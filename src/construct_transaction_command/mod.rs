@@ -2,7 +2,8 @@ use structopt::StructOpt;
 use strum_macros::{
     EnumVariantNames,
 };
-use strum::VariantNames;
+// use strum::VariantNames;
+use strum::{EnumMessage, EnumDiscriminants, EnumIter, IntoEnumIterator};
 use dialoguer::{
     Select,
     theme::ColorfulTheme,
@@ -23,12 +24,22 @@ pub enum CliCommand {
     Utils,
 }
 
-#[derive(Debug, EnumVariantNames)]
+// #[derive(Debug, EnumVariantNames)]
+// pub enum ArgsCommand {
+//     /// consrtuct a new transaction
+//     ConstructTransaction(OnOffLineMode),
+//     Utils,
+// }
+
+#[derive(Debug, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum ArgsCommand {
-    /// consrtuct a new transaction
+    #[strum_discriminants(strum(message="Construct a new transaction"))]
     ConstructTransaction(OnOffLineMode),
+    #[strum_discriminants(strum(message="Helpers"))]
     Utils,
 }
+
 
 impl From<CliCommand> for ArgsCommand {
     fn from(item: CliCommand) -> Self {
@@ -45,18 +56,20 @@ impl From<CliCommand> for ArgsCommand {
 impl ArgsCommand {
     pub fn choose_command() -> Self {
         println!();
-        let commands = ArgsCommand::VARIANTS;
+        // let commands = ArgsCommand::VARIANTS;
+        let variants = ArgsCommandDiscriminants::iter().collect::<Vec<_>>();
+        let commands = variants.iter().map(|p| p.get_message().unwrap().to_owned()).collect::<Vec<_>>();
         let selection = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Choose your action")
             .items(&commands)
             .default(0)
             .interact()
             .unwrap();
-        match commands[selection] {
-            "ConstructTransaction" => {                
+        match variants[selection] {
+            ArgsCommandDiscriminants::ConstructTransaction => {
                 Self::ConstructTransaction(OnOffLineMode{mode: Mode::choose_mode()})
             },
-            "Utils" => {
+            ArgsCommandDiscriminants::Utils => {
                 Self::Utils
             },
             _ => unreachable!("Error")

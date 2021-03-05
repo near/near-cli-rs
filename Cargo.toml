@@ -9,7 +9,8 @@ edition = "2018"
 [dependencies]
 structopt = "0.3"
 dialoguer = "0.7"
-strum = "0.20"
+# strum = "0.20"
+strum = { git = "https://github.com/frol/strum", branch = "feat/discriminants-pass-through-attributes", features = ["derive"] }
 strum_macros = "0.20"
 smart-default = "0.6.0"
 derive_more = "0.99.9"

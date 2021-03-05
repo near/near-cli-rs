@@ -2,7 +2,7 @@ use structopt::StructOpt;
 use strum_macros::{
     EnumVariantNames,
 };
-use strum::VariantNames;
+use strum::{EnumMessage, EnumDiscriminants, EnumIter, IntoEnumIterator};
 use dialoguer::{
     Select,
     Input,
@@ -49,9 +49,12 @@ pub enum CliAccessKeyPermission {
     FullAccess(CliFullAccessType),
 }
 
-#[derive(Debug, EnumVariantNames)]
+#[derive(Debug, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum AccessKeyPermission {
+    #[strum_discriminants(strum(message="A permission with function call"))]
     FunctionCall(FunctionCallType),
+    #[strum_discriminants(strum(message="A permission with full access"))]
     FullAccess(FullAccessType),
 }
 
@@ -128,15 +131,17 @@ impl From<CliAccessKeyPermission> for AccessKeyPermission {
 
 impl AccessKeyPermission {
     pub fn choose_permission() -> Self {
-        let permissions = AccessKeyPermission::VARIANTS;
+        // let permissions = AccessKeyPermission::VARIANTS;
+        let variants = AccessKeyPermissionDiscriminants::iter().collect::<Vec<_>>();
+        let permissions = variants.iter().map(|p| p.get_message().unwrap().to_owned()).collect::<Vec<_>>();
         let select_permission = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Select a permission that you want to add to the access key:")
             .items(&permissions)
             .default(0)
-            .interact_on_opt(&Term::stderr())
+            .interact()
             .unwrap();
-        match select_permission {
-            Some(0) => {
+        match variants[select_permission] {
+            AccessKeyPermissionDiscriminants::FunctionCall => {
                 let allowance: Option<near_primitives::types::Balance> = FunctionCallType::input_allowance();
                 let receiver_id: near_primitives::types::AccountId = FunctionCallType::input_receiver_id();
                 let method_names: Vec<String> = FunctionCallType::input_method_names();
@@ -149,7 +154,7 @@ impl AccessKeyPermission {
                         next_action
                 })
             },
-            Some(1) => AccessKeyPermission::FullAccess(FullAccessType {
+            AccessKeyPermissionDiscriminants::FullAccess => AccessKeyPermission::FullAccess(FullAccessType {
                 next_action: Box::new(ActionSubcommand::choose_action_command())
             }),
             _ => unreachable!("Error")

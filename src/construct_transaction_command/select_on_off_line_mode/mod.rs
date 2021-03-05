@@ -79,16 +79,16 @@ impl Mode {
             )
             .items(&choose_mode)
             .default(0)
-            .interact_on_opt(&Term::stderr())
+            .interact()
             .unwrap();
-        match select_mode {
-            Some(0) => {
+        match choose_mode[select_mode] {
+            "Yes, I keep it simple" => {
                 let selected_server: SelectServer = SelectServer::select_server();
                 Mode::Online(OnlineArgs {
                         selected_server
                     }) 
             },
-            Some(1) => {
+            "No, I want to work in no-network (air-gapped) environment" => {
                 let nonce: u64 = OfflineArgs::input_nonce();
                 let block_hash = OfflineArgs::input_block_hash();
                 let send_from: SendFrom = SendFrom::send_from();

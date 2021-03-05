@@ -2,7 +2,8 @@ use structopt::StructOpt;
 use strum_macros::{
     EnumVariantNames,
 };
-use strum::VariantNames;
+// use strum::VariantNames;
+use strum::{EnumMessage, EnumDiscriminants, EnumIter, IntoEnumIterator};
 use dialoguer::{
     Select,
     Input,
@@ -48,15 +49,24 @@ pub struct Receiver {
     pub transaction_subcommand: ActionSubcommand
 }
 
-#[derive(Debug, EnumVariantNames)]
+#[derive(Debug, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum ActionSubcommand {
+    #[strum_discriminants(strum(message="Transfer NEAR Tokens"))]
     TransferNEARTokens(TransferNEARTokensAction),
+    #[strum_discriminants(strum(message="Call a Function"))]
     CallFunction,
+    #[strum_discriminants(strum(message="Stake NEAR Tokens"))]
     StakeNEARTokens,
+    #[strum_discriminants(strum(message="Create an Account"))]
     CreateAccount(CreateAccountAction),
+    #[strum_discriminants(strum(message="Delete an Account"))]
     DeleteAccount(DeleteAccountAction),
+    #[strum_discriminants(strum(message="Add an Access Key"))]
     AddAccessKey(AddAccessKeyAction),
+    #[strum_discriminants(strum(message="Detete an Access Key"))]
     DeleteAccessKey(DeleteAccessKeyAction),
+    #[strum_discriminants(strum(message="Skip adding a new action"))]
     Skip(SkipAction)
 }
 
@@ -104,15 +114,16 @@ impl ActionSubcommand {
     }
     pub fn choose_action_command() -> Self {
         println!();
-        let action_subcommands= ActionSubcommand::VARIANTS;
+        let variants = ActionSubcommandDiscriminants::iter().collect::<Vec<_>>();
+        let action_subcommands = variants.iter().map(|p| p.get_message().unwrap().to_owned()).collect::<Vec<_>>();
         let select_action_subcommand = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Select an action that you want to add to the action:")
             .items(&action_subcommands)
             .default(0)
-            .interact_on_opt(&Term::stderr())
+            .interact()
             .unwrap();
-        match select_action_subcommand {
-            Some(0) => {
+        match variants[select_action_subcommand] {
+            ActionSubcommandDiscriminants::TransferNEARTokens => {
                 let amount: NearBalance = NearBalance::input_amount();
                 let next_action: Box<ActionSubcommand> = Box::new(ActionSubcommand::choose_action_command());
                 ActionSubcommand::TransferNEARTokens(TransferNEARTokensAction {
@@ -120,15 +131,15 @@ impl ActionSubcommand {
                     next_action
                 })
             },
-            Some(1) => ActionSubcommand::CallFunction,
-            Some(2) => ActionSubcommand::StakeNEARTokens,
-            Some(3) => {
+            ActionSubcommandDiscriminants::CallFunction => ActionSubcommand::CallFunction,
+            ActionSubcommandDiscriminants::StakeNEARTokens => ActionSubcommand::StakeNEARTokens,
+            ActionSubcommandDiscriminants::CreateAccount => {
                 let next_action: Box<ActionSubcommand> = Box::new(ActionSubcommand::choose_action_command());
                 ActionSubcommand::CreateAccount(CreateAccountAction {
                     next_action
                 })
             },
-            Some(4) => {
+            ActionSubcommandDiscriminants::DeleteAccount => {
                 let beneficiary_id: String = DeleteAccountAction::input_beneficiary_id();
                 let next_action: Box<ActionSubcommand> = Box::new(ActionSubcommand::choose_action_command());
                 ActionSubcommand::DeleteAccount(DeleteAccountAction {
@@ -136,7 +147,7 @@ impl ActionSubcommand {
                     next_action
                 })
             },
-            Some(5) => {
+            ActionSubcommandDiscriminants::AddAccessKey => {
                 let public_key: String = AddAccessKeyAction::input_public_key();
                 let nonce: near_primitives::types::Nonce = AddAccessKeyAction::input_nonce();
                 let permission: AccessKeyPermission = AccessKeyPermission::choose_permission();
@@ -146,7 +157,7 @@ impl ActionSubcommand {
                     permission
                 })
             },
-            Some(6) => {
+            ActionSubcommandDiscriminants::DeleteAccessKey => {
                 let public_key: String = DeleteAccessKeyAction::input_public_key();
                 let next_action: Box<ActionSubcommand> = Box::new(ActionSubcommand::choose_action_command());
                 ActionSubcommand::DeleteAccessKey(DeleteAccessKeyAction {
@@ -154,7 +165,7 @@ impl ActionSubcommand {
                     next_action
                 })
             },
-            Some(7) => ActionSubcommand::Skip(SkipAction{sign_option: SignTransaction::choose_sign_option()}),
+            ActionSubcommandDiscriminants::Skip => ActionSubcommand::Skip(SkipAction{sign_option: SignTransaction::choose_sign_option()}),
             _ => unreachable!("Error")
         }
     }

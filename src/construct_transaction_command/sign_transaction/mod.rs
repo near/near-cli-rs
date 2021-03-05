@@ -60,14 +60,18 @@ impl SignTransaction {
             .with_prompt("Would you like to sign the transaction?")
             .items(&sign_options)
             .default(0)
-            .interact_on_opt(&Term::stderr())
+            .interact()
             .unwrap();
-        match select_sign_options {
-            Some(0) => SignTransaction::SignPrivateKey(SignPrivateKey{
-                signer_public_key: SignPrivateKey::signer_public_key(),
-                signer_secret_key: SignPrivateKey::signer_secret_key()
-            }),
-            Some(1) => SignTransaction::SignKeychain(SignKeychain{key_chain: SignKeychain::input_key_chain()}),
+        match sign_options[select_sign_options] {
+            "Yes, I want to sign the transaction with my private key" => {
+                SignTransaction::SignPrivateKey(SignPrivateKey{
+                    signer_public_key: SignPrivateKey::signer_public_key(),
+                    signer_secret_key: SignPrivateKey::signer_secret_key()
+                })
+            },
+            "No, I want to construct the transaction and sign it somewhere else" => {
+                SignTransaction::SignKeychain(SignKeychain{key_chain: SignKeychain::input_key_chain()})
+            },
             _ => SignTransaction::SignPrivateKey(SignPrivateKey{
                 signer_public_key: SignPrivateKey::signer_public_key(),
                 signer_secret_key: SignPrivateKey::signer_secret_key()

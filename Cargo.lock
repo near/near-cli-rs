@@ -1579,7 +1579,7 @@ dependencies = [
  "smart-default",
  "structopt",
  "strum",
- "strum_macros",
+ "strum_macros 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2487,15 +2487,28 @@ dependencies = [
 
 [[package]]
 name = "strum"
-version = "0.20.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7318c509b5ba57f18533982607f24070a55d353e90d4cae30c467cdb2ad5ac5c"
+version = "0.20.1"
+source = "git+https://github.com/frol/strum?branch=feat/discriminants-pass-through-attributes#26f213161736cc1b711a7f22b00dff58c3261f22"
+dependencies = [
+ "strum_macros 0.20.1 (git+https://github.com/frol/strum?branch=feat/discriminants-pass-through-attributes)",
+]
 
 [[package]]
 name = "strum_macros"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee8bc6b87a5112aeeab1f4a9f7ab634fe6cbefc4850006df31267f4cfb9e3149"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "strum_macros"
+version = "0.20.1"
+source = "git+https://github.com/frol/strum?branch=feat/discriminants-pass-through-attributes#26f213161736cc1b711a7f22b00dff58c3261f22"
 dependencies = [
  "heck",
  "proc-macro2",
