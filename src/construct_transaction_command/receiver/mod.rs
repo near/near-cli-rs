@@ -98,7 +98,7 @@ impl ActionSubcommand {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: String,
+        selected_server_url: url::Url,
     ) {
         match self {
             ActionSubcommand::TransferNEARTokens(args_transfer) => args_transfer.process(prepopulated_unsigned_transaction, selected_server_url).await,
@@ -175,7 +175,7 @@ impl Receiver {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: String,
+        selected_server_url: url::Url,
     ) {
         println!("Receiver process: self:\n       {:?}", &self);
         let unsigned_transaction = near_primitives::transaction::Transaction {
@@ -279,7 +279,7 @@ mod tests {
             block_hash: crate::common::BlobAsBase58String::<CryptoHash>::from_str("F2KwJ2rBE5LfuPFPRTYtu243hTniYggfC6P24WQVfZnx").unwrap().into_inner(),
             actions: vec![],
         };
-        let selected_server_url: String = "https://rpc.testnet.near.org".to_string();
+        let selected_server_url: url::Url = url::Url::parse("https://rpc.testnet.near.org").unwrap();
         Receiver::process(my_self, prepopulated_unsigned_transaction, selected_server_url).await;
 
     }
@@ -300,7 +300,7 @@ impl SkipAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: String,
+        selected_server_url: url::Url,
     ) {
         println!("Skip process:\n       {:?}", &self);
         println!("Skip process: prepopulated_unsigned_transaction:\n       {:?}", &prepopulated_unsigned_transaction);

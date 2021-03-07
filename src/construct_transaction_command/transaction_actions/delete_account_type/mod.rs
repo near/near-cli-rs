@@ -48,7 +48,7 @@ impl DeleteAccountAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: String,
+        selected_server_url: url::Url,
     ) {
         println!("DeleteAccountAction process: self:\n       {:?}", &self);
         println!("DeleteAccountAction process: prepopulated_unsigned_transaction:\n       {:?}", &prepopulated_unsigned_transaction);

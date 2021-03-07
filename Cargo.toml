@@ -1,5 +1,5 @@
 [package]
-name = "my-near-cli-dialoguer-strum-2"
+name = "my-near-cli-dialoguer-strum-3"
 version = "0.1.0"
 authors = ["FroVolod <frol_off@meta.ua>"]
 edition = "2018"
@@ -40,3 +40,5 @@ slip10 = { git = "https://github.com/frol/slip10", rev = "a3235dd0acf3a485f547cf
 near-crypto = { git = "https://github.com/nearprotocol/nearcore", rev="29fcaf3b8c81a4c0371d105054ce251355382a77" }
 near-primitives = { git = "https://github.com/nearprotocol/nearcore", rev="29fcaf3b8c81a4c0371d105054ce251355382a77" }
 near-jsonrpc-client = { git = "https://github.com/nearprotocol/nearcore", rev="29fcaf3b8c81a4c0371d105054ce251355382a77" }
+
+url = { version = "2", features = ["serde"] }

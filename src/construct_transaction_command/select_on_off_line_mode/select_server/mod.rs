@@ -72,7 +72,9 @@ impl SelectServer {
             },
             SelectServer::Mainnet(_server) => {},
             SelectServer::Betanet(_server) => {},
-            SelectServer::Custom(_server) => {},
+            SelectServer::Custom(server) => {
+                server.process(prepopulated_unsigned_transaction).await;
+            },
         }
     }
     pub fn select_server() -> Self {
@@ -87,15 +89,15 @@ impl SelectServer {
         let send_from = SendFrom::send_from();
         match select_server {
             Some(0) => SelectServer::Testnet(Server{
-                            url: TESTNET_API_SERVER_URL.to_string(),
+                            url: url::Url::parse(TESTNET_API_SERVER_URL).unwrap(),
                             send_from
                         }),
             Some(1) => SelectServer::Mainnet(Server{
-                            url: MAINNET_API_SERVER_URL.to_string(),
+                            url: url::Url::parse(MAINNET_API_SERVER_URL).unwrap(),
                             send_from
                         }),
             Some(2) => SelectServer::Betanet(Server{
-                            url: BETANET_API_SERVER_URL.to_string(),
+                            url: url::Url::parse(BETANET_API_SERVER_URL).unwrap(),
                             send_from
                         }),
             Some(3) => SelectServer::Custom(Server{

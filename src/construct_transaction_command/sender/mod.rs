@@ -36,7 +36,7 @@ impl Sender {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: String,
+        selected_server_url: url::Url,
     ) {
         let unsigned_transaction = near_primitives::transaction::Transaction {
             signer_id: self.sender_account_id.clone(),
@@ -74,7 +74,7 @@ impl SendTo {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: String,
+        selected_server_url: url::Url,
     ) {
         match self {
             SendTo::Receiver(receiver) => receiver.process(prepopulated_unsigned_transaction, selected_server_url).await
