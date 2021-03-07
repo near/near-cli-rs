@@ -4,6 +4,7 @@ use dialoguer::{
     theme::ColorfulTheme,
     console::Term
 };
+use strum::{EnumMessage, EnumDiscriminants, EnumIter, IntoEnumIterator};
 
 pub mod sign_private_key;
 use sign_private_key::{
@@ -22,10 +23,20 @@ use sign_manually::{
 };
 
 
-#[derive(Debug)]
+#[derive(Debug, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum SignTransaction {
+    #[strum_discriminants(strum(
+        message="Yes, I want to sign the transaction with my private key"
+    ))]
     SignPrivateKey(SignPrivateKey),
+    #[strum_discriminants(strum(
+        message="Yes, I want to sign the transaction with keychain"
+    ))]
     SignKeychain(SignKeychain),
+    #[strum_discriminants(strum(
+        message="No, I want to construct the transaction and sign it somewhere else"
+    ))]
     SignManually(SignManually)
 }
 
@@ -40,42 +51,49 @@ impl SignTransaction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: String,
+        selected_server_url: url::Url,
     ) {
         println!("SignTransaction process: self:       {:?}", &self);
         println!("SignTransaction process: prepopulated_unsigned_transaction:       {:?}", &prepopulated_unsigned_transaction);
         match self {
             SignTransaction::SignPrivateKey(keys) => keys.process(prepopulated_unsigned_transaction, selected_server_url).await,
-            SignTransaction::SignKeychain(chain) => chain.process(prepopulated_unsigned_transaction, selected_server_url),
-            SignTransaction::SignManually(args_manually) => {}
+            SignTransaction::SignKeychain(chain) => {
+                println!("Сейчас ведется доработка данного модуля")
+                // chain.process(prepopulated_unsigned_transaction, selected_server_url)
+            },
+            SignTransaction::SignManually(args_manually) => args_manually.process(prepopulated_unsigned_transaction, selected_server_url)
         }
     }
     pub fn choose_sign_option() -> Self {
         println!();
-        let sign_options = vec![
-            "Yes, I want to sign the transaction with my private key",
-            "No, I want to construct the transaction and sign it somewhere else",
-        ];
+        // let sign_options = vec![
+        //     "Yes, I want to sign the transaction with my private key",
+        //     "Yes, I want to sign the transaction with keychain",
+        //     "No, I want to construct the transaction and sign it somewhere else",
+        // ];
+        let variants = SignTransactionDiscriminants::iter().collect::<Vec<_>>();
+        let sign_options = variants.iter().map(|p| p.get_message().unwrap().to_owned()).collect::<Vec<_>>();
         let select_sign_options = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Would you like to sign the transaction?")
             .items(&sign_options)
             .default(0)
             .interact()
             .unwrap();
-        match sign_options[select_sign_options] {
-            "Yes, I want to sign the transaction with my private key" => {
+        match variants[select_sign_options] {
+            SignTransactionDiscriminants::SignPrivateKey => {
                 SignTransaction::SignPrivateKey(SignPrivateKey{
                     signer_public_key: SignPrivateKey::signer_public_key(),
                     signer_secret_key: SignPrivateKey::signer_secret_key()
                 })
             },
-            "No, I want to construct the transaction and sign it somewhere else" => {
-                SignTransaction::SignKeychain(SignKeychain{key_chain: SignKeychain::input_key_chain()})
+            SignTransactionDiscriminants::SignKeychain => {
+                // SignTransaction::SignKeychain(SignKeychain{key_chain: SignKeychain::input_key_chain()})
+                panic!("This module is under development")
             },
-            _ => SignTransaction::SignPrivateKey(SignPrivateKey{
-                signer_public_key: SignPrivateKey::signer_public_key(),
-                signer_secret_key: SignPrivateKey::signer_secret_key()
-            })
+            SignTransactionDiscriminants::SignManually => {
+                SignTransaction::SignManually(SignManually{})
+            },
+            _ => unreachable!("Error")
         }
     }
 }
