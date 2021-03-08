@@ -45,17 +45,17 @@ pub struct CliAddAccessKeyAction {
 
 #[derive(Debug, StructOpt)]
 pub enum CliAccessKeyPermission {
-    FunctionCall(CliFunctionCallType),
-    FullAccess(CliFullAccessType),
+    FunctionCallAction(CliFunctionCallType),
+    FullAccessAction(CliFullAccessType),
 }
 
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum AccessKeyPermission {
     #[strum_discriminants(strum(message="A permission with function call"))]
-    FunctionCall(FunctionCallType),
+    FunctionCallAction(FunctionCallType),
     #[strum_discriminants(strum(message="A permission with full access"))]
-    FullAccess(FullAccessType),
+    FullAccessAction(FullAccessType),
 }
 
 impl From<CliAddAccessKeyAction> for AddAccessKeyAction {
@@ -93,8 +93,8 @@ impl AddAccessKeyAction {
         println!("AddAccessKeyAction process: self:\n       {:?}", &self);
         println!("AddAccessKeyAction process: prepopulated_unsigned_transaction:\n       {:?}", &prepopulated_unsigned_transaction);
         match self.permission {
-            AccessKeyPermission::FullAccess(full_access_type) => full_access_type.process(self.nonce, prepopulated_unsigned_transaction, selected_server_url, self.public_key).await,
-            AccessKeyPermission::FunctionCall(function_call_type) => function_call_type.process(self.nonce, prepopulated_unsigned_transaction, selected_server_url, self.public_key).await,
+            AccessKeyPermission::FullAccessAction(full_access_type) => full_access_type.process(self.nonce, prepopulated_unsigned_transaction, selected_server_url, self.public_key).await,
+            AccessKeyPermission::FunctionCallAction(function_call_type) => function_call_type.process(self.nonce, prepopulated_unsigned_transaction, selected_server_url, self.public_key).await,
         }
     }
     pub fn input_nonce() -> near_primitives::types::Nonce {
@@ -115,13 +115,13 @@ impl AddAccessKeyAction {
 impl From<CliAccessKeyPermission> for AccessKeyPermission {
     fn from(item: CliAccessKeyPermission) -> Self {
         match item {
-            CliAccessKeyPermission::FunctionCall(cli_function_call_type) => {
+            CliAccessKeyPermission::FunctionCallAction(cli_function_call_type) => {
                 let function_call_type: FunctionCallType = FunctionCallType::from(cli_function_call_type);
-                AccessKeyPermission::FunctionCall(function_call_type) 
+                AccessKeyPermission::FunctionCallAction(function_call_type) 
             },
-            CliAccessKeyPermission::FullAccess(cli_full_access_type) => {
+            CliAccessKeyPermission::FullAccessAction(cli_full_access_type) => {
                 let full_access_type: FullAccessType = FullAccessType::from(cli_full_access_type);
-                AccessKeyPermission::FullAccess(full_access_type)
+                AccessKeyPermission::FullAccessAction(full_access_type)
             }
         }
     }
@@ -141,12 +141,12 @@ impl AccessKeyPermission {
             .interact()
             .unwrap();
         match variants[select_permission] {
-            AccessKeyPermissionDiscriminants::FunctionCall => {
+            AccessKeyPermissionDiscriminants::FunctionCallAction => {
                 let allowance: Option<near_primitives::types::Balance> = FunctionCallType::input_allowance();
                 let receiver_id: near_primitives::types::AccountId = FunctionCallType::input_receiver_id();
                 let method_names: Vec<String> = FunctionCallType::input_method_names();
                 let next_action: Box<ActionSubcommand> = Box::new(ActionSubcommand::choose_action_command());
-                AccessKeyPermission::FunctionCall(
+                AccessKeyPermission::FunctionCallAction(
                     FunctionCallType {
                         allowance,
                         receiver_id,
@@ -154,7 +154,7 @@ impl AccessKeyPermission {
                         next_action
                 })
             },
-            AccessKeyPermissionDiscriminants::FullAccess => AccessKeyPermission::FullAccess(FullAccessType {
+            AccessKeyPermissionDiscriminants::FullAccessAction => AccessKeyPermission::FullAccessAction(FullAccessType {
                 next_action: Box::new(ActionSubcommand::choose_action_command())
             }),
             _ => unreachable!("Error")
