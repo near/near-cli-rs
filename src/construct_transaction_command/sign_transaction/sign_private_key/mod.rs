@@ -27,14 +27,14 @@ impl SignPrivateKey {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: url::Url,
+        selected_server_url: Option<url::Url>,
     ) {
         println!("SignPrivateKey process: self:\n       {:?}", &self);
         println!("SignPrivateKey process: prepopulated_unsigned_transaction:\n       {:?}", &prepopulated_unsigned_transaction);
         println!("SignPrivateKey process: selected_server_url:\n       {:?}", &selected_server_url);
         let public_key = near_crypto::PublicKey::from_str(&self.signer_public_key).unwrap();
         let signer_secret_key = near_crypto::SecretKey::from_str(&self.signer_secret_key).unwrap();
-        match selected_server_url.domain() {
+        match selected_server_url {
             None => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
                     public_key,
@@ -52,7 +52,7 @@ impl SignPrivateKey {
                 println!("---  serialize_to_base64:   --- \n   {:#?}", &serialize_to_base64)
                 
             },
-            _ => {
+            Some(selected_server_url) => {
                 let online_signer_access_key_response = self
                     .rpc_client(&selected_server_url.as_str())
                     .query(near_primitives::rpc::RpcQueryRequest {

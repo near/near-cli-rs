@@ -12,7 +12,7 @@ use crate::construct_transaction_command::sender::{
 
 #[derive(Debug)]
 pub struct Server {
-    pub url: url::Url,
+    pub url: Option<url::Url>,
     pub send_from: SendFrom
 }
 
@@ -22,7 +22,7 @@ impl Server {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) {
         println!("Server process:\n        {:?}", &self);
-        let selected_server_url: url::Url = self.url.clone();
+        let selected_server_url = self.url.clone();
         self.send_from.process(prepopulated_unsigned_transaction, selected_server_url).await;
     }
 }
@@ -36,7 +36,7 @@ impl SendFrom {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: url::Url,
+        selected_server_url: Option<url::Url>,
     ) {
         println!("Sendfrom process:\n      {:?}", &self);
         match self {
@@ -71,7 +71,7 @@ impl CliServer {
             None => SendFrom::send_from()
         };
         Server {
-            url: url::Url::parse(&url).unwrap() ,
+            url: Some(url::Url::parse(&url).unwrap()) ,
             send_from,
         }
     }
@@ -79,7 +79,7 @@ impl CliServer {
 
 impl CliCustomServer {
     pub fn into_server(self) -> Server {
-        let url:url::Url = match self.url {
+        let url: url::Url = match self.url {
             Some(url) => {
                 match url::Url::parse(&url) {
                     Ok(url) => url,
@@ -103,7 +103,7 @@ impl CliCustomServer {
             None => SendFrom::send_from()
         };
         Server {
-            url,
+            url: Some(url),
             send_from,
         }
     }

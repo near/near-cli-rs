@@ -83,7 +83,7 @@ impl FunctionCallType {
         self,
         nonce: near_primitives::types::Nonce,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: url::Url,
+        selected_server_url: Option<url::Url>,
         public_key_string: String,
     ) {
         println!("FunctionCallType process: self:\n       {:?}", &self);

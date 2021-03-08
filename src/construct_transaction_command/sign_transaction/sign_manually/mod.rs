@@ -25,7 +25,7 @@ impl SignManually {
     pub fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        _selected_server_url: url::Url,
+        _selected_server_url: Option<url::Url>,
     ) {
         println!();
         println!("SignManually process: prepopulated_unsigned_transaction:\n {:#?}", &prepopulated_unsigned_transaction);

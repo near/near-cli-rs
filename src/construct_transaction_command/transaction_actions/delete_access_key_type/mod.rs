@@ -49,7 +49,7 @@ impl DeleteAccessKeyAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: url::Url,
+        selected_server_url: Option<url::Url>,
         // public_key_string: String,
     ) {
         println!("DeleteAccessKeyAction process: self:\n       {:?}", &self);

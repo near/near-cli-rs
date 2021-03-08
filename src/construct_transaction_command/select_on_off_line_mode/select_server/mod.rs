@@ -89,23 +89,24 @@ impl SelectServer {
         let send_from = SendFrom::send_from();
         match select_server {
             Some(0) => SelectServer::Testnet(Server{
-                            url: url::Url::parse(TESTNET_API_SERVER_URL).unwrap(),
+                            url: Some(url::Url::parse(TESTNET_API_SERVER_URL).unwrap()),
                             send_from
                         }),
             Some(1) => SelectServer::Mainnet(Server{
-                            url: url::Url::parse(MAINNET_API_SERVER_URL).unwrap(),
+                            url: Some(url::Url::parse(MAINNET_API_SERVER_URL).unwrap()),
                             send_from
                         }),
             Some(2) => SelectServer::Betanet(Server{
-                            url: url::Url::parse(BETANET_API_SERVER_URL).unwrap(),
+                            url: Some(url::Url::parse(BETANET_API_SERVER_URL).unwrap()),
                             send_from
                         }),
             Some(3) => SelectServer::Custom(Server{
                             url: {
-                                Input::new()
+                                let url: url::Url = Input::new()
                                 .with_prompt("What is the RPC endpoint?")
                                 .interact_text()
-                                .unwrap()
+                                .unwrap();
+                                Some(url)
                             },
                             send_from
             }),

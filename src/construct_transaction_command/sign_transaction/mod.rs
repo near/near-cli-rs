@@ -51,7 +51,7 @@ impl SignTransaction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: url::Url,
+        selected_server_url: Option<url::Url>,
     ) {
         println!("SignTransaction process: self:       {:?}", &self);
         println!("SignTransaction process: prepopulated_unsigned_transaction:       {:?}", &prepopulated_unsigned_transaction);
