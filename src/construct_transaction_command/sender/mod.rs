@@ -7,6 +7,7 @@ use super::receiver::{
     Receiver,
     CliReceiver,
     ActionSubcommand,
+    NextAction
 };
 
 
@@ -82,10 +83,11 @@ impl SendTo {
     }
     pub fn send_to() -> Self {
         let receiver_account_id: String = Receiver::input_receiver_account_id();
-        let transaction_subcommand: ActionSubcommand = ActionSubcommand::choose_action_command();
+        // let transaction_subcommand: ActionSubcommand = ActionSubcommand::choose_action_command();
+        let action: NextAction = NextAction::input_next_action();
         SendTo::Receiver(Receiver {
             receiver_account_id,
-            transaction_subcommand
+            action
         })
     }
 }

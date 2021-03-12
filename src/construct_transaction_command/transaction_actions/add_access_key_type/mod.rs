@@ -12,7 +12,7 @@ use dialoguer::{
 use async_recursion::async_recursion;
 
 
-use super::super::receiver::ActionSubcommand;
+use super::super::receiver::NextAction;
 
 pub(crate) mod function_call_type;
 use function_call_type::{
@@ -145,7 +145,7 @@ impl AccessKeyPermission {
                 let allowance: Option<near_primitives::types::Balance> = FunctionCallType::input_allowance();
                 let receiver_id: near_primitives::types::AccountId = FunctionCallType::input_receiver_id();
                 let method_names: Vec<String> = FunctionCallType::input_method_names();
-                let next_action: Box<ActionSubcommand> = Box::new(ActionSubcommand::choose_action_command());
+                let next_action: Box<NextAction> = Box::new(NextAction::input_next_action());
                 AccessKeyPermission::FunctionCallAction(
                     FunctionCallType {
                         allowance,
@@ -155,7 +155,7 @@ impl AccessKeyPermission {
                 })
             },
             AccessKeyPermissionDiscriminants::FullAccessAction => AccessKeyPermission::FullAccessAction(FullAccessType {
-                next_action: Box::new(ActionSubcommand::choose_action_command())
+                next_action: Box::new(NextAction::input_next_action())
             }),
             _ => unreachable!("Error")
         }

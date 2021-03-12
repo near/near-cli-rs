@@ -6,15 +6,17 @@ use dialoguer::{
 use async_recursion::async_recursion;
 
 use super::super::receiver::{
-    ActionSubcommand,
-    CliActionSkipSubcommand
+    // ActionSubcommand,
+    // CliActionSkipSubcommand,
+    NextAction,
+    CliSkipNextAction
 };
 
 
 #[derive(Debug)]
 pub struct DeleteAccessKeyAction {
     pub public_key: String,
-    pub next_action: Box<ActionSubcommand>
+    pub next_action: Box<NextAction>
 }
 
 #[derive(Debug, StructOpt)]
@@ -22,7 +24,7 @@ pub struct CliDeleteAccessKeyAction {
     #[structopt(long)]
     public_key: Option<String>,
     #[structopt(subcommand)]
-    next_action: Option<CliActionSkipSubcommand>
+    next_action: Option<CliSkipNextAction>
 }
 
 impl From<CliDeleteAccessKeyAction> for DeleteAccessKeyAction {
@@ -31,11 +33,11 @@ impl From<CliDeleteAccessKeyAction> for DeleteAccessKeyAction {
             Some(cli_public_key) => cli_public_key,
             None => DeleteAccessKeyAction::input_public_key()
         };
-        let next_action: Box<ActionSubcommand> = match item.next_action {
+        let next_action: Box<NextAction> = match item.next_action {
             Some(cli_skip_action) => {
-                Box::new(ActionSubcommand::from(cli_skip_action))
+                Box::new(NextAction::from(cli_skip_action))
             },
-            None => Box::new(ActionSubcommand::choose_action_command()) 
+            None => Box::new(NextAction::input_next_action()) 
         };
         DeleteAccessKeyAction {
             public_key,
@@ -67,14 +69,16 @@ impl DeleteAccessKeyAction {
             .. prepopulated_unsigned_transaction
         };
         match *self.next_action {
-            ActionSubcommand::TransferNEARTokens(args_transfer) => args_transfer.process(unsigned_transaction, selected_server_url).await,
-            // ActionSubcommand::CallFunction(args_function) => {},
-            // ActionSubcommand::StakeNEARTokens(args_stake) => {},
-            ActionSubcommand::CreateAccount(args_create_account) => args_create_account.process(unsigned_transaction, selected_server_url).await,
-            ActionSubcommand::DeleteAccount(args_delete_account) => args_delete_account.process(unsigned_transaction, selected_server_url).await,
-            ActionSubcommand::AddAccessKey(args_add_public_key) => args_add_public_key.process(unsigned_transaction, selected_server_url, "".to_string()).await,
-            ActionSubcommand::DeleteAccessKey(args_delete_access_key) => args_delete_access_key.process(unsigned_transaction, selected_server_url).await,
-            ActionSubcommand::Skip(args_skip) => args_skip.process(unsigned_transaction, selected_server_url).await,
+            // ActionSubcommand::TransferNEARTokens(args_transfer) => args_transfer.process(unsigned_transaction, selected_server_url).await,
+            // // ActionSubcommand::CallFunction(args_function) => {},
+            // // ActionSubcommand::StakeNEARTokens(args_stake) => {},
+            // ActionSubcommand::CreateAccount(args_create_account) => args_create_account.process(unsigned_transaction, selected_server_url).await,
+            // ActionSubcommand::DeleteAccount(args_delete_account) => args_delete_account.process(unsigned_transaction, selected_server_url).await,
+            // ActionSubcommand::AddAccessKey(args_add_public_key) => args_add_public_key.process(unsigned_transaction, selected_server_url, "".to_string()).await,
+            // ActionSubcommand::DeleteAccessKey(args_delete_access_key) => args_delete_access_key.process(unsigned_transaction, selected_server_url).await,
+            // ActionSubcommand::Skip(args_skip) => args_skip.process(unsigned_transaction, selected_server_url).await,
+            NextAction::AddAction(select_action) => select_action.process(unsigned_transaction, selected_server_url).await,
+            NextAction::Skip(skip_action) => skip_action.process(unsigned_transaction, selected_server_url).await,
             _ => unreachable!("Error")
         }
 
