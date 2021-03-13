@@ -14,9 +14,9 @@ use utils_command::{
 };
 mod consts;
 mod construct_transaction_command;
-use construct_transaction_command::select_on_off_line_mode::{
-    CliOnOffLineMode,
-    OnOffLineMode,
+use construct_transaction_command::operation_mode::{
+    CliOperationMode,
+    OperationMode,
     Mode
 };
 
@@ -68,7 +68,7 @@ impl Args {
 
 #[derive(Debug, StructOpt)]
 pub enum CliCommand {
-    ConstructTransaction(CliOnOffLineMode),
+    ConstructTransaction(CliOperationMode),
     Utils(CliUtilType),
 }
 
@@ -76,7 +76,7 @@ pub enum CliCommand {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum ArgsCommand {
     #[strum_discriminants(strum(message="Construct a new transaction"))]
-    ConstructTransaction(OnOffLineMode),
+    ConstructTransaction(OperationMode),
     #[strum_discriminants(strum(message="Helpers"))]
     Utils(UtilType),
 }
@@ -85,7 +85,7 @@ impl From<CliCommand> for ArgsCommand {
     fn from(item: CliCommand) -> Self {
         match item {
             CliCommand::ConstructTransaction(cli_onoffline_mode) => {
-                let onoffline_mode = OnOffLineMode::from(cli_onoffline_mode);
+                let onoffline_mode = OperationMode::from(cli_onoffline_mode);
                 ArgsCommand::ConstructTransaction(onoffline_mode)
             }
             CliCommand::Utils(cli_util_type) => {
@@ -109,7 +109,7 @@ impl ArgsCommand {
             .unwrap();
         match variants[selection] {
             ArgsCommandDiscriminants::ConstructTransaction => {
-                Self::ConstructTransaction(OnOffLineMode{mode: Mode::choose_mode()})
+                Self::ConstructTransaction(OperationMode{mode: Mode::choose_mode()})
             },
             ArgsCommandDiscriminants::Utils => {
                 Self::Utils(UtilType{util: UtilList::choose_util()})
