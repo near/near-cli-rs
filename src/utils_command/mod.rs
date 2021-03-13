@@ -1,4 +1,5 @@
 pub mod generate_keypair_subcommand;
+pub mod sign_transaction_subcommand;
 
 /// Collection of various low-level helpers
 #[derive(Debug)]

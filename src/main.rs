@@ -47,6 +47,10 @@ impl Args {
                 };
                 mode.process(unsigned_transaction).await;
             },
+            ArgsCommand::Utils(util_type) => {
+                println!("Работают utils");
+                util_type.process()
+            },
             _ => unreachable!("Error") 
         };
         "Ok".to_string()
