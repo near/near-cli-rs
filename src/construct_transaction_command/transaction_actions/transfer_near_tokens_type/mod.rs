@@ -1,21 +1,15 @@
-use structopt::StructOpt;
-use dialoguer::{
-    Input,
-};
+use async_recursion::async_recursion;
+use dialoguer::Input;
 use std::num::ParseIntError;
 use std::str::FromStr;
-use async_recursion::async_recursion;
+use structopt::StructOpt;
 
-use super::super::receiver::{
-    NextAction,
-    CliSkipNextAction
-};
-
+use super::super::receiver::{CliSkipNextAction, NextAction};
 
 #[derive(Debug)]
 pub struct TransferNEARTokensAction {
     pub amount: NearBalance,
-    pub next_action: Box<NextAction>
+    pub next_action: Box<NextAction>,
 }
 
 impl TransferNEARTokensAction {
@@ -26,25 +20,34 @@ impl TransferNEARTokensAction {
         selected_server_url: Option<url::Url>,
     ) {
         println!("TransferNEARTokens process: self:\n       {:?}", &self);
-        println!("TransferNEARTokens process: prepopulated_unsigned_transaction:\n       {:?}", &prepopulated_unsigned_transaction);
+        println!(
+            "TransferNEARTokens process: prepopulated_unsigned_transaction:\n       {:?}",
+            &prepopulated_unsigned_transaction
+        );
         let amount = match self.amount {
-            NearBalance(num) => num
+            NearBalance(num) => num,
         };
         let action = near_primitives::transaction::Action::Transfer(
-            near_primitives::transaction::TransferAction {
-                deposit: amount,
-            },
+            near_primitives::transaction::TransferAction { deposit: amount },
         );
-        let mut actions= prepopulated_unsigned_transaction.actions.clone();
+        let mut actions = prepopulated_unsigned_transaction.actions.clone();
         actions.push(action);
         let unsigned_transaction = near_primitives::transaction::Transaction {
             actions,
-            .. prepopulated_unsigned_transaction
+            ..prepopulated_unsigned_transaction
         };
         match *self.next_action {
-            NextAction::AddAction(select_action) => select_action.process(unsigned_transaction, selected_server_url).await,
-            NextAction::Skip(skip_action) => skip_action.process(unsigned_transaction, selected_server_url).await,
-            _ => unreachable!("Error")
+            NextAction::AddAction(select_action) => {
+                select_action
+                    .process(unsigned_transaction, selected_server_url)
+                    .await
+            }
+            NextAction::Skip(skip_action) => {
+                skip_action
+                    .process(unsigned_transaction, selected_server_url)
+                    .await
+            }
+            _ => unreachable!("Error"),
         }
     }
 }
@@ -53,7 +56,7 @@ impl TransferNEARTokensAction {
 pub struct CliTransferNEARTokensAction {
     amount: Option<NearBalance>,
     #[structopt(subcommand)]
-    next_action: Option<CliSkipNextAction> 
+    next_action: Option<CliSkipNextAction>,
 }
 
 impl NearBalance {
@@ -67,7 +70,7 @@ impl NearBalance {
 }
 
 #[derive(Debug)]
-pub struct NearBalance (u128);
+pub struct NearBalance(u128);
 
 impl FromStr for NearBalance {
     type Err = ParseIntError;
@@ -77,12 +80,10 @@ impl FromStr for NearBalance {
             s.make_ascii_uppercase();
             match s.contains("NEAR") {
                 true => {
-                    let num:u128 = s.trim_matches(char::is_alphabetic)
-                        .parse()
-                        .unwrap();
+                    let num: u128 = s.trim_matches(char::is_alphabetic).parse().unwrap();
                     num * 10u128.pow(24)
-                },
-                _ => 0
+                }
+                _ => 0,
             }
         });
         Ok(NearBalance(number))
@@ -93,18 +94,15 @@ impl From<CliTransferNEARTokensAction> for TransferNEARTokensAction {
     fn from(item: CliTransferNEARTokensAction) -> Self {
         let amount: NearBalance = match item.amount {
             Some(cli_amount) => cli_amount,
-            None => NearBalance::input_amount()
+            None => NearBalance::input_amount(),
         };
         let next_action: Box<NextAction> = match item.next_action {
-            Some(cli_skip_action) => {
-                Box::new(NextAction::from(cli_skip_action))
-            },
-            None => Box::new(NextAction::input_next_action()) 
+            Some(cli_skip_action) => Box::new(NextAction::from(cli_skip_action)),
+            None => Box::new(NextAction::input_next_action()),
         };
         TransferNEARTokensAction {
             amount,
-            next_action
+            next_action,
         }
     }
 }
-

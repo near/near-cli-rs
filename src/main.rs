@@ -1,25 +1,13 @@
+use dialoguer::{theme::ColorfulTheme, Select};
 use structopt::StructOpt;
-use strum::{EnumMessage, EnumDiscriminants, EnumIter, IntoEnumIterator};
-use dialoguer::{
-    Select,
-    theme::ColorfulTheme,
-};
+use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod common;
 mod utils_command;
-use utils_command::{
-    UtilType,
-    CliUtilType,
-    UtilList
-};
-mod consts;
+use utils_command::{CliUtilType, UtilList, UtilType};
 mod construct_transaction_command;
-use construct_transaction_command::operation_mode::{
-    CliOperationMode,
-    OperationMode,
-    Mode
-};
-
+mod consts;
+use construct_transaction_command::operation_mode::{CliOperationMode, Mode, OperationMode};
 
 #[derive(Debug)]
 struct Args {
@@ -38,14 +26,12 @@ impl From<CliArgs> for Args {
             Some(cli_subcommand) => ArgsCommand::from(cli_subcommand),
             None => ArgsCommand::choose_command(),
         };
-        Self {
-            subcommand,
-        }
+        Self { subcommand }
     }
 }
 
 impl Args {
-    async fn process(self) -> String {
+    async fn process(self) {
         match self.subcommand {
             ArgsCommand::ConstructTransaction(mode) => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
@@ -57,12 +43,9 @@ impl Args {
                     actions: vec![],
                 };
                 mode.process(unsigned_transaction).await;
-            },
-            ArgsCommand::Utils(util_type) => {
-                util_type.process()
-            },
-        };
-        "Ok".to_string()
+            }
+            ArgsCommand::Utils(util_type) => util_type.process(),
+        }
     }
 }
 
@@ -75,9 +58,9 @@ pub enum CliCommand {
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum ArgsCommand {
-    #[strum_discriminants(strum(message="Construct a new transaction"))]
+    #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(OperationMode),
-    #[strum_discriminants(strum(message="Helpers"))]
+    #[strum_discriminants(strum(message = "Helpers"))]
     Utils(UtilType),
 }
 
@@ -91,7 +74,7 @@ impl From<CliCommand> for ArgsCommand {
             CliCommand::Utils(cli_util_type) => {
                 let util_type = UtilType::from(cli_util_type);
                 ArgsCommand::Utils(util_type)
-            },
+            }
         }
     }
 }
@@ -100,7 +83,10 @@ impl ArgsCommand {
     pub fn choose_command() -> Self {
         println!();
         let variants = ArgsCommandDiscriminants::iter().collect::<Vec<_>>();
-        let commands = variants.iter().map(|p| p.get_message().unwrap().to_owned()).collect::<Vec<_>>();
+        let commands = variants
+            .iter()
+            .map(|p| p.get_message().unwrap().to_owned())
+            .collect::<Vec<_>>();
         let selection = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Choose your action")
             .items(&commands)
@@ -109,11 +95,13 @@ impl ArgsCommand {
             .unwrap();
         match variants[selection] {
             ArgsCommandDiscriminants::ConstructTransaction => {
-                Self::ConstructTransaction(OperationMode{mode: Mode::choose_mode()})
-            },
-            ArgsCommandDiscriminants::Utils => {
-                Self::Utils(UtilType{util: UtilList::choose_util()})
-            },
+                Self::ConstructTransaction(OperationMode {
+                    mode: Mode::choose_mode(),
+                })
+            }
+            ArgsCommandDiscriminants::Utils => Self::Utils(UtilType {
+                util: UtilList::choose_util(),
+            }),
         }
     }
 }
@@ -123,6 +111,6 @@ fn main() {
     let args = Args::from(cli);
 
     actix::System::builder()
-    .build()
-    .block_on(async move { args.process().await });
+        .build()
+        .block_on(async move { args.process().await });
 }

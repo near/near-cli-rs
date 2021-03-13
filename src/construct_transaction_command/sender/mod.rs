@@ -1,31 +1,24 @@
+use dialoguer::Input;
 use structopt::StructOpt;
-use dialoguer::{
-    Input,
-};
 
-use super::receiver::{
-    Receiver,
-    CliReceiver,
-    NextAction
-};
-
+use super::receiver::{CliReceiver, NextAction, Receiver};
 
 #[derive(Debug)]
 pub struct Sender {
     pub sender_account_id: String,
-    pub send_to: SendTo
+    pub send_to: SendTo,
 }
 
 #[derive(Debug)]
 pub enum SendTo {
-    Receiver(Receiver)
+    Receiver(Receiver),
 }
 
 #[derive(Debug, StructOpt)]
 pub struct CliSender {
     pub sender_account_id: Option<String>,
     #[structopt(subcommand)]
-    send_to: Option<CliSendTo> 
+    send_to: Option<CliSendTo>,
 }
 #[derive(Debug, StructOpt)]
 pub enum CliSendTo {
@@ -40,9 +33,11 @@ impl Sender {
     ) {
         let unsigned_transaction = near_primitives::transaction::Transaction {
             signer_id: self.sender_account_id.clone(),
-            .. prepopulated_unsigned_transaction
+            ..prepopulated_unsigned_transaction
         };
-        self.send_to.process(unsigned_transaction, selected_server_url).await;
+        self.send_to
+            .process(unsigned_transaction, selected_server_url)
+            .await;
     }
     pub fn input_sender_account_id() -> String {
         println!();
@@ -57,15 +52,15 @@ impl From<CliSender> for Sender {
     fn from(item: CliSender) -> Self {
         let sender_account_id: String = match item.sender_account_id {
             Some(cli_sender_account_id) => cli_sender_account_id,
-            None => Sender::input_sender_account_id()
+            None => Sender::input_sender_account_id(),
         };
         let send_to: SendTo = match item.send_to {
             Some(cli_send_to) => SendTo::from(cli_send_to),
-            None => SendTo::send_to()
-        }; 
+            None => SendTo::send_to(),
+        };
         Sender {
             sender_account_id,
-            send_to
+            send_to,
         }
     }
 }
@@ -77,7 +72,11 @@ impl SendTo {
         selected_server_url: Option<url::Url>,
     ) {
         match self {
-            SendTo::Receiver(receiver) => receiver.process(prepopulated_unsigned_transaction, selected_server_url).await
+            SendTo::Receiver(receiver) => {
+                receiver
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .await
+            }
         }
     }
     pub fn send_to() -> Self {
@@ -85,7 +84,7 @@ impl SendTo {
         let action: NextAction = NextAction::input_next_action();
         SendTo::Receiver(Receiver {
             receiver_account_id,
-            action
+            action,
         })
     }
 }

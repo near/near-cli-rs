@@ -1,6 +1,5 @@
-use structopt::StructOpt;
 use near_primitives::borsh::BorshSerialize;
-
+use structopt::StructOpt;
 
 #[derive(Debug)]
 pub struct SignManually {}
@@ -21,13 +20,19 @@ impl SignManually {
         _selected_server_url: Option<url::Url>,
     ) {
         println!();
-        println!("SignManually process: prepopulated_unsigned_transaction:\n {:#?}", &prepopulated_unsigned_transaction);
+        println!(
+            "SignManually process: prepopulated_unsigned_transaction:\n {:#?}",
+            &prepopulated_unsigned_transaction
+        );
         println!();
         let serialize_to_base64 = near_primitives::serialize::to_base64(
-                    prepopulated_unsigned_transaction
-                    .try_to_vec()
-                    .expect("Transaction is not expected to fail on serialization"),
-            );
-        println!("---  serialize_to_base64:   --- \n   {:#?}", &serialize_to_base64)
+            prepopulated_unsigned_transaction
+                .try_to_vec()
+                .expect("Transaction is not expected to fail on serialization"),
+        );
+        println!(
+            "---  serialize_to_base64:   --- \n   {:#?}",
+            &serialize_to_base64
+        )
     }
 }

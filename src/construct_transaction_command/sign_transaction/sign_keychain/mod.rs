@@ -1,19 +1,8 @@
-use structopt::StructOpt;
+use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 use std::str::FromStr;
-use strum_macros::{
-    Display,
-    EnumString,
-    EnumVariantNames,
-};
+use structopt::StructOpt;
 use strum::VariantNames;
-use dialoguer::{
-    Select,
-    Input,
-    theme::ColorfulTheme,
-    console::Term
-};
-
-
+use strum_macros::{Display, EnumString, EnumVariantNames};
 
 #[derive(Debug)]
 pub struct SignKeychain {
@@ -33,8 +22,10 @@ impl SignKeychain {
         _selected_server_url: Option<url::Url>,
     ) {
         println!("SignKeychain process: self:       {:?}", &self);
-        println!("SignKeychain process: prepopulated_unsigned_transaction:       {:?}", &prepopulated_unsigned_transaction);
-        
+        println!(
+            "SignKeychain process: prepopulated_unsigned_transaction:       {:?}",
+            &prepopulated_unsigned_transaction
+        );
     }
 
     pub fn input_key_chain() -> String {
@@ -50,10 +41,8 @@ impl From<CliSignKeychain> for SignKeychain {
         println!("***********.  cli sign alternative {:?}", &item);
         let key_chain: String = match item.key_chain {
             Some(cli_key_chain) => cli_key_chain,
-            None => SignKeychain::input_key_chain()
+            None => SignKeychain::input_key_chain(),
         };
-        SignKeychain {
-            key_chain,
-        }
+        SignKeychain { key_chain }
     }
 }

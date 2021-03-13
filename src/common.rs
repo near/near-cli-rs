@@ -1,6 +1,5 @@
 use std::convert::TryInto;
 
-
 #[derive(
     Debug,
     strum_macros::IntoStaticStr,
