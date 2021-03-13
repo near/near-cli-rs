@@ -84,9 +84,9 @@ pub enum ArgsCommand {
 impl From<CliCommand> for ArgsCommand {
     fn from(item: CliCommand) -> Self {
         match item {
-            CliCommand::ConstructTransaction(cli_onoffline_mode) => {
-                let onoffline_mode = OperationMode::from(cli_onoffline_mode);
-                ArgsCommand::ConstructTransaction(onoffline_mode)
+            CliCommand::ConstructTransaction(cli_operation_mode) => {
+                let operation_mode = OperationMode::from(cli_operation_mode);
+                ArgsCommand::ConstructTransaction(operation_mode)
             }
             CliCommand::Utils(cli_util_type) => {
                 let util_type = UtilType::from(cli_util_type);
