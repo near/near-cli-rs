@@ -30,7 +30,7 @@ impl SignKeychain {
     pub fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        _selected_server_url: Option<url::Url>,
     ) {
         println!("SignKeychain process: self:       {:?}", &self);
         println!("SignKeychain process: prepopulated_unsigned_transaction:       {:?}", &prepopulated_unsigned_transaction);

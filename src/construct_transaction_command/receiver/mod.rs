@@ -1,14 +1,9 @@
 use structopt::StructOpt;
-use strum_macros::{
-    EnumVariantNames,
-};
-// use strum::VariantNames;
 use strum::{EnumMessage, EnumDiscriminants, EnumIter, IntoEnumIterator};
 use dialoguer::{
     Select,
     Input,
     theme::ColorfulTheme,
-    console::Term
 };
 
 use super::transaction_actions::transfer_near_tokens_type::{
@@ -38,15 +33,11 @@ use super::transaction_actions::delete_account_type::{
     DeleteAccountAction,
     CliDeleteAccountAction
 };
-// use crate::command::on_off_line_mode::server::sender::receiver::add_access_key_type::full_access_type::FullAccessType;
-// use crate::utils_subcommand::generate_keypair_subcommand;
-// use add_access_key_type::full_access_type::FullAccessType;
 
 
 #[derive(Debug)]
 pub struct Receiver {
     pub receiver_account_id: String,
-    // pub transaction_subcommand: ActionSubcommand
     pub action: NextAction
 }
 
@@ -81,15 +72,12 @@ pub enum ActionSubcommand {
     AddAccessKey(AddAccessKeyAction),
     #[strum_discriminants(strum(message="Detete an Access Key"))]
     DeleteAccessKey(DeleteAccessKeyAction),
-    // #[strum_discriminants(strum(message="Skip adding a new action"))]
-    // Skip(SkipAction)
 }
 
 #[derive(Debug, StructOpt)]
 pub struct CliReceiver {
     receiver_account_id: Option<String>,
     #[structopt(subcommand)]
-    // transaction_subcommand: Option<CliActionSubcommand> 
     action: Option<CliNextAction>
 }
 
@@ -114,7 +102,6 @@ pub enum CliActionSubcommand {
     DeleteAccount(CliDeleteAccountAction),
     AddAccessKey(CliAddAccessKeyAction),
     DeleteAccessKey(CliDeleteAccessKeyAction),
-    // Skip(CliSkipAction)
 }
 
 #[derive(Debug, StructOpt)]
@@ -129,10 +116,6 @@ impl NextAction {
         selected_server_url: Option<url::Url>,
     ) {
         println!("Receiver process: self:\n       {:?}", &self);
-        // let unsigned_transaction = near_primitives::transaction::Transaction {
-        //     .. prepopulated_unsigned_transaction
-        // };
-        // self.transaction_subcommand.process(unsigned_transaction, selected_server_url).await;
         match self {
             NextAction::AddAction(select_action) => select_action.process(prepopulated_unsigned_transaction, selected_server_url).await,
             NextAction::Skip(skip_action) => skip_action.process(prepopulated_unsigned_transaction, selected_server_url).await,
@@ -147,9 +130,6 @@ impl SelectAction {
         selected_server_url: Option<url::Url>,
     ) {
         println!("Receiver process: self:\n       {:?}", &self);
-        // let unsigned_transaction = near_primitives::transaction::Transaction {
-        //     .. prepopulated_unsigned_transaction
-        // };
         self.transaction_subcommand.process(prepopulated_unsigned_transaction, selected_server_url).await;
     }
 }
@@ -168,7 +148,6 @@ impl ActionSubcommand {
             ActionSubcommand::DeleteAccount(args_delete_account) => args_delete_account.process(prepopulated_unsigned_transaction, selected_server_url).await,
             ActionSubcommand::AddAccessKey(args_add_access_key) => args_add_access_key.process(prepopulated_unsigned_transaction, selected_server_url, "".to_string()).await,
             ActionSubcommand::DeleteAccessKey(args_delete_access_key) => args_delete_access_key.process(prepopulated_unsigned_transaction, selected_server_url).await,
-            // ActionSubcommand::Skip(args_skip) => args_skip.process(prepopulated_unsigned_transaction, selected_server_url).await,
             _ => unreachable!("Error")
         }
     }
@@ -225,8 +204,6 @@ impl ActionSubcommand {
                     next_action
                 })
             },
-            // ActionSubcommandDiscriminants::Skip => ActionSubcommand::Skip(SkipAction{sign_option: SignTransaction::choose_sign_option()}),
-            _ => unreachable!("Error")
         }
     }
 }
@@ -259,10 +236,6 @@ impl From<CliReceiver> for Receiver {
             Some(cli_receiver_account_id) => cli_receiver_account_id,
             None => Receiver::input_receiver_account_id()
         };
-        // let transaction_subcommand: ActionSubcommand = match item.transaction_subcommand {
-        //     Some(cli_action_subcommand) => ActionSubcommand::from(cli_action_subcommand),
-        //     None => ActionSubcommand::choose_action_command()
-        // };
         let action: NextAction = match item.action {
             Some(cli_next_action) => NextAction::from(cli_next_action),
             None => NextAction::input_next_action()
@@ -294,7 +267,6 @@ impl NextAction {
                 let sign_option: SignTransaction = SignTransaction::choose_sign_option();
                 NextAction::Skip(SkipAction {sign_option})
             },
-            _ => unreachable!("Error")
         }
     }
 }

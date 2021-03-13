@@ -10,7 +10,6 @@ use dialoguer::{
 };
 use async_recursion::async_recursion;
 
-
 use crate::construct_transaction_command::receiver::{
     NextAction,
     CliSkipNextAction
@@ -112,17 +111,8 @@ impl FunctionCallType {
             .. prepopulated_unsigned_transaction
         };
         match *self.next_action {
-            // ActionSubcommand::TransferNEARTokens(args_transfer) => args_transfer.process(unsigned_transaction, selected_server_url).await,
-            // // ActionSubcommand::CallFunction(args_function) => {},
-            // // ActionSubcommand::StakeNEARTokens(args_stake) => {},
-            // ActionSubcommand::CreateAccount(args_create_account) => args_create_account.process(unsigned_transaction, selected_server_url).await,
-            // ActionSubcommand::DeleteAccount(args_delete_account) => args_delete_account.process(unsigned_transaction, selected_server_url).await,
-            // ActionSubcommand::AddAccessKey(args_add_access_key) => args_add_access_key.process(unsigned_transaction, selected_server_url, public_key_string).await,
-            // ActionSubcommand::DeleteAccessKey(args_delete_access_key) => args_delete_access_key.process(unsigned_transaction, selected_server_url).await,
-            // ActionSubcommand::Skip(args_skip) => args_skip.process(unsigned_transaction, selected_server_url).await,
             NextAction::AddAction(select_action) => select_action.process(unsigned_transaction, selected_server_url).await,
             NextAction::Skip(skip_action) => skip_action.process(unsigned_transaction, selected_server_url).await,
-            _ => unreachable!("Error")
         }
     }
     pub fn input_method_names() -> Vec<String> {

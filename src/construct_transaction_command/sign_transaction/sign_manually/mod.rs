@@ -1,17 +1,4 @@
 use structopt::StructOpt;
-use std::str::FromStr;
-use strum_macros::{
-    Display,
-    EnumString,
-    EnumVariantNames,
-};
-use strum::VariantNames;
-use dialoguer::{
-    Select,
-    Input,
-    theme::ColorfulTheme,
-    console::Term
-};
 use near_primitives::borsh::BorshSerialize;
 
 
@@ -20,6 +7,12 @@ pub struct SignManually {}
 
 #[derive(Debug, StructOpt)]
 pub struct CliSignManually {}
+
+impl From<CliSignManually> for SignManually {
+    fn from(_: CliSignManually) -> Self {
+        SignManually {}
+    }
+}
 
 impl SignManually {
     pub fn process(

@@ -4,7 +4,6 @@ use dialoguer::{
     Select,
     Input,
     theme::ColorfulTheme,
-    console::Term
 };
 use near_primitives::hash::CryptoHash;
 
@@ -14,11 +13,8 @@ use select_server::{
     CliSelectServer
 };
 use select_server::server::{
-    Server,
     SendFrom,
     CliSendFrom,
-    CliServer,
-    CliCustomServer,
 };
 
 

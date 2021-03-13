@@ -2,9 +2,13 @@ use structopt::StructOpt;
 use dialoguer::{
     Select,
     theme::ColorfulTheme,
-    console::Term
 };
-use strum::{EnumMessage, EnumDiscriminants, EnumIter, IntoEnumIterator};
+use strum::{
+    EnumMessage,
+    EnumDiscriminants,
+    EnumIter,
+    IntoEnumIterator
+};
 
 pub mod sign_private_key;
 use sign_private_key::{
@@ -66,11 +70,6 @@ impl SignTransaction {
     }
     pub fn choose_sign_option() -> Self {
         println!();
-        // let sign_options = vec![
-        //     "Yes, I want to sign the transaction with my private key",
-        //     "Yes, I want to sign the transaction with keychain",
-        //     "No, I want to construct the transaction and sign it somewhere else",
-        // ];
         let variants = SignTransactionDiscriminants::iter().collect::<Vec<_>>();
         let sign_options = variants.iter().map(|p| p.get_message().unwrap().to_owned()).collect::<Vec<_>>();
         let select_sign_options = Select::with_theme(&ColorfulTheme::default())
@@ -109,9 +108,10 @@ impl From<CliSignTransaction> for SignTransaction {
                 let key_chain = SignKeychain::from(cli_key_chain);
                 SignTransaction::SignKeychain(key_chain)
             },
-            // CliSignTransaction::SignManually(cli_manually) => {
-            //     
-            // }
+            CliSignTransaction::SignManually(cli_manually) => {
+                let manually = SignManually::from(cli_manually);
+                SignTransaction::SignManually(manually)
+            },
             _ => unreachable!("Error")
         }
     }

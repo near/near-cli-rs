@@ -1,13 +1,9 @@
 use structopt::StructOpt;
 use std::str::FromStr;
-use dialoguer::{
-    Input,
-};
+use dialoguer::Input;
 use async_recursion::async_recursion;
 
 use super::super::receiver::{
-    // ActionSubcommand,
-    // CliActionSkipSubcommand,
     NextAction,
     CliSkipNextAction
 };
@@ -52,7 +48,6 @@ impl DeleteAccessKeyAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-        // public_key_string: String,
     ) {
         println!("DeleteAccessKeyAction process: self:\n       {:?}", &self);
         println!("DeleteAccessKeyAction process: prepopulated_unsigned_transaction:\n       {:?}", &prepopulated_unsigned_transaction);
@@ -69,17 +64,8 @@ impl DeleteAccessKeyAction {
             .. prepopulated_unsigned_transaction
         };
         match *self.next_action {
-            // ActionSubcommand::TransferNEARTokens(args_transfer) => args_transfer.process(unsigned_transaction, selected_server_url).await,
-            // // ActionSubcommand::CallFunction(args_function) => {},
-            // // ActionSubcommand::StakeNEARTokens(args_stake) => {},
-            // ActionSubcommand::CreateAccount(args_create_account) => args_create_account.process(unsigned_transaction, selected_server_url).await,
-            // ActionSubcommand::DeleteAccount(args_delete_account) => args_delete_account.process(unsigned_transaction, selected_server_url).await,
-            // ActionSubcommand::AddAccessKey(args_add_public_key) => args_add_public_key.process(unsigned_transaction, selected_server_url, "".to_string()).await,
-            // ActionSubcommand::DeleteAccessKey(args_delete_access_key) => args_delete_access_key.process(unsigned_transaction, selected_server_url).await,
-            // ActionSubcommand::Skip(args_skip) => args_skip.process(unsigned_transaction, selected_server_url).await,
             NextAction::AddAction(select_action) => select_action.process(unsigned_transaction, selected_server_url).await,
             NextAction::Skip(skip_action) => skip_action.process(unsigned_transaction, selected_server_url).await,
-            _ => unreachable!("Error")
         }
 
     }

@@ -1,13 +1,9 @@
 use structopt::StructOpt;
-use strum_macros::{
-    EnumVariantNames,
-};
 use strum::{EnumMessage, EnumDiscriminants, EnumIter, IntoEnumIterator};
 use dialoguer::{
     Select,
     Input,
     theme::ColorfulTheme,
-    console::Term
 };
 use async_recursion::async_recursion;
 
@@ -127,11 +123,8 @@ impl From<CliAccessKeyPermission> for AccessKeyPermission {
     }
 }
 
-
-
 impl AccessKeyPermission {
     pub fn choose_permission() -> Self {
-        // let permissions = AccessKeyPermission::VARIANTS;
         let variants = AccessKeyPermissionDiscriminants::iter().collect::<Vec<_>>();
         let permissions = variants.iter().map(|p| p.get_message().unwrap().to_owned()).collect::<Vec<_>>();
         let select_permission = Select::with_theme(&ColorfulTheme::default())
@@ -157,7 +150,6 @@ impl AccessKeyPermission {
             AccessKeyPermissionDiscriminants::FullAccessAction => AccessKeyPermission::FullAccessAction(FullAccessType {
                 next_action: Box::new(NextAction::input_next_action())
             }),
-            _ => unreachable!("Error")
         }
     }
 }
