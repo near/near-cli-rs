@@ -1,29 +1,92 @@
-pub mod generate_keypair_subcommand;
-pub mod sign_transaction_subcommand;
+use structopt::StructOpt;
+use strum::{EnumMessage, EnumDiscriminants, EnumIter, IntoEnumIterator};
+use dialoguer::{
+    Select,
+    theme::ColorfulTheme,
+};
 
-/// Collection of various low-level helpers
+// mod generate_keypair_subcommand;
+mod sign_transaction_subcommand;
+
+
 #[derive(Debug)]
-pub struct CliArgs {
-    subcommand: CliSubCommand,
+pub struct UtilType {
+    pub util: UtilList
 }
 
-impl CliArgs {
-    fn rpc_client(&self) -> near_jsonrpc_client::JsonRpcClient {
-        near_jsonrpc_client::new_client("https://rpc.testnet.near.org")
+#[derive(Debug, StructOpt)]
+pub struct CliUtilType {
+    #[structopt(subcommand)]
+    util: Option<CliUtilList>
+}
+
+#[derive(Debug, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+pub enum UtilList {
+    #[strum_discriminants(strum(message="Sign a transaction"))]
+    SignTransactionCommand(sign_transaction_subcommand::SignTransaction)
+}
+
+#[derive(Debug, StructOpt)]
+enum CliUtilList {
+    SignTransactionCommand(sign_transaction_subcommand::CliSignTransaction)
+}
+
+impl From<CliUtilType> for UtilType {
+    fn from(item: CliUtilType) -> Self {
+        let util: UtilList = match item.util {
+            Some(cli_util) => UtilList::from(cli_util),
+            None => UtilList::choose_util()
+        };
+        UtilType {util}
     }
 }
 
-#[derive(Debug)]
-pub enum CliSubCommand {
-    GenerateKeypair(generate_keypair_subcommand::GenerateKeypair),
+impl UtilList {
+    pub fn process(self) {
+        match self {
+            UtilList::SignTransactionCommand(sign_transaction) => sign_transaction.process(),
+            _ => unreachable!("Error")
+        }
+    }
+    pub fn choose_util() -> Self {
+        println!();
+        let variants = UtilListDiscriminants::iter().collect::<Vec<_>>();
+        let utils = variants.iter().map(|p| p.get_message().unwrap().to_owned()).collect::<Vec<_>>();
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Choose your action")
+            .items(&utils)
+            .default(0)
+            .interact()
+            .unwrap();
+        match variants[selection] {
+            UtilListDiscriminants::SignTransactionCommand => {
+                let signer_secret_key = sign_transaction_subcommand::SignTransaction::input_signer_secret_key();
+                let unsigned_transaction = sign_transaction_subcommand::SignTransaction::input_unsigned_transaction();
+                Self::SignTransactionCommand(sign_transaction_subcommand::SignTransaction {
+                    signer_secret_key,
+                    unsigned_transaction
+                })
+            },
+        }
+    }
 }
 
-impl CliArgs {
-    pub async fn process(self) -> String {
-        match self.subcommand {
-            CliSubCommand::GenerateKeypair(generate_keypair_subcommand) => {
-                generate_keypair_subcommand.process().await
-            }
+impl From<CliUtilList> for UtilList {
+    fn from(item: CliUtilList) -> Self {
+        match item {
+            CliUtilList::SignTransactionCommand(cli_sign_transaction) => {
+                let sign_transaction = sign_transaction_subcommand::SignTransaction::from(cli_sign_transaction);
+                UtilList::SignTransactionCommand(sign_transaction)
+            } 
         }
+    }
+}
+
+
+
+impl UtilType {
+    pub fn process(self) {
+        self.util.process()
     }
 }

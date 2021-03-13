@@ -1,12 +1,23 @@
 use structopt::StructOpt;
+use strum::{EnumMessage, EnumDiscriminants, EnumIter, IntoEnumIterator};
+use dialoguer::{
+    Select,
+    theme::ColorfulTheme,
+};
 
-pub(crate) mod common;
-pub(crate) mod utils_command;
+mod common;
+mod utils_command;
+use utils_command::{
+    UtilType,
+    CliUtilType,
+    UtilList
+};
 mod consts;
 mod construct_transaction_command;
-use construct_transaction_command::{
-    CliCommand,
-    ArgsCommand,
+use construct_transaction_command::select_on_off_line_mode::{
+    CliOnOffLineMode,
+    OnOffLineMode,
+    Mode
 };
 
 
@@ -48,12 +59,62 @@ impl Args {
                 mode.process(unsigned_transaction).await;
             },
             ArgsCommand::Utils(util_type) => {
-                println!("Работают utils");
                 util_type.process()
             },
-            _ => unreachable!("Error") 
         };
         "Ok".to_string()
+    }
+}
+
+#[derive(Debug, StructOpt)]
+pub enum CliCommand {
+    ConstructTransaction(CliOnOffLineMode),
+    Utils(CliUtilType),
+}
+
+#[derive(Debug, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+pub enum ArgsCommand {
+    #[strum_discriminants(strum(message="Construct a new transaction"))]
+    ConstructTransaction(OnOffLineMode),
+    #[strum_discriminants(strum(message="Helpers"))]
+    Utils(UtilType),
+}
+
+impl From<CliCommand> for ArgsCommand {
+    fn from(item: CliCommand) -> Self {
+        match item {
+            CliCommand::ConstructTransaction(cli_onoffline_mode) => {
+                let onoffline_mode = OnOffLineMode::from(cli_onoffline_mode);
+                ArgsCommand::ConstructTransaction(onoffline_mode)
+            }
+            CliCommand::Utils(cli_util_type) => {
+                let util_type = UtilType::from(cli_util_type);
+                ArgsCommand::Utils(util_type)
+            },
+        }
+    }
+}
+
+impl ArgsCommand {
+    pub fn choose_command() -> Self {
+        println!();
+        let variants = ArgsCommandDiscriminants::iter().collect::<Vec<_>>();
+        let commands = variants.iter().map(|p| p.get_message().unwrap().to_owned()).collect::<Vec<_>>();
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Choose your action")
+            .items(&commands)
+            .default(0)
+            .interact()
+            .unwrap();
+        match variants[selection] {
+            ArgsCommandDiscriminants::ConstructTransaction => {
+                Self::ConstructTransaction(OnOffLineMode{mode: Mode::choose_mode()})
+            },
+            ArgsCommandDiscriminants::Utils => {
+                Self::Utils(UtilType{util: UtilList::choose_util()})
+            },
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 use near_primitives::borsh::BorshSerialize;
-use std::{convert::TryFrom, str::FromStr};
+use std::str::FromStr;
 use structopt::StructOpt;
 use dialoguer::{
     Input,
@@ -38,8 +38,6 @@ impl From<CliSignTransaction> for SignTransaction {
         }
     }
 }
-
-
 
 impl SignTransaction {
     pub fn process(self) {
