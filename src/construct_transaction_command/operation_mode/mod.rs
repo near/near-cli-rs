@@ -19,17 +19,17 @@ use select_server::server::{
 
 
 #[derive(Debug, StructOpt)]
-pub struct CliOnOffLineMode {
+pub struct CliOperationMode {
     #[structopt(subcommand)]
     pub mode: Option<CliMode>,
 }
 
 #[derive(Debug)]
-pub struct OnOffLineMode {
+pub struct OperationMode {
     pub mode: Mode,
 }
 
-impl OnOffLineMode {
+impl OperationMode {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
@@ -45,8 +45,8 @@ impl OnOffLineMode {
     }
 }
 
-impl From<CliOnOffLineMode> for OnOffLineMode {
-    fn from(item: CliOnOffLineMode) -> Self {
+impl From<CliOperationMode> for OperationMode {
+    fn from(item: CliOperationMode) -> Self {
         let mode = match item.mode {
             Some(cli_mode) => Mode::from(cli_mode),
             None => Mode::choose_mode()
