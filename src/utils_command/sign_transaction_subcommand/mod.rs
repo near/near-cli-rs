@@ -1,14 +1,10 @@
-use crate::common::TransactionAsBase64;
 use dialoguer::Input;
-use near_primitives::borsh::BorshDeserialize;
 use near_primitives::borsh::BorshSerialize;
-use std::str::FromStr;
 use structopt::StructOpt;
 
 #[derive(Debug)]
 pub struct SignTransaction {
     pub signer_secret_key: near_crypto::SecretKey,
-    // transaction_format: crate::common::TransactionFormat,
     pub unsigned_transaction: near_primitives::transaction::Transaction,
 }
 
@@ -26,10 +22,11 @@ impl From<CliSignTransaction> for SignTransaction {
             Some(cli_signer_secret_key) => cli_signer_secret_key,
             None => SignTransaction::input_signer_secret_key(),
         };
-        let unsigned_transaction: near_primitives::transaction::Transaction = match item.unsigned_transaction {
-            Some(cli_unsigned_transaction) =>  cli_unsigned_transaction.inner,
-            None => SignTransaction::input_unsigned_transaction(),
-        };
+        let unsigned_transaction: near_primitives::transaction::Transaction =
+            match item.unsigned_transaction {
+                Some(cli_unsigned_transaction) => cli_unsigned_transaction.inner,
+                None => SignTransaction::input_unsigned_transaction(),
+            };
         SignTransaction {
             signer_secret_key,
             unsigned_transaction,
@@ -39,16 +36,13 @@ impl From<CliSignTransaction> for SignTransaction {
 
 impl SignTransaction {
     pub fn process(self) {
-        // let unsigned_transaction_borsh = base64::decode(&self.unsigned_transaction).unwrap();
-        // let unsigned_transaction =
-        //     near_primitives::transaction::Transaction::try_from_slice(&unsigned_transaction_borsh)
-        //         .unwrap();
-        // let signer_secret_key = near_crypto::SecretKey::from_str(&self.signer_secret_key).unwrap();
         let signature = self
             .signer_secret_key
             .sign(&self.unsigned_transaction.get_hash().as_ref());
-        let signed_transaction =
-            near_primitives::transaction::SignedTransaction::new(signature, self.unsigned_transaction);
+        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+            signature,
+            self.unsigned_transaction,
+        );
         let serialize_to_base64 = near_primitives::serialize::to_base64(
             signed_transaction
                 .try_to_vec()
