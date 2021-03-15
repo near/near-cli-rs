@@ -1,5 +1,7 @@
 use std::convert::TryInto;
 
+use near_primitives::borsh::BorshDeserialize;
+
 #[derive(
     Debug,
     strum_macros::IntoStaticStr,
@@ -70,3 +72,28 @@ where
         self.inner
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct TransactionAsBase64 {
+    pub inner: near_primitives::transaction::Transaction,
+}
+
+impl std::str::FromStr for TransactionAsBase64 {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            inner: near_primitives::transaction::Transaction::try_from_slice(
+                &near_primitives::serialize::from_base64(s)
+                .map_err(|err| format!("base64 transaction sequence is invalid: {}", err))?,
+            )
+            .map_err(|err| format!("transaction could not be parsed: {}", err))?,
+        })
+    }
+}
+
+impl std::fmt::Display for TransactionAsBase64 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Transaction {}", self.inner.get_hash())
+    }
+}
+

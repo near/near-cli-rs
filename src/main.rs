@@ -1,10 +1,12 @@
+use std::str::FromStr;
+
 use dialoguer::{theme::ColorfulTheme, Select};
 use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod common;
 mod utils_command;
-use utils_command::{CliUtilType, UtilList, UtilType};
+use utils_command::{CliUtils, Util, Utils};
 mod construct_transaction_command;
 mod consts;
 use construct_transaction_command::operation_mode::{CliOperationMode, Mode, OperationMode};
@@ -52,7 +54,7 @@ impl Args {
 #[derive(Debug, StructOpt)]
 pub enum CliCommand {
     ConstructTransaction(CliOperationMode),
-    Utils(CliUtilType),
+    Utils(CliUtils),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -61,7 +63,7 @@ pub enum ArgsCommand {
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(OperationMode),
     #[strum_discriminants(strum(message = "Helpers"))]
-    Utils(UtilType),
+    Utils(Utils),
 }
 
 impl From<CliCommand> for ArgsCommand {
@@ -71,9 +73,9 @@ impl From<CliCommand> for ArgsCommand {
                 let operation_mode = OperationMode::from(cli_operation_mode);
                 ArgsCommand::ConstructTransaction(operation_mode)
             }
-            CliCommand::Utils(cli_util_type) => {
-                let util_type = UtilType::from(cli_util_type);
-                ArgsCommand::Utils(util_type)
+            CliCommand::Utils(cli_util) => {
+                let util = Utils::from(cli_util);
+                ArgsCommand::Utils(util)
             }
         }
     }
@@ -99,8 +101,8 @@ impl ArgsCommand {
                     mode: Mode::choose_mode(),
                 })
             }
-            ArgsCommandDiscriminants::Utils => Self::Utils(UtilType {
-                util: UtilList::choose_util(),
+            ArgsCommandDiscriminants::Utils => Self::Utils(Utils {
+                util: Util::choose_util(),
             }),
         }
     }
