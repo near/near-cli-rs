@@ -1,6 +1,4 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use near_primitives::hash::CryptoHash;
-use std::str::FromStr;
 use structopt::StructOpt;
 
 mod select_server;
@@ -91,7 +89,7 @@ impl Mode {
 #[derive(Debug)]
 pub struct OfflineArgs {
     nonce: u64,
-    block_hash: CryptoHash,
+    block_hash: near_primitives::hash::CryptoHash,
     send_from: SendFrom,
 }
 
@@ -100,7 +98,7 @@ pub struct CliOfflineArgs {
     #[structopt(long)]
     nonce: Option<u64>,
     #[structopt(long)]
-    block_hash: Option<crate::common::BlobAsBase58String<CryptoHash>>,
+    block_hash: Option<crate::common::BlockHashAsBase58>,
     #[structopt(subcommand)]
     pub send_from: Option<CliSendFrom>,
 }
@@ -133,7 +131,7 @@ impl From<CliOfflineArgs> for OfflineArgs {
             None => OfflineArgs::input_nonce(),
         };
         let block_hash = match item.block_hash {
-            Some(cli_block_hash) => cli_block_hash.into_inner(),
+            Some(cli_block_hash) => cli_block_hash.inner,
             None => OfflineArgs::input_block_hash(),
         };
         let send_from: SendFrom = match item.send_from {
@@ -173,20 +171,18 @@ impl OfflineArgs {
     fn input_nonce() -> u64 {
         Input::new()
             .with_prompt(
-                "Enter transaction nonce (query the access key information with
+                "Enter transaction nonce (query the access key information with \
                 `near-cli utils view-access-key frol4.testnet ed25519:...` incremented by 1)",
             )
             .interact_text()
             .unwrap()
     }
     fn input_block_hash() -> near_primitives::hash::CryptoHash {
-        let input_block_hash: String = Input::new()
-            .with_prompt("Enter recent block hash:")
+        let input_block_hash: crate::common::BlockHashAsBase58 = Input::new()
+            .with_prompt("Enter recent block hash")
             .interact_text()
             .unwrap();
-        crate::common::BlobAsBase58String::<CryptoHash>::from_str(&input_block_hash)
-            .unwrap()
-            .into_inner()
+        input_block_hash.inner
     }
 }
 
