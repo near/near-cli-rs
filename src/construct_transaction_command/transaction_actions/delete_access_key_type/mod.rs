@@ -7,21 +7,21 @@ use super::super::receiver::{CliSkipNextAction, NextAction};
 
 #[derive(Debug)]
 pub struct DeleteAccessKeyAction {
-    pub public_key: String,
+    pub public_key: near_crypto::PublicKey,
     pub next_action: Box<NextAction>,
 }
 
 #[derive(Debug, StructOpt)]
 pub struct CliDeleteAccessKeyAction {
     #[structopt(long)]
-    public_key: Option<String>,
+    public_key: Option<near_crypto::PublicKey>,
     #[structopt(subcommand)]
     next_action: Option<CliSkipNextAction>,
 }
 
 impl From<CliDeleteAccessKeyAction> for DeleteAccessKeyAction {
     fn from(item: CliDeleteAccessKeyAction) -> Self {
-        let public_key: String = match item.public_key {
+        let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,
             None => DeleteAccessKeyAction::input_public_key(),
         };
@@ -48,9 +48,8 @@ impl DeleteAccessKeyAction {
             "DeleteAccessKeyAction process: prepopulated_unsigned_transaction:\n       {:?}",
             &prepopulated_unsigned_transaction
         );
-        let public_key = near_crypto::PublicKey::from_str(&self.public_key).unwrap();
         let action = near_primitives::transaction::Action::DeleteKey(
-            near_primitives::transaction::DeleteKeyAction { public_key },
+            near_primitives::transaction::DeleteKeyAction { public_key: self.public_key },
         );
         let mut actions = prepopulated_unsigned_transaction.actions.clone();
         actions.push(action);
@@ -71,7 +70,7 @@ impl DeleteAccessKeyAction {
             }
         }
     }
-    pub fn input_public_key() -> String {
+    pub fn input_public_key() -> near_crypto::PublicKey {
         Input::new()
             .with_prompt("Enter the access key to remove it")
             .interact_text()

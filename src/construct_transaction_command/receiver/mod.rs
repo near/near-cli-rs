@@ -217,7 +217,7 @@ impl ActionSubcommand {
                 })
             }
             ActionSubcommandDiscriminants::DeleteAccessKey => {
-                let public_key: String = DeleteAccessKeyAction::input_public_key();
+                let public_key: near_crypto::PublicKey = DeleteAccessKeyAction::input_public_key();
                 let next_action: Box<NextAction> = Box::new(NextAction::input_next_action());
                 ActionSubcommand::DeleteAccessKey(DeleteAccessKeyAction {
                     public_key,

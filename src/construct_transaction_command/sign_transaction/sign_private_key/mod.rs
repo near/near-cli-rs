@@ -5,16 +5,16 @@ use structopt::StructOpt;
 
 #[derive(Debug)]
 pub struct SignPrivateKey {
-    pub signer_public_key: String,
-    pub signer_secret_key: String,
+    pub signer_public_key: near_crypto::PublicKey,
+    pub signer_secret_key: near_crypto::SecretKey,
 }
 
 #[derive(Debug, StructOpt)]
 pub struct CliSignPrivateKey {
     #[structopt(long)]
-    signer_public_key: Option<String>,
+    signer_public_key: Option<near_crypto::PublicKey>,
     #[structopt(long)]
-    signer_secret_key: Option<String>,
+    signer_secret_key: Option<near_crypto::SecretKey>,
 }
 
 impl SignPrivateKey {
@@ -35,8 +35,8 @@ impl SignPrivateKey {
             "SignPrivateKey process: selected_server_url:\n       {:?}",
             &selected_server_url
         );
-        let public_key = near_crypto::PublicKey::from_str(&self.signer_public_key).unwrap();
-        let signer_secret_key = near_crypto::SecretKey::from_str(&self.signer_secret_key).unwrap();
+        let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
+        let signer_secret_key: near_crypto::SecretKey = self.signer_secret_key.clone();
         match selected_server_url {
             None => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
@@ -116,13 +116,13 @@ impl SignPrivateKey {
             }
         }
     }
-    pub fn signer_public_key() -> String {
+    pub fn signer_public_key() -> near_crypto::PublicKey {
         Input::new()
             .with_prompt("enter sender's public key")
             .interact_text()
             .unwrap()
     }
-    pub fn signer_secret_key() -> String {
+    pub fn signer_secret_key() -> near_crypto::SecretKey {
         Input::new()
             .with_prompt("enter sender's private key")
             .interact_text()
@@ -132,11 +132,11 @@ impl SignPrivateKey {
 
 impl From<CliSignPrivateKey> for SignPrivateKey {
     fn from(item: CliSignPrivateKey) -> Self {
-        let signer_public_key: String = match item.signer_public_key {
+        let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
             Some(cli_public_key) => cli_public_key,
             None => SignPrivateKey::signer_public_key(),
         };
-        let signer_secret_key: String = match item.signer_secret_key {
+        let signer_secret_key: near_crypto::SecretKey = match item.signer_secret_key {
             Some(cli_secret_key) => cli_secret_key,
             None => SignPrivateKey::signer_secret_key(),
         };
