@@ -18,7 +18,7 @@ pub struct FunctionCallType {
 #[derive(Debug, StructOpt)]
 pub struct CliFunctionCallType {
     #[structopt(long)]
-    allowance: Option<NearBalance>,
+    allowance: Option<crate::common::NearBalance>,
     #[structopt(long)]
     receiver_id: Option<near_primitives::types::AccountId>,
     #[structopt(long)]
@@ -32,7 +32,7 @@ impl From<CliFunctionCallType> for FunctionCallType {
         let allowance: Option<near_primitives::types::Balance> = match item.allowance {
             Some(cli_allowance) => {
                 let allowance = match cli_allowance {
-                    NearBalance(num) => num,
+                    crate::common::NearBalance(num) => num,
                 };
                 Some(allowance)
             }
@@ -170,9 +170,9 @@ impl FunctionCallType {
                     .with_prompt("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees.")
                     .interact_text()
                     .unwrap();
-                let allowance_near_balance: NearBalance = NearBalance::from_str(&input).unwrap();
+                let allowance_near_balance: crate::common::NearBalance = crate::common::NearBalance::from_str(&input).unwrap();
                 let allowance = match allowance_near_balance {
-                    NearBalance(num) => num,
+                    crate::common::NearBalance(num) => num,
                 };
                 Some(allowance)
             }
@@ -186,26 +186,5 @@ impl FunctionCallType {
             .with_prompt("Enter a receiver to use by this access key to pay for function call gas and transaction fees.")
             .interact_text()
             .unwrap()
-    }
-}
-
-#[derive(Debug)]
-pub struct NearBalance(u128);
-
-impl FromStr for NearBalance {
-    type Err = ParseIntError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let number: u128 = s.parse().unwrap_or_else(|ParseIntError| -> u128 {
-            let mut s: String = s.to_string().clone();
-            s.make_ascii_uppercase();
-            match s.contains("NEAR") {
-                true => {
-                    let num: u128 = s.trim_matches(char::is_alphabetic).parse().unwrap();
-                    num * 10u128.pow(24)
-                }
-                _ => 0,
-            }
-        });
-        Ok(NearBalance(number))
     }
 }

@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 use super::sign_transaction::{CliSignTransaction, SignTransaction};
 use super::transaction_actions::transfer_near_tokens_type::{
-    CliTransferNEARTokensAction, NearBalance, TransferNEARTokensAction,
+    CliTransferNEARTokensAction, TransferNEARTokensAction,
 };
 
 use super::transaction_actions::add_access_key_type::{
@@ -185,7 +185,7 @@ impl ActionSubcommand {
             .unwrap();
         match variants[select_action_subcommand] {
             ActionSubcommandDiscriminants::TransferNEARTokens => {
-                let amount: NearBalance = NearBalance::input_amount();
+                let amount: crate::common::NearBalance = crate::common::NearBalance::input_amount();
                 let next_action: Box<NextAction> = Box::new(NextAction::input_next_action());
                 ActionSubcommand::TransferNEARTokens(TransferNEARTokensAction {
                     amount,
