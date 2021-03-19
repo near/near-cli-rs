@@ -1,6 +1,5 @@
 use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
-use std::str::FromStr;
 use structopt::StructOpt;
 
 #[derive(Debug)]

@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use dialoguer::{theme::ColorfulTheme, Select};
 use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};

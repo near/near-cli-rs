@@ -47,7 +47,7 @@ impl SignTransaction {
                 keys.process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
-            SignTransaction::SignKeychain(chain) => {
+            SignTransaction::SignKeychain(_chain) => {
                 println!("Сейчас ведется доработка данного модуля")
                 // chain.process(prepopulated_unsigned_transaction, selected_server_url)
             }
@@ -75,15 +75,14 @@ impl SignTransaction {
                     signer_public_key: SignPrivateKey::signer_public_key(),
                     signer_secret_key: SignPrivateKey::signer_secret_key(),
                 })
-            }
+            },
             SignTransactionDiscriminants::SignKeychain => {
                 // SignTransaction::SignKeychain(SignKeychain{key_chain: SignKeychain::input_key_chain()})
                 panic!("This module is under development")
-            }
+            },
             SignTransactionDiscriminants::SignManually => {
                 SignTransaction::SignManually(SignManually {})
-            }
-            _ => unreachable!("Error"),
+            },
         }
     }
 }
@@ -94,16 +93,15 @@ impl From<CliSignTransaction> for SignTransaction {
             CliSignTransaction::SignPrivateKey(cli_private_key) => {
                 let privat_key = SignPrivateKey::from(cli_private_key);
                 SignTransaction::SignPrivateKey(privat_key)
-            }
+            },
             CliSignTransaction::SignKeychain(cli_key_chain) => {
                 let key_chain = SignKeychain::from(cli_key_chain);
                 SignTransaction::SignKeychain(key_chain)
-            }
+            },
             CliSignTransaction::SignManually(cli_manually) => {
                 let manually = SignManually::from(cli_manually);
                 SignTransaction::SignManually(manually)
-            }
-            _ => unreachable!("Error"),
+            },
         }
     }
 }

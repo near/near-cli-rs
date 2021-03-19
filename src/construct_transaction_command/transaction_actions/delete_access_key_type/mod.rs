@@ -1,6 +1,5 @@
 use async_recursion::async_recursion;
 use dialoguer::Input;
-use std::str::FromStr;
 use structopt::StructOpt;
 
 use super::super::receiver::{CliSkipNextAction, NextAction};
