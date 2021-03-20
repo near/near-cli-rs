@@ -17,9 +17,7 @@ derive_more = "0.99.9"
 
 async-recursion = "0.3.2"
 
-actix = "0.9"
-actix-rt = "1"
-actix-web = { version = "2", features = [ "openssl" ] }
+actix = "0.11.0-beta.2"
 openssl-probe = { version = "0.1.2" }
 
 base64 = "0.12.3"
@@ -30,17 +28,9 @@ hex = "0.4.2"
 serde_json = "1.0.57"
 # The fix is needed for seemless clap integration: https://github.com/wusyong/slip10/pull/3
 slip10 = { git = "https://github.com/frol/slip10", rev = "a3235dd0acf3a485f547cf23e2dd56838adb45f8" }
-
-
-# near-crypto = { git = "https://github.com/nearprotocol/nearcore", rev="1cb93029cb41d224b1a6c77caf90414ff64e3d47" }
-# near-primitives = { git = "https://github.com/nearprotocol/nearcore", rev="1cb93029cb41d224b1a6c77caf90414ff64e3d47" }
-# near-jsonrpc-client = { git = "https://github.com/nearprotocol/nearcore", rev="1cb93029cb41d224b1a6c77caf90414ff64e3d47" }
-
-
-near-crypto = { git = "https://github.com/nearprotocol/nearcore", rev="29fcaf3b8c81a4c0371d105054ce251355382a77" }
-near-primitives = { git = "https://github.com/nearprotocol/nearcore", rev="29fcaf3b8c81a4c0371d105054ce251355382a77" }
-near-jsonrpc-client = { git = "https://github.com/nearprotocol/nearcore", rev="29fcaf3b8c81a4c0371d105054ce251355382a77" }
-
 url = { version = "2", features = ["serde"] }
-[patch.'https://github.com/nearprotocol/nearcore']
-near-crypto = {path="/Users/frovolod/.cargo/git/checkouts/nearcore-e3f14b9758bedfa0/29fcaf3/core/crypto/"}
+
+near-crypto = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }
+near-primitives = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }
+near-jsonrpc-client = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }
+near-jsonrpc-primitives = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }
