@@ -1586,7 +1586,6 @@ dependencies = [
 [[package]]
 name = "near-crypto"
 version = "0.1.0"
-source = "git+https://github.com/nearprotocol/nearcore?rev=29fcaf3b8c81a4c0371d105054ce251355382a77#29fcaf3b8c81a4c0371d105054ce251355382a77"
 dependencies = [
  "arrayref",
  "blake2",

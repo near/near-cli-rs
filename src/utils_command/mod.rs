@@ -3,7 +3,8 @@ use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 // mod generate_keypair_subcommand;
-mod sign_transaction_subcommand;
+mod sign_transaction_subcommand_with_secret_key;
+mod combine_transaction_subcommand_with_signature;
 
 #[derive(Debug)]
 pub struct Utils {
@@ -19,13 +20,16 @@ pub struct CliUtils {
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Util {
-    #[strum_discriminants(strum(message = "Sign a transaction"))]
-    SignTransaction(self::sign_transaction_subcommand::SignTransaction),
+    #[strum_discriminants(strum(message = "Sign a transaction with secret key"))]
+    SignTransactionSecretKey(self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey),
+    #[strum_discriminants(strum(message = "Combine unsigned transaction with signature"))]
+    CombineTransactionSignature(self::combine_transaction_subcommand_with_signature::CombineTransactionSignature),
 }
 
 #[derive(Debug, StructOpt)]
 enum CliUtil {
-    SignTransaction(self::sign_transaction_subcommand::CliSignTransaction),
+    SignTransactionSecretKey(self::sign_transaction_subcommand_with_secret_key::CliSignTransactionSecretKey),
+    CombineTransactionSignature(self::combine_transaction_subcommand_with_signature::CliCombineTransactionSignature),
 }
 
 impl From<CliUtils> for Utils {
@@ -41,8 +45,8 @@ impl From<CliUtils> for Utils {
 impl Util {
     pub fn process(self) {
         match self {
-            Util::SignTransaction(sign_transaction) => sign_transaction.process(),
-            _ => unreachable!("Error"),
+            Util::SignTransactionSecretKey(sign_transaction) => sign_transaction.process(),
+            Util::CombineTransactionSignature(combine_transaction) => combine_transaction.process(),
         }
     }
     pub fn choose_util() -> Self {
@@ -59,14 +63,24 @@ impl Util {
             .interact()
             .unwrap();
         match variants[selection] {
-            UtilDiscriminants::SignTransaction => {
+            UtilDiscriminants::SignTransactionSecretKey => {
                 let signer_secret_key =
-                    sign_transaction_subcommand::SignTransaction::input_signer_secret_key();
+                    self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey::input_signer_secret_key();
                 let unsigned_transaction =
-                    sign_transaction_subcommand::SignTransaction::input_unsigned_transaction();
-                Self::SignTransaction(sign_transaction_subcommand::SignTransaction {
+                    self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey::input_unsigned_transaction();
+                Self::SignTransactionSecretKey(self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey {
                     signer_secret_key,
                     unsigned_transaction,
+                })
+            },
+            UtilDiscriminants::CombineTransactionSignature => {
+                let signature =
+                    self::combine_transaction_subcommand_with_signature::CombineTransactionSignature::input_signature();
+                let unsigned_transaction =
+                    self::combine_transaction_subcommand_with_signature::CombineTransactionSignature::input_unsigned_transaction();
+                Self::CombineTransactionSignature(self::combine_transaction_subcommand_with_signature::CombineTransactionSignature {
+                    signature,
+                    unsigned_transaction
                 })
             }
         }
@@ -76,10 +90,15 @@ impl Util {
 impl From<CliUtil> for Util {
     fn from(item: CliUtil) -> Self {
         match item {
-            CliUtil::SignTransaction(cli_sign_transaction) => {
+            CliUtil::SignTransactionSecretKey(cli_sign_transaction) => {
                 let sign_transaction =
-                    sign_transaction_subcommand::SignTransaction::from(cli_sign_transaction);
-                Util::SignTransaction(sign_transaction)
+                    self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey::from(cli_sign_transaction);
+                Util::SignTransactionSecretKey(sign_transaction)
+            },
+            CliUtil::CombineTransactionSignature(cli_combine_transaction) => {
+                let combine_transaction =
+                    self::combine_transaction_subcommand_with_signature::CombineTransactionSignature::from(cli_combine_transaction);
+                Util::CombineTransactionSignature(combine_transaction)
             }
         }
     }

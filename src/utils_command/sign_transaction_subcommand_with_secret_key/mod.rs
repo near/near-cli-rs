@@ -3,42 +3,43 @@ use near_primitives::borsh::BorshSerialize;
 use structopt::StructOpt;
 
 #[derive(Debug)]
-pub struct SignTransaction {
+pub struct SignTransactionSecretKey {
     pub signer_secret_key: near_crypto::SecretKey,
     pub unsigned_transaction: near_primitives::transaction::Transaction,
 }
 
 #[derive(Debug, StructOpt)]
-pub struct CliSignTransaction {
+pub struct CliSignTransactionSecretKey {
     #[structopt(long)]
     signer_secret_key: Option<near_crypto::SecretKey>,
     #[structopt(long)]
     unsigned_transaction: Option<crate::common::TransactionAsBase64>,
 }
 
-impl From<CliSignTransaction> for SignTransaction {
-    fn from(item: CliSignTransaction) -> Self {
+impl From<CliSignTransactionSecretKey> for SignTransactionSecretKey {
+    fn from(item: CliSignTransactionSecretKey) -> Self {
         let signer_secret_key: near_crypto::SecretKey = match item.signer_secret_key {
             Some(cli_signer_secret_key) => cli_signer_secret_key,
-            None => SignTransaction::input_signer_secret_key(),
+            None => SignTransactionSecretKey::input_signer_secret_key(),
         };
         let unsigned_transaction: near_primitives::transaction::Transaction =
             match item.unsigned_transaction {
                 Some(cli_unsigned_transaction) => cli_unsigned_transaction.inner,
-                None => SignTransaction::input_unsigned_transaction(),
+                None => SignTransactionSecretKey::input_unsigned_transaction(),
             };
-        SignTransaction {
+        SignTransactionSecretKey {
             signer_secret_key,
             unsigned_transaction,
         }
     }
 }
 
-impl SignTransaction {
+impl SignTransactionSecretKey {
     pub fn process(self) {
         let signature = self
             .signer_secret_key
             .sign(&self.unsigned_transaction.get_hash().as_ref());
+        println!("Signature:  {:?}", &signature);
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature,
             self.unsigned_transaction,
