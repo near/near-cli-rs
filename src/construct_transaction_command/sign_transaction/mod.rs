@@ -3,7 +3,7 @@ use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod sign_private_key;
-use sign_private_key::{CliSignPrivateKey, SignPrivateKey};
+use sign_private_key::{CliSignPrivateKey, SignPrivateKey, Submit};
 pub mod sign_keychain;
 use sign_keychain::{CliSignKeychain, SignKeychain};
 pub mod sign_manually;
@@ -74,6 +74,7 @@ impl SignTransaction {
                 SignTransaction::SignPrivateKey(SignPrivateKey {
                     signer_public_key: SignPrivateKey::signer_public_key(),
                     signer_secret_key: SignPrivateKey::signer_secret_key(),
+                    submit: Submit::choose_submit()
                 })
             },
             SignTransactionDiscriminants::SignKeychain => {
