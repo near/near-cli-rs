@@ -9,9 +9,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 #[derive(Debug)]
 pub struct SignPrivateKey {
     pub signer_public_key: near_crypto::PublicKey,
-    pub signer_secret_key: near_crypto::SecretKey,
-    pub submit: Submit
-}
+    pub signer_secret_key: near_crypto::SecretKey,}
 
 #[derive(Debug, StructOpt)]
 pub struct CliSignPrivateKey {
@@ -19,8 +17,6 @@ pub struct CliSignPrivateKey {
     signer_public_key: Option<near_crypto::PublicKey>,
     #[structopt(long)]
     signer_secret_key: Option<near_crypto::SecretKey>,
-    #[structopt(subcommand)]
-    submit: Option<CliSubmit>
 }
 
 #[derive(Debug, EnumDiscriminants, Clone)]
@@ -30,21 +26,6 @@ pub enum Submit {
     Send,
     #[strum_discriminants(strum(message = "Do you want show the transaction on display?"))]
     Display
-}
-
-#[derive(Debug, StructOpt)]
-enum CliSubmit {
-    Send,
-    Dysplay
-}
-
-impl From<CliSubmit> for Submit {
-    fn from(item: CliSubmit) -> Self {
-        match item {
-            CliSubmit::Send => Submit::Send,
-            CliSubmit::Dysplay => Submit::Display
-        }
-    }
 }
 
 impl SignPrivateKey {
@@ -57,17 +38,8 @@ impl SignPrivateKey {
         selected_server_url: Option<url::Url>,
     ) {
         println!("SignPrivateKey process: self:\n       {:?}", &self);
-        println!(
-            "SignPrivateKey process: prepopulated_unsigned_transaction:\n       {:?}",
-            &prepopulated_unsigned_transaction
-        );
-        println!(
-            "SignPrivateKey process: selected_server_url:\n       {:?}",
-            &selected_server_url
-        );
         let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
         let signer_secret_key: near_crypto::SecretKey = self.signer_secret_key.clone();
-        let submit = self.submit.clone();
         match selected_server_url {
             None => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
@@ -84,7 +56,12 @@ impl SignPrivateKey {
                         .try_to_vec()
                         .expect("Transaction is not expected to fail on serialization"),
                 );
-                submit.process_offline(signed_transaction, serialize_to_base64)
+                println!(
+                    "\n\n---  Signed transaction:   ---\n    {:#?}",
+                    &signed_transaction
+                );
+                let submit = Submit::choose_submit();
+                submit.process_offline(signed_transaction, serialize_to_base64);
             }
             Some(selected_server_url) => {
                 let online_signer_access_key_response = self
@@ -129,6 +106,11 @@ impl SignPrivateKey {
                         .try_to_vec()
                         .expect("Transaction is not expected to fail on serialization"),
                 );
+                println!(
+                    "\n\n---  Signed transaction:   ---\n    {:#?}",
+                    &signed_transaction
+                );
+                let submit = Submit::choose_submit();
                 submit.process_online(selected_server_url, signed_transaction, serialize_to_base64).await; 
             }
         }
@@ -157,14 +139,9 @@ impl From<CliSignPrivateKey> for SignPrivateKey {
             Some(cli_secret_key) => cli_secret_key,
             None => SignPrivateKey::signer_secret_key(),
         };
-        let submit: Submit = match item.submit {
-            Some(cli_submit) => Submit::from(cli_submit),
-            None => Submit::choose_submit()
-        };
         SignPrivateKey {
             signer_public_key,
             signer_secret_key,
-            submit
         }
     }
 }
@@ -175,31 +152,15 @@ impl Submit {
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String
     ) {
-        println!("Submit process_offline self:  {:?}", &self);
-        match self {
-            Submit::Send => {
-                println!("\n\n\n===========  DISPLAY  ==========");
-                println!(
-                    "\n\n---  Signed transaction:   ---\n    {:#?}",
-                    &signed_transaction
-                );
-                println!(
-                    "\n\n---  serialize_to_base64:   --- \n   {:#?}",
-                    &serialize_to_base64
-                );
-            },
-            Submit::Display => {
-                println!("\n\n\n===========  DISPLAY  ==========");
-                println!(
-                    "\n\n---  Signed transaction:   ---\n    {:#?}",
-                    &signed_transaction
-                );
-                println!(
-                    "\n\n---  serialize_to_base64:   --- \n   {:#?}",
-                    &serialize_to_base64
-                );
-            }
-        }
+        println!("\n\n\n===========  DISPLAY  ==========");
+        println!(
+            "\n\n---  Signed transaction:   ---\n    {:#?}",
+            &signed_transaction
+        );
+        println!(
+            "\n\n---  serialize_to_base64:   --- \n   {:#?}",
+            &serialize_to_base64
+        );
     }
     pub async fn process_online(
         self,
@@ -207,7 +168,6 @@ impl Submit {
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String
     ) {
-        println!("Submit process_online self:  {:?}", &self);
         match self {
             Submit::Send => {
                 println!("\n\n\n========= SENT =========");
