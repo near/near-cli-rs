@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use structopt::StructOpt;
 
 
 fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
@@ -22,7 +23,7 @@ fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
 
 /// Generate a key pair of secret and public keys (use it anywhere you need
 /// Ed25519 keys)
-#[derive(Debug)]
+#[derive(Debug, StructOpt)]
 pub struct GenerateKeypair {
     pub master_seed_phrase: Option<String>,
     pub new_master_seed_phrase_words_count: usize,
@@ -42,7 +43,7 @@ impl Default for GenerateKeypair {
 }
 
 impl GenerateKeypair {
-    pub async fn process(self) -> String {
+    pub fn process(self) {
         let (master_seed_phrase, master_seed) =
             if let Some(ref master_seed_phrase) = self.master_seed_phrase {
                 (
@@ -94,7 +95,7 @@ impl GenerateKeypair {
             }
             crate::common::OutputFormat::Json => {
                 println!(
-                    "{}",
+                    "{:#?}",
                     serde_json::json!({
                         "master_seed_phrase": master_seed_phrase,
                         "seed_phrase_hd_path": bip32path_to_string(&self.seed_phrase_hd_path),
@@ -105,6 +106,5 @@ impl GenerateKeypair {
                 );
             }
         };
-        public_key_str
     }
 }

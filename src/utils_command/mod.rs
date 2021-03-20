@@ -2,7 +2,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-// mod generate_keypair_subcommand;
+mod generate_keypair_subcommand;
 mod sign_transaction_subcommand_with_secret_key;
 mod combine_transaction_subcommand_with_signature;
 
@@ -20,6 +20,8 @@ pub struct CliUtils {
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Util {
+    #[strum_discriminants(strum(message = "Generate a key pair"))]
+    GenerateKeypair(self::generate_keypair_subcommand::GenerateKeypair),
     #[strum_discriminants(strum(message = "Sign a transaction with secret key"))]
     SignTransactionSecretKey(self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey),
     #[strum_discriminants(strum(message = "Combine unsigned transaction with signature"))]
@@ -28,6 +30,7 @@ pub enum Util {
 
 #[derive(Debug, StructOpt)]
 enum CliUtil {
+    GenerateKeypair(self::generate_keypair_subcommand::GenerateKeypair),
     SignTransactionSecretKey(self::sign_transaction_subcommand_with_secret_key::CliSignTransactionSecretKey),
     CombineTransactionSignature(self::combine_transaction_subcommand_with_signature::CliCombineTransactionSignature),
 }
@@ -45,6 +48,7 @@ impl From<CliUtils> for Utils {
 impl Util {
     pub fn process(self) {
         match self {
+            Util::GenerateKeypair(generate_keypair) => generate_keypair.process(),
             Util::SignTransactionSecretKey(sign_transaction) => sign_transaction.process(),
             Util::CombineTransactionSignature(combine_transaction) => combine_transaction.process(),
         }
@@ -63,6 +67,9 @@ impl Util {
             .interact()
             .unwrap();
         match variants[selection] {
+            UtilDiscriminants::GenerateKeypair => {
+                Self::GenerateKeypair(self::generate_keypair_subcommand::GenerateKeypair::default())
+            },
             UtilDiscriminants::SignTransactionSecretKey => {
                 let signer_secret_key =
                     self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey::input_signer_secret_key();
@@ -90,6 +97,7 @@ impl Util {
 impl From<CliUtil> for Util {
     fn from(item: CliUtil) -> Self {
         match item {
+            CliUtil::GenerateKeypair(generate_keypair) => Util::GenerateKeypair(generate_keypair),
             CliUtil::SignTransactionSecretKey(cli_sign_transaction) => {
                 let sign_transaction =
                     self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey::from(cli_sign_transaction);
