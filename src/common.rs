@@ -1,6 +1,8 @@
 use near_primitives::borsh::BorshDeserialize;
 use std::convert::TryInto;
 use dialoguer::Input;
+use std::str::FromStr;
+
 
 #[derive(
     Debug,
@@ -125,5 +127,85 @@ impl std::str::FromStr for NearBalance {
             _ => return Err("Near Balance: incorrect currency value entered".to_string())
         };
         Ok(NearBalance(number))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn near_balance_from_str_currency_near() {
+        assert_eq!(NearBalance::from_str("10 near").unwrap(), NearBalance(10000000000000000000000000)); // 26 number
+        assert_eq!(NearBalance::from_str("10.055NEAR").unwrap(), NearBalance(10055000000000000000000000)); // 26 number
+    }
+    #[test]
+    fn near_balance_from_str_currency_n() {
+        assert_eq!(NearBalance::from_str("10 n").unwrap(), NearBalance(10000000000000000000000000)); // 26 number
+        assert_eq!(NearBalance::from_str("10N ").unwrap(), NearBalance(10000000000000000000000000)); // 26 number
+    }
+    #[test]
+    fn near_balance_from_str_f64_near() {
+        assert_eq!(NearBalance::from_str("0.000001 near").unwrap(), NearBalance(1000000000000000000)); // 18 number
+    }
+    #[test]
+    fn near_balance_from_str_f64_near_without_int() {
+        let near_balance = NearBalance::from_str(".055NEAR");
+        assert_eq!(near_balance, Err("Near Balance: cannot parse integer from empty string".to_string()));
+    }
+    #[test]
+    fn near_balance_from_str_currency_ynear() {
+        assert_eq!(NearBalance::from_str("100 ynear").unwrap(), NearBalance(100));
+        assert_eq!(NearBalance::from_str("100YNEAR ").unwrap(), NearBalance(100));
+    }
+    #[test]
+    fn near_balance_from_str_currency_yn() {
+        assert_eq!(NearBalance::from_str("9000 YN  ").unwrap(), NearBalance(9000));
+        assert_eq!(NearBalance::from_str("0 yn").unwrap(), NearBalance(0));
+    }
+    #[test]
+    fn near_balance_from_str_currency_yoctonear() {
+        assert_eq!(NearBalance::from_str("111YOCTONEAR").unwrap(), NearBalance(111));
+        assert_eq!(NearBalance::from_str("333 yoctonear").unwrap(), NearBalance(333));
+    }
+    #[test]
+    fn near_balance_from_str_currency_yocton() {
+        assert_eq!(NearBalance::from_str("10YOCTON").unwrap(), NearBalance(10));
+        assert_eq!(NearBalance::from_str("10 yocton      ").unwrap(), NearBalance(10));
+    }
+    #[test]
+    fn near_balance_from_str_f64_ynear() {
+        let near_balance = NearBalance::from_str("0.055yNEAR");
+        assert_eq!(near_balance, Err("Near Balance: invalid digit found in string".to_string()));
+    }
+    #[test]
+    fn near_balance_from_str_without_currency() {
+        let near_balance = NearBalance::from_str("100");
+        assert_eq!(near_balance, Err("Near Balance: incorrect currency value entered".to_string()));
+    }
+    #[test]
+    fn near_balance_from_str_incorrect_currency() {
+        let near_balance = NearBalance::from_str("100 UAH");
+        assert_eq!(near_balance, Err("Near Balance: incorrect currency value entered".to_string()));
+    }
+    #[test]
+    fn near_balance_from_str_invalid_double_dot() {
+        let near_balance = NearBalance::from_str("100.55.");
+        assert_eq!(near_balance, Err("Near Balance: incorrect currency value entered".to_string()));
+    }
+    #[test]
+    fn near_balance_from_str_large_fractional_part() {
+        let near_balance = NearBalance::from_str("100.1111122222333334444455555 n"); // 25 symbols after "."
+        assert_eq!(near_balance, Err("Near Balance: too large fractional part of a number".to_string()));
+    }
+    #[test]
+    fn near_balance_from_str_large_int_part() {
+        let near_balance = NearBalance::from_str("1234567890123456.0 n");
+        assert_eq!(near_balance, Err("Near Balance: underflow or overflow happens".to_string()));
+    }
+    #[test]
+    fn near_balance_from_str_without_fractional_part() {
+        let near_balance = NearBalance::from_str("100. n");
+        assert_eq!(near_balance, Err("Near Balance: cannot parse integer from empty string".to_string()));
     }
 }
