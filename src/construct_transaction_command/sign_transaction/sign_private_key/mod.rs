@@ -66,7 +66,7 @@ impl SignPrivateKey {
             Some(selected_server_url) => {
                 let online_signer_access_key_response = self
                     .rpc_client(&selected_server_url.as_str())
-                    .query(near_primitives::rpc::RpcQueryRequest {
+                    .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                         block_reference: near_primitives::types::Finality::Final.into(),
                         request: near_primitives::views::QueryRequest::ViewAccessKey {
                             account_id: prepopulated_unsigned_transaction.signer_id.clone(),
@@ -78,11 +78,7 @@ impl SignPrivateKey {
                         println!("Error online_signer_access_key_response:   {:?}", &err)
                     })
                     .unwrap();
-                println!(
-                    "online_signer_access_key_response:\n   {:?}",
-                    &online_signer_access_key_response
-                );
-                let current_nonce = if let near_primitives::views::QueryResponseKind::AccessKey(
+                let current_nonce = if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
                     online_signer_access_key,
                 ) = online_signer_access_key_response.kind
                 {

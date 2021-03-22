@@ -110,7 +110,5 @@ fn main() {
     let cli = CliArgs::from_args();
     let args = Args::from(cli);
 
-    actix::System::builder()
-        .build()
-        .block_on(async move { args.process().await });
+    actix::System::new().block_on(args.process());
 }
