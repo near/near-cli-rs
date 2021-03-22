@@ -69,7 +69,6 @@ impl AddAccessKeyAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-        _public_key_string: String,
     ) {
         println!("AddAccessKeyAction process: self:\n       {:?}", &self);
         println!(

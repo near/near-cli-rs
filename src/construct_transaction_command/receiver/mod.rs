@@ -158,7 +158,6 @@ impl ActionSubcommand {
                     .process(
                         prepopulated_unsigned_transaction,
                         selected_server_url,
-                        "".to_string(),
                     )
                     .await
             }
