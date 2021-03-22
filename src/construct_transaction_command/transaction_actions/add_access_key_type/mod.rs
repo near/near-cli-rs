@@ -12,14 +12,14 @@ use full_access_type::{CliFullAccessType, FullAccessType};
 
 #[derive(Debug)]
 pub struct AddAccessKeyAction {
-    pub public_key: String,
+    pub public_key: near_crypto::PublicKey,
     pub nonce: near_primitives::types::Nonce,
     pub permission: AccessKeyPermission,
 }
 
 #[derive(Debug, StructOpt)]
 pub struct CliAddAccessKeyAction {
-    public_key: Option<String>,
+    public_key: Option<near_crypto::PublicKey>,
     #[structopt(long)]
     nonce: Option<u64>,
     #[structopt(subcommand)]
@@ -43,8 +43,8 @@ pub enum AccessKeyPermission {
 
 impl From<CliAddAccessKeyAction> for AddAccessKeyAction {
     fn from(item: CliAddAccessKeyAction) -> Self {
-        let public_key: near_primitives::types::AccountId = match item.public_key {
-            Some(cli_public_key) => near_primitives::types::AccountId::from(cli_public_key),
+        let public_key: near_crypto::PublicKey = match item.public_key {
+            Some(cli_public_key) => cli_public_key,
             None => AddAccessKeyAction::input_public_key(),
         };
         let nonce: near_primitives::types::Nonce = match item.nonce {
@@ -104,7 +104,7 @@ impl AddAccessKeyAction {
             .interact_text()
             .unwrap()
     }
-    pub fn input_public_key() -> String {
+    pub fn input_public_key() -> near_crypto::PublicKey {
         Input::new()
             .with_prompt("Enter a public key for this access key")
             .interact_text()

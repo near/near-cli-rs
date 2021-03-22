@@ -206,7 +206,7 @@ impl ActionSubcommand {
                 })
             }
             ActionSubcommandDiscriminants::AddAccessKey => {
-                let public_key: String = AddAccessKeyAction::input_public_key();
+                let public_key: near_crypto::PublicKey = AddAccessKeyAction::input_public_key();
                 let nonce: near_primitives::types::Nonce = AddAccessKeyAction::input_nonce();
                 let permission: AccessKeyPermission = AccessKeyPermission::choose_permission();
                 ActionSubcommand::AddAccessKey(AddAccessKeyAction {

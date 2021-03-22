@@ -74,14 +74,14 @@ impl FunctionCallType {
         nonce: near_primitives::types::Nonce,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-        public_key_string: String,
+        public_key: near_crypto::PublicKey,
     ) {
         println!("FunctionCallType process: self:\n       {:?}", &self);
         println!(
             "FunctionCallType process: prepopulated_unsigned_transaction:\n       {:?}",
             &prepopulated_unsigned_transaction
         );
-        let public_key = near_crypto::PublicKey::from_str(&public_key_string).unwrap();
+        // let public_key = near_crypto::PublicKey::from_str(&public_key_string).unwrap();
         let access_key: near_primitives::account::AccessKey = near_primitives::account::AccessKey {
             nonce,
             permission: near_primitives::account::AccessKeyPermission::FunctionCall(
