@@ -3,13 +3,15 @@ use near_primitives::borsh::BorshSerialize;
 use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 use dialoguer::{theme::ColorfulTheme, Select};
+use async_recursion::async_recursion;
 
 
 
 #[derive(Debug)]
 pub struct SignPrivateKey {
     pub signer_public_key: near_crypto::PublicKey,
-    pub signer_secret_key: near_crypto::SecretKey,}
+    pub signer_secret_key: near_crypto::SecretKey,
+}
 
 #[derive(Debug, StructOpt)]
 pub struct CliSignPrivateKey {
@@ -32,6 +34,7 @@ impl SignPrivateKey {
     fn rpc_client(self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
         near_jsonrpc_client::new_client(&selected_server_url)
     }
+    #[async_recursion(?Send)]
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
@@ -40,76 +43,91 @@ impl SignPrivateKey {
         println!("SignPrivateKey process: self:\n       {:?}", &self);
         let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
         let signer_secret_key: near_crypto::SecretKey = self.signer_secret_key.clone();
-        match selected_server_url {
-            None => {
-                let unsigned_transaction = near_primitives::transaction::Transaction {
-                    public_key,
-                    ..prepopulated_unsigned_transaction
-                };
-                let signature = signer_secret_key.sign(unsigned_transaction.get_hash().as_ref());
-                let signed_transaction = near_primitives::transaction::SignedTransaction::new(
-                    signature,
-                    unsigned_transaction,
-                );
-                let serialize_to_base64 = near_primitives::serialize::to_base64(
-                    signed_transaction
-                        .try_to_vec()
-                        .expect("Transaction is not expected to fail on serialization"),
-                );
-                println!(
-                    "\n\n---  Signed transaction:   ---\n    {:#?}",
-                    &signed_transaction
-                );
-                let submit = Submit::choose_submit();
-                submit.process_offline(signed_transaction, serialize_to_base64);
+        let public_key_origin: near_crypto::PublicKey = near_crypto::SecretKey::public_key(&signer_secret_key);
+        if &public_key==&public_key_origin {
+            match selected_server_url {
+                None => {
+                    let unsigned_transaction = near_primitives::transaction::Transaction {
+                        public_key,
+                        ..prepopulated_unsigned_transaction
+                    };
+                    let signature = signer_secret_key.sign(unsigned_transaction.get_hash().as_ref());
+                    let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+                        signature,
+                        unsigned_transaction,
+                    );
+                    let serialize_to_base64 = near_primitives::serialize::to_base64(
+                        signed_transaction
+                            .try_to_vec()
+                            .expect("Transaction is not expected to fail on serialization"),
+                    );
+                    println!(
+                        "\n\n---  Signed transaction:   ---\n    {:#?}",
+                        &signed_transaction
+                    );
+                    let submit = Submit::choose_submit();
+                    submit.process_offline(signed_transaction, serialize_to_base64);
+                }
+                Some(selected_server_url) => {
+                    let online_signer_access_key_response = self
+                        .rpc_client(&selected_server_url.as_str())
+                        .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
+                            block_reference: near_primitives::types::Finality::Final.into(),
+                            request: near_primitives::views::QueryRequest::ViewAccessKey {
+                                account_id: prepopulated_unsigned_transaction.signer_id.clone(),
+                                public_key: public_key.clone(),
+                            },
+                        })
+                        .await
+                        .map_err(|err| {
+                            println!("Error online_signer_access_key_response:   {:?}", &err)
+                        })
+                        .unwrap();
+                    let current_nonce = if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
+                        online_signer_access_key,
+                    ) = online_signer_access_key_response.kind
+                    {
+                        online_signer_access_key.nonce
+                    } else {
+                        return println!("Error current_nonce");
+                    };
+                    let unsigned_transaction = near_primitives::transaction::Transaction {
+                        public_key,
+                        block_hash: online_signer_access_key_response.block_hash,
+                        nonce: current_nonce + 1,
+                        ..prepopulated_unsigned_transaction
+                    };
+                    let signature = signer_secret_key.sign(unsigned_transaction.get_hash().as_ref());
+                    let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+                        signature,
+                        unsigned_transaction,
+                    );
+                    let serialize_to_base64 = near_primitives::serialize::to_base64(
+                        signed_transaction
+                            .try_to_vec()
+                            .expect("Transaction is not expected to fail on serialization"),
+                    );
+                    println!(
+                        "\n\n---  Signed transaction:   ---\n    {:#?}",
+                        &signed_transaction
+                    );
+                    let submit = Submit::choose_submit();
+                    submit.process_online(selected_server_url, signed_transaction, serialize_to_base64).await; 
+                }
             }
-            Some(selected_server_url) => {
-                let online_signer_access_key_response = self
-                    .rpc_client(&selected_server_url.as_str())
-                    .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
-                        block_reference: near_primitives::types::Finality::Final.into(),
-                        request: near_primitives::views::QueryRequest::ViewAccessKey {
-                            account_id: prepopulated_unsigned_transaction.signer_id.clone(),
-                            public_key: public_key.clone(),
-                        },
-                    })
-                    .await
-                    .map_err(|err| {
-                        println!("Error online_signer_access_key_response:   {:?}", &err)
-                    })
-                    .unwrap();
-                let current_nonce = if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
-                    online_signer_access_key,
-                ) = online_signer_access_key_response.kind
-                {
-                    online_signer_access_key.nonce
-                } else {
-                    return println!("Error current_nonce");
-                };
-                let unsigned_transaction = near_primitives::transaction::Transaction {
-                    public_key,
-                    block_hash: online_signer_access_key_response.block_hash,
-                    nonce: current_nonce + 1,
-                    ..prepopulated_unsigned_transaction
-                };
-                let signature = signer_secret_key.sign(unsigned_transaction.get_hash().as_ref());
-                let signed_transaction = near_primitives::transaction::SignedTransaction::new(
-                    signature,
-                    unsigned_transaction,
-                );
-                let serialize_to_base64 = near_primitives::serialize::to_base64(
-                    signed_transaction
-                        .try_to_vec()
-                        .expect("Transaction is not expected to fail on serialization"),
-                );
-                println!(
-                    "\n\n---  Signed transaction:   ---\n    {:#?}",
-                    &signed_transaction
-                );
-                let submit = Submit::choose_submit();
-                submit.process_online(selected_server_url, signed_transaction, serialize_to_base64).await; 
-            }
-        }
+        } else {
+            println!("\nError: The key pair does not match. Re-enter the keys");
+            let signer_public_key: near_crypto::PublicKey = Self::signer_public_key();
+            let signer_secret_key: near_crypto::SecretKey = Self::signer_secret_key();
+            Self::process(
+                SignPrivateKey {
+                    signer_public_key,
+                    signer_secret_key,
+                },
+                prepopulated_unsigned_transaction,
+                selected_server_url
+            ).await;
+        };
     }
     pub fn signer_public_key() -> near_crypto::PublicKey {
         Input::new()
