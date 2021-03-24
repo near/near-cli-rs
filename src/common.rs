@@ -1,7 +1,6 @@
 use near_primitives::borsh::BorshDeserialize;
 use std::convert::TryInto;
 use dialoguer::Input;
-use std::str::FromStr;
 
 
 #[derive(
@@ -133,6 +132,7 @@ impl std::str::FromStr for NearBalance {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn near_balance_from_str_currency_near() {
