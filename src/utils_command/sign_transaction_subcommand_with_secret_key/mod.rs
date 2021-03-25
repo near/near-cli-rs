@@ -8,7 +8,7 @@ pub struct SignTransactionSecretKey {
     pub unsigned_transaction: near_primitives::transaction::Transaction,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliSignTransactionSecretKey {
     #[structopt(long)]
     signer_secret_key: Option<near_crypto::SecretKey>,

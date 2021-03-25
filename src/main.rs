@@ -4,10 +4,10 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod common;
 mod utils_command;
-use utils_command::{CliUtils, Util, Utils};
+use utils_command::{CliUtils, Utils};
 mod construct_transaction_command;
 mod consts;
-use construct_transaction_command::operation_mode::{CliOperationMode, Mode, OperationMode};
+use construct_transaction_command::operation_mode::{CliOperationMode, OperationMode};
 
 #[derive(Debug)]
 struct Args {
@@ -22,11 +22,11 @@ struct CliArgs {
 
 impl From<CliArgs> for Args {
     fn from(item: CliArgs) -> Self {
-        let subcommand = match item.subcommand {
-            Some(cli_subcommand) => ArgsCommand::from(cli_subcommand),
+        let cli_subcommand = match item.subcommand {
+            Some(cli_subcommand) => cli_subcommand,
             None => ArgsCommand::choose_command(),
         };
-        Self { subcommand }
+        Self { subcommand: ArgsCommand::from(cli_subcommand) }
     }
 }
 
@@ -80,7 +80,7 @@ impl From<CliCommand> for ArgsCommand {
 }
 
 impl ArgsCommand {
-    pub fn choose_command() -> Self {
+    pub fn choose_command() -> CliCommand {
         println!();
         let variants = ArgsCommandDiscriminants::iter().collect::<Vec<_>>();
         let commands = variants
@@ -95,13 +95,11 @@ impl ArgsCommand {
             .unwrap();
         match variants[selection] {
             ArgsCommandDiscriminants::ConstructTransaction => {
-                Self::ConstructTransaction(OperationMode {
-                    mode: Mode::choose_mode(),
-                })
+                CliCommand::ConstructTransaction(Default::default())
             }
-            ArgsCommandDiscriminants::Utils => Self::Utils(Utils {
-                util: Util::choose_util(),
-            }),
+            ArgsCommandDiscriminants::Utils => {
+                CliCommand::Utils(Default::default())
+            },
         }
     }
 }

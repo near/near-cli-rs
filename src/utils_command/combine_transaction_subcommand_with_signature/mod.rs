@@ -8,7 +8,7 @@ pub struct CombineTransactionSignature {
     pub unsigned_transaction: near_primitives::transaction::Transaction,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliCombineTransactionSignature {
     #[structopt(long)]
     signature: Option<near_crypto::Signature>,
