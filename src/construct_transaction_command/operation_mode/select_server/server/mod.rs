@@ -1,7 +1,7 @@
 use dialoguer::Input;
 use structopt::StructOpt;
 
-use crate::construct_transaction_command::sender::{CliSender, SendTo, Sender};
+use crate::construct_transaction_command::sender::{CliSender, Sender};
 
 #[derive(Debug)]
 pub struct Server {
@@ -42,15 +42,18 @@ impl SendFrom {
             }
         }
     }
+    pub fn send_from() -> CliSendFrom {
+        CliSendFrom::Sender(Default::default())
+    }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliServer {
     #[structopt(subcommand)]
     pub send_from: Option<CliSendFrom>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliCustomServer {
     #[structopt(long)]
     pub url: Option<String>,
@@ -65,13 +68,13 @@ pub enum CliSendFrom {
 
 impl CliServer {
     pub fn into_server(self, url: String) -> Server {
-        let send_from: SendFrom = match self.send_from {
-            Some(cli_send_from) => SendFrom::from(cli_send_from),
+        let cli_send_from: CliSendFrom = match self.send_from {
+            Some(cli_send_from) => cli_send_from,
             None => SendFrom::send_from(),
         };
         Server {
             url: Some(url::Url::parse(&url).unwrap()),
-            send_from,
+            send_from: SendFrom::from(cli_send_from),
         }
     }
 }
@@ -91,13 +94,13 @@ impl CliCustomServer {
                 .interact_text()
                 .unwrap(),
         };
-        let send_from: SendFrom = match self.send_from {
-            Some(cli_send_from) => SendFrom::from(cli_send_from),
+        let cli_send_from: CliSendFrom = match self.send_from {
+            Some(cli_send_from) => cli_send_from,
             None => SendFrom::send_from(),
         };
         Server {
             url: Some(url),
-            send_from,
+            send_from: SendFrom::from(cli_send_from),
         }
     }
 }
@@ -110,16 +113,5 @@ impl From<CliSendFrom> for SendFrom {
                 SendFrom::Sender(sender)
             }
         }
-    }
-}
-
-impl SendFrom {
-    pub fn send_from() -> Self {
-        let sender_account_id: String = Sender::input_sender_account_id();
-        let send_to: SendTo = SendTo::send_to();
-        SendFrom::Sender(Sender {
-            sender_account_id,
-            send_to,
-        })
     }
 }

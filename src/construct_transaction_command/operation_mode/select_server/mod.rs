@@ -1,14 +1,15 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
+use dialoguer::{theme::ColorfulTheme, Select};
 use structopt::StructOpt;
-use strum::VariantNames;
+use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 use strum_macros::{Display, EnumVariantNames};
 
 use crate::consts;
 use consts::{BETANET_API_SERVER_URL, MAINNET_API_SERVER_URL, TESTNET_API_SERVER_URL};
 pub mod server;
-use server::{CliCustomServer, CliServer, SendFrom, Server};
+use server::{CliCustomServer, CliServer, Server};
 
-#[derive(Debug, Display, EnumVariantNames)]
+#[derive(Debug, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum SelectServer {
     Testnet(Server),
     Mainnet(Server),
@@ -59,40 +60,24 @@ impl SelectServer {
             }
         }
     }
-    pub fn select_server() -> Self {
+    pub fn select_server() -> CliSelectServer {
         println!();
-        let servers = SelectServer::VARIANTS;
-        let select_server = Select::with_theme(&ColorfulTheme::default())
+        let variants = SelectServerDiscriminants::iter().collect::<Vec<_>>();
+        let servers = variants
+            .iter()
+            .map(|p| p.get_message().unwrap().to_owned())
+            .collect::<Vec<_>>();
+        let selected_server = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Select NEAR protocol RPC server:")
             .items(&servers)
             .default(0)
-            .interact_on_opt(&Term::stderr())
+            .interact()
             .unwrap();
-        let send_from = SendFrom::send_from();
-        match select_server {
-            Some(0) => SelectServer::Testnet(Server {
-                url: Some(url::Url::parse(TESTNET_API_SERVER_URL).unwrap()),
-                send_from,
-            }),
-            Some(1) => SelectServer::Mainnet(Server {
-                url: Some(url::Url::parse(MAINNET_API_SERVER_URL).unwrap()),
-                send_from,
-            }),
-            Some(2) => SelectServer::Betanet(Server {
-                url: Some(url::Url::parse(BETANET_API_SERVER_URL).unwrap()),
-                send_from,
-            }),
-            Some(3) => SelectServer::Custom(Server {
-                url: {
-                    let url: url::Url = Input::new()
-                        .with_prompt("What is the RPC endpoint?")
-                        .interact_text()
-                        .unwrap();
-                    Some(url)
-                },
-                send_from,
-            }),
-            _ => unreachable!("Error"),
+        match variants[selected_server] {
+            SelectServerDiscriminants::Testnet => CliSelectServer::Testnet(Default::default()),
+            SelectServerDiscriminants::Mainnet => CliSelectServer::Mainnet(Default::default()),
+            SelectServerDiscriminants::Betanet => CliSelectServer::Betanet(Default::default()),
+            SelectServerDiscriminants::Custom => CliSelectServer::Custom(Default::default()),
         }
     }
 }

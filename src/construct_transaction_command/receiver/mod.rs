@@ -8,7 +8,7 @@ use super::transaction_actions::transfer_near_tokens_type::{
 };
 
 use super::transaction_actions::add_access_key_type::{
-    AccessKeyPermission, AddAccessKeyAction, CliAddAccessKeyAction,
+    AddAccessKeyAction, CliAddAccessKeyAction,
 };
 use super::transaction_actions::create_account_type::{
     CliCreateAccountAction, CreateAccountAction,
@@ -59,7 +59,7 @@ pub enum ActionSubcommand {
     DeleteAccessKey(DeleteAccessKeyAction),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliReceiver {
     receiver_account_id: Option<String>,
     #[structopt(subcommand)]
@@ -72,7 +72,7 @@ pub enum CliNextAction {
     Skip(CliSkipAction),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliSelectAction {
     #[structopt(subcommand)]
     transaction_subcommand: Option<CliActionSubcommand>,
@@ -112,6 +112,24 @@ impl NextAction {
                     .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
+        }
+    }
+    pub fn input_next_action() -> CliNextAction {
+        println!();
+        let variants = NextActionDiscriminants::iter().collect::<Vec<_>>();
+        let next_action = variants
+            .iter()
+            .map(|p| p.get_message().unwrap().to_owned())
+            .collect::<Vec<_>>();
+        let select_next_action = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Select an action that you want to add to the action:")
+            .items(&next_action)
+            .default(0)
+            .interact()
+            .unwrap();
+        match variants[select_next_action] {
+            NextActionDiscriminants::AddAction => CliNextAction::AddAction(Default::default()),
+            NextActionDiscriminants::Skip => CliNextAction::Skip(Default::default())
         }
     }
 }
@@ -169,7 +187,7 @@ impl ActionSubcommand {
             _ => unreachable!("Error"),
         }
     }
-    pub fn choose_action_command() -> Self {
+    pub fn choose_action_command() -> CliActionSubcommand {
         println!();
         let variants = ActionSubcommandDiscriminants::iter().collect::<Vec<_>>();
         let action_subcommands = variants
@@ -183,46 +201,13 @@ impl ActionSubcommand {
             .interact()
             .unwrap();
         match variants[select_action_subcommand] {
-            ActionSubcommandDiscriminants::TransferNEARTokens => {
-                let amount: crate::common::NearBalance = crate::common::NearBalance::input_amount();
-                let next_action: Box<NextAction> = Box::new(NextAction::input_next_action());
-                ActionSubcommand::TransferNEARTokens(TransferNEARTokensAction {
-                    amount,
-                    next_action,
-                })
-            }
-            ActionSubcommandDiscriminants::CallFunction => ActionSubcommand::CallFunction,
-            ActionSubcommandDiscriminants::StakeNEARTokens => ActionSubcommand::StakeNEARTokens,
-            ActionSubcommandDiscriminants::CreateAccount => {
-                let next_action: Box<NextAction> = Box::new(NextAction::input_next_action());
-                ActionSubcommand::CreateAccount(CreateAccountAction { next_action })
-            }
-            ActionSubcommandDiscriminants::DeleteAccount => {
-                let beneficiary_id: String = DeleteAccountAction::input_beneficiary_id();
-                let next_action: Box<NextAction> = Box::new(NextAction::input_next_action());
-                ActionSubcommand::DeleteAccount(DeleteAccountAction {
-                    beneficiary_id,
-                    next_action,
-                })
-            }
-            ActionSubcommandDiscriminants::AddAccessKey => {
-                let public_key: near_crypto::PublicKey = AddAccessKeyAction::input_public_key();
-                let nonce: near_primitives::types::Nonce = AddAccessKeyAction::input_nonce();
-                let permission: AccessKeyPermission = AccessKeyPermission::choose_permission();
-                ActionSubcommand::AddAccessKey(AddAccessKeyAction {
-                    public_key,
-                    nonce,
-                    permission,
-                })
-            }
-            ActionSubcommandDiscriminants::DeleteAccessKey => {
-                let public_key: near_crypto::PublicKey = DeleteAccessKeyAction::input_public_key();
-                let next_action: Box<NextAction> = Box::new(NextAction::input_next_action());
-                ActionSubcommand::DeleteAccessKey(DeleteAccessKeyAction {
-                    public_key,
-                    next_action,
-                })
-            }
+            ActionSubcommandDiscriminants::TransferNEARTokens => CliActionSubcommand::TransferNEARTokens(Default::default()),
+            ActionSubcommandDiscriminants::CallFunction => CliActionSubcommand::CallFunction,
+            ActionSubcommandDiscriminants::StakeNEARTokens => CliActionSubcommand::StakeNEARTokens,
+            ActionSubcommandDiscriminants::CreateAccount => CliActionSubcommand::CreateAccount(Default::default()),
+            ActionSubcommandDiscriminants::DeleteAccount => CliActionSubcommand::DeleteAccount(Default::default()),
+            ActionSubcommandDiscriminants::AddAccessKey => CliActionSubcommand::AddAccessKey(Default::default()),
+            ActionSubcommandDiscriminants::DeleteAccessKey => CliActionSubcommand::DeleteAccessKey(Default::default()),
         }
     }
 }
@@ -256,43 +241,13 @@ impl From<CliReceiver> for Receiver {
             Some(cli_receiver_account_id) => cli_receiver_account_id,
             None => Receiver::input_receiver_account_id(),
         };
-        let action: NextAction = match item.action {
-            Some(cli_next_action) => NextAction::from(cli_next_action),
+        let cli_action: CliNextAction = match item.action {
+            Some(cli_next_action) => cli_next_action,
             None => NextAction::input_next_action(),
         };
         Receiver {
             receiver_account_id,
-            action,
-        }
-    }
-}
-
-impl NextAction {
-    pub fn input_next_action() -> Self {
-        println!();
-        let variants = NextActionDiscriminants::iter().collect::<Vec<_>>();
-        let next_action = variants
-            .iter()
-            .map(|p| p.get_message().unwrap().to_owned())
-            .collect::<Vec<_>>();
-        let select_next_action = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select an action that you want to add to the action:")
-            .items(&next_action)
-            .default(0)
-            .interact()
-            .unwrap();
-        match variants[select_next_action] {
-            NextActionDiscriminants::AddAction => {
-                let transaction_subcommand: ActionSubcommand =
-                    ActionSubcommand::choose_action_command();
-                NextAction::AddAction(SelectAction {
-                    transaction_subcommand,
-                })
-            }
-            NextActionDiscriminants::Skip => {
-                let sign_option: SignTransaction = SignTransaction::choose_sign_option();
-                NextAction::Skip(SkipAction { sign_option })
-            }
+            action: NextAction::from(cli_action),
         }
     }
 }
@@ -314,12 +269,12 @@ impl From<CliNextAction> for NextAction {
 
 impl From<CliSelectAction> for SelectAction {
     fn from(item: CliSelectAction) -> Self {
-        let transaction_subcommand: ActionSubcommand = match item.transaction_subcommand {
-            Some(cli_transaction_subcommand) => ActionSubcommand::from(cli_transaction_subcommand),
+        let cli_transaction_subcommand: CliActionSubcommand = match item.transaction_subcommand {
+            Some(cli_transaction_subcommand) => cli_transaction_subcommand,
             None => ActionSubcommand::choose_action_command(),
         };
         SelectAction {
-            transaction_subcommand,
+            transaction_subcommand: ActionSubcommand::from(cli_transaction_subcommand),
         }
     }
 }
@@ -368,12 +323,20 @@ impl From<CliSkipNextAction> for NextAction {
     }
 }
 
+impl From<CliSkipNextAction> for CliNextAction {
+    fn from(item: CliSkipNextAction) -> Self {
+        match item {
+            CliSkipNextAction::Skip(cli_skip_action) => CliNextAction::Skip(cli_skip_action)
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct SkipAction {
     pub sign_option: SignTransaction,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliSkipAction {
     #[structopt(subcommand)]
     sign_option: Option<CliSignTransaction>,
@@ -398,10 +361,10 @@ impl SkipAction {
 
 impl From<CliSkipAction> for SkipAction {
     fn from(item: CliSkipAction) -> Self {
-        let sign_option: SignTransaction = match item.sign_option {
-            Some(cli_sign_transaction) => SignTransaction::from(cli_sign_transaction),
+        let cli_sign_option: CliSignTransaction = match item.sign_option {
+            Some(cli_sign_transaction) => cli_sign_transaction,
             None => SignTransaction::choose_sign_option(),
         };
-        SkipAction { sign_option }
+        SkipAction { sign_option: SignTransaction::from(cli_sign_option) }
     }
 }

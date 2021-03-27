@@ -2,7 +2,7 @@ use async_recursion::async_recursion;
 use dialoguer::Input;
 use structopt::StructOpt;
 
-use super::super::receiver::{CliSkipNextAction, NextAction};
+use super::super::receiver::{CliSkipNextAction, NextAction, CliNextAction};
 
 #[derive(Debug)]
 pub struct DeleteAccountAction {
@@ -10,7 +10,7 @@ pub struct DeleteAccountAction {
     pub next_action: Box<NextAction>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliDeleteAccountAction {
     #[structopt(long)]
     beneficiary_id: Option<String>,
@@ -24,13 +24,13 @@ impl From<CliDeleteAccountAction> for DeleteAccountAction {
             Some(cli_account_id) => cli_account_id,
             None => DeleteAccountAction::input_beneficiary_id(),
         };
-        let next_action: Box<NextAction> = match item.next_action {
-            Some(cli_skip_action) => Box::new(NextAction::from(cli_skip_action)),
-            None => Box::new(NextAction::input_next_action()),
+        let cli_skip_next_action: CliNextAction = match item.next_action {
+            Some(cli_skip_action) => CliNextAction::from(cli_skip_action),
+            None => NextAction::input_next_action(),
         };
         DeleteAccountAction {
             beneficiary_id,
-            next_action,
+            next_action: Box::new(NextAction::from(cli_skip_next_action)),
         }
     }
 }

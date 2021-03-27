@@ -3,8 +3,6 @@ use dialoguer::{theme::ColorfulTheme, Input, Select};
 use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-use super::super::receiver::NextAction;
-
 pub(crate) mod function_call_type;
 use function_call_type::{CliFunctionCallType, FunctionCallType};
 pub(crate) mod full_access_type;
@@ -17,7 +15,7 @@ pub struct AddAccessKeyAction {
     pub permission: AccessKeyPermission,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliAddAccessKeyAction {
     public_key: Option<near_crypto::PublicKey>,
     #[structopt(long)]
@@ -51,14 +49,14 @@ impl From<CliAddAccessKeyAction> for AddAccessKeyAction {
             Some(cli_nonce) => near_primitives::types::Nonce::from(cli_nonce),
             None => AddAccessKeyAction::input_nonce(),
         };
-        let permission: AccessKeyPermission = match item.permission {
-            Some(cli_permission) => AccessKeyPermission::from(cli_permission),
+        let cli_permission: CliAccessKeyPermission = match item.permission {
+            Some(cli_permission) => cli_permission,
             None => AccessKeyPermission::choose_permission(),
         };
         AddAccessKeyAction {
             public_key,
             nonce,
-            permission,
+            permission: AccessKeyPermission::from(cli_permission),
         }
     }
 }
@@ -129,7 +127,7 @@ impl From<CliAccessKeyPermission> for AccessKeyPermission {
 }
 
 impl AccessKeyPermission {
-    pub fn choose_permission() -> Self {
+    pub fn choose_permission() -> CliAccessKeyPermission {
         let variants = AccessKeyPermissionDiscriminants::iter().collect::<Vec<_>>();
         let permissions = variants
             .iter()
@@ -142,25 +140,8 @@ impl AccessKeyPermission {
             .interact()
             .unwrap();
         match variants[select_permission] {
-            AccessKeyPermissionDiscriminants::FunctionCallAction => {
-                let allowance: Option<near_primitives::types::Balance> =
-                    FunctionCallType::input_allowance();
-                let receiver_id: near_primitives::types::AccountId =
-                    FunctionCallType::input_receiver_id();
-                let method_names: Vec<String> = FunctionCallType::input_method_names();
-                let next_action: Box<NextAction> = Box::new(NextAction::input_next_action());
-                AccessKeyPermission::FunctionCallAction(FunctionCallType {
-                    allowance,
-                    receiver_id,
-                    method_names,
-                    next_action,
-                })
-            }
-            AccessKeyPermissionDiscriminants::FullAccessAction => {
-                AccessKeyPermission::FullAccessAction(FullAccessType {
-                    next_action: Box::new(NextAction::input_next_action()),
-                })
-            }
+            AccessKeyPermissionDiscriminants::FunctionCallAction => CliAccessKeyPermission::FunctionCallAction(Default::default()),
+            AccessKeyPermissionDiscriminants::FullAccessAction => CliAccessKeyPermission::FullAccessAction(Default::default())
         }
     }
 }

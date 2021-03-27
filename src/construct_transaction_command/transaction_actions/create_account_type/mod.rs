@@ -1,14 +1,14 @@
 use async_recursion::async_recursion;
 use structopt::StructOpt;
 
-use super::super::receiver::{CliSkipNextAction, NextAction};
+use super::super::receiver::{CliSkipNextAction, CliNextAction, NextAction};
 
 #[derive(Debug)]
 pub struct CreateAccountAction {
     pub next_action: Box<NextAction>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliCreateAccountAction {
     #[structopt(subcommand)]
     next_action: Option<CliSkipNextAction>,
@@ -16,11 +16,11 @@ pub struct CliCreateAccountAction {
 
 impl From<CliCreateAccountAction> for CreateAccountAction {
     fn from(item: CliCreateAccountAction) -> Self {
-        let next_action: Box<NextAction> = match item.next_action {
-            Some(cli_next_action) => Box::new(NextAction::from(cli_next_action)),
-            None => Box::new(NextAction::input_next_action()),
+        let cli_skip_next_action: CliNextAction = match item.next_action {
+            Some(cli_skip_action) => CliNextAction::from(cli_skip_action),
+            None => NextAction::input_next_action(),
         };
-        CreateAccountAction { next_action }
+        CreateAccountAction { next_action: Box::new(NextAction::from(cli_skip_next_action)) }
     }
 }
 

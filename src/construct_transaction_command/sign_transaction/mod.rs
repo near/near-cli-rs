@@ -56,7 +56,7 @@ impl SignTransaction {
             }
         }
     }
-    pub fn choose_sign_option() -> Self {
+    pub fn choose_sign_option() -> CliSignTransaction {
         println!();
         let variants = SignTransactionDiscriminants::iter().collect::<Vec<_>>();
         let sign_options = variants
@@ -71,17 +71,14 @@ impl SignTransaction {
             .unwrap();
         match variants[select_sign_options] {
             SignTransactionDiscriminants::SignPrivateKey => {
-                SignTransaction::SignPrivateKey(SignPrivateKey {
-                    signer_public_key: SignPrivateKey::signer_public_key(),
-                    signer_secret_key: SignPrivateKey::signer_secret_key(),
-                })
+                CliSignTransaction::SignPrivateKey(Default::default())
             },
             SignTransactionDiscriminants::SignKeychain => {
                 // SignTransaction::SignKeychain(SignKeychain{key_chain: SignKeychain::input_key_chain()})
                 panic!("This module is under development")
             },
             SignTransactionDiscriminants::SignManually => {
-                SignTransaction::SignManually(SignManually {})
+                CliSignTransaction::SignManually(Default::default())
             },
         }
     }

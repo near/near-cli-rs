@@ -1,7 +1,7 @@
 use dialoguer::Input;
 use structopt::StructOpt;
 
-use super::receiver::{CliReceiver, NextAction, Receiver};
+use super::receiver::{CliReceiver, Receiver};
 
 #[derive(Debug)]
 pub struct Sender {
@@ -14,7 +14,7 @@ pub enum SendTo {
     Receiver(Receiver),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliSender {
     pub sender_account_id: Option<String>,
     #[structopt(subcommand)]
@@ -54,13 +54,13 @@ impl From<CliSender> for Sender {
             Some(cli_sender_account_id) => cli_sender_account_id,
             None => Sender::input_sender_account_id(),
         };
-        let send_to: SendTo = match item.send_to {
-            Some(cli_send_to) => SendTo::from(cli_send_to),
+        let cli_send_to: CliSendTo = match item.send_to {
+            Some(cli_send_to) => cli_send_to,
             None => SendTo::send_to(),
         };
         Sender {
             sender_account_id,
-            send_to,
+            send_to: SendTo::from(cli_send_to),
         }
     }
 }
@@ -79,13 +79,8 @@ impl SendTo {
             }
         }
     }
-    pub fn send_to() -> Self {
-        let receiver_account_id: String = Receiver::input_receiver_account_id();
-        let action: NextAction = NextAction::input_next_action();
-        SendTo::Receiver(Receiver {
-            receiver_account_id,
-            action,
-        })
+    pub fn send_to() -> CliSendTo {
+        CliSendTo::Receiver(Default::default())
     }
 }
 

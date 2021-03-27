@@ -2,7 +2,7 @@ use async_recursion::async_recursion;
 use dialoguer::Input;
 use structopt::StructOpt;
 
-use super::super::receiver::{CliSkipNextAction, NextAction};
+use super::super::receiver::{CliSkipNextAction, CliNextAction, NextAction};
 
 #[derive(Debug)]
 pub struct DeleteAccessKeyAction {
@@ -10,7 +10,7 @@ pub struct DeleteAccessKeyAction {
     pub next_action: Box<NextAction>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliDeleteAccessKeyAction {
     #[structopt(long)]
     public_key: Option<near_crypto::PublicKey>,
@@ -24,13 +24,13 @@ impl From<CliDeleteAccessKeyAction> for DeleteAccessKeyAction {
             Some(cli_public_key) => cli_public_key,
             None => DeleteAccessKeyAction::input_public_key(),
         };
-        let next_action: Box<NextAction> = match item.next_action {
-            Some(cli_skip_action) => Box::new(NextAction::from(cli_skip_action)),
-            None => Box::new(NextAction::input_next_action()),
+        let cli_skip_next_action: CliNextAction = match item.next_action {
+            Some(cli_skip_action) => CliNextAction::from(cli_skip_action),
+            None => NextAction::input_next_action(),
         };
         DeleteAccessKeyAction {
             public_key,
-            next_action,
+            next_action: Box::new(NextAction::from(cli_skip_next_action)),
         }
     }
 }

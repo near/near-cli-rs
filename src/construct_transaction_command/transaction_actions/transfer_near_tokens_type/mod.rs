@@ -2,7 +2,7 @@ use async_recursion::async_recursion;
 use structopt::StructOpt;
 
 use crate::common::NearBalance;
-use super::super::receiver::{CliSkipNextAction, NextAction};
+use super::super::receiver::{CliSkipNextAction, CliNextAction, NextAction};
 
 #[derive(Debug)]
 pub struct TransferNEARTokensAction {
@@ -49,7 +49,7 @@ impl TransferNEARTokensAction {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliTransferNEARTokensAction {
     amount: Option<NearBalance>,
     #[structopt(subcommand)]
@@ -62,13 +62,13 @@ impl From<CliTransferNEARTokensAction> for TransferNEARTokensAction {
             Some(cli_amount) => cli_amount,
             None => NearBalance::input_amount(),
         };
-        let next_action: Box<NextAction> = match item.next_action {
-            Some(cli_skip_action) => Box::new(NextAction::from(cli_skip_action)),
-            None => Box::new(NextAction::input_next_action()),
+        let cli_skip_next_action: CliNextAction = match item.next_action {
+            Some(cli_skip_action) => CliNextAction::from(cli_skip_action),
+            None => NextAction::input_next_action(),
         };
         TransferNEARTokensAction {
             amount,
-            next_action,
+            next_action: Box::new(NextAction::from(cli_skip_next_action)),
         }
     }
 }

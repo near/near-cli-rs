@@ -1,15 +1,14 @@
 use async_recursion::async_recursion;
-use std::str::FromStr;
 use structopt::StructOpt;
 
-use crate::construct_transaction_command::receiver::{CliSkipNextAction, NextAction};
+use crate::construct_transaction_command::receiver::{CliSkipNextAction, CliNextAction, NextAction};
 
 #[derive(Debug)]
 pub struct FullAccessType {
     pub next_action: Box<NextAction>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliFullAccessType {
     #[structopt(subcommand)]
     next_action: Option<CliSkipNextAction>,
@@ -17,11 +16,11 @@ pub struct CliFullAccessType {
 
 impl From<CliFullAccessType> for FullAccessType {
     fn from(item: CliFullAccessType) -> Self {
-        let next_action: Box<NextAction> = match item.next_action {
-            Some(cli_skip_action) => Box::new(NextAction::from(cli_skip_action)),
-            None => Box::new(NextAction::input_next_action()),
+        let cli_skip_next_action: CliNextAction = match item.next_action {
+            Some(cli_skip_action) => CliNextAction::from(cli_skip_action),
+            None => NextAction::input_next_action(),
         };
-        FullAccessType { next_action }
+        FullAccessType { next_action: Box::new(NextAction::from(cli_skip_next_action)) }
     }
 }
 
@@ -39,7 +38,6 @@ impl FullAccessType {
             "FullAccessType process: prepopulated_unsigned_transaction:\n       {:?}",
             &prepopulated_unsigned_transaction
         );
-        // let public_key = near_crypto::PublicKey::from_str(&public_key_string).unwrap();
         let access_key: near_primitives::account::AccessKey = near_primitives::account::AccessKey {
             nonce,
             permission: near_primitives::account::AccessKeyPermission::FullAccess,

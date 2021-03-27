@@ -5,10 +5,10 @@ mod select_server;
 use select_server::server::{CliSendFrom, SendFrom};
 use select_server::{CliSelectServer, SelectServer};
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliOperationMode {
     #[structopt(subcommand)]
-    pub mode: Option<CliMode>,
+    mode: Option<CliMode>,
 }
 
 #[derive(Debug)]
@@ -36,11 +36,11 @@ impl OperationMode {
 
 impl From<CliOperationMode> for OperationMode {
     fn from(item: CliOperationMode) -> Self {
-        let mode = match item.mode {
-            Some(cli_mode) => Mode::from(cli_mode),
+        let cli_mode = match item.mode {
+            Some(cli_mode) => cli_mode,
             None => Mode::choose_mode(),
         };
-        Self { mode }
+        Self { mode: Mode::from(cli_mode) }
     }
 }
 
@@ -51,7 +51,7 @@ pub enum Mode {
 }
 
 impl Mode {
-    pub fn choose_mode() -> Self {
+    pub fn choose_mode() -> CliMode {
         let choose_mode = vec![
             "Yes, I keep it simple",
             "No, I want to work in no-network (air-gapped) environment",
@@ -68,18 +68,10 @@ impl Mode {
             .unwrap();
         match choose_mode[select_mode] {
             "Yes, I keep it simple" => {
-                let selected_server: SelectServer = SelectServer::select_server();
-                Mode::Online(OnlineArgs { selected_server })
+                CliMode::Online(Default::default())
             }
             "No, I want to work in no-network (air-gapped) environment" => {
-                let nonce: u64 = OfflineArgs::input_nonce();
-                let block_hash = OfflineArgs::input_block_hash();
-                let send_from: SendFrom = SendFrom::send_from();
-                Mode::Offline(OfflineArgs {
-                    nonce,
-                    block_hash,
-                    send_from,
-                })
+                CliMode::Offline(Default::default())
             }
             _ => unreachable!("Error"),
         }
@@ -93,7 +85,7 @@ pub struct OfflineArgs {
     send_from: SendFrom,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliOfflineArgs {
     #[structopt(long)]
     nonce: Option<u64>,
@@ -108,7 +100,7 @@ pub struct OnlineArgs {
     selected_server: SelectServer,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliOnlineArgs {
     #[structopt(subcommand)]
     selected_server: Option<CliSelectServer>,
@@ -116,11 +108,11 @@ pub struct CliOnlineArgs {
 
 impl From<CliOnlineArgs> for OnlineArgs {
     fn from(item: CliOnlineArgs) -> Self {
-        let selected_server = match item.selected_server {
-            Some(cli_selected_server) => SelectServer::from(cli_selected_server),
+        let cli_selected_server = match item.selected_server {
+            Some(cli_selected_server) => cli_selected_server,
             None => SelectServer::select_server(),
         };
-        OnlineArgs { selected_server }
+        OnlineArgs { selected_server: SelectServer::from(cli_selected_server) }
     }
 }
 
@@ -134,14 +126,14 @@ impl From<CliOfflineArgs> for OfflineArgs {
             Some(cli_block_hash) => cli_block_hash.inner,
             None => OfflineArgs::input_block_hash(),
         };
-        let send_from: SendFrom = match item.send_from {
-            Some(cli_send_from) => SendFrom::from(cli_send_from),
+        let cli_send_from: CliSendFrom = match item.send_from {
+            Some(cli_send_from) => cli_send_from,
             None => SendFrom::send_from(),
         };
         OfflineArgs {
             nonce,
             block_hash,
-            send_from,
+            send_from: SendFrom::from(cli_send_from),
         }
     }
 }

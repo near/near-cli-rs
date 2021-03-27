@@ -4,7 +4,7 @@ use structopt::StructOpt;
 #[derive(Debug)]
 pub struct SignManually {}
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Default, StructOpt)]
 pub struct CliSignManually {}
 
 impl From<CliSignManually> for SignManually {
