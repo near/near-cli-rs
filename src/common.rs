@@ -1,6 +1,5 @@
 use near_primitives::borsh::BorshDeserialize;
 use std::convert::TryInto;
-use dialoguer::Input;
 
 
 #[derive(
