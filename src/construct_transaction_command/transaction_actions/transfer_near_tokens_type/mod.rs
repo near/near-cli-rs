@@ -1,5 +1,6 @@
 use async_recursion::async_recursion;
 use structopt::StructOpt;
+use dialoguer::Input;
 
 use crate::common::NearBalance;
 use super::super::receiver::{CliSkipNextAction, CliNextAction, NextAction};
@@ -47,6 +48,12 @@ impl TransferNEARTokensAction {
             }
         }
     }
+    fn input_amount() -> NearBalance {
+        Input::new()
+            .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
+            .interact_text()
+            .unwrap()
+    }
 }
 
 #[derive(Debug, Default, StructOpt)]
@@ -60,7 +67,7 @@ impl From<CliTransferNEARTokensAction> for TransferNEARTokensAction {
     fn from(item: CliTransferNEARTokensAction) -> Self {
         let amount: NearBalance = match item.amount {
             Some(cli_amount) => cli_amount,
-            None => NearBalance::input_amount(),
+            None => TransferNEARTokensAction::input_amount(),
         };
         let cli_skip_next_action: CliNextAction = match item.next_action {
             Some(cli_skip_action) => CliNextAction::from(cli_skip_action),

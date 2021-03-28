@@ -74,15 +74,6 @@ impl std::fmt::Display for NearBalance {
     }
 }
 
-impl NearBalance {
-    pub fn input_amount() -> Self {
-        Input::new()
-            .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
-            .interact_text()
-            .unwrap()
-    }
-}
-
 impl std::str::FromStr for NearBalance {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
