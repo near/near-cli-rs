@@ -19,6 +19,9 @@ use super::transaction_actions::delete_access_key_type::{
 use super::transaction_actions::delete_account_type::{
     CliDeleteAccountAction, DeleteAccountAction,
 };
+use super::transaction_actions::stake_near_tokens_type::{
+    StakeNEARTokensAction, CliStakeNEARTokensAction,
+};
 
 #[derive(Debug)]
 pub struct Receiver {
@@ -48,7 +51,7 @@ pub enum ActionSubcommand {
     #[strum_discriminants(strum(message = "Call a Function"))]
     CallFunction,
     #[strum_discriminants(strum(message = "Stake NEAR Tokens"))]
-    StakeNEARTokens,
+    StakeNEARTokens(StakeNEARTokensAction),
     #[strum_discriminants(strum(message = "Create an Account"))]
     CreateAccount(CreateAccountAction),
     #[strum_discriminants(strum(message = "Delete an Account"))]
@@ -82,7 +85,7 @@ pub struct CliSelectAction {
 pub enum CliActionSubcommand {
     TransferNEARTokens(CliTransferNEARTokensAction),
     CallFunction,
-    StakeNEARTokens,
+    StakeNEARTokens(CliStakeNEARTokensAction),
     CreateAccount(CliCreateAccountAction),
     DeleteAccount(CliDeleteAccountAction),
     AddAccessKey(CliAddAccessKeyAction),
@@ -160,7 +163,11 @@ impl ActionSubcommand {
                     .await
             }
             // ActionSubcommand::CallFunction(args_function) => {},
-            // ActionSubcommand::StakeNEARTokens(args_stake) => {},
+            ActionSubcommand::StakeNEARTokens(args_stake) => {
+                args_stake
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .await
+            },
             ActionSubcommand::CreateAccount(args_create_account) => {
                 args_create_account
                     .process(prepopulated_unsigned_transaction, selected_server_url)
@@ -203,7 +210,7 @@ impl ActionSubcommand {
         match variants[select_action_subcommand] {
             ActionSubcommandDiscriminants::TransferNEARTokens => CliActionSubcommand::TransferNEARTokens(Default::default()),
             ActionSubcommandDiscriminants::CallFunction => CliActionSubcommand::CallFunction,
-            ActionSubcommandDiscriminants::StakeNEARTokens => CliActionSubcommand::StakeNEARTokens,
+            ActionSubcommandDiscriminants::StakeNEARTokens => CliActionSubcommand::StakeNEARTokens(Default::default()),
             ActionSubcommandDiscriminants::CreateAccount => CliActionSubcommand::CreateAccount(Default::default()),
             ActionSubcommandDiscriminants::DeleteAccount => CliActionSubcommand::DeleteAccount(Default::default()),
             ActionSubcommandDiscriminants::AddAccessKey => CliActionSubcommand::AddAccessKey(Default::default()),
@@ -306,6 +313,11 @@ impl From<CliActionSubcommand> for ActionSubcommand {
                 let delete_access_key: DeleteAccessKeyAction =
                     DeleteAccessKeyAction::from(cli_delete_access_key);
                 ActionSubcommand::DeleteAccessKey(delete_access_key)
+            }
+            CliActionSubcommand::StakeNEARTokens(cli_stake_near_token) => {
+                let stake_near_token: StakeNEARTokensAction =
+                    StakeNEARTokensAction::from(cli_stake_near_token);
+                ActionSubcommand::StakeNEARTokens(stake_near_token)
             }
             _ => unreachable!("Error"),
         }
