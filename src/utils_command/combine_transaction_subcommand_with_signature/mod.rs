@@ -42,7 +42,7 @@ impl From<CliCombineTransactionSignature> for CombineTransactionSignature {
 }
 
 impl CombineTransactionSignature {
-    pub fn process(self) {
+    pub fn process(self) -> crate::CliResult {
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             self.signature,
             self.unsigned_transaction,
@@ -57,6 +57,7 @@ impl CombineTransactionSignature {
             signed_transaction
         );
         println!("Base64-encoded signed transaction: {}", serialize_to_base64);
+        Ok(())
     }
     pub fn input_signature() -> near_crypto::Signature {
         Input::new()

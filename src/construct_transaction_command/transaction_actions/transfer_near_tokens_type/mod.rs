@@ -17,7 +17,7 @@ impl TransferNEARTokensAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!("TransferNEARTokens process: self:\n       {:?}", &self);
         println!(
             "TransferNEARTokens process: prepopulated_unsigned_transaction:\n       {:?}",

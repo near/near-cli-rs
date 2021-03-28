@@ -75,7 +75,7 @@ impl FunctionCallType {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
         public_key: near_crypto::PublicKey,
-    ) {
+    ) -> crate::CliResult {
         println!("FunctionCallType process: self:\n       {:?}", &self);
         println!(
             "FunctionCallType process: prepopulated_unsigned_transaction:\n       {:?}",

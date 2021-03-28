@@ -46,7 +46,7 @@ impl From<CliUtils> for Utils {
 }
 
 impl Util {
-    pub fn process(self) {
+    pub fn process(self) -> crate::CliResult {
         match self {
             Util::GenerateKeypair(generate_keypair) => generate_keypair.process(),
             Util::SignTransactionSecretKey(sign_transaction) => sign_transaction.process(),
@@ -99,7 +99,7 @@ impl From<CliUtil> for Util {
 }
 
 impl Utils {
-    pub fn process(self) {
+    pub fn process(self) -> crate::CliResult {
         self.util.process()
     }
 }

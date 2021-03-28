@@ -43,7 +43,7 @@ impl Default for GenerateKeypair {
 }
 
 impl GenerateKeypair {
-    pub fn process(self) {
+    pub fn process(self) -> crate::CliResult {
         let (master_seed_phrase, master_seed) =
             if let Some(ref master_seed_phrase) = self.master_seed_phrase {
                 (
@@ -106,5 +106,6 @@ impl GenerateKeypair {
                 );
             }
         };
+        Ok(())
     }
 }

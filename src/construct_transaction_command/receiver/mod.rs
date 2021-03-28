@@ -102,7 +102,7 @@ impl NextAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!("Receiver process: self:\n       {:?}", &self);
         match self {
             NextAction::AddAction(select_action) => {
@@ -142,11 +142,11 @@ impl SelectAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!("Receiver process: self:\n       {:?}", &self);
         self.transaction_subcommand
             .process(prepopulated_unsigned_transaction, selected_server_url)
-            .await;
+            .await
     }
 }
 
@@ -155,7 +155,7 @@ impl ActionSubcommand {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         match self {
             ActionSubcommand::TransferNEARTokens(args_transfer) => {
                 args_transfer
@@ -224,7 +224,7 @@ impl Receiver {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!("Receiver process: self:\n       {:?}", &self);
         let unsigned_transaction = near_primitives::transaction::Transaction {
             receiver_id: self.receiver_account_id.clone(),
@@ -232,7 +232,7 @@ impl Receiver {
         };
         self.action
             .process(unsigned_transaction, selected_server_url)
-            .await;
+            .await
     }
     pub fn input_receiver_account_id() -> String {
         Input::new()
@@ -359,7 +359,7 @@ impl SkipAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!("Skip process:\n       {:?}", &self);
         println!(
             "Skip process: prepopulated_unsigned_transaction:\n       {:?}",
@@ -367,7 +367,7 @@ impl SkipAction {
         );
         self.sign_option
             .process(prepopulated_unsigned_transaction, selected_server_url)
-            .await;
+            .await
     }
 }
 

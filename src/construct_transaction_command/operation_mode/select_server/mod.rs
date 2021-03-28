@@ -52,22 +52,22 @@ impl SelectServer {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) {
+    ) -> crate::CliResult {
         match self {
             SelectServer::Testnet(server) => {
-                server.process(prepopulated_unsigned_transaction).await;
+                server.process(prepopulated_unsigned_transaction).await?;
             }
             SelectServer::Mainnet(_server) => {}
             SelectServer::Betanet(_server) => {}
             SelectServer::Custom(server) => {
-                server.process(prepopulated_unsigned_transaction).await;
+                server.process(prepopulated_unsigned_transaction).await?;
             }
         }
+        Ok(())
     }
     pub fn select_server() -> CliSelectServer {
         println!();
         let variants = SelectServerDiscriminants::iter().collect::<Vec<_>>();
-        println!("++++++++++++++++++  variants {:?}", &variants);
         let servers = variants
             .iter()
             .map(|p| p.get_message().unwrap().to_owned())

@@ -20,7 +20,7 @@ impl OperationMode {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) {
+    ) -> crate::CliResult {
         match self.mode {
             Mode::Online(online_args) => {
                 online_args.process(prepopulated_unsigned_transaction).await
@@ -142,7 +142,7 @@ impl OfflineArgs {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) {
+    ) -> crate::CliResult {
         println!("OfflineArgs process self:\n        {:?}", &self);
         println!(
             "OfflineArgs process prepopulated_unsigned_transaction:\n        {:?}",
@@ -158,7 +158,7 @@ impl OfflineArgs {
         };
         self.send_from
             .process(unsigned_transaction, selected_server_url)
-            .await;
+            .await
     }
     fn input_nonce() -> u64 {
         Input::new()
@@ -182,14 +182,14 @@ impl OnlineArgs {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) {
+    ) -> crate::CliResult {
         println!(
             "OnlineArgs process:\n        {:?}",
             prepopulated_unsigned_transaction
         );
         self.selected_server
             .process(prepopulated_unsigned_transaction)
-            .await;
+            .await
     }
 }
 

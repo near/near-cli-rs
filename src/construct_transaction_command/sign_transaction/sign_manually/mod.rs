@@ -18,7 +18,7 @@ impl SignManually {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         _selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!();
         println!(
             "SignManually process: prepopulated_unsigned_transaction:\n {:#?}",
@@ -33,6 +33,7 @@ impl SignManually {
         println!(
             "---  serialize_to_base64:   --- \n   {:#?}",
             &serialize_to_base64
-        )
+        );
+        Ok(())
     }
 }

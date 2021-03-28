@@ -41,7 +41,7 @@ impl DeleteAccountAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!("DeleteAccountAction process: self:\n       {:?}", &self);
         println!(
             "DeleteAccountAction process: prepopulated_unsigned_transaction:\n       {:?}",

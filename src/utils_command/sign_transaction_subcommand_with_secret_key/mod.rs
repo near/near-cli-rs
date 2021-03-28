@@ -35,7 +35,7 @@ impl From<CliSignTransactionSecretKey> for SignTransactionSecretKey {
 }
 
 impl SignTransactionSecretKey {
-    pub fn process(self) {
+    pub fn process(self) -> crate::CliResult {
         let signature = self
             .signer_secret_key
             .sign(&self.unsigned_transaction.get_hash().as_ref());
@@ -54,6 +54,7 @@ impl SignTransactionSecretKey {
             signed_transaction
         );
         println!("Base64-encoded signed transaction: {}", serialize_to_base64);
+        Ok(())
     }
     pub fn input_signer_secret_key() -> near_crypto::SecretKey {
         Input::new()

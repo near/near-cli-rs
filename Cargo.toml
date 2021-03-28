@@ -31,6 +31,8 @@ serde_json = "1.0.57"
 slip10 = { git = "https://github.com/frol/slip10", rev = "a3235dd0acf3a485f547cf23e2dd56838adb45f8" }
 url = { version = "2", features = ["serde"] }
 
+color-eyre = "0.5"
+
 near-crypto = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }
 near-primitives = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }
 near-jsonrpc-client = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }

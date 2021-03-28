@@ -2,6 +2,8 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
+type CliResult = color_eyre::eyre::Result<()>;
+
 mod common;
 mod utils_command;
 use utils_command::{CliUtils, Utils};
@@ -31,7 +33,7 @@ impl From<CliArgs> for Args {
 }
 
 impl Args {
-    async fn process(self) {
+    async fn process(self) -> CliResult {
         match self.subcommand {
             ArgsCommand::ConstructTransaction(mode) => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
@@ -42,7 +44,7 @@ impl Args {
                     block_hash: Default::default(),
                     actions: vec![],
                 };
-                mode.process(unsigned_transaction).await;
+                mode.process(unsigned_transaction).await
             }
             ArgsCommand::Utils(util_type) => util_type.process(),
         }
@@ -104,9 +106,11 @@ impl ArgsCommand {
     }
 }
 
-fn main() {
+fn main() -> CliResult {
     let cli = CliArgs::from_args();
     let args = Args::from(cli);
 
-    actix::System::new().block_on(args.process());
+    color_eyre::install()?;
+
+    actix::System::new().block_on(args.process())
 }

@@ -41,7 +41,7 @@ impl DeleteAccessKeyAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!("DeleteAccessKeyAction process: self:\n       {:?}", &self);
         println!(
             "DeleteAccessKeyAction process: prepopulated_unsigned_transaction:\n       {:?}",

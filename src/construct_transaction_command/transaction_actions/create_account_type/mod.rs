@@ -30,7 +30,7 @@ impl CreateAccountAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!("CreateAccountAction process: self:\n       {:?}", &self);
         println!(
             "CreateAccountAction process: prepopulated_unsigned_transaction:\n       {:?}",

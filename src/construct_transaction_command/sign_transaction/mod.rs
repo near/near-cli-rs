@@ -36,7 +36,7 @@ impl SignTransaction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!("SignTransaction process: self:       {:?}", &self);
         println!(
             "SignTransaction process: prepopulated_unsigned_transaction:       {:?}",
@@ -45,16 +45,17 @@ impl SignTransaction {
         match self {
             SignTransaction::SignPrivateKey(keys) => {
                 keys.process(prepopulated_unsigned_transaction, selected_server_url)
-                    .await
+                    .await?
             }
             SignTransaction::SignKeychain(_chain) => {
                 println!("Сейчас ведется доработка данного модуля")
                 // chain.process(prepopulated_unsigned_transaction, selected_server_url)
             }
             SignTransaction::SignManually(args_manually) => {
-                args_manually.process(prepopulated_unsigned_transaction, selected_server_url)
+                args_manually.process(prepopulated_unsigned_transaction, selected_server_url)?
             }
         }
+        Ok(())
     }
     pub fn choose_sign_option() -> CliSignTransaction {
         println!();

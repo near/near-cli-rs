@@ -3,8 +3,6 @@ use near_primitives::borsh::BorshSerialize;
 use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 use dialoguer::{theme::ColorfulTheme, Select};
-use async_recursion::async_recursion;
-
 
 
 #[derive(Debug)]
@@ -34,12 +32,11 @@ impl SignPrivateKey {
     fn rpc_client(self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
         near_jsonrpc_client::new_client(&selected_server_url)
     }
-    #[async_recursion(?Send)]
-    pub async fn process(
+    pub async fn process (
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
-    ) {
+    ) -> crate::CliResult {
         println!("SignPrivateKey process: self:\n       {:?}", &self);
         let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
         let signer_secret_key: near_crypto::SecretKey = self.signer_secret_key.clone();
@@ -64,7 +61,7 @@ impl SignPrivateKey {
                     &signed_transaction
                 );
                 let submit = Submit::choose_submit();
-                submit.process_offline(signed_transaction, serialize_to_base64);
+                submit.process_offline(signed_transaction, serialize_to_base64)
             }
             Some(selected_server_url) => {
                 let online_signer_access_key_response = self
@@ -78,16 +75,20 @@ impl SignPrivateKey {
                     })
                     .await
                     .map_err(|err| {
-                        println!("Error online_signer_access_key_response:   {:?}", &err)
-                    })
-                    .unwrap();
+                        color_eyre::Report::msg(format!(
+                            "Failed to fetch public key information for nonce: {:?}",
+                            err
+                        ))
+                    })?;
                 let current_nonce = if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
                     online_signer_access_key,
                 ) = online_signer_access_key_response.kind
                 {
                     online_signer_access_key.nonce
                 } else {
-                    return println!("Error current_nonce");
+                    return Err(color_eyre::Report::msg(format!(
+                        "Error current_nonce"
+                    )));
                 };
                 let unsigned_transaction = near_primitives::transaction::Transaction {
                     public_key,
@@ -110,7 +111,7 @@ impl SignPrivateKey {
                     &signed_transaction
                 );
                 let submit = Submit::choose_submit();
-                submit.process_online(selected_server_url, signed_transaction, serialize_to_base64).await; 
+                submit.process_online(selected_server_url, signed_transaction, serialize_to_base64).await
             }
         }
     }
@@ -165,7 +166,7 @@ impl Submit {
         self,
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String
-    ) {
+    ) -> crate::CliResult {
         println!("\n\n\n===========  DISPLAY  ==========");
         println!(
             "\n\n---  Signed transaction:   ---\n    {:#?}",
@@ -175,13 +176,14 @@ impl Submit {
             "\n\n---  serialize_to_base64:   --- \n   {:#?}",
             &serialize_to_base64
         );
+        Ok(())
     }
     pub async fn process_online(
         self,
         selected_server_url: url::Url, 
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String
-    ) {
+    ) -> crate::CliResult {
         match self {
             Submit::Send => {
                 println!("\n\n\n========= SENT =========");
@@ -216,7 +218,8 @@ impl Submit {
                     &serialize_to_base64
                 );
             }
-        } 
+        }
+        Ok(())
     }
     pub fn choose_submit() -> Self {
         println!();
