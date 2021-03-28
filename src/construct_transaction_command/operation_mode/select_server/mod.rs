@@ -11,9 +11,13 @@ use server::{CliCustomServer, CliServer, Server};
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum SelectServer {
+    #[strum_discriminants(strum(message = "Testnet"))]
     Testnet(Server),
+    #[strum_discriminants(strum(message = "Mainnet"))]
     Mainnet(Server),
+    #[strum_discriminants(strum(message = "Betanet"))]
     Betanet(Server),
+    #[strum_discriminants(strum(message = "Custom"))]
     Custom(Server),
 }
 
@@ -63,6 +67,7 @@ impl SelectServer {
     pub fn select_server() -> CliSelectServer {
         println!();
         let variants = SelectServerDiscriminants::iter().collect::<Vec<_>>();
+        println!("++++++++++++++++++  variants {:?}", &variants);
         let servers = variants
             .iter()
             .map(|p| p.get_message().unwrap().to_owned())
