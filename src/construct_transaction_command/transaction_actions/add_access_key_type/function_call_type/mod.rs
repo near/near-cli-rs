@@ -1,4 +1,4 @@
-use std::{str::FromStr, vec};
+use std::vec;
 use structopt::StructOpt;
 
 use async_recursion::async_recursion;
@@ -164,11 +164,10 @@ impl FunctionCallType {
             .unwrap();
         match select_choose_input {
             Some(0) => {
-                let input: String = Input::new()
+                let allowance_near_balance: crate::common::NearBalance = Input::new()
                     .with_prompt("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees.")
                     .interact_text()
                     .unwrap();
-                let allowance_near_balance: crate::common::NearBalance = crate::common::NearBalance::from_str(&input).unwrap();
                 let allowance = match allowance_near_balance {
                     crate::common::NearBalance(num) => num,
                 };
