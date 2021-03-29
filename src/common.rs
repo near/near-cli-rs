@@ -198,4 +198,9 @@ mod tests {
         let near_balance = NearBalance::from_str("100. n");
         assert_eq!(near_balance, Err("Near Balance: cannot parse integer from empty string".to_string()));
     }
+    #[test]
+    fn near_balance_from_str_negative_value() {
+        let near_balance = NearBalance::from_str("-100 n");
+        assert_eq!(near_balance, Err("Near Balance: invalid digit found in string".to_string()));
+    }
 }
