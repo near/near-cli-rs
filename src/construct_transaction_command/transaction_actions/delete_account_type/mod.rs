@@ -6,21 +6,21 @@ use super::super::receiver::{CliSkipNextAction, NextAction, CliNextAction};
 
 #[derive(Debug)]
 pub struct DeleteAccountAction {
-    pub beneficiary_id: String,
+    pub beneficiary_id: near_primitives::types::AccountId,
     pub next_action: Box<NextAction>,
 }
 
 #[derive(Debug, Default, StructOpt)]
 pub struct CliDeleteAccountAction {
     #[structopt(long)]
-    beneficiary_id: Option<String>,
+    beneficiary_id: Option<near_primitives::types::AccountId>,
     #[structopt(subcommand)]
     next_action: Option<CliSkipNextAction>,
 }
 
 impl From<CliDeleteAccountAction> for DeleteAccountAction {
     fn from(item: CliDeleteAccountAction) -> Self {
-        let beneficiary_id: String = match item.beneficiary_id {
+        let beneficiary_id: near_primitives::types::AccountId = match item.beneficiary_id {
             Some(cli_account_id) => cli_account_id,
             None => DeleteAccountAction::input_beneficiary_id(),
         };
@@ -47,7 +47,7 @@ impl DeleteAccountAction {
             "DeleteAccountAction process: prepopulated_unsigned_transaction:\n       {:?}",
             &prepopulated_unsigned_transaction
         );
-        let beneficiary_id: String = self.beneficiary_id.clone();
+        let beneficiary_id: near_primitives::types::AccountId = self.beneficiary_id.clone();
         let action = near_primitives::transaction::Action::DeleteAccount(
             near_primitives::transaction::DeleteAccountAction { beneficiary_id },
         );
@@ -70,7 +70,7 @@ impl DeleteAccountAction {
             }
         }
     }
-    pub fn input_beneficiary_id() -> String {
+    pub fn input_beneficiary_id() -> near_primitives::types::AccountId {
         println!();
         Input::new()
             .with_prompt("Enter the beneficiary ID to delete this account ID")
