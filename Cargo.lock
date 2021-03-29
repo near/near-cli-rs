@@ -1626,35 +1626,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "my-near-cli-dialoguer-strum-3"
-version = "0.1.0"
-dependencies = [
- "actix",
- "actix-web",
- "async-recursion",
- "base64 0.12.3",
- "bip39",
- "bs58 0.3.1",
- "color-eyre",
- "derive_more",
- "dialoguer",
- "ed25519-dalek",
- "hex",
- "near-crypto",
- "near-jsonrpc-client",
- "near-jsonrpc-primitives",
- "near-primitives",
- "openssl-probe",
- "serde_json",
- "slip10",
- "smart-default",
- "structopt",
- "strum 0.20.1",
- "strum_macros 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "url",
-]
-
-[[package]]
 name = "near-chain"
 version = "0.1.0"
 source = "git+https://github.com/near/nearcore?rev=1e7e99fd8b24a2b417e4cff37ad93a2d7564eb31#1e7e99fd8b24a2b417e4cff37ad93a2d7564eb31"
@@ -1730,6 +1701,35 @@ dependencies = [
  "rand 0.7.3",
  "reed-solomon-erasure",
  "serde",
+]
+
+[[package]]
+name = "near-cli"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-web",
+ "async-recursion",
+ "base64 0.12.3",
+ "bip39",
+ "bs58 0.3.1",
+ "color-eyre",
+ "derive_more",
+ "dialoguer",
+ "ed25519-dalek",
+ "hex",
+ "near-crypto",
+ "near-jsonrpc-client",
+ "near-jsonrpc-primitives",
+ "near-primitives",
+ "openssl-probe",
+ "serde_json",
+ "slip10",
+ "smart-default",
+ "structopt",
+ "strum 0.20.1",
+ "strum_macros 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url",
 ]
 
 [[package]]
