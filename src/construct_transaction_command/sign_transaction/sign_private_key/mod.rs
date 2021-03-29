@@ -203,8 +203,12 @@ impl Submit {
                                 .expect("Transaction is not expected to fail on serialization"),
                         ))
                         .await
-                        .map_err(|err| println!("Error transaction:  {:?}", &err))
-                        .unwrap();
+                        .map_err(|err| {
+                            color_eyre::Report::msg(format!(
+                                "Error transaction: {:?}",
+                                err
+                            ))
+                        })?;
                 println!("\n\n---  Success:  ---\n {:#?}", &transaction_info);
             },
             Submit::Display => {
