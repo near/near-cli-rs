@@ -46,7 +46,7 @@ impl SignPrivateKey {
                     public_key,
                     ..prepopulated_unsigned_transaction
                 };
-                let signature = signer_secret_key.sign(unsigned_transaction.get_hash().as_ref());
+                let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
                 let signed_transaction = near_primitives::transaction::SignedTransaction::new(
                     signature,
                     unsigned_transaction,
@@ -96,7 +96,7 @@ impl SignPrivateKey {
                     nonce: current_nonce + 1,
                     ..prepopulated_unsigned_transaction
                 };
-                let signature = signer_secret_key.sign(unsigned_transaction.get_hash().as_ref());
+                let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
                 let signed_transaction = near_primitives::transaction::SignedTransaction::new(
                     signature,
                     unsigned_transaction,

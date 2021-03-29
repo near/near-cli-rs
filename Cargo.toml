@@ -22,7 +22,7 @@ actix-web = { version = "4.0.0-beta.3", features = [ "openssl" ] }
 openssl-probe = { version = "0.1.2" }
 
 base64 = "0.12.3"
-bip39 = { version = "1.0.0-rc.1", features = [ "rand" ] }
+bip39 = { version = "1.0.0", features = [ "rand" ] }
 bs58 = "0.3"
 ed25519-dalek = { version = "1" }
 hex = "0.4.2"
@@ -33,7 +33,7 @@ url = { version = "2", features = ["serde"] }
 
 color-eyre = "0.5"
 
-near-crypto = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }
-near-primitives = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }
-near-jsonrpc-client = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }
-near-jsonrpc-primitives = { git = "https://github.com/nearprotocol/nearcore", rev="3d7f7295f9456390f5ec352388803f5a3257bb8b" }
+near-crypto = { git = "https://github.com/near/nearcore", rev="1e7e99fd8b24a2b417e4cff37ad93a2d7564eb31" }
+near-primitives = { git = "https://github.com/near/nearcore", rev="1e7e99fd8b24a2b417e4cff37ad93a2d7564eb31" }
+near-jsonrpc-client = { git = "https://github.com/near/nearcore", rev="1e7e99fd8b24a2b417e4cff37ad93a2d7564eb31" }
+near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="1e7e99fd8b24a2b417e4cff37ad93a2d7564eb31" }

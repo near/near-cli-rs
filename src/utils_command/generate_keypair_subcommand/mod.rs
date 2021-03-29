@@ -52,7 +52,14 @@ impl GenerateKeypair {
                 )
             } else {
                 let mnemonic = bip39::Mnemonic::generate(self.new_master_seed_phrase_words_count).unwrap();
-                (mnemonic.as_str().to_owned(), mnemonic.to_seed(""))
+                let mut master_seed_phrase = String::new();
+                for (index, word) in mnemonic.word_iter().enumerate() {
+                    if index != 0 {
+                        master_seed_phrase.push(' ');
+                    }
+                    master_seed_phrase.push_str(word);
+                }
+                (master_seed_phrase, mnemonic.to_seed(""))
             };
 
         let derived_private_key = slip10::derive_key_from_path(
