@@ -1,5 +1,5 @@
 [package]
-name = "my-near-cli-dialoguer-strum-3"
+name = "near-cli"
 version = "0.1.0"
 authors = ["FroVolod <frol_off@meta.ua>"]
 edition = "2018"
