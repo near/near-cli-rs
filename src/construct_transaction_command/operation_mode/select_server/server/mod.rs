@@ -56,7 +56,7 @@ pub struct CliServer {
 #[derive(Debug, Default, StructOpt)]
 pub struct CliCustomServer {
     #[structopt(long)]
-    pub url: Option<String>,
+    pub url: Option<crate::common::AvailableRpcServerUrl>,
     #[structopt(subcommand)]
     send_from: Option<CliSendFrom>,
 }
@@ -81,14 +81,8 @@ impl CliServer {
 
 impl CliCustomServer {
     pub fn into_server(self) -> Server {
-        let url: url::Url = match self.url {
-            Some(url) => match url::Url::parse(&url) {
-                Ok(url) => url,
-                Err(_) => Input::new()
-                    .with_prompt("What is the RPC endpoi?")
-                    .interact_text()
-                    .unwrap(),
-            },
+        let url: crate::common::AvailableRpcServerUrl = match self.url {
+            Some(url) => url,
             None => Input::new()
                 .with_prompt("What is the RPC endpoi?")
                 .interact_text()
@@ -99,7 +93,7 @@ impl CliCustomServer {
             None => SendFrom::send_from(),
         };
         Server {
-            url: Some(url),
+            url: Some(url.inner),
             send_from: SendFrom::from(cli_send_from),
         }
     }

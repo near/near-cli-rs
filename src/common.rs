@@ -64,6 +64,32 @@ impl std::fmt::Display for BlockHashAsBase58 {
     }
 }
 
+#[derive(Debug,  Clone, PartialEq)]
+pub struct AvailableRpcServerUrl {
+    pub inner: url::Url,
+}
+
+impl std::str::FromStr for AvailableRpcServerUrl {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let url: url::Url = url::Url::parse(s)
+            .map_err(|err| format!("URL is not parsed: {}", err))?;
+        actix::System::new()
+            .block_on(async {
+                near_jsonrpc_client::new_client(&url.as_str())
+                .status().await}
+            )    
+            .map_err(|err| format!("AvailableRpcServerUrl: {:?}", err))?;
+        Ok(Self { inner: url })
+    }
+}
+
+impl std::fmt::Display for AvailableRpcServerUrl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Url {}", self.inner)
+    }
+}
+
 #[derive(Debug,  Clone, Default, PartialEq)]
 pub struct NearBalance(pub u128);
 
