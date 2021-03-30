@@ -21,7 +21,7 @@ impl SignManually {
     ) -> crate::CliResult {
         println!();
         println!(
-            "SignManually process: prepopulated_unsigned_transaction:\n {:#?}",
+            "Unsigned transaction:\n\n {:#?}",
             &prepopulated_unsigned_transaction
         );
         println!();

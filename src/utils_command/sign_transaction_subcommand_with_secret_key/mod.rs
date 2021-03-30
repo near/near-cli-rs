@@ -49,7 +49,7 @@ impl SignTransactionSecretKey {
                 .expect("Transaction is not expected to fail on serialization"),
         );
         println!(
-            "The transaction has been successfully signed:\n{:#?}",
+            "\n\nThe transaction has been successfully signed:\n{:#?}",
             signed_transaction
         );
         println!("Base64-encoded signed transaction: {}", serialize_to_base64);
