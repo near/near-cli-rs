@@ -31,11 +31,6 @@ impl CreateAccountAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("CreateAccountAction process: self:\n       {:?}", &self);
-        println!(
-            "CreateAccountAction process: prepopulated_unsigned_transaction:\n       {:?}",
-            &prepopulated_unsigned_transaction
-        );
         let action = near_primitives::transaction::Action::CreateAccount(
             near_primitives::transaction::CreateAccountAction {},
         );

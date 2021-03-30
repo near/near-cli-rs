@@ -37,11 +37,6 @@ impl SignTransaction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("SignTransaction process: self:       {:?}", &self);
-        println!(
-            "SignTransaction process: prepopulated_unsigned_transaction:       {:?}",
-            &prepopulated_unsigned_transaction
-        );
         match self {
             SignTransaction::SignPrivateKey(keys) => {
                 keys.process(prepopulated_unsigned_transaction, selected_server_url)

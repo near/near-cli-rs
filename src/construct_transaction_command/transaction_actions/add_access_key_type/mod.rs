@@ -68,11 +68,6 @@ impl AddAccessKeyAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("AddAccessKeyAction process: self:\n       {:?}", &self);
-        println!(
-            "AddAccessKeyAction process: prepopulated_unsigned_transaction:\n       {:?}",
-            &prepopulated_unsigned_transaction
-        );
         match self.permission {
             AccessKeyPermission::FullAccessAction(full_access_type) => {
                 full_access_type

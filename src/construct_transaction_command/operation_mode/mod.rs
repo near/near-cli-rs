@@ -143,11 +143,6 @@ impl OfflineArgs {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        println!("OfflineArgs process self:\n        {:?}", &self);
-        println!(
-            "OfflineArgs process prepopulated_unsigned_transaction:\n        {:?}",
-            prepopulated_unsigned_transaction
-        );
         let selected_server_url = None;
         let nonce = self.nonce.clone();
         let block_hash = self.block_hash.clone();
@@ -183,10 +178,6 @@ impl OnlineArgs {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        println!(
-            "OnlineArgs process:\n        {:?}",
-            prepopulated_unsigned_transaction
-        );
         self.selected_server
             .process(prepopulated_unsigned_transaction)
             .await

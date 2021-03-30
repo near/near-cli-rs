@@ -103,7 +103,6 @@ impl NextAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("Receiver process: self:\n       {:?}", &self);
         match self {
             NextAction::AddAction(select_action) => {
                 select_action
@@ -143,7 +142,6 @@ impl SelectAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("Receiver process: self:\n       {:?}", &self);
         self.transaction_subcommand
             .process(prepopulated_unsigned_transaction, selected_server_url)
             .await
@@ -225,7 +223,6 @@ impl Receiver {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("Receiver process: self:\n       {:?}", &self);
         let unsigned_transaction = near_primitives::transaction::Transaction {
             receiver_id: self.receiver_account_id.clone(),
             ..prepopulated_unsigned_transaction
@@ -360,11 +357,6 @@ impl SkipAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("Skip process:\n       {:?}", &self);
-        println!(
-            "Skip process: prepopulated_unsigned_transaction:\n       {:?}",
-            &prepopulated_unsigned_transaction
-        );
         self.sign_option
             .process(prepopulated_unsigned_transaction, selected_server_url)
             .await

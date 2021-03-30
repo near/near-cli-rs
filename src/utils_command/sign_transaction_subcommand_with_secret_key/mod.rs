@@ -39,7 +39,6 @@ impl SignTransactionSecretKey {
         let signature = self
             .signer_secret_key
             .sign(&self.unsigned_transaction.get_hash_and_size().0.as_ref());
-        println!("Signature:  {:?}", &signature);
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature,
             self.unsigned_transaction,

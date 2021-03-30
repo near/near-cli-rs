@@ -1,8 +1,5 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
-use std::str::FromStr;
+use dialoguer::Input;
 use structopt::StructOpt;
-use strum::VariantNames;
-use strum_macros::{Display, EnumString, EnumVariantNames};
 
 #[derive(Debug)]
 pub struct SignKeychain {
@@ -16,7 +13,7 @@ pub struct CliSignKeychain {
 }
 
 impl SignKeychain {
-    pub fn process(
+    pub fn _process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         _selected_server_url: Option<url::Url>,
@@ -38,7 +35,6 @@ impl SignKeychain {
 
 impl From<CliSignKeychain> for SignKeychain {
     fn from(item: CliSignKeychain) -> Self {
-        println!("***********.  cli sign alternative {:?}", &item);
         let key_chain: String = match item.key_chain {
             Some(cli_key_chain) => cli_key_chain,
             None => SignKeychain::input_key_chain(),

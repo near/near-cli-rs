@@ -68,7 +68,6 @@ impl GenerateKeypair {
             &self.seed_phrase_hd_path,
         )
         .map_err(|err| {
-            // color_eyre::Report::msg(format!("Key derivation from path failed: {:?}", err))
             println!("Error: {:?}", &err);
         })
         .unwrap();

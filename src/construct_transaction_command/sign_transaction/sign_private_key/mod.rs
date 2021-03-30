@@ -37,7 +37,6 @@ impl SignPrivateKey {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("SignPrivateKey process: self:\n       {:?}", &self);
         let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
         let signer_secret_key: near_crypto::SecretKey = self.signer_secret_key.clone();
         match selected_server_url {
@@ -140,8 +139,6 @@ impl From<CliSignPrivateKey> for SignPrivateKey {
             None => SignPrivateKey::signer_secret_key(),
         };
         let public_key_origin: near_crypto::PublicKey = near_crypto::SecretKey::public_key(&signer_secret_key);
-        println!("signer_public_key:  {:?}", &signer_public_key);
-        println!("public_key_origin:  {:?}", &public_key_origin);
         if &signer_public_key==&public_key_origin {
             SignPrivateKey {
                 signer_public_key,

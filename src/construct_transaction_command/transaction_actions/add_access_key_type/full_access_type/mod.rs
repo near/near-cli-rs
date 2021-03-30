@@ -33,11 +33,6 @@ impl FullAccessType {
         selected_server_url: Option<url::Url>,
         public_key: near_crypto::PublicKey,
     ) -> crate::CliResult {
-        println!("FullAccessType process: self:\n       {:?}", &self);
-        println!(
-            "FullAccessType process: prepopulated_unsigned_transaction:\n       {:?}",
-            &prepopulated_unsigned_transaction
-        );
         let access_key: near_primitives::account::AccessKey = near_primitives::account::AccessKey {
             nonce,
             permission: near_primitives::account::AccessKeyPermission::FullAccess,

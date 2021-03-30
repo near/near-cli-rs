@@ -19,11 +19,6 @@ impl StakeNEARTokensAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("StakeNEARTokens process: self:\n       {:?}", &self);
-        println!(
-            "StakeNEARTokens process: prepopulated_unsigned_transaction:\n       {:?}",
-            &prepopulated_unsigned_transaction
-        );
         let stake = match self.stake {
             NearBalance(num) => num,
         };

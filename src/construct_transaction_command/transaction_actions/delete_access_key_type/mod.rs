@@ -42,11 +42,6 @@ impl DeleteAccessKeyAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("DeleteAccessKeyAction process: self:\n       {:?}", &self);
-        println!(
-            "DeleteAccessKeyAction process: prepopulated_unsigned_transaction:\n       {:?}",
-            &prepopulated_unsigned_transaction
-        );
         let action = near_primitives::transaction::Action::DeleteKey(
             near_primitives::transaction::DeleteKeyAction { public_key: self.public_key },
         );

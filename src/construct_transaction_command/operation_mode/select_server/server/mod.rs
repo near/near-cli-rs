@@ -14,7 +14,6 @@ impl Server {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        println!("Server process:\n        {:?}", &self);
         let selected_server_url = self.url.clone();
         self.send_from
             .process(prepopulated_unsigned_transaction, selected_server_url)
@@ -33,7 +32,6 @@ impl SendFrom {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        println!("Sendfrom process:\n      {:?}", &self);
         match self {
             SendFrom::Sender(sender) => {
                 sender
