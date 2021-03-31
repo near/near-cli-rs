@@ -9,6 +9,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 pub struct SignPrivateKey {
     pub signer_public_key: near_crypto::PublicKey,
     pub signer_secret_key: near_crypto::SecretKey,
+    submit: Option<Submit>
 }
 
 #[derive(Debug, Default, StructOpt)]
@@ -17,9 +18,11 @@ pub struct CliSignPrivateKey {
     signer_public_key: Option<near_crypto::PublicKey>,
     #[structopt(long)]
     signer_secret_key: Option<near_crypto::SecretKey>,
+    #[structopt(subcommand)]
+    submit: Option<Submit>
 }
 
-#[derive(Debug, EnumDiscriminants, Clone)]
+#[derive(Debug, EnumDiscriminants, Clone, StructOpt)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Submit {
     #[strum_discriminants(strum(message = "Do you want send the transaction to the server (it's works only for online mode)"))]
@@ -39,6 +42,7 @@ impl SignPrivateKey {
     ) -> crate::CliResult {
         let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
         let signer_secret_key: near_crypto::SecretKey = self.signer_secret_key.clone();
+        let submit: Option<Submit> = self.submit.clone();
         match selected_server_url {
             None => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
@@ -109,8 +113,15 @@ impl SignPrivateKey {
                     "\n\n---  Signed transaction:   ---\n    {:#?}",
                     &signed_transaction
                 );
-                let submit = Submit::choose_submit();
-                submit.process_online(selected_server_url, signed_transaction, serialize_to_base64).await
+                match submit {
+                    None => {
+                        let submit = Submit::choose_submit();
+                        submit.process_online(selected_server_url, signed_transaction, serialize_to_base64).await
+                    },
+                    Some(submit) => {
+                        submit.process_online(selected_server_url, signed_transaction, serialize_to_base64).await
+                    }
+                }
             }
         }
     }
@@ -138,11 +149,13 @@ impl From<CliSignPrivateKey> for SignPrivateKey {
             Some(cli_secret_key) => cli_secret_key,
             None => SignPrivateKey::signer_secret_key(),
         };
+        let submit: Option<Submit> = item.submit;
         let public_key_origin: near_crypto::PublicKey = near_crypto::SecretKey::public_key(&signer_secret_key);
         if &signer_public_key==&public_key_origin {
             SignPrivateKey {
                 signer_public_key,
                 signer_secret_key,
+                submit
             }
         } else {
             println!("\nError: The key pair does not match. Re-enter the keys");
@@ -152,6 +165,7 @@ impl From<CliSignPrivateKey> for SignPrivateKey {
                 CliSignPrivateKey {
                     signer_public_key: Some(signer_public_key),
                     signer_secret_key: Some(signer_secret_key),
+                    submit: None
                 }
             )
         }
