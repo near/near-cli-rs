@@ -22,6 +22,9 @@ use super::transaction_actions::delete_account_type::{
 use super::transaction_actions::stake_near_tokens_type::{
     StakeNEARTokensAction, CliStakeNEARTokensAction,
 };
+use super::transaction_actions::call_function_type::{
+    CallFunctionAction, CliCallFunctionAction
+};
 
 #[derive(Debug)]
 pub struct Receiver {
@@ -49,7 +52,7 @@ pub enum ActionSubcommand {
     #[strum_discriminants(strum(message = "Transfer NEAR Tokens"))]
     TransferNEARTokens(TransferNEARTokensAction),
     #[strum_discriminants(strum(message = "Call a Function"))]
-    CallFunction,
+    CallFunction(CallFunctionAction),
     #[strum_discriminants(strum(message = "Stake NEAR Tokens"))]
     StakeNEARTokens(StakeNEARTokensAction),
     #[strum_discriminants(strum(message = "Create an Account"))]
@@ -84,7 +87,7 @@ pub struct CliSelectAction {
 #[derive(Debug, StructOpt)]
 pub enum CliActionSubcommand {
     TransferNEARTokens(CliTransferNEARTokensAction),
-    CallFunction,
+    CallFunction(CliCallFunctionAction),
     StakeNEARTokens(CliStakeNEARTokensAction),
     CreateAccount(CliCreateAccountAction),
     DeleteAccount(CliDeleteAccountAction),
@@ -160,7 +163,11 @@ impl ActionSubcommand {
                     .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
-            // ActionSubcommand::CallFunction(args_function) => {},
+            ActionSubcommand::CallFunction(args_function) => {
+                args_function
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .await
+            },
             ActionSubcommand::StakeNEARTokens(args_stake) => {
                 args_stake
                     .process(prepopulated_unsigned_transaction, selected_server_url)
@@ -189,7 +196,6 @@ impl ActionSubcommand {
                     .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
-            _ => unreachable!("Error"),
         }
     }
     pub fn choose_action_command() -> CliActionSubcommand {
@@ -207,7 +213,7 @@ impl ActionSubcommand {
             .unwrap();
         match variants[select_action_subcommand] {
             ActionSubcommandDiscriminants::TransferNEARTokens => CliActionSubcommand::TransferNEARTokens(Default::default()),
-            ActionSubcommandDiscriminants::CallFunction => CliActionSubcommand::CallFunction,
+            ActionSubcommandDiscriminants::CallFunction => CliActionSubcommand::CallFunction(Default::default()),
             ActionSubcommandDiscriminants::StakeNEARTokens => CliActionSubcommand::StakeNEARTokens(Default::default()),
             ActionSubcommandDiscriminants::CreateAccount => CliActionSubcommand::CreateAccount(Default::default()),
             ActionSubcommandDiscriminants::DeleteAccount => CliActionSubcommand::DeleteAccount(Default::default()),
@@ -316,7 +322,11 @@ impl From<CliActionSubcommand> for ActionSubcommand {
                     StakeNEARTokensAction::from(cli_stake_near_token);
                 ActionSubcommand::StakeNEARTokens(stake_near_token)
             }
-            _ => unreachable!("Error"),
+            CliActionSubcommand::CallFunction(cli_call_function) => {
+                let call_function: CallFunctionAction =
+                    CallFunctionAction::from(cli_call_function);
+                ActionSubcommand::CallFunction(call_function)
+            }
         }
     }
 }
