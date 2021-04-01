@@ -2,8 +2,8 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-pub mod sign_private_key;
-use sign_private_key::{CliSignPrivateKey, SignPrivateKey};
+pub mod sign_with_private_key;
+use sign_with_private_key::{CliSignPrivateKey, SignPrivateKey};
 pub mod sign_keychain;
 use sign_keychain::{CliSignKeychain, SignKeychain};
 pub mod sign_manually;

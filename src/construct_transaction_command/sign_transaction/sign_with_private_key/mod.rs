@@ -63,8 +63,13 @@ impl SignPrivateKey {
                     "\n\n---  Signed transaction:   ---\n    {:#?}",
                     &signed_transaction
                 );
-                let submit = Submit::choose_submit();
-                submit.process_offline(signed_transaction, serialize_to_base64)
+                match submit {
+                    Some(submit) => submit.process_offline(signed_transaction, serialize_to_base64),
+                    None => {
+                        let submit = Submit::choose_submit();
+                        submit.process_offline(signed_transaction, serialize_to_base64)
+                    }
+                }
             }
             Some(selected_server_url) => {
                 let online_signer_access_key_response = self
