@@ -32,7 +32,7 @@ impl From<CliCallFunctionAction> for CallFunctionAction {
         let args: Vec<u8> = match item.args {
             Some(cli_args) => {
                 println!("CallFunctionAction args: {:?}", &cli_args);
-                [1,2,3].to_vec()
+                cli_args.into_bytes()
             },
             None => CallFunctionAction::input_args()
         };
@@ -117,17 +117,7 @@ impl CallFunctionAction {
             .with_prompt("Enter args for function.")
             .interact_text()
             .unwrap();
-        let args = input
-            .split(',')
-            .map(|x| {
-                x.trim()
-                .parse::<u8>()
-                .map_err(|err| format!("Parsing error : {}", err))
-                .unwrap()
-            })
-            .collect::<Vec<u8>>();
-        println!("=======  args: {:?}", &args);
-        args
+        input.into_bytes()
     }
     fn input_deposit() -> near_primitives::types::Balance {
         println!();
