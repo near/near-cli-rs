@@ -17,7 +17,6 @@ impl SignManually {
     pub fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        _selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         println!();
         println!(

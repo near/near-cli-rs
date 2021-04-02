@@ -9,7 +9,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 pub struct SignPrivateKey {
     pub signer_public_key: near_crypto::PublicKey,
     pub signer_secret_key: near_crypto::SecretKey,
-    submit: Option<Submit>
+    pub submit: Option<Submit>
 }
 
 #[derive(Debug, Default, StructOpt)]

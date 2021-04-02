@@ -26,7 +26,9 @@ bip39 = { version = "1.0.0", features = [ "rand" ] }
 bs58 = "0.3"
 ed25519-dalek = { version = "1" }
 hex = "0.4.2"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
+dirs = "3.0"
 # The fix is needed for seemless clap integration: https://github.com/wusyong/slip10/pull/3
 slip10 = { git = "https://github.com/frol/slip10", rev = "a3235dd0acf3a485f547cf23e2dd56838adb45f8" }
 url = { version = "2", features = ["serde"] }

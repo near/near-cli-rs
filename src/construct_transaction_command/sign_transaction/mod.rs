@@ -4,8 +4,8 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod sign_with_private_key;
 use sign_with_private_key::{CliSignPrivateKey, SignPrivateKey};
-pub mod sign_keychain;
-use sign_keychain::{CliSignKeychain, SignKeychain};
+pub mod sign_with_keychain;
+use sign_with_keychain::{SignKeychain, CliSignKeychain};
 pub mod sign_manually;
 use sign_manually::{CliSignManually, SignManually};
 
@@ -40,17 +40,16 @@ impl SignTransaction {
         match self {
             SignTransaction::SignPrivateKey(keys) => {
                 keys.process(prepopulated_unsigned_transaction, selected_server_url)
-                    .await?
+                    .await
             }
-            SignTransaction::SignKeychain(_chain) => {
-                println!("Сейчас ведется доработка данного модуля")
-                // chain.process(prepopulated_unsigned_transaction, selected_server_url)
+            SignTransaction::SignKeychain(chain) => {
+                chain.process(prepopulated_unsigned_transaction, selected_server_url)
+                .await
             }
             SignTransaction::SignManually(args_manually) => {
-                args_manually.process(prepopulated_unsigned_transaction, selected_server_url)?
+                args_manually.process(prepopulated_unsigned_transaction)
             }
         }
-        Ok(())
     }
     pub fn choose_sign_option() -> CliSignTransaction {
         println!();
@@ -70,8 +69,7 @@ impl SignTransaction {
                 CliSignTransaction::SignPrivateKey(Default::default())
             },
             SignTransactionDiscriminants::SignKeychain => {
-                // SignTransaction::SignKeychain(SignKeychain{key_chain: SignKeychain::input_key_chain()})
-                panic!("This module is under development")
+                CliSignTransaction::SignKeychain(Default::default())
             },
             SignTransactionDiscriminants::SignManually => {
                 CliSignTransaction::SignManually(Default::default())
