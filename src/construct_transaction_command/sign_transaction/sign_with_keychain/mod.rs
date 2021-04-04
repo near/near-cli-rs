@@ -37,7 +37,6 @@ impl SignKeychain {
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let home_dir =  dirs::home_dir().expect("Impossible to get your home dir!");
-        println!("home dir: {:?}", &home_dir);
         let file_name = format!("{}.json", prepopulated_unsigned_transaction.signer_id);
         let mut path = PathBuf::from(&home_dir);
         path.push(crate::consts::DIR_NAME_KEY_CHAIN);
