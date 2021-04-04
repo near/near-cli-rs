@@ -1,5 +1,5 @@
 use structopt::StructOpt;
-use dialoguer::Input;
+use dialoguer::{theme::ColorfulTheme, Input, Select};
 use async_recursion::async_recursion;
 
 use super::super::receiver::{CliSkipNextAction, CliNextAction, NextAction};
@@ -15,10 +15,14 @@ pub struct CallFunctionAction {
 
 #[derive(Debug, Default, StructOpt)]
 pub struct CliCallFunctionAction {
+    #[structopt(long)]
     method_name: Option<String>,
+    #[structopt(long)]
     args: Option<String>,
-    gas: Option<near_primitives::types::Gas>,  // default 1000000000
-    deposit: Option<crate::common::NearBalance>,  // default 0
+    #[structopt(long)]
+    gas: Option<near_primitives::types::Gas>,
+    #[structopt(long)]
+    deposit: Option<crate::common::NearBalance>,
     #[structopt(subcommand)]
     next_action: Option<CliSkipNextAction>
 }
@@ -106,10 +110,43 @@ impl CallFunctionAction {
     }
     fn input_gas() -> near_primitives::types::Gas {
         println!();
-        Input::new()
-            .with_prompt("Enter a gas for function.")
-            .interact_text()
-            .unwrap()
+        let choose_mode = vec![
+            "Yes, I want to enter a different value",
+            "No, I see no problem with default value",
+        ];
+        println!();
+        let select_mode = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt(
+                "The default is 1000000000 (1 gigagas). Do you want to change this value?"
+            )
+            .items(&choose_mode)
+            .default(0)
+            .interact()
+            .unwrap();
+        match choose_mode[select_mode] {
+            "Yes, I want to enter a different value" => {
+                println!();
+                let gas: u64 = loop {
+                    let input_gas: crate::common::NearGas = Input::new()
+                        .with_prompt("Enter a gas for function.")
+                        .interact_text()
+                        .unwrap();
+                    let gas: u64 = match input_gas {
+                        crate::common::NearGas(num) => num
+                    };
+                    if gas <= 200000000000000 {
+                        break gas;
+                    } else {
+                        println!("You need to enter a value of no more than 200 TERAGAS")
+                    }
+                };
+                gas
+            }
+            "No, I see no problem with default value" => {
+                1000000000
+            }
+            _ => unreachable!("Error"),
+        }
     }
     fn input_args() -> Vec<u8> {
         println!();
@@ -121,12 +158,34 @@ impl CallFunctionAction {
     }
     fn input_deposit() -> near_primitives::types::Balance {
         println!();
-        let deposit: crate::common::NearBalance = Input::new()
-            .with_prompt("Enter a deposit for function.")
-            .interact_text()
+        let choose_mode = vec![
+            "Yes, I want to enter a different value",
+            "No, I see no problem with default value",
+        ];
+        println!();
+        let select_mode = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt(
+                "The default is 0. Do you want to change this value?"
+            )
+            .items(&choose_mode)
+            .default(0)
+            .interact()
             .unwrap();
-        match deposit {
-            crate::common::NearBalance(num) => num,
+        match choose_mode[select_mode] {
+            "Yes, I want to enter a different value" => {
+                println!();
+                let deposit: crate::common::NearBalance = Input::new()
+                    .with_prompt("Enter a deposit for function (example: 10NEAR or 0.5near or 10000yoctonear).")
+                    .interact_text()
+                    .unwrap();
+                match deposit {
+                    crate::common::NearBalance(num) => num,
+                }
+            }
+            "No, I see no problem with default value" => {
+                0
+            }
+            _ => unreachable!("Error"),
         }
     }
 }

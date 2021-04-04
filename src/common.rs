@@ -90,7 +90,7 @@ impl std::fmt::Display for AvailableRpcServerUrl {
     }
 }
 
-#[derive(Debug,  Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct NearBalance(pub u128);
 
 impl std::fmt::Display for NearBalance {
@@ -144,6 +144,67 @@ impl std::str::FromStr for NearBalance {
         Ok(NearBalance(number))
     }
 }
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct NearGas(pub u64);
+
+impl std::fmt::Display for NearGas {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "NearGas {}", self)
+    }
+}
+
+impl NearGas {
+    fn into_tera_gas(num: &str) -> Result<u64, String> {
+        let res_split: Vec<&str> = num.split('.').collect();
+        match res_split.len() {
+            2 => {
+                let num_int_gas:u64 = res_split[0].parse::<u64>()
+                        .map_err(|err| format!("Near Gas: {}", err))?
+                        .checked_mul(10u64.pow(12))
+                        .ok_or_else(|| "Near Gas: underflow or overflow happens")?;
+                let len_fract = res_split[1].len() as u32;
+                let num_fract_gas = if len_fract <= 12 {
+                    res_split[1]
+                        .parse::<u64>()
+                        .map_err(|err| format!("Near Gas: {}", err))?
+                        .checked_mul(10u64.pow(12 - res_split[1].len() as u32))
+                        .ok_or_else(|| "Near Gas: underflow or overflow happens")?
+                } else {
+                    return  Err("Near Gas: too large fractional part of a number".to_string())
+                };
+                Ok(
+                    num_int_gas.checked_add(num_fract_gas)
+                        .ok_or_else(|| "Near Gas: underflow or overflow happens")?
+                )
+            },
+            1 => {
+                Ok(
+                    res_split[0].parse::<u64>()
+                        .map_err(|err| format!("Near Gas: {}", err))?
+                        .checked_mul(10u64.pow(12))
+                        .ok_or_else(|| "Near Gas: underflow or overflow happens")?
+                )
+            },
+            _ => return Err("Near Gas: incorrect number entered".to_string())
+        }
+    }
+}
+
+impl std::str::FromStr for NearGas {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
+        let currency= s.trim().trim_start_matches(&num).trim().to_uppercase();
+        let number = match currency.as_str() {
+            "T" | "TGAS" | "TERAGAS" => NearGas::into_tera_gas(num)?,
+            "GIGAGAS" | "GGAS" => NearGas::into_tera_gas(num)? / 1000,
+            _ => return Err("Near Gas: incorrect currency value entered".to_string())
+        };
+        Ok(NearGas(number))
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
