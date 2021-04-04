@@ -1,13 +1,13 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use structopt::StructOpt;
+use clap::Clap;
 
 mod select_server;
 use select_server::server::{CliSendFrom, SendFrom};
 use select_server::{CliSelectServer, SelectServer};
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliOperationMode {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     mode: Option<CliMode>,
 }
 
@@ -85,13 +85,13 @@ pub struct OfflineArgs {
     send_from: SendFrom,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliOfflineArgs {
-    #[structopt(long)]
+    #[clap(long)]
     nonce: Option<u64>,
-    #[structopt(long)]
+    #[clap(long)]
     block_hash: Option<crate::common::BlockHashAsBase58>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub send_from: Option<CliSendFrom>,
 }
 
@@ -100,9 +100,9 @@ pub struct OnlineArgs {
     selected_server: SelectServer,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliOnlineArgs {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     selected_server: Option<CliSelectServer>,
 }
 
@@ -184,7 +184,7 @@ impl OnlineArgs {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 pub enum CliMode {
     Online(CliOnlineArgs),
     Offline(CliOfflineArgs),

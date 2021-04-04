@@ -1,5 +1,5 @@
 use async_recursion::async_recursion;
-use structopt::StructOpt;
+use clap::Clap;
 use dialoguer::Input;
 
 use crate::common::NearBalance;
@@ -51,10 +51,10 @@ impl TransferNEARTokensAction {
     }
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliTransferNEARTokensAction {
     amount: Option<NearBalance>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     next_action: Option<CliSkipNextAction>,
 }
 

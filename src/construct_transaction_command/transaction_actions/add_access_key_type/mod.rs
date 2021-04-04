@@ -1,6 +1,6 @@
 use async_recursion::async_recursion;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use structopt::StructOpt;
+use clap::Clap;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub(crate) mod function_call_type;
@@ -15,16 +15,16 @@ pub struct AddAccessKeyAction {
     pub permission: AccessKeyPermission,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliAddAccessKeyAction {
     public_key: Option<near_crypto::PublicKey>,
-    #[structopt(long)]
+    #[clap(long)]
     nonce: Option<u64>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     permission: Option<CliAccessKeyPermission>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 pub enum CliAccessKeyPermission {
     FunctionCallAction(CliFunctionCallType),
     FullAccessAction(CliFullAccessType),

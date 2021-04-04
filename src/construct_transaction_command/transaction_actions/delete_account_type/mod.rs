@@ -1,6 +1,6 @@
 use async_recursion::async_recursion;
 use dialoguer::Input;
-use structopt::StructOpt;
+use clap::Clap;
 
 use super::super::receiver::{CliSkipNextAction, NextAction, CliNextAction};
 
@@ -10,11 +10,11 @@ pub struct DeleteAccountAction {
     pub next_action: Box<NextAction>,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliDeleteAccountAction {
-    #[structopt(long)]
+    #[clap(long)]
     beneficiary_id: Option<near_primitives::types::AccountId>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     next_action: Option<CliSkipNextAction>,
 }
 

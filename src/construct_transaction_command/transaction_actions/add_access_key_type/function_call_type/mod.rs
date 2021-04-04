@@ -1,5 +1,5 @@
 use std::vec;
-use structopt::StructOpt;
+use clap::Clap;
 
 use async_recursion::async_recursion;
 use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
@@ -14,15 +14,15 @@ pub struct FunctionCallType {
     pub next_action: Box<NextAction>,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliFunctionCallType {
-    #[structopt(long)]
+    #[clap(long)]
     allowance: Option<crate::common::NearBalance>,
-    #[structopt(long)]
+    #[clap(long)]
     receiver_id: Option<near_primitives::types::AccountId>,
-    #[structopt(long)]
+    #[clap(long)]
     method_names: Option<String>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     next_action: Option<CliSkipNextAction>,
 }
 

@@ -1,5 +1,5 @@
 use dialoguer::{theme::ColorfulTheme, Select};
-use structopt::StructOpt;
+use clap::Clap;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 use strum_macros::{Display, EnumVariantNames};
 
@@ -21,7 +21,7 @@ pub enum SelectServer {
     Custom(Server),
 }
 
-#[derive(Debug, Display, EnumVariantNames, StructOpt)]
+#[derive(Debug, Display, EnumVariantNames, Clap)]
 pub enum CliSelectServer {
     Testnet(CliServer),
     Mainnet(CliServer),

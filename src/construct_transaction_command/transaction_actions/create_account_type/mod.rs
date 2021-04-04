@@ -1,5 +1,5 @@
 use async_recursion::async_recursion;
-use structopt::StructOpt;
+use clap::Clap;
 
 use super::super::receiver::{CliSkipNextAction, CliNextAction, NextAction};
 
@@ -8,9 +8,9 @@ pub struct CreateAccountAction {
     pub next_action: Box<NextAction>,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliCreateAccountAction {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     next_action: Option<CliSkipNextAction>,
 }
 

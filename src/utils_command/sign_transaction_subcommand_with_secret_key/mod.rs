@@ -1,6 +1,6 @@
 use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
-use structopt::StructOpt;
+use clap::Clap;
 
 #[derive(Debug)]
 pub struct SignTransactionSecretKey {
@@ -8,11 +8,11 @@ pub struct SignTransactionSecretKey {
     pub unsigned_transaction: near_primitives::transaction::Transaction,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliSignTransactionSecretKey {
-    #[structopt(long)]
+    #[clap(long)]
     signer_secret_key: Option<near_crypto::SecretKey>,
-    #[structopt(long)]
+    #[clap(long)]
     unsigned_transaction: Option<crate::common::TransactionAsBase64>,
 }
 

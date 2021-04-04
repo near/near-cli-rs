@@ -1,5 +1,5 @@
 use dialoguer::Input;
-use structopt::StructOpt;
+use clap::Clap;
 
 use super::receiver::{CliReceiver, Receiver};
 
@@ -14,13 +14,13 @@ pub enum SendTo {
     Receiver(Receiver),
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliSender {
     pub sender_account_id: Option<String>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     send_to: Option<CliSendTo>,
 }
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 pub enum CliSendTo {
     Receiver(CliReceiver),
 }

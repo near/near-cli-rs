@@ -1,4 +1,4 @@
-use structopt::StructOpt;
+use clap::Clap;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use async_recursion::async_recursion;
 
@@ -13,17 +13,17 @@ pub struct CallFunctionAction {
     next_action: Box<NextAction>
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliCallFunctionAction {
-    #[structopt(long)]
+    #[clap(long)]
     method_name: Option<String>,
-    #[structopt(long)]
+    #[clap(long)]
     args: Option<String>,
-    #[structopt(long)]
+    #[clap(long)]
     gas: Option<near_primitives::types::Gas>,
-    #[structopt(long)]
+    #[clap(long)]
     deposit: Option<crate::common::NearBalance>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     next_action: Option<CliSkipNextAction>
 }
 

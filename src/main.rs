@@ -1,5 +1,5 @@
+use clap::Clap;
 use dialoguer::{theme::ColorfulTheme, Select};
-use structopt::StructOpt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 type CliResult = color_eyre::eyre::Result<()>;
@@ -16,9 +16,9 @@ struct Args {
     subcommand: ArgsCommand,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 struct CliArgs {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     subcommand: Option<CliCommand>,
 }
 
@@ -51,7 +51,7 @@ impl Args {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 pub enum CliCommand {
     ConstructTransaction(CliOperationMode),
     Utils(CliUtils),
@@ -107,7 +107,7 @@ impl ArgsCommand {
 }
 
 fn main() -> CliResult {
-    let cli = CliArgs::from_args();
+    let cli = CliArgs::parse();
     let args = Args::from(cli);
 
     color_eyre::install()?;

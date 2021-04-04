@@ -1,5 +1,5 @@
 use dialoguer::{theme::ColorfulTheme, Select};
-use structopt::StructOpt;
+use clap::Clap;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod sign_with_private_key;
@@ -24,7 +24,7 @@ pub enum SignTransaction {
     SignManually(SignManually),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 pub enum CliSignTransaction {
     SignPrivateKey(CliSignPrivateKey),
     SignKeychain(CliSignKeychain),

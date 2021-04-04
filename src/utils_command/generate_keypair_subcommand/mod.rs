@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use structopt::StructOpt;
+use clap::Clap;
 
 
 fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
@@ -23,7 +23,7 @@ fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
 
 /// Generate a key pair of secret and public keys (use it anywhere you need
 /// Ed25519 keys)
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 pub struct GenerateKeypair {
     pub master_seed_phrase: Option<String>,
     pub new_master_seed_phrase_words_count: usize,
