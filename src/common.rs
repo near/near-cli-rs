@@ -290,4 +290,54 @@ mod tests {
         let near_balance = NearBalance::from_str("-100 n");
         assert_eq!(near_balance, Err("Near Balance: invalid digit found in string".to_string()));
     }
+
+    #[test]
+    fn near_balance_from_str_currency_tgas() {
+        assert_eq!(NearGas::from_str("10 tgas").unwrap(), NearGas(10000000000000)); // 14 number
+        assert_eq!(NearGas::from_str("10.055TERAGAS").unwrap(), NearGas(10055000000000)); // 14 number
+    }
+    #[test]
+    fn near_gas_from_str_currency_gigagas() {
+        assert_eq!(NearGas::from_str("10 gigagas").unwrap(), NearGas(10000000000)); // 11 number
+        assert_eq!(NearGas::from_str("10GGAS ").unwrap(), NearGas(10000000000)); // 11 number
+    }
+    #[test]
+    fn near_gas_from_str_f64_tgas() {
+        assert_eq!(NearGas::from_str("0.000001 tgas").unwrap(), NearGas(1000000)); // 7 number
+    }
+    #[test]
+    fn near_gas_from_str_f64_gas_without_int() {
+        let near_gas = NearGas::from_str(".055ggas");
+        assert_eq!(near_gas, Err("Near Gas: cannot parse integer from empty string".to_string()));
+    }
+    #[test]
+    fn near_gas_from_str_without_currency() {
+        let near_gas = NearGas::from_str("100");
+        assert_eq!(near_gas, Err("Near Gas: incorrect currency value entered".to_string()));
+    }
+    #[test]
+    fn near_gas_from_str_incorrect_currency() {
+        let near_gas = NearGas::from_str("100 UAH");
+        assert_eq!(near_gas, Err("Near Gas: incorrect currency value entered".to_string()));
+    }
+    #[test]
+    fn near_gas_from_str_invalid_double_dot() {
+        let near_gas = NearGas::from_str("100.55.");
+        assert_eq!(near_gas, Err("Near Gas: incorrect currency value entered".to_string()));
+    }
+    #[test]
+    fn near_gas_from_str_large_fractional_part() {
+        let near_gas = NearGas::from_str("100.1111122222333 ggas"); // 13 symbols after "."
+        assert_eq!(near_gas, Err("Near Gas: too large fractional part of a number".to_string()));
+    }
+    #[test]
+    fn near_gas_from_str_large_int_part() {
+        let near_gas = NearGas::from_str("200123456789123.0 tgas");
+        assert_eq!(near_gas, Err("Near Gas: underflow or overflow happens".to_string()));
+    }
+    #[test]
+    fn near_gas_from_str_negative_value() {
+        let near_gas = NearGas::from_str("-100 ggas");
+        assert_eq!(near_gas, Err("Near Gas: invalid digit found in string".to_string()));
+    }
 }
