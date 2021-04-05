@@ -807,6 +807,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_generate"
+version = "3.0.0-beta.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "adf420f8b687b628d2915ccfd43a660c437a170432e3fbcb66944e8717a0d68f"
+dependencies = [
+ "clap 3.0.0-beta.2",
+]
+
+[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1783,6 +1792,7 @@ dependencies = [
  "bip39",
  "bs58 0.3.1",
  "clap 3.0.0-beta.2",
+ "clap_generate",
  "color-eyre",
  "derive_more",
  "dialoguer",
@@ -3042,8 +3052,7 @@ dependencies = [
 [[package]]
 name = "strum_macros"
 version = "0.20.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee8bc6b87a5112aeeab1f4a9f7ab634fe6cbefc4850006df31267f4cfb9e3149"
+source = "git+https://github.com/frol/strum?branch=feat/discriminants-pass-through-attributes#83c18208c9f0f0f4c412694ec0ba89f3eab026f9"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -3054,7 +3063,8 @@ dependencies = [
 [[package]]
 name = "strum_macros"
 version = "0.20.1"
-source = "git+https://github.com/frol/strum?branch=feat/discriminants-pass-through-attributes#83c18208c9f0f0f4c412694ec0ba89f3eab026f9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee8bc6b87a5112aeeab1f4a9f7ab634fe6cbefc4850006df31267f4cfb9e3149"
 dependencies = [
  "heck",
  "proc-macro2",
