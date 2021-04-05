@@ -1,4 +1,4 @@
-use clap::Clap;
+use clap::{Clap, IntoApp};
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
@@ -55,6 +55,22 @@ impl Args {
 pub enum CliCommand {
     ConstructTransaction(CliOperationMode),
     Utils(CliUtils),
+    GenerateShellCompletions(CliGenerateShellCompletions),
+}
+
+#[derive(Debug, Clap)]
+pub struct CliGenerateShellCompletions {
+    #[clap(subcommand)]
+    shell_type: CliShellCompletionType,
+}
+
+#[derive(Debug, Clap)]
+pub enum CliShellCompletionType {
+    Bash,
+    Elvish,
+    Fish,
+    PowerShell,
+    Zsh,
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -76,6 +92,9 @@ impl From<CliCommand> for ArgsCommand {
             CliCommand::Utils(cli_util) => {
                 let util = Utils::from(cli_util);
                 ArgsCommand::Utils(util)
+            }
+            CliCommand::GenerateShellCompletions(_) => {
+                unreachable!("This variant is handled in the main function")
             }
         }
     }
@@ -101,13 +120,33 @@ impl ArgsCommand {
             }
             ArgsCommandDiscriminants::Utils => {
                 CliCommand::Utils(Default::default())
-            },
+            }
         }
     }
 }
 
 fn main() -> CliResult {
     let cli = CliArgs::parse();
+
+    if let Some(CliCommand::GenerateShellCompletions(subcommand)) = cli.subcommand {
+        fn generate_shell_completion<T: clap_generate::Generator>() {
+            let mut app = CliArgs::into_app();
+            let app_name = app.get_name().to_owned();
+            clap_generate::generate::<T, _>(&mut app, &app_name, &mut std::io::stdout());
+        }
+
+        use clap_generate::generators::{Bash, Elvish, Fish, PowerShell, Zsh};
+        match subcommand.shell_type {
+            CliShellCompletionType::Bash => generate_shell_completion::<Bash>(),
+            CliShellCompletionType::Elvish => generate_shell_completion::<Elvish>(),
+            CliShellCompletionType::Fish => generate_shell_completion::<Fish>(),
+            CliShellCompletionType::PowerShell => generate_shell_completion::<PowerShell>(),
+            CliShellCompletionType::Zsh => generate_shell_completion::<Zsh>(),
+        }
+
+        return Ok(());
+    }
+
     let args = Args::from(cli);
 
     color_eyre::install()?;
