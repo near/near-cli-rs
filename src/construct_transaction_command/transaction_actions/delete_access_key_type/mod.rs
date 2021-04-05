@@ -1,6 +1,6 @@
 use async_recursion::async_recursion;
 use dialoguer::Input;
-use structopt::StructOpt;
+use clap::Clap;
 
 use super::super::receiver::{CliSkipNextAction, CliNextAction, NextAction};
 
@@ -10,11 +10,11 @@ pub struct DeleteAccessKeyAction {
     pub next_action: Box<NextAction>,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliDeleteAccessKeyAction {
-    #[structopt(long)]
+    #[clap(long)]
     public_key: Option<near_crypto::PublicKey>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     next_action: Option<CliSkipNextAction>,
 }
 

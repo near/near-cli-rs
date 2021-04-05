@@ -1,5 +1,5 @@
 use dialoguer::{theme::ColorfulTheme, Select};
-use structopt::StructOpt;
+use clap::Clap;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod generate_keypair_subcommand;
@@ -11,9 +11,9 @@ pub struct Utils {
     pub util: Util,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliUtils {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     util: Option<CliUtil>,
 }
 
@@ -28,7 +28,7 @@ pub enum Util {
     CombineTransactionSignature(self::combine_transaction_subcommand_with_signature::CombineTransactionSignature),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 enum CliUtil {
     GenerateKeypair(self::generate_keypair_subcommand::GenerateKeypair),
     SignTransactionSecretKey(self::sign_transaction_subcommand_with_secret_key::CliSignTransactionSecretKey),

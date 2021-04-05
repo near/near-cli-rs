@@ -1,5 +1,5 @@
 use dialoguer::Input;
-use structopt::StructOpt;
+use clap::Clap;
 
 use crate::construct_transaction_command::sender::{CliSender, Sender};
 
@@ -45,21 +45,21 @@ impl SendFrom {
     }
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliServer {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub send_from: Option<CliSendFrom>,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliCustomServer {
-    #[structopt(long)]
+    #[clap(long)]
     pub url: Option<crate::common::AvailableRpcServerUrl>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     send_from: Option<CliSendFrom>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 pub enum CliSendFrom {
     Sender(CliSender),
 }

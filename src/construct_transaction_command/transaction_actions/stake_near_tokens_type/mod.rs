@@ -1,5 +1,5 @@
 use async_recursion::async_recursion;
-use structopt::StructOpt;
+use clap::Clap;
 use dialoguer::Input;
 
 use crate::common::NearBalance;
@@ -61,11 +61,11 @@ impl StakeNEARTokensAction {
     }
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliStakeNEARTokensAction {
     stake: Option<NearBalance>,
     public_key: Option<near_crypto::PublicKey>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     next_action: Option<CliSkipNextAction>,
 }
 

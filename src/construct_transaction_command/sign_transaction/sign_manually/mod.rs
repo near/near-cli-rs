@@ -1,10 +1,10 @@
 use near_primitives::borsh::BorshSerialize;
-use structopt::StructOpt;
+use clap::Clap;
 
 #[derive(Debug)]
 pub struct SignManually {}
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliSignManually {}
 
 impl From<CliSignManually> for SignManually {

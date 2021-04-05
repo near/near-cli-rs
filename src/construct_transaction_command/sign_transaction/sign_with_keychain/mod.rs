@@ -1,7 +1,7 @@
 extern crate dirs;
 use std::path::PathBuf;
 use serde::Deserialize;
-use structopt::StructOpt;
+use clap::Clap;
 
 use super::sign_with_private_key::{SignPrivateKey, Submit};
 
@@ -18,9 +18,9 @@ pub struct SignKeychain {
     submit: Option<Submit>
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliSignKeychain {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     submit: Option<Submit>
 }
 

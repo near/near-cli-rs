@@ -1,5 +1,5 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use structopt::StructOpt;
+use clap::Clap;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 use super::sign_transaction::{CliSignTransaction, SignTransaction};
@@ -65,26 +65,26 @@ pub enum ActionSubcommand {
     DeleteAccessKey(DeleteAccessKeyAction),
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliReceiver {
     receiver_account_id: Option<String>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     action: Option<CliNextAction>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 pub enum CliNextAction {
     AddAction(CliSelectAction),
     Skip(CliSkipAction),
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliSelectAction {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     transaction_subcommand: Option<CliActionSubcommand>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 pub enum CliActionSubcommand {
     TransferNEARTokens(CliTransferNEARTokensAction),
     CallFunction(CliCallFunctionAction),
@@ -95,7 +95,7 @@ pub enum CliActionSubcommand {
     DeleteAccessKey(CliDeleteAccessKeyAction),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 pub enum CliSkipNextAction {
     Skip(CliSkipAction),
 }
@@ -355,9 +355,9 @@ pub struct SkipAction {
     pub sign_option: SignTransaction,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliSkipAction {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     sign_option: Option<CliSignTransaction>,
 }
 

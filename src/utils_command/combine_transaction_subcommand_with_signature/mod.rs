@@ -1,6 +1,6 @@
 use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
-use structopt::StructOpt;
+use clap::Clap;
 
 #[derive(Debug, Clone)]
 pub struct CombineTransactionSignature {
@@ -8,11 +8,11 @@ pub struct CombineTransactionSignature {
     pub unsigned_transaction: near_primitives::transaction::Transaction,
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliCombineTransactionSignature {
-    #[structopt(long)]
+    #[clap(long)]
     signature: Option<near_crypto::Signature>,
-    #[structopt(long)]
+    #[clap(long)]
     unsigned_transaction: Option<crate::common::TransactionAsBase64>,
 }
 

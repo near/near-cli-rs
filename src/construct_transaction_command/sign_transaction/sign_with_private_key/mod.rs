@@ -1,6 +1,6 @@
 use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
-use structopt::StructOpt;
+use clap::Clap;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 use dialoguer::{theme::ColorfulTheme, Select};
 
@@ -12,17 +12,17 @@ pub struct SignPrivateKey {
     pub submit: Option<Submit>
 }
 
-#[derive(Debug, Default, StructOpt)]
+#[derive(Debug, Default, Clap)]
 pub struct CliSignPrivateKey {
-    #[structopt(long)]
+    #[clap(long)]
     signer_public_key: Option<near_crypto::PublicKey>,
-    #[structopt(long)]
+    #[clap(long)]
     signer_secret_key: Option<near_crypto::SecretKey>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     submit: Option<Submit>
 }
 
-#[derive(Debug, EnumDiscriminants, Clone, StructOpt)]
+#[derive(Debug, EnumDiscriminants, Clone, Clap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Submit {
     #[strum_discriminants(strum(message = "Do you want send the transaction to the server (it's works only for online mode)"))]
