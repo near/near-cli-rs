@@ -104,54 +104,33 @@ impl CallFunctionAction {
     fn input_method_name() -> String {
         println!();
         Input::new()
-            .with_prompt("Enter a method name.")
+            .with_prompt("Enter a method name")
             .interact_text()
             .unwrap()
     }
     fn input_gas() -> near_primitives::types::Gas {
         println!();
-        let choose_mode = vec![
-            "Yes, I want to enter a different value",
-            "No, I see no problem with default value",
-        ];
-        println!();
-        let select_mode = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(
-                "The default is 1000000000 (1 gigagas). Do you want to change this value?"
-            )
-            .items(&choose_mode)
-            .default(0)
-            .interact()
-            .unwrap();
-        match choose_mode[select_mode] {
-            "Yes, I want to enter a different value" => {
-                println!();
-                let gas: u64 = loop {
-                    let input_gas: crate::common::NearGas = Input::new()
-                        .with_prompt("Enter a gas for function.")
-                        .interact_text()
-                        .unwrap();
-                    let gas: u64 = match input_gas {
-                        crate::common::NearGas(num) => num
-                    };
-                    if gas <= 200000000000000 {
-                        break gas;
-                    } else {
-                        println!("You need to enter a value of no more than 200 TERAGAS")
-                    }
-                };
-                gas
+        let gas: u64 = loop {
+            let input_gas: crate::common::NearGas = Input::new()
+                .with_prompt("Enter a gas for function")
+                .default(crate::common::NearGas { inner: 100000000000000 })
+                .interact_text()
+                .unwrap();
+            let gas: u64 = match input_gas {
+                crate::common::NearGas { inner: num } => num
+            };
+            if gas <= 200000000000000 {
+                break gas;
+            } else {
+                println!("You need to enter a value of no more than 200 TERAGAS")
             }
-            "No, I see no problem with default value" => {
-                1000000000
-            }
-            _ => unreachable!("Error"),
-        }
+        };
+        gas
     }
     fn input_args() -> Vec<u8> {
         println!();
         let input: String = Input::new()
-            .with_prompt("Enter args for function.")
+            .with_prompt("Enter args for function")
             .interact_text()
             .unwrap();
         input.into_bytes()

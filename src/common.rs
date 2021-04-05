@@ -146,11 +146,13 @@ impl std::str::FromStr for NearBalance {
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct NearGas(pub u64);
+pub struct NearGas {
+    pub inner: u64
+}
 
 impl std::fmt::Display for NearGas {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "NearGas {}", self)
+        write!(f, "default: {} TeraGas", self.inner / 1000000000000)
     }
 }
 
@@ -201,7 +203,9 @@ impl std::str::FromStr for NearGas {
             "GIGAGAS" | "GGAS" => NearGas::into_tera_gas(num)? / 1000,
             _ => return Err("Near Gas: incorrect currency value entered".to_string())
         };
-        Ok(NearGas(number))
+        Ok(NearGas {
+            inner: number
+        })
     }
 }
 
@@ -293,17 +297,17 @@ mod tests {
 
     #[test]
     fn near_balance_from_str_currency_tgas() {
-        assert_eq!(NearGas::from_str("10 tgas").unwrap(), NearGas(10000000000000)); // 14 number
-        assert_eq!(NearGas::from_str("10.055TERAGAS").unwrap(), NearGas(10055000000000)); // 14 number
+        assert_eq!(NearGas::from_str("10 tgas").unwrap(), NearGas { inner: 10000000000000 }); // 14 number
+        assert_eq!(NearGas::from_str("10.055TERAGAS").unwrap(), NearGas { inner: 10055000000000 }); // 14 number
     }
     #[test]
     fn near_gas_from_str_currency_gigagas() {
-        assert_eq!(NearGas::from_str("10 gigagas").unwrap(), NearGas(10000000000)); // 11 number
-        assert_eq!(NearGas::from_str("10GGAS ").unwrap(), NearGas(10000000000)); // 11 number
+        assert_eq!(NearGas::from_str("10 gigagas").unwrap(), NearGas { inner: 10000000000 }); // 11 number
+        assert_eq!(NearGas::from_str("10GGAS ").unwrap(), NearGas { inner: 10000000000 }); // 11 number
     }
     #[test]
     fn near_gas_from_str_f64_tgas() {
-        assert_eq!(NearGas::from_str("0.000001 tgas").unwrap(), NearGas(1000000)); // 7 number
+        assert_eq!(NearGas::from_str("0.000001 tgas").unwrap(), NearGas { inner: 1000000 }); // 7 number
     }
     #[test]
     fn near_gas_from_str_f64_gas_without_int() {
