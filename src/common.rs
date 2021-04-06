@@ -152,7 +152,7 @@ pub struct NearGas {
 
 impl std::fmt::Display for NearGas {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "default: {} TeraGas", self.inner / 1000000000000)
+        write!(f, "{} TeraGas", self.inner / 1000000000000)
     }
 }
 
