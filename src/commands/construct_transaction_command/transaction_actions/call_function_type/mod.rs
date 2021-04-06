@@ -42,7 +42,7 @@ impl From<CliCallFunctionAction> for CallFunctionAction {
         let deposit: near_primitives::types::Balance = match item.deposit {
             Some(cli_deposit) => {
                 match cli_deposit {
-                    crate::common::NearBalance(num) => num
+                    crate::common::NearBalance {inner: num} => num
                 }
             },
             None => CallFunctionAction::input_deposit()
@@ -75,7 +75,6 @@ impl CallFunctionAction {
         let gas: u64 = loop {
             let input_gas: crate::common::NearGas = Input::new()
                 .with_prompt("Enter a gas for function")
-                // .default(crate::common::NearGas { inner: 100000000000000 })
                 .with_initial_text("100 TeraGas")
                 .interact_text()
                 .unwrap();
@@ -123,7 +122,7 @@ impl CallFunctionAction {
                     .interact_text()
                     .unwrap();
                 match deposit {
-                    crate::common::NearBalance(num) => num,
+                    crate::common::NearBalance {inner: num} => num,
                 }
             }
             "No, I see no problem with default value" => {

@@ -28,7 +28,7 @@ impl From<CliFunctionCallType> for FunctionCallType {
         let allowance: Option<near_primitives::types::Balance> = match item.allowance {
             Some(cli_allowance) => {
                 let allowance = match cli_allowance {
-                    crate::common::NearBalance(num) => num,
+                    crate::common::NearBalance {inner: num} => num,
                 };
                 Some(allowance)
             }
@@ -119,7 +119,7 @@ impl FunctionCallType {
                     .interact_text()
                     .unwrap();
                 let allowance = match allowance_near_balance {
-                    crate::common::NearBalance(num) => num,
+                    crate::common::NearBalance {inner: num} => num,
                 };
                 Some(allowance)
             }

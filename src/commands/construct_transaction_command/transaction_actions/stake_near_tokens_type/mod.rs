@@ -61,7 +61,7 @@ impl StakeNEARTokensAction {
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let stake = match self.stake {
-            crate::common::NearBalance(num) => num,
+            crate::common::NearBalance {inner: num} => num,
         };
         let action = near_primitives::transaction::Action::Stake(
             near_primitives::transaction::StakeAction {

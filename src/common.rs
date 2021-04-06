@@ -91,11 +91,13 @@ impl std::fmt::Display for AvailableRpcServerUrl {
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct NearBalance(pub u128);
+pub struct NearBalance {
+    pub inner: u128
+}
 
 impl std::fmt::Display for NearBalance {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "NearBalance {}", self)
+        write!(f, "{} NEAR", self.inner / 10u128.pow(24))
     }
 }
 
@@ -141,7 +143,9 @@ impl std::str::FromStr for NearBalance {
             },
             _ => return Err("Near Balance: incorrect currency value entered".to_string())
         };
-        Ok(NearBalance(number))
+        Ok(NearBalance {
+            inner: number
+        })
     }
 }
 
@@ -153,6 +157,22 @@ pub struct NearGas {
 impl std::fmt::Display for NearGas {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} TeraGas", self.inner / 1000000000000)
+    }
+}
+
+impl std::str::FromStr for NearGas {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
+        let currency= s.trim().trim_start_matches(&num).trim().to_uppercase();
+        let number = match currency.as_str() {
+            "T" | "TGAS" | "TERAGAS" => NearGas::into_tera_gas(num)?,
+            "GIGAGAS" | "GGAS" => NearGas::into_tera_gas(num)? / 1000,
+            _ => return Err("Near Gas: incorrect currency value entered".to_string())
+        };
+        Ok(NearGas {
+            inner: number
+        })
     }
 }
 
@@ -193,22 +213,6 @@ impl NearGas {
     }
 }
 
-impl std::str::FromStr for NearGas {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
-        let currency= s.trim().trim_start_matches(&num).trim().to_uppercase();
-        let number = match currency.as_str() {
-            "T" | "TGAS" | "TERAGAS" => NearGas::into_tera_gas(num)?,
-            "GIGAGAS" | "GGAS" => NearGas::into_tera_gas(num)? / 1000,
-            _ => return Err("Near Gas: incorrect currency value entered".to_string())
-        };
-        Ok(NearGas {
-            inner: number
-        })
-    }
-}
-
 
 #[cfg(test)]
 mod tests {
@@ -217,17 +221,17 @@ mod tests {
 
     #[test]
     fn near_balance_from_str_currency_near() {
-        assert_eq!(NearBalance::from_str("10 near").unwrap(), NearBalance(10000000000000000000000000)); // 26 number
-        assert_eq!(NearBalance::from_str("10.055NEAR").unwrap(), NearBalance(10055000000000000000000000)); // 26 number
+        assert_eq!(NearBalance::from_str("10 near").unwrap(), NearBalance { inner: 10000000000000000000000000 }); // 26 number
+        assert_eq!(NearBalance::from_str("10.055NEAR").unwrap(), NearBalance { inner: 10055000000000000000000000 }); // 26 number
     }
     #[test]
     fn near_balance_from_str_currency_n() {
-        assert_eq!(NearBalance::from_str("10 n").unwrap(), NearBalance(10000000000000000000000000)); // 26 number
-        assert_eq!(NearBalance::from_str("10N ").unwrap(), NearBalance(10000000000000000000000000)); // 26 number
+        assert_eq!(NearBalance::from_str("10 n").unwrap(), NearBalance { inner:10000000000000000000000000 }); // 26 number
+        assert_eq!(NearBalance::from_str("10N ").unwrap(), NearBalance { inner:10000000000000000000000000 }); // 26 number
     }
     #[test]
     fn near_balance_from_str_f64_near() {
-        assert_eq!(NearBalance::from_str("0.000001 near").unwrap(), NearBalance(1000000000000000000)); // 18 number
+        assert_eq!(NearBalance::from_str("0.000001 near").unwrap(), NearBalance { inner:1000000000000000000 }); // 18 number
     }
     #[test]
     fn near_balance_from_str_f64_near_without_int() {
@@ -236,23 +240,23 @@ mod tests {
     }
     #[test]
     fn near_balance_from_str_currency_ynear() {
-        assert_eq!(NearBalance::from_str("100 ynear").unwrap(), NearBalance(100));
-        assert_eq!(NearBalance::from_str("100YNEAR ").unwrap(), NearBalance(100));
+        assert_eq!(NearBalance::from_str("100 ynear").unwrap(), NearBalance { inner: 100 });
+        assert_eq!(NearBalance::from_str("100YNEAR ").unwrap(), NearBalance { inner: 100 });
     }
     #[test]
     fn near_balance_from_str_currency_yn() {
-        assert_eq!(NearBalance::from_str("9000 YN  ").unwrap(), NearBalance(9000));
-        assert_eq!(NearBalance::from_str("0 yn").unwrap(), NearBalance(0));
+        assert_eq!(NearBalance::from_str("9000 YN  ").unwrap(), NearBalance { inner: 9000 });
+        assert_eq!(NearBalance::from_str("0 yn").unwrap(), NearBalance { inner: 0 });
     }
     #[test]
     fn near_balance_from_str_currency_yoctonear() {
-        assert_eq!(NearBalance::from_str("111YOCTONEAR").unwrap(), NearBalance(111));
-        assert_eq!(NearBalance::from_str("333 yoctonear").unwrap(), NearBalance(333));
+        assert_eq!(NearBalance::from_str("111YOCTONEAR").unwrap(), NearBalance { inner: 111 });
+        assert_eq!(NearBalance::from_str("333 yoctonear").unwrap(), NearBalance { inner: 333 });
     }
     #[test]
     fn near_balance_from_str_currency_yocton() {
-        assert_eq!(NearBalance::from_str("10YOCTON").unwrap(), NearBalance(10));
-        assert_eq!(NearBalance::from_str("10 yocton      ").unwrap(), NearBalance(10));
+        assert_eq!(NearBalance::from_str("10YOCTON").unwrap(), NearBalance { inner: 10 });
+        assert_eq!(NearBalance::from_str("10 yocton      ").unwrap(), NearBalance { inner: 10 });
     }
     #[test]
     fn near_balance_from_str_f64_ynear() {

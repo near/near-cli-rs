@@ -47,7 +47,7 @@ impl TransferNEARTokensAction {
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let amount = match self.amount {
-            crate::common::NearBalance(num) => num,
+            crate::common::NearBalance {inner: num} => num,
         };
         let action = near_primitives::transaction::Action::Transfer(
             near_primitives::transaction::TransferAction { deposit: amount },
