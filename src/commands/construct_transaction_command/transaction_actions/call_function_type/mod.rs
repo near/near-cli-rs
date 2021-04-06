@@ -1,5 +1,5 @@
 use async_recursion::async_recursion;
-use dialoguer::{theme::ColorfulTheme, Input, Select};
+use dialoguer::Input;
 
 
 #[derive(Debug, Default, clap::Clap)]
@@ -101,34 +101,13 @@ impl CallFunctionAction {
 
     fn input_deposit() -> near_primitives::types::Balance {
         println!();
-        let choose_mode = vec![
-            "Yes, I want to enter a different value",
-            "No, I see no problem with default value",
-        ];
-        println!();
-        let select_mode = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(
-                "The default is 0. Do you want to change this value?"
-            )
-            .items(&choose_mode)
-            .default(0)
-            .interact()
+        let deposit: crate::common::NearBalance = Input::new()
+            .with_prompt("Enter a deposit for function (example: 10NEAR or 0.5near or 10000yoctonear).")
+            .with_initial_text("0 Near")
+            .interact_text()
             .unwrap();
-        match choose_mode[select_mode] {
-            "Yes, I want to enter a different value" => {
-                println!();
-                let deposit: crate::common::NearBalance = Input::new()
-                    .with_prompt("Enter a deposit for function (example: 10NEAR or 0.5near or 10000yoctonear).")
-                    .interact_text()
-                    .unwrap();
-                match deposit {
-                    crate::common::NearBalance {inner: num} => num,
-                }
-            }
-            "No, I see no problem with default value" => {
-                0
-            }
-            _ => unreachable!("Error"),
+        match deposit {
+            crate::common::NearBalance {inner: num} => num,
         }
     }
 
