@@ -6,6 +6,7 @@ mod function_call_type;
 mod full_access_type;
 
 
+/// данные для добавленя ключа пользователю
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliAddAccessKeyAction {
     public_key: Option<near_crypto::PublicKey>,

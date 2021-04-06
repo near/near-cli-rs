@@ -1,12 +1,14 @@
 use dialoguer::Input;
 
 
+/// данные для выбранного сервера
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliServer {
     #[clap(subcommand)]
     pub send_from: Option<CliSendFrom>,
 }
 
+/// данные для custom server
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliCustomServer {
     #[clap(long)]

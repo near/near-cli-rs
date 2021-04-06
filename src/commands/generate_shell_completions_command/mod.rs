@@ -1,6 +1,7 @@
 use clap::IntoApp;
 
 
+/// инструмент для настройки терминала пользователя
 #[derive(Debug, clap::Clap)]
 pub struct CliGenerateShellCompletions {
     #[clap(subcommand)]

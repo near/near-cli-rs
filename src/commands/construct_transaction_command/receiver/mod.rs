@@ -1,6 +1,7 @@
 use dialoguer::Input;
 
 
+/// данные о получателе транзакции
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliReceiver {
     receiver_account_id: Option<String>,

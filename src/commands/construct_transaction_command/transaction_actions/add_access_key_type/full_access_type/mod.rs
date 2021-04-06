@@ -1,6 +1,7 @@
 use async_recursion::async_recursion;
 
 
+/// данные для определения ключа с полным доступом
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliFullAccessType {
     #[clap(subcommand)]

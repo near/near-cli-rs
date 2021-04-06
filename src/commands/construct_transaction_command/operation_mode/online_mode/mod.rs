@@ -1,6 +1,7 @@
 pub mod select_server;
 
 
+/// аргументы, необходимые для создания транзакции в online mode
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOnlineArgs {
     #[clap(subcommand)]

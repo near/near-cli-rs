@@ -2,6 +2,7 @@ use async_recursion::async_recursion;
 use dialoguer::Input;
 
 
+/// данные для CallFunction в создаваемой транзакции
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliCallFunctionAction {
     #[clap(long)]

@@ -1,6 +1,7 @@
 use dialoguer::Input;
 
 
+/// аргументы, необходимые для создания транзакции в offline mode
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOfflineArgs {
     #[clap(long)]

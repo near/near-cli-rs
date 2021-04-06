@@ -105,6 +105,7 @@ impl NextAction {
     }
 }
 
+/// инструмент для создания одной общей транзакции из нескольких команд
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSelectAction {
     #[clap(subcommand)]
@@ -272,6 +273,7 @@ impl ActionSubcommand {
     }
 }
 
+/// инструмент, показывающий окончание набора команд в одной транзакции
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSkipAction {
     #[clap(subcommand)]

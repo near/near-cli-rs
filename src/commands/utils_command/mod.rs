@@ -6,6 +6,7 @@ mod sign_transaction_subcommand_with_secret_key;
 mod combine_transaction_subcommand_with_signature;
 
 
+/// набор утилит-помощников
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliUtils {
     #[clap(subcommand)]

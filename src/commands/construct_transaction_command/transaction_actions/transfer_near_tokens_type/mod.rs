@@ -2,6 +2,7 @@ use async_recursion::async_recursion;
 use dialoguer::Input;
 
 
+/// данные для создания перевода токенов
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliTransferNEARTokensAction {
     amount: Option<crate::common::NearBalance>,

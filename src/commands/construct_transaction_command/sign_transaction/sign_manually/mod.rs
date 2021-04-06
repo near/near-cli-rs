@@ -1,6 +1,7 @@
 use near_primitives::borsh::BorshSerialize;
 
 
+/// данные для подписания сформированной транзакции в режиме manually
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSignManually {}
 

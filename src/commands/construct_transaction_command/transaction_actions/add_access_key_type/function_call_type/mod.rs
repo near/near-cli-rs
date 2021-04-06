@@ -3,6 +3,7 @@ use async_recursion::async_recursion;
 use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 
 
+/// данные для определения ключа с function call
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliFunctionCallType {
     #[clap(long)]

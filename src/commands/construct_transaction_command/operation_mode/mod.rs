@@ -5,6 +5,7 @@ mod offline_mode;
 mod online_mode;
 
 
+/// инструмент выбора режима online/offline
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOperationMode {
     #[clap(subcommand)]

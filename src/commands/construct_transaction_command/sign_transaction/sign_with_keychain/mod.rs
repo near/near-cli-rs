@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use serde::Deserialize;
 
 
+/// данные для подписания сформированной транзакции с помощью файла с ключами
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSignKeychain {
     #[clap(subcommand)]

@@ -1,6 +1,6 @@
 use async_recursion::async_recursion;
 
-
+/// данные для создания аккаунта
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliCreateAccountAction {
     #[clap(subcommand)]
