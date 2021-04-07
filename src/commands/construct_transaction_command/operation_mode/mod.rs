@@ -38,7 +38,9 @@ impl OperationMode {
 
 #[derive(Debug, clap::Clap)]
 pub enum CliMode {
+    /// Prepare and, optionally, submit a new transaction with online mode
     Online(self::online_mode::CliOnlineArgs),
+    /// Prepare and, optionally, submit a new transaction with offline mode
     Offline(self::offline_mode::CliOfflineArgs),
 }
 

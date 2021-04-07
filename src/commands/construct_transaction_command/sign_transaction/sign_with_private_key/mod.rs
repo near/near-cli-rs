@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 use near_primitives::borsh::BorshSerialize;
 
 
-/// данные для подписания сформированной транзакции с помощью личных ключей
+/// подписание сформированной транзакции с помощью личных ключей
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSignPrivateKey {
     #[clap(long)]

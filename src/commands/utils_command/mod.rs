@@ -21,7 +21,9 @@ pub struct Utils {
 #[derive(Debug, clap::Clap)]
 enum CliUtil {
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
+    /// Предоставьте данные для подписания данных с помощью privte key
     SignTransactionSecretKey(self::sign_transaction_subcommand_with_secret_key::CliSignTransactionSecretKey),
+    /// Предоставьте данные для соединения подготовленной неподписаной транзакции с сигнатурой
     CombineTransactionSignature(self::combine_transaction_subcommand_with_signature::CliCombineTransactionSignature),
 }
 

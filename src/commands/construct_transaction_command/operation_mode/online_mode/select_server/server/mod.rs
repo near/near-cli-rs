@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 
-/// данные для выбранного сервера
+/// предустановленный RPC-сервер
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliServer {
     #[clap(subcommand)]
@@ -70,6 +70,7 @@ impl Server {
 
 #[derive(Debug, clap::Clap)]
 pub enum CliSendFrom {
+    /// Specify a sender
     Sender(crate::commands::construct_transaction_command::sender::CliSender),
 }
 

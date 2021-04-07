@@ -2,7 +2,7 @@ use async_recursion::async_recursion;
 use dialoguer::Input;
 
 
-/// данные для создания ставки
+/// создание ставки
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliStakeNEARTokensAction {
     stake: Option<crate::common::NearBalance>,

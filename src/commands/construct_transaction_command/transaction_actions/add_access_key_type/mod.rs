@@ -6,7 +6,7 @@ mod function_call_type;
 mod full_access_type;
 
 
-/// данные для добавленя ключа пользователю
+/// добавление ключа пользователю
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliAddAccessKeyAction {
     public_key: Option<near_crypto::PublicKey>,
@@ -93,7 +93,9 @@ impl AddAccessKeyAction {
 
 #[derive(Debug, clap::Clap)]
 pub enum CliAccessKeyPermission {
+    /// Предоставьте данные для ключа с function call
     FunctionCallAction(self::function_call_type::CliFunctionCallType),
+    /// Предоставьте данные для ключа с полным доступом
     FullAccessAction(self::full_access_type::CliFullAccessType),
 }
 

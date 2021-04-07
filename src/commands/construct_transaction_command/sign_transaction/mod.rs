@@ -8,8 +8,11 @@ mod sign_with_private_key;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliSignTransaction {
+    /// Provide arguments to sign a private key transaction
     SignPrivateKey(self::sign_with_private_key::CliSignPrivateKey),
+    /// Provide arguments to sign a keychain transaction
     SignKeychain(self::sign_with_keychain::CliSignKeychain),
+    /// Provide arguments to sign a manually transaction
     SignManually(self::sign_manually::CliSignManually),
 }
 

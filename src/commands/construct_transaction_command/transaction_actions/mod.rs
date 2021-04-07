@@ -12,11 +12,14 @@ mod transfer_near_tokens_type;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliNextAction {
+    /// Choose next action
     AddAction(CliSelectAction),
+    /// Go to transaction signing
     Skip(CliSkipAction),
 }
 
 #[derive(Debug, clap::Clap)]
+    /// Go to transaction signing
 pub enum CliSkipNextAction {
     Skip(CliSkipAction),
 }
@@ -105,7 +108,7 @@ impl NextAction {
     }
 }
 
-/// инструмент для создания одной общей транзакции из нескольких команд
+/// инструмент для добавления команды в транзакцию
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSelectAction {
     #[clap(subcommand)]
@@ -143,12 +146,19 @@ impl SelectAction {
 
 #[derive(Debug, clap::Clap)]
 pub enum CliActionSubcommand {
+    /// Предоставьте данные для перевода Near
     TransferNEARTokens(self::transfer_near_tokens_type::CliTransferNEARTokensAction),
+    /// Предоставьте данные для call function
     CallFunction(self::call_function_type::CliCallFunctionAction),
+    /// Предоставьте данные для ставки
     StakeNEARTokens(self::stake_near_tokens_type::CliStakeNEARTokensAction),
+    /// Предоставьте данные для создания аккаунта
     CreateAccount(self::create_account_type::CliCreateAccountAction),
+    /// Предоставьте данные для удаления аккаунта
     DeleteAccount(self::delete_account_type::CliDeleteAccountAction),
+    /// Предоставьте данные для добавления ключа доступа пользователю
     AddAccessKey(self::add_access_key_type::CliAddAccessKeyAction),
+    /// Предоставьте данные для удаления ключа доступа у пользователя
     DeleteAccessKey(self::delete_access_key_type::CliDeleteAccessKeyAction),
 }
 
