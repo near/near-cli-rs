@@ -1,6 +1,48 @@
 use dialoguer::Input;
 
 
+#[derive(Debug, clap::Clap)]
+pub enum CliSendTo {
+    /// Specify a receiver
+    Receiver(CliReceiver),
+}
+
+#[derive(Debug)]
+pub enum SendTo {
+    Receiver(Receiver),
+}
+
+impl From<CliSendTo> for SendTo {
+    fn from(item: CliSendTo) -> Self {
+        match item {
+            CliSendTo::Receiver(cli_receiver) => {
+                let receiver = Receiver::from(cli_receiver);
+                Self::Receiver(receiver)
+            }
+        }
+    }
+}
+
+impl SendTo {
+    pub fn send_to() -> Self {
+        Self::from(CliSendTo::Receiver(Default::default()))
+    }
+
+    pub async fn process(
+        self,
+        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+        selected_server_url: Option<url::Url>,
+    ) -> crate::CliResult {
+        match self {
+            SendTo::Receiver(receiver) => {
+                receiver
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .await
+            }
+        }
+    }
+}
+
 /// данные о получателе транзакции
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliReceiver {
