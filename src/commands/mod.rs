@@ -3,6 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod construct_transaction_command;
 pub mod generate_shell_completions_command;
+pub mod transfer;
 pub mod utils_command;
 
 
@@ -14,6 +15,8 @@ pub enum CliTopLevelCommand {
     Utils(self::utils_command::CliUtils),
     /// Use these to generate static shell completions
     GenerateShellCompletions(self::generate_shell_completions_command::CliGenerateShellCompletions),
+    /// Use these to transfer tokens
+    Transfer(self::transfer::CliCurrency),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -23,6 +26,8 @@ pub enum TopLevelCommand {
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Helpers"))]
     Utils(self::utils_command::Utils),
+    #[strum_discriminants(strum(message = "Transfer tokens"))]
+    Transfer(self::transfer::Currency),
 }
 
 impl From<CliTopLevelCommand> for TopLevelCommand {
@@ -36,6 +41,9 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             }
             CliTopLevelCommand::GenerateShellCompletions(_) => {
                 unreachable!("This variant is handled in the main function")
+            }
+            CliTopLevelCommand::Transfer(cli_currency) => {
+                TopLevelCommand::Transfer(cli_currency.into())
             }
         }
     }
@@ -62,24 +70,30 @@ impl TopLevelCommand {
             TopLevelCommandDiscriminants::Utils => {
                 CliTopLevelCommand::Utils(Default::default())
             }
+            TopLevelCommandDiscriminants::Transfer => {
+                CliTopLevelCommand::Transfer(Default::default())
+            }
         };
         Self::from(cli_top_level_command)
     }
 
     pub async fn process(self) -> crate::CliResult {
+        let unsigned_transaction = near_primitives::transaction::Transaction {
+            signer_id: "".to_string(),
+            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
+            nonce: 0,
+            receiver_id: "".to_string(),
+            block_hash: Default::default(),
+            actions: vec![],
+        };
         match self {
             Self::ConstructTransaction(mode) => {
-                let unsigned_transaction = near_primitives::transaction::Transaction {
-                    signer_id: "".to_string(),
-                    public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-                    nonce: 0,
-                    receiver_id: "".to_string(),
-                    block_hash: Default::default(),
-                    actions: vec![],
-                };
                 mode.process(unsigned_transaction).await
             }
             Self::Utils(util_type) => util_type.process().await,
+            Self::Transfer(currency) => {
+                currency.process(unsigned_transaction).await
+            }
         }
     }
 }
