@@ -2,6 +2,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod construct_transaction_command;
+pub mod execute;
 pub mod generate_shell_completions_command;
 pub mod transfer;
 pub mod utils_command;
@@ -11,12 +12,14 @@ pub mod utils_command;
 pub enum CliTopLevelCommand {
     /// Prepare and, optionally, submit a new transaction
     ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
-    /// Helpers
-    Utils(self::utils_command::CliUtils),
+    /// Execute methods
+    Execute(self::execute::CliOptionMethod),
     /// Use these to generate static shell completions
     GenerateShellCompletions(self::generate_shell_completions_command::CliGenerateShellCompletions),
     /// Use these to transfer tokens
     Transfer(self::transfer::CliCurrency),
+    /// Helpers
+    Utils(self::utils_command::CliUtils),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -24,10 +27,12 @@ pub enum CliTopLevelCommand {
 pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "Helpers"))]
-    Utils(self::utils_command::Utils),
+    #[strum_discriminants(strum(message = "Methods"))]
+    Execute(self::execute::OptionMethod),
     #[strum_discriminants(strum(message = "Transfer tokens"))]
     Transfer(self::transfer::Currency),
+    #[strum_discriminants(strum(message = "Helpers"))]
+    Utils(self::utils_command::Utils),
 }
 
 impl From<CliTopLevelCommand> for TopLevelCommand {
@@ -36,14 +41,17 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             CliTopLevelCommand::ConstructTransaction(cli_operation_mode) => {
                 TopLevelCommand::ConstructTransaction(cli_operation_mode.into())
             }
-            CliTopLevelCommand::Utils(cli_util) => {
-                TopLevelCommand::Utils(cli_util.into())
+            CliTopLevelCommand::Execute(cli_option_method) => {
+                TopLevelCommand::Execute(cli_option_method.into())
             }
             CliTopLevelCommand::GenerateShellCompletions(_) => {
                 unreachable!("This variant is handled in the main function")
             }
             CliTopLevelCommand::Transfer(cli_currency) => {
                 TopLevelCommand::Transfer(cli_currency.into())
+            }
+            CliTopLevelCommand::Utils(cli_util) => {
+                TopLevelCommand::Utils(cli_util.into())
             }
         }
     }
@@ -67,11 +75,14 @@ impl TopLevelCommand {
             TopLevelCommandDiscriminants::ConstructTransaction => {
                 CliTopLevelCommand::ConstructTransaction(Default::default())
             }
-            TopLevelCommandDiscriminants::Utils => {
-                CliTopLevelCommand::Utils(Default::default())
+            TopLevelCommandDiscriminants::Execute => {
+                CliTopLevelCommand::Execute(Default::default())
             }
             TopLevelCommandDiscriminants::Transfer => {
                 CliTopLevelCommand::Transfer(Default::default())
+            }
+            TopLevelCommandDiscriminants::Utils => {
+                CliTopLevelCommand::Utils(Default::default())
             }
         };
         Self::from(cli_top_level_command)
@@ -90,10 +101,11 @@ impl TopLevelCommand {
             Self::ConstructTransaction(mode) => {
                 mode.process(unsigned_transaction).await
             }
-            Self::Utils(util_type) => util_type.process().await,
+            Self::Execute(option_method) => option_method.process(unsigned_transaction).await,
             Self::Transfer(currency) => {
                 currency.process(unsigned_transaction).await
             }
+            Self::Utils(util_type) => util_type.process().await,
         }
     }
 }
