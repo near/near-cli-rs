@@ -10,7 +10,7 @@ pub struct CliCallFunctionAction {
     #[clap(long)]
     args: Option<String>,
     #[clap(long)]
-    gas: Option<near_primitives::types::Gas>,
+    gas: Option<crate::common::NearGas>,
     #[clap(long)]
     deposit: Option<crate::common::NearBalance>,
     #[clap(subcommand)]
@@ -37,7 +37,11 @@ impl From<CliCallFunctionAction> for CallFunctionAction {
             None => CallFunctionAction::input_args()
         };
         let gas: near_primitives::types::Gas = match item.gas {
-            Some(cli_gas) => cli_gas,
+            Some(cli_gas) => {
+                match cli_gas {
+                    crate::common::NearGas {inner: num} => num
+                }
+            },
             None => CallFunctionAction::input_gas()
         };
         let deposit: near_primitives::types::Balance = match item.deposit {
