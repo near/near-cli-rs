@@ -4,7 +4,6 @@ use dialoguer::Input;
 /// создание перевода токенов
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliTransferNEARTokensAction {
-    #[clap(long)]
     amount: Option<crate::common::NearBalance>,
     #[clap(subcommand)]
     mode: Option<super::operation_mode::CliMode>,
