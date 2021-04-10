@@ -48,13 +48,13 @@ impl SendTo {
 pub struct CliReceiver {
     receiver_account_id: Option<String>,
     #[clap(subcommand)]
-    sign_option: Option<super::sign_transaction::CliSignTransaction>,
+    sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
 }
 
 #[derive(Debug)]
 pub struct Receiver {
     pub receiver_account_id: String,
-    pub sign_option: super::sign_transaction::SignTransaction,
+    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
 impl From<CliReceiver> for Receiver {
@@ -65,7 +65,7 @@ impl From<CliReceiver> for Receiver {
         };
         let sign_option = match item.sign_option {
             Some(cli_sign_transaction) => cli_sign_transaction.into(),
-            None => super::sign_transaction::SignTransaction::choose_sign_option(),
+            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(),
         };
         Self {
             receiver_account_id,

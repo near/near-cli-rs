@@ -4,7 +4,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 pub mod operation_mode;
 mod receiver;
 mod sender;
-mod sign_transaction;
 pub mod transfer_near_tokens_type;
 
 
