@@ -32,14 +32,15 @@ impl OptionMethod {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction
     ) -> crate::CliResult {
-        println!("OptionMethod self: {:?}", &self);
         self.method.process(prepopulated_unsigned_transaction).await
     }
 }
 
 #[derive(Debug, clap::Clap)]
 enum CliMethod {
-    ChangeMethod(self::change_method::CliChangeMethod),
+    /// Specify a change method
+    ChangeMethod(self::change_method::operation_mode::CliOperationMode),
+    /// Specify a view method
     ViewMethod,
 }
 
@@ -47,7 +48,7 @@ enum CliMethod {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 enum Method {
     #[strum_discriminants(strum(message = "Change a method"))]
-    ChangeMethod(self::change_method::ChangeMethod),
+    ChangeMethod(self::change_method::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a method"))]
     ViewMethod,
 }
@@ -55,7 +56,7 @@ enum Method {
 impl From<CliMethod> for Method {
     fn from(item: CliMethod) -> Self {
         match item {
-            CliMethod::ChangeMethod(cli_change_method) => Method::ChangeMethod(cli_change_method.into()),
+            CliMethod::ChangeMethod(cli_operation_mode) => Method::ChangeMethod(cli_operation_mode.into()),
             CliMethod::ViewMethod => Method::ViewMethod
         }
     }
@@ -70,7 +71,7 @@ impl Method {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_method = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Choose your action")
+            .with_prompt("Choose your method")
             .items(&methods)
             .default(0)
             .interact()
@@ -91,7 +92,7 @@ impl Method {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction
     ) -> crate::CliResult {
         match self {
-            Self::ChangeMethod(call_function_action) => call_function_action.process(prepopulated_unsigned_transaction).await,
+            Self::ChangeMethod(operation_mode) => operation_mode.process(prepopulated_unsigned_transaction).await,
             Self::ViewMethod => Ok(())
         }
     }

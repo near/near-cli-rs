@@ -5,11 +5,42 @@ mod offline_mode;
 pub mod online_mode;
 
 
+/// инструмент выбора режима online/offline
+#[derive(Debug, Default, clap::Clap)]
+pub struct CliOperationMode {
+    #[clap(subcommand)]
+    mode: Option<CliMode>,
+}
+
+#[derive(Debug)]
+pub struct OperationMode {
+    pub mode: Mode,
+}
+
+impl From<CliOperationMode> for OperationMode {
+    fn from(item: CliOperationMode) -> Self {
+        let mode = match item.mode {
+            Some(cli_mode) => Mode::from(cli_mode),
+            None => Mode::choose_mode(),
+        };
+        Self { mode }
+    }
+}
+
+impl OperationMode {
+    pub async fn process(
+        self,
+        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+    ) -> crate::CliResult {
+        self.mode.process(prepopulated_unsigned_transaction).await
+    }
+}
+
 #[derive(Debug, clap::Clap)]
 pub enum CliMode {
-    /// Prepare and, optionally, submit a new transaction with online mode
+    /// Execute a change method with online mode
     Network(self::online_mode::CliNetworkArgs),
-    /// Prepare and, optionally, submit a new transaction with offline mode
+    /// Execute a change method with offline mode
     Offline(self::offline_mode::CliOfflineArgs),
 }
 
@@ -45,8 +76,8 @@ impl Mode {
             .collect::<Vec<_>>();
         let selected_mode = Select::with_theme(&ColorfulTheme::default())
             .with_prompt(
-                "To construct a transaction you will need to provide information about sender (signer) and receiver accounts, and actions that needs to be performed.
-                 \nDo you want to derive some information required for transaction construction automatically querying it online?"
+                "To execute a change method you will need to provide information about sender (signer) and receiver accounts.
+                 \nDo you want to derive some information required for execute a change method automatically querying it online?"
             )
             .items(&modes)
             .default(0)

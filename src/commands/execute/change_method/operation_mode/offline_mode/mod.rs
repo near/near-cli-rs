@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 
-/// аргументы, необходимые для создания трансфера в offline mode
+/// аргументы, необходимые для offline mode
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOfflineArgs {
     #[clap(long)]
@@ -9,14 +9,14 @@ pub struct CliOfflineArgs {
     #[clap(long)]
     block_hash: Option<crate::common::BlockHashAsBase58>,
     #[clap(subcommand)]
-    pub send_from: Option<super::online_mode::select_server::server::CliSendFrom>,
+    pub send_to: Option<super::super::receiver::CliSendTo>,
 }
 
 #[derive(Debug)]
 pub struct OfflineArgs {
     nonce: u64,
     block_hash: near_primitives::hash::CryptoHash,
-    send_from: super::online_mode::select_server::server::SendFrom,
+    send_to: super::super::receiver::SendTo,
 }
 
 impl From<CliOfflineArgs> for OfflineArgs {
@@ -29,14 +29,14 @@ impl From<CliOfflineArgs> for OfflineArgs {
             Some(cli_block_hash) => cli_block_hash.inner,
             None => OfflineArgs::input_block_hash(),
         };
-        let send_from = match item.send_from {
-            Some(cli_send_from) => super::online_mode::select_server::server::SendFrom::from(cli_send_from),
-            None => super::online_mode::select_server::server::SendFrom::choose_send_from(),
+        let send_to = match item.send_to {
+            Some(cli_send_to) => super::super::receiver::SendTo::from(cli_send_to),
+            None => super::super::receiver::SendTo::send_to(),
         };
         Self {
             nonce,
             block_hash,
-            send_from,
+            send_to,
         }
     }
 }
@@ -72,7 +72,7 @@ impl OfflineArgs {
             ..prepopulated_unsigned_transaction
         };
         let selected_server_url = None;
-        self.send_from
+        self.send_to
             .process(unsigned_transaction, selected_server_url)
             .await
     }    

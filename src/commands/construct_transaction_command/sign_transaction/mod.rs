@@ -11,7 +11,7 @@ pub enum CliSignTransaction {
     /// Provide arguments to sign a private key transaction
     SignPrivateKey(self::sign_with_private_key::CliSignPrivateKey),
     /// Provide arguments to sign a keychain transaction
-    SignKeychain(self::sign_with_keychain::CliSignKeychain),
+    SignWithKeychain(self::sign_with_keychain::CliSignKeychain),
     /// Provide arguments to sign a manually transaction
     SignManually(self::sign_manually::CliSignManually),
 }
@@ -24,7 +24,7 @@ pub enum SignTransaction {
     ))]
     SignPrivateKey(self::sign_with_private_key::SignPrivateKey),
     #[strum_discriminants(strum(message = "Yes, I want to sign the transaction with keychain"))]
-    SignKeychain(self::sign_with_keychain::SignKeychain),
+    SignWithKeychain(self::sign_with_keychain::SignKeychain),
     #[strum_discriminants(strum(
         message = "No, I want to construct the transaction and sign it somewhere else"
     ))]
@@ -38,9 +38,9 @@ impl From<CliSignTransaction> for SignTransaction {
                 let privat_key = self::sign_with_private_key::SignPrivateKey::from(cli_private_key);
                 SignTransaction::SignPrivateKey(privat_key)
             },
-            CliSignTransaction::SignKeychain(cli_key_chain) => {
+            CliSignTransaction::SignWithKeychain(cli_key_chain) => {
                 let key_chain = self::sign_with_keychain::SignKeychain::from(cli_key_chain);
-                SignTransaction::SignKeychain(key_chain)
+                SignTransaction::SignWithKeychain(key_chain)
             },
             CliSignTransaction::SignManually(cli_manually) => {
                 let manually = self::sign_manually::SignManually::from(cli_manually);
@@ -68,8 +68,8 @@ impl SignTransaction {
             SignTransactionDiscriminants::SignPrivateKey => {
                 CliSignTransaction::SignPrivateKey(Default::default())
             },
-            SignTransactionDiscriminants::SignKeychain => {
-                CliSignTransaction::SignKeychain(Default::default())
+            SignTransactionDiscriminants::SignWithKeychain => {
+                CliSignTransaction::SignWithKeychain(Default::default())
             },
             SignTransactionDiscriminants::SignManually => {
                 CliSignTransaction::SignManually(Default::default())
@@ -88,7 +88,7 @@ impl SignTransaction {
                 keys.process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
-            SignTransaction::SignKeychain(chain) => {
+            SignTransaction::SignWithKeychain(chain) => {
                 chain.process(prepopulated_unsigned_transaction, selected_server_url)
                 .await
             }

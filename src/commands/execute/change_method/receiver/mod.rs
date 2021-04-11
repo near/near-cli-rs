@@ -43,18 +43,18 @@ impl SendTo {
     }
 }
 
-/// данные о получателе транзакции
+/// данные о контракте
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliReceiver {
     receiver_account_id: Option<String>,
     #[clap(subcommand)]
-    sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
+    call: Option<super::CliCallFunction>,
 }
 
 #[derive(Debug)]
 pub struct Receiver {
     pub receiver_account_id: String,
-    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+    pub call: super::CallFunction,
 }
 
 impl From<CliReceiver> for Receiver {
@@ -63,13 +63,13 @@ impl From<CliReceiver> for Receiver {
             Some(cli_receiver_account_id) => cli_receiver_account_id,
             None => Receiver::input_receiver_account_id(),
         };
-        let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => cli_sign_transaction.into(),
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(),
+        let call = match item.call {
+            Some(cli_call) => cli_call.into(),
+            None => super::CallFunction::choose_call_function(),
         };
         Self {
             receiver_account_id,
-            sign_option,
+            call,
         }
     }
 }
@@ -91,7 +91,7 @@ impl Receiver {
             receiver_id: self.receiver_account_id.clone(),
             ..prepopulated_unsigned_transaction
         };
-        self.sign_option
+        self.call
             .process(unsigned_transaction, selected_server_url)
             .await
     }

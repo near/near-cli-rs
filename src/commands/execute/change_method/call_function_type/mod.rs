@@ -11,7 +11,7 @@ pub struct CliCallFunctionAction {
     #[clap(long="prepaid-gas")]
     gas: Option<crate::common::NearGas>,
     #[clap(subcommand)]
-    mode: Option<super::operation_mode::CliMode>
+    send_from: Option<super::sender::CliSendFrom>
 }
 
 #[derive(Debug)]
@@ -20,7 +20,7 @@ pub struct CallFunctionAction {
     args: Vec<u8>,
     gas: near_primitives::types::Gas,
     deposit: near_primitives::types::Balance,
-    mode: super::operation_mode::Mode
+    send_from: super::sender::SendFrom
 }
 
 impl From<CliCallFunctionAction> for CallFunctionAction {
@@ -49,16 +49,16 @@ impl From<CliCallFunctionAction> for CallFunctionAction {
             },
             None => CallFunctionAction::input_deposit()
         };
-        let mode = match item.mode {
-            Some(cli_mode) => super::operation_mode::Mode::from(cli_mode),
-            None => super::operation_mode::Mode::choose_mode()
+        let send_from = match item.send_from {
+            Some(cli_send_from) => super::sender::SendFrom::from(cli_send_from),
+            None => super::sender::SendFrom::choose_send_from()
         };
         Self {
             method_name,
             args,
             gas,
             deposit,
-            mode,
+            send_from,
         }
     }
 }
@@ -116,7 +116,7 @@ impl CallFunctionAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        // selected_server_url: Option<url::Url>,
+        selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let action = near_primitives::transaction::Action::FunctionCall(
             near_primitives::transaction::FunctionCallAction {
@@ -132,6 +132,6 @@ impl CallFunctionAction {
             actions,
             ..prepopulated_unsigned_transaction
         };
-        self.mode.process(unsigned_transaction).await
+        self.send_from.process(unsigned_transaction, selected_server_url).await
     }
 }

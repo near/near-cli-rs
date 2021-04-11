@@ -1,42 +1,11 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-pub mod call_function_type;
-mod operation_mode;
+mod call_function_type;
+pub mod operation_mode;
 mod receiver;
 mod sender;
 
-
-/// формирование вызова метода изменения
-#[derive(Debug, Default, clap::Clap)]
-pub struct CliChangeMethod {
-    #[clap(subcommand)]
-    call: Option<CliCallFunction>
-}
-
-#[derive(Debug)]
-pub struct ChangeMethod {
-    call: CallFunction
-}
-
-impl From<CliChangeMethod> for ChangeMethod {
-    fn from(item: CliChangeMethod) -> Self {
-        let call = match item.call {
-            Some(cli_call_function) => CallFunction::from(cli_call_function),
-            None => CallFunction::choose_call_function()
-        };
-        Self { call }
-    }
-}
-
-impl ChangeMethod {
-    pub async fn process(
-        self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        self.call.process(prepopulated_unsigned_transaction).await
-    }
-}
 
 #[derive(Debug, clap::Clap)]
 pub enum CliCallFunction {
@@ -70,7 +39,7 @@ impl CallFunction {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selection = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Choose your action")
+            .with_prompt("Call your function")
             .items(&commands)
             .default(0)
             .interact()
@@ -86,9 +55,10 @@ impl CallFunction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+        selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         match self {
-            Self::Call(call_function_action) => call_function_action.process(prepopulated_unsigned_transaction).await,
+            Self::Call(call_function_action) => call_function_action.process(prepopulated_unsigned_transaction, selected_server_url).await,
         }
     }
 }

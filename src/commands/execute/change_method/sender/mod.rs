@@ -1,18 +1,59 @@
 use dialoguer::Input;
 
 
-/// данные об отправителе транзакции
+#[derive(Debug, clap::Clap)]
+pub enum CliSendFrom {
+    /// Specify a signer
+    Signer(CliSender),
+}
+
+#[derive(Debug)]
+pub enum SendFrom {
+    Signer(Sender),
+}
+
+impl From<CliSendFrom> for SendFrom {
+    fn from(item: CliSendFrom) -> Self {
+        match item {
+            CliSendFrom::Signer(cli_sender) => {
+                Self::Signer(cli_sender.into())
+            }
+        }
+    }
+}
+
+impl SendFrom {
+    pub fn choose_send_from() -> Self {
+        Self::from(CliSendFrom::Signer(Default::default()))
+    }
+    
+    pub async fn process(
+        self,
+        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+        selected_server_url: Option<url::Url>,
+    ) -> crate::CliResult {
+        match self {
+            SendFrom::Signer(sender) => {
+                sender
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .await
+            }
+        }
+    }
+}
+
+/// Specify a signer
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSender {
     pub sender_account_id: Option<String>,
     #[clap(subcommand)]
-    send_to: Option<super::receiver::CliSendTo>,
+    pub sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
 }
 
 #[derive(Debug)]
 pub struct Sender {
     pub sender_account_id: String,
-    pub send_to: super::receiver::SendTo,
+    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
 impl From<CliSender> for Sender {
@@ -21,13 +62,13 @@ impl From<CliSender> for Sender {
             Some(cli_sender_account_id) => cli_sender_account_id,
             None => Sender::input_sender_account_id(),
         };
-        let send_to: super::receiver::SendTo = match item.send_to {
-            Some(cli_send_to) => super::receiver::SendTo::from(cli_send_to),
-            None => super::receiver::SendTo::send_to(),
+        let sign_option = match item.sign_option {
+            Some(cli_sign_transaction) => cli_sign_transaction.into(),
+            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(),
         };
         Self {
             sender_account_id,
-            send_to,
+            sign_option,
         }
     }
 }
@@ -36,7 +77,7 @@ impl Sender {
     pub fn input_sender_account_id() -> String {
         println!();
         Input::new()
-            .with_prompt("What is the account ID of the caller?")
+            .with_prompt("What is the account ID of the signer?")
             .interact_text()
             .unwrap()
     }
@@ -50,7 +91,7 @@ impl Sender {
             signer_id: self.sender_account_id.clone(),
             ..prepopulated_unsigned_transaction
         };
-        self.send_to
+        self.sign_option
             .process(unsigned_transaction, selected_server_url)
             .await
     }
