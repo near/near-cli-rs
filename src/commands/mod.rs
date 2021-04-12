@@ -12,7 +12,7 @@ pub mod utils_command;
 pub enum CliTopLevelCommand {
     /// Prepare and, optionally, submit a new transaction
     ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
-    /// Execute methods
+    /// Execute function (contract method)
     Execute(self::execute::CliOptionMethod),
     /// Use these to generate static shell completions
     GenerateShellCompletions(self::generate_shell_completions_command::CliGenerateShellCompletions),
@@ -27,7 +27,7 @@ pub enum CliTopLevelCommand {
 pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "Methods"))]
+    #[strum_discriminants(strum(message = "Execute function (contract method)"))]
     Execute(self::execute::OptionMethod),
     #[strum_discriminants(strum(message = "Transfer tokens"))]
     Transfer(self::transfer::Currency),

@@ -41,7 +41,7 @@ enum CliMethod {
     /// Specify a change method
     ChangeMethod(self::change_method::operation_mode::CliOperationMode),
     /// Specify a view method
-    ViewMethod,
+    ViewMethod(self::view_method::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -50,14 +50,14 @@ enum Method {
     #[strum_discriminants(strum(message = "Change a method"))]
     ChangeMethod(self::change_method::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a method"))]
-    ViewMethod,
+    ViewMethod(self::view_method::operation_mode::OperationMode),
 }
 
 impl From<CliMethod> for Method {
     fn from(item: CliMethod) -> Self {
         match item {
             CliMethod::ChangeMethod(cli_operation_mode) => Method::ChangeMethod(cli_operation_mode.into()),
-            CliMethod::ViewMethod => Method::ViewMethod
+            CliMethod::ViewMethod(cli_operation_mode) => Method::ViewMethod(cli_operation_mode.into())
         }
     }
 }
@@ -81,7 +81,7 @@ impl Method {
                 CliMethod::ChangeMethod(Default::default())
             }
             MethodDiscriminants::ViewMethod => {
-                CliMethod::ViewMethod//(Default::default())
+                CliMethod::ViewMethod(Default::default())
             }
         };
         Self::from(cli_method)
@@ -93,7 +93,9 @@ impl Method {
     ) -> crate::CliResult {
         match self {
             Self::ChangeMethod(operation_mode) => operation_mode.process(prepopulated_unsigned_transaction).await,
-            Self::ViewMethod => Ok(())
+            Self::ViewMethod(operation_mode) => {
+                operation_mode.process().await
+            }
         }
     }
 }
