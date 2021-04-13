@@ -42,21 +42,21 @@ impl Currency {
 #[derive(Debug, clap::Clap)]
 enum CliCurrencySelection {
     /// отправка трансфера в NEAR tokens
-    NEAR(self::transfer_near_tokens_type::CliTransferNEARTokensAction),
+    NEAR(self::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 enum CurrencySelection {
     #[strum_discriminants(strum(message = "NEAR tokens"))]
-    NEAR(self::transfer_near_tokens_type::TransferNEARTokensAction),
+    NEAR(self::operation_mode::OperationMode),
 }
 
 impl From<CliCurrencySelection> for CurrencySelection {
     fn from(item: CliCurrencySelection) -> Self {
         match item {
-            CliCurrencySelection::NEAR(cli_transfer_near_tokens) => {
-                Self::NEAR(cli_transfer_near_tokens.into())
+            CliCurrencySelection::NEAR(cli_operation_mode) => {
+                Self::NEAR(cli_operation_mode.into())
             }
         }
     }
@@ -90,8 +90,8 @@ impl CurrencySelection {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
         match self {
-            Self::NEAR(transfer_near_tokens) => {
-                transfer_near_tokens.process(prepopulated_unsigned_transaction).await
+            Self::NEAR(operation_mode) => {
+                operation_mode.process(prepopulated_unsigned_transaction).await
             }
         }
     }

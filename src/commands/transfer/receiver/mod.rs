@@ -48,13 +48,14 @@ impl SendTo {
 pub struct CliReceiver {
     receiver_account_id: Option<String>,
     #[clap(subcommand)]
-    sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
+    transfer: Option<super::transfer_near_tokens_type::CliTransfer>
 }
+
 
 #[derive(Debug)]
 pub struct Receiver {
     pub receiver_account_id: String,
-    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+    pub transfer: super::transfer_near_tokens_type::Transfer,
 }
 
 impl From<CliReceiver> for Receiver {
@@ -63,13 +64,13 @@ impl From<CliReceiver> for Receiver {
             Some(cli_receiver_account_id) => cli_receiver_account_id,
             None => Receiver::input_receiver_account_id(),
         };
-        let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => cli_sign_transaction.into(),
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(),
+        let transfer: super::transfer_near_tokens_type::Transfer = match item.transfer {
+            Some(cli_transfer) => cli_transfer.into(),
+            None => super::transfer_near_tokens_type::Transfer::choose_transfer_near(),
         };
         Self {
             receiver_account_id,
-            sign_option,
+            transfer,
         }
     }
 }
@@ -91,7 +92,7 @@ impl Receiver {
             receiver_id: self.receiver_account_id.clone(),
             ..prepopulated_unsigned_transaction
         };
-        self.sign_option
+        self.transfer
             .process(unsigned_transaction, selected_server_url)
             .await
     }

@@ -5,6 +5,37 @@ mod offline_mode;
 mod online_mode;
 
 
+/// инструмент выбора режима online/offline
+#[derive(Debug, Default, clap::Clap)]
+pub struct CliOperationMode {
+    #[clap(subcommand)]
+    mode: Option<CliMode>,
+}
+
+#[derive(Debug)]
+pub struct OperationMode {
+    pub mode: Mode,
+}
+
+impl From<CliOperationMode> for OperationMode {
+    fn from(item: CliOperationMode) -> Self {
+        let mode = match item.mode {
+            Some(cli_mode) => Mode::from(cli_mode),
+            None => Mode::choose_mode(),
+        };
+        Self { mode }
+    }
+}
+
+impl OperationMode {
+    pub async fn process(
+        self,
+        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+    ) -> crate::CliResult {
+        self.mode.process(prepopulated_unsigned_transaction).await
+    }
+}
+
 #[derive(Debug, clap::Clap)]
 pub enum CliMode {
     /// Prepare and, optionally, submit a new transaction with online mode

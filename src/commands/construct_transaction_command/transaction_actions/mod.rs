@@ -19,8 +19,8 @@ pub enum CliNextAction {
 }
 
 #[derive(Debug, clap::Clap)]
-    /// Go to transaction signing
 pub enum CliSkipNextAction {
+    /// Go to transaction signing
     Skip(CliSkipAction),
 }
 

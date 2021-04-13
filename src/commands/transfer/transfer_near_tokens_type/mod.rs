@@ -1,18 +1,59 @@
 use dialoguer::Input;
 
 
+#[derive(Debug, clap::Clap)]
+pub enum CliTransfer {
+    /// Enter an amount
+    Amount(CliTransferNEARTokensAction),
+}
+
+#[derive(Debug)]
+pub enum Transfer {
+    Amount(TransferNEARTokensAction),
+}
+
+impl From<CliTransfer> for Transfer {
+    fn from(item: CliTransfer) -> Self {
+        match item {
+            CliTransfer::Amount(cli_transfer_near_action) => {
+                Self::Amount(cli_transfer_near_action.into())
+            }
+        }
+    }
+}
+
+impl Transfer {
+    pub fn choose_transfer_near() -> Self {
+        Self::from(CliTransfer::Amount(Default::default()))
+    }
+
+    pub async fn process(
+        self,
+        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+        selected_server_url: Option<url::Url>,
+    ) -> crate::CliResult {
+        match self {
+            Transfer::Amount(transfer_near_action) => {
+                transfer_near_action
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .await
+            }
+        }
+    }
+}
+
 /// создание перевода токенов
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliTransferNEARTokensAction {
     amount: Option<crate::common::NearBalance>,
     #[clap(subcommand)]
-    mode: Option<super::operation_mode::CliMode>,
+    sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
 }
 
 #[derive(Debug)]
 pub struct TransferNEARTokensAction {
     pub amount: crate::common::NearBalance,
-    pub mode: super::operation_mode::Mode,
+    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
 impl From<CliTransferNEARTokensAction> for TransferNEARTokensAction {
@@ -21,19 +62,19 @@ impl From<CliTransferNEARTokensAction> for TransferNEARTokensAction {
             Some(cli_amount) => cli_amount,
             None => TransferNEARTokensAction::input_amount(),
         };
-        let mode = match item.mode {
-            Some(cli_mode) => super::operation_mode::Mode::from(cli_mode),
-            None => super::operation_mode::Mode::choose_mode()
+        let sign_option = match item.sign_option {
+            Some(cli_sign_transaction) => cli_sign_transaction.into(),
+            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(),
         };
         Self {
             amount,
-            mode,
+            sign_option,
         }
     }
 }
 
 impl TransferNEARTokensAction {
-    fn input_amount() -> crate::common::NearBalance {
+    pub fn input_amount() -> crate::common::NearBalance {
         Input::new()
             .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
             .interact_text()
@@ -43,6 +84,7 @@ impl TransferNEARTokensAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+        selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let amount = match self.amount {
             crate::common::NearBalance {inner: num} => num,
@@ -56,6 +98,6 @@ impl TransferNEARTokensAction {
             actions,
             ..prepopulated_unsigned_transaction
         };
-        self.mode.process(unsigned_transaction).await
+        self.sign_option.process(unsigned_transaction, selected_server_url).await
     }
 }
