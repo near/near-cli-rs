@@ -1,6 +1,7 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
+pub mod add;
 pub mod construct_transaction_command;
 pub mod execute;
 pub mod generate_shell_completions_command;
@@ -10,6 +11,8 @@ pub mod utils_command;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliTopLevelCommand {
+    /// Use these to add access key
+    Add(self::add::CliAddAccessKey),
     /// Prepare and, optionally, submit a new transaction
     ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
     /// Execute function (contract method)
@@ -25,6 +28,8 @@ pub enum CliTopLevelCommand {
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
+    #[strum_discriminants(strum(message = "Add access key"))]
+    Add(self::add::AddAccessKey),
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Execute function (contract method)"))]
@@ -38,6 +43,9 @@ pub enum TopLevelCommand {
 impl From<CliTopLevelCommand> for TopLevelCommand {
     fn from(cli_top_level_command: CliTopLevelCommand) -> Self {
         match cli_top_level_command {
+            CliTopLevelCommand::Add(cli_add_access_key) => {
+                TopLevelCommand::Add(cli_add_access_key.into())
+            }
             CliTopLevelCommand::ConstructTransaction(cli_operation_mode) => {
                 TopLevelCommand::ConstructTransaction(cli_operation_mode.into())
             }
@@ -72,6 +80,9 @@ impl TopLevelCommand {
             .interact()
             .unwrap();
         let cli_top_level_command = match variants[selection] {
+            TopLevelCommandDiscriminants::Add => {
+                CliTopLevelCommand::Add(Default::default())
+            }
             TopLevelCommandDiscriminants::ConstructTransaction => {
                 CliTopLevelCommand::ConstructTransaction(Default::default())
             }
@@ -98,6 +109,9 @@ impl TopLevelCommand {
             actions: vec![],
         };
         match self {
+            Self::Add(add_access_key) => {
+                add_access_key.process(unsigned_transaction).await
+            }
             Self::ConstructTransaction(mode) => {
                 mode.process(unsigned_transaction).await
             }
