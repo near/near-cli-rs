@@ -11,8 +11,8 @@ pub mod utils_command;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliTopLevelCommand {
-    /// Use these to add access key
-    Add(self::add::CliAddAccessKey),
+    /// Use these to add access key, contract code, stake proposal, sub-account
+    Add(self::add::CliAddAction),
     /// Prepare and, optionally, submit a new transaction
     ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
     /// Execute function (contract method)
@@ -29,7 +29,7 @@ pub enum CliTopLevelCommand {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "Add access key"))]
-    Add(self::add::AddAccessKey),
+    Add(self::add::AddAction),
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Execute function (contract method)"))]
@@ -43,8 +43,8 @@ pub enum TopLevelCommand {
 impl From<CliTopLevelCommand> for TopLevelCommand {
     fn from(cli_top_level_command: CliTopLevelCommand) -> Self {
         match cli_top_level_command {
-            CliTopLevelCommand::Add(cli_add_access_key) => {
-                TopLevelCommand::Add(cli_add_access_key.into())
+            CliTopLevelCommand::Add(cli_add_action) => {
+                TopLevelCommand::Add(cli_add_action.into())
             }
             CliTopLevelCommand::ConstructTransaction(cli_operation_mode) => {
                 TopLevelCommand::ConstructTransaction(cli_operation_mode.into())
@@ -109,8 +109,8 @@ impl TopLevelCommand {
             actions: vec![],
         };
         match self {
-            Self::Add(add_access_key) => {
-                add_access_key.process(unsigned_transaction).await
+            Self::Add(add_action) => {
+                add_action.process(unsigned_transaction).await
             }
             Self::ConstructTransaction(mode) => {
                 mode.process(unsigned_transaction).await

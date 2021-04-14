@@ -71,12 +71,12 @@ impl Server {
 #[derive(Debug, clap::Clap)]
 pub enum CliSendFrom {
     /// Specify a sender
-    Account(crate::commands::add::sender::CliSender),
+    Account(crate::commands::add::access_key::sender::CliSender),
 }
 
 #[derive(Debug)]
 pub enum SendFrom {
-    Account(crate::commands::add::sender::Sender),
+    Account(crate::commands::add::access_key::sender::Sender),
 }
 
 impl From<CliSendFrom> for SendFrom {
