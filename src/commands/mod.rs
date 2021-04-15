@@ -28,7 +28,7 @@ pub enum CliTopLevelCommand {
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
-    #[strum_discriminants(strum(message = "Add access key"))]
+    #[strum_discriminants(strum(message = "Add access key, contract code, stake proposal, sub-account"))]
     Add(self::add::AddAction),
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),

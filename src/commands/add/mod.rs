@@ -2,6 +2,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod access_key;
+mod contract_code;
 
 
 /// инструмент выбора to add action
@@ -42,7 +43,7 @@ pub enum CliAction {
     /// Add a new access key for an account
     AccessKey(self::access_key::operation_mode::CliOperationMode),
     /// Add a new contract code
-    ContractCode,
+    ContractCode(self::contract_code::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -51,7 +52,7 @@ pub enum Action {
     #[strum_discriminants(strum(message = "Add access key"))]
     AccessKey(self::access_key::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Add contract code"))]
-    ContractCode,
+    ContractCode(self::contract_code::operation_mode::OperationMode),
 }
 
 impl From<CliAction> for Action {
@@ -60,7 +61,9 @@ impl From<CliAction> for Action {
             CliAction::AccessKey(cli_operation_mode) => {
                 Action::AccessKey(cli_operation_mode.into())
             }
-            CliAction::ContractCode => Action::ContractCode
+            CliAction::ContractCode(cli_operation_mode) => {
+                Action::ContractCode(cli_operation_mode.into())
+            }
         }
     }
 }
@@ -84,7 +87,7 @@ impl Action {
             .unwrap();
         let cli_action = match variants[selected_action] {
             ActionDiscriminants::AccessKey => CliAction::AccessKey(Default::default()),
-            ActionDiscriminants::ContractCode => CliAction::ContractCode//(Default::default()),
+            ActionDiscriminants::ContractCode => CliAction::ContractCode(Default::default()),
         };
         Self::from(cli_action)
     }
@@ -99,8 +102,10 @@ impl Action {
                 .process(prepopulated_unsigned_transaction)
                 .await
             }
-            Action::ContractCode => {
-                Ok(())
+            Action::ContractCode(operation_mode) => {
+                operation_mode
+                    .process(prepopulated_unsigned_transaction)
+                    .await                
             }
         }
         
