@@ -3,10 +3,12 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod add;
 pub mod construct_transaction_command;
+pub mod delete;
 pub mod execute;
 pub mod generate_shell_completions_command;
 pub mod transfer;
 pub mod utils_command;
+pub mod view;
 
 
 #[derive(Debug, clap::Clap)]
@@ -15,6 +17,8 @@ pub enum CliTopLevelCommand {
     Add(self::add::CliAddAction),
     /// Prepare and, optionally, submit a new transaction
     ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
+    /// Use these to delete access key, sub-account
+    Delete(self::delete::CliDeleteAction),
     /// Execute function (contract method)
     Execute(self::execute::CliOptionMethod),
     /// Use these to generate static shell completions
@@ -23,6 +27,8 @@ pub enum CliTopLevelCommand {
     Transfer(self::transfer::CliCurrency),
     /// Helpers
     Utils(self::utils_command::CliUtils),
+    // /// View account, contract code, contract state, transaction 
+    // View,
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -32,12 +38,15 @@ pub enum TopLevelCommand {
     Add(self::add::AddAction),
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "Delete access key, account"))]
+    Delete(self::delete::DeleteAction),
     #[strum_discriminants(strum(message = "Execute function (contract method)"))]
     Execute(self::execute::OptionMethod),
     #[strum_discriminants(strum(message = "Transfer tokens"))]
     Transfer(self::transfer::Currency),
     #[strum_discriminants(strum(message = "Helpers"))]
     Utils(self::utils_command::Utils),
+    // View,
 }
 
 impl From<CliTopLevelCommand> for TopLevelCommand {
@@ -48,6 +57,9 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             }
             CliTopLevelCommand::ConstructTransaction(cli_operation_mode) => {
                 TopLevelCommand::ConstructTransaction(cli_operation_mode.into())
+            }
+            CliTopLevelCommand::Delete(cli_delete_action) => {
+                TopLevelCommand::Delete(cli_delete_action.into())
             }
             CliTopLevelCommand::Execute(cli_option_method) => {
                 TopLevelCommand::Execute(cli_option_method.into())
@@ -61,6 +73,9 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             CliTopLevelCommand::Utils(cli_util) => {
                 TopLevelCommand::Utils(cli_util.into())
             }
+            // CliTopLevelCommand::View => {
+            //     TopLevelCommand::View
+            // }
         }
     }
 }
@@ -86,6 +101,9 @@ impl TopLevelCommand {
             TopLevelCommandDiscriminants::ConstructTransaction => {
                 CliTopLevelCommand::ConstructTransaction(Default::default())
             }
+            TopLevelCommandDiscriminants::Delete => {
+                CliTopLevelCommand::Delete(Default::default())
+            }
             TopLevelCommandDiscriminants::Execute => {
                 CliTopLevelCommand::Execute(Default::default())
             }
@@ -95,6 +113,9 @@ impl TopLevelCommand {
             TopLevelCommandDiscriminants::Utils => {
                 CliTopLevelCommand::Utils(Default::default())
             }
+            // TopLevelCommandDiscriminants::View => {
+            //     CliTopLevelCommand::View(Default::default())
+            // }
         };
         Self::from(cli_top_level_command)
     }
@@ -115,11 +136,15 @@ impl TopLevelCommand {
             Self::ConstructTransaction(mode) => {
                 mode.process(unsigned_transaction).await
             }
+            Self::Delete(delete_action) => {
+                delete_action.process(unsigned_transaction).await
+            },
             Self::Execute(option_method) => option_method.process(unsigned_transaction).await,
             Self::Transfer(currency) => {
                 currency.process(unsigned_transaction).await
             }
             Self::Utils(util_type) => util_type.process().await,
+            // Self::View => {},
         }
     }
 }
