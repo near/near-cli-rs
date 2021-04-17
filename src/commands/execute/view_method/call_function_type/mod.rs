@@ -84,7 +84,7 @@ impl CallFunctionView {
             result.result
         } else {
             return Err(color_eyre::Report::msg(format!(
-                "Error current_nonce"
+                "Error call result"
             )));
         };
         let call_result_str = String::from_utf8(call_result).unwrap();
