@@ -27,8 +27,8 @@ pub enum CliTopLevelCommand {
     Transfer(self::transfer::CliCurrency),
     /// Helpers
     Utils(self::utils_command::CliUtils),
-    // /// View account, contract code, contract state, transaction 
-    // View,
+    /// View account, contract code, contract state, transaction 
+    View(self::view::CliViewQueryRequest),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -46,7 +46,8 @@ pub enum TopLevelCommand {
     Transfer(self::transfer::Currency),
     #[strum_discriminants(strum(message = "Helpers"))]
     Utils(self::utils_command::Utils),
-    // View,
+    #[strum_discriminants(strum(message = "View account, contract code, contract state, transaction"))]
+    View(self::view::ViewQueryRequest),
 }
 
 impl From<CliTopLevelCommand> for TopLevelCommand {
@@ -73,9 +74,9 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             CliTopLevelCommand::Utils(cli_util) => {
                 TopLevelCommand::Utils(cli_util.into())
             }
-            // CliTopLevelCommand::View => {
-            //     TopLevelCommand::View
-            // }
+            CliTopLevelCommand::View(cli_view_query_request) => {
+                TopLevelCommand::View(cli_view_query_request.into())
+            }
         }
     }
 }
@@ -113,9 +114,9 @@ impl TopLevelCommand {
             TopLevelCommandDiscriminants::Utils => {
                 CliTopLevelCommand::Utils(Default::default())
             }
-            // TopLevelCommandDiscriminants::View => {
-            //     CliTopLevelCommand::View(Default::default())
-            // }
+            TopLevelCommandDiscriminants::View => {
+                CliTopLevelCommand::View(Default::default())
+            }
         };
         Self::from(cli_top_level_command)
     }
@@ -144,7 +145,9 @@ impl TopLevelCommand {
                 currency.process(unsigned_transaction).await
             }
             Self::Utils(util_type) => util_type.process().await,
-            // Self::View => {},
+            Self::View(view_query_request) => {
+                view_query_request.process().await
+            },
         }
     }
 }
