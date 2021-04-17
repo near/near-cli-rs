@@ -48,6 +48,7 @@ impl Sender {
     ) -> crate::CliResult {
         let unsigned_transaction = near_primitives::transaction::Transaction {
             signer_id: self.sender_account_id.clone(),
+            receiver_id: self.sender_account_id.clone(),
             ..prepopulated_unsigned_transaction
         };
         self.contract
