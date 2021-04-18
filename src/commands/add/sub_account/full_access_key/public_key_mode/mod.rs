@@ -2,6 +2,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod add_full_access_key;
+mod generate_keypair;
 
 
 #[derive(Debug, clap::Clap)]
@@ -9,7 +10,7 @@ pub enum CliPublicKeyMode {
     /// Enter public key
     PublicKey(self::add_full_access_key::CliAddAccessKeyAction),
     /// Generate key pair
-    GenerateKeypair,
+    GenerateKeypair(self::generate_keypair::CliGenerateKeypair),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -18,7 +19,7 @@ pub enum PublicKeyMode {
     #[strum_discriminants(strum(message = "Enter public key"))]
     PublicKey(self::add_full_access_key::AddAccessKeyAction),
     #[strum_discriminants(strum(message = "Generate key pair"))]
-    GenerateKeypair,
+    GenerateKeypair(self::generate_keypair::GenerateKeypair),
 }
 
 impl From<CliPublicKeyMode> for PublicKeyMode {
@@ -27,7 +28,9 @@ impl From<CliPublicKeyMode> for PublicKeyMode {
             CliPublicKeyMode::PublicKey(cli_add_access_key_action) => {
                 PublicKeyMode::PublicKey(cli_add_access_key_action.into())
             }
-            CliPublicKeyMode::GenerateKeypair => PublicKeyMode::GenerateKeypair
+            CliPublicKeyMode::GenerateKeypair(cli_generate_keypair) => {
+                PublicKeyMode::GenerateKeypair(cli_generate_keypair.into())
+            }
         }
     }
 }
@@ -47,7 +50,7 @@ impl PublicKeyMode {
             .unwrap();
         match variants[select_mode] {
             PublicKeyModeDiscriminants::PublicKey => Self::from(CliPublicKeyMode::PublicKey(Default::default())),
-            PublicKeyModeDiscriminants::GenerateKeypair => Self::from(CliPublicKeyMode::GenerateKeypair)//(Default::default()))
+            PublicKeyModeDiscriminants::GenerateKeypair => Self::from(CliPublicKeyMode::GenerateKeypair(Default::default()))
         }
     }
 
@@ -62,9 +65,11 @@ impl PublicKeyMode {
                     .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
-            PublicKeyMode::GenerateKeypair => {
+            PublicKeyMode::GenerateKeypair(cli_generate_keypair) => {
                 println!("This module is currently being developed.");
-                Ok(())
+                cli_generate_keypair
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .await
             }
         }
     }
