@@ -18,6 +18,22 @@ pub struct Utils {
     pub util: Util,
 }
 
+impl From<CliUtils> for Utils {
+    fn from(item: CliUtils) -> Self {
+        let util = match item.util {
+            Some(cli_util) => Util::from(cli_util),
+            None => Util::choose_util(),
+        };
+        Self { util }
+    }
+}
+
+impl Utils {
+    pub async fn process(self) -> crate::CliResult {
+        self.util.process().await
+    }
+}
+
 #[derive(Debug, clap::Clap)]
 enum CliUtil {
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
@@ -36,22 +52,6 @@ pub enum Util {
     SignTransactionSecretKey(self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey),
     #[strum_discriminants(strum(message = "Combine unsigned transaction with signature"))]
     CombineTransactionSignature(self::combine_transaction_subcommand_with_signature::CombineTransactionSignature),
-}
-
-impl From<CliUtils> for Utils {
-    fn from(item: CliUtils) -> Self {
-        let util = match item.util {
-            Some(cli_util) => Util::from(cli_util),
-            None => Util::choose_util(),
-        };
-        Self { util }
-    }
-}
-
-impl Utils {
-    pub async fn process(self) -> crate::CliResult {
-        self.util.process().await
-    }
 }
 
 impl From<CliUtil> for Util {
