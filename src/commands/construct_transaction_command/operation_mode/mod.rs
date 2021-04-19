@@ -39,7 +39,7 @@ impl OperationMode {
 #[derive(Debug, clap::Clap)]
 pub enum CliMode {
     /// Prepare and, optionally, submit a new transaction with online mode
-    Online(self::online_mode::CliOnlineArgs),
+    Network(self::online_mode::CliOnlineArgs),
     /// Prepare and, optionally, submit a new transaction with offline mode
     Offline(self::offline_mode::CliOfflineArgs),
 }
@@ -48,7 +48,7 @@ pub enum CliMode {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Mode {
     #[strum_discriminants(strum(message = "Yes, I keep it simple"))]
-    Online(self::online_mode::OnlineArgs),
+    Network(self::online_mode::OnlineArgs),
     #[strum_discriminants(strum(message = "No, I want to work in no-network (air-gapped) environment"))]
     Offline(self::offline_mode::OfflineArgs),
 }
@@ -56,8 +56,8 @@ pub enum Mode {
 impl From<CliMode> for Mode {
     fn from(item: CliMode) -> Self {
         match item {
-            CliMode::Online(cli_online_args) => {
-                Self::Online(cli_online_args.into())
+            CliMode::Network(cli_network_args) => {
+                Self::Network(cli_network_args.into())
             }
             CliMode::Offline(cli_offline_args) => {
                 Self::Offline(cli_offline_args.into())
@@ -84,7 +84,7 @@ impl Mode {
             .interact()
             .unwrap();
         let cli_mode = match variants[selected_mode] {
-            ModeDiscriminants::Online => CliMode::Online(Default::default()),
+            ModeDiscriminants::Network => CliMode::Network(Default::default()),
             ModeDiscriminants::Offline => CliMode::Offline(Default::default()),
         };
         Self::from(cli_mode)
@@ -95,7 +95,7 @@ impl Mode {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
         match self {
-            Self::Online(online_args) => {
+            Self::Network(online_args) => {
                 online_args.process(prepopulated_unsigned_transaction).await
             }
             Self::Offline(offline_args) => {
