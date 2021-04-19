@@ -1,7 +1,8 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-mod contract_code;
+mod view_contract_code;
+mod view_transaction_status;
 mod view_account;
 
 
@@ -42,7 +43,7 @@ pub enum CliQueryRequest {
     /// View properties for an account
     AccountSummary(self::view_account::operation_mode::CliOperationMode),
     /// View a contract code
-    ContractCode(self::contract_code::operation_mode::CliOperationMode),
+    ContractCode(self::view_contract_code::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -51,7 +52,7 @@ pub enum QueryRequest {
     #[strum_discriminants(strum(message = "View properties for an account"))]
     AccountSummary(self::view_account::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a contract code"))]
-    ContractCode(self::contract_code::operation_mode::OperationMode),
+    ContractCode(self::view_contract_code::operation_mode::OperationMode),
 }
 
 impl From<CliQueryRequest> for QueryRequest {
