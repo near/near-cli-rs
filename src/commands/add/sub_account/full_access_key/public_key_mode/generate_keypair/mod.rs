@@ -97,7 +97,14 @@ impl GenerateKeypair {
             "private_key": secret_keypair_str,
             })
         );
-        let path: std::path::PathBuf = format!("{}.json", &prepopulated_unsigned_transaction.receiver_id).into();
+        let home_dir =  dirs::home_dir().expect("Impossible to get your home dir!");
+        let file_name: std::path::PathBuf = format!("{}.json", &prepopulated_unsigned_transaction.receiver_id).into();
+        let mut path = std::path::PathBuf::from(&home_dir);
+        path.push(crate::consts::DIR_NAME_KEY_CHAIN);
+        path.push(file_name);
+        if path.is_file() {
+            panic!("The file already exists!")
+        }
         std::fs::File::create(path)
             .map_err(|err| {
                 color_eyre::Report::msg(format!(
