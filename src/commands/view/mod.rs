@@ -44,6 +44,8 @@ pub enum CliQueryRequest {
     AccountSummary(self::view_account::operation_mode::CliOperationMode),
     /// View a contract code
     ContractCode(self::view_contract_code::operation_mode::CliOperationMode),
+    /// View a transaction status
+    Transaction(self::view_transaction_status::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -53,6 +55,8 @@ pub enum QueryRequest {
     AccountSummary(self::view_account::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a contract code"))]
     ContractCode(self::view_contract_code::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "View a transaction status"))]
+    Transaction(self::view_transaction_status::operation_mode::OperationMode),
 }
 
 impl From<CliQueryRequest> for QueryRequest {
@@ -63,6 +67,9 @@ impl From<CliQueryRequest> for QueryRequest {
             }
             CliQueryRequest::ContractCode(cli_operation_mode) => {
                 QueryRequest::ContractCode(cli_operation_mode.into())
+            }
+            CliQueryRequest::Transaction(cli_operation_mode) => {
+                QueryRequest::Transaction(cli_operation_mode.into())
             }
         }
     }
@@ -87,6 +94,7 @@ impl QueryRequest {
         let cli_request = match variants[selected_request] {
             QueryRequestDiscriminants::AccountSummary => CliQueryRequest::AccountSummary(Default::default()),
             QueryRequestDiscriminants::ContractCode => CliQueryRequest::ContractCode(Default::default()),
+            QueryRequestDiscriminants::Transaction => CliQueryRequest::Transaction(Default::default()),
         };
         Self::from(cli_request)
     }
@@ -101,6 +109,11 @@ impl QueryRequest {
                     .await
             }
             QueryRequest::ContractCode(operation_mode) => {
+                operation_mode
+                    .process()
+                    .await
+            }
+            QueryRequest::Transaction(operation_mode) => {
                 operation_mode
                     .process()
                     .await

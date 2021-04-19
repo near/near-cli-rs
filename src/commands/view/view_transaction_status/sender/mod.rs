@@ -2,47 +2,48 @@ use dialoguer::Input;
 
 
 #[derive(Debug, clap::Clap)]
-pub enum CliSendTo {
-    /// Specify an account
-    Account(CliSender),
+pub enum CliSendFrom {
+    /// Specify a signer
+    Signer(CliSender),
 }
 
 #[derive(Debug)]
-pub enum SendTo {
-    Account(Sender),
+pub enum SendFrom {
+    Signer(Sender),
 }
 
-impl From<CliSendTo> for SendTo {
-    fn from(item: CliSendTo) -> Self {
+impl From<CliSendFrom> for SendFrom {
+    fn from(item: CliSendFrom) -> Self {
         match item {
-            CliSendTo::Account(cli_sender) => {
+            CliSendFrom::Signer(cli_sender) => {
                 let sender = Sender::from(cli_sender);
-                Self::Account(sender)
+                Self::Signer(sender)
             }
         }
     }
 }
 
-impl SendTo {
-    pub fn send_to() -> Self {
-        Self::from(CliSendTo::Account(Default::default()))
+impl SendFrom {
+    pub fn send_from() -> Self {
+        Self::from(CliSendFrom::Signer(Default::default()))
     }
 
     pub async fn process(
         self,
         selected_server_url: url::Url,
+        transaction_hash: String,
     ) -> crate::CliResult {
         match self {
-            SendTo::Account(sender) => {
+            SendFrom::Signer(sender) => {
                 sender
-                    .process(selected_server_url)
+                    .process(selected_server_url, transaction_hash)
                     .await
             }
         }
     }
 }
 
-/// Specify the account to be view
+/// Specify the account that signed the transaction
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSender {
     pub sender_account_id: Option<String>,
@@ -69,7 +70,7 @@ impl Sender {
     pub fn input_sender_account_id() -> String {
         println!();
         Input::new()
-            .with_prompt("What Account ID do you need to view?")
+            .with_prompt("Specify the account that signed the transaction")
             .interact_text()
             .unwrap()
     }
@@ -81,78 +82,20 @@ impl Sender {
     pub async fn process(
         self,
         selected_server_url: url::Url,
+        transaction_hash: String,
     ) -> crate::CliResult {
         let account_id = self.sender_account_id.clone();
-        self.get_account_info(account_id.clone(), selected_server_url.clone()).await?;
-        self.get_access_key_list(account_id.clone(), selected_server_url.clone()).await?;
-        Ok(())
-    }
-
-    async fn get_account_info(
-        &self,
-        account_id: String,
-        selected_server_url: url::Url,
-    ) -> crate::CliResult {
-        let query_view_method_response = self
+        let query_view_transaction_status = self
             .rpc_client(&selected_server_url.as_str())
-            .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewAccount {
-                    account_id: account_id.clone(),
-                },
-            })
+            .tx(transaction_hash, account_id)
             .await
             .map_err(|err| {
                 color_eyre::Report::msg(format!(
-                    "Failed to fetch query for view account: {:?}",
+                    "Failed to fetch query for view transaction: {:?}",
                     err
                 ))
             })?;
-        let call_access_view = if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
-            result,
-        ) = query_view_method_response.kind
-        {
-            result
-        } else {
-            return Err(color_eyre::Report::msg(format!(
-                "Error call result"
-            )));
-        };
-        println!("{:#?}\n", &call_access_view);
-        Ok(())
-    }
-
-    async fn get_access_key_list(
-        &self,
-        account_id: String,
-        selected_server_url: url::Url,
-    ) -> crate::CliResult {
-        let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
-            .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                    account_id,
-                },
-            })
-            .await
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to fetch query for view key list: {:?}",
-                    err
-                ))
-            })?;
-        let call_access_key_view = if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
-            result,
-        ) = query_view_method_response.kind
-        {
-            result
-        } else {
-            return Err(color_eyre::Report::msg(format!(
-                "Error call result"
-            )));
-        };
-        println!("{:#?}", &call_access_key_view);
+        println!("Transactiion status: {:#?}", query_view_transaction_status);
         Ok(())
     }
 }
