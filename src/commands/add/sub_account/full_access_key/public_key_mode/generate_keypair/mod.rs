@@ -102,10 +102,12 @@ impl GenerateKeypair {
         let mut path = std::path::PathBuf::from(&home_dir);
         path.push(crate::consts::DIR_NAME_KEY_CHAIN);
         path.push(file_name);
-        if path.is_file() {
-            panic!("The file already exists!")
-        }
-        std::fs::File::create(path)
+        if path.exists() {
+            return Err(color_eyre::Report::msg(format!(
+                "The file: {} already exists!", &path.display()
+            )));
+        };
+        std::fs::File::create(&path)
             .map_err(|err| {
                 color_eyre::Report::msg(format!(
                     "Failed to create file: {:?}",
@@ -119,6 +121,7 @@ impl GenerateKeypair {
                     err
                 ))
             })?;
+        println!("The data for the access key is saved in a file {}", &path.display());
 
         let access_key: near_primitives::account::AccessKey = near_primitives::account::AccessKey {
             nonce: 0,

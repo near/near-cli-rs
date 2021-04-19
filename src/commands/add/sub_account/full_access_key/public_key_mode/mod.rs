@@ -66,7 +66,6 @@ impl PublicKeyMode {
                     .await
             }
             PublicKeyMode::GenerateKeypair(cli_generate_keypair) => {
-                println!("This module is currently being developed.");
                 cli_generate_keypair
                     .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
