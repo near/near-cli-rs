@@ -1,9 +1,11 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-mod view_contract_code;
-mod view_transaction_status;
 mod view_account;
+mod view_contract_code;
+mod view_contract_state;
+mod view_transaction_status;
+
 
 
 /// инструмент выбора to view
@@ -44,6 +46,8 @@ pub enum CliQueryRequest {
     AccountSummary(self::view_account::operation_mode::CliOperationMode),
     /// View a contract code
     ContractCode(self::view_contract_code::operation_mode::CliOperationMode),
+    /// View a contract state
+    ContractState(self::view_contract_state::operation_mode::CliOperationMode),
     /// View a transaction status
     Transaction(self::view_transaction_status::operation_mode::CliOperationMode),
 }
@@ -55,6 +59,8 @@ pub enum QueryRequest {
     AccountSummary(self::view_account::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a contract code"))]
     ContractCode(self::view_contract_code::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "View a contract state"))]
+    ContractState(self::view_contract_state::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a transaction status"))]
     Transaction(self::view_transaction_status::operation_mode::OperationMode),
 }
@@ -67,6 +73,9 @@ impl From<CliQueryRequest> for QueryRequest {
             }
             CliQueryRequest::ContractCode(cli_operation_mode) => {
                 QueryRequest::ContractCode(cli_operation_mode.into())
+            }
+            CliQueryRequest::ContractState(cli_operation_mode) => {
+                QueryRequest::ContractState(cli_operation_mode.into())
             }
             CliQueryRequest::Transaction(cli_operation_mode) => {
                 QueryRequest::Transaction(cli_operation_mode.into())
@@ -94,6 +103,7 @@ impl QueryRequest {
         let cli_request = match variants[selected_request] {
             QueryRequestDiscriminants::AccountSummary => CliQueryRequest::AccountSummary(Default::default()),
             QueryRequestDiscriminants::ContractCode => CliQueryRequest::ContractCode(Default::default()),
+            QueryRequestDiscriminants::ContractState => CliQueryRequest::ContractState(Default::default()),
             QueryRequestDiscriminants::Transaction => CliQueryRequest::Transaction(Default::default()),
         };
         Self::from(cli_request)
@@ -109,6 +119,11 @@ impl QueryRequest {
                     .await
             }
             QueryRequest::ContractCode(operation_mode) => {
+                operation_mode
+                    .process()
+                    .await
+            }
+            QueryRequest::ContractState(operation_mode) => {
                 operation_mode
                     .process()
                     .await
