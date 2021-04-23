@@ -4,6 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod access_key;
 mod contract_code;
 mod sub_account;
+mod stake_proposal;
 
 
 /// инструмент выбора to add action
@@ -45,6 +46,8 @@ pub enum CliAction {
     AccessKey(self::access_key::operation_mode::CliOperationMode),
     /// Add a new contract code
     ContractCode(self::contract_code::operation_mode::CliOperationMode),
+    /// Add a new stake proposal
+    StakeProposal(self::stake_proposal::operation_mode::CliOperationMode),
     /// Add a new sub-account
     SubAccount(self::sub_account::operation_mode::CliOperationMode),
 }
@@ -56,6 +59,8 @@ pub enum Action {
     AccessKey(self::access_key::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Add contract code"))]
     ContractCode(self::contract_code::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "Add stake proposal"))]
+    StakeProposal(self::stake_proposal::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Add sub-account"))]
     SubAccount(self::sub_account::operation_mode::OperationMode),
 }
@@ -68,6 +73,9 @@ impl From<CliAction> for Action {
             }
             CliAction::ContractCode(cli_operation_mode) => {
                 Action::ContractCode(cli_operation_mode.into())
+            }
+            CliAction::StakeProposal(cli_operation_mode) => {
+                Action::StakeProposal(cli_operation_mode.into())
             }
             CliAction::SubAccount(cli_operation_mode) => {
                 Action::SubAccount(cli_operation_mode.into())
@@ -95,6 +103,7 @@ impl Action {
         let cli_action = match variants[selected_action] {
             ActionDiscriminants::AccessKey => CliAction::AccessKey(Default::default()),
             ActionDiscriminants::ContractCode => CliAction::ContractCode(Default::default()),
+            ActionDiscriminants::StakeProposal => CliAction::StakeProposal(Default::default()),
             ActionDiscriminants::SubAccount => CliAction::SubAccount(Default::default()),
         };
         Self::from(cli_action)
@@ -111,6 +120,11 @@ impl Action {
                 .await
             }
             Action::ContractCode(operation_mode) => {
+                operation_mode
+                    .process(prepopulated_unsigned_transaction)
+                    .await                
+            }
+            Action::StakeProposal(operation_mode) => {
                 operation_mode
                     .process(prepopulated_unsigned_transaction)
                     .await                
