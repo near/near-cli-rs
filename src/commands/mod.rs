@@ -13,7 +13,7 @@ pub mod view;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliTopLevelCommand {
-    /// Use these to add access key, contract code, stake proposal, sub-account
+    /// Use these to add access key, contract code, stake proposal, sub-account, implicit-account
     Add(self::add::CliAddAction),
     /// Prepare and, optionally, submit a new transaction
     ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
@@ -34,7 +34,7 @@ pub enum CliTopLevelCommand {
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
-    #[strum_discriminants(strum(message = "Add access key, contract code, stake proposal, sub-account"))]
+    #[strum_discriminants(strum(message = "Add access key, contract code, stake proposal, sub-account, implicit-account"))]
     Add(self::add::AddAction),
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),

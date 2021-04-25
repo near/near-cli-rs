@@ -3,6 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod access_key;
 mod contract_code;
+mod implicit_account;
 mod sub_account;
 mod stake_proposal;
 
@@ -46,6 +47,8 @@ pub enum CliAction {
     AccessKey(self::access_key::operation_mode::CliOperationMode),
     /// Add a new contract code
     ContractCode(self::contract_code::operation_mode::CliOperationMode),
+    /// Add an implicit-account
+    ImplicitAccount(self::implicit_account::CliImplicitAccount),
     /// Add a new stake proposal
     StakeProposal(self::stake_proposal::operation_mode::CliOperationMode),
     /// Add a new sub-account
@@ -55,13 +58,15 @@ pub enum CliAction {
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Action {
-    #[strum_discriminants(strum(message = "Add access key"))]
+    #[strum_discriminants(strum(message = "Add a new access key for an account"))]
     AccessKey(self::access_key::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "Add contract code"))]
+    #[strum_discriminants(strum(message = "Add a new contract code"))]
     ContractCode(self::contract_code::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "Add stake proposal"))]
+    #[strum_discriminants(strum(message = "Add an implicit-account"))]
+    ImplicitAccount(self::implicit_account::ImplicitAccount),
+    #[strum_discriminants(strum(message = "Add a new stake proposal"))]
     StakeProposal(self::stake_proposal::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "Add sub-account"))]
+    #[strum_discriminants(strum(message = "Add a new sub-account"))]
     SubAccount(self::sub_account::operation_mode::OperationMode),
 }
 
@@ -73,6 +78,9 @@ impl From<CliAction> for Action {
             }
             CliAction::ContractCode(cli_operation_mode) => {
                 Action::ContractCode(cli_operation_mode.into())
+            }
+            CliAction::ImplicitAccount(cli_generate_keypair) => {
+                Action::ImplicitAccount(cli_generate_keypair.into())
             }
             CliAction::StakeProposal(cli_operation_mode) => {
                 Action::StakeProposal(cli_operation_mode.into())
@@ -103,6 +111,7 @@ impl Action {
         let cli_action = match variants[selected_action] {
             ActionDiscriminants::AccessKey => CliAction::AccessKey(Default::default()),
             ActionDiscriminants::ContractCode => CliAction::ContractCode(Default::default()),
+            ActionDiscriminants::ImplicitAccount => CliAction::ImplicitAccount(Default::default()),
             ActionDiscriminants::StakeProposal => CliAction::StakeProposal(Default::default()),
             ActionDiscriminants::SubAccount => CliAction::SubAccount(Default::default()),
         };
@@ -122,6 +131,11 @@ impl Action {
             Action::ContractCode(operation_mode) => {
                 operation_mode
                     .process(prepopulated_unsigned_transaction)
+                    .await                
+            }
+            Action::ImplicitAccount(generate_keypair) => {
+                generate_keypair
+                    .process()
                     .await                
             }
             Action::StakeProposal(operation_mode) => {
