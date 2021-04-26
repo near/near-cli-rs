@@ -1,53 +1,53 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-pub mod add;
+pub mod add_command;
 pub mod construct_transaction_command;
-pub mod delete;
-pub mod execute;
+pub mod delete_command;
+pub mod execute_command;
 pub mod generate_shell_completions_command;
-pub mod transfer;
+pub mod transfer_command;
 pub mod utils_command;
-pub mod view;
+pub mod view_command;
 
 
 #[derive(Debug, clap::Clap)]
 pub enum CliTopLevelCommand {
     /// Use these to add access key, contract code, stake proposal, sub-account, implicit-account
-    Add(self::add::CliAddAction),
+    Add(self::add_command::CliAddAction),
     /// Prepare and, optionally, submit a new transaction
     ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
     /// Use these to delete access key, sub-account
-    Delete(self::delete::CliDeleteAction),
+    Delete(self::delete_command::CliDeleteAction),
     /// Execute function (contract method)
-    Execute(self::execute::CliOptionMethod),
+    Execute(self::execute_command::CliOptionMethod),
     /// Use these to generate static shell completions
     GenerateShellCompletions(self::generate_shell_completions_command::CliGenerateShellCompletions),
     /// Use these to transfer tokens
-    Transfer(self::transfer::CliCurrency),
+    Transfer(self::transfer_command::CliCurrency),
     /// Helpers
     Utils(self::utils_command::CliUtils),
     /// View account, contract code, contract state, transaction 
-    View(self::view::CliViewQueryRequest),
+    View(self::view_command::CliViewQueryRequest),
 }
 
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "Add access key, contract code, stake proposal, sub-account, implicit-account"))]
-    Add(self::add::AddAction),
+    Add(self::add_command::AddAction),
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Delete access key, account"))]
-    Delete(self::delete::DeleteAction),
+    Delete(self::delete_command::DeleteAction),
     #[strum_discriminants(strum(message = "Execute function (contract method)"))]
-    Execute(self::execute::OptionMethod),
+    Execute(self::execute_command::OptionMethod),
     #[strum_discriminants(strum(message = "Transfer tokens"))]
-    Transfer(self::transfer::Currency),
+    Transfer(self::transfer_command::Currency),
     #[strum_discriminants(strum(message = "Helpers"))]
     Utils(self::utils_command::Utils),
     #[strum_discriminants(strum(message = "View account, contract code, contract state, transaction"))]
-    View(self::view::ViewQueryRequest),
+    View(self::view_command::ViewQueryRequest),
 }
 
 impl From<CliTopLevelCommand> for TopLevelCommand {
