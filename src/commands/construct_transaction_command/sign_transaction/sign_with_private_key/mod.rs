@@ -233,20 +233,33 @@ impl Submit {
                     "\n\n---  serialize_to_base64:   --- \n   {:#?}",
                     &serialize_to_base64
                 );
-                let transaction_info =
-                    near_jsonrpc_client::new_client(&selected_server_url.as_str())
+                let json_rcp_client = near_jsonrpc_client::new_client(&selected_server_url.as_str());
+                let transaction_info = loop {
+                    let transaction_info_result = json_rcp_client
                         .broadcast_tx_commit(near_primitives::serialize::to_base64(
                             signed_transaction
                                 .try_to_vec()
                                 .expect("Transaction is not expected to fail on serialization"),
                         ))
-                        .await
-                        .map_err(|err| {
-                            color_eyre::Report::msg(format!(
+                        .await;
+                    match transaction_info_result {
+                        Ok(response) => {
+                            break response;
+                        }
+                        Err(err) => {
+                            if let Some(serde_json::Value::String(data)) = &err.data {
+                                if data.contains("Timeout") {
+                                    println!("Error transaction: {:?}",err);
+                                    continue;
+                                }
+                            }
+                            return Err(color_eyre::Report::msg(format!(
                                 "Error transaction: {:?}",
                                 err
-                            ))
-                        })?;
+                            )));
+                        }
+                    };
+                };
                 println!("\n\n---  Success:  ---\n {:#?}", &transaction_info);
             },
             Submit::Display => {
