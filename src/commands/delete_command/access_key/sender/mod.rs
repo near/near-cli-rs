@@ -36,7 +36,7 @@ impl Sender {
     pub fn input_sender_account_id() -> String {
         println!();
         Input::new()
-            .with_prompt("Which account ID do you need to remove?")
+            .with_prompt("Which account ID do you need to remove the key from?")
             .interact_text()
             .unwrap()
     }
