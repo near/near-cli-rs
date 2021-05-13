@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+    
+  # push:
+  #   branches: [ master ]
+
+jobs:
+  # build-ubuntu:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #   - name: Run qwe
+  #     run: echo Hello, world!
+
+  #   - name: Install rg (ubuntu)
+  #     run: brew install ripgrep
+
+
+  #   - name: Run cd to near-cli
+  #     run: |
+  #       ls -la
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: List current folder
+      run: ls -la
+
+    # - name: Build
+    #   run: cargo build --verbose
+
+    # - name: Run tests
+    #   run: cargo test --verbose
+    
+    
