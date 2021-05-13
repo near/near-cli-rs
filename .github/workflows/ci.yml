@@ -1,9 +1,10 @@
 name: CI
 
 on: 
-    
+  workflow_dispatch:
+
   push:
-   branches: [ ci-1, workflow_dispatch ]
+   branches: [ ci-1 ]
 
 jobs:
   # build-ubuntu:
