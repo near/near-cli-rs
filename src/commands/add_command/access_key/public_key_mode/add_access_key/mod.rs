@@ -1,9 +1,8 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-mod function_call_type;
 mod full_access_type;
-
+mod function_call_type;
 
 /// добавление ключа пользователю
 #[derive(Debug, Default, clap::Clap)]
@@ -103,7 +102,7 @@ impl From<CliAccessKeyPermission> for AccessKeyPermission {
                 AccessKeyPermission::GrantFunctionCallAccess(function_call_type)
             }
             CliAccessKeyPermission::GrantFullAccess(cli_full_access_type) => {
-                let full_access_type = 
+                let full_access_type =
                     self::full_access_type::FullAccessType::from(cli_full_access_type);
                 AccessKeyPermission::GrantFullAccess(full_access_type)
             }
@@ -125,8 +124,12 @@ impl AccessKeyPermission {
             .interact()
             .unwrap();
         match variants[select_permission] {
-            AccessKeyPermissionDiscriminants::GrantFunctionCallAccess => Self::from(CliAccessKeyPermission::GrantFunctionCallAccess(Default::default())),
-            AccessKeyPermissionDiscriminants::GrantFullAccess => Self::from(CliAccessKeyPermission::GrantFullAccess(Default::default()))
+            AccessKeyPermissionDiscriminants::GrantFunctionCallAccess => Self::from(
+                CliAccessKeyPermission::GrantFunctionCallAccess(Default::default()),
+            ),
+            AccessKeyPermissionDiscriminants::GrantFullAccess => {
+                Self::from(CliAccessKeyPermission::GrantFullAccess(Default::default()))
+            }
         }
     }
 }

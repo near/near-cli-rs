@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSendTo {
     /// Specify an account
@@ -28,16 +27,9 @@ impl SendTo {
         Self::from(CliSendTo::Account(Default::default()))
     }
 
-    pub async fn process(
-        self,
-        selected_server_url: url::Url,
-    ) -> crate::CliResult {
+    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
         match self {
-            SendTo::Account(sender) => {
-                sender
-                    .process(selected_server_url)
-                    .await
-            }
+            SendTo::Account(sender) => sender.process(selected_server_url).await,
         }
     }
 }
@@ -59,9 +51,7 @@ impl From<CliSender> for Sender {
             Some(cli_sender_account_id) => cli_sender_account_id,
             None => Sender::input_sender_account_id(),
         };
-        Self {
-            sender_account_id,
-        }
+        Self { sender_account_id }
     }
 }
 
@@ -78,17 +68,14 @@ impl Sender {
         near_jsonrpc_client::new_client(&selected_server_url)
     }
 
-    pub async fn process(
-        self,
-        selected_server_url: url::Url,
-    ) -> crate::CliResult {
+    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
         let query_view_method_response = self
             .rpc_client(&selected_server_url.as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewState {
                     account_id: self.sender_account_id.clone(),
-                    prefix: near_primitives::types::StoreKey::from(vec![])
+                    prefix: near_primitives::types::StoreKey::from(vec![]),
                 },
             })
             .await
@@ -98,18 +85,22 @@ impl Sender {
                     err
                 ))
             })?;
-        let call_access_view = if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(
-            result,
-        ) = query_view_method_response.kind
-        {
-            result
-        } else {
-            return Err(color_eyre::Report::msg(format!(
-                "Error call result"
-            )));
-        };
-        println!("\nContract state (values):\n{:#?}\n", &call_access_view.values);
-        println!("\nContract state (proof):\n{:#?}\n", &call_access_view.proof);
+        let call_access_view =
+            if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
+                query_view_method_response.kind
+            {
+                result
+            } else {
+                return Err(color_eyre::Report::msg(format!("Error call result")));
+            };
+        println!(
+            "\nContract state (values):\n{:#?}\n",
+            &call_access_view.values
+        );
+        println!(
+            "\nContract state (proof):\n{:#?}\n",
+            &call_access_view.proof
+        );
         Ok(())
     }
 }

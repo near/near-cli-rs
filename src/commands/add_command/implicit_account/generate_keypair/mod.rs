@@ -1,6 +1,5 @@
-use std::str::FromStr;
 use std::io::Write;
-
+use std::str::FromStr;
 
 fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
     const HARDEND: u32 = 1 << 31;
@@ -24,8 +23,7 @@ fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
 /// Generate a key pair of secret and public keys (use it anywhere you need
 /// Ed25519 keys)
 #[derive(Debug, Default, clap::Clap)]
-pub struct CliGenerateKeypair {
-}
+pub struct CliGenerateKeypair {}
 
 impl CliGenerateKeypair {
     pub async fn process(self) -> crate::CliResult {
@@ -47,8 +45,12 @@ impl CliGenerateKeypair {
             &master_seed,
             slip10::Curve::Ed25519,
             &seed_phrase_hd_path,
-        ).map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to derive a key from the master key: {}", err))
+        )
+        .map_err(|err| {
+            color_eyre::Report::msg(format!(
+                "Failed to derive a key from the master key: {}",
+                err
+            ))
         })?;
 
         let secret_keypair = {
@@ -76,31 +78,27 @@ impl CliGenerateKeypair {
             "private_key": secret_keypair_str,
             })
         );
-        let home_dir =  dirs::home_dir().expect("Impossible to get your home dir!");
+        let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
         let file_name: std::path::PathBuf = format!("{}.json", &implicit_account_id).into();
         let mut path = std::path::PathBuf::from(&home_dir);
         path.push(crate::consts::DIR_NAME_KEY_CHAIN);
         path.push(file_name);
         if path.exists() {
             return Err(color_eyre::Report::msg(format!(
-                "The file: {} already exists!", &path.display()
+                "The file: {} already exists!",
+                &path.display()
             )));
         };
         std::fs::File::create(&path)
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to create file: {:?}",
-                    err
-                ))
-            })?
+            .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
             .write(buf.as_bytes())
             .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to write to file: {:?}",
-                    err
-                ))
+                color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
             })?;
-        println!("The data for the access key is saved in a file {}", &path.display());
+        println!(
+            "The data for the access key is saved in a file {}",
+            &path.display()
+        );
         Ok(())
     }
 }

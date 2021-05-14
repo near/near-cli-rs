@@ -3,19 +3,21 @@ use dialoguer::Input;
 pub mod operation_mode;
 mod sender;
 
-
 /// удаление аккаунта
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliDeleteAccountAction {
     beneficiary_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
-    sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
+    sign_option: Option<
+        crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
+    >,
 }
 
 #[derive(Debug)]
 pub struct DeleteAccountAction {
     pub beneficiary_id: near_primitives::types::AccountId,
-    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+    pub sign_option:
+        crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
 impl From<CliDeleteAccountAction> for DeleteAccountAction {
@@ -30,7 +32,7 @@ impl From<CliDeleteAccountAction> for DeleteAccountAction {
         };
         Self {
             beneficiary_id,
-            sign_option
+            sign_option,
         }
     }
 }

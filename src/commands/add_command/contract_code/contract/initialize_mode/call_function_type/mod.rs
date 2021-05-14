@@ -1,17 +1,18 @@
 use dialoguer::Input;
 
-
 /// вызов CallFunction
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliCallFunctionAction {
     method_name: Option<String>,
     args: Option<String>,
-    #[clap(long="attached-deposit")]
+    #[clap(long = "attached-deposit")]
     deposit: Option<crate::common::NearBalance>,
-    #[clap(long="prepaid-gas")]
+    #[clap(long = "prepaid-gas")]
     gas: Option<crate::common::NearGas>,
     #[clap(subcommand)]
-    pub sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
+    pub sign_option: Option<
+        crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
+    >,
 }
 
 #[derive(Debug)]
@@ -20,34 +21,31 @@ pub struct CallFunctionAction {
     args: Vec<u8>,
     gas: near_primitives::types::Gas,
     deposit: near_primitives::types::Balance,
-    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+    pub sign_option:
+        crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
 impl From<CliCallFunctionAction> for CallFunctionAction {
     fn from(item: CliCallFunctionAction) -> Self {
         let method_name: String = match item.method_name {
             Some(cli_method_name) => cli_method_name,
-            None => CallFunctionAction::input_method_name()
+            None => CallFunctionAction::input_method_name(),
         };
         let args: Vec<u8> = match item.args {
             Some(cli_args) => cli_args.into_bytes(),
-            None => CallFunctionAction::input_args()
+            None => CallFunctionAction::input_args(),
         };
         let gas: near_primitives::types::Gas = match item.gas {
-            Some(cli_gas) => {
-                match cli_gas {
-                    crate::common::NearGas {inner: num} => num
-                }
+            Some(cli_gas) => match cli_gas {
+                crate::common::NearGas { inner: num } => num,
             },
-            None => CallFunctionAction::input_gas()
+            None => CallFunctionAction::input_gas(),
         };
         let deposit: near_primitives::types::Balance = match item.deposit {
-            Some(cli_deposit) => {
-                match cli_deposit {
-                    crate::common::NearBalance {inner: num} => num
-                }
+            Some(cli_deposit) => match cli_deposit {
+                crate::common::NearBalance { inner: num } => num,
             },
-            None => CallFunctionAction::input_deposit()
+            None => CallFunctionAction::input_deposit(),
         };
         let sign_option = match item.sign_option {
             Some(cli_sign_transaction) => cli_sign_transaction.into(),
@@ -81,7 +79,7 @@ impl CallFunctionAction {
                 .interact_text()
                 .unwrap();
             let gas: u64 = match input_gas {
-                crate::common::NearGas { inner: num } => num
+                crate::common::NearGas { inner: num } => num,
             };
             if gas <= 200000000000000 {
                 break gas;
@@ -91,7 +89,7 @@ impl CallFunctionAction {
         };
         gas
     }
-    
+
     fn input_args() -> Vec<u8> {
         println!();
         let input: String = Input::new()
@@ -104,12 +102,14 @@ impl CallFunctionAction {
     fn input_deposit() -> near_primitives::types::Balance {
         println!();
         let deposit: crate::common::NearBalance = Input::new()
-            .with_prompt("Enter a deposit for function (example: 10NEAR or 0.5near or 10000yoctonear).")
+            .with_prompt(
+                "Enter a deposit for function (example: 10NEAR or 0.5near or 10000yoctonear).",
+            )
             .with_initial_text("0 Near")
             .interact_text()
             .unwrap();
         match deposit {
-            crate::common::NearBalance {inner: num} => num,
+            crate::common::NearBalance { inner: num } => num,
         }
     }
 

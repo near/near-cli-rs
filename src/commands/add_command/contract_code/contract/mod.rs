@@ -1,9 +1,8 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 use std::io::Read;
+use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod initialize_mode;
-
 
 #[derive(Debug, clap::Clap)]
 pub enum CliContract {
@@ -37,9 +36,7 @@ impl Contract {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_contract = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(
-                "To deploy contract code you will need to choose next action"
-            )
+            .with_prompt("To deploy contract code you will need to choose next action")
             .items(&contracts)
             .default(0)
             .interact()
@@ -70,28 +67,28 @@ impl Contract {
 pub struct CliContractFile {
     file_path: Option<std::path::PathBuf>,
     #[clap(subcommand)]
-    next_action: Option<self::initialize_mode::CliNextAction>
+    next_action: Option<self::initialize_mode::CliNextAction>,
 }
 
 #[derive(Debug)]
 pub struct ContractFile {
     pub file_path: std::path::PathBuf,
-    next_action: self::initialize_mode::NextAction
+    next_action: self::initialize_mode::NextAction,
 }
 
 impl From<CliContractFile> for ContractFile {
     fn from(item: CliContractFile) -> Self {
         let file_path = match item.file_path {
             Some(cli_file_path) => cli_file_path,
-            None => ContractFile::input_file_path()
+            None => ContractFile::input_file_path(),
         };
         let next_action = match item.next_action {
             Some(cli_next_action) => self::initialize_mode::NextAction::from(cli_next_action),
-            None => self::initialize_mode::NextAction::choose_next_action()
+            None => self::initialize_mode::NextAction::choose_next_action(),
         };
         ContractFile {
             file_path,
-            next_action
+            next_action,
         }
     }
 }
@@ -114,26 +111,13 @@ impl ContractFile {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-
         let mut f = std::fs::File::open(&self.file_path.clone())
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to open file: {:?}",
-                    err
-                ))
-            })?;
+            .map_err(|err| color_eyre::Report::msg(format!("Failed to open file: {:?}", err)))?;
         let mut code = Vec::new();
         f.read_to_end(&mut code)
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to read file: {:?}",
-                    err
-                ))
-            })?;
+            .map_err(|err| color_eyre::Report::msg(format!("Failed to read file: {:?}", err)))?;
         let action = near_primitives::transaction::Action::DeployContract(
-            near_primitives::transaction::DeployContractAction {
-                code
-            },
+            near_primitives::transaction::DeployContractAction { code },
         );
         let mut actions = prepopulated_unsigned_transaction.actions.clone();
         actions.push(action);

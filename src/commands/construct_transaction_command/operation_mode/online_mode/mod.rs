@@ -1,6 +1,5 @@
 pub mod select_server;
 
-
 /// аргументы, необходимые для создания транзакции в online mode
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOnlineArgs {
@@ -16,7 +15,9 @@ pub struct OnlineArgs {
 impl From<CliOnlineArgs> for OnlineArgs {
     fn from(item: CliOnlineArgs) -> Self {
         let selected_server = match item.selected_server {
-            Some(cli_selected_server) => self::select_server::SelectServer::from(cli_selected_server),
+            Some(cli_selected_server) => {
+                self::select_server::SelectServer::from(cli_selected_server)
+            }
             None => self::select_server::SelectServer::choose_server(),
         };
         Self { selected_server }

@@ -1,7 +1,6 @@
 use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
 
-
 /// утилита, позволяющая подписать транзакцию личным ключом
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSignTransactionSecretKey {
@@ -60,11 +59,12 @@ impl SignTransactionSecretKey {
             self.unsigned_transaction,
         );
         let serialize_to_base64 = near_primitives::serialize::to_base64(
-            signed_transaction
-                .try_to_vec()
-                .map_err(|err| {
-                    color_eyre::Report::msg(format!("Transaction is not expected to fail on serialization: {}", err))
-                })?,
+            signed_transaction.try_to_vec().map_err(|err| {
+                color_eyre::Report::msg(format!(
+                    "Transaction is not expected to fail on serialization: {}",
+                    err
+                ))
+            })?,
         );
         println!(
             "\n\nThe transaction has been successfully signed:\n{:#?}",

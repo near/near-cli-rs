@@ -4,9 +4,8 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod access_key;
 mod contract_code;
 mod implicit_account;
-mod sub_account;
 mod stake_proposal;
-
+mod sub_account;
 
 /// инструмент выбора to add action
 #[derive(Debug, Default, clap::Clap)]
@@ -24,7 +23,7 @@ impl From<CliAddAction> for AddAction {
     fn from(item: CliAddAction) -> Self {
         let action = match item.action {
             Some(cli_action) => cli_action.into(),
-            None => Action::choose_action()
+            None => Action::choose_action(),
         };
         Self { action }
     }
@@ -35,9 +34,7 @@ impl AddAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        self.action
-            .process(prepopulated_unsigned_transaction)
-            .await
+        self.action.process(prepopulated_unsigned_transaction).await
     }
 }
 
@@ -101,9 +98,7 @@ impl Action {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_action = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(
-                "Сhoose what you want to add"
-            )
+            .with_prompt("Сhoose what you want to add")
             .items(&actions)
             .default(0)
             .interact()
@@ -124,29 +119,25 @@ impl Action {
     ) -> crate::CliResult {
         match self {
             Action::AccessKey(operation_mode) => {
-            operation_mode
-                .process(prepopulated_unsigned_transaction)
-                .await
+                operation_mode
+                    .process(prepopulated_unsigned_transaction)
+                    .await
             }
             Action::ContractCode(operation_mode) => {
                 operation_mode
                     .process(prepopulated_unsigned_transaction)
-                    .await                
+                    .await
             }
-            Action::ImplicitAccount(generate_keypair) => {
-                generate_keypair
-                    .process()
-                    .await                
-            }
+            Action::ImplicitAccount(generate_keypair) => generate_keypair.process().await,
             Action::StakeProposal(operation_mode) => {
                 operation_mode
                     .process(prepopulated_unsigned_transaction)
-                    .await                
+                    .await
             }
             Action::SubAccount(operation_mode) => {
                 operation_mode
                     .process(prepopulated_unsigned_transaction)
-                    .await                
+                    .await
             }
         }
     }

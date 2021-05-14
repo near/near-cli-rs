@@ -6,7 +6,6 @@ mod receiver;
 mod sender;
 pub mod transfer_near_tokens_type;
 
-
 /// инструмент выбора переводимой валюты
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliCurrency {
@@ -23,7 +22,7 @@ impl From<CliCurrency> for Currency {
     fn from(item: CliCurrency) -> Self {
         let currency_selection = match item.currency_selection {
             Some(cli_currency_selection) => CurrencySelection::from(cli_currency_selection),
-            None => CurrencySelection::choose_currency()
+            None => CurrencySelection::choose_currency(),
         };
         Self { currency_selection }
     }
@@ -34,10 +33,11 @@ impl Currency {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        self.currency_selection.process(prepopulated_unsigned_transaction).await
+        self.currency_selection
+            .process(prepopulated_unsigned_transaction)
+            .await
     }
 }
-
 
 #[derive(Debug, clap::Clap)]
 enum CliCurrencySelection {
@@ -55,9 +55,7 @@ enum CurrencySelection {
 impl From<CliCurrencySelection> for CurrencySelection {
     fn from(item: CliCurrencySelection) -> Self {
         match item {
-            CliCurrencySelection::NEAR(cli_operation_mode) => {
-                Self::NEAR(cli_operation_mode.into())
-            }
+            CliCurrencySelection::NEAR(cli_operation_mode) => Self::NEAR(cli_operation_mode.into()),
         }
     }
 }
@@ -91,7 +89,9 @@ impl CurrencySelection {
     ) -> crate::CliResult {
         match self {
             Self::NEAR(operation_mode) => {
-                operation_mode.process(prepopulated_unsigned_transaction).await
+                operation_mode
+                    .process(prepopulated_unsigned_transaction)
+                    .await
             }
         }
     }

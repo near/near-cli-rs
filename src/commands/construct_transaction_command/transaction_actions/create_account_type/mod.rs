@@ -18,7 +18,9 @@ impl From<CliCreateAccountAction> for CreateAccountAction {
             Some(cli_skip_action) => super::NextAction::from(cli_skip_action),
             None => super::NextAction::input_next_action(),
         };
-        Self { next_action: Box::new(skip_next_action) }
+        Self {
+            next_action: Box::new(skip_next_action),
+        }
     }
 }
 

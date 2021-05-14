@@ -3,7 +3,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod server;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSelectServer {
     /// предоставление данных для сервера https://rpc.testnet.near.org
@@ -32,15 +31,15 @@ pub enum SelectServer {
 impl From<CliSelectServer> for SelectServer {
     fn from(item: CliSelectServer) -> Self {
         match item {
-            CliSelectServer::Testnet(cli_server) => {
-                Self::Testnet(cli_server.into_server(crate::consts::TESTNET_API_SERVER_URL.parse().unwrap()))
-            }
-            CliSelectServer::Mainnet(cli_server) => {
-                Self::Mainnet(cli_server.into_server(crate::consts::MAINNET_API_SERVER_URL.parse().unwrap()))
-            }
-            CliSelectServer::Betanet(cli_server) => {
-                Self::Betanet(cli_server.into_server(crate::consts::BETANET_API_SERVER_URL.parse().unwrap()))
-            }
+            CliSelectServer::Testnet(cli_server) => Self::Testnet(
+                cli_server.into_server(crate::consts::TESTNET_API_SERVER_URL.parse().unwrap()),
+            ),
+            CliSelectServer::Mainnet(cli_server) => Self::Mainnet(
+                cli_server.into_server(crate::consts::MAINNET_API_SERVER_URL.parse().unwrap()),
+            ),
+            CliSelectServer::Betanet(cli_server) => Self::Betanet(
+                cli_server.into_server(crate::consts::BETANET_API_SERVER_URL.parse().unwrap()),
+            ),
             CliSelectServer::Custom(cli_custom_server) => {
                 Self::Custom(cli_custom_server.into_server())
             }
@@ -71,23 +70,20 @@ impl SelectServer {
         Self::from(cli_select_server)
     }
 
-    pub async fn process(
-        self,
-    ) -> crate::CliResult {
-        Ok( 
-            match self {
-                SelectServer::Testnet(server) => {
-                    server.process().await?;
-                }
-                SelectServer::Mainnet(server) => {
-                    server.process().await?;
-                }
-                SelectServer::Betanet(server) => {
-                    server.process().await?;
-                }
-                SelectServer::Custom(server) => {
-                    server.process().await?;
-                }
+    pub async fn process(self) -> crate::CliResult {
+        Ok(match self {
+            SelectServer::Testnet(server) => {
+                server.process().await?;
+            }
+            SelectServer::Mainnet(server) => {
+                server.process().await?;
+            }
+            SelectServer::Betanet(server) => {
+                server.process().await?;
+            }
+            SelectServer::Custom(server) => {
+                server.process().await?;
+            }
         })
     }
 }

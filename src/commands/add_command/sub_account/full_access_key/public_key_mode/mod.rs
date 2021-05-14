@@ -4,7 +4,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod add_full_access_key;
 mod generate_keypair;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliPublicKeyMode {
     /// Enter public key
@@ -49,8 +48,12 @@ impl PublicKeyMode {
             .interact()
             .unwrap();
         match variants[select_mode] {
-            PublicKeyModeDiscriminants::PublicKey => Self::from(CliPublicKeyMode::PublicKey(Default::default())),
-            PublicKeyModeDiscriminants::GenerateKeypair => Self::from(CliPublicKeyMode::GenerateKeypair(Default::default()))
+            PublicKeyModeDiscriminants::PublicKey => {
+                Self::from(CliPublicKeyMode::PublicKey(Default::default()))
+            }
+            PublicKeyModeDiscriminants::GenerateKeypair => {
+                Self::from(CliPublicKeyMode::GenerateKeypair(Default::default()))
+            }
         }
     }
 

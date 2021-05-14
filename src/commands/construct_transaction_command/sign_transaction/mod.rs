@@ -5,7 +5,6 @@ mod sign_manually;
 mod sign_with_keychain;
 mod sign_with_private_key;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSignTransaction {
     /// Provide arguments to sign a private key transaction
@@ -37,20 +36,20 @@ impl From<CliSignTransaction> for SignTransaction {
             CliSignTransaction::SignPrivateKey(cli_private_key) => {
                 let privat_key = self::sign_with_private_key::SignPrivateKey::from(cli_private_key);
                 SignTransaction::SignPrivateKey(privat_key)
-            },
+            }
             CliSignTransaction::SignWithKeychain(cli_key_chain) => {
                 let key_chain = self::sign_with_keychain::SignKeychain::from(cli_key_chain);
                 SignTransaction::SignWithKeychain(key_chain)
-            },
+            }
             CliSignTransaction::SignManually(cli_manually) => {
                 let manually = self::sign_manually::SignManually::from(cli_manually);
                 SignTransaction::SignManually(manually)
-            },
+            }
         }
     }
 }
 
-impl SignTransaction {    
+impl SignTransaction {
     pub fn choose_sign_option() -> Self {
         println!();
         let variants = SignTransactionDiscriminants::iter().collect::<Vec<_>>();
@@ -67,13 +66,13 @@ impl SignTransaction {
         let cli_sign_option = match variants[select_sign_options] {
             SignTransactionDiscriminants::SignPrivateKey => {
                 CliSignTransaction::SignPrivateKey(Default::default())
-            },
+            }
             SignTransactionDiscriminants::SignWithKeychain => {
                 CliSignTransaction::SignWithKeychain(Default::default())
-            },
+            }
             SignTransactionDiscriminants::SignManually => {
                 CliSignTransaction::SignManually(Default::default())
-            },
+            }
         };
         Self::from(cli_sign_option)
     }
@@ -89,12 +88,14 @@ impl SignTransaction {
                     .await
             }
             SignTransaction::SignWithKeychain(chain) => {
-                chain.process(prepopulated_unsigned_transaction, selected_server_url)
-                .await
+                chain
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .await
             }
             SignTransaction::SignManually(args_manually) => {
-                args_manually.process(prepopulated_unsigned_transaction)
-                .await
+                args_manually
+                    .process(prepopulated_unsigned_transaction)
+                    .await
             }
         }
     }

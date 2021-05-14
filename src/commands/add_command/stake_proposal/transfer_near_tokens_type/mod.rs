@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliTransfer {
     /// Enter an amount
@@ -80,15 +79,21 @@ impl TransferNEARTokensAction {
             .interact_text()
             .unwrap()
     }
-    
+
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let stake = match self.amount {
-            crate::common::NearBalance {inner: num} => num,
+            crate::common::NearBalance { inner: num } => num,
         };
-        self.sign_transactions.process(prepopulated_unsigned_transaction, selected_server_url, stake).await
+        self.sign_transactions
+            .process(
+                prepopulated_unsigned_transaction,
+                selected_server_url,
+                stake,
+            )
+            .await
     }
 }

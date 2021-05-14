@@ -3,7 +3,6 @@ use dialoguer::Input;
 pub mod operation_mode;
 mod sender;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliDeleteAccessKeyAction {
     /// Specify public key
@@ -50,13 +49,16 @@ impl DeleteAccessKeyAction {
 pub struct CliDeleteAccessKeyType {
     public_key: Option<near_crypto::PublicKey>,
     #[clap(subcommand)]
-    sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
+    sign_option: Option<
+        crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
+    >,
 }
 
 #[derive(Debug)]
 pub struct DeleteAccessKeyType {
     pub public_key: near_crypto::PublicKey,
-    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+    pub sign_option:
+        crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
 impl From<CliDeleteAccessKeyType> for DeleteAccessKeyType {
@@ -90,7 +92,9 @@ impl DeleteAccessKeyType {
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let action = near_primitives::transaction::Action::DeleteKey(
-            near_primitives::transaction::DeleteKeyAction { public_key: self.public_key },
+            near_primitives::transaction::DeleteKeyAction {
+                public_key: self.public_key,
+            },
         );
         let mut actions = prepopulated_unsigned_transaction.actions.clone();
         actions.push(action);

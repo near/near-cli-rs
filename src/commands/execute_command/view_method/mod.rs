@@ -5,7 +5,6 @@ mod call_function_type;
 pub mod operation_mode;
 mod receiver;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliCallFunction {
     /// вызов метода просмотра
@@ -44,9 +43,7 @@ impl CallFunction {
             .interact()
             .unwrap();
         let cli_call = match variants[selection] {
-            CallFunctionDiscriminants::Call => {
-                CliCallFunction::Call(Default::default())
-            }
+            CallFunctionDiscriminants::Call => CliCallFunction::Call(Default::default()),
         };
         Self::from(cli_call)
     }
@@ -58,7 +55,9 @@ impl CallFunction {
     ) -> crate::CliResult {
         match self {
             Self::Call(call_function_action) => {
-                call_function_action.process(selected_server_url, contract_account_id).await
+                call_function_action
+                    .process(selected_server_url, contract_account_id)
+                    .await
             }
         }
     }

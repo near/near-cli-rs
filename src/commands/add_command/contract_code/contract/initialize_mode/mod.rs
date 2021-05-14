@@ -3,13 +3,12 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod call_function_type;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliNextAction {
     /// Add an initialize
     Initialize(self::call_function_type::CliCallFunctionAction),
     /// Don't add an initialize
-    NoInitialize(CliNoInitialize)
+    NoInitialize(CliNoInitialize),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -43,16 +42,16 @@ impl NextAction {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_action = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(
-                "Do you want to choose next action"
-            )
+            .with_prompt("Do you want to choose next action")
             .items(&actions)
             .default(0)
             .interact()
             .unwrap();
         let cli_action = match variants[selected_action] {
             NextActionDiscriminants::Initialize => CliNextAction::Initialize(Default::default()),
-            NextActionDiscriminants::NoInitialize => CliNextAction::NoInitialize(Default::default()),
+            NextActionDiscriminants::NoInitialize => {
+                CliNextAction::NoInitialize(Default::default())
+            }
         };
         Self::from(cli_action)
     }
@@ -74,7 +73,6 @@ impl NextAction {
                     .await
             }
         }
-        
     }
 }
 
@@ -82,12 +80,15 @@ impl NextAction {
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliNoInitialize {
     #[clap(subcommand)]
-    pub sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
+    pub sign_option: Option<
+        crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
+    >,
 }
 
 #[derive(Debug)]
 pub struct NoInitialize {
-    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+    pub sign_option:
+        crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
 impl From<CliNoInitialize> for NoInitialize {
@@ -96,9 +97,7 @@ impl From<CliNoInitialize> for NoInitialize {
             Some(cli_sign_transaction) => cli_sign_transaction.into(),
             None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(),
         };
-        Self {
-            sign_option,
-        } 
+        Self { sign_option }
     }
 }
 

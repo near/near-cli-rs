@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// Specify the account to be deleted
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSender {

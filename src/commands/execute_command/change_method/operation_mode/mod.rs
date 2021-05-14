@@ -4,7 +4,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod offline_mode;
 pub mod online_mode;
 
-
 /// инструмент выбора режима online/offline
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOperationMode {
@@ -49,19 +48,17 @@ pub enum CliMode {
 pub enum Mode {
     #[strum_discriminants(strum(message = "Yes, I keep it simple"))]
     Network(self::online_mode::NetworkArgs),
-    #[strum_discriminants(strum(message = "No, I want to work in no-network (air-gapped) environment"))]
+    #[strum_discriminants(strum(
+        message = "No, I want to work in no-network (air-gapped) environment"
+    ))]
     Offline(self::offline_mode::OfflineArgs),
 }
 
 impl From<CliMode> for Mode {
     fn from(item: CliMode) -> Self {
         match item {
-            CliMode::Network(cli_network_args) => {
-                Self::Network(cli_network_args.into())
-            }
-            CliMode::Offline(cli_offline_args) => {
-                Self::Offline(cli_offline_args.into())
-            }
+            CliMode::Network(cli_network_args) => Self::Network(cli_network_args.into()),
+            CliMode::Offline(cli_offline_args) => Self::Offline(cli_offline_args.into()),
         }
     }
 }
@@ -96,10 +93,14 @@ impl Mode {
     ) -> crate::CliResult {
         match self {
             Self::Network(network_args) => {
-                network_args.process(prepopulated_unsigned_transaction).await
+                network_args
+                    .process(prepopulated_unsigned_transaction)
+                    .await
             }
             Self::Offline(offline_args) => {
-                offline_args.process(prepopulated_unsigned_transaction).await
+                offline_args
+                    .process(prepopulated_unsigned_transaction)
+                    .await
             }
         }
     }

@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSendFrom {
     /// Specify a signer
@@ -15,9 +14,7 @@ pub enum SendFrom {
 impl From<CliSendFrom> for SendFrom {
     fn from(item: CliSendFrom) -> Self {
         match item {
-            CliSendFrom::Signer(cli_sender) => {
-                Self::Signer(cli_sender.into())
-            }
+            CliSendFrom::Signer(cli_sender) => Self::Signer(cli_sender.into()),
         }
     }
 }
@@ -26,7 +23,7 @@ impl SendFrom {
     pub fn choose_send_from() -> Self {
         Self::from(CliSendFrom::Signer(Default::default()))
     }
-    
+
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
@@ -47,13 +44,16 @@ impl SendFrom {
 pub struct CliSender {
     pub sender_account_id: Option<String>,
     #[clap(subcommand)]
-    pub sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
+    pub sign_option: Option<
+        crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
+    >,
 }
 
 #[derive(Debug)]
 pub struct Sender {
     pub sender_account_id: String,
-    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+    pub sign_option:
+        crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
 impl From<CliSender> for Sender {

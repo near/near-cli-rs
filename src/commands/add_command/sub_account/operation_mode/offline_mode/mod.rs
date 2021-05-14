@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// аргументы, необходимые для создания трансфера в offline mode
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOfflineArgs {
@@ -30,7 +29,9 @@ impl From<CliOfflineArgs> for OfflineArgs {
             None => OfflineArgs::input_block_hash(),
         };
         let send_from = match item.send_from {
-            Some(cli_send_from) => super::online_mode::select_server::server::SendFrom::from(cli_send_from),
+            Some(cli_send_from) => {
+                super::online_mode::select_server::server::SendFrom::from(cli_send_from)
+            }
             None => super::online_mode::select_server::server::SendFrom::choose_send_from(),
         };
         Self {
@@ -75,5 +76,5 @@ impl OfflineArgs {
         self.send_from
             .process(unsigned_transaction, selected_server_url)
             .await
-    }    
+    }
 }

@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// данные об отправителе транзакции
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSender {

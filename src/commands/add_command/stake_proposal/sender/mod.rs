@@ -1,12 +1,11 @@
 use dialoguer::Input;
 
-
 /// данные об отправителе транзакции
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSender {
     pub sender_account_id: Option<String>,
     #[clap(subcommand)]
-    transfer: Option<super::transfer_near_tokens_type::CliTransfer>
+    transfer: Option<super::transfer_near_tokens_type::CliTransfer>,
 }
 
 #[derive(Debug)]

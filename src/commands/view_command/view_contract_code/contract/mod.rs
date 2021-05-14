@@ -2,7 +2,6 @@ use dialoguer::Input;
 
 mod download_mode;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSendTo {
     /// Specify a contract
@@ -30,16 +29,9 @@ impl SendTo {
         Self::from(CliSendTo::Contract(Default::default()))
     }
 
-    pub async fn process(
-        self,
-        selected_server_url: url::Url,
-    ) -> crate::CliResult {
+    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
         match self {
-            SendTo::Contract(sender) => {
-                sender
-                    .process(selected_server_url)
-                    .await
-            }
+            SendTo::Contract(sender) => sender.process(selected_server_url).await,
         }
     }
 }
@@ -65,8 +57,10 @@ impl From<CliContract> for Contract {
             None => Contract::input_contract_id(),
         };
         let download_mode = match item.download_mode {
-            Some(cli_download_mode) => self::download_mode::DownloadMode::from(cli_download_mode, &contract_id),
-            None => self::download_mode::DownloadMode::choose_download_mode(&contract_id)
+            Some(cli_download_mode) => {
+                self::download_mode::DownloadMode::from(cli_download_mode, &contract_id)
+            }
+            None => self::download_mode::DownloadMode::choose_download_mode(&contract_id),
         };
         Self {
             contract_id,
@@ -84,10 +78,7 @@ impl Contract {
             .unwrap()
     }
 
-    pub async fn process(
-        self,
-        selected_server_url: url::Url,
-    ) -> crate::CliResult {
+    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
         self.download_mode
             .process(self.contract_id, selected_server_url)
             .await

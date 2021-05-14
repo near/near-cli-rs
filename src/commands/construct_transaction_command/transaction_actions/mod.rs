@@ -9,7 +9,6 @@ mod delete_account_type;
 mod stake_near_tokens_type;
 mod transfer_near_tokens_type;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliNextAction {
     /// Choose next action
@@ -62,7 +61,7 @@ impl From<CliSkipNextAction> for NextAction {
 impl From<CliSkipNextAction> for CliNextAction {
     fn from(item: CliSkipNextAction) -> Self {
         match item {
-            CliSkipNextAction::Skip(cli_skip_action) => Self::Skip(cli_skip_action)
+            CliSkipNextAction::Skip(cli_skip_action) => Self::Skip(cli_skip_action),
         }
     }
 }
@@ -83,7 +82,7 @@ impl NextAction {
             .unwrap();
         let cli_next_action = match variants[select_next_action] {
             NextActionDiscriminants::AddAction => CliNextAction::AddAction(Default::default()),
-            NextActionDiscriminants::Skip => CliNextAction::Skip(Default::default())
+            NextActionDiscriminants::Skip => CliNextAction::Skip(Default::default()),
         };
         Self::from(cli_next_action)
     }
@@ -224,13 +223,27 @@ impl ActionSubcommand {
             .interact()
             .unwrap();
         let cli_action_subcomand = match variants[select_action_subcommand] {
-            ActionSubcommandDiscriminants::TransferNEARTokens => CliActionSubcommand::TransferNEARTokens(Default::default()),
-            ActionSubcommandDiscriminants::CallFunction => CliActionSubcommand::CallFunction(Default::default()),
-            ActionSubcommandDiscriminants::StakeNEARTokens => CliActionSubcommand::StakeNEARTokens(Default::default()),
-            ActionSubcommandDiscriminants::CreateAccount => CliActionSubcommand::CreateAccount(Default::default()),
-            ActionSubcommandDiscriminants::DeleteAccount => CliActionSubcommand::DeleteAccount(Default::default()),
-            ActionSubcommandDiscriminants::AddAccessKey => CliActionSubcommand::AddAccessKey(Default::default()),
-            ActionSubcommandDiscriminants::DeleteAccessKey => CliActionSubcommand::DeleteAccessKey(Default::default()),
+            ActionSubcommandDiscriminants::TransferNEARTokens => {
+                CliActionSubcommand::TransferNEARTokens(Default::default())
+            }
+            ActionSubcommandDiscriminants::CallFunction => {
+                CliActionSubcommand::CallFunction(Default::default())
+            }
+            ActionSubcommandDiscriminants::StakeNEARTokens => {
+                CliActionSubcommand::StakeNEARTokens(Default::default())
+            }
+            ActionSubcommandDiscriminants::CreateAccount => {
+                CliActionSubcommand::CreateAccount(Default::default())
+            }
+            ActionSubcommandDiscriminants::DeleteAccount => {
+                CliActionSubcommand::DeleteAccount(Default::default())
+            }
+            ActionSubcommandDiscriminants::AddAccessKey => {
+                CliActionSubcommand::AddAccessKey(Default::default())
+            }
+            ActionSubcommandDiscriminants::DeleteAccessKey => {
+                CliActionSubcommand::DeleteAccessKey(Default::default())
+            }
         };
         Self::from(cli_action_subcomand)
     }
@@ -250,12 +263,12 @@ impl ActionSubcommand {
                 args_function
                     .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
-            },
+            }
             ActionSubcommand::StakeNEARTokens(args_stake) => {
                 args_stake
                     .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
-            },
+            }
             ActionSubcommand::CreateAccount(args_create_account) => {
                 args_create_account
                     .process(prepopulated_unsigned_transaction, selected_server_url)
@@ -268,10 +281,7 @@ impl ActionSubcommand {
             }
             ActionSubcommand::AddAccessKey(args_add_access_key) => {
                 args_add_access_key
-                    .process(
-                        prepopulated_unsigned_transaction,
-                        selected_server_url,
-                    )
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
             ActionSubcommand::DeleteAccessKey(args_delete_access_key) => {

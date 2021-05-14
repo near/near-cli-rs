@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSendTo {
     /// Specify a receiver

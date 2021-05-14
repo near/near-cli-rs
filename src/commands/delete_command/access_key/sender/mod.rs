@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// Specify the account to be deleted
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSender {
@@ -22,7 +21,9 @@ impl From<CliSender> for Sender {
             None => Sender::input_sender_account_id(),
         };
         let public_key = match item.public_key {
-            Some(cli_delete_access_key) => super::DeleteAccessKeyAction::from(cli_delete_access_key),
+            Some(cli_delete_access_key) => {
+                super::DeleteAccessKeyAction::from(cli_delete_access_key)
+            }
             None => super::DeleteAccessKeyAction::choose_delete_access_key_action(),
         };
         Self {

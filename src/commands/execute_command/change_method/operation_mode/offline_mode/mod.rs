@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// аргументы, необходимые для offline mode
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOfflineArgs {
@@ -75,5 +74,5 @@ impl OfflineArgs {
         self.send_to
             .process(unsigned_transaction, selected_server_url)
             .await
-    }    
+    }
 }

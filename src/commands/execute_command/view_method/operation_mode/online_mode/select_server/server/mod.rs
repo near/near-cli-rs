@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// предустановленный RPC-сервер
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliServer {
@@ -29,10 +28,7 @@ impl CliServer {
             Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(cli_send_to),
             None => super::super::super::super::receiver::SendTo::send_to(),
         };
-        Server {
-            url,
-            send_to,
-        }
+        Server { url, send_to }
     }
 }
 
@@ -57,12 +53,8 @@ impl CliCustomServer {
 }
 
 impl Server {
-    pub async fn process(
-        self,
-    ) -> crate::CliResult {
+    pub async fn process(self) -> crate::CliResult {
         let selected_server_url = self.url.clone();
-        self.send_to
-            .process(selected_server_url)
-            .await
+        self.send_to.process(selected_server_url).await
     }
 }

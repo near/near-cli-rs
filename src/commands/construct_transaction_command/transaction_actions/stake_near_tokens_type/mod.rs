@@ -1,7 +1,6 @@
 use async_recursion::async_recursion;
 use dialoguer::Input;
 
-
 /// создание ставки
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliStakeNEARTokensAction {
@@ -47,7 +46,7 @@ impl StakeNEARTokensAction {
             .interact_text()
             .unwrap()
     }
-    
+
     fn input_stake() -> crate::common::NearBalance {
         Input::new()
             .with_prompt("How many NEAR Tokens do you want to stake?")
@@ -62,12 +61,12 @@ impl StakeNEARTokensAction {
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let stake = match self.stake {
-            crate::common::NearBalance {inner: num} => num,
+            crate::common::NearBalance { inner: num } => num,
         };
         let action = near_primitives::transaction::Action::Stake(
             near_primitives::transaction::StakeAction {
                 stake,
-                public_key: self.public_key.clone()
+                public_key: self.public_key.clone(),
             },
         );
         let mut actions = prepopulated_unsigned_transaction.actions.clone();

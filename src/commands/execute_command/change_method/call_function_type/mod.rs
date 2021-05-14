@@ -1,17 +1,16 @@
 use dialoguer::Input;
 
-
 /// вызов CallFunction
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliCallFunctionAction {
     method_name: Option<String>,
     args: Option<String>,
-    #[clap(long="attached-deposit")]
+    #[clap(long = "attached-deposit")]
     deposit: Option<crate::common::NearBalance>,
-    #[clap(long="prepaid-gas")]
+    #[clap(long = "prepaid-gas")]
     gas: Option<crate::common::NearGas>,
     #[clap(subcommand)]
-    send_from: Option<super::sender::CliSendFrom>
+    send_from: Option<super::sender::CliSendFrom>,
 }
 
 #[derive(Debug)]
@@ -20,38 +19,34 @@ pub struct CallFunctionAction {
     args: Vec<u8>,
     gas: near_primitives::types::Gas,
     deposit: near_primitives::types::Balance,
-    send_from: super::sender::SendFrom
+    send_from: super::sender::SendFrom,
 }
 
 impl From<CliCallFunctionAction> for CallFunctionAction {
     fn from(item: CliCallFunctionAction) -> Self {
         let method_name: String = match item.method_name {
             Some(cli_method_name) => cli_method_name,
-            None => CallFunctionAction::input_method_name()
+            None => CallFunctionAction::input_method_name(),
         };
         let args: Vec<u8> = match item.args {
             Some(cli_args) => cli_args.into_bytes(),
-            None => CallFunctionAction::input_args()
+            None => CallFunctionAction::input_args(),
         };
         let gas: near_primitives::types::Gas = match item.gas {
-            Some(cli_gas) => {
-                match cli_gas {
-                    crate::common::NearGas {inner: num} => num
-                }
+            Some(cli_gas) => match cli_gas {
+                crate::common::NearGas { inner: num } => num,
             },
-            None => CallFunctionAction::input_gas()
+            None => CallFunctionAction::input_gas(),
         };
         let deposit: near_primitives::types::Balance = match item.deposit {
-            Some(cli_deposit) => {
-                match cli_deposit {
-                    crate::common::NearBalance {inner: num} => num
-                }
+            Some(cli_deposit) => match cli_deposit {
+                crate::common::NearBalance { inner: num } => num,
             },
-            None => CallFunctionAction::input_deposit()
+            None => CallFunctionAction::input_deposit(),
         };
         let send_from = match item.send_from {
             Some(cli_send_from) => super::sender::SendFrom::from(cli_send_from),
-            None => super::sender::SendFrom::choose_send_from()
+            None => super::sender::SendFrom::choose_send_from(),
         };
         Self {
             method_name,
@@ -81,7 +76,7 @@ impl CallFunctionAction {
                 .interact_text()
                 .unwrap();
             let gas: u64 = match input_gas {
-                crate::common::NearGas { inner: num } => num
+                crate::common::NearGas { inner: num } => num,
             };
             if gas <= 200000000000000 {
                 break gas;
@@ -91,7 +86,7 @@ impl CallFunctionAction {
         };
         gas
     }
-    
+
     fn input_args() -> Vec<u8> {
         println!();
         let input: String = Input::new()
@@ -104,12 +99,14 @@ impl CallFunctionAction {
     fn input_deposit() -> near_primitives::types::Balance {
         println!();
         let deposit: crate::common::NearBalance = Input::new()
-            .with_prompt("Enter a deposit for function (example: 10NEAR or 0.5near or 10000yoctonear).")
+            .with_prompt(
+                "Enter a deposit for function (example: 10NEAR or 0.5near or 10000yoctonear).",
+            )
             .with_initial_text("0 Near")
             .interact_text()
             .unwrap();
         match deposit {
-            crate::common::NearBalance {inner: num} => num,
+            crate::common::NearBalance { inner: num } => num,
         }
     }
 
@@ -132,6 +129,8 @@ impl CallFunctionAction {
             actions,
             ..prepopulated_unsigned_transaction
         };
-        self.send_from.process(unsigned_transaction, selected_server_url).await
+        self.send_from
+            .process(unsigned_transaction, selected_server_url)
+            .await
     }
 }

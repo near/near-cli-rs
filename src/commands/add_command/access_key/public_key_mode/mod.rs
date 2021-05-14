@@ -48,8 +48,12 @@ impl PublicKeyMode {
             .interact()
             .unwrap();
         match variants[select_mode] {
-            PublicKeyModeDiscriminants::PublicKey => Self::from(CliPublicKeyMode::PublicKey(Default::default())),
-            PublicKeyModeDiscriminants::GenerateKeypair => Self::from(CliPublicKeyMode::GenerateKeypair(Default::default()))
+            PublicKeyModeDiscriminants::PublicKey => {
+                Self::from(CliPublicKeyMode::PublicKey(Default::default()))
+            }
+            PublicKeyModeDiscriminants::GenerateKeypair => {
+                Self::from(CliPublicKeyMode::GenerateKeypair(Default::default()))
+            }
         }
     }
 

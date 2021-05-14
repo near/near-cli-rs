@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// данные об аккаунте контракта
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSender {

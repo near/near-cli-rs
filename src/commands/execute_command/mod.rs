@@ -4,7 +4,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod change_method;
 mod view_method;
 
-
 /// выбор метода для выполнения
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOptionMethod {
@@ -14,14 +13,14 @@ pub struct CliOptionMethod {
 
 #[derive(Debug)]
 pub struct OptionMethod {
-    method: Method
+    method: Method,
 }
 
 impl From<CliOptionMethod> for OptionMethod {
     fn from(item: CliOptionMethod) -> Self {
         let method = match item.method {
             Some(cli_method) => Method::from(cli_method),
-            None => Method::choose_method()
+            None => Method::choose_method(),
         };
         Self { method }
     }
@@ -30,7 +29,7 @@ impl From<CliOptionMethod> for OptionMethod {
 impl OptionMethod {
     pub async fn process(
         self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction
+        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
         self.method.process(prepopulated_unsigned_transaction).await
     }
@@ -56,8 +55,12 @@ enum Method {
 impl From<CliMethod> for Method {
     fn from(item: CliMethod) -> Self {
         match item {
-            CliMethod::ChangeMethod(cli_operation_mode) => Method::ChangeMethod(cli_operation_mode.into()),
-            CliMethod::ViewMethod(cli_operation_mode) => Method::ViewMethod(cli_operation_mode.into())
+            CliMethod::ChangeMethod(cli_operation_mode) => {
+                Method::ChangeMethod(cli_operation_mode.into())
+            }
+            CliMethod::ViewMethod(cli_operation_mode) => {
+                Method::ViewMethod(cli_operation_mode.into())
+            }
         }
     }
 }
@@ -77,27 +80,23 @@ impl Method {
             .interact()
             .unwrap();
         let cli_method = match variants[selected_method] {
-            MethodDiscriminants::ChangeMethod => {
-                CliMethod::ChangeMethod(Default::default())
-            }
-            MethodDiscriminants::ViewMethod => {
-                CliMethod::ViewMethod(Default::default())
-            }
+            MethodDiscriminants::ChangeMethod => CliMethod::ChangeMethod(Default::default()),
+            MethodDiscriminants::ViewMethod => CliMethod::ViewMethod(Default::default()),
         };
         Self::from(cli_method)
     }
 
     pub async fn process(
         self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction
+        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
         match self {
-            Self::ChangeMethod(operation_mode) => operation_mode.process(prepopulated_unsigned_transaction).await,
-            Self::ViewMethod(operation_mode) => {
-                operation_mode.process().await
+            Self::ChangeMethod(operation_mode) => {
+                operation_mode
+                    .process(prepopulated_unsigned_transaction)
+                    .await
             }
+            Self::ViewMethod(operation_mode) => operation_mode.process().await,
         }
     }
 }
-
-

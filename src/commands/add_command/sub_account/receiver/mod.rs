@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSendTo {
     /// Specify a sub-account
@@ -64,7 +63,9 @@ impl From<CliSubAccount> for SubAccount {
             None => SubAccount::input_sub_account_id(),
         };
         let full_access_key = match item.full_access_key {
-            Some(cli_full_access_key) => super::full_access_key::FullAccessKey::from(cli_full_access_key),
+            Some(cli_full_access_key) => {
+                super::full_access_key::FullAccessKey::from(cli_full_access_key)
+            }
             None => super::full_access_key::FullAccessKey::choose_full_access_key(),
         };
         Self {

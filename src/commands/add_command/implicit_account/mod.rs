@@ -3,7 +3,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod generate_keypair;
 
-
 /// Generate key pair
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliImplicitAccount {
@@ -22,17 +21,13 @@ impl From<CliImplicitAccount> for ImplicitAccount {
             Some(cli_public_key_mode) => PublicKeyMode::from(cli_public_key_mode),
             None => PublicKeyMode::choose_public_key_mode(),
         };
-        Self {
-            public_key_mode,
-        }
+        Self { public_key_mode }
     }
 }
 
 impl ImplicitAccount {
     pub async fn process(self) -> crate::CliResult {
-        self.public_key_mode
-            .process()
-            .await
+        self.public_key_mode.process().await
     }
 }
 
@@ -73,18 +68,17 @@ impl PublicKeyMode {
             .interact()
             .unwrap();
         match variants[select_mode] {
-            PublicKeyModeDiscriminants::GenerateKeypair => Self::from(CliPublicKeyMode::GenerateKeypair(Default::default()))
+            PublicKeyModeDiscriminants::GenerateKeypair => {
+                Self::from(CliPublicKeyMode::GenerateKeypair(Default::default()))
+            }
         }
     }
 
     pub async fn process(self) -> crate::CliResult {
         match self {
             PublicKeyMode::GenerateKeypair(cli_generate_keypair) => {
-                cli_generate_keypair
-                    .process()
-                    .await
+                cli_generate_keypair.process().await
             }
         }
     }
 }
-

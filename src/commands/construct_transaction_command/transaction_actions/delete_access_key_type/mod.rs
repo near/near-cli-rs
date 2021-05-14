@@ -1,7 +1,6 @@
 use async_recursion::async_recursion;
 use dialoguer::Input;
 
-
 /// удаление ключа доступа у пользователя
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliDeleteAccessKeyAction {
@@ -41,7 +40,7 @@ impl DeleteAccessKeyAction {
             .interact_text()
             .unwrap()
     }
-    
+
     #[async_recursion(?Send)]
     pub async fn process(
         self,
@@ -49,7 +48,9 @@ impl DeleteAccessKeyAction {
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let action = near_primitives::transaction::Action::DeleteKey(
-            near_primitives::transaction::DeleteKeyAction { public_key: self.public_key },
+            near_primitives::transaction::DeleteKeyAction {
+                public_key: self.public_key,
+            },
         );
         let mut actions = prepopulated_unsigned_transaction.actions.clone();
         actions.push(action);

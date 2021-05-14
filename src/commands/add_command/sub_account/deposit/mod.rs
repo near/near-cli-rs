@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliDeposit {
     /// Enter an amount
@@ -47,13 +46,16 @@ impl Deposit {
 pub struct CliTransferNEARTokensAction {
     amount: Option<crate::common::NearBalance>,
     #[clap(subcommand)]
-    sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
+    sign_option: Option<
+        crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
+    >,
 }
 
 #[derive(Debug)]
 pub struct TransferNEARTokensAction {
     pub amount: crate::common::NearBalance,
-    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+    pub sign_option:
+        crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
 impl From<CliTransferNEARTokensAction> for TransferNEARTokensAction {
@@ -80,14 +82,14 @@ impl TransferNEARTokensAction {
             .interact_text()
             .unwrap()
     }
-    
+
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let amount = match self.amount {
-            crate::common::NearBalance {inner: num} => num,
+            crate::common::NearBalance { inner: num } => num,
         };
         let action = near_primitives::transaction::Action::Transfer(
             near_primitives::transaction::TransferAction { deposit: amount },
@@ -98,6 +100,8 @@ impl TransferNEARTokensAction {
             actions,
             ..prepopulated_unsigned_transaction
         };
-        self.sign_option.process(unsigned_transaction, selected_server_url).await
+        self.sign_option
+            .process(unsigned_transaction, selected_server_url)
+            .await
     }
 }

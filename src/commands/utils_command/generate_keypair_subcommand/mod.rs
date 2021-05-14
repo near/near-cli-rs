@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-
 fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
     const HARDEND: u32 = 1 << 31;
 
@@ -36,7 +35,7 @@ impl Default for CliGenerateKeypair {
             master_seed_phrase: None,
             new_master_seed_phrase_words_count: 12,
             seed_phrase_hd_path: slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap(),
-            format: crate::common::OutputFormat::Json
+            format: crate::common::OutputFormat::Json,
         }
     }
 }
@@ -65,8 +64,12 @@ impl CliGenerateKeypair {
             &master_seed,
             slip10::Curve::Ed25519,
             &self.seed_phrase_hd_path,
-        ).map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to derive a key from the master key: {}", err))
+        )
+        .map_err(|err| {
+            color_eyre::Report::msg(format!(
+                "Failed to derive a key from the master key: {}",
+                err
+            ))
         })?;
 
         let secret_keypair = {

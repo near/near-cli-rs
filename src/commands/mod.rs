@@ -10,7 +10,6 @@ pub mod transfer_command;
 pub mod utils_command;
 pub mod view_command;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliTopLevelCommand {
     /// Use these to add access key, contract code, stake proposal, sub-account, implicit-account
@@ -27,14 +26,16 @@ pub enum CliTopLevelCommand {
     Transfer(self::transfer_command::CliCurrency),
     /// Helpers
     Utils(self::utils_command::CliUtils),
-    /// View account, contract code, contract state, transaction 
+    /// View account, contract code, contract state, transaction
     View(self::view_command::CliViewQueryRequest),
 }
 
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
-    #[strum_discriminants(strum(message = "Add access key, contract code, stake proposal, sub-account, implicit-account"))]
+    #[strum_discriminants(strum(
+        message = "Add access key, contract code, stake proposal, sub-account, implicit-account"
+    ))]
     Add(self::add_command::AddAction),
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
@@ -46,16 +47,16 @@ pub enum TopLevelCommand {
     Transfer(self::transfer_command::Currency),
     #[strum_discriminants(strum(message = "Helpers"))]
     Utils(self::utils_command::Utils),
-    #[strum_discriminants(strum(message = "View account, contract code, contract state, transaction"))]
+    #[strum_discriminants(strum(
+        message = "View account, contract code, contract state, transaction"
+    ))]
     View(self::view_command::ViewQueryRequest),
 }
 
 impl From<CliTopLevelCommand> for TopLevelCommand {
     fn from(cli_top_level_command: CliTopLevelCommand) -> Self {
         match cli_top_level_command {
-            CliTopLevelCommand::Add(cli_add_action) => {
-                TopLevelCommand::Add(cli_add_action.into())
-            }
+            CliTopLevelCommand::Add(cli_add_action) => TopLevelCommand::Add(cli_add_action.into()),
             CliTopLevelCommand::ConstructTransaction(cli_operation_mode) => {
                 TopLevelCommand::ConstructTransaction(cli_operation_mode.into())
             }
@@ -71,9 +72,7 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             CliTopLevelCommand::Transfer(cli_currency) => {
                 TopLevelCommand::Transfer(cli_currency.into())
             }
-            CliTopLevelCommand::Utils(cli_util) => {
-                TopLevelCommand::Utils(cli_util.into())
-            }
+            CliTopLevelCommand::Utils(cli_util) => TopLevelCommand::Utils(cli_util.into()),
             CliTopLevelCommand::View(cli_view_query_request) => {
                 TopLevelCommand::View(cli_view_query_request.into())
             }
@@ -96,27 +95,19 @@ impl TopLevelCommand {
             .interact()
             .unwrap();
         let cli_top_level_command = match variants[selection] {
-            TopLevelCommandDiscriminants::Add => {
-                CliTopLevelCommand::Add(Default::default())
-            }
+            TopLevelCommandDiscriminants::Add => CliTopLevelCommand::Add(Default::default()),
             TopLevelCommandDiscriminants::ConstructTransaction => {
                 CliTopLevelCommand::ConstructTransaction(Default::default())
             }
-            TopLevelCommandDiscriminants::Delete => {
-                CliTopLevelCommand::Delete(Default::default())
-            }
+            TopLevelCommandDiscriminants::Delete => CliTopLevelCommand::Delete(Default::default()),
             TopLevelCommandDiscriminants::Execute => {
                 CliTopLevelCommand::Execute(Default::default())
             }
             TopLevelCommandDiscriminants::Transfer => {
                 CliTopLevelCommand::Transfer(Default::default())
             }
-            TopLevelCommandDiscriminants::Utils => {
-                CliTopLevelCommand::Utils(Default::default())
-            }
-            TopLevelCommandDiscriminants::View => {
-                CliTopLevelCommand::View(Default::default())
-            }
+            TopLevelCommandDiscriminants::Utils => CliTopLevelCommand::Utils(Default::default()),
+            TopLevelCommandDiscriminants::View => CliTopLevelCommand::View(Default::default()),
         };
         Self::from(cli_top_level_command)
     }
@@ -131,23 +122,13 @@ impl TopLevelCommand {
             actions: vec![],
         };
         match self {
-            Self::Add(add_action) => {
-                add_action.process(unsigned_transaction).await
-            }
-            Self::ConstructTransaction(mode) => {
-                mode.process(unsigned_transaction).await
-            }
-            Self::Delete(delete_action) => {
-                delete_action.process(unsigned_transaction).await
-            },
+            Self::Add(add_action) => add_action.process(unsigned_transaction).await,
+            Self::ConstructTransaction(mode) => mode.process(unsigned_transaction).await,
+            Self::Delete(delete_action) => delete_action.process(unsigned_transaction).await,
             Self::Execute(option_method) => option_method.process(unsigned_transaction).await,
-            Self::Transfer(currency) => {
-                currency.process(unsigned_transaction).await
-            }
+            Self::Transfer(currency) => currency.process(unsigned_transaction).await,
             Self::Utils(util_type) => util_type.process().await,
-            Self::View(view_query_request) => {
-                view_query_request.process().await
-            },
+            Self::View(view_query_request) => view_query_request.process().await,
         }
     }
 }

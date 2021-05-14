@@ -6,7 +6,6 @@ pub mod operation_mode;
 mod receiver;
 mod sender;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliCallFunction {
     /// вызов метода изменения
@@ -45,9 +44,7 @@ impl CallFunction {
             .interact()
             .unwrap();
         let cli_call = match variants[selection] {
-            CallFunctionDiscriminants::Call => {
-                CliCallFunction::Call(Default::default())
-            }
+            CallFunctionDiscriminants::Call => CliCallFunction::Call(Default::default()),
         };
         Self::from(cli_call)
     }
@@ -58,7 +55,11 @@ impl CallFunction {
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         match self {
-            Self::Call(call_function_action) => call_function_action.process(prepopulated_unsigned_transaction, selected_server_url).await,
+            Self::Call(call_function_action) => {
+                call_function_action
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .await
+            }
         }
     }
 }

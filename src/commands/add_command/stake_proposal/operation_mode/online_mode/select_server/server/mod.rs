@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// предустановленный RPC-сервер
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliServer {
@@ -82,9 +81,7 @@ pub enum SendFrom {
 impl From<CliSendFrom> for SendFrom {
     fn from(item: CliSendFrom) -> Self {
         match item {
-            CliSendFrom::Validator(cli_sender) => {
-                Self::Validator(cli_sender.into())
-            }
+            CliSendFrom::Validator(cli_sender) => Self::Validator(cli_sender.into()),
         }
     }
 }
@@ -93,7 +90,7 @@ impl SendFrom {
     pub fn choose_send_from() -> Self {
         Self::from(CliSendFrom::Validator(Default::default()))
     }
-    
+
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,

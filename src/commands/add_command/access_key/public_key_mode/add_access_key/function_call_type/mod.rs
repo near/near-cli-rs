@@ -1,6 +1,5 @@
-use std::vec;
 use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
-
+use std::vec;
 
 /// данные для определения ключа с function call
 #[derive(Debug, Default, clap::Clap)]
@@ -12,7 +11,9 @@ pub struct CliFunctionCallType {
     #[clap(long)]
     method_names: Option<String>,
     #[clap(subcommand)]
-    sign_option: Option<crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction>,
+    sign_option: Option<
+        crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
+    >,
 }
 
 #[derive(Debug)]
@@ -20,7 +21,8 @@ pub struct FunctionCallType {
     pub allowance: Option<near_primitives::types::Balance>,
     pub receiver_id: near_primitives::types::AccountId,
     pub method_names: Vec<String>,
-    pub sign_option: crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+    pub sign_option:
+        crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
 impl From<CliFunctionCallType> for FunctionCallType {
@@ -28,7 +30,7 @@ impl From<CliFunctionCallType> for FunctionCallType {
         let allowance: Option<near_primitives::types::Balance> = match item.allowance {
             Some(cli_allowance) => {
                 let allowance = match cli_allowance {
-                    crate::common::NearBalance {inner: num} => num,
+                    crate::common::NearBalance { inner: num } => num,
                 };
                 Some(allowance)
             }
@@ -99,7 +101,7 @@ impl FunctionCallType {
             _ => unreachable!("Error"),
         }
     }
-    
+
     pub fn input_allowance() -> Option<near_primitives::types::Balance> {
         println!();
         let choose_input = vec![
@@ -119,7 +121,7 @@ impl FunctionCallType {
                     .interact_text()
                     .unwrap();
                 let allowance = match allowance_near_balance {
-                    crate::common::NearBalance {inner: num} => num,
+                    crate::common::NearBalance { inner: num } => num,
                 };
                 Some(allowance)
             }

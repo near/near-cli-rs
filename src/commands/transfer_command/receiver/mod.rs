@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSendTo {
     /// Specify a receiver
@@ -48,9 +47,8 @@ impl SendTo {
 pub struct CliReceiver {
     receiver_account_id: Option<String>,
     #[clap(subcommand)]
-    transfer: Option<super::transfer_near_tokens_type::CliTransfer>
+    transfer: Option<super::transfer_near_tokens_type::CliTransfer>,
 }
-
 
 #[derive(Debug)]
 pub struct Receiver {

@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// предустановленный RPC-сервер
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliServer {

@@ -2,7 +2,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod online_mode;
 
-
 /// инструмент выбора режима online/offline
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOperationMode {
@@ -26,9 +25,7 @@ impl From<CliOperationMode> for OperationMode {
 }
 
 impl OperationMode {
-    pub async fn process(
-        self,
-    ) -> crate::CliResult {
+    pub async fn process(self) -> crate::CliResult {
         self.mode.process().await
     }
 }
@@ -49,9 +46,7 @@ pub enum Mode {
 impl From<CliMode> for Mode {
     fn from(item: CliMode) -> Self {
         match item {
-            CliMode::Network(cli_network_args) => {
-                Self::Network(cli_network_args.into())
-            }
+            CliMode::Network(cli_network_args) => Self::Network(cli_network_args.into()),
         }
     }
 }
@@ -61,13 +56,9 @@ impl Mode {
         Self::from(CliMode::Network(Default::default()))
     }
 
-    pub async fn process(
-        self,
-    ) -> crate::CliResult {
+    pub async fn process(self) -> crate::CliResult {
         match self {
-            Self::Network(network_args) => {
-                network_args.process().await
-            }
+            Self::Network(network_args) => network_args.process().await,
         }
     }
 }

@@ -37,7 +37,9 @@ impl Args {
 fn main() -> CliResult {
     let cli = CliArgs::parse();
 
-    if let Some(self::commands::CliTopLevelCommand::GenerateShellCompletions(subcommand)) = cli.top_level_command {
+    if let Some(self::commands::CliTopLevelCommand::GenerateShellCompletions(subcommand)) =
+        cli.top_level_command
+    {
         subcommand.process();
         return Ok(());
     }

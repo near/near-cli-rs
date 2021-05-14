@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSendFrom {
     /// Specify a signer
@@ -34,11 +33,7 @@ impl SendFrom {
         transaction_hash: String,
     ) -> crate::CliResult {
         match self {
-            SendFrom::Signer(sender) => {
-                sender
-                    .process(selected_server_url, transaction_hash)
-                    .await
-            }
+            SendFrom::Signer(sender) => sender.process(selected_server_url, transaction_hash).await,
         }
     }
 }
@@ -60,9 +55,7 @@ impl From<CliSender> for Sender {
             Some(cli_sender_account_id) => cli_sender_account_id,
             None => Sender::input_sender_account_id(),
         };
-        Self {
-            sender_account_id,
-        }
+        Self { sender_account_id }
     }
 }
 

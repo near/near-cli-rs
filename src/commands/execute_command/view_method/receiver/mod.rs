@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSendTo {
     /// Specify a receiver
@@ -28,16 +27,9 @@ impl SendTo {
         Self::from(CliSendTo::Contract(Default::default()))
     }
 
-    pub async fn process(
-        self,
-        selected_server_url: url::Url,
-    ) -> crate::CliResult {
+    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
         match self {
-            SendTo::Contract(receiver) => {
-                receiver
-                    .process(selected_server_url)
-                    .await
-            }
+            SendTo::Contract(receiver) => receiver.process(selected_server_url).await,
         }
     }
 }
@@ -81,10 +73,7 @@ impl Receiver {
             .unwrap()
     }
 
-    pub async fn process(
-        self,
-        selected_server_url: url::Url,
-    ) -> crate::CliResult {
+    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
         self.call
             .process(selected_server_url, self.contract_account_id)
             .await

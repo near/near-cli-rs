@@ -4,7 +4,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod access_key;
 mod account;
 
-
 /// инструмент выбора to delete action
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliDeleteAction {
@@ -21,7 +20,7 @@ impl From<CliDeleteAction> for DeleteAction {
     fn from(item: CliDeleteAction) -> Self {
         let action = match item.action {
             Some(cli_action) => cli_action.into(),
-            None => Action::choose_action()
+            None => Action::choose_action(),
         };
         Self { action }
     }
@@ -32,9 +31,7 @@ impl DeleteAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        self.action
-            .process(prepopulated_unsigned_transaction)
-            .await
+        self.action.process(prepopulated_unsigned_transaction).await
     }
 }
 
@@ -42,7 +39,7 @@ impl DeleteAction {
 pub enum CliAction {
     /// Delete an access key for an account
     AccessKey(self::access_key::operation_mode::CliOperationMode),
-    /// Delete this account 
+    /// Delete this account
     Account(self::account::operation_mode::CliOperationMode),
     // /// Add a new sub-account
     // SubAccount,
@@ -64,9 +61,7 @@ impl From<CliAction> for Action {
             CliAction::AccessKey(cli_operation_mode) => {
                 Action::AccessKey(cli_operation_mode.into())
             }
-            CliAction::Account(cli_operation_mode) => {
-                Action::Account(cli_operation_mode.into())
-            }
+            CliAction::Account(cli_operation_mode) => Action::Account(cli_operation_mode.into()),
         }
     }
 }
@@ -80,9 +75,7 @@ impl Action {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_action = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(
-                "Сhoose what you want to delete"
-            )
+            .with_prompt("Сhoose what you want to delete")
             .items(&actions)
             .default(0)
             .interact()
@@ -100,14 +93,14 @@ impl Action {
     ) -> crate::CliResult {
         match self {
             Action::AccessKey(operation_mode) => {
-            operation_mode
-                .process(prepopulated_unsigned_transaction)
-                .await
+                operation_mode
+                    .process(prepopulated_unsigned_transaction)
+                    .await
             }
             Action::Account(operation_mode) => {
                 operation_mode
                     .process(prepopulated_unsigned_transaction)
-                    .await                
+                    .await
             }
         }
     }

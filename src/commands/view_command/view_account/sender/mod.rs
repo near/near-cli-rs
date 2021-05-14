@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliSendTo {
     /// Specify an account
@@ -28,16 +27,9 @@ impl SendTo {
         Self::from(CliSendTo::Account(Default::default()))
     }
 
-    pub async fn process(
-        self,
-        selected_server_url: url::Url,
-    ) -> crate::CliResult {
+    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
         match self {
-            SendTo::Account(sender) => {
-                sender
-                    .process(selected_server_url)
-                    .await
-            }
+            SendTo::Account(sender) => sender.process(selected_server_url).await,
         }
     }
 }
@@ -59,9 +51,7 @@ impl From<CliSender> for Sender {
             Some(cli_sender_account_id) => cli_sender_account_id,
             None => Sender::input_sender_account_id(),
         };
-        Self {
-            sender_account_id,
-        }
+        Self { sender_account_id }
     }
 }
 
@@ -78,13 +68,12 @@ impl Sender {
         near_jsonrpc_client::new_client(&selected_server_url)
     }
 
-    pub async fn process(
-        self,
-        selected_server_url: url::Url,
-    ) -> crate::CliResult {
+    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
         let account_id = self.sender_account_id.clone();
-        self.get_account_info(account_id.clone(), selected_server_url.clone()).await?;
-        self.get_access_key_list(account_id.clone(), selected_server_url.clone()).await?;
+        self.get_account_info(account_id.clone(), selected_server_url.clone())
+            .await?;
+        self.get_access_key_list(account_id.clone(), selected_server_url.clone())
+            .await?;
         Ok(())
     }
 
@@ -108,16 +97,14 @@ impl Sender {
                     err
                 ))
             })?;
-        let call_access_view = if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
-            result,
-        ) = query_view_method_response.kind
-        {
-            result
-        } else {
-            return Err(color_eyre::Report::msg(format!(
-                "Error call result"
-            )));
-        };
+        let call_access_view =
+            if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(result) =
+                query_view_method_response.kind
+            {
+                result
+            } else {
+                return Err(color_eyre::Report::msg(format!("Error call result")));
+            };
         println!("{:#?}\n", &call_access_view);
         Ok(())
     }
@@ -131,9 +118,7 @@ impl Sender {
             .rpc_client(&selected_server_url.as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                    account_id,
-                },
+                request: near_primitives::views::QueryRequest::ViewAccessKeyList { account_id },
             })
             .await
             .map_err(|err| {
@@ -142,16 +127,14 @@ impl Sender {
                     err
                 ))
             })?;
-        let call_access_key_view = if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
-            result,
-        ) = query_view_method_response.kind
-        {
-            result
-        } else {
-            return Err(color_eyre::Report::msg(format!(
-                "Error call result"
-            )));
-        };
+        let call_access_key_view =
+            if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(result) =
+                query_view_method_response.kind
+            {
+                result
+            } else {
+                return Err(color_eyre::Report::msg(format!("Error call result")));
+            };
         println!("{:#?}", &call_access_key_view);
         Ok(())
     }

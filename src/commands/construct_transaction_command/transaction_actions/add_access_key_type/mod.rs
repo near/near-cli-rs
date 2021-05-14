@@ -2,9 +2,8 @@ use async_recursion::async_recursion;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-mod function_call_type;
 mod full_access_type;
-
+mod function_call_type;
 
 /// добавление ключа пользователю
 #[derive(Debug, Default, clap::Clap)]
@@ -52,7 +51,7 @@ impl AddAccessKeyAction {
             .interact_text()
             .unwrap()
     }
-    
+
     pub fn input_public_key() -> near_crypto::PublicKey {
         Input::new()
             .with_prompt("Enter a public key for this access key")
@@ -117,7 +116,7 @@ impl From<CliAccessKeyPermission> for AccessKeyPermission {
                 AccessKeyPermission::FunctionCallAction(function_call_type)
             }
             CliAccessKeyPermission::FullAccessAction(cli_full_access_type) => {
-                let full_access_type = 
+                let full_access_type =
                     self::full_access_type::FullAccessType::from(cli_full_access_type);
                 AccessKeyPermission::FullAccessAction(full_access_type)
             }
@@ -139,8 +138,12 @@ impl AccessKeyPermission {
             .interact()
             .unwrap();
         match variants[select_permission] {
-            AccessKeyPermissionDiscriminants::FunctionCallAction => Self::from(CliAccessKeyPermission::FunctionCallAction(Default::default())),
-            AccessKeyPermissionDiscriminants::FullAccessAction => Self::from(CliAccessKeyPermission::FullAccessAction(Default::default()))
+            AccessKeyPermissionDiscriminants::FunctionCallAction => Self::from(
+                CliAccessKeyPermission::FunctionCallAction(Default::default()),
+            ),
+            AccessKeyPermissionDiscriminants::FullAccessAction => {
+                Self::from(CliAccessKeyPermission::FullAccessAction(Default::default()))
+            }
         }
     }
 }

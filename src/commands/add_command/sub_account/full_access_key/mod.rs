@@ -3,7 +3,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod public_key_mode;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliFullAccessKey {
     /// Specify a full access key for the sub-account
@@ -36,15 +35,15 @@ impl FullAccessKey {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_action = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(
-                "Сhoose what you want to add"
-            )
+            .with_prompt("Сhoose what you want to add")
             .items(&actions)
             .default(0)
             .interact()
             .unwrap();
         let cli_action = match variants[selected_action] {
-            FullAccessKeyDiscriminants::SubAccountFullAccess => CliFullAccessKey::SubAccountFullAccess(Default::default()),
+            FullAccessKeyDiscriminants::SubAccountFullAccess => {
+                CliFullAccessKey::SubAccountFullAccess(Default::default())
+            }
         };
         Self::from(cli_action)
     }
@@ -79,12 +78,12 @@ pub struct SubAccountFullAccess {
 impl From<CliSubAccountFullAccess> for SubAccountFullAccess {
     fn from(item: CliSubAccountFullAccess) -> Self {
         let public_key_mode = match item.public_key_mode {
-            Some(cli_public_key_mode) => self::public_key_mode::PublicKeyMode::from(cli_public_key_mode),
+            Some(cli_public_key_mode) => {
+                self::public_key_mode::PublicKeyMode::from(cli_public_key_mode)
+            }
             None => self::public_key_mode::PublicKeyMode::choose_public_key_mode(),
         };
-        Self {
-            public_key_mode,
-        }
+        Self { public_key_mode }
     }
 }
 

@@ -1,7 +1,6 @@
 use dialoguer::Input;
 use std::io::Write;
 
-
 // download contract file
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliContractFile {
@@ -17,18 +16,14 @@ impl ContractFile {
     pub fn from(item: CliContractFile, contract_id: &str) -> Self {
         let file_path = match item.file_path {
             Some(cli_file_path) => Some(cli_file_path),
-            None => ContractFile::input_file_path(contract_id)
+            None => ContractFile::input_file_path(contract_id),
         };
-        ContractFile {
-            file_path,
-        }
+        ContractFile { file_path }
     }
 }
 
 impl ContractFile {
-    fn input_file_path(
-        contract_id: &str,
-    ) -> Option<std::path::PathBuf> {
+    fn input_file_path(contract_id: &str) -> Option<std::path::PathBuf> {
         println!();
         let input_file_path: String = Input::new()
             .with_prompt("Where to download the contract file?")
@@ -62,33 +57,28 @@ impl ContractFile {
                     err
                 ))
             })?;
-        let call_access_view = if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(
-            result,
-        ) = query_view_method_response.kind
-        {
-            result
-        } else {
-            return Err(color_eyre::Report::msg(format!(
-                "Error call result"
-            )));
-        };
+        let call_access_view =
+            if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
+                query_view_method_response.kind
+            {
+                result
+            } else {
+                return Err(color_eyre::Report::msg(format!("Error call result")));
+            };
         match &self.file_path {
             Some(file_path) => {
                 std::fs::File::create(file_path)
                     .map_err(|err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to create file: {:?}",
-                            err
-                        ))
+                        color_eyre::Report::msg(format!("Failed to create file: {:?}", err))
                     })?
                     .write(&call_access_view.code)
                     .map_err(|err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to write to file: {:?}",
-                            err
-                        ))
+                        color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
                     })?;
-                println!("\nThe file {:?} was downloaded successfully", self.file_path);
+                println!(
+                    "\nThe file {:?} was downloaded successfully",
+                    self.file_path
+                );
             }
             None => {
                 println!("\nHash of the contract: {}", &call_access_view.hash)

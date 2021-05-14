@@ -6,8 +6,6 @@ mod view_contract_code;
 mod view_contract_state;
 mod view_transaction_status;
 
-
-
 /// инструмент выбора to view
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliViewQueryRequest {
@@ -24,19 +22,15 @@ impl From<CliViewQueryRequest> for ViewQueryRequest {
     fn from(item: CliViewQueryRequest) -> Self {
         let query = match item.query {
             Some(cli_query_request) => QueryRequest::from(cli_query_request),
-            None => QueryRequest::choose_query_request()
+            None => QueryRequest::choose_query_request(),
         };
-        ViewQueryRequest{ query }
+        ViewQueryRequest { query }
     }
 }
 
 impl ViewQueryRequest {
-    pub async fn process(
-        self,
-    ) -> crate::CliResult {
-        self.query
-            .process()
-            .await
+    pub async fn process(self) -> crate::CliResult {
+        self.query.process().await
     }
 }
 
@@ -93,46 +87,34 @@ impl QueryRequest {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_request = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(
-                "Сhoose what you want to view"
-            )
+            .with_prompt("Сhoose what you want to view")
             .items(&requests)
             .default(0)
             .interact()
             .unwrap();
         let cli_request = match variants[selected_request] {
-            QueryRequestDiscriminants::AccountSummary => CliQueryRequest::AccountSummary(Default::default()),
-            QueryRequestDiscriminants::ContractCode => CliQueryRequest::ContractCode(Default::default()),
-            QueryRequestDiscriminants::ContractState => CliQueryRequest::ContractState(Default::default()),
-            QueryRequestDiscriminants::Transaction => CliQueryRequest::Transaction(Default::default()),
+            QueryRequestDiscriminants::AccountSummary => {
+                CliQueryRequest::AccountSummary(Default::default())
+            }
+            QueryRequestDiscriminants::ContractCode => {
+                CliQueryRequest::ContractCode(Default::default())
+            }
+            QueryRequestDiscriminants::ContractState => {
+                CliQueryRequest::ContractState(Default::default())
+            }
+            QueryRequestDiscriminants::Transaction => {
+                CliQueryRequest::Transaction(Default::default())
+            }
         };
         Self::from(cli_request)
     }
 
-    pub async fn process(
-        self,
-    ) -> crate::CliResult {
+    pub async fn process(self) -> crate::CliResult {
         match self {
-            QueryRequest::AccountSummary(operation_mode) => {
-                operation_mode
-                    .process()
-                    .await
-            }
-            QueryRequest::ContractCode(operation_mode) => {
-                operation_mode
-                    .process()
-                    .await
-            }
-            QueryRequest::ContractState(operation_mode) => {
-                operation_mode
-                    .process()
-                    .await
-            }
-            QueryRequest::Transaction(operation_mode) => {
-                operation_mode
-                    .process()
-                    .await
-            }
+            QueryRequest::AccountSummary(operation_mode) => operation_mode.process().await,
+            QueryRequest::ContractCode(operation_mode) => operation_mode.process().await,
+            QueryRequest::ContractState(operation_mode) => operation_mode.process().await,
+            QueryRequest::Transaction(operation_mode) => operation_mode.process().await,
         }
     }
 }

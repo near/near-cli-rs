@@ -1,7 +1,6 @@
 use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
 
-
 /// утилита, соединяющая подготовленную неподписанную транзакцию с синатурой
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliCombineTransactionSignature {

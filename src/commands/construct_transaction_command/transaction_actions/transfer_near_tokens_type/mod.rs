@@ -1,7 +1,6 @@
 use async_recursion::async_recursion;
 use dialoguer::Input;
 
-
 /// создание перевода токенов
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliTransferNEARTokensAction {
@@ -40,7 +39,7 @@ impl TransferNEARTokensAction {
             .interact_text()
             .unwrap()
     }
-    
+
     #[async_recursion(?Send)]
     pub async fn process(
         self,
@@ -48,7 +47,7 @@ impl TransferNEARTokensAction {
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
         let amount = match self.amount {
-            crate::common::NearBalance {inner: num} => num,
+            crate::common::NearBalance { inner: num } => num,
         };
         let action = near_primitives::transaction::Action::Transfer(
             near_primitives::transaction::TransferAction { deposit: amount },

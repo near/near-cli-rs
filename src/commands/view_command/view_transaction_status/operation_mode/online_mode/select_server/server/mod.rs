@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// предустановленный RPC-сервер
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliServer {
@@ -26,7 +25,9 @@ pub struct Server {
 impl CliServer {
     pub fn into_server(self, url: url::Url) -> Server {
         let transaction_status = match self.transaction_status {
-            Some(cli_transaction_status) => super::super::super::super::TransactionStatus::from(cli_transaction_status),
+            Some(cli_transaction_status) => {
+                super::super::super::super::TransactionStatus::from(cli_transaction_status)
+            }
             None => super::super::super::super::TransactionStatus::choose_transaction_status(),
         };
         Server {
@@ -46,7 +47,9 @@ impl CliCustomServer {
                 .unwrap(),
         };
         let transaction_status = match self.transaction_status {
-            Some(cli_transaction_status) => super::super::super::super::TransactionStatus::from(cli_transaction_status),
+            Some(cli_transaction_status) => {
+                super::super::super::super::TransactionStatus::from(cli_transaction_status)
+            }
             None => super::super::super::super::TransactionStatus::choose_transaction_status(),
         };
         Server {
@@ -57,12 +60,8 @@ impl CliCustomServer {
 }
 
 impl Server {
-    pub async fn process(
-        self,
-    ) -> crate::CliResult {
+    pub async fn process(self) -> crate::CliResult {
         let selected_server_url = self.url.clone();
-        self.transaction_status
-            .process(selected_server_url)
-            .await
+        self.transaction_status.process(selected_server_url).await
     }
 }

@@ -1,6 +1,5 @@
-use std::str::FromStr;
 use std::io::Write;
-
+use std::str::FromStr;
 
 fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
     const HARDEND: u32 = 1 << 31;
@@ -37,7 +36,9 @@ pub struct GenerateKeypair {
 impl From<CliGenerateKeypair> for GenerateKeypair {
     fn from(item: CliGenerateKeypair) -> Self {
         let permission: super::add_access_key::AccessKeyPermission = match item.permission {
-            Some(cli_permission) => super::add_access_key::AccessKeyPermission::from(cli_permission),
+            Some(cli_permission) => {
+                super::add_access_key::AccessKeyPermission::from(cli_permission)
+            }
             None => super::add_access_key::AccessKeyPermission::choose_permission(),
         };
         Self { permission }
@@ -68,8 +69,12 @@ impl GenerateKeypair {
             &master_seed,
             slip10::Curve::Ed25519,
             &seed_phrase_hd_path,
-        ).map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to derive a key from the master key: {}", err))
+        )
+        .map_err(|err| {
+            color_eyre::Report::msg(format!(
+                "Failed to derive a key from the master key: {}",
+                err
+            ))
         })?;
 
         let secret_keypair = {
@@ -98,31 +103,28 @@ impl GenerateKeypair {
             "private_key": secret_keypair_str,
             })
         );
-        let home_dir =  dirs::home_dir().expect("Impossible to get your home dir!");
-        let file_name: std::path::PathBuf = format!("{}.json", &prepopulated_unsigned_transaction.signer_id).into();
+        let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
+        let file_name: std::path::PathBuf =
+            format!("{}.json", &prepopulated_unsigned_transaction.signer_id).into();
         let mut path = std::path::PathBuf::from(&home_dir);
         path.push(crate::consts::DIR_NAME_KEY_CHAIN);
         path.push(file_name);
         if path.exists() {
             return Err(color_eyre::Report::msg(format!(
-                "The file: {} already exists!", &path.display()
+                "The file: {} already exists!",
+                &path.display()
             )));
         };
         std::fs::File::create(&path)
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to create file: {:?}",
-                    err
-                ))
-            })?
+            .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
             .write(buf.as_bytes())
             .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to write to file: {:?}",
-                    err
-                ))
+                color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
             })?;
-        println!("The data for the access key is saved in a file {}", &path.display());
+        println!(
+            "The data for the access key is saved in a file {}",
+            &path.display()
+        );
 
         match self.permission {
             super::add_access_key::AccessKeyPermission::GrantFullAccess(full_access_type) => {
@@ -135,7 +137,9 @@ impl GenerateKeypair {
                     )
                     .await
             }
-            super::add_access_key::AccessKeyPermission::GrantFunctionCallAccess(function_call_type) => {
+            super::add_access_key::AccessKeyPermission::GrantFunctionCallAccess(
+                function_call_type,
+            ) => {
                 function_call_type
                     .process(
                         0,

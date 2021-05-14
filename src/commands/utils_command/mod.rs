@@ -1,10 +1,9 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
+mod combine_transaction_subcommand_with_signature;
 mod generate_keypair_subcommand;
 mod sign_transaction_subcommand_with_secret_key;
-mod combine_transaction_subcommand_with_signature;
-
 
 /// набор утилит-помощников
 #[derive(Debug, Default, clap::Clap)]
@@ -38,9 +37,13 @@ impl Utils {
 enum CliUtil {
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
     /// Предоставьте данные для подписания данных с помощью privte key
-    SignTransactionSecretKey(self::sign_transaction_subcommand_with_secret_key::CliSignTransactionSecretKey),
+    SignTransactionSecretKey(
+        self::sign_transaction_subcommand_with_secret_key::CliSignTransactionSecretKey,
+    ),
     /// Предоставьте данные для соединения подготовленной неподписаной транзакции с сигнатурой
-    CombineTransactionSignature(self::combine_transaction_subcommand_with_signature::CliCombineTransactionSignature),
+    CombineTransactionSignature(
+        self::combine_transaction_subcommand_with_signature::CliCombineTransactionSignature,
+    ),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -49,9 +52,13 @@ pub enum Util {
     #[strum_discriminants(strum(message = "Generate a key pair"))]
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
     #[strum_discriminants(strum(message = "Sign a transaction with secret key"))]
-    SignTransactionSecretKey(self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey),
+    SignTransactionSecretKey(
+        self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey,
+    ),
     #[strum_discriminants(strum(message = "Combine unsigned transaction with signature"))]
-    CombineTransactionSignature(self::combine_transaction_subcommand_with_signature::CombineTransactionSignature),
+    CombineTransactionSignature(
+        self::combine_transaction_subcommand_with_signature::CombineTransactionSignature,
+    ),
 }
 
 impl From<CliUtil> for Util {
@@ -62,7 +69,7 @@ impl From<CliUtil> for Util {
                 let sign_transaction =
                     self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey::from(cli_sign_transaction);
                 Util::SignTransactionSecretKey(sign_transaction)
-            },
+            }
             CliUtil::CombineTransactionSignature(cli_combine_transaction) => {
                 let combine_transaction =
                     self::combine_transaction_subcommand_with_signature::CombineTransactionSignature::from(cli_combine_transaction);
@@ -87,12 +94,12 @@ impl Util {
             .interact()
             .unwrap();
         let cli_util = match variants[selection] {
-            UtilDiscriminants::GenerateKeypair => {
-                CliUtil::GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair::default())
-            },
+            UtilDiscriminants::GenerateKeypair => CliUtil::GenerateKeypair(
+                self::generate_keypair_subcommand::CliGenerateKeypair::default(),
+            ),
             UtilDiscriminants::SignTransactionSecretKey => {
                 CliUtil::SignTransactionSecretKey(Default::default())
-            },
+            }
             UtilDiscriminants::CombineTransactionSignature => {
                 CliUtil::CombineTransactionSignature(Default::default())
             }
@@ -104,7 +111,9 @@ impl Util {
         match self {
             Self::GenerateKeypair(generate_keypair) => generate_keypair.process().await,
             Self::SignTransactionSecretKey(sign_transaction) => sign_transaction.process().await,
-            Self::CombineTransactionSignature(combine_transaction) => combine_transaction.process().await,
+            Self::CombineTransactionSignature(combine_transaction) => {
+                combine_transaction.process().await
+            }
         }
     }
 }

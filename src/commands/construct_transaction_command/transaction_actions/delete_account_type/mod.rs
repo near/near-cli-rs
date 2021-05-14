@@ -1,7 +1,6 @@
 use async_recursion::async_recursion;
 use dialoguer::Input;
 
-
 /// удаление аккаунта
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliDeleteAccountAction {

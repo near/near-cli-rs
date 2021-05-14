@@ -1,7 +1,6 @@
-use std::vec;
 use async_recursion::async_recursion;
 use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
-
+use std::vec;
 
 /// данные для определения ключа с function call
 #[derive(Debug, Default, clap::Clap)]
@@ -29,7 +28,7 @@ impl From<CliFunctionCallType> for FunctionCallType {
         let allowance: Option<near_primitives::types::Balance> = match item.allowance {
             Some(cli_allowance) => {
                 let allowance = match cli_allowance {
-                    crate::common::NearBalance {inner: num} => num,
+                    crate::common::NearBalance { inner: num } => num,
                 };
                 Some(allowance)
             }
@@ -100,7 +99,7 @@ impl FunctionCallType {
             _ => unreachable!("Error"),
         }
     }
-    
+
     pub fn input_allowance() -> Option<near_primitives::types::Balance> {
         println!();
         let choose_input = vec![
@@ -120,7 +119,7 @@ impl FunctionCallType {
                     .interact_text()
                     .unwrap();
                 let allowance = match allowance_near_balance {
-                    crate::common::NearBalance {inner: num} => num,
+                    crate::common::NearBalance { inner: num } => num,
                 };
                 Some(allowance)
             }

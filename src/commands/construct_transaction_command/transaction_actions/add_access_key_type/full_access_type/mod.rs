@@ -1,6 +1,5 @@
 use async_recursion::async_recursion;
 
-
 /// данные для определения ключа с полным доступом
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliFullAccessType {
@@ -19,7 +18,9 @@ impl From<CliFullAccessType> for FullAccessType {
             Some(cli_skip_action) => super::super::NextAction::from(cli_skip_action),
             None => super::super::NextAction::input_next_action(),
         };
-        Self { next_action: Box::new(skip_next_action) }
+        Self {
+            next_action: Box::new(skip_next_action),
+        }
     }
 }
 

@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// Add full access key to the sub-account
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliAddAccessKeyAction {

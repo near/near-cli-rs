@@ -3,7 +3,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod download;
 
-
 #[derive(Debug, clap::Clap)]
 pub enum CliDownloadMode {
     /// Download a contract file
@@ -24,18 +23,16 @@ pub enum DownloadMode {
 impl DownloadMode {
     pub fn from(item: CliDownloadMode, contract_id: &str) -> Self {
         match item {
-            CliDownloadMode::Download(cli_contract_file) => {
-                DownloadMode::Download(self::download::ContractFile::from(cli_contract_file, contract_id))
-            }
-            CliDownloadMode::Hash => DownloadMode::Hash
+            CliDownloadMode::Download(cli_contract_file) => DownloadMode::Download(
+                self::download::ContractFile::from(cli_contract_file, contract_id),
+            ),
+            CliDownloadMode::Hash => DownloadMode::Hash,
         }
     }
 }
 
 impl DownloadMode {
-    pub fn choose_download_mode(
-        contract_id: &str
-    ) -> Self {
+    pub fn choose_download_mode(contract_id: &str) -> Self {
         println!();
         let variants = DownloadModeDiscriminants::iter().collect::<Vec<_>>();
         let modes = variants
@@ -43,16 +40,14 @@ impl DownloadMode {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_mode = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(
-                "To view contract code you will need to choose next action"
-            )
+            .with_prompt("To view contract code you will need to choose next action")
             .items(&modes)
             .default(0)
             .interact()
             .unwrap();
         let cli_mode = match variants[selected_mode] {
             DownloadModeDiscriminants::Download => CliDownloadMode::Download(Default::default()),
-            DownloadModeDiscriminants::Hash => CliDownloadMode::Hash
+            DownloadModeDiscriminants::Hash => CliDownloadMode::Hash,
         };
         Self::from(cli_mode, contract_id)
     }

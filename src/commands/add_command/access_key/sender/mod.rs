@@ -1,6 +1,5 @@
 use dialoguer::Input;
 
-
 /// данные об отправителе транзакции
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSender {
@@ -22,7 +21,9 @@ impl From<CliSender> for Sender {
             None => Sender::input_sender_account_id(),
         };
         let public_key_mode = match item.public_key_mode {
-            Some(cli_public_key_mode) => super::public_key_mode::PublicKeyMode::from(cli_public_key_mode),
+            Some(cli_public_key_mode) => {
+                super::public_key_mode::PublicKeyMode::from(cli_public_key_mode)
+            }
             None => super::public_key_mode::PublicKeyMode::choose_public_key_mode(),
         };
         Self {
