@@ -90,12 +90,12 @@ jobs:
     - name: Install packages (Ubuntu)
       if: matrix.os == 'ubuntu-18.04'
       run: |
-        ci/ubuntu-install-packages
+        .github/ci/ubuntu-install-packages
 
     - name: Install packages (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        ci/macos-install-packages
+        .github/ci/macos-install-packages
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
@@ -153,14 +153,14 @@ jobs:
       if: matrix.os == 'windows-2019'
       shell: bash
       run: |
-        outdir="$(ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
+        outdir="$(.github/ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
         ls "$outdir/_rg.ps1" && file "$outdir/_rg.ps1"
 
     - name: Test for existence of build artifacts (Unix)
       if: matrix.os != 'windows-2019'
       shell: bash
       run: |
-        outdir="$(ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
+        outdir="$(.github/ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
         # TODO: Check for the man page generation here. For whatever reason,
         # it seems to be intermittently failing in CI. No idea why.
         # for f in rg.bash rg.fish rg.1; do
@@ -169,14 +169,14 @@ jobs:
           ls "$outdir/$f" && file "$outdir/$f"
         done
 
-    - name: Test zsh shell completions (Unix, sans cross)
-      # We could test this when using Cross, but we'd have to execute the
-      # 'rg' binary (done in test-complete) with qemu, which is a pain and
-      # doesn't really gain us much. If shell completion works in one place,
-      # it probably works everywhere.
-      if: matrix.target == '' && matrix.os != 'windows-2019'
-      shell: bash
-      run: ci/test-complete
+    # - name: Test zsh shell completions (Unix, sans cross)
+    #   # We could test this when using Cross, but we'd have to execute the
+    #   # 'rg' binary (done in test-complete) with qemu, which is a pain and
+    #   # doesn't really gain us much. If shell completion works in one place,
+    #   # it probably works everywhere.
+    #   if: matrix.target == '' && matrix.os != 'windows-2019'
+    #   shell: bash
+    #   run: ci/test-complete
 
   rustfmt:
     name: rustfmt
