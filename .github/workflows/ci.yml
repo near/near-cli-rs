@@ -8,7 +8,7 @@ on:
   # - cron: '00 01 * * *'
 jobs:
   test:
-    name: test
+    name: test 
     env:
       # For some builds, we use cross to test on 32-bit and big-endian
       # systems.
