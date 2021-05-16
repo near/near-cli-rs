@@ -53,3 +53,18 @@ jobs:
     - name: Check formatting
       run: |
         cargo fmt --all -- --check  
+  
+  build-near-cli:
+    needs: [ rustfmt ]
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Run cd to near-cli
+      run: |
+        ls -la
+
+    - name: Run build near-cli
+      run: cargo build --verbose --all
+    
