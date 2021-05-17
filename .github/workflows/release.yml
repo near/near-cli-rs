@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION='v0.0.1'" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -145,11 +145,11 @@ jobs:
         echo "release version: $RELEASE_VERSION"
 
     - name: Build release binary
-      run: ${{ env.CARGO }} build --verbose --release --features pcre2 ${{ env.TARGET_FLAGS }}
+      run: ${{ env.CARGO }} build --verbose --release 
 
     - name: Strip release binary (linux and macos)
       if: matrix.build == 'linux' || matrix.build == 'macos'
-      run: strip "target/${{ matrix.target }}/release/rg"
+      run: strip "target/${{ matrix.target }}/release/near-cli"
 
     - name: Strip release binary (arm)
       if: matrix.build == 'linux-arm'
@@ -158,7 +158,7 @@ jobs:
           "$PWD/target:/target:Z" \
           rustembedded/cross:arm-unknown-linux-gnueabihf \
           arm-linux-gnueabihf-strip \
-          /target/arm-unknown-linux-gnueabihf/release/rg
+          /target/arm-unknown-linux-gnueabihf/release/near-cli
 
     - name: Build archive
       shell: bash
