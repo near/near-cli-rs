@@ -37,9 +37,9 @@ jobs:
         # - nightly-32
         # - nightly-mips
         # - nightly-arm
-        # - macos
-        - win-msvc
-        - win-gnu
+        - macos
+        # - win-msvc
+        # - win-gnu
         include:
         # - build: pinned
         #   os: ubuntu-18.04
@@ -74,15 +74,15 @@ jobs:
           #   arm-linux-gnueabihf-strip \
           #   /target/arm-unknown-linux-gnueabihf/debug/rg
           # target: arm-unknown-linux-gnueabihf
-        # - build: macos
-        #   os: macos-latest
-        #   rust: stable
-        - build: win-msvc
-          os: windows-2019
-          rust: nightly
-        - build: win-gnu
-          os: windows-2019
-          rust: nightly-x86_64-gnu
+        - build: macos
+          os: macos-latest
+          rust: stable
+        # - build: win-msvc
+        #   os: windows-2019
+        #   rust: nightly
+        # - build: win-gnu
+        #   os: windows-2019
+        #   rust: nightly-x86_64-gnu
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
