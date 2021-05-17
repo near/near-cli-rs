@@ -92,10 +92,10 @@ jobs:
       run: |
         .github/ci/ubuntu-install-packages
 
-    - name: Install packages (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        .github/ci/macos-install-packages
+    # - name: Install packages (macOS)
+    #   if: matrix.os == 'macos-latest'
+    #   run: |
+    #     .github/ci/macos-install-packages
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
