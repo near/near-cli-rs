@@ -55,7 +55,6 @@ jobs:
         cargo fmt --all -- --check  
   
   build-near-cli:
-    needs: [ rustfmt ]
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout repository
@@ -67,4 +66,9 @@ jobs:
 
     - name: Run build near-cli
       run: cargo build --verbose --all
+
+    - name: View contract code for '26.volodymyr.testnet'
+      run: |
+        ./target/debug/near-cli view contract-code network testnet contract '26.volodymyr.testnet' hash
+    
     
