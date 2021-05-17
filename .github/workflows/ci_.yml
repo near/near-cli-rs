@@ -41,12 +41,12 @@ jobs:
         # - win-msvc
         # - win-gnu
         include:
-        - build: pinned
-          os: ubuntu-18.04
-          rust: 1.41.0
-        # - build: stable
+        # - build: pinned
         #   os: ubuntu-18.04
-        #   rust: stable
+        #   rust: 1.41.0
+        - build: stable
+          os: ubuntu-18.04
+          rust: stable
         # - build: beta
         #   os: ubuntu-18.04
         #   rust: beta
@@ -92,10 +92,10 @@ jobs:
       run: |
         .github/ci/ubuntu-install-packages
 
-    # - name: Install packages (macOS)
-    #   if: matrix.os == 'macos-latest'
-    #   run: |
-    #     .github/ci/macos-install-packages
+    - name: Install packages (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        .github/ci/macos-install-packages
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
@@ -117,7 +117,7 @@ jobs:
         echo "cargo command is: ${{ env.CARGO }}"
         echo "target flag is: ${{ env.TARGET_FLAGS }}"
 
-    - name: Build ripgrep and all crates
+    - name: Build near-cli and all crates
       run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }}
 
     # - name: Build ripgrep with PCRE2
