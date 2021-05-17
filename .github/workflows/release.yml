@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.3" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=v0.0.4" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -147,9 +147,12 @@ jobs:
     - name: Build release binary
       run: ${{ env.CARGO }} build --verbose --release 
 
-    - name: Strip release binary (linux and macos)
-      if: matrix.build == 'linux' || matrix.build == 'macos'
-      run: strip "target/${{ matrix.target }}/release/near-cli"
+    #- name: Strip release binary (linux and macos)
+    #  if: matrix.build == 'linux' || matrix.build == 'macos'
+    #  run: strip "target/${{ matrix.target }}/release/near-cli"
+    
+    - name: Get dir ls
+      run: ls target
 
     - name: Strip release binary (arm)
       if: matrix.build == 'linux-arm'
