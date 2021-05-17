@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION='v0.0.1'" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION='v0.0.2'" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -59,8 +59,8 @@ jobs:
       TARGET_DIR: ./target
       # Emit backtraces on panics.
       RUST_BACKTRACE: 1
-      # Build static releases with PCRE2.
-      # PCRE2_SYS_STATIC: 1
+        Build static releases with PCRE2.
+      PCRE2_SYS_STATIC: 1
     strategy:
       matrix:
         build: [linux, macos] #[linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
