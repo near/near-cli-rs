@@ -116,13 +116,17 @@ jobs:
       run: |
         echo "cargo command is: ${{ env.CARGO }}"
         echo "target flag is: ${{ env.TARGET_FLAGS }}"
+    
+    - name: Get target list
+      run: rustup target list
+    
 
-    - name: Build near-cli and all crates
-      run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }}
+    # - name: Build near-cli and all crates
+    #   run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }}
 
-    - name: View contract code for '26.volodymyr.testnet'
-      run: |
-        ./target/debug/near-cli view contract-code network testnet contract '26.volodymyr.testnet' hash
+    # - name: View contract code for '26.volodymyr.testnet'
+    #   run: |
+    #     ./target/debug/near-cli view contract-code network testnet contract '26.volodymyr.testnet' hash
 
     # - name: Build ripgrep with PCRE2
     #   run: ${{ env.CARGO }} build --verbose --all --features pcre2 ${{ env.TARGET_FLAGS }}
