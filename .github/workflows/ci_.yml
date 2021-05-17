@@ -41,15 +41,15 @@ jobs:
         - win-msvc
         - win-gnu
         include:
-        - build: pinned
-          os: ubuntu-18.04
-          rust: 1.50.0
-        - build: stable
-          os: ubuntu-18.04
-          rust: stable
-        - build: beta
-          os: ubuntu-18.04
-          rust: beta
+        # - build: pinned
+        #   os: ubuntu-18.04
+        #   rust: 1.50.0
+        # - build: stable
+        #   os: ubuntu-18.04
+        #   rust: stable
+        # - build: beta
+        #   os: ubuntu-18.04
+        #   rust: beta
         # - build: nightly
         #   os: ubuntu-18.04
         #   rust: nightly
@@ -74,9 +74,9 @@ jobs:
           #   arm-linux-gnueabihf-strip \
           #   /target/arm-unknown-linux-gnueabihf/debug/rg
           # target: arm-unknown-linux-gnueabihf
-        - build: macos
-          os: macos-latest
-          rust: stable
+        # - build: macos
+        #   os: macos-latest
+        #   rust: stable
         - build: win-msvc
           os: windows-2019
           rust: nightly
