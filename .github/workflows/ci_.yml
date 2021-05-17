@@ -121,8 +121,8 @@ jobs:
       run: rustup target list
     
 
-    # - name: Build near-cli and all crates
-    #   run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }}
+    - name: Build near-cli and all crates
+      run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }}
 
     # - name: View contract code for '26.volodymyr.testnet'
     #   run: |
