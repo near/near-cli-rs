@@ -10,12 +10,12 @@ on:
         description: 'location'
         required: false
         default: 'The Octoverse'
-  # push:    
-    # Enable when testing release infrastructure on a branch.
-    # branches:
-    # - ci-1
-    # tags:
-    # - '[0-9]+.[0-9]+.[0-9]+'
+  push:    
+    #Enable when testing release infrastructure on a branch.
+    branches:
+    - ci-1
+    tags:
+    - '[0-9]+.[0-9]+.[0-9]+'
 jobs:
   create-release:
     name: create-release
