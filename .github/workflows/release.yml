@@ -19,9 +19,9 @@ jobs:
         run: mkdir artifacts
 
       - name: Get the release version from the tag
-        if: env.NEAR_CLI_VERSION == ''
+        # if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.4" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=v0.0.5" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -54,7 +54,7 @@ jobs:
       # systems.
       CARGO: cargo
       # When CARGO is set to CROSS, this is set to `--target matrix.target`.
-      TARGET_FLAGS:
+      TARGET_FLAGS: --target matrix.target
       # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
       TARGET_DIR: ./target
       # Emit backtraces on panics.
@@ -147,12 +147,12 @@ jobs:
     - name: Build release binary
       run: ${{ env.CARGO }} build --verbose --release 
 
-    #- name: Strip release binary (linux and macos)
-    #  if: matrix.build == 'linux' || matrix.build == 'macos'
-    #  run: strip "target/${{ matrix.target }}/release/near-cli"
-    
     - name: Get dir ls
       run: ls target
+    
+    - name: Strip release binary (linux and macos)
+      if: matrix.build == 'linux' || matrix.build == 'macos'
+      run: strip "target/${{ matrix.target }}/release/near-cli"
 
     - name: Strip release binary (arm)
       if: matrix.build == 'linux-arm'
