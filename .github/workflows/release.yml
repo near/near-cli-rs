@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         # if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.8" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=v0.0.9" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -172,8 +172,8 @@ jobs:
 
         # cp {README.md,COPYING,UNLICENSE,LICENSE-MIT} "$staging/"
         # cp {CHANGELOG.md,FAQ.md,GUIDE.md} "$staging/doc/"
-        cp "$outdir"/{near-cli.bash,near-cli.fish,_near-cli.ps1} "$staging/complete/"
-        cp complete/_near-cli "$staging/complete/"
+        #cp "$outdir"/{near-cli.bash,near-cli.fish,_near-cli.ps1} "$staging/complete/"
+        #cp complete/_near-cli "$staging/complete/"
 
         if [ "${{ matrix.os }}" = "windows-2019" ]; then
           cp "target/${{ matrix.target }}/release/near-cli.exe" "$staging/"
