@@ -1,6 +1,15 @@
 name: release
 on:
   workflow_dispatch:
+    inputs:
+      name:
+        description: 'Person to greet'
+        required: true
+        default: 'Mona the Octocat'
+      home:
+        description: 'location'
+        required: false
+        default: 'The Octoverse'
   # push:    
     # Enable when testing release infrastructure on a branch.
     # branches:
