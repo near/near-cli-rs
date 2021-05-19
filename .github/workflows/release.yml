@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         # if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.19" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=v0.0.20" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -54,7 +54,7 @@ jobs:
       # systems.
       CARGO: cargo
       # When CARGO is set to CROSS, this is set to `--target matrix.target`.
-      TARGET_FLAGS:
+      TARGET_FLAGS: --target matrix.target
       # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
       TARGET_DIR: ./target
       # Emit backtraces on panics.
@@ -125,19 +125,18 @@ jobs:
         override: true
         target: ${{ matrix.target }}
 
-    # - name: Use Cross
+    - name: Use Cross
       # if: matrix.os != 'windows-2019'
-      # run: |
-      #   cargo install cross
-      #   echo "CARGO=cross" >> $GITHUB_ENV
-      #   echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
-      #   echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+      run: |
+        cargo install cross
+        #  echo "CARGO=cross" >> $GITHUB_ENV
+        echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+        echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
 
     - name: Show command used for Cargo
       run: |
         echo "cargo command is: ${{ env.CARGO }}"
         echo "target flag is: ${{ env.TARGET_FLAGS }}"
-        echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
         echo "target dir is: ${{ env.TARGET_DIR }}"
 
     - name: Get release download URL
@@ -160,7 +159,7 @@ jobs:
       run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }}
 
     - name: Get dir ls
-      run: ls target/release
+      run: ls target
     
     - name: Strip release binary (linux and macos)
       if: matrix.build == 'linux' || matrix.build == 'macos'
