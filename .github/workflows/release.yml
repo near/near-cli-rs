@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         # if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.16" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=v0.0.17" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -99,7 +99,19 @@ jobs:
     - name: Install packages (Ubuntu)
       if: matrix.os == 'ubuntu-18.04'
       run: |
-        .github/ci/ubuntu-install-packages
+        # .github/ci/ubuntu-install-packages
+        sudo apt-get update
+        sudo apt-get install -y \
+          asciidoctor \
+          zsh xz-utils liblz4-tool musl-tools \
+          git \
+          cmake \
+          g++ \
+          pkg-config \
+          libssl-dev \
+          curl \
+          llvm \
+          clang
 
     - name: Install packages (macOS)
       if: matrix.os == 'macos-latest'
@@ -128,24 +140,24 @@ jobs:
         echo "target flag is: ${{ env.TARGET_FLAGS }}"
         echo "target dir is: ${{ env.TARGET_DIR }}"
 
-    # - name: Get release download URL
-    #   uses: actions/download-artifact@v1
-    #   with:
-    #     name: artifacts
-    #     path: artifacts
+    - name: Get release download URL
+      uses: actions/download-artifact@v1
+      with:
+        name: artifacts
+        path: artifacts
 
-    # - name: Set release upload URL and release version
-    #   shell: bash
-    #   run: |
-    #     release_upload_url="$(cat artifacts/release-upload-url)"
-    #     echo "RELEASE_UPLOAD_URL=$release_upload_url" >> $GITHUB_ENV
-    #     echo "release upload url: $RELEASE_UPLOAD_URL"
-    #     release_version="$(cat artifacts/release-version)"
-    #     echo "RELEASE_VERSION=$release_version" >> $GITHUB_ENV
-    #     echo "release version: $RELEASE_VERSION"
+    - name: Set release upload URL and release version
+      shell: bash
+      run: |
+        release_upload_url="$(cat artifacts/release-upload-url)"
+        echo "RELEASE_UPLOAD_URL=$release_upload_url" >> $GITHUB_ENV
+        echo "release upload url: $RELEASE_UPLOAD_URL"
+        release_version="$(cat artifacts/release-version)"
+        echo "RELEASE_VERSION=$release_version" >> $GITHUB_ENV
+        echo "release version: $RELEASE_VERSION"
 
-    # - name: Build release binary
-    #   run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }}
+    - name: Build release binary
+      run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }}
 
     - name: Get dir ls
       run: ls target
