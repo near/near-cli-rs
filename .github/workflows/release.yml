@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         # if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.12" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=v0.0.13" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -63,20 +63,20 @@ jobs:
       PCRE2_SYS_STATIC: 1
     strategy:
       matrix:
-        build: [linux] #[linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
+        build: [macos] #[linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
         include:
-        - build: linux
-          os: ubuntu-18.04
-          rust: 1.50.0
-          target: x86_64-unknown-linux-musl
+        # - build: linux
+        #   os: ubuntu-18.04
+        #   rust: 1.50.0
+        #   target: x86_64-unknown-linux-musl
         # - build: linux-arm
         #   os: ubuntu-18.04
         #   rust: nightly
         #   target: arm-unknown-linux-gnueabihf
-        # - build: macos
-        #   os: macos-latest
-        #   rust: nightly
-        #   target: x86_64-apple-darwin
+        - build: macos
+          os: macos-latest
+          rust: nightly
+          target: x86_64-apple-darwin
         # - build: win-msvc
         #   os: windows-2019
         #   rust: nightly
