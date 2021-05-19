@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         # if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.14" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=v0.0.15" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
