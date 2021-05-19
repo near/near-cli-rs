@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         # if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.17" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=v0.0.18" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -99,7 +99,6 @@ jobs:
     - name: Install packages (Ubuntu)
       if: matrix.os == 'ubuntu-18.04'
       run: |
-        # .github/ci/ubuntu-install-packages
         sudo apt-get update
         sudo apt-get install -y \
           asciidoctor \
@@ -160,7 +159,7 @@ jobs:
       run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }}
 
     - name: Get dir ls
-      run: ls target
+      run: ls target/release
     
     # - name: Strip release binary (linux and macos)
     #   if: matrix.build == 'linux' || matrix.build == 'macos'
