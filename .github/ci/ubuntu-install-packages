@@ -3,4 +3,13 @@
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
   asciidoctor \
-  zsh xz-utils liblz4-tool musl-tools
+  zsh xz-utils liblz4-tool musl-tools \
+  git \
+  cmake \
+  g++ \
+  pkg-config \
+  libssl-dev \
+  curl \
+  llvm \
+  clang
+
