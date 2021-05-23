@@ -4,7 +4,7 @@ near-cli – это интерактивный помощник составле
 
 ### Documentation quick links
 
-* [Usage] (#usage)
+* [Usage](#usage)
 * [User Guide](GUIDE.md)
 * [Installation](#installation)
 * [Building](#building)
