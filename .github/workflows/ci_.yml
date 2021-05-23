@@ -2,8 +2,8 @@ name: ci
 on:
   pull_request:
   push:
-    branches:
-    - ci-1
+    # branches:
+    # - ci-1
   # schedule:
   # - cron: '00 01 * * *'
 jobs:
