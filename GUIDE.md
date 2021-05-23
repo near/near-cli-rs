@@ -31,7 +31,7 @@ translatable to any command line shell environment.
 
 <details><summary>Construct a new transaction</summary>
 <p>
-</p><pre><code>https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R
+</p><pre><code><img src="" alt="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R" style="max-width:100%;">
 </code></pre>
 <p></p>
 </details>
