@@ -20,7 +20,25 @@ translatable to any command line shell environment.
 
 ### Add access key, contract code, stake proposal, sub-account, implicit-account
 
+* [Add a new access key for an account](#add-access-key)
+* [Add a new contract code](#add-contract-code)
+* [Add an implicit-account](#add-implicit-account)
+* [Add a new stake proposal](#add-stake-proposal)
+* [Add a new sub-account](#add-sub-account)
 
+#### Add a new access key for an account
+
+
+#### Add a new contract code
+
+
+#### Add an implicit-account
+
+
+#### Add a new stake proposal
+
+
+#### Add a new sub-account
 
 ### Construct a new transaction
 
