@@ -30,7 +30,7 @@ translatable to any command line shell environment.
 ### Construct a new transaction
 
 <details><summary>Construct a new transaction</summary>
-<p>
+<p><script src="https://asciinema.org/a/14.js" id="asciicast-14" async></script>
 </p><pre><code><img src="" alt="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R" style="max-width:100%;">
 </code></pre>
 <p></p>
