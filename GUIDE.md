@@ -46,11 +46,11 @@ To do this, we will use the transaction constructor.
 <p></p>
 </details> -->
 
-<dl>
+<details><summary>Construct a new transaction</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
-</dl>
+</details>
 
 ### Delete access key, account
 
