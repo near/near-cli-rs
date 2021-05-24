@@ -35,12 +35,11 @@ translatable to any command line shell environment.
 <p>
 </p><pre><code>
 </code></pre>
-<a href="https://asciinema.org/a/14"><img src="https://asciinema.org/a/14.png" width="836"/></a>
+<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R">
+    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
+</a>
 <p></p>
 </details>
-
-[![asciicast](https://asciinema.org/a/14.png)](https://asciinema.org/a/14?autoplay=1)
-
 
 ### Delete access key, account
 
