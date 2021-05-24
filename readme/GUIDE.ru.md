@@ -58,12 +58,12 @@
 
 ### Construct a new transaction
 
-Let's look at an example, when we need:
-1. Create a new account
-2. Add access keys to this account
-3. Transfer a certain number of tokens to this account
+Рассмотрим пример, когда необходимо:
+1. Создать аккаунт
+2. Добавить созданному аккаунту ключи доступа
+3. Осуществить перевод токенов на созданный аккаунт
 
-To do this, we will use the transaction constructor.
+Для этого воспользуемся конструктором транзакции:
 
 
 <!-- <details><summary>Construct a new transaction</summary>
@@ -76,7 +76,7 @@ To do this, we will use the transaction constructor.
 <p></p>
 </details> -->
 
-<details><summary>Construct a new transaction</summary>
+<details><summary>Construct a new transaction (демо)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
