@@ -20,6 +20,7 @@
 ### Add access key, contract code, stake proposal, sub-account, implicit-account
 
 * __Add a new access key for an account__
+
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```
 ./near-cli add access-key \
