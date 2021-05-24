@@ -39,7 +39,7 @@ translatable to any command line shell environment.
 
 ### Delete access key, account
 
-[![asciicast](https://asciinema.org/a/14.png)](https://asciinema.org/a/14?autoplay=1)
+[![asciicast](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png)](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?t=1&speed=2)
 
 ### Execute function (contract method
 
