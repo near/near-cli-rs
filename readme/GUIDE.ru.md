@@ -309,9 +309,71 @@ near-cli add stake-proposal \
 </details>
 
 __5. Add a new sub-account__
-<details><summary>Add a new sub-account (демонстрация работы команды)</summary>
-<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
+
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```
+near-cli add sub-account \
+        network testnet \
+        owner-account 'volodymyr.testnet' \
+        sub-account '22.volodymyr.testnet' \
+        sub-account-full-access \
+        generate-keypair \
+        deposit '1 NEAR' \
+        sign-with-keychain \
+        send
+```
+Результат выполнения команды:
+```
+========= SENT =========
+
+
+---  Signed transaction:   ---
+    SignedTransaction {
+    transaction: Transaction {
+        signer_id: "volodymyr.testnet",
+        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
+        nonce: 155,
+        receiver_id: "22.volodymyr.testnet",
+        block_hash: `3aeuuGbAr3ckC8beii6E7qa7j3Fos1LNFzvk8ESj3E1L`,
+        actions: [
+            CreateAccount(
+                CreateAccountAction,
+            ),
+            AddKey(
+                AddKeyAction {
+                    public_key: ed25519:DAKCQXSbTTu52HYCvvJEZt4Qpk9s2J3xb2DrVTPwxgs4,
+                    access_key: AccessKey {
+                        nonce: 0,
+                        permission: FullAccess,
+                    },
+                },
+            ),
+            Transfer(
+                TransferAction {
+                    deposit: 1000000000000000000000000,
+                },
+            ),
+        ],
+    },
+    signature: ed25519:3829dxbPvQ3cH66MwaKYw61HVcEazRam52foPJKBbT7KXPpA29h85C4h82qug1TSXmckq6j3Q2GPSuPzv5qCCkcX,
+    hash: `AyHBkKfbfJxSLNhSUpHi6fqhRiDr4FbsuFUPTESDR867`,
+    size: 183,
+}
+
+
+---  serialize_to_base64:   --- 
+   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPmwAAAAAAAAAUAAAAMjIudm9sb2R5bXlyLnRlc3RuZXQmVmhrXs42DaCrmIuhbAbmK7JeKrX5uN7X0nkiNUgMNwMAAAAABQC0rwugO8t0SplsrnfivSg6TjskRq+Yc1BZyeegdY9dCwAAAAAAAAAAAQMAAACh7czOG8LTAAAAAAAAAGoWbdbqW1kIs2qbVTxybDVLX7QLoLAEOKpBp0EfjMb76JEj7aqrnxejcrFeTXazM1Hlu9T3sacg86r2dZjebQA="
+
+
+---  Success:  ---
+ FinalExecutionOutcome {
+    status: SuccessValue(``),
+    ...
+ }
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/jY2eKCQuT8WvdtQMzbCBuWU60?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/jY2eKCQuT8WvdtQMzbCBuWU60.png" width="836"/>
 </a>
 </details>
 
