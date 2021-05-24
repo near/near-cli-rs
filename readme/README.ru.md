@@ -5,7 +5,7 @@ near-cli – это утилита командной строки для раб
 ### Documentation quick links
 
 * [Usage](#usage)
-* [User Guide](GUIDE.md)
+* [User Guide](GUIDE.ru.md)
 * [Installation](#installation)
 * [Building](#building)
 
