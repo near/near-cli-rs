@@ -91,7 +91,7 @@ __1. Add a new access key for an account__
 ```
 near-cli add access-key \
         network testnet \
-        account '21.volodymyr.testnet' \
+        account 'volodymyr.testnet' \
         generate-keypair \
         grant-function-call-access \ 
         --receiver-id 'meta.pool.testnet' \
@@ -103,6 +103,63 @@ near-cli add access-key \
         send
 
 ```
+Результат выполнения команды:
+```
+========= SENT =========
+
+
+---  Signed transaction:   ---
+    SignedTransaction {
+    transaction: Transaction {
+        signer_id: "21.volodymyr.testnet",
+        public_key: ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF,
+        nonce: 19,
+        receiver_id: "21.volodymyr.testnet",
+        block_hash: `54idHezkbgmzcmpBdCH5Fksr4gZHRamdV9UWeBUG3mf1`,
+        actions: [
+            AddKey(
+                AddKeyAction {
+                    public_key: ed25519:4YDJbW2GDDgzgNUW5UmC7iDxEy8e2JJenKbUyUMUxhzG,
+                    access_key: AccessKey {
+                        nonce: 0,
+                        permission: FunctionCall(
+                            FunctionCallPermission {
+                                allowance: Some(
+                                    10000000000000000000000000,
+                                ),
+                                receiver_id: "meta.pool.testnet",
+                                method_names: [
+                                    "set_a",
+                                    " set_b",
+                                ],
+                            },
+                        ),
+                    },
+                },
+            ),
+        ],
+    },
+    signature: ed25519:6EvuDd9GsZEqUgnr9KPaRv3TexVz4rPdEJ6MiorCFvfpd5bCVKHAxAdvYQdL7n76sr4NFDZrmtXhJmuHreAMdDv,
+    hash: `CAKAx4MGnmvCbFiuRfjNZpvivdbtvMWw15ftDJAbzqAa`,
+    size: 229,
+}
+
+
+---  serialize_to_base64:   --- 
+   "FAAAADIxLnZvbG9keW15ci50ZXN0bmV0AMob/ZK9JLsyX0GsR1RyW9L2ZAclRYRiqIZwzCPP7dmEEwAAAAAAAAAUAAAAMjEudm9sb2R5bXlyLnRlc3RuZXQ8Yo5v35DY5uHEw5CTtRQycg1L8uIrXLMhASkPPkHI7AEAAAAFADSR+jEvIqz/Mmw2d7LyuyJIWd3pdV72ZFx+sX7CTw4hAAAAAAAAAAAAAQAAAEpIARQWlUUIAAAAAAARAAAAbWV0YS5wb29sLnRlc3RuZXQCAAAABQAAAHNldF9hBgAAACBzZXRfYgAEhNenJczDVbUDfaxLFyd5Vo5/PIROxP9IuyFE9aE1n9G4FeGT23KBBf8z/HMok6ebbmarbmm5BLlmBK9UlEcN"
+
+
+---  Success:  ---
+ FinalExecutionOutcome {
+    status: SuccessValue(``),
+    ...
+ }
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/s9Z0eRw9fuxTrRDSTvpzcNZGo?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/s9Z0eRw9fuxTrRDSTvpzcNZGo.png" width="836"/>
+</a>
+</details>
 
 __2. Add a new contract code__
 <details><summary>Add a new contract code (демонстрация работы команды)</summary>
