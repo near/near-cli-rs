@@ -162,9 +162,65 @@ near-cli add access-key \
 </details>
 
 __2. Add a new contract code__
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```
+near-cli add contract-code \
+        network testnet \
+        account '21.volodymyr.testnet' \
+        contract-file '/Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm' \
+        initialize 'increment' '{}'     \
+        --attached-deposit '0 NEAR' \
+        --prepaid-gas '1 TGas' \
+        sign-with-keychain \
+        send
+```
+Результат выполнения команды:
+```
+========= SENT =========
+
+
+---  Signed transaction:   ---
+    SignedTransaction {
+    transaction: Transaction {
+        signer_id: "21.volodymyr.testnet",
+        public_key: ed25519:HmCeumE9k2fLiMjE3wJ1LATRd5yPb1k7cQN8TsLGcze6,
+        nonce: 48893912000002,
+        receiver_id: "21.volodymyr.testnet",
+        block_hash: `2xRPh4zLhA6D5m79U9u88r83VHFYVuKqERgijEbw3D89`,
+        actions: [
+            DeployContract(
+                DeployContractAction {
+                    code: (43724)[0, 97, … 116, 101],
+                },
+            ),
+            FunctionCall(
+                FunctionCallAction {
+                    method_name: increment,
+                    args: `{}`,
+                    gas: 1000000000000,
+                    deposit: 0,
+                },
+            ),
+        ],
+    },
+    signature: ed25519:22zhdvQ2nyNvp9UVrNtpsr6G1xGvht3NF6xZpFWRuawgw3PsUFWdQd4ewybWvwDUV7Wa2dRwQBbUy6dfGSDBtSH5,
+    hash: `AcEaHwNtiZW6EcK7WqwxEhubRss9Z4ZwZ9iLkkqVSzSK`,
+    size: 43898,
+}
+
+
+---  serialize_to_base64:   --- 
+   "FAAAADIxLnZvbG9keW15ci50ZXN0bmV0APkN..."
+
+---  Success:  ---
+ FinalExecutionOutcome {
+    status: SuccessValue(``),
+    ...
+ }
+```
 <details><summary>Add a new contract code (демонстрация работы команды)</summary>
-<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
+<a href="https://asciinema.org/a/741GlX4ul4yh5GLEASd9GnYVk?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/741GlX4ul4yh5GLEASd9GnYVk.png" width="836"/>
 </a>
 </details>
 
