@@ -36,7 +36,7 @@ url = { version = "2", features = ["serde"] }
 
 color-eyre = "0.5"
 
-near-crypto = { git = "https://github.com/near/nearcore", rev="1e7e99fd8b24a2b417e4cff37ad93a2d7564eb31" }
-near-primitives = { git = "https://github.com/near/nearcore", rev="1e7e99fd8b24a2b417e4cff37ad93a2d7564eb31" }
-near-jsonrpc-client = { git = "https://github.com/near/nearcore", rev="1e7e99fd8b24a2b417e4cff37ad93a2d7564eb31" }
-near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="1e7e99fd8b24a2b417e4cff37ad93a2d7564eb31" }
+near-crypto = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }
+near-primitives = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }
+near-jsonrpc-client = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }
+near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }

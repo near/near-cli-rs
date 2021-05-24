@@ -78,8 +78,12 @@ impl SelectServer {
             SelectServer::Testnet(server) => {
                 server.process(prepopulated_unsigned_transaction).await?;
             }
-            SelectServer::Mainnet(_server) => {}
-            SelectServer::Betanet(_server) => {}
+            SelectServer::Mainnet(server) => {
+                server.process(prepopulated_unsigned_transaction).await?;
+            }
+            SelectServer::Betanet(server) => {
+                server.process(prepopulated_unsigned_transaction).await?;
+            }
             SelectServer::Custom(server) => {
                 server.process(prepopulated_unsigned_transaction).await?;
             }
