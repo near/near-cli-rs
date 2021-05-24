@@ -621,11 +621,87 @@ near-cli execute view-method \
 
 ### Transfer tokens
 
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```
+near-cli transfer near \
+        network testnet \
+        sender 'volodymyr.testnet' \
+        receiver '21.volodymyr.testnet' \
+        amount  '1 NEAR' \
+        sign-with-keychain \
+        send
+```
+Результат выполнения команды:
+```
+========= SENT =========
 
+
+---  Signed transaction:   ---
+    SignedTransaction {
+    transaction: Transaction {
+        signer_id: "volodymyr.testnet",
+        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
+        nonce: 164,
+        receiver_id: "21.volodymyr.testnet",
+        block_hash: `9fsPJ5b4cjcbSA9gdjTX9BskZW4u3cyg7dq4rFixB3hk`,
+        actions: [
+            Transfer(
+                TransferAction {
+                    deposit: 1000000000000000000000000,
+                },
+            ),
+        ],
+    },
+    signature: ed25519:62QgUt5Co689BGJP1UDpirACSSWkgouaP2WAfZBTbsvxeEso3LjUZLVBfg9vVDpjp4K8mACqBvyrr8WQoR2Kjrm,
+    hash: `7xGzEbUY6PZvt9LiNeYXX8euBU8KsJgAm9K1GnGkU3jH`,
+    size: 139,
+}
+
+
+---  serialize_to_base64:   --- 
+   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPpAAAAAAAAAAUAAAAMjEudm9sb2R5bXlyLnRlc3RuZXSA0ok08Tobo8iXW81D3qGvMJe3ET6uqbRv4GavXwZbIwEAAAADAAAAoe3MzhvC0wAAAAAAAAAEVS8LAOAofbvpp0zIXP5R/3RWTfT36bX21H5pi1fv8WBa1KABh5cuaG+bcKWSTqsv24Wbw4seW4Q56Mk7tW4O"
+
+
+---  Success:  ---
+ FinalExecutionOutcome {
+    status: SuccessValue(``),
+    ...
+ }
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa.png" width="836"/>
+</a>
+</details>
 
 ### Helpers
 
+__1. Generate a key pair__
 
+Данная утилита генерирует случайным образом ключи доступа. 
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/vwlWvmyNnxaGOFMeHb5wkwe2t?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/vwlWvmyNnxaGOFMeHb5wkwe2t.png" width="836"/>
+</a>
+</details>
+
+__2. Sign a transaction with secret key__
+
+Данныя утилита позволяет подписать своими ключами ранее сформированную и неподписанную транзакцию.
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/sjS78AfPfwltNge2Yb9uRCxSX?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/sjS78AfPfwltNge2Yb9uRCxSX.png" width="836"/>
+</a>
+</details>
+
+__3. Combine unsigned transaction with signature__
+
+Данныя утилита позволяет подписать своей подписью (signature) ранее сформированную и неподписанную транзакцию.
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/HfsutLZKnWS8w1PnY1kGIUYid?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/HfsutLZKnWS8w1PnY1kGIUYid.png" width="836"/>
+</a>
+</details>
 
 ### View account, contract code, contract state, transaction
 
