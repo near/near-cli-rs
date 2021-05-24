@@ -30,8 +30,11 @@ translatable to any command line shell environment.
 ### Construct a new transaction
 
 <details><summary>Construct a new transaction</summary>
-[![asciicast](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png)](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?t=1&speed=2)
+<p>
 
+</p><pre><code>[![asciicast](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png)](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?t=1&speed=2)
+</code></pre>
+<p></p>
 </details>
 
 
