@@ -20,7 +20,7 @@ translatable to any command line shell environment.
 
 ### Add access key, contract code, stake proposal, sub-account, implicit-account
 
-* <details><summary>Add a new access key for an account</summary>
+<details><summary>Add a new access key for an account</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
