@@ -162,6 +162,7 @@ near-cli add access-key \
 </details>
 
 __2. Add a new contract code__
+
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```
 near-cli add contract-code \
