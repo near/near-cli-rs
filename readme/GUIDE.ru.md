@@ -412,7 +412,7 @@ near-cli add sub-account \
 
 ### Delete access key, account
 
-__1. Delete an access key__
+__1. Delete an access key for this account__
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```
@@ -425,31 +425,31 @@ near-cli delete access-key \
 ```
 Результат выполнения команды:
 ```
-========= SENT =========                                                                                                                                                                                       
-                                                                                                                                                                                                               
-                                                                                                                                                                                                               
----  Signed transaction:   ---                                                                                                                                                                                 
-    SignedTransaction {                                                                                                                                                                                        
-    transaction: Transaction {                                                                                                                                                                                 
-        signer_id: "volodymyr.testnet",                                                                                                                                                                        
-        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,                                                                                                                                      
-        nonce: 150,                                                                                                                                                                                            
-        receiver_id: "volodymyr.testnet",                                                                                                                                                                      
-        block_hash: `2QN6AYjHoiZ7zyCBbzw7Z51tTNLvNRqjNvBnGc9NxD4G`,                                                                                                                                            
-        actions: [                                                                                                                                                                                             
-            DeleteKey(                                                                                                                                                                                         
-                DeleteKeyAction {                                                                                                                                                                              
-                    public_key: ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF,                                                                                                                          
-                },                                                                                                                                                                                             
-            ),                                                                                                                                                                                                 
-        ],                                                                                                                                                                                                     
-    },                                                                                                                                                                                                         
-    signature: ed25519:2F5TxjosufprDseWP8bwFud3EsBCnWHsYwYXPYYdxxM5eEaiYHmFRxbdcuNGGEDCPvVJcQz7a81W7wWhq5CdhCcu,                                                                                               
-    hash: `GJuD1v2VmCDJ4kftgRDs1jb7G3mupyKTNJQyBeQfqYth`,                                                                                                                                                      
-    size: 153,                                                                                                                                                                                                 
+========= SENT =========
+
+
+---  Signed transaction:   ---
+    SignedTransaction {
+    transaction: Transaction {
+        signer_id: "volodymyr.testnet",
+        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
+        nonce: 150,
+        receiver_id: "volodymyr.testnet",
+        block_hash: `2QN6AYjHoiZ7zyCBbzw7Z51tTNLvNRqjNvBnGc9NxD4G`,
+        actions: [
+            DeleteKey(
+                DeleteKeyAction {
+                    public_key: ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF,
+                },
+            ),
+        ],
+    },
+    signature: ed25519:2F5TxjosufprDseWP8bwFud3EsBCnWHsYwYXPYYdxxM5eEaiYHmFRxbdcuNGGEDCPvVJcQz7a81W7wWhq5CdhCcu,
+    hash: `GJuD1v2VmCDJ4kftgRDs1jb7G3mupyKTNJQyBeQfqYth`,
+    size: 153,
 }
 
----  serialize_to_base64:  ---                                                                                                                                                                                
+---  serialize_to_base64:  ---
    "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPlgAAAAAAAAARAAAAdm9sb2R5bXlyLnRlc3RuZXQU1+QYMaiaEUDB28Q59LkkxXAAgogf5VYGGB8hyePhlQEAAAAGAMob/ZK9JLsyX0GsR1RyW9L2ZAclRYRiqIZwzCPP7dm
 EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8zHclNdg4=" 
 
@@ -462,6 +462,59 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/WJUEWxlzOR9Qiwujdsf0dhY6s?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/WJUEWxlzOR9Qiwujdsf0dhY6s.png" width="836"/>
+</a>
+</details>
+
+__2. Delete this account__
+
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```
+near-cli delete account \
+        network testnet \
+        account '21.volodymyr.testnet' \
+        beneficiary 'volodymyr.testnet' \
+        sign-with-keychain \
+        send
+```
+Результат выполнения команды:
+```
+========= SENT =========
+
+
+---  Signed transaction:   ---
+    SignedTransaction {
+    transaction: Transaction {
+        signer_id: "21.volodymyr.testnet",
+        public_key: ed25519:7o9NPr6QvRCCDkrDi85kv58cvsRDiHbR2Qde6viRJqsM,
+        nonce: 48892160000001,
+        receiver_id: "21.volodymyr.testnet",
+        block_hash: `MPjKkZYAPnhgkKYZ2CrNrW5yii2hVhoEPDquqMGoiGq`,
+        actions: [
+            DeleteAccount(
+                DeleteAccountAction {
+                    beneficiary_id: "volodymyr.testnet",
+                },
+            ),
+        ],
+    },
+    signature: ed25519:4iigeP2QHYaRF9mL1BkfWUgThWQ6pog7WZpwtaDLh6Arzmy6SsYyB1hCNv8WdqLuNPLK39LVaE4Sg94zjPRDPjZh,
+    hash: `BTYjZgmASV4vZzgd4VFvrM9sPw11UySDYtZDecLQ1CWi`,
+    size: 147,
+}                                                                                                                                   
+
+---  serialize_to_base64:   ---                                              
+   "FAAAADIxLnZvbG9keW15ci50ZXN0bmV0AGT4TS2LaX8JfN8qL9cGgPautk2wLgrfwWWjFd8z4r+wAUDUl3csAAAUAAAAMjEudm9sb2R5bXlyLnRlc3RuZXQFOVEWckb5UkAyG8Llhx7dxfnTWLeA1g5jlCgFAmgb+gEAAAAHEQAAAHZvbG9keW15ci50ZXN0bmV0ALoHEPR
+pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA=" 
+
+---  Success:  ---
+ FinalExecutionOutcome {
+    status: SuccessValue(``),
+    ...
+ }
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/Lr0Y0eAuMK2pu5O639i4hpIFr?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Lr0Y0eAuMK2pu5O639i4hpIFr.png" width="836"/>
 </a>
 </details>
 
