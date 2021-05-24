@@ -30,8 +30,9 @@ translatable to any command line shell environment.
 ### Construct a new transaction
 
 <details><summary>Construct a new transaction</summary>
-<p><script src="https://asciinema.org/a/14.js" id="asciicast-14" async></script>
-</p><pre><code><img src="" alt="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R" style="max-width:100%;">
+<p>[![asciicast](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png)](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?t=1&speed=2)
+
+</p><pre><code>
 </code></pre>
 <p></p>
 </details>
@@ -39,7 +40,6 @@ translatable to any command line shell environment.
 
 ### Delete access key, account
 
-[![asciicast](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png)](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?t=1&speed=2)
 
 ### Execute function (contract method
 
