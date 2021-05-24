@@ -72,7 +72,7 @@
     ...
  }
 ```
-<details><summary>Add a new access key for an account (демонстрация работы команды)</summary>
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
