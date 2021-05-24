@@ -32,8 +32,9 @@ translatable to any command line shell environment.
 <details><summary>Construct a new transaction</summary>
 <p>
 
-</p><pre><code><script src="https://asciinema.org/a/14.js" id="asciicast-14" async></script>
+</p><pre><code>
 </code></pre>
+<script src="https://asciinema.org/a/14.js" id="asciicast-14" async></script>
 <p></p>
 </details>
 
