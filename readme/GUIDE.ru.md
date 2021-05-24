@@ -1,7 +1,7 @@
 ## Инструкция
 
-Это руководство предназначено для того, чтобы дать подробное описание near-cli и
-обзор его возможностей. Предполагается, что утилита near-cli
+Это руководство предназначено для того, чтобы дать подробное описание утилиты near-cli и
+обзор её возможностей. Предполагается, что утилита near-cli
 [установлена](README.ru.md#installation)
 и пользователи знакомы с использованием инструментов командной строки. Также предполагается Unix-подобная система, хотя большинство команд, вероятно, легко
 переводимы в любую среду оболочки командной строки.
@@ -12,7 +12,7 @@
 * [Construct a new transaction](#construct-transaction)
 * [Delete access key, account](#delete)
 * [Execute function (contract method)](#execute)
-* [Transfer tokens](#transfer)
+* [Transfer tokens](#transfer-tokens)
 * [Helpers](#helpers)
 * [View account, contract code, contract state, transaction](#view)
 
