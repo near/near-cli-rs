@@ -412,6 +412,59 @@ near-cli add sub-account \
 
 ### Delete access key, account
 
+__1. Delete an access key__
+
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```
+near-cli delete access-key \
+        network testnet \
+        account 'volodymyr.testnet' \
+        public-key 'ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF' \
+        sign-with-keychain \
+        send
+```
+Результат выполнения команды:
+```
+========= SENT =========                                                                                                                                                                                       
+                                                                                                                                                                                                               
+                                                                                                                                                                                                               
+---  Signed transaction:   ---                                                                                                                                                                                 
+    SignedTransaction {                                                                                                                                                                                        
+    transaction: Transaction {                                                                                                                                                                                 
+        signer_id: "volodymyr.testnet",                                                                                                                                                                        
+        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,                                                                                                                                      
+        nonce: 150,                                                                                                                                                                                            
+        receiver_id: "volodymyr.testnet",                                                                                                                                                                      
+        block_hash: `2QN6AYjHoiZ7zyCBbzw7Z51tTNLvNRqjNvBnGc9NxD4G`,                                                                                                                                            
+        actions: [                                                                                                                                                                                             
+            DeleteKey(                                                                                                                                                                                         
+                DeleteKeyAction {                                                                                                                                                                              
+                    public_key: ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF,                                                                                                                          
+                },                                                                                                                                                                                             
+            ),                                                                                                                                                                                                 
+        ],                                                                                                                                                                                                     
+    },                                                                                                                                                                                                         
+    signature: ed25519:2F5TxjosufprDseWP8bwFud3EsBCnWHsYwYXPYYdxxM5eEaiYHmFRxbdcuNGGEDCPvVJcQz7a81W7wWhq5CdhCcu,                                                                                               
+    hash: `GJuD1v2VmCDJ4kftgRDs1jb7G3mupyKTNJQyBeQfqYth`,                                                                                                                                                      
+    size: 153,                                                                                                                                                                                                 
+}
+
+---  serialize_to_base64:  ---                                                                                                                                                                                
+   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPlgAAAAAAAAARAAAAdm9sb2R5bXlyLnRlc3RuZXQU1+QYMaiaEUDB28Q59LkkxXAAgogf5VYGGB8hyePhlQEAAAAGAMob/ZK9JLsyX0GsR1RyW9L2ZAclRYRiqIZwzCPP7dm
+EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8zHclNdg4=" 
+
+---  Success:  ---
+ FinalExecutionOutcome {
+    status: SuccessValue(``),
+    ...
+ }
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/WJUEWxlzOR9Qiwujdsf0dhY6s?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/WJUEWxlzOR9Qiwujdsf0dhY6s.png" width="836"/>
+</a>
+</details>
+
 
 ### Execute function (contract method
 
