@@ -29,6 +29,11 @@ translatable to any command line shell environment.
 
 ### Construct a new transaction
 
+Давайте рассмотрим пример, когда необходимо:
+- создать новый аккаунт;
+- добавить этому аккаунту ключи доступа;
+- перечислить на счет аккаунта некоторую сумму
+Для этого воспользуемся конструктором транзакции.
 
 
 <details><summary>Construct a new transaction</summary>
