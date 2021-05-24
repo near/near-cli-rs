@@ -26,11 +26,35 @@ translatable to any command line shell environment.
 </a>
 </details>
 
+<details><summary>Add a new contract code</summary>
+<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
+</a>
+</details>
+
+<details><summary>Add an implicit-account</summary>
+<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
+</a>
+</details>
+
+<details><summary>Add a new stake proposal</summary>
+<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
+</a>
+</details>
+
+<details><summary>Add a new sub-account</summary>
+<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
+</a>
+</details>
+
 <!-- * [Add a new access key for an account](#add-access-key) -->
-* [Add a new contract code](#add-contract-code)
+<!-- * [Add a new contract code](#add-contract-code)
 * [Add an implicit-account](#add-implicit-account)
 * [Add a new stake proposal](#add-stake-proposal)
-* [Add a new sub-account](#add-sub-account)
+* [Add a new sub-account](#add-sub-account) -->
 
 
 ### Construct a new transaction
@@ -39,6 +63,7 @@ Let's look at an example, when we need:
 1. Create a new account
 2. Add access keys to this account
 3. Transfer a certain number of tokens to this account
+
 To do this, we will use the transaction constructor.
 
 
