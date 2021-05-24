@@ -8,7 +8,7 @@
 
 ### Группы команд
 
-* [Add access key, contract code, stake proposal, sub-account, implicit-account](#add)
+* [Add access key, contract code, stake proposal, sub-account, implicit-account](#add-access-key,-contract-code,-stake-proposal,-sub-account,-implicit-account)
 * [Construct a new transaction](#construct-transaction)
 * [Delete access key, account](#delete)
 * [Execute function (contract method)](#execute)
