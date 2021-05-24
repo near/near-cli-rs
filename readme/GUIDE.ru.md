@@ -219,7 +219,7 @@ near-cli add contract-code \
     ...
  }
 ```
-<details><summary>Add a new contract code (демонстрация работы команды)</summary>
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/741GlX4ul4yh5GLEASd9GnYVk?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/741GlX4ul4yh5GLEASd9GnYVk.png" width="836"/>
 </a>
