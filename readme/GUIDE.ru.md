@@ -19,31 +19,31 @@
 
 ### Add access key, contract code, stake proposal, sub-account, implicit-account
 
-<details><summary>Add a new access key for an account</summary>
+<details><summary>Add a new access key for an account (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 </details>
 
-<details><summary>Add a new contract code</summary>
+<details><summary>Add a new contract code (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 </details>
 
-<details><summary>Add an implicit-account</summary>
+<details><summary>Add an implicit-account (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 </details>
 
-<details><summary>Add a new stake proposal</summary>
+<details><summary>Add a new stake proposal (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 </details>
 
-<details><summary>Add a new sub-account</summary>
+<details><summary>Add a new sub-account (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
@@ -76,7 +76,7 @@
 <p></p>
 </details> -->
 
-<details><summary>Construct a new transaction (демо)</summary>
+<details><summary>Construct a new transaction (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
