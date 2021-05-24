@@ -35,7 +35,7 @@ translatable to any command line shell environment.
 <p>
 </p><pre><code>
 </code></pre>
-<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R">
+<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 <p></p>
