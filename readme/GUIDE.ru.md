@@ -94,12 +94,12 @@ near-cli add access-key \
         account '21.volodymyr.testnet' \
         generate-keypair \
         grant-function-call-access \ 
-        --receiver-id 'meta.pool.testnet' \
-        --allowance '10 NEAR' \
-        --method-names 'set_a, set_b' \
+            --receiver-id 'meta.pool.testnet' \
+            --allowance '10 NEAR' \
+            --method-names 'set_a, set_b' \
         sign-private-key \
-        --signer-public-key ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF \
-        --signer-secret-key  ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB \
+            --signer-public-key ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF \
+            --signer-secret-key  ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB \
         send
 
 ```
@@ -170,8 +170,8 @@ near-cli add contract-code \
         account '21.volodymyr.testnet' \
         contract-file '/Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm' \
         initialize 'increment' '{}'     \
-        --attached-deposit '0 NEAR' \
-        --prepaid-gas '1 TGas' \
+            --attached-deposit '0 NEAR' \
+            --prepaid-gas '1 TGas' \
         sign-with-keychain \
         send
 ```
@@ -519,9 +519,105 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 </details>
 
 
-### Execute function (contract method
+### Execute function (contract method)
+
+__1. Change a method__
+
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```
+near-cli execute change-method \
+        network testnet \
+        contract 'meta.pool.testnet' \
+        call 'distribute_staking' '{}' \
+            --attached-deposit '0 NEAR' \
+            --prepaid-gas '3 Tgas' \
+        signer 'volodymyr.testnet' \
+        sign-with-keychain \
+        send
+```
+Результат выполнения команды:
+```
+========= SENT =========
 
 
+---  Signed transaction:   ---
+    SignedTransaction {
+    transaction: Transaction {
+        signer_id: "volodymyr.testnet",
+        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
+        nonce: 162,
+        receiver_id: "meta.pool.testnet",
+        block_hash: `7KXacoKThQRRQwwU1U6W2fRvpRUwgbKMQ7fM7ZEhnWcU`,
+        actions: [
+            FunctionCall(
+                FunctionCallAction {
+                    method_name: distribute_staking,
+                    args: `{}`,
+                    gas: 3000000000000,
+                    deposit: 0,
+                },
+            ),
+        ],
+    },
+    signature: ed25519:q1zT9bniKLqnyCpt3EcRQotegTcJmjkXmSWDKq2MWyvMYzigAF4TZ3WETn6cCw5x5NSUSahRVS8rc11QvDiSXYB,
+    hash: `A42ik23MSkHy5uCTV7PxMTePgirVQzNExFhvbRCjx7ia`,
+    size: 172,
+}
+
+
+---  serialize_to_base64:   --- 
+   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPogAAAAAAAAARAAAAbWV0YS5wb29sLnRlc3RuZXRd5ScQXuimrSNf3tsuUd4q0M4/exg3UIqPOFt5oVKoxQEAAAACEgAAAGRpc3RyaWJ1dGVfc3Rha2luZwIAAAB7fQAw7326AgAAAAAAAAAAAAAAAAAAAAAAAAApaHmaMzRKvhnhTuQia80ae5baaGMQpBkmq438MreboP2Xlbg/9pNUSX8CouiUOqjvGw/xdzIozjiWeLJRvJsA"
+
+
+---  Success:  ---
+ FinalExecutionOutcome {
+    status: SuccessValue(`false`),
+    ...
+ }
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc.png" width="836"/>
+</a>
+</details>
+
+__2. View a method__
+
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```
+near-cli execute view-method \
+        network mainnet \
+        contract zavodil.poolv1.near \
+        call 'get_accounts' '{"from_index": 0, "limit": 3}'
+```
+Результат выполнения команды:
+```
+[
+  {
+    "account_id": "zavodil.near",
+    "unstaked_balance": "8",
+    "staked_balance": "11324123436434018378485148158",
+    "can_withdraw": true
+  },
+  {
+    "account_id": "gagdiez.near",
+    "unstaked_balance": "4",
+    "staked_balance": "2190787031154122258592953066",
+    "can_withdraw": true
+  },
+  {
+    "account_id": "5ff98e7c85755e0f77c78eaf4a8aeca24846d8b5.lockup.near",
+    "unstaked_balance": "0",
+    "staked_balance": "12033408649269474452976655376",
+    "can_withdraw": true
+  }
+]
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI.png" width="836"/>
+</a>
+</details>
 
 ### Transfer tokens
 
