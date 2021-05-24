@@ -29,7 +29,7 @@ translatable to any command line shell environment.
 
 ### Construct a new transaction
 
-...Let's look at an example, when we need:
+Let's look at an example, when we need:
 1. Create a new account
 2. Add access keys to this account
 3. Transfer a certain number of tokens to this account
@@ -46,11 +46,11 @@ To do this, we will use the transaction constructor.
 <p></p>
 </details> -->
 
-<details><summary>Construct a new transaction</summary>
+<dl>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
-</details>
+</dl>
 
 ### Delete access key, account
 
