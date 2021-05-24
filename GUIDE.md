@@ -32,7 +32,7 @@ translatable to any command line shell environment.
 <details><summary>Construct a new transaction</summary>
 <p>
 
-</p><pre><code>[![asciicast](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png)](https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?t=1&speed=2)
+</p><pre><code><script src="https://asciinema.org/a/14.js" id="asciicast-14" async></script>
 </code></pre>
 <p></p>
 </details>
