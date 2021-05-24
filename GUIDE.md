@@ -29,7 +29,7 @@ translatable to any command line shell environment.
 
 ### Construct a new transaction
 
-Let's look at an example, when we need:
+...Let's look at an example, when we need:
 1. Create a new account
 2. Add access keys to this account
 3. Transfer a certain number of tokens to this account
