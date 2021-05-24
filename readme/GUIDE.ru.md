@@ -9,10 +9,11 @@
 Прежде, чем я перейду к описанию конкретных команд, хочу рассмотреть два общих для этих команд пункта:
 
   1. Режим Network / Offline
+  
     В режиме Offline нужно будет ответить на некоторые вопросы:
 
       __* transaction nonce__
-      
+
         Этот номер нужно будет найти на сайте своей учетной записи (например, https://explorer.testnet.near.org/accounts/frol4.testnet), увеличив при этом на 1.
         <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
         <a href="https://asciinema.org/a/2hsXeOrB3Kt13DSTDC5BVcqau?autoplay=1&t=1&speed=2">
