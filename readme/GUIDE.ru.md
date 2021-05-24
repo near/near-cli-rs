@@ -226,9 +226,19 @@ near-cli add contract-code \
 </details>
 
 __3. Add an implicit-account__
-<details><summary>Add an implicit-account (демонстрация работы команды)</summary>
-<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
+
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```
+near-cli add implicit-account \
+        generate-keypair
+```
+Результат выполнения команды:
+```
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr.png" width="836"/>
 </a>
 </details>
 
