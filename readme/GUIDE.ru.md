@@ -81,6 +81,28 @@ __1. Add a new access key for an account__
 </a>
 </details>
 
+Изменим наши парамерты для добавленного кюча:
+..*ключи будут сгенерированы автоматически
+..*будут иметь функциональный доступ
+..*транзакция будет подписана вручную
+
+Для этого введем следующую команду:
+```
+near-cli add access-key \
+        network testnet \
+        account '21.volodymyr.testnet' \
+        generate-keypair \
+        grant-function-call-access \ 
+        --receiver-id 'meta.pool.testnet' \
+        --allowance '10 NEAR' \
+        --method-names 'set_a, set_b' \
+        sign-private-key \
+        --signer-public-key ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF \
+        --signer-secret-key  ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB \
+        send
+
+```
+
 __2. Add a new contract code__
 <details><summary>Add a new contract code (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
