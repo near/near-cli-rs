@@ -29,14 +29,14 @@ translatable to any command line shell environment.
 
 ### Construct a new transaction
 
-Давайте рассмотрим пример, когда необходимо:
-1. создать новый аккаунт;
-2. добавить этому аккаунту ключи доступа;
-3. перечислить на счет аккаунта некоторую сумму
-Для этого воспользуемся конструктором транзакции.
+Let's look at an example, when we need:
+1. Create a new account
+2. Add access keys to this account
+3. Transfer a certain number of tokens to this account
+To do this, we will use the transaction constructor.
 
 
-<details><summary>Construct a new transaction</summary>
+<!-- <details><summary>Construct a new transaction</summary>
 <p>
 </p><pre><code>
 </code></pre>
@@ -44,6 +44,12 @@ translatable to any command line shell environment.
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 <p></p>
+</details> -->
+
+<details><summary>Construct a new transaction</summary>
+<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
+</a>
 </details>
 
 ### Delete access key, account
