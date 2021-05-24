@@ -78,28 +78,28 @@
 </a>
 </details>
 
-* __Add a new contract code__
+1. __Add a new contract code__
 <details><summary>Add a new contract code (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 </details>
 
-* __Add an implicit-account__
+2. __Add an implicit-account__
 <details><summary>Add an implicit-account (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 </details>
 
-* __Add a new stake proposal__
+3. __Add a new stake proposal__
 <details><summary>Add a new stake proposal (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 </details>
 
-* __Add a new sub-account__
+4. __Add a new sub-account__
 <details><summary>Add a new sub-account (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
