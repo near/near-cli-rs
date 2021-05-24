@@ -38,7 +38,7 @@ translatable to any command line shell environment.
 <p></p>
 </details>
 
-[![asciicast](https://asciinema.org/a/14.png)](https://asciinema.org/a/14)
+[![asciicast](https://asciinema.org/a/14.png)](https://asciinema.org/a/14?autoplay=1)
 
 
 ### Delete access key, account
