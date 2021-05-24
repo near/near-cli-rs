@@ -91,7 +91,7 @@ __1. Add a new access key for an account__
 ```
 near-cli add access-key \
         network testnet \
-        account 'volodymyr.testnet' \
+        account '21.volodymyr.testnet' \
         generate-keypair \
         grant-function-call-access \ 
         --receiver-id 'meta.pool.testnet' \
