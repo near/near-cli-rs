@@ -10,7 +10,7 @@
 
 * [Add access key, contract code, stake proposal, sub-account, implicit-account](#add-access-key,-contract-code,-stake-proposal,-sub-account,-implicit-account)
 * [Construct a new transaction](#construct-transaction)
-* [Delete access key, account](#delete)
+* [Delete access key, account](#delete-access-key-account)
 * [Execute function (contract method)](#execute)
 * [Transfer tokens](#transfer-tokens)
 * [Helpers](#helpers)
