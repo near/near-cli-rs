@@ -77,7 +77,7 @@
   * ключи будут иметь полный доступ
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli add access-key \
         network testnet \
         account 'volodymyr.testnet' \
@@ -87,7 +87,7 @@
         send
 ```
 Результат выполнения команды:
-```sh
+```txt
 ========= SENT =========
 
 
@@ -139,7 +139,7 @@
   * транзакция будет подписана вручную
 
 Для этого введем следующую команду:
-```sh
+```txt
 ./near-cli add access-key \
         network testnet \
         account '21.volodymyr.testnet' \
@@ -155,7 +155,7 @@
 
 ```
 Результат выполнения команды:
-```sh
+```txt
 ========= SENT =========
 
 
@@ -215,7 +215,7 @@
 #### Add a new contract code
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli add contract-code \
         network testnet \
         account '21.volodymyr.testnet' \
@@ -227,7 +227,7 @@
         send
 ```
 Результат выполнения команды:
-```sh
+```txt
 ========= SENT =========
 
 
@@ -279,7 +279,7 @@
 #### Add an implicit-account
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli add implicit-account \
         generate-keypair
 ```
@@ -296,7 +296,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 #### Add a new stake proposal
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli add stake-proposal \
         network testnet \
         validator 'volodymyr.testnet' \
@@ -306,7 +306,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
         send
 ```
 Результат выполнения команды:
-```sh
+```txt
 ========= SENT =========
 
 
@@ -362,7 +362,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 #### Add a new sub-account
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli add sub-account \
         network testnet \
         owner-account 'volodymyr.testnet' \
@@ -374,7 +374,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
         send
 ```
 Результат выполнения команды:
-```sh
+```txt
 ========= SENT =========
 
 
@@ -466,7 +466,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 #### Delete an access key for this account
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli delete access-key \
         network testnet \
         account 'volodymyr.testnet' \
@@ -475,7 +475,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
         send
 ```
 Результат выполнения команды:
-```sh
+```txt
 ========= SENT =========
 
 
@@ -519,7 +519,7 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 #### Delete this account
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli delete account \
         network testnet \
         account '21.volodymyr.testnet' \
@@ -528,7 +528,7 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
         send
 ```
 Результат выполнения команды:
-```sh
+```txt
 ========= SENT =========
 
 
@@ -575,7 +575,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 #### Change a method
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli execute change-method \
         network testnet \
         contract 'meta.pool.testnet' \
@@ -587,7 +587,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
         send
 ```
 Результат выполнения команды:
-```sh
+```txt
 ========= SENT =========
 
 
@@ -635,14 +635,14 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 #### View a method
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli execute view-method \
         network mainnet \
         contract zavodil.poolv1.near \
         call 'get_accounts' '{"from_index": 0, "limit": 3}'
 ```
 Результат выполнения команды:
-```sh
+```txt
 [
   {
     "account_id": "zavodil.near",
@@ -673,7 +673,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 ### Transfer tokens
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli transfer near \
         network testnet \
         sender 'volodymyr.testnet' \
@@ -683,7 +683,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
         send
 ```
 Результат выполнения команды:
-```sh
+```txt
 ========= SENT =========
 
 
@@ -759,13 +759,13 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 #### View properties for an account
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli view account-summary \
         network testnet \
         account '26.volodymyr.testnet'
 ```
 Результат выполнения команды:
-```sh
+```txt
 AccountView {
     amount: 999272571364280200000000,
     locked: 0,
@@ -795,7 +795,7 @@ AccessKeyList {
 #### View a contract code
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli add implicit-account \
         generate-keypair
 ```
@@ -812,7 +812,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 #### View a contract state
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli add implicit-account \
         generate-keypair
 ```
@@ -829,7 +829,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 #### View a transaction status
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```sh
+```txt
 ./near-cli add implicit-account \
         generate-keypair
 ```
