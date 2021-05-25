@@ -8,11 +8,11 @@
 
 Прежде, чем я перейду к описанию конкретных команд, хочу рассмотреть два общих для этих команд пункта:
 
-1. Режим Network / Offline
+1. Режим _Online_ / _Offline_
 
-В режиме Offline нужно будет ответить на некоторые вопросы:
+В режиме _Offline_ нужно будет ввести некоторые показатели:
 
-__* transaction nonce__
+  __* transaction nonce__
 
 Этот номер нужно будет найти на сайте своей учетной записи ([например](media/transaction_nonce.png)), увеличив при этом на 1
 
@@ -20,7 +20,16 @@ __* transaction nonce__
     <img src="media/transaction_nonce.png" width="836"/>
 </details>
 
-В режиме Network эти сведения будут установлены автоматически.
+  __* recent block hash__
+
+  Информацию для этого параметра нужно искать [здесь](https://explorer.testnet.near.org/blocks).
+
+<details><summary><i>transaction nonce</i></summary>
+    <img src="media/blocks.png" width="836"/>
+    <img src="media/block_hash.png" width="836"/>
+</details>
+
+В режиме _Online_ эти аргументы будут установлены автоматически.
 
 ### Группы команд
 
