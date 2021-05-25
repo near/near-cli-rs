@@ -14,7 +14,7 @@
 
 __* transaction nonce__
 
-Этот номер нужно будет найти на сайте своей учетной записи (например, https://explorer.testnet.near.org/accounts/frol4.testnet), увеличив при этом на 1
+Этот номер нужно будет найти на сайте своей учетной записи ([например](media/transaction_nonce.png), https://explorer.testnet.near.org/accounts/frol4.testnet), увеличив при этом на 1
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/2hsXeOrB3Kt13DSTDC5BVcqau?autoplay=1&t=1&speed=2">
