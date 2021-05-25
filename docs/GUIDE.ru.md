@@ -949,7 +949,8 @@ Transactiion status: FinalExecutionOutcome {
 
 <details><summary>Результат выполнения команды</summary>
 <p>
-</p><pre>
+</p>
+
     ========= SENT =========
 
 
@@ -984,6 +985,5 @@ Transactiion status: FinalExecutionOutcome {
     status: SuccessValue(``),
     ...
  }
-</pre>
 <p></p>
 </details>
