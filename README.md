@@ -12,7 +12,7 @@ near-cli – это утилита командной строки для раб
 
 Вцелом новичку трудно сразу разобраться как устроены команды.
 For example, I consider having the following command to do a transfer:
-```
+```sh
 near-cli transfer near \
     network testnet \
     sender 'volodymyr.testnet' \
