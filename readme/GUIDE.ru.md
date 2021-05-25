@@ -24,9 +24,15 @@
 
   Информацию для этого параметра нужно искать [здесь](https://explorer.testnet.near.org/blocks).
 
-<details><summary><i>transaction nonce</i></summary>
+<details><summary><i>recent block hash</i></summary>
     <img src="media/blocks.png" width="836"/>
     <img src="media/block_hash.png" width="836"/>
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f.png" width="836"/>
+</a>
 </details>
 
 В режиме _Online_ эти аргументы будут установлены автоматически.
