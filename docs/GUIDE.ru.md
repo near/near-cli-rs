@@ -36,7 +36,15 @@
     </a>
     </details>
 
+2. Подпись транзакции
 
+    near-cli предполагает несколько способов подписи созданной транзакции. Рассмотрим подробнее каждый.
+
+      * _I want to sign the transaction with my private key_
+
+      * _I want to sign the transaction with keychain_
+
+      * _I want to construct the transaction and sign it somewhere else_
 
 
 
