@@ -212,7 +212,7 @@ near-cli add access-key \
 </a>
 </details>
 
-__2. Add a new contract code__
+#### Add a new contract code
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
@@ -276,7 +276,7 @@ near-cli add contract-code \
 </a>
 </details>
 
-__3. Add an implicit-account__
+#### Add an implicit-account
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
@@ -293,7 +293,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 </a>
 </details>
 
-__4. Add a new stake proposal__
+#### Add a new stake proposal
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
@@ -359,7 +359,7 @@ near-cli add stake-proposal \
 </a>
 </details>
 
-__5. Add a new sub-account__
+#### Add a new sub-account
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
@@ -463,7 +463,7 @@ near-cli add sub-account \
 
 ### Delete access key, account
 
-__1. Delete an access key for this account__
+#### Delete an access key for this account
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
@@ -516,7 +516,7 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 </a>
 </details>
 
-__2. Delete this account__
+#### Delete this account
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
@@ -572,7 +572,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 
 ### Execute function (contract method)
 
-__1. Change a method__
+#### Change a method
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
@@ -632,7 +632,7 @@ near-cli execute change-method \
 </a>
 </details>
 
-__2. View a method__
+#### View a method
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
@@ -727,7 +727,7 @@ near-cli transfer near \
 
 ### Helpers
 
-__1. Generate a key pair__
+#### Generate a key pair
 
 Данная утилита генерирует случайным образом ключи доступа. 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -736,7 +736,7 @@ __1. Generate a key pair__
 </a>
 </details>
 
-__2. Sign a transaction with secret key__
+#### Sign a transaction with secret key
 
 Данныя утилита позволяет подписать своими ключами ранее сформированную и неподписанную транзакцию.
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -745,7 +745,7 @@ __2. Sign a transaction with secret key__
 </a>
 </details>
 
-__3. Combine unsigned transaction with signature__
+#### Combine unsigned transaction with signature
 
 Данныя утилита позволяет подписать своей подписью (signature) ранее сформированную и неподписанную транзакцию.
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -756,9 +756,21 @@ __3. Combine unsigned transaction with signature__
 
 ### View account, contract code, contract state, transaction
 
+#### View properties for an account
+
+
+#### View a contract code
+
+
+#### View a contract state
+
+
+#### View a transaction status
+
+
 <details><summary>Результат выполнения команды</summary>
 <p>
-</p><pre><code class="sh">
+</p><pre><code>
     ========= SENT =========
 
 
