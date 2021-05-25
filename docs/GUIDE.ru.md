@@ -812,6 +812,24 @@ AccessKeyList {
     </a>
     </details>
 
+  * Для получения хэша контракта в командной строке терминала необходимо ввести:
+
+    ```txt
+    ./near-cli view contract-code \
+            network testnet \
+            contract 'volodymyr.testnet' \
+            hash
+    ```
+    Результат выполнения команды:
+    ```txt
+    Hash of the contract: 6F7TqH3ggf4iKbmJpFg9uJq87HTUohP1rdrDU7tZx9iH
+    ```
+    <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+    <a href="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea?autoplay=1&t=1&speed=2">
+        <img src="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea.png" width="836"/>
+    </a>
+    </details>
+
 #### View a contract state
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
