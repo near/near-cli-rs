@@ -72,7 +72,7 @@
 
 #### Add a new access key for an account
 
-Выполним команду с такими условиями:
+Выполним команду добавления новой пары ключей доступа аккаунту с такими условиями:
   * публичный ключ доступа будет введен вручную
   * ключи будут иметь полный доступ
 
@@ -137,7 +137,7 @@
 </a>
 </details>
 
-Изменим наши парамерты для добавленного кюча:
+Изменим наши парамерты для добавления кючей доступа:
   * ключи будут сгенерированы автоматически
   * будут иметь функциональный доступ
   * транзакция будет подписана вручную
@@ -222,7 +222,7 @@
 
 #### Add a new contract code
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для добавления нового контракта в командной строке терминала необходимо ввести:
 ```txt
 ./near-cli add contract-code \
         network testnet \
@@ -312,7 +312,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 
 #### Add a new stake proposal
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Сделать ставку можно с помощью этой команды:
 ```txt
 ./near-cli add stake-proposal \
         network testnet \
@@ -382,7 +382,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 
 #### Add a new sub-account
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для создания суб-аккаунта в командной строке терминала необходимо ввести:
 ```txt
 ./near-cli add sub-account \
         network testnet \
@@ -455,7 +455,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 
 ### Construct a new transaction
 
-Рассмотрим пример, когда необходимо:
+Рассмотрим пример, когда необходимо выполнить несколько действий в рамках одной транзакции:
 1. Создать аккаунт
 2. Добавить созданному аккаунту ключи доступа
 3. Осуществить перевод токенов на созданный аккаунт
@@ -472,7 +472,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 
 #### Delete an access key for this account
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для удаления ключей доступа в командной строке терминала необходимо ввести:
 ```txt
 ./near-cli delete access-key \
         network testnet \
@@ -529,6 +529,7 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 
 #### Delete this account
 
+Данная команда предназначена для удаления текущего аккаунта. Важно помнить, что все средства удаляемого аккаунта перейдут на счет "_beneficiary_".
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```txt
 ./near-cli delete account \
@@ -695,6 +696,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 
 ### Transfer tokens
 
+Данная команда служит для перевода средств между аккаунтами. Обратите внимание, что количество пересылаемых токенов указывается совместно с размерной единицей (это NEAR либо yoctoNEAR).
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```txt
 ./near-cli transfer near \
@@ -785,7 +787,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 
 #### View properties for an account
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для просмотра сведений об аккаунте в командной строке терминала необходимо ввести:
 ```txt
 ./near-cli view account-summary \
         network testnet \
@@ -825,7 +827,7 @@ AccessKeyList {
 
 #### View a contract code
 
-  * Для загрузки файла контракта в командной строке терминала необходимо ввести:
+  * Для получения файла контракта в командной строке терминала необходимо ввести:
 
     ```txt
     ./near-cli view contract-code \
@@ -871,7 +873,7 @@ AccessKeyList {
 
 #### View a contract state
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для просмотра состояния контракта в командной строке терминала необходимо ввести:
 ```txt
 ./near-cli view contract-state \
         network testnet \
@@ -904,7 +906,7 @@ Contract state (proof):
 
 #### View a transaction status
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для просмотра статуса желаемой транзакции в командной строке терминала необходимо ввести её хэш:
 ```txt
 ./near-cli view transaction \
         network testnet \
