@@ -765,8 +765,26 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
         account '26.volodymyr.testnet'
 ```
 Результат выполнения команды:
-```
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
+```sh
+AccountView {
+    amount: 999272571364280200000000,
+    locked: 0,
+    code_hash: `8WGGK1GDYrVzkgYmgomWvESH8kSy6miFJj8yAu32RFLp`,
+    storage_usage: 43952,
+    storage_paid_at: 0,
+}
+
+AccessKeyList {
+    keys: [
+        AccessKeyInfoView {
+            public_key: ed25519:3LwQh4RgaPEV4oyPcKoL2MdUK4aLRtBrixBp4WhoGxAB,
+            access_key: AccessKeyView {
+                nonce: 2,
+                permission: FullAccess,
+            },
+        },
+    ],
+}
 ```
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr?autoplay=1&t=1&speed=2">
