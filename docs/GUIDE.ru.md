@@ -868,14 +868,12 @@ Contract state (proof):
         transaction-hash 'GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank' \
         signer 'volodymyr.testnet'
 ```
-Результат выполнения команды:
-
 
 <details><summary>Результат выполнения команды</summary>
 <p>
 </p>
 
-```
+```txt
 Specify the account that signed the transaction: volodymyr.testnet
 Transactiion status: FinalExecutionOutcome {
     status: SuccessValue(``),
