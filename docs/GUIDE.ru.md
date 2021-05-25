@@ -86,7 +86,9 @@
         sign-with-keychain \
         send
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 ========= SENT =========
 
@@ -127,6 +129,8 @@
     ...
  }
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/2hsXeOrB3Kt13DSTDC5BVcqau?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/2hsXeOrB3Kt13DSTDC5BVcqau.png" width="836"/>
@@ -154,7 +158,9 @@
         send
 
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 ========= SENT =========
 
@@ -206,6 +212,8 @@
     ...
  }
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/s9Z0eRw9fuxTrRDSTvpzcNZGo?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/s9Z0eRw9fuxTrRDSTvpzcNZGo.png" width="836"/>
@@ -226,7 +234,9 @@
         sign-with-keychain \
         send
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 ========= SENT =========
 
@@ -270,6 +280,8 @@
     ...
  }
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/741GlX4ul4yh5GLEASd9GnYVk?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/741GlX4ul4yh5GLEASd9GnYVk.png" width="836"/>
@@ -283,10 +295,14 @@
 ./near-cli add implicit-account \
         generate-keypair
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr.png" width="836"/>
@@ -305,7 +321,9 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
         sign-with-keychain \
         send
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 ========= SENT =========
 
@@ -353,6 +371,8 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
     ],
 }
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/j9X09oohB30K0jj1DgMjGaqz7?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/j9X09oohB30K0jj1DgMjGaqz7.png" width="836"/>
@@ -373,7 +393,9 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
         sign-with-keychain \
         send
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 ========= SENT =========
 
@@ -422,18 +444,13 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
     ...
  }
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/jY2eKCQuT8WvdtQMzbCBuWU60?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/jY2eKCQuT8WvdtQMzbCBuWU60.png" width="836"/>
 </a>
 </details>
-
-<!-- * [Add a new access key for an account](#add-access-key) -->
-<!-- * [Add a new contract code](#add-contract-code)
-* [Add an implicit-account](#add-implicit-account)
-* [Add a new stake proposal](#add-stake-proposal)
-* [Add a new sub-account](#add-sub-account) -->
-
 
 ### Construct a new transaction
 
@@ -443,17 +460,6 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 3. Осуществить перевод токенов на созданный аккаунт
 
 Для этого воспользуемся конструктором транзакции:
-
-
-<!-- <details><summary>Construct a new transaction</summary>
-<p>
-</p><pre><code>
-</code></pre>
-<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
-</a>
-<p></p>
-</details> -->
 
 <details><summary>Construct a new transaction (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
@@ -474,7 +480,9 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
         sign-with-keychain \
         send
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 ========= SENT =========
 
@@ -510,6 +518,8 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
     ...
  }
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/WJUEWxlzOR9Qiwujdsf0dhY6s?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/WJUEWxlzOR9Qiwujdsf0dhY6s.png" width="836"/>
@@ -527,7 +537,9 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
         sign-with-keychain \
         send
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 ========= SENT =========
 
@@ -563,11 +575,13 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
     ...
  }
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/Lr0Y0eAuMK2pu5O639i4hpIFr?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/Lr0Y0eAuMK2pu5O639i4hpIFr.png" width="836"/>
 </a>
-</details>
+
 
 
 ### Execute function (contract method)
@@ -586,7 +600,9 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
         sign-with-keychain \
         send
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 ========= SENT =========
 
@@ -626,6 +642,8 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
     ...
  }
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc.png" width="836"/>
@@ -641,7 +659,9 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
         contract zavodil.poolv1.near \
         call 'get_accounts' '{"from_index": 0, "limit": 3}'
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 [
   {
@@ -664,6 +684,8 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
   }
 ]
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI.png" width="836"/>
@@ -682,7 +704,9 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
         sign-with-keychain \
         send
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 ========= SENT =========
 
@@ -719,6 +743,8 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
     ...
  }
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa.png" width="836"/>
@@ -764,7 +790,9 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
         network testnet \
         account '26.volodymyr.testnet'
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 AccountView {
     amount: 999272571364280200000000,
@@ -786,6 +814,8 @@ AccessKeyList {
     ],
 }
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4.png" width="836"/>
@@ -802,10 +832,14 @@ AccessKeyList {
             contract 'volodymyr.testnet' \
             download './volodymyr.testnet.wasm'
     ```
-    Результат выполнения команды:
+
+    <details><summary><i>Результат выполнения команды</i></summary>
+    
     ```txt
     The file Some("volodymyr.testnet.wasm") was downloaded successfully
     ```
+    </details>
+
     <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
     <a href="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz?autoplay=1&t=1&speed=2">
         <img src="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz.png" width="836"/>
@@ -820,10 +854,14 @@ AccessKeyList {
             contract 'volodymyr.testnet' \
             hash
     ```
-    Результат выполнения команды:
+    
+    <details><summary><i>Результат выполнения команды</i></summary>
+
     ```txt
     Hash of the contract: 6F7TqH3ggf4iKbmJpFg9uJq87HTUohP1rdrDU7tZx9iH
     ```
+    </details>
+
     <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
     <a href="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea?autoplay=1&t=1&speed=2">
         <img src="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea.png" width="836"/>
