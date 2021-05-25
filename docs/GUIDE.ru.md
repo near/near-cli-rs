@@ -950,7 +950,6 @@ Transactiion status: FinalExecutionOutcome {
 <details><summary>Результат выполнения команды</summary>
 <p>
 </p><pre>
-```
     ========= SENT =========
 
 
