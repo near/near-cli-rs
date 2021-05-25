@@ -52,6 +52,8 @@
         Например, */Users/frovolod/.near-credentials/default/volodymyr.testnet.json*.
 
       * _I want to construct the transaction and sign it somewhere else_
+        
+        Этот вариант предполагает подписание созданной транзакции сторонним программным продуктом.
 
 
 
