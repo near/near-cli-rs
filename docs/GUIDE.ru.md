@@ -863,20 +863,91 @@ Contract state (proof):
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```txt
-./near-cli add implicit-account \
-        generate-keypair
+./near-cli view transaction \
+        network testnet \
+        transaction-hash 'GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank' \
+        signer 'volodymyr.testnet'
 ```
 Результат выполнения команды:
 ```
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
+Specify the account that signed the transaction: volodymyr.testnet
+Transactiion status: FinalExecutionOutcome {
+    status: SuccessValue(``),
+    transaction: SignedTransactionView {
+        signer_id: "volodymyr.testnet",
+        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
+        nonce: 165,
+        receiver_id: "qweqweqwe.volodymyr.testnet",
+        actions: [
+            CreateAccount,
+            Transfer {
+                deposit: 100000000000000000000000000,
+            },
+            AddKey {
+                public_key: ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf,
+                access_key: AccessKeyView {
+                    nonce: 0,
+                    permission: FullAccess,
+                },
+            },
+        ],
+        signature: ed25519:266jBRjvnaxe4mDyHRGwv3TJesvgRo2umJBqkZU26fRwmhVHciu3tBSLqRZFjEuqLTiwDTrFvfxpJ8Sbd2PqHHhv,
+        hash: `GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank`,
+    },
+    transaction_outcome: ExecutionOutcomeWithIdView {
+        proof: [],
+        block_hash: `AQH6jDqqxpBYj5NSZv3Skg5hUZQRsn16jvDuphCTugSQ`,
+        id: `GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank`,
+        outcome: ExecutionOutcomeView {
+            logs: [],
+            receipt_ids: [
+                `5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh`,
+            ],
+            gas_burnt: 424555062500,
+            tokens_burnt: 42455506250000000000,
+            executor_id: "volodymyr.testnet",
+            status: SuccessReceiptId(5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh),
+        },
+    },
+    receipts_outcome: [
+        ExecutionOutcomeWithIdView {
+            proof: [],
+            block_hash: `DBUpiLVVDBQwSAPU8ZTE8KQnX5skDD1dTsBjJQ8kV24R`,
+            id: `5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh`,
+            outcome: ExecutionOutcomeView {
+                logs: [],
+                receipt_ids: [
+                    `851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU`,
+                ],
+                gas_burnt: 424555062500,
+                tokens_burnt: 42455506250000000000,
+                executor_id: "qweqweqwe.volodymyr.testnet",
+                status: SuccessValue(``),
+            },
+        },
+        ExecutionOutcomeWithIdView {
+            proof: [],
+            block_hash: `BSjrH3WyKnXhD17drR94YfM725Ho59us9N4msXrrgHEw`,
+            id: `851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU`,
+            outcome: ExecutionOutcomeView {
+                logs: [],
+                receipt_ids: [],
+                gas_burnt: 0,
+                tokens_burnt: 0,
+                executor_id: "volodymyr.testnet",
+                status: SuccessValue(``),
+            },
+        },
+    ],
+}
 ```
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr.png" width="836"/>
+<a href="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6.png" width="836"/>
 </a>
 </details>
 
-<details><summary>Результат выполнения команды</summary>
+<!-- <details><summary>Результат выполнения команды</summary>
 <p>
 </p><pre><code>
     ========= SENT =========
@@ -915,4 +986,4 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
  }
 </code></pre>
 <p></p>
-</details>
+</details> -->
