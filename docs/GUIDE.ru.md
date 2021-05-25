@@ -10,31 +10,31 @@
 
 #### Режим _Online_ / _Offline_
 
-    Результатом работы создания любой транзакции в режиме _Offline_ (display) является подготовленная транзакция в виде Base64-закодированной строки, которую вдальнейшем можно [отправить в сеть через RPC](https://docs.near.org/docs/api/rpc#transactions). В режиме _Online_ эта возможность добавлена (send).
-    Также _Online_-режим обеспечивает автоматический сбор данных, необходимых для формирования и отправки транзакции, а в режиме _Offline_ нужно будет ввести некоторые показатели вручную:
+  Результатом работы создания любой транзакции в режиме _Offline_ (display) является подготовленная транзакция в виде Base64-закодированной строки, которую вдальнейшем можно [отправить в сеть через RPC](https://docs.near.org/docs/api/rpc#transactions). В режиме _Online_ эта возможность добавлена (send).
+  Также _Online_-режим обеспечивает автоматический сбор данных, необходимых для формирования и отправки транзакции, а в режиме _Offline_ нужно будет ввести некоторые показатели вручную:
 
-      * __transaction nonce__
+    * __transaction nonce__
 
-        Этот номер нужно будет найти на сайте своей учетной записи ([например](media/transaction_nonce.png)), увеличив при этом на 1
+    Этот номер нужно будет найти на сайте своей учетной записи ([например](media/transaction_nonce.png)), увеличив при этом на 1
 
-    <details><summary><i>transaction nonce</i></summary>
-        <img src="media/transaction_nonce.png" width="836"/>
-    </details>
+<details><summary><i>transaction nonce</i></summary>
+    <img src="media/transaction_nonce.png" width="836"/>
+</details>
 
-      * __recent block hash__
+    * __recent block hash__
 
-        Информацию для этого параметра нужно искать [здесь](https://explorer.testnet.near.org/blocks).
+    Информацию для этого параметра нужно искать [здесь](https://explorer.testnet.near.org/blocks).
 
-    <details><summary><i>recent block hash</i></summary>
-        <img src="media/blocks.png" width="836"/>
-        <img src="media/block_hash.png" width="836"/>
-    </details>
+<details><summary><i>recent block hash</i></summary>
+    <img src="media/blocks.png" width="836"/>
+    <img src="media/block_hash.png" width="836"/>
+</details>
 
-    <details><summary><i>Демонстрация работы Offline режима</i></summary>
-    <a href="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f?autoplay=1&t=1&speed=2">
-        <img src="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f.png" width="836"/>
-    </a>
-    </details>
+<details><summary><i>Демонстрация работы Offline режима</i></summary>
+<a href="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f.png" width="836"/>
+</a>
+</details>
 
 
 
