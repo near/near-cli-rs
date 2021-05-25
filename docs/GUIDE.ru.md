@@ -758,8 +758,7 @@ __3. Combine unsigned transaction with signature__
 
 <details><summary>Результат выполнения команды</summary>
 <p>
-</p><pre>
-```sh
+</p><pre><code style="white-space:pre">
     ========= SENT =========
 
 
@@ -794,7 +793,6 @@ __3. Combine unsigned transaction with signature__
     status: SuccessValue(``),
     ...
  }
-```
-</pre>
+</code></pre>
 <p></p>
 </details>
