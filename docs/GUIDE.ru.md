@@ -13,7 +13,7 @@
     Результатом работы создания любой транзакции в режиме _Offline_ (display) является подготовленная транзакция в виде Base64-закодированной строки, которую вдальнейшем можно [отправить в сеть через RPC](https://docs.near.org/docs/api/rpc#transactions). В режиме _Online_ эта возможность добавлена (send).
     Также _Online_-режим обеспечивает автоматический сбор данных, необходимых для формирования и отправки транзакции, а в режиме _Offline_ нужно будет ввести некоторые показатели вручную:
 
-      __* transaction nonce__
+      * transaction nonce
 
         Этот номер нужно будет найти на сайте своей учетной записи ([например](media/transaction_nonce.png)), увеличив при этом на 1
 
@@ -21,7 +21,7 @@
         <img src="media/transaction_nonce.png" width="836"/>
     </details>
 
-      __* recent block hash__
+      * recent block hash
 
         Информацию для этого параметра нужно искать [здесь](https://explorer.testnet.near.org/blocks).
 
