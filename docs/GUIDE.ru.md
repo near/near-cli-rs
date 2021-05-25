@@ -838,7 +838,9 @@ AccessKeyList {
         network testnet \
         account 'volodymyr.testnet'
 ```
-Результат выполнения команды:
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
 ```txt
 Contract state (values):
 [
@@ -853,6 +855,8 @@ Contract state (values):
 Contract state (proof):
 []
 ```
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i.png" width="836"/>
