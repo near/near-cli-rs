@@ -35,7 +35,7 @@
 </a>
 </details>
 
-Результатом работы создания любой транзакции в режиме _Offline_ является захэшированная строка транзакции.
+Результатом работы создания любой транзакции в режиме _Offline_ является подготовленная транзакция в виде Base64-закодированной строки, которую вдальнейшем можно [отправить в сеть через RPC](https://docs.near.org/docs/api/rpc#transactions)
 
 В режиме _Online_ эти аргументы будут установлены автоматически.
 
@@ -54,7 +54,7 @@
 
 ### Add access key, contract code, stake proposal, sub-account, implicit-account
 
-__1. Add a new access key for an account__
+#### Add a new access key for an account
 
 Выполним команду с такими условиями:
   * публичный ключ доступа будет введен вручную
