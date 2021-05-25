@@ -42,7 +42,14 @@
 
       * _I want to sign the transaction with my private key_
 
+        При выборе этого варианта подписи near-cli попросит пользователя ввести ключи доступа:
+          "public_key":"ed25519:Ebx7...",
+          "private_key":"ed25519:2qM8..."
+
       * _I want to sign the transaction with keychain_
+        
+        При выборе этого варианта подписи near-cli самостоятельно найдет ключи доступа в файле *имя_пользователя.json*, расположенного в */Users/user/.near-credentials/default/*.
+        Например, */Users/frovolod/.near-credentials/default/volodymyr.testnet.json*.
 
       * _I want to construct the transaction and sign it somewhere else_
 
