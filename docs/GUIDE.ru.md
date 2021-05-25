@@ -870,9 +870,6 @@ Contract state (proof):
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
-<p>
-</p>
-
 ```txt
 Specify the account that signed the transaction: volodymyr.testnet
 Transactiion status: FinalExecutionOutcome {
@@ -945,7 +942,6 @@ Transactiion status: FinalExecutionOutcome {
     ],
 }
 ```
-<p></p>
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
