@@ -4,8 +4,8 @@ near-cli – это утилита командной строки для раб
 
 ### README.md
 
-* en [English](readme/README.en.md)
-* ru [Русский](readme/README.ru.md)
+* en [English](docs/README.en.md)
+* ru [Русский](docs/README.ru.md)
 
 
 ### Usage
