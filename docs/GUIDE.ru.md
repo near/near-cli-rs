@@ -869,7 +869,13 @@ Contract state (proof):
         signer 'volodymyr.testnet'
 ```
 Результат выполнения команды:
-```txt
+
+
+<details><summary>Результат выполнения команды</summary>
+<p>
+</p>
+
+```
 Specify the account that signed the transaction: volodymyr.testnet
 Transactiion status: FinalExecutionOutcome {
     status: SuccessValue(``),
@@ -941,6 +947,9 @@ Transactiion status: FinalExecutionOutcome {
     ],
 }
 ```
+<p></p>
+</details>
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6.png" width="836"/>
