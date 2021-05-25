@@ -140,7 +140,7 @@
 
 Для этого введем следующую команду:
 ```sh
-near-cli add access-key \
+./near-cli add access-key \
         network testnet \
         account '21.volodymyr.testnet' \
         generate-keypair \
@@ -216,7 +216,7 @@ near-cli add access-key \
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
-near-cli add contract-code \
+./near-cli add contract-code \
         network testnet \
         account '21.volodymyr.testnet' \
         contract-file '/Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm' \
@@ -280,11 +280,11 @@ near-cli add contract-code \
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
-near-cli add implicit-account \
+./near-cli add implicit-account \
         generate-keypair
 ```
 Результат выполнения команды:
-```
+```txt
 The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
 ```
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -297,7 +297,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
-near-cli add stake-proposal \
+./near-cli add stake-proposal \
         network testnet \
         validator 'volodymyr.testnet' \
         amount '100 NEAR' \
@@ -363,7 +363,7 @@ near-cli add stake-proposal \
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
-near-cli add sub-account \
+./near-cli add sub-account \
         network testnet \
         owner-account 'volodymyr.testnet' \
         sub-account '22.volodymyr.testnet' \
@@ -467,7 +467,7 @@ near-cli add sub-account \
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
-near-cli delete access-key \
+./near-cli delete access-key \
         network testnet \
         account 'volodymyr.testnet' \
         public-key 'ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF' \
@@ -520,7 +520,7 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
-near-cli delete account \
+./near-cli delete account \
         network testnet \
         account '21.volodymyr.testnet' \
         beneficiary 'volodymyr.testnet' \
@@ -576,7 +576,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
-near-cli execute change-method \
+./near-cli execute change-method \
         network testnet \
         contract 'meta.pool.testnet' \
         call 'distribute_staking' '{}' \
@@ -636,7 +636,7 @@ near-cli execute change-method \
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
-near-cli execute view-method \
+./near-cli execute view-method \
         network mainnet \
         contract zavodil.poolv1.near \
         call 'get_accounts' '{"from_index": 0, "limit": 3}'
@@ -674,7 +674,7 @@ near-cli execute view-method \
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```sh
-near-cli transfer near \
+./near-cli transfer near \
         network testnet \
         sender 'volodymyr.testnet' \
         receiver '21.volodymyr.testnet' \
@@ -758,15 +758,72 @@ near-cli transfer near \
 
 #### View properties for an account
 
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```sh
+./near-cli view account-summary \
+        network testnet \
+        account '26.volodymyr.testnet'
+```
+Результат выполнения команды:
+```
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr.png" width="836"/>
+</a>
+</details>
 
 #### View a contract code
 
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```sh
+./near-cli add implicit-account \
+        generate-keypair
+```
+Результат выполнения команды:
+```
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr.png" width="836"/>
+</a>
+</details>
 
 #### View a contract state
 
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```sh
+./near-cli add implicit-account \
+        generate-keypair
+```
+Результат выполнения команды:
+```
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr.png" width="836"/>
+</a>
+</details>
 
 #### View a transaction status
 
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```sh
+./near-cli add implicit-account \
+        generate-keypair
+```
+Результат выполнения команды:
+```
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr.png" width="836"/>
+</a>
+</details>
 
 <details><summary>Результат выполнения команды</summary>
 <p>
