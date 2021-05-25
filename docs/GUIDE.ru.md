@@ -758,7 +758,7 @@ __3. Combine unsigned transaction with signature__
 
 <details><summary>Результат выполнения команды</summary>
 <p>
-</p><pre><code style="white-space:pre">
+</p><pre><code class="sh">
     ========= SENT =========
 
 
