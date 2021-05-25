@@ -794,22 +794,23 @@ AccessKeyList {
 
 #### View a contract code
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
-```txt
-./near-cli view contract-code \
-        network testnet \
-        contract 'volodymyr.testnet' \
-        download './volodymyr.testnet.wasm'
-```
-Результат выполнения команды:
-```txt
-The file Some("volodymyr.testnet.wasm") was downloaded successfully
-```
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz.png" width="836"/>
-</a>
-</details>
+  * Для загрузки файла контракта в командной строке терминала необходимо ввести:
+
+    ```txt
+    ./near-cli view contract-code \
+            network testnet \
+            contract 'volodymyr.testnet' \
+            download './volodymyr.testnet.wasm'
+    ```
+    Результат выполнения команды:
+    ```txt
+    The file Some("volodymyr.testnet.wasm") was downloaded successfully
+    ```
+    <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+    <a href="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz?autoplay=1&t=1&speed=2">
+        <img src="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz.png" width="836"/>
+    </a>
+    </details>
 
 #### View a contract state
 
