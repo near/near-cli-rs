@@ -869,7 +869,7 @@ Contract state (proof):
         signer 'volodymyr.testnet'
 ```
 Результат выполнения команды:
-```
+```txt
 Specify the account that signed the transaction: volodymyr.testnet
 Transactiion status: FinalExecutionOutcome {
     status: SuccessValue(``),
