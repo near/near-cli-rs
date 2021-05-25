@@ -868,9 +868,9 @@ Contract state (proof):
         transaction-hash 'GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank' \
         signer 'volodymyr.testnet'
 ```
-
-<details><summary><i>Результат выполнения команды:</i></summary>
-```Specify the account that signed the transaction: volodymyr.testnet
+Результат выполнения команды:
+```txt
+Specify the account that signed the transaction: volodymyr.testnet
 Transactiion status: FinalExecutionOutcome {
     status: SuccessValue(``),
     transaction: SignedTransactionView {
@@ -941,10 +941,51 @@ Transactiion status: FinalExecutionOutcome {
     ],
 }
 ```
-</details>
-
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6.png" width="836"/>
 </a>
+</details>
+
+
+<details><summary>Результат выполнения команды</summary>
+<p>
+</p>
+
+```    ========= SENT =========
+
+
+---  Signed transaction:   ---
+    SignedTransaction {
+    transaction: Transaction {
+        signer_id: "volodymyr.testnet",
+        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
+        nonce: 164,
+        receiver_id: "21.volodymyr.testnet",
+        block_hash: `9fsPJ5b4cjcbSA9gdjTX9BskZW4u3cyg7dq4rFixB3hk`,
+        actions: [
+            Transfer(
+                TransferAction {
+                    deposit: 1000000000000000000000000,
+                },
+            ),
+        ],
+    },
+    signature: ed25519:62QgUt5Co689BGJP1UDpirACSSWkgouaP2WAfZBTbsvxeEso3LjUZLVBfg9vVDpjp4K8mACqBvyrr8WQoR2Kjrm,
+    hash: `7xGzEbUY6PZvt9LiNeYXX8euBU8KsJgAm9K1GnGkU3jH`,
+    size: 139,
+}
+
+
+---  serialize_to_base64:   --- 
+   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPpAAAAAAAAAAUAAAAMjEudm9sb2R5bXlyLnRlc3RuZXSA0ok08Tobo8iXW81D3qGvMJe3ET6uqbRv4GavXwZbIwEAAAADAAAAoe3MzhvC0wAAAAAAAAAEVS8LAOAofbvpp0zIXP5R/3RWTfT36bX21H5pi1fv8WBa1KABh5cuaG+bcKWSTqsv24Wbw4seW4Q56Mk7tW4O"
+
+
+---  Success:  ---
+ FinalExecutionOutcome {
+    status: SuccessValue(``),
+    ...
+ }
+```
+<p></p>
 </details>
