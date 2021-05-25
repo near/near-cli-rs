@@ -139,7 +139,7 @@
   * транзакция будет подписана вручную
 
 Для этого введем следующую команду:
-```
+```sh
 near-cli add access-key \
         network testnet \
         account '21.volodymyr.testnet' \
@@ -155,7 +155,7 @@ near-cli add access-key \
 
 ```
 Результат выполнения команды:
-```
+```sh
 ========= SENT =========
 
 
@@ -215,7 +215,7 @@ near-cli add access-key \
 __2. Add a new contract code__
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```
+```sh
 near-cli add contract-code \
         network testnet \
         account '21.volodymyr.testnet' \
@@ -227,7 +227,7 @@ near-cli add contract-code \
         send
 ```
 Результат выполнения команды:
-```
+```sh
 ========= SENT =========
 
 
@@ -279,7 +279,7 @@ near-cli add contract-code \
 __3. Add an implicit-account__
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```
+```sh
 near-cli add implicit-account \
         generate-keypair
 ```
@@ -296,7 +296,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 __4. Add a new stake proposal__
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```
+```sh
 near-cli add stake-proposal \
         network testnet \
         validator 'volodymyr.testnet' \
@@ -306,7 +306,7 @@ near-cli add stake-proposal \
         send
 ```
 Результат выполнения команды:
-```
+```sh
 ========= SENT =========
 
 
@@ -362,7 +362,7 @@ near-cli add stake-proposal \
 __5. Add a new sub-account__
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```
+```sh
 near-cli add sub-account \
         network testnet \
         owner-account 'volodymyr.testnet' \
@@ -374,7 +374,7 @@ near-cli add sub-account \
         send
 ```
 Результат выполнения команды:
-```
+```sh
 ========= SENT =========
 
 
@@ -466,7 +466,7 @@ near-cli add sub-account \
 __1. Delete an access key for this account__
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```
+```sh
 near-cli delete access-key \
         network testnet \
         account 'volodymyr.testnet' \
@@ -475,7 +475,7 @@ near-cli delete access-key \
         send
 ```
 Результат выполнения команды:
-```
+```sh
 ========= SENT =========
 
 
@@ -519,7 +519,7 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 __2. Delete this account__
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```
+```sh
 near-cli delete account \
         network testnet \
         account '21.volodymyr.testnet' \
@@ -528,7 +528,7 @@ near-cli delete account \
         send
 ```
 Результат выполнения команды:
-```
+```sh
 ========= SENT =========
 
 
@@ -575,7 +575,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 __1. Change a method__
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```
+```sh
 near-cli execute change-method \
         network testnet \
         contract 'meta.pool.testnet' \
@@ -587,7 +587,7 @@ near-cli execute change-method \
         send
 ```
 Результат выполнения команды:
-```
+```sh
 ========= SENT =========
 
 
@@ -635,14 +635,14 @@ near-cli execute change-method \
 __2. View a method__
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```
+```sh
 near-cli execute view-method \
         network mainnet \
         contract zavodil.poolv1.near \
         call 'get_accounts' '{"from_index": 0, "limit": 3}'
 ```
 Результат выполнения команды:
-```
+```sh
 [
   {
     "account_id": "zavodil.near",
@@ -673,7 +673,7 @@ near-cli execute view-method \
 ### Transfer tokens
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
-```
+```sh
 near-cli transfer near \
         network testnet \
         sender 'volodymyr.testnet' \
@@ -683,7 +683,7 @@ near-cli transfer near \
         send
 ```
 Результат выполнения команды:
-```
+```sh
 ========= SENT =========
 
 
@@ -759,6 +759,7 @@ __3. Combine unsigned transaction with signature__
 <details><summary>Результат выполнения команды</summary>
 <p>
 </p><pre><code>
+```sh
     ========= SENT =========
 
 
@@ -793,6 +794,7 @@ __3. Combine unsigned transaction with signature__
     status: SuccessValue(``),
     ...
  }
+```
 </code></pre>
 <p></p>
 </details>
