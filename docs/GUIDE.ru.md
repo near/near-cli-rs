@@ -834,16 +834,28 @@ AccessKeyList {
 
 Для выполнения этой команды в командной строке терминала необходимо ввести:
 ```txt
-./near-cli add implicit-account \
-        generate-keypair
+./near-cli view contract-state \
+        network testnet \
+        account 'volodymyr.testnet'
 ```
 Результат выполнения команды:
-```
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
+```txt
+Contract state (values):
+[
+    StateItem {
+        key: "U1RBVEU=",
+        value: "BA==",
+        proof: [],
+    },
+]
+
+
+Contract state (proof):
+[]
 ```
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr.png" width="836"/>
+<a href="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i.png" width="836"/>
 </a>
 </details>
 
