@@ -947,7 +947,7 @@ Transactiion status: FinalExecutionOutcome {
 </a>
 </details>
 
-<!-- <details><summary>Результат выполнения команды</summary>
+<details><summary>Результат выполнения команды</summary>
 <p>
 </p><pre><code>
     ========= SENT =========
@@ -986,4 +986,4 @@ Transactiion status: FinalExecutionOutcome {
  }
 </code></pre>
 <p></p>
-</details> -->
+</details>
