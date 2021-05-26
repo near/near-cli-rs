@@ -59,14 +59,394 @@
 
 ### Группы команд
 
-* [Add access key, contract code, stake proposal, sub-account, implicit-account](#add-access-key-contract-code-stake-proposal-sub-account-implicit-account)
-* [Construct a new transaction](#construct-a-new-transaction)
-* [Delete access key, account](#delete-access-key-account)
-* [Execute function (contract method)](#execute-function-contract-method)
-* [Transfer tokens](#transfer-tokens)
-* [Helpers](#helpers)
 * [View account, contract code, contract state, transaction](#view-account-contract-code-contract-state-transaction)
+* [Transfer tokens](#transfer-tokens)
+* [Execute function (contract method)](#execute-function-contract-method)
+* [Add access key, contract code, stake proposal, sub-account, implicit-account](#add-access-key-contract-code-stake-proposal-sub-account-implicit-account)
+* [Delete access key, account](#delete-access-key-account)
+* [Construct a new transaction](#construct-a-new-transaction)
+* [Helpers](#helpers)
 
+### View account, contract code, contract state, transaction
+
+#### View properties for an account
+
+Для просмотра сведений об аккаунте в командной строке терминала необходимо ввести:
+```txt
+./near-cli view account-summary \
+        network testnet \
+        account '26.volodymyr.testnet'
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+AccountView {
+    amount: 999272571364280200000000,
+    locked: 0,
+    code_hash: `8WGGK1GDYrVzkgYmgomWvESH8kSy6miFJj8yAu32RFLp`,
+    storage_usage: 43952,
+    storage_paid_at: 0,
+}
+
+AccessKeyList {
+    keys: [
+        AccessKeyInfoView {
+            public_key: ed25519:3LwQh4RgaPEV4oyPcKoL2MdUK4aLRtBrixBp4WhoGxAB,
+            access_key: AccessKeyView {
+                nonce: 2,
+                permission: FullAccess,
+            },
+        },
+    ],
+}
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4.png" width="836"/>
+</a>
+</details>
+
+#### View a contract code
+
+  * Для получения файла контракта в командной строке терминала необходимо ввести:
+
+    ```txt
+    ./near-cli view contract-code \
+            network testnet \
+            contract 'volodymyr.testnet' \
+            download './volodymyr.testnet.wasm'
+    ```
+
+    <details><summary><i>Результат выполнения команды</i></summary>
+    
+    ```txt
+    The file Some("volodymyr.testnet.wasm") was downloaded successfully
+    ```
+    </details>
+
+    <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+    <a href="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz?autoplay=1&t=1&speed=2">
+        <img src="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz.png" width="836"/>
+    </a>
+    </details>
+
+  * Для получения хэша контракта в командной строке терминала необходимо ввести:
+
+    ```txt
+    ./near-cli view contract-code \
+            network testnet \
+            contract 'volodymyr.testnet' \
+            hash
+    ```
+    
+    <details><summary><i>Результат выполнения команды</i></summary>
+
+    ```txt
+    Hash of the contract: 6F7TqH3ggf4iKbmJpFg9uJq87HTUohP1rdrDU7tZx9iH
+    ```
+    </details>
+
+    <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+    <a href="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea?autoplay=1&t=1&speed=2">
+        <img src="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea.png" width="836"/>
+    </a>
+    </details>
+
+#### View a contract state
+
+Для просмотра состояния контракта в командной строке терминала необходимо ввести:
+```txt
+./near-cli view contract-state \
+        network testnet \
+        account 'volodymyr.testnet'
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Contract state (values):
+[
+    StateItem {
+        key: "U1RBVEU=",
+        value: "BA==",
+        proof: [],
+    },
+]
+
+
+Contract state (proof):
+[]
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i.png" width="836"/>
+</a>
+</details>
+
+#### View a transaction status
+
+Для просмотра статуса желаемой транзакции в командной строке терминала необходимо ввести её хэш:
+```txt
+./near-cli view transaction \
+        network testnet \
+        transaction-hash 'GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank' \
+        signer 'volodymyr.testnet'
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Specify the account that signed the transaction: volodymyr.testnet
+Transactiion status: FinalExecutionOutcome {
+    status: SuccessValue(``),
+    transaction: SignedTransactionView {
+        signer_id: "volodymyr.testnet",
+        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
+        nonce: 165,
+        receiver_id: "qweqweqwe.volodymyr.testnet",
+        actions: [
+            CreateAccount,
+            Transfer {
+                deposit: 100000000000000000000000000,
+            },
+            AddKey {
+                public_key: ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf,
+                access_key: AccessKeyView {
+                    nonce: 0,
+                    permission: FullAccess,
+                },
+            },
+        ],
+        signature: ed25519:266jBRjvnaxe4mDyHRGwv3TJesvgRo2umJBqkZU26fRwmhVHciu3tBSLqRZFjEuqLTiwDTrFvfxpJ8Sbd2PqHHhv,
+        hash: `GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank`,
+    },
+    transaction_outcome: ExecutionOutcomeWithIdView {
+        proof: [],
+        block_hash: `AQH6jDqqxpBYj5NSZv3Skg5hUZQRsn16jvDuphCTugSQ`,
+        id: `GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank`,
+        outcome: ExecutionOutcomeView {
+            logs: [],
+            receipt_ids: [
+                `5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh`,
+            ],
+            gas_burnt: 424555062500,
+            tokens_burnt: 42455506250000000000,
+            executor_id: "volodymyr.testnet",
+            status: SuccessReceiptId(5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh),
+        },
+    },
+    receipts_outcome: [
+        ExecutionOutcomeWithIdView {
+            proof: [],
+            block_hash: `DBUpiLVVDBQwSAPU8ZTE8KQnX5skDD1dTsBjJQ8kV24R`,
+            id: `5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh`,
+            outcome: ExecutionOutcomeView {
+                logs: [],
+                receipt_ids: [
+                    `851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU`,
+                ],
+                gas_burnt: 424555062500,
+                tokens_burnt: 42455506250000000000,
+                executor_id: "qweqweqwe.volodymyr.testnet",
+                status: SuccessValue(``),
+            },
+        },
+        ExecutionOutcomeWithIdView {
+            proof: [],
+            block_hash: `BSjrH3WyKnXhD17drR94YfM725Ho59us9N4msXrrgHEw`,
+            id: `851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU`,
+            outcome: ExecutionOutcomeView {
+                logs: [],
+                receipt_ids: [],
+                gas_burnt: 0,
+                tokens_burnt: 0,
+                executor_id: "volodymyr.testnet",
+                status: SuccessValue(``),
+            },
+        },
+    ],
+}
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6.png" width="836"/>
+</a>
+</details>
+
+### Transfer tokens
+
+Данная команда служит для перевода средств между аккаунтами. Обратите внимание, что количество пересылаемых токенов указывается совместно с размерной единицей (это NEAR либо yoctoNEAR).
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```txt
+./near-cli transfer near \
+        network testnet \
+        sender 'volodymyr.testnet' \
+        receiver '21.volodymyr.testnet' \
+        amount  '1 NEAR' \
+        sign-with-keychain \
+        send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+========= SENT =========
+
+
+---  Signed transaction:   ---
+    SignedTransaction {
+    transaction: Transaction {
+        signer_id: "volodymyr.testnet",
+        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
+        nonce: 164,
+        receiver_id: "21.volodymyr.testnet",
+        block_hash: `9fsPJ5b4cjcbSA9gdjTX9BskZW4u3cyg7dq4rFixB3hk`,
+        actions: [
+            Transfer(
+                TransferAction {
+                    deposit: 1000000000000000000000000,
+                },
+            ),
+        ],
+    },
+    signature: ed25519:62QgUt5Co689BGJP1UDpirACSSWkgouaP2WAfZBTbsvxeEso3LjUZLVBfg9vVDpjp4K8mACqBvyrr8WQoR2Kjrm,
+    hash: `7xGzEbUY6PZvt9LiNeYXX8euBU8KsJgAm9K1GnGkU3jH`,
+    size: 139,
+}
+
+
+---  serialize_to_base64:   --- 
+   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPpAAAAAAAAAAUAAAAMjEudm9sb2R5bXlyLnRlc3RuZXSA0ok08Tobo8iXW81D3qGvMJe3ET6uqbRv4GavXwZbIwEAAAADAAAAoe3MzhvC0wAAAAAAAAAEVS8LAOAofbvpp0zIXP5R/3RWTfT36bX21H5pi1fv8WBa1KABh5cuaG+bcKWSTqsv24Wbw4seW4Q56Mk7tW4O"
+
+
+---  Success:  ---
+ FinalExecutionOutcome {
+    status: SuccessValue(``),
+    ...
+ }
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa.png" width="836"/>
+</a>
+</details>
+
+### Execute function (contract method)
+
+#### Change a method
+
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```txt
+./near-cli execute change-method \
+        network testnet \
+        contract 'meta.pool.testnet' \
+        call 'distribute_staking' '{}' \
+            --attached-deposit '0 NEAR' \
+            --prepaid-gas '3 Tgas' \
+        signer 'volodymyr.testnet' \
+        sign-with-keychain \
+        send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+========= SENT =========
+
+
+---  Signed transaction:   ---
+    SignedTransaction {
+    transaction: Transaction {
+        signer_id: "volodymyr.testnet",
+        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
+        nonce: 162,
+        receiver_id: "meta.pool.testnet",
+        block_hash: `7KXacoKThQRRQwwU1U6W2fRvpRUwgbKMQ7fM7ZEhnWcU`,
+        actions: [
+            FunctionCall(
+                FunctionCallAction {
+                    method_name: distribute_staking,
+                    args: `{}`,
+                    gas: 3000000000000,
+                    deposit: 0,
+                },
+            ),
+        ],
+    },
+    signature: ed25519:q1zT9bniKLqnyCpt3EcRQotegTcJmjkXmSWDKq2MWyvMYzigAF4TZ3WETn6cCw5x5NSUSahRVS8rc11QvDiSXYB,
+    hash: `A42ik23MSkHy5uCTV7PxMTePgirVQzNExFhvbRCjx7ia`,
+    size: 172,
+}
+
+
+---  serialize_to_base64:   --- 
+   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPogAAAAAAAAARAAAAbWV0YS5wb29sLnRlc3RuZXRd5ScQXuimrSNf3tsuUd4q0M4/exg3UIqPOFt5oVKoxQEAAAACEgAAAGRpc3RyaWJ1dGVfc3Rha2luZwIAAAB7fQAw7326AgAAAAAAAAAAAAAAAAAAAAAAAAApaHmaMzRKvhnhTuQia80ae5baaGMQpBkmq438MreboP2Xlbg/9pNUSX8CouiUOqjvGw/xdzIozjiWeLJRvJsA"
+
+
+---  Success:  ---
+ FinalExecutionOutcome {
+    status: SuccessValue(`false`),
+    ...
+ }
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc.png" width="836"/>
+</a>
+</details>
+
+#### View a method
+
+Для выполнения этой команды в командной строке терминала необходимо ввести:
+```txt
+./near-cli execute view-method \
+        network mainnet \
+        contract zavodil.poolv1.near \
+        call 'get_accounts' '{"from_index": 0, "limit": 3}'
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+[
+  {
+    "account_id": "zavodil.near",
+    "unstaked_balance": "8",
+    "staked_balance": "11324123436434018378485148158",
+    "can_withdraw": true
+  },
+  {
+    "account_id": "gagdiez.near",
+    "unstaked_balance": "4",
+    "staked_balance": "2190787031154122258592953066",
+    "can_withdraw": true
+  },
+  {
+    "account_id": "5ff98e7c85755e0f77c78eaf4a8aeca24846d8b5.lockup.near",
+    "unstaked_balance": "0",
+    "staked_balance": "12033408649269474452976655376",
+    "can_withdraw": true
+  }
+]
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI.png" width="836"/>
+</a>
+</details>
 
 ### Add access key, contract code, stake proposal, sub-account, implicit-account
 
@@ -454,21 +834,6 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 </a>
 </details>
 
-### Construct a new transaction
-
-Рассмотрим пример, когда необходимо выполнить несколько действий в рамках одной транзакции:
-1. Создать аккаунт
-2. Добавить созданному аккаунту ключи доступа
-3. Осуществить перевод токенов на созданный аккаунт
-
-Для этого воспользуемся конструктором транзакции:
-
-<details><summary>Construct a new transaction (демонстрация работы команды)</summary>
-<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
-</a>
-</details>
-
 ### Delete access key, account
 
 #### Delete an access key for this account
@@ -585,173 +950,18 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
     <img src="https://asciinema.org/a/Lr0Y0eAuMK2pu5O639i4hpIFr.png" width="836"/>
 </a>
 
+### Construct a new transaction
 
+Рассмотрим пример, когда необходимо выполнить несколько действий в рамках одной транзакции:
+1. Создать аккаунт
+2. Добавить созданному аккаунту ключи доступа
+3. Осуществить перевод токенов на созданный аккаунт
 
-### Execute function (contract method)
+Для этого воспользуемся конструктором транзакции:
 
-#### Change a method
-
-Для выполнения этой команды в командной строке терминала необходимо ввести:
-```txt
-./near-cli execute change-method \
-        network testnet \
-        contract 'meta.pool.testnet' \
-        call 'distribute_staking' '{}' \
-            --attached-deposit '0 NEAR' \
-            --prepaid-gas '3 Tgas' \
-        signer 'volodymyr.testnet' \
-        sign-with-keychain \
-        send
-```
-
-<details><summary><i>Результат выполнения команды</i></summary>
-
-```txt
-========= SENT =========
-
-
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "volodymyr.testnet",
-        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-        nonce: 162,
-        receiver_id: "meta.pool.testnet",
-        block_hash: `7KXacoKThQRRQwwU1U6W2fRvpRUwgbKMQ7fM7ZEhnWcU`,
-        actions: [
-            FunctionCall(
-                FunctionCallAction {
-                    method_name: distribute_staking,
-                    args: `{}`,
-                    gas: 3000000000000,
-                    deposit: 0,
-                },
-            ),
-        ],
-    },
-    signature: ed25519:q1zT9bniKLqnyCpt3EcRQotegTcJmjkXmSWDKq2MWyvMYzigAF4TZ3WETn6cCw5x5NSUSahRVS8rc11QvDiSXYB,
-    hash: `A42ik23MSkHy5uCTV7PxMTePgirVQzNExFhvbRCjx7ia`,
-    size: 172,
-}
-
-
----  serialize_to_base64:   --- 
-   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPogAAAAAAAAARAAAAbWV0YS5wb29sLnRlc3RuZXRd5ScQXuimrSNf3tsuUd4q0M4/exg3UIqPOFt5oVKoxQEAAAACEgAAAGRpc3RyaWJ1dGVfc3Rha2luZwIAAAB7fQAw7326AgAAAAAAAAAAAAAAAAAAAAAAAAApaHmaMzRKvhnhTuQia80ae5baaGMQpBkmq438MreboP2Xlbg/9pNUSX8CouiUOqjvGw/xdzIozjiWeLJRvJsA"
-
-
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(`false`),
-    ...
- }
-```
-</details>
-
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc.png" width="836"/>
-</a>
-</details>
-
-#### View a method
-
-Для выполнения этой команды в командной строке терминала необходимо ввести:
-```txt
-./near-cli execute view-method \
-        network mainnet \
-        contract zavodil.poolv1.near \
-        call 'get_accounts' '{"from_index": 0, "limit": 3}'
-```
-
-<details><summary><i>Результат выполнения команды</i></summary>
-
-```txt
-[
-  {
-    "account_id": "zavodil.near",
-    "unstaked_balance": "8",
-    "staked_balance": "11324123436434018378485148158",
-    "can_withdraw": true
-  },
-  {
-    "account_id": "gagdiez.near",
-    "unstaked_balance": "4",
-    "staked_balance": "2190787031154122258592953066",
-    "can_withdraw": true
-  },
-  {
-    "account_id": "5ff98e7c85755e0f77c78eaf4a8aeca24846d8b5.lockup.near",
-    "unstaked_balance": "0",
-    "staked_balance": "12033408649269474452976655376",
-    "can_withdraw": true
-  }
-]
-```
-</details>
-
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI.png" width="836"/>
-</a>
-</details>
-
-### Transfer tokens
-
-Данная команда служит для перевода средств между аккаунтами. Обратите внимание, что количество пересылаемых токенов указывается совместно с размерной единицей (это NEAR либо yoctoNEAR).
-Для выполнения этой команды в командной строке терминала необходимо ввести:
-```txt
-./near-cli transfer near \
-        network testnet \
-        sender 'volodymyr.testnet' \
-        receiver '21.volodymyr.testnet' \
-        amount  '1 NEAR' \
-        sign-with-keychain \
-        send
-```
-
-<details><summary><i>Результат выполнения команды</i></summary>
-
-```txt
-========= SENT =========
-
-
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "volodymyr.testnet",
-        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-        nonce: 164,
-        receiver_id: "21.volodymyr.testnet",
-        block_hash: `9fsPJ5b4cjcbSA9gdjTX9BskZW4u3cyg7dq4rFixB3hk`,
-        actions: [
-            Transfer(
-                TransferAction {
-                    deposit: 1000000000000000000000000,
-                },
-            ),
-        ],
-    },
-    signature: ed25519:62QgUt5Co689BGJP1UDpirACSSWkgouaP2WAfZBTbsvxeEso3LjUZLVBfg9vVDpjp4K8mACqBvyrr8WQoR2Kjrm,
-    hash: `7xGzEbUY6PZvt9LiNeYXX8euBU8KsJgAm9K1GnGkU3jH`,
-    size: 139,
-}
-
-
----  serialize_to_base64:   --- 
-   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPpAAAAAAAAAAUAAAAMjEudm9sb2R5bXlyLnRlc3RuZXSA0ok08Tobo8iXW81D3qGvMJe3ET6uqbRv4GavXwZbIwEAAAADAAAAoe3MzhvC0wAAAAAAAAAEVS8LAOAofbvpp0zIXP5R/3RWTfT36bX21H5pi1fv8WBa1KABh5cuaG+bcKWSTqsv24Wbw4seW4Q56Mk7tW4O"
-
-
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(``),
-    ...
- }
-```
-</details>
-
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa.png" width="836"/>
+<details><summary>Construct a new transaction (демонстрация работы команды)</summary>
+<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 </details>
 
@@ -781,218 +991,5 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/HfsutLZKnWS8w1PnY1kGIUYid?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/HfsutLZKnWS8w1PnY1kGIUYid.png" width="836"/>
-</a>
-</details>
-
-### View account, contract code, contract state, transaction
-
-#### View properties for an account
-
-Для просмотра сведений об аккаунте в командной строке терминала необходимо ввести:
-```txt
-./near-cli view account-summary \
-        network testnet \
-        account '26.volodymyr.testnet'
-```
-
-<details><summary><i>Результат выполнения команды</i></summary>
-
-```txt
-AccountView {
-    amount: 999272571364280200000000,
-    locked: 0,
-    code_hash: `8WGGK1GDYrVzkgYmgomWvESH8kSy6miFJj8yAu32RFLp`,
-    storage_usage: 43952,
-    storage_paid_at: 0,
-}
-
-AccessKeyList {
-    keys: [
-        AccessKeyInfoView {
-            public_key: ed25519:3LwQh4RgaPEV4oyPcKoL2MdUK4aLRtBrixBp4WhoGxAB,
-            access_key: AccessKeyView {
-                nonce: 2,
-                permission: FullAccess,
-            },
-        },
-    ],
-}
-```
-</details>
-
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4.png" width="836"/>
-</a>
-</details>
-
-#### View a contract code
-
-  * Для получения файла контракта в командной строке терминала необходимо ввести:
-
-    ```txt
-    ./near-cli view contract-code \
-            network testnet \
-            contract 'volodymyr.testnet' \
-            download './volodymyr.testnet.wasm'
-    ```
-
-    <details><summary><i>Результат выполнения команды</i></summary>
-    
-    ```txt
-    The file Some("volodymyr.testnet.wasm") was downloaded successfully
-    ```
-    </details>
-
-    <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-    <a href="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz?autoplay=1&t=1&speed=2">
-        <img src="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz.png" width="836"/>
-    </a>
-    </details>
-
-  * Для получения хэша контракта в командной строке терминала необходимо ввести:
-
-    ```txt
-    ./near-cli view contract-code \
-            network testnet \
-            contract 'volodymyr.testnet' \
-            hash
-    ```
-    
-    <details><summary><i>Результат выполнения команды</i></summary>
-
-    ```txt
-    Hash of the contract: 6F7TqH3ggf4iKbmJpFg9uJq87HTUohP1rdrDU7tZx9iH
-    ```
-    </details>
-
-    <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-    <a href="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea?autoplay=1&t=1&speed=2">
-        <img src="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea.png" width="836"/>
-    </a>
-    </details>
-
-#### View a contract state
-
-Для просмотра состояния контракта в командной строке терминала необходимо ввести:
-```txt
-./near-cli view contract-state \
-        network testnet \
-        account 'volodymyr.testnet'
-```
-
-<details><summary><i>Результат выполнения команды</i></summary>
-
-```txt
-Contract state (values):
-[
-    StateItem {
-        key: "U1RBVEU=",
-        value: "BA==",
-        proof: [],
-    },
-]
-
-
-Contract state (proof):
-[]
-```
-</details>
-
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i.png" width="836"/>
-</a>
-</details>
-
-#### View a transaction status
-
-Для просмотра статуса желаемой транзакции в командной строке терминала необходимо ввести её хэш:
-```txt
-./near-cli view transaction \
-        network testnet \
-        transaction-hash 'GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank' \
-        signer 'volodymyr.testnet'
-```
-
-<details><summary><i>Результат выполнения команды</i></summary>
-
-```txt
-Specify the account that signed the transaction: volodymyr.testnet
-Transactiion status: FinalExecutionOutcome {
-    status: SuccessValue(``),
-    transaction: SignedTransactionView {
-        signer_id: "volodymyr.testnet",
-        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-        nonce: 165,
-        receiver_id: "qweqweqwe.volodymyr.testnet",
-        actions: [
-            CreateAccount,
-            Transfer {
-                deposit: 100000000000000000000000000,
-            },
-            AddKey {
-                public_key: ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf,
-                access_key: AccessKeyView {
-                    nonce: 0,
-                    permission: FullAccess,
-                },
-            },
-        ],
-        signature: ed25519:266jBRjvnaxe4mDyHRGwv3TJesvgRo2umJBqkZU26fRwmhVHciu3tBSLqRZFjEuqLTiwDTrFvfxpJ8Sbd2PqHHhv,
-        hash: `GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank`,
-    },
-    transaction_outcome: ExecutionOutcomeWithIdView {
-        proof: [],
-        block_hash: `AQH6jDqqxpBYj5NSZv3Skg5hUZQRsn16jvDuphCTugSQ`,
-        id: `GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank`,
-        outcome: ExecutionOutcomeView {
-            logs: [],
-            receipt_ids: [
-                `5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh`,
-            ],
-            gas_burnt: 424555062500,
-            tokens_burnt: 42455506250000000000,
-            executor_id: "volodymyr.testnet",
-            status: SuccessReceiptId(5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh),
-        },
-    },
-    receipts_outcome: [
-        ExecutionOutcomeWithIdView {
-            proof: [],
-            block_hash: `DBUpiLVVDBQwSAPU8ZTE8KQnX5skDD1dTsBjJQ8kV24R`,
-            id: `5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh`,
-            outcome: ExecutionOutcomeView {
-                logs: [],
-                receipt_ids: [
-                    `851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU`,
-                ],
-                gas_burnt: 424555062500,
-                tokens_burnt: 42455506250000000000,
-                executor_id: "qweqweqwe.volodymyr.testnet",
-                status: SuccessValue(``),
-            },
-        },
-        ExecutionOutcomeWithIdView {
-            proof: [],
-            block_hash: `BSjrH3WyKnXhD17drR94YfM725Ho59us9N4msXrrgHEw`,
-            id: `851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU`,
-            outcome: ExecutionOutcomeView {
-                logs: [],
-                receipt_ids: [],
-                gas_burnt: 0,
-                tokens_burnt: 0,
-                executor_id: "volodymyr.testnet",
-                status: SuccessValue(``),
-            },
-        },
-    ],
-}
-```
-</details>
-
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6.png" width="836"/>
 </a>
 </details>
