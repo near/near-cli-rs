@@ -1,6 +1,10 @@
 near-cli
 --------
-near-cli – это утилита командной строки для работы с блокчейном Near Protocol. 
+near-cli – это утилита командной строки для работы с блокчейном Near Protocol.
+
+### README.md
+
+* en [English](docs/README.en.md)
 
 ### Оглавление
 
