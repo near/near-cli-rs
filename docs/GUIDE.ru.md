@@ -49,6 +49,7 @@
       * _I want to sign the transaction with keychain_
         
         При выборе этого варианта подписи near-cli самостоятельно найдет ключи доступа в файле *имя_пользователя.json*, расположенного в */Users/user/.near-credentials/default/*.
+        
         Например, */Users/frovolod/.near-credentials/default/volodymyr.testnet.json*.
 
       * _I want to construct the transaction and sign it somewhere else_
