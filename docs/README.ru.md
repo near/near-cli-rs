@@ -56,7 +56,7 @@ near-cli компилируется на Rust 1.50.0 (stable) или новее.
 
 Сборка near-cli:
 
-```
+```txt
 $ git clone https://github.com/FroVolod/near-cli
 $ cd near-cli
 $ cargo build --release

@@ -56,7 +56,7 @@ near-cli compiles with Rust 1.50.0 (stable) or newer. In general, near-cli track
 
 To build near-cli:
 
-```
+```txt
 $ git clone https://github.com/FroVolod/near-cli
 $ cd near-cli
 $ cargo build --release
