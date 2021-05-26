@@ -7,7 +7,16 @@ mod consts;
 type CliResult = color_eyre::eyre::Result<()>;
 
 /// near-cli is a toolbox for interacting with NEAR protocol
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Clap)]
+#[clap(
+    version,
+    author,
+    about,
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands),
+    setting(clap::AppSettings::NextLineHelp)
+)]
 struct CliArgs {
     #[clap(subcommand)]
     top_level_command: Option<self::commands::CliTopLevelCommand>,
