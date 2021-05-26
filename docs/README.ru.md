@@ -2,14 +2,14 @@ near-cli
 --------
 near-cli – это утилита командной строки для работы с блокчейном Near Protocol. 
 
-### Documentation quick links
+### Оглавление
 
-* [Usage](#usage)
-* [User Guide](GUIDE.ru.md)
-* [Installation](#installation)
-* [Building](#building)
+* [Применение](#применение)
+* [Инструкция](GUIDE.ru.md)
+* [Установка](#установка)
+* [Сборка](#сборка)
 
-### Usage
+### Применение
 
 Вцелом новичку трудно сразу разобраться как устроены команды.
 For example, I consider having the following command to do a transfer:
@@ -38,6 +38,6 @@ near-cli transfer near \
 
 
 
-### Installation
+### Установка
 
-### Building
+### Сборка
