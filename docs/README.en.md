@@ -4,7 +4,7 @@ near-cli is a command line utility for working with the Near Protocol blockchain
 
 ### README.md
 
-* ru [Русский](docs/README.ru.md)
+* ru [Русский](README.ru.md)
 
 ### Documentation quick links
 
