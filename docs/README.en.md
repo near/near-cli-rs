@@ -2,18 +2,18 @@ near-cli
 --------
 near-cli is a command line utility for working with the Near Protocol blockchain.
 
-### README.md
+## README.md
 
 * ru [Русский](README.ru.md)
 
-### Documentation quick links
+## Documentation quick links
 
 * [Usage](#usage)
-* [User Guide](GUIDE.en.md)
+* [User Guide](#user-guid)
 * [Installation](#installation)
 * [Building](#building)
 
-### Usage
+## Usage
 
 In general, it is difficult for a beginner to immediately understand how commands work.  
 For example, I consider having the following command to do a transfer:
@@ -26,7 +26,7 @@ near-cli transfer near \
     sign-with-keychain \
     send
 ```
-Это полная команда. Результат ее работы будет такой:
+This is the complete version of the command. The result of this command will be as follows:
 ```txt
 ---  Success:  ---
  FinalExecutionOutcome {
@@ -35,7 +35,7 @@ near-cli transfer near \
 }
 ```
 Typing this or another command manually, you can make a mistake or forget the sequence of the command.  
-It's not a problem. _– help_ will tell you how to build a command correctly.  
+It's not a problem. `--help` will tell you how to build a command correctly.  
 However, using near-cli, you can press _Enter_ anywhere in the command line and the interactive mode of the program will continue to compose the command from the place where you finished entering the necessary parameters.
 
 <details><summary><i>Demonstration of the utility with a partially recruited command</i></summary>
@@ -45,8 +45,15 @@ However, using near-cli, you can press _Enter_ anywhere in the command line and 
 </details>
 
 
+## User Guide
 
-### Installation
+Detailed user guid are available in the file [GUIDE.en.md](GUIDE.en.md).
+
+## Installation
+
+At this stage of the development of the utility, installation of the program is not required.  
+It is enough to [download](https://github.com/FroVolod/near-cli/releases/) the archive file suitable for your operating system installed on the computer and unzip it.  
+The resulting directory contains the executable file _near-cli_, which is accompanied by detailed [user guid](GUIDE.en.md).
 
 ### Building
 
