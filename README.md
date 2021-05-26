@@ -40,3 +40,17 @@ near-cli transfer near \
 ### Installation
 
 ### Building
+
+near-cli is written in Rust, so you'll need to grab a
+[Rust installation](https://www.rust-lang.org/) in order to compile it.
+near-cli compiles with Rust 1.50.0 (stable) or newer. In general, near-cli tracks the latest stable release of the Rust compiler.
+
+To build near-cli:
+
+```
+$ git clone https://github.com/FroVolod/near-cli
+$ cd near-cli
+$ cargo build --release
+$ ./target/release/near-cli --version
+near-cli
+```
