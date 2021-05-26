@@ -1,7 +1,7 @@
 ## User Guide
 
-This guide is intended to give an elementary description of near-cli and an
-overview of its capabilities. This guide assumes that near-cli is
+This guide is intended to give a detailed description of _near-cli_ and an
+overview of its capabilities. This guide assumes that _near-cli_ is
 [installed](README.md#installation)
 and that readers have passing familiarity with using command line tools. This
 also assumes a Unix-like system, although most commands are probably easily
@@ -22,14 +22,14 @@ translatable to any command line shell environment.
 
 #### View properties for an account
 
-Для просмотра сведений об аккаунте в командной строке терминала необходимо ввести:
+To view account information, in the terminal command line type:
 ```txt
 ./near-cli view account-summary \
         network testnet \
         account '26.volodymyr.testnet'
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 AccountView {
@@ -54,7 +54,7 @@ AccessKeyList {
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4.png" width="836"/>
 </a>
@@ -62,7 +62,7 @@ AccessKeyList {
 
 #### View a contract code
 
-  * Для получения файла контракта в командной строке терминала необходимо ввести:
+  * In order to get the contract file, type the following in the terminal command line:
 
     ```txt
     ./near-cli view contract-code \
@@ -71,20 +71,20 @@ AccessKeyList {
             download './volodymyr.testnet.wasm'
     ```
 
-    <details><summary><i>Результат выполнения команды</i></summary>
+    <details><summary><i>The result of this command will be as follows:</i></summary>
     
     ```txt
     The file Some("volodymyr.testnet.wasm") was downloaded successfully
     ```
     </details>
 
-    <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+    <details><summary><i>Demonstration of the command in interactive mode</i></summary>
     <a href="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz?autoplay=1&t=1&speed=2">
         <img src="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz.png" width="836"/>
     </a>
     </details>
 
-  * Для получения хэша контракта в командной строке терминала необходимо ввести:
+  * In order to get the contract hash, type the following in the terminal command line:
 
     ```txt
     ./near-cli view contract-code \
@@ -93,14 +93,14 @@ AccessKeyList {
             hash
     ```
     
-    <details><summary><i>Результат выполнения команды</i></summary>
+    <details><summary><i>The result of this command will be as follows:</i></summary>
 
     ```txt
     Hash of the contract: 6F7TqH3ggf4iKbmJpFg9uJq87HTUohP1rdrDU7tZx9iH
     ```
     </details>
 
-    <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+    <details><summary><i>Demonstration of the command in interactive mode</i></summary>
     <a href="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea?autoplay=1&t=1&speed=2">
         <img src="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea.png" width="836"/>
     </a>
@@ -108,14 +108,14 @@ AccessKeyList {
 
 #### View a contract state
 
-Для просмотра состояния контракта в командной строке терминала необходимо ввести:
+To view the status of the contract, type the following in the terminal command line:
 ```txt
 ./near-cli view contract-state \
         network testnet \
         account 'volodymyr.testnet'
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 Contract state (values):
@@ -133,7 +133,7 @@ Contract state (proof):
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i.png" width="836"/>
 </a>
@@ -141,7 +141,7 @@ Contract state (proof):
 
 #### View a transaction status
 
-Для просмотра статуса желаемой транзакции в командной строке терминала необходимо ввести её хэш:
+To view the status of the desired transaction, type its hash in the terminal command line:
 ```txt
 ./near-cli view transaction \
         network testnet \
@@ -149,7 +149,7 @@ Contract state (proof):
         signer 'volodymyr.testnet'
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 Specify the account that signed the transaction: volodymyr.testnet
@@ -225,7 +225,7 @@ Transactiion status: FinalExecutionOutcome {
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6.png" width="836"/>
 </a>
@@ -234,8 +234,8 @@ Transactiion status: FinalExecutionOutcome {
 
 ### Transfer tokens
 
-Данная команда служит для перевода средств между аккаунтами. Обратите внимание, что количество пересылаемых токенов указывается совместно с размерной единицей (это NEAR либо yoctoNEAR).
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+This command is used to transfer tokens between accounts. Please note that the amount of tokens forwarded is indicated together with the dimensional unit (this is NEAR or yoctoNEAR).
+In order to execute this command, in the terminal command line type:
 ```txt
 ./near-cli transfer near \
         network testnet \
@@ -246,7 +246,7 @@ Transactiion status: FinalExecutionOutcome {
         send
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 ========= SENT =========
@@ -286,7 +286,7 @@ Transactiion status: FinalExecutionOutcome {
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa.png" width="836"/>
 </a>
@@ -297,7 +297,7 @@ Transactiion status: FinalExecutionOutcome {
 
 #### Change a method
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+In order to execute this command, in the terminal command line type:
 ```txt
 ./near-cli execute change-method \
         network testnet \
@@ -310,7 +310,7 @@ Transactiion status: FinalExecutionOutcome {
         send
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 ========= SENT =========
@@ -353,7 +353,7 @@ Transactiion status: FinalExecutionOutcome {
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc.png" width="836"/>
 </a>
@@ -361,7 +361,7 @@ Transactiion status: FinalExecutionOutcome {
 
 #### View a method
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+In order to execute this command, in the terminal command line type:
 ```txt
 ./near-cli execute view-method \
         network mainnet \
@@ -369,7 +369,7 @@ Transactiion status: FinalExecutionOutcome {
         call 'get_accounts' '{"from_index": 0, "limit": 3}'
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 [
@@ -395,7 +395,7 @@ Transactiion status: FinalExecutionOutcome {
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI.png" width="836"/>
 </a>
@@ -406,12 +406,12 @@ Transactiion status: FinalExecutionOutcome {
 
 #### Add a new access key for an account
 
-Выполним команду добавления новой пары ключей доступа аккаунту с такими условиями:
-  * публичный ключ доступа будет введен вручную
-  * ключи будут иметь полный доступ
-  * транзакция будет подписана автоматически (при наличии файла с ключами доступа)
+Let's execute the command to add a new pair of access keys to the account with the following conditions:
+  * the public key will be entered manually
+  * keys will have full access
+  * the transaction will be signed automatically (if there is a file with access keys)
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+In order to execute this command, in the terminal command line type:
 ```txt
 ./near-cli add access-key \
         network testnet \
@@ -422,7 +422,7 @@ Transactiion status: FinalExecutionOutcome {
         send
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 ========= SENT =========
@@ -466,18 +466,18 @@ Transactiion status: FinalExecutionOutcome {
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/2hsXeOrB3Kt13DSTDC5BVcqau?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/2hsXeOrB3Kt13DSTDC5BVcqau.png" width="836"/>
 </a>
 </details>
 
-Изменим наши парамерты для добавления кючей доступа:
-  * ключи будут сгенерированы автоматически
-  * будут иметь функциональный доступ
-  * транзакция будет подписана вручную
+Let's change our parameters to add access keys:
+  * keys will be generated automatically
+  * keys will have functional access
+  * the transaction will be signed with key pair
 
-Для этого введем следующую команду:
+In order to execute this command, in the terminal command line type:
 ```txt
 ./near-cli add access-key \
         network testnet \
@@ -494,7 +494,7 @@ Transactiion status: FinalExecutionOutcome {
 
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 ========= SENT =========
@@ -549,7 +549,7 @@ Transactiion status: FinalExecutionOutcome {
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/s9Z0eRw9fuxTrRDSTvpzcNZGo?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/s9Z0eRw9fuxTrRDSTvpzcNZGo.png" width="836"/>
 </a>
@@ -557,7 +557,7 @@ Transactiion status: FinalExecutionOutcome {
 
 #### Add a new contract code
 
-Для добавления нового контракта в командной строке терминала необходимо ввести:
+In order to add a new contract, in the terminal command line type:
 ```txt
 ./near-cli add contract-code \
         network testnet \
@@ -570,7 +570,7 @@ Transactiion status: FinalExecutionOutcome {
         send
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 ========= SENT =========
@@ -617,7 +617,7 @@ Transactiion status: FinalExecutionOutcome {
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/741GlX4ul4yh5GLEASd9GnYVk?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/741GlX4ul4yh5GLEASd9GnYVk.png" width="836"/>
 </a>
@@ -625,21 +625,21 @@ Transactiion status: FinalExecutionOutcome {
 
 #### Add an implicit-account
 
-Данная команда автоматически генерирует ключи доступа и сохраняет их в файле.
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+This command automatically generates access keys and saves them to a file.
+In order to execute this command, in the terminal command line type:
 ```txt
 ./near-cli add implicit-account \
         generate-keypair
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 The data for the access key is saved in a file /Users/frovolod/.near-credentials/default/cbb8d84ac58503f2a53e07830008531a8480b8dd42db045316cd89c87d2b4862.json
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/Ub5Q13ZEKfzG4I0yKd0zinFjr.png" width="836"/>
 </a>
@@ -647,7 +647,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 
 #### Add a new stake proposal
 
-Сделать ставку можно с помощью этой команды:
+You can place a state using this command:
 ```txt
 ./near-cli add stake-proposal \
         network testnet \
@@ -658,7 +658,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
         send
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 ========= SENT =========
@@ -709,7 +709,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/j9X09oohB30K0jj1DgMjGaqz7?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/j9X09oohB30K0jj1DgMjGaqz7.png" width="836"/>
 </a>
@@ -717,7 +717,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 
 #### Add a new sub-account
 
-Для создания суб-аккаунта в командной строке терминала необходимо ввести:
+In order to create a sub-account, in the terminal command line type:
 ```txt
 ./near-cli add sub-account \
         network testnet \
@@ -730,7 +730,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
         send
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 ========= SENT =========
@@ -782,7 +782,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/jY2eKCQuT8WvdtQMzbCBuWU60?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/jY2eKCQuT8WvdtQMzbCBuWU60.png" width="836"/>
 </a>
@@ -793,7 +793,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 
 #### Delete an access key for this account
 
-Для удаления ключей доступа в командной строке терминала необходимо ввести:
+In order to remove access keys, in the terminal command line type:
 ```txt
 ./near-cli delete access-key \
         network testnet \
@@ -803,7 +803,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
         send
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 ========= SENT =========
@@ -842,7 +842,7 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/WJUEWxlzOR9Qiwujdsf0dhY6s?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/WJUEWxlzOR9Qiwujdsf0dhY6s.png" width="836"/>
 </a>
@@ -850,8 +850,8 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 
 #### Delete this account
 
-Данная команда предназначена для удаления текущего аккаунта. Важно помнить, что все средства удаляемого аккаунта перейдут на счет "_beneficiary_".
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+This command is designed to delete the current account. It is important to remember that all tokens of the deleted account will be transferred to the "_beneficiary_" account.
+In order to execute this command, in the terminal command line type:
 ```txt
 ./near-cli delete account \
         network testnet \
@@ -861,7 +861,7 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
         send
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 ========= SENT =========
@@ -900,7 +900,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 ```
 </details>
 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/Lr0Y0eAuMK2pu5O639i4hpIFr?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/Lr0Y0eAuMK2pu5O639i4hpIFr.png" width="836"/>
 </a>
@@ -908,12 +908,12 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 
 ### Construct a new transaction
 
-Рассмотрим пример, когда необходимо выполнить несколько действий в рамках одной транзакции:
-1. Создать аккаунт
-2. Добавить созданному аккаунту ключи доступа
-3. Осуществить перевод токенов на созданный аккаунт
+Let's consider an example when it is necessary to perform several actions within one transaction:
+1. Create an account
+2. Add access keys to the created account
+3. Transfer tokens to the created account
 
-Для этого воспользуемся конструктором транзакции:
+To do this, we will use the transaction constructor:
 
 <details><summary>Construct a new transaction (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
@@ -926,8 +926,8 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 
 #### Generate a key pair
 
-Данная утилита генерирует случайным образом ключи доступа. 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+This utility generates access keys at random. 
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/vwlWvmyNnxaGOFMeHb5wkwe2t?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/vwlWvmyNnxaGOFMeHb5wkwe2t.png" width="836"/>
 </a>
@@ -935,8 +935,8 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 
 #### Sign a transaction with secret key
 
-Данныя утилита позволяет подписать своими ключами ранее сформированную и неподписанную транзакцию.
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+This utility allows you to sign a previously formed and unsigned transaction with your keys.
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/sjS78AfPfwltNge2Yb9uRCxSX?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/sjS78AfPfwltNge2Yb9uRCxSX.png" width="836"/>
 </a>
@@ -944,8 +944,8 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 
 #### Combine unsigned transaction with signature
 
-Данныя утилита позволяет подписать своей подписью (signature) ранее сформированную и неподписанную транзакцию.
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+This utility allows you to sign a previously generated and unsigned transaction with your signature.
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/HfsutLZKnWS8w1PnY1kGIUYid?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/HfsutLZKnWS8w1PnY1kGIUYid.png" width="836"/>
 </a>
