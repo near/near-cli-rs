@@ -56,7 +56,6 @@
         Этот вариант предполагает подписание созданной транзакции сторонним программным продуктом.
 
 
-
 ### Группы команд
 
 * [View account, contract code, contract state, transaction](#view-account-contract-code-contract-state-transaction)
@@ -66,6 +65,7 @@
 * [Delete access key, account](#delete-access-key-account)
 * [Construct a new transaction](#construct-a-new-transaction)
 * [Helpers](#helpers)
+
 
 ### View account, contract code, contract state, transaction
 
@@ -280,6 +280,7 @@ Transactiion status: FinalExecutionOutcome {
 </a>
 </details>
 
+
 ### Transfer tokens
 
 Данная команда служит для перевода средств между аккаунтами. Обратите внимание, что количество пересылаемых токенов указывается совместно с размерной единицей (это NEAR либо yoctoNEAR).
@@ -339,6 +340,7 @@ Transactiion status: FinalExecutionOutcome {
     <img src="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa.png" width="836"/>
 </a>
 </details>
+
 
 ### Execute function (contract method)
 
@@ -447,6 +449,7 @@ Transactiion status: FinalExecutionOutcome {
     <img src="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI.png" width="836"/>
 </a>
 </details>
+
 
 ### Add access key, contract code, stake proposal, sub-account, implicit-account
 
@@ -834,6 +837,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 </a>
 </details>
 
+
 ### Delete access key, account
 
 #### Delete an access key for this account
@@ -950,6 +954,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
     <img src="https://asciinema.org/a/Lr0Y0eAuMK2pu5O639i4hpIFr.png" width="836"/>
 </a>
 
+
 ### Construct a new transaction
 
 Рассмотрим пример, когда необходимо выполнить несколько действий в рамках одной транзакции:
@@ -964,6 +969,7 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
     <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
 </a>
 </details>
+
 
 ### Helpers
 
