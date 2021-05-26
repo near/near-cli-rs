@@ -49,3 +49,17 @@ near-cli – это утилита командной строки для раб
 ### Установка
 
 ### Сборка
+
+near-cli написан на Rust. Поэтому необходимо
+[установить Rust](https://www.rust-lang.org/) для компиляции программы.
+near-cli компилируется на Rust 1.50.0 (stable) или новее.
+
+Сборка near-cli:
+
+```
+$ git clone https://github.com/FroVolod/near-cli
+$ cd near-cli
+$ cargo build --release
+$ ./target/release/near-cli --version
+near-cli 0.1.0
+```

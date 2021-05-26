@@ -9,7 +9,7 @@ near-cli is a command line utility for working with the Near Protocol blockchain
 ### Documentation quick links
 
 * [Usage](#usage)
-* [User Guide](GUIDE.md)
+* [User Guide](GUIDE.en.md)
 * [Installation](#installation)
 * [Building](#building)
 
@@ -61,5 +61,5 @@ $ git clone https://github.com/FroVolod/near-cli
 $ cd near-cli
 $ cargo build --release
 $ ./target/release/near-cli --version
-near-cli
+near-cli 0.1.0
 ```
