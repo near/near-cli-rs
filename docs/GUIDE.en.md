@@ -922,31 +922,4 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 </details>
 
 
-### Helpers
 
-#### Generate a key pair
-
-Данная утилита генерирует случайным образом ключи доступа. 
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/vwlWvmyNnxaGOFMeHb5wkwe2t?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/vwlWvmyNnxaGOFMeHb5wkwe2t.png" width="836"/>
-</a>
-</details>
-
-#### Sign a transaction with secret key
-
-Данныя утилита позволяет подписать своими ключами ранее сформированную и неподписанную транзакцию.
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/sjS78AfPfwltNge2Yb9uRCxSX?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/sjS78AfPfwltNge2Yb9uRCxSX.png" width="836"/>
-</a>
-</details>
-
-#### Combine unsigned transaction with signature
-
-Данныя утилита позволяет подписать своей подписью (signature) ранее сформированную и неподписанную транзакцию.
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/HfsutLZKnWS8w1PnY1kGIUYid?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/HfsutLZKnWS8w1PnY1kGIUYid.png" width="836"/>
-</a>
-</details>
