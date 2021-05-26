@@ -35,7 +35,7 @@ This is the complete version of the command. The result of this command will be 
 }
 ```
 Typing this or another command manually, you can make a mistake or forget the sequence of the command.  
-It's not a problem. `--help` will tell you how to build a command correctly.  
+It's not a problem. `--help` will tell you how to build a command properly.  
 However, using near-cli, you can press _Enter_ anywhere in the command line and the interactive mode of the program will continue to compose the command from the place where you finished entering the necessary parameters.
 
 <details><summary><i>Demonstration of the utility with a partially recruited command</i></summary>
@@ -47,13 +47,13 @@ However, using near-cli, you can press _Enter_ anywhere in the command line and 
 
 ## User Guide
 
-Detailed user guid are available in the file [GUIDE.en.md](GUIDE.en.md).
+Detailed user guide is available in the file [GUIDE.en.md](GUIDE.en.md).
 
 ## Installation
 
 At this stage of the development of the utility, installation of the program is not required.  
 It is enough to [download](https://github.com/FroVolod/near-cli/releases/) the archive file suitable for your operating system installed on the computer and unzip it.  
-The resulting directory contains the executable file _near-cli_, which is accompanied by detailed [user guid](GUIDE.en.md).
+The resulting directory contains the executable file _near-cli_, which is accompanied by detailed [user guide](GUIDE.en.md).
 
 ### Building
 
