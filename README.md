@@ -21,7 +21,7 @@ near-cli transfer near \
     sign-with-keychain \
     send
 ```
-Это полная команда. Результат ее работы будет такой:
+This is the complete version of the command. The result of this command will be as follows:
 ```txt
 ---  Success:  ---
  FinalExecutionOutcome {
