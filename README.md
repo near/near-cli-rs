@@ -33,7 +33,11 @@ Typing this or another command manually, you can make a mistake or forget the se
 It's not a problem. _– help_ will tell you how to build a command correctly.  
 However, using near-cli, you can press _Enter_ anywhere in the command line and the interactive mode of the program will continue to compose the command from the place where you finished entering the necessary parameters.
 
-
+<details><summary><i>Demonstration of the utility with a partially recruited command</i></summary>
+<a href="https://asciinema.org/a/tdNu6qoDKUzFH6ZCsfADHoqOP?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/tdNu6qoDKUzFH6ZCsfADHoqOP.png" width="836"/>
+</a>
+</details>
 
 
 
