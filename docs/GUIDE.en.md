@@ -9,13 +9,13 @@ translatable to any command line shell environment.
 
 ### Actions
 
-* [Add access key, contract code, stake proposal, sub-account, implicit-account](#add)
-* [Construct a new transaction](#construct-transaction)
-* [Delete access key, account](#delete)
-* [Execute function (contract method)](#execute)
-* [Transfer tokens](#transfer)
+* [View account, contract code, contract state, transaction](#view-account-contract-code-contract-state-transaction)
+* [Transfer tokens](#transfer-tokens)
+* [Execute function (contract method)](#execute-function-contract-method)
+* [Add access key, contract code, stake proposal, sub-account, implicit-account](#add-access-key-contract-code-stake-proposal-sub-account-implicit-account)
+* [Delete access key, account](#delete-access-key-account)
+* [Construct a new transaction](#construct-a-new-transaction)
 * [Helpers](#helpers)
-* [View account, contract code, contract state, transaction](#view)
 
 
 ### Add access key, contract code, stake proposal, sub-account, implicit-account
