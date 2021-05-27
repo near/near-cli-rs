@@ -2,9 +2,8 @@ name: ci
 on:
   pull_request:
     branches: [master]
-  # push:
-    # branches:
-    # - ci-1
+  push:
+    branches: [master]
   # schedule:
   # - cron: '00 01 * * *'
 jobs:
@@ -118,38 +117,16 @@ jobs:
         echo "cargo command is: ${{ env.CARGO }}"
         echo "target flag is: ${{ env.TARGET_FLAGS }}"
     
-    - name: Get target list
-      run: rustup target list
-    
-
     - name: Build near-cli and all crates
       run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }}
 
-    # - name: View contract code for '26.volodymyr.testnet'
-    #   run: |
-    #     ./target/debug/near-cli view contract-code network testnet contract '26.volodymyr.testnet' hash
+    - name: View contract code for 'volodymyr.testnet'
+      run: |
+        ./target/debug/near-cli view contract-code network testnet contract 'volodymyr.testnet' hash
 
-    # - name: Build ripgrep with PCRE2
-    #   run: ${{ env.CARGO }} build --verbose --all --features pcre2 ${{ env.TARGET_FLAGS }}
-
-    # This is useful for debugging problems when the expected build artifacts
-    # (like shell completions and man pages) aren't generated.
-    # - name: Show build.rs stderr
-    #   shell: bash
-    #   run: |
-    #     set +x
-    #     stderr="$(find "${{ env.TARGET_DIR }}/debug" -name stderr -print0 | xargs -0 ls -t | head -n1)"
-    #     if [ -s "$stderr" ]; then
-    #       echo "===== $stderr ===== "
-    #       cat "$stderr"
-    #       echo "====="
-    #     fi
-    #     set -x
-
-    # - name: Run tests with PCRE2 (sans cross)
-    #   if: matrix.target == ''
-    #   run: ${{ env.CARGO }} test --verbose --all --features pcre2 ${{ env.TARGET_FLAGS }}
-
+    - name: Run tests (sans cross)
+      if: matrix.target == ''
+      run: ${{ env.CARGO }} test --verbose --all
     # - name: Run tests without PCRE2 (with cross)
     #   # These tests should actually work, but they almost double the runtime.
     #   # Every integration test spins up qemu to run 'rg', and when PCRE2 is
@@ -158,34 +135,6 @@ jobs:
     #   if: matrix.target != ''
     #   run: ${{ env.CARGO }} test --verbose --all ${{ env.TARGET_FLAGS }}
 
-    # - name: Test for existence of build artifacts (Windows)
-    #   if: matrix.os == 'windows-2019'
-    #   shell: bash
-    #   run: |
-    #     outdir="$(.github/ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
-    #     ls "$outdir/_rg.ps1" && file "$outdir/_rg.ps1"
-
-    # - name: Test for existence of build artifacts (Unix)
-    #   if: matrix.os != 'windows-2019'
-    #   shell: bash
-    #   run: |
-    #     outdir="$(.github/ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
-    #     # TODO: Check for the man page generation here. For whatever reason,
-    #     # it seems to be intermittently failing in CI. No idea why.
-    #     # for f in rg.bash rg.fish rg.1; do
-    #     for f in rg.bash rg.fish; do
-    #       # We could use file -E here, but it isn't supported on macOS.
-    #       ls "$outdir/$f" && file "$outdir/$f"
-    #     done
-
-    # - name: Test zsh shell completions (Unix, sans cross)
-    #   # We could test this when using Cross, but we'd have to execute the
-    #   # 'rg' binary (done in test-complete) with qemu, which is a pain and
-    #   # doesn't really gain us much. If shell completion works in one place,
-    #   # it probably works everywhere.
-    #   if: matrix.target == '' && matrix.os != 'windows-2019'
-    #   shell: bash
-    #   run: ci/test-complete
 
   rustfmt:
     name: rustfmt

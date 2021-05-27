@@ -3,10 +3,9 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [master]
-  # push:    
+  push:    
     #Enable when testing release infrastructure on a branch.
-    # branches:
-    # - ci-1
+    branches: [master]
 jobs:
   create-release:
     name: create-release
@@ -21,7 +20,7 @@ jobs:
       - name: Get the release version from the tag
         # if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.32" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=0.1.0" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -158,9 +157,6 @@ jobs:
     - name: Build release binary
       run: ${{ env.CARGO }} build --verbose --release --target-dir ${{ env.TARGET_DIR }}
 
-    - name: Get dir ls
-      run: ls target
-    
     - name: Strip release binary (linux and macos)
       if: matrix.build == 'linux' || matrix.build == 'macos'
       run: strip "target/${{ matrix.target }}/release/near-cli"
