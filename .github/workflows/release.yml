@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         # if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.26" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=v0.0.27" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -54,7 +54,7 @@ jobs:
       # systems.
       CARGO: cargo
       # When CARGO is set to CROSS, this is set to `--target matrix.target`.
-      TARGET_FLAGS: 
+      TARGET_FLAGS: --target matrix.target
       # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
       TARGET_DIR: ./target
       # Emit backtraces on panics.
@@ -177,7 +177,7 @@ jobs:
     - name: Build archive
       shell: bash
       run: |
-        outdir="$(.github/ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
+        # outdir="$(.github/ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
         staging="near-cli-${{ env.RELEASE_VERSION }}-${{ matrix.target }}"
         mkdir -p "$staging"/{complete,doc}
 
