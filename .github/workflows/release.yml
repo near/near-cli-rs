@@ -3,8 +3,8 @@ on:
   workflow_dispatch:
   push:    
     #Enable when testing release infrastructure on a branch.
-    # branches:
-    # - ci-1
+    branches:
+    - ci-1
     # tags:
     # - '[0-9]+.[0-9]+.[0-9]+'
 jobs:
@@ -54,7 +54,7 @@ jobs:
       # systems.
       CARGO: cargo
       # When CARGO is set to CROSS, this is set to `--target matrix.target`.
-      TARGET_FLAGS: --target matrix.target
+      TARGET_FLAGS: 
       # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
       TARGET_DIR: ./target
       # Emit backtraces on panics.
@@ -63,20 +63,20 @@ jobs:
       PCRE2_SYS_STATIC: 1
     strategy:
       matrix:
-        build: [linux] #[linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
+        build: [linux, macos] #[linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
         include:
         - build: linux
           os: ubuntu-18.04
           rust: 1.50.0
-          target: x86_64-unknown-linux-musl
+          target: x86_64-unknown-linux-gnu
         # - build: linux-arm
         #   os: ubuntu-18.04
         #   rust: nightly
         #   target: arm-unknown-linux-gnueabihf
-        # - build: macos
-        #   os: macos-latest
-        #   rust: nightly
-        #   target: x86_64-apple-darwin
+        - build: macos
+          os: macos-latest
+          rust: nightly
+          target: x86_64-apple-darwin
         # - build: win-msvc
         #   os: windows-2019
         #   rust: nightly
@@ -128,9 +128,9 @@ jobs:
     - name: Don't Use Cross
       # if: matrix.os != 'windows-2019'
       run: |
-        # cargo install cross
+        #  cargo install cross
         #  echo "CARGO=cross" >> $GITHUB_ENV
-        echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+        #  echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
         echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
 
     - name: Show command used for Cargo
@@ -182,7 +182,9 @@ jobs:
         mkdir -p "$staging"/{complete,doc}
 
         # cp {README.md,COPYING,UNLICENSE,LICENSE-MIT} "$staging/"
+        cp README.md "$staging/"
         # cp {CHANGELOG.md,FAQ.md,GUIDE.md} "$staging/doc/"
+        cp "$doc" "$staging/doc/"
         # cp "$outdir"/{near-cli.bash,near-cli.fish,_near-cli.ps1} "$staging/complete/"
         # cp complete/_near-cli "$staging/complete/"
 
