@@ -1,12 +1,12 @@
 name: release
 on:
   workflow_dispatch:
-  # pull_request:
-  #   branches: [master]
-  push:    
+  pull_request:
+    branches: [master]
+  # push:    
     #Enable when testing release infrastructure on a branch.
-    branches:
-    - ci-1
+    # branches:
+    # - ci-1
 jobs:
   create-release:
     name: create-release
@@ -21,7 +21,7 @@ jobs:
       - name: Get the release version from the tag
         # if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=v0.0.31" >> $GITHUB_ENV
+          echo "NEAR_CLI_VERSION=v0.0.32" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
 
       - name: Create GitHub release
@@ -180,20 +180,14 @@ jobs:
         staging="near-cli-${{ env.RELEASE_VERSION }}-${{ matrix.target }}"
         mkdir -p "$staging"/"docs"
 
-        # cp {README.md,COPYING,UNLICENSE,LICENSE-MIT} "$staging/"
         cp README.md "$staging/"
-        # cp {CHANGELOG.md,FAQ.md,GUIDE.md} "$staging/doc/"
         cp -a "docs"/* "$staging/docs/"
-        # cp "$outdir"/{near-cli.bash,near-cli.fish,_near-cli.ps1} "$staging/complete/"
-        # cp complete/_near-cli "$staging/complete/"
 
         if [ "${{ matrix.os }}" = "windows-2019" ]; then
           cp "target/${{ matrix.target }}/release/near-cli.exe" "$staging/"
           7z a "$staging.zip" "$staging"
           echo "ASSET=$staging.zip" >> $GITHUB_ENV
         else
-          # The man page is only generated on Unix systems. ¯\_(ツ)_/¯
-          # cp "$outdir"/near-cli.1 "$staging/doc/"
           cp "target/${{ matrix.target }}/release/near-cli" "$staging/"
           tar czf "$staging.tar.gz" "$staging"
           echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
