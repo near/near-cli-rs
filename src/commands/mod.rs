@@ -34,23 +34,23 @@ pub enum CliTopLevelCommand {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
     #[strum_discriminants(strum(
-        message = "Add access key, contract code, stake proposal, sub-account, implicit-account"
-    ))]
-    Add(self::add_command::AddAction),
-    #[strum_discriminants(strum(message = "Construct a new transaction"))]
-    ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "Delete access key, account"))]
-    Delete(self::delete_command::DeleteAction),
-    #[strum_discriminants(strum(message = "Execute function (contract method)"))]
-    Execute(self::execute_command::OptionMethod),
-    #[strum_discriminants(strum(message = "Transfer tokens"))]
-    Transfer(self::transfer_command::Currency),
-    #[strum_discriminants(strum(message = "Helpers"))]
-    Utils(self::utils_command::Utils),
-    #[strum_discriminants(strum(
         message = "View account, contract code, contract state, transaction"
     ))]
     View(self::view_command::ViewQueryRequest),
+    #[strum_discriminants(strum(message = "Transfer tokens"))]
+    Transfer(self::transfer_command::Currency),
+    #[strum_discriminants(strum(message = "Execute function (contract method)"))]
+    Execute(self::execute_command::OptionMethod),
+    #[strum_discriminants(strum(
+        message = "Add access key, contract code, stake proposal, sub-account, implicit-account"
+    ))]
+    Add(self::add_command::AddAction),
+    #[strum_discriminants(strum(message = "Delete access key, account"))]
+    Delete(self::delete_command::DeleteAction),
+    #[strum_discriminants(strum(message = "Construct a new transaction"))]
+    ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "Helpers"))]
+    Utils(self::utils_command::Utils),
 }
 
 impl From<CliTopLevelCommand> for TopLevelCommand {
