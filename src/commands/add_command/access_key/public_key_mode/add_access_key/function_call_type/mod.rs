@@ -28,12 +28,7 @@ pub struct FunctionCallType {
 impl From<CliFunctionCallType> for FunctionCallType {
     fn from(item: CliFunctionCallType) -> Self {
         let allowance: Option<near_primitives::types::Balance> = match item.allowance {
-            Some(cli_allowance) => {
-                let allowance = match cli_allowance {
-                    crate::common::NearBalance { inner: num } => num,
-                };
-                Some(allowance)
-            }
+            Some(cli_allowance) => Some(cli_allowance.to_yoctonear()),
             None => FunctionCallType::input_allowance(),
         };
         let receiver_id: near_primitives::types::AccountId = match item.receiver_id {
@@ -120,10 +115,7 @@ impl FunctionCallType {
                     .with_prompt("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees.")
                     .interact_text()
                     .unwrap();
-                let allowance = match allowance_near_balance {
-                    crate::common::NearBalance { inner: num } => num,
-                };
-                Some(allowance)
+                Some(allowance_near_balance.to_yoctonear())
             }
             Some(1) => None,
             _ => unreachable!("Error"),

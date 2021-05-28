@@ -43,30 +43,24 @@ impl TransferNEARTokensAction {
     #[async_recursion(?Send)]
     pub async fn process(
         self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+        mut prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        let amount = match self.amount {
-            crate::common::NearBalance { inner: num } => num,
-        };
         let action = near_primitives::transaction::Action::Transfer(
-            near_primitives::transaction::TransferAction { deposit: amount },
+            near_primitives::transaction::TransferAction {
+                deposit: self.amount.to_yoctonear(),
+            },
         );
-        let mut actions = prepopulated_unsigned_transaction.actions.clone();
-        actions.push(action);
-        let unsigned_transaction = near_primitives::transaction::Transaction {
-            actions,
-            ..prepopulated_unsigned_transaction
-        };
+        prepopulated_unsigned_transaction.actions.push(action);
         match *self.next_action {
             super::NextAction::AddAction(select_action) => {
                 select_action
-                    .process(unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
             super::NextAction::Skip(skip_action) => {
                 skip_action
-                    .process(unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
         }
