@@ -88,11 +88,10 @@ impl TransferNEARTokensAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        let amount = match self.amount {
-            crate::common::NearBalance { inner: num } => num,
-        };
         let action = near_primitives::transaction::Action::Transfer(
-            near_primitives::transaction::TransferAction { deposit: amount },
+            near_primitives::transaction::TransferAction {
+                deposit: self.amount.to_yoctonear(),
+            },
         );
         let mut actions = prepopulated_unsigned_transaction.actions.clone();
         actions.push(action);

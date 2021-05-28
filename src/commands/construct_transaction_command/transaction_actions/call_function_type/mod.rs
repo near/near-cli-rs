@@ -42,9 +42,7 @@ impl From<CliCallFunctionAction> for CallFunctionAction {
             None => CallFunctionAction::input_gas(),
         };
         let deposit: near_primitives::types::Balance = match item.deposit {
-            Some(cli_deposit) => match cli_deposit {
-                crate::common::NearBalance { inner: num } => num,
-            },
+            Some(cli_deposit) => cli_deposit.to_yoctonear(),
             None => CallFunctionAction::input_deposit(),
         };
         let skip_next_action: super::NextAction = match item.next_action {
@@ -105,12 +103,10 @@ impl CallFunctionAction {
             .with_prompt(
                 "Enter a deposit for function (example: 10NEAR or 0.5near or 10000yoctonear).",
             )
-            .with_initial_text("0 Near")
+            .with_initial_text("0 NEAR")
             .interact_text()
             .unwrap();
-        match deposit {
-            crate::common::NearBalance { inner: num } => num,
-        }
+        deposit.to_yoctonear()
     }
 
     #[async_recursion(?Send)]

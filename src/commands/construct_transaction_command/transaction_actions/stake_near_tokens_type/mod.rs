@@ -57,33 +57,25 @@ impl StakeNEARTokensAction {
     #[async_recursion(?Send)]
     pub async fn process(
         self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+        mut prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        let stake = match self.stake {
-            crate::common::NearBalance { inner: num } => num,
-        };
         let action = near_primitives::transaction::Action::Stake(
             near_primitives::transaction::StakeAction {
-                stake,
+                stake: self.stake.to_yoctonear(),
                 public_key: self.public_key.clone(),
             },
         );
-        let mut actions = prepopulated_unsigned_transaction.actions.clone();
-        actions.push(action);
-        let unsigned_transaction = near_primitives::transaction::Transaction {
-            actions,
-            ..prepopulated_unsigned_transaction
-        };
+        prepopulated_unsigned_transaction.actions.push(action);
         match *self.next_action {
             super::NextAction::AddAction(select_action) => {
                 select_action
-                    .process(unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
             super::NextAction::Skip(skip_action) => {
                 skip_action
-                    .process(unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, selected_server_url)
                     .await
             }
         }

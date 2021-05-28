@@ -1,5 +1,6 @@
-use near_primitives::borsh::BorshDeserialize;
 use std::convert::TryInto;
+
+use near_primitives::borsh::BorshDeserialize;
 
 #[derive(
     Debug,
@@ -90,14 +91,41 @@ impl std::fmt::Display for AvailableRpcServerUrl {
     }
 }
 
+const ONE_NEAR: u128 = 10u128.pow(24);
+
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct NearBalance {
-    pub inner: u128,
+    yoctonear_amount: u128,
+}
+
+impl NearBalance {
+    pub fn from_yoctonear(yoctonear_amount: u128) -> Self {
+        Self { yoctonear_amount }
+    }
+
+    pub fn to_yoctonear(&self) -> u128 {
+        self.yoctonear_amount
+    }
 }
 
 impl std::fmt::Display for NearBalance {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} NEAR", self.inner / 10u128.pow(24))
+        if self.yoctonear_amount == 0 {
+            write!(f, "0 NEAR")
+        } else if self.yoctonear_amount < ONE_NEAR / 1_000 {
+            write!(
+                f,
+                "less than 0.001 NEAR ({} yoctoNEAR)",
+                self.yoctonear_amount
+            )
+        } else {
+            write!(
+                f,
+                "{}.{:0>3} NEAR",
+                self.yoctonear_amount / ONE_NEAR,
+                self.yoctonear_amount / (ONE_NEAR / 1_000) % 1_000
+            )
+        }
     }
 }
 
@@ -106,7 +134,7 @@ impl std::str::FromStr for NearBalance {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
         let currency = s.trim().trim_start_matches(&num).trim().to_uppercase();
-        let number = match currency.as_str() {
+        let yoctonear_amount = match currency.as_str() {
             "N" | "NEAR" => {
                 let res_split: Vec<&str> = num.split('.').collect();
                 match res_split.len() {
@@ -145,7 +173,7 @@ impl std::str::FromStr for NearBalance {
                 .map_err(|err| format!("Near Balance: {}", err))?,
             _ => return Err("Near Balance: incorrect currency value entered".to_string()),
         };
-        Ok(NearBalance { inner: number })
+        Ok(NearBalance { yoctonear_amount })
     }
 }
 

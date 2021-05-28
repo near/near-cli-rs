@@ -85,14 +85,11 @@ impl TransferNEARTokensAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         selected_server_url: Option<url::Url>,
     ) -> crate::CliResult {
-        let stake = match self.amount {
-            crate::common::NearBalance { inner: num } => num,
-        };
         self.sign_transactions
             .process(
                 prepopulated_unsigned_transaction,
                 selected_server_url,
-                stake,
+                self.amount.to_yoctonear(),
             )
             .await
     }
