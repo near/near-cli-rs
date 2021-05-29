@@ -246,13 +246,13 @@ mod tests {
         assert_eq!(
             NearBalance::from_str("10 near").unwrap(),
             NearBalance {
-                inner: 10000000000000000000000000
+                yoctonear_amount: 10000000000000000000000000
             }
         ); // 26 number
         assert_eq!(
             NearBalance::from_str("10.055NEAR").unwrap(),
             NearBalance {
-                inner: 10055000000000000000000000
+                yoctonear_amount: 10055000000000000000000000
             }
         ); // 26 number
     }
@@ -261,13 +261,13 @@ mod tests {
         assert_eq!(
             NearBalance::from_str("10 n").unwrap(),
             NearBalance {
-                inner: 10000000000000000000000000
+                yoctonear_amount: 10000000000000000000000000
             }
         ); // 26 number
         assert_eq!(
             NearBalance::from_str("10N ").unwrap(),
             NearBalance {
-                inner: 10000000000000000000000000
+                yoctonear_amount: 10000000000000000000000000
             }
         ); // 26 number
     }
@@ -276,7 +276,7 @@ mod tests {
         assert_eq!(
             NearBalance::from_str("0.000001 near").unwrap(),
             NearBalance {
-                inner: 1000000000000000000
+                yoctonear_amount: 1000000000000000000
             }
         ); // 18 number
     }
@@ -292,44 +292,44 @@ mod tests {
     fn near_balance_from_str_currency_ynear() {
         assert_eq!(
             NearBalance::from_str("100 ynear").unwrap(),
-            NearBalance { inner: 100 }
+            NearBalance { yoctonear_amount: 100 }
         );
         assert_eq!(
             NearBalance::from_str("100YNEAR ").unwrap(),
-            NearBalance { inner: 100 }
+            NearBalance { yoctonear_amount: 100 }
         );
     }
     #[test]
     fn near_balance_from_str_currency_yn() {
         assert_eq!(
             NearBalance::from_str("9000 YN  ").unwrap(),
-            NearBalance { inner: 9000 }
+            NearBalance { yoctonear_amount: 9000 }
         );
         assert_eq!(
             NearBalance::from_str("0 yn").unwrap(),
-            NearBalance { inner: 0 }
+            NearBalance { yoctonear_amount: 0 }
         );
     }
     #[test]
     fn near_balance_from_str_currency_yoctonear() {
         assert_eq!(
             NearBalance::from_str("111YOCTONEAR").unwrap(),
-            NearBalance { inner: 111 }
+            NearBalance { yoctonear_amount: 111 }
         );
         assert_eq!(
             NearBalance::from_str("333 yoctonear").unwrap(),
-            NearBalance { inner: 333 }
+            NearBalance { yoctonear_amount: 333 }
         );
     }
     #[test]
     fn near_balance_from_str_currency_yocton() {
         assert_eq!(
             NearBalance::from_str("10YOCTON").unwrap(),
-            NearBalance { inner: 10 }
+            NearBalance { yoctonear_amount: 10 }
         );
         assert_eq!(
             NearBalance::from_str("10 yocton      ").unwrap(),
-            NearBalance { inner: 10 }
+            NearBalance { yoctonear_amount: 10 }
         );
     }
     #[test]
