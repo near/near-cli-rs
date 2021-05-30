@@ -292,44 +292,60 @@ mod tests {
     fn near_balance_from_str_currency_ynear() {
         assert_eq!(
             NearBalance::from_str("100 ynear").unwrap(),
-            NearBalance { yoctonear_amount: 100 }
+            NearBalance {
+                yoctonear_amount: 100
+            }
         );
         assert_eq!(
             NearBalance::from_str("100YNEAR ").unwrap(),
-            NearBalance { yoctonear_amount: 100 }
+            NearBalance {
+                yoctonear_amount: 100
+            }
         );
     }
     #[test]
     fn near_balance_from_str_currency_yn() {
         assert_eq!(
             NearBalance::from_str("9000 YN  ").unwrap(),
-            NearBalance { yoctonear_amount: 9000 }
+            NearBalance {
+                yoctonear_amount: 9000
+            }
         );
         assert_eq!(
             NearBalance::from_str("0 yn").unwrap(),
-            NearBalance { yoctonear_amount: 0 }
+            NearBalance {
+                yoctonear_amount: 0
+            }
         );
     }
     #[test]
     fn near_balance_from_str_currency_yoctonear() {
         assert_eq!(
             NearBalance::from_str("111YOCTONEAR").unwrap(),
-            NearBalance { yoctonear_amount: 111 }
+            NearBalance {
+                yoctonear_amount: 111
+            }
         );
         assert_eq!(
             NearBalance::from_str("333 yoctonear").unwrap(),
-            NearBalance { yoctonear_amount: 333 }
+            NearBalance {
+                yoctonear_amount: 333
+            }
         );
     }
     #[test]
     fn near_balance_from_str_currency_yocton() {
         assert_eq!(
             NearBalance::from_str("10YOCTON").unwrap(),
-            NearBalance { yoctonear_amount: 10 }
+            NearBalance {
+                yoctonear_amount: 10
+            }
         );
         assert_eq!(
             NearBalance::from_str("10 yocton      ").unwrap(),
-            NearBalance { yoctonear_amount: 10 }
+            NearBalance {
+                yoctonear_amount: 10
+            }
         );
     }
     #[test]
