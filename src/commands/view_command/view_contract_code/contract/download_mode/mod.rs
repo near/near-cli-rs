@@ -64,7 +64,10 @@ impl DownloadMode {
                     .await
             }
             DownloadMode::Hash => {
-                let contract_hash = self::download::ContractFile { file_path: None };
+                let contract_hash = self::download::ContractFile {
+                    file_path: None,
+                    selected_block_id: super::super::block_id::BlockId::choose_block_id(),
+                };
                 contract_hash
                     .process(contract_id, selected_server_url)
                     .await

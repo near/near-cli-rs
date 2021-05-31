@@ -1,15 +1,26 @@
 use dialoguer::Input;
-use std::io::Write;
 
 // download contract file
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliContractFile {
     file_path: Option<std::path::PathBuf>,
+    #[clap(subcommand)]
+    selected_block_id: Option<super::super::super::block_id::CliBlockId>,
 }
 
 #[derive(Debug)]
 pub struct ContractFile {
     pub file_path: Option<std::path::PathBuf>,
+    pub selected_block_id: super::super::super::block_id::BlockId,
+}
+
+impl Default for ContractFile {
+    fn default() -> Self {
+        Self {
+            file_path: None,
+            selected_block_id: super::super::super::block_id::BlockId::AtFinalBlock,
+        }
+    }
 }
 
 impl ContractFile {
@@ -18,7 +29,15 @@ impl ContractFile {
             Some(cli_file_path) => Some(cli_file_path),
             None => ContractFile::input_file_path(contract_id),
         };
-        ContractFile { file_path }
+        let selected_block_id: super::super::super::block_id::BlockId = match item.selected_block_id
+        {
+            Some(cli_block_id) => cli_block_id.into(),
+            None => super::super::super::block_id::BlockId::choose_block_id(),
+        };
+        ContractFile {
+            file_path,
+            selected_block_id,
+        }
     }
 }
 
@@ -33,57 +52,13 @@ impl ContractFile {
         Some(input_file_path.into())
     }
 
-    fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
-        near_jsonrpc_client::new_client(&selected_server_url)
-    }
-
     pub async fn process(
         self,
         contract_id: String,
         selected_server_url: url::Url,
     ) -> crate::CliResult {
-        let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
-            .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewCode {
-                    account_id: contract_id,
-                },
-            })
+        self.selected_block_id
+            .process(contract_id, selected_server_url, self.file_path)
             .await
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to fetch query for view contract: {:?}",
-                    err
-                ))
-            })?;
-        let call_access_view =
-            if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-                query_view_method_response.kind
-            {
-                result
-            } else {
-                return Err(color_eyre::Report::msg(format!("Error call result")));
-            };
-        match &self.file_path {
-            Some(file_path) => {
-                std::fs::File::create(file_path)
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!("Failed to create file: {:?}", err))
-                    })?
-                    .write(&call_access_view.code)
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
-                    })?;
-                println!(
-                    "\nThe file {:?} was downloaded successfully",
-                    self.file_path
-                );
-            }
-            None => {
-                println!("\nHash of the contract: {}", &call_access_view.hash)
-            }
-        }
-        Ok(())
     }
 }
