@@ -17,11 +17,11 @@ pub enum CliBlockId {
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum BlockId {
-    #[strum_discriminants(strum(message = "View this contract at final block"))]
+    #[strum_discriminants(strum(message = "View state this contract at final block"))]
     AtFinalBlock,
-    #[strum_discriminants(strum(message = "View this contract at block heigt"))]
+    #[strum_discriminants(strum(message = "View state this contract at block heigt"))]
     AtBlockHeight(self::block_id_height::BlockIdHeight),
-    #[strum_discriminants(strum(message = "View this contract at block hash"))]
+    #[strum_discriminants(strum(message = "View state this contract at block hash"))]
     AtBlockHash(self::block_id_hash::BlockIdHash),
 }
 
