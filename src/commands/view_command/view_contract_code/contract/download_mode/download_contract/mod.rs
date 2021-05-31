@@ -14,15 +14,6 @@ pub struct ContractFile {
     pub selected_block_id: super::super::super::block_id::BlockId,
 }
 
-impl Default for ContractFile {
-    fn default() -> Self {
-        Self {
-            file_path: None,
-            selected_block_id: super::super::super::block_id::BlockId::AtFinalBlock,
-        }
-    }
-}
-
 impl ContractFile {
     pub fn from(item: CliContractFile, contract_id: &str) -> Self {
         let file_path = match item.file_path {
