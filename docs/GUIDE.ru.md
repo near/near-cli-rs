@@ -113,7 +113,8 @@ AccessKeyList {
     ./near-cli view contract-code \
             network testnet \
             contract 'volodymyr.testnet' \
-            download './volodymyr.testnet.wasm'
+            download './contract-volodymyr.testnet.wasm' \
+            at-final-block
     ```
 
     <details><summary><i>Результат выполнения команды</i></summary>
