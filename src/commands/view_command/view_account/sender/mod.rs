@@ -27,9 +27,12 @@ impl SendTo {
         Self::from(CliSendTo::Account(Default::default()))
     }
 
-    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
+    pub async fn process(
+        self,
+        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+    ) -> crate::CliResult {
         match self {
-            SendTo::Account(sender) => sender.process(selected_server_url).await,
+            SendTo::Account(sender) => sender.process(network_connection_config).await,
         }
     }
 }
@@ -68,11 +71,14 @@ impl Sender {
         near_jsonrpc_client::new_client(&selected_server_url)
     }
 
-    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
+    pub async fn process(
+        self,
+        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+    ) -> crate::CliResult {
         let account_id = self.sender_account_id.clone();
-        self.display_account_info(account_id.clone(), selected_server_url.clone())
+        self.display_account_info(account_id.clone(), &network_connection_config)
             .await?;
-        self.display_access_key_list(account_id.clone(), selected_server_url.clone())
+        self.display_access_key_list(account_id.clone(), &network_connection_config)
             .await?;
         Ok(())
     }
@@ -80,10 +86,10 @@ impl Sender {
     async fn display_account_info(
         &self,
         account_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: &super::operation_mode::online_mode::select_server::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.rpc_url().as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewAccount {
@@ -132,10 +138,10 @@ impl Sender {
     async fn display_access_key_list(
         &self,
         account_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: &super::operation_mode::online_mode::select_server::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.rpc_url().as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewAccessKeyList {
