@@ -4,6 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod view_account;
 mod view_contract_code;
 mod view_contract_state;
+mod view_nonce;
 mod view_transaction_status;
 
 /// инструмент выбора to view
@@ -44,6 +45,8 @@ pub enum CliQueryRequest {
     ContractState(self::view_contract_state::operation_mode::CliOperationMode),
     /// View a transaction status
     Transaction(self::view_transaction_status::operation_mode::CliOperationMode),
+    /// View a nonce for a public key
+    Nonce(self::view_nonce::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -57,6 +60,8 @@ pub enum QueryRequest {
     ContractState(self::view_contract_state::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a transaction status"))]
     Transaction(self::view_transaction_status::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "View a nonce for a public key"))]
+    Nonce(self::view_nonce::operation_mode::OperationMode),
 }
 
 impl From<CliQueryRequest> for QueryRequest {
@@ -73,6 +78,9 @@ impl From<CliQueryRequest> for QueryRequest {
             }
             CliQueryRequest::Transaction(cli_operation_mode) => {
                 QueryRequest::Transaction(cli_operation_mode.into())
+            }
+            CliQueryRequest::Nonce(cli_operation_mode) => {
+                QueryRequest::Nonce(cli_operation_mode.into())
             }
         }
     }
@@ -105,6 +113,7 @@ impl QueryRequest {
             QueryRequestDiscriminants::Transaction => {
                 CliQueryRequest::Transaction(Default::default())
             }
+            QueryRequestDiscriminants::Nonce => CliQueryRequest::Nonce(Default::default()),
         };
         Self::from(cli_request)
     }
@@ -115,6 +124,7 @@ impl QueryRequest {
             QueryRequest::ContractCode(operation_mode) => operation_mode.process().await,
             QueryRequest::ContractState(operation_mode) => operation_mode.process().await,
             QueryRequest::Transaction(operation_mode) => operation_mode.process().await,
+            QueryRequest::Nonce(operation_mode) => operation_mode.process().await,
         }
     }
 }
