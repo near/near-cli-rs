@@ -58,17 +58,17 @@ impl DownloadMode {
     pub async fn process(
         self,
         contract_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: super::super::operation_mode::online_mode::select_server::ConnectionConfig,
     ) -> crate::CliResult {
         match self {
             DownloadMode::Download(contract_file) => {
                 contract_file
-                    .process(contract_id, selected_server_url)
+                    .process(contract_id, network_connection_config)
                     .await
             }
             DownloadMode::Hash(contract_hash) => {
                 contract_hash
-                    .process(contract_id, selected_server_url)
+                    .process(contract_id, network_connection_config)
                     .await
             }
         }

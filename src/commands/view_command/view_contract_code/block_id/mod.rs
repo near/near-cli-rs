@@ -65,23 +65,23 @@ impl BlockId {
     pub async fn process(
         self,
         contract_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
         file_path: Option<std::path::PathBuf>,
     ) -> crate::CliResult {
         println!();
         match self {
             Self::AtBlockHeight(block_id_height) => {
                 block_id_height
-                    .process(contract_id, selected_server_url, file_path)
+                    .process(contract_id, network_connection_config, file_path)
                     .await
             }
             Self::AtBlockHash(block_id_hash) => {
                 block_id_hash
-                    .process(contract_id, selected_server_url, file_path)
+                    .process(contract_id, network_connection_config, file_path)
                     .await
             }
             Self::AtFinalBlock => {
-                self.at_final_block(contract_id, selected_server_url, file_path)
+                self.at_final_block(contract_id, network_connection_config, file_path)
                     .await
             }
         }
@@ -94,11 +94,11 @@ impl BlockId {
     async fn at_final_block(
         self,
         contract_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
         file_path: Option<std::path::PathBuf>,
     ) -> crate::CliResult {
         let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.rpc_url().as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewCode {
