@@ -27,9 +27,12 @@ impl SendTo {
         Self::from(CliSendTo::Account(Default::default()))
     }
 
-    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
+    pub async fn process(
+        self,
+        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+    ) -> crate::CliResult {
         match self {
-            SendTo::Account(account) => account.process(selected_server_url).await,
+            SendTo::Account(account) => account.process(network_connection_config).await,
         }
     }
 }
@@ -74,9 +77,12 @@ impl Account {
             .unwrap()
     }
 
-    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
+    pub async fn process(
+        self,
+        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+    ) -> crate::CliResult {
         self.public_key
-            .process(self.account_id, selected_server_url)
+            .process(self.account_id, network_connection_config)
             .await
     }
 }
