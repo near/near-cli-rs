@@ -15,11 +15,7 @@
 
       * _transaction nonce_
 
-        Этот номер нужно будет найти на сайте своей учетной записи ([например](media/transaction_nonce.png)), увеличив при этом на 1
-
-    <details><summary><i>transaction nonce</i></summary>
-        <img src="media/transaction_nonce.png" width="836"/>
-    </details>
+        Этот номер нужно будет получить при помощи [View a nonce](#view-a-nonce), увеличив при этом на 1
 
       * _recent block hash_
 
@@ -30,7 +26,7 @@
         <img src="media/block_hash.png" width="836"/>
     </details>
 
-    <details><summary><i>Демонстрация работы Offline режима</i></summary>
+    <details><summary><i>Демонстрация работы _Offline_ режима</i></summary>
     <a href="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f?autoplay=1&t=1&speed=2">
         <img src="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f.png" width="836"/>
     </a>
@@ -58,7 +54,7 @@
 
 ### Группы команд
 
-* [View account, contract code, contract state, transaction](#view-account-contract-code-contract-state-transaction)
+* [View account, contract code, contract state, transaction, nonce](#view-account-contract-code-contract-state-transaction-nonce)
 * [Transfer tokens](#transfer-tokens)
 * [Execute function (contract method)](#execute-function-contract-method)
 * [Add access key, contract code, stake proposal, sub-account, implicit-account](#add-access-key-contract-code-stake-proposal-sub-account-implicit-account)
@@ -67,7 +63,7 @@
 * [Helpers](#helpers)
 
 
-### View account, contract code, contract state, transaction
+### View account, contract code, contract state, transaction, nonce
 
 #### View properties for an account
 
@@ -277,6 +273,29 @@ Transactiion status: FinalExecutionOutcome {
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6.png" width="836"/>
+</a>
+</details>
+
+#### View a nonce
+
+Для просмотра _nonce_ желаемого публичного ключа доступа в командной строке терминала необходимо ввести:
+```txt
+./near-cli view nonce \
+        network testnet \
+        signer 'volodymyr.testnet' \
+        public-key 'ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS'
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/g2WZpFu6njjxoklP4J7Ibc5Q6?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/g2WZpFu6njjxoklP4J7Ibc5Q6.png" width="836"/>
 </a>
 </details>
 
