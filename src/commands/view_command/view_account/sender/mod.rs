@@ -77,9 +77,12 @@ impl Sender {
             .unwrap()
     }
 
-    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
+    pub async fn process(
+        self,
+        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+    ) -> crate::CliResult {
         self.selected_block_id
-            .process(self.sender_account_id, selected_server_url)
+            .process(self.sender_account_id, network_connection_config)
             .await
     }
 }

@@ -36,11 +36,11 @@ impl BlockIdHeight {
     pub async fn process(
         self,
         account_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: super::super::operation_mode::online_mode::select_server::ConnectionConfig,
     ) -> crate::CliResult {
-        self.display_account_info(account_id.clone(), selected_server_url.clone())
+        self.display_account_info(account_id.clone(), &network_connection_config)
             .await?;
-        self.display_access_key_list(account_id.clone(), selected_server_url.clone())
+        self.display_access_key_list(account_id.clone(), &network_connection_config)
             .await?;
         Ok(())
     }
@@ -48,10 +48,10 @@ impl BlockIdHeight {
     async fn display_account_info(
         &self,
         account_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: &super::super::operation_mode::online_mode::select_server::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.archival_rpc_url().as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::BlockReference::BlockId(
                     near_primitives::types::BlockId::Height(self.block_id_height.clone()),
@@ -102,10 +102,10 @@ impl BlockIdHeight {
     async fn display_access_key_list(
         &self,
         account_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: &super::super::operation_mode::online_mode::select_server::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.archival_rpc_url().as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::BlockReference::BlockId(
                     near_primitives::types::BlockId::Height(self.block_id_height.clone()),
