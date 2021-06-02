@@ -36,10 +36,10 @@ impl BlockIdHash {
     pub async fn process(
         self,
         sender_account_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: super::super::operation_mode::online_mode::select_server::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.archival_rpc_url().as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::BlockReference::BlockId(
                     near_primitives::types::BlockId::Hash(self.block_id_hash.clone()),

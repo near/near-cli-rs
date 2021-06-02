@@ -64,22 +64,22 @@ impl BlockId {
     pub async fn process(
         self,
         sender_account_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
     ) -> crate::CliResult {
         println!();
         match self {
             Self::AtBlockHeight(block_id_height) => {
                 block_id_height
-                    .process(sender_account_id, selected_server_url)
+                    .process(sender_account_id, network_connection_config)
                     .await
             }
             Self::AtBlockHash(block_id_hash) => {
                 block_id_hash
-                    .process(sender_account_id, selected_server_url)
+                    .process(sender_account_id, network_connection_config)
                     .await
             }
             Self::AtFinalBlock => {
-                self.at_final_block(sender_account_id, selected_server_url)
+                self.at_final_block(sender_account_id, network_connection_config)
                     .await
             }
         }
@@ -92,10 +92,10 @@ impl BlockId {
     async fn at_final_block(
         self,
         sender_account_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.rpc_url().as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewState {
