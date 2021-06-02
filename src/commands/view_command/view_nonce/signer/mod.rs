@@ -3,20 +3,20 @@ use dialoguer::Input;
 #[derive(Debug, clap::Clap)]
 pub enum CliSendTo {
     /// Specify an account
-    Account(CliSigner),
+    Signer(CliSigner),
 }
 
 #[derive(Debug)]
 pub enum SendTo {
-    Account(Signer),
+    Signer(Signer),
 }
 
 impl From<CliSendTo> for SendTo {
     fn from(item: CliSendTo) -> Self {
         match item {
-            CliSendTo::Account(cli_signer) => {
+            CliSendTo::Signer(cli_signer) => {
                 let signer = Signer::from(cli_signer);
-                Self::Account(signer)
+                Self::Signer(signer)
             }
         }
     }
@@ -24,12 +24,12 @@ impl From<CliSendTo> for SendTo {
 
 impl SendTo {
     pub fn send_to() -> Self {
-        Self::from(CliSendTo::Account(Default::default()))
+        Self::from(CliSendTo::Signer(Default::default()))
     }
 
     pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
         match self {
-            SendTo::Account(signer) => signer.process(selected_server_url).await,
+            SendTo::Signer(signer) => signer.process(selected_server_url).await,
         }
     }
 }
@@ -37,16 +37,15 @@ impl SendTo {
 /// Specify signer to view the nonce for public key
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSigner {
-    #[clap(long)]
     account_id: Option<String>,
-    #[clap(long)]
-    public_key: Option<near_crypto::PublicKey>,
+    #[clap(subcommand)]
+    public_key: Option<super::public_key::CliAccessKey>,
 }
 
 #[derive(Debug)]
 pub struct Signer {
     account_id: String,
-    public_key: near_crypto::PublicKey,
+    pub public_key: super::public_key::AccessKey,
 }
 
 impl From<CliSigner> for Signer {
@@ -55,9 +54,9 @@ impl From<CliSigner> for Signer {
             Some(cli_account_id) => cli_account_id,
             None => Signer::input_account_id(),
         };
-        let public_key: near_crypto::PublicKey = match item.public_key {
-            Some(cli_public_key) => cli_public_key,
-            None => Signer::input_public_key(),
+        let public_key = match item.public_key {
+            Some(cli_public_key) => super::public_key::AccessKey::from(cli_public_key),
+            None => super::public_key::AccessKey::choose_key(),
         };
         Self {
             account_id,
@@ -75,49 +74,9 @@ impl Signer {
             .unwrap()
     }
 
-    fn input_public_key() -> near_crypto::PublicKey {
-        Input::new()
-            .with_prompt("Enter the public key")
-            .interact_text()
-            .unwrap()
-    }
-
-    fn rpc_client(self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
-        near_jsonrpc_client::new_client(&selected_server_url)
-    }
-
     pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
-        let account_id = self.account_id.clone();
-        let public_key = self.public_key.clone();
-        let online_signer_access_key_response = self
-            .rpc_client(&selected_server_url.as_str())
-            .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewAccessKey {
-                    account_id,
-                    public_key: public_key.clone(),
-                },
-            })
+        self.public_key
+            .process(self.account_id, selected_server_url)
             .await
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to fetch public key information for nonce: {:?}",
-                    err
-                ))
-            })?;
-        let current_nonce =
-            if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
-                online_signer_access_key,
-            ) = online_signer_access_key_response.kind
-            {
-                online_signer_access_key.nonce
-            } else {
-                return Err(color_eyre::Report::msg(format!("Error current_nonce")));
-            };
-        println!(
-            "\ncurrent nonce: {}  for a public key: {}",
-            current_nonce, public_key
-        );
-        Ok(())
     }
 }
