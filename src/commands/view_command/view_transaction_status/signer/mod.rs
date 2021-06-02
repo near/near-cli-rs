@@ -81,10 +81,9 @@ impl Sender {
         network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
         transaction_hash: String,
     ) -> crate::CliResult {
-        println!("RPC: {:?}", &network_connection_config.rpc_url().as_str());
         let account_id = self.account_id.clone();
         let query_view_transaction_status = self
-            .rpc_client(network_connection_config.rpc_url().as_str())
+            .rpc_client(network_connection_config.archival_rpc_url().as_str())
             .tx(transaction_hash, account_id)
             .await
             .map_err(|err| {

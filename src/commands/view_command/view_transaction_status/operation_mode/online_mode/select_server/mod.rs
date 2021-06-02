@@ -37,11 +37,17 @@ pub enum ConnectionConfig {
 }
 
 impl ConnectionConfig {
-    pub fn rpc_url(&self) -> url::Url {
+    pub fn archival_rpc_url(&self) -> url::Url {
         match self {
-            Self::Testnet => crate::consts::TESTNET_API_SERVER_URL.parse().unwrap(),
-            Self::Mainnet => crate::consts::MAINNET_API_SERVER_URL.parse().unwrap(),
-            Self::Betanet => crate::consts::BETANET_API_SERVER_URL.parse().unwrap(),
+            Self::Testnet => crate::consts::TESTNET_ARCHIVAL_API_SERVER_URL
+                .parse()
+                .unwrap(),
+            Self::Mainnet => crate::consts::MAINNET_ARCHIVAL_API_SERVER_URL
+                .parse()
+                .unwrap(),
+            Self::Betanet => crate::consts::BETANET_ARCHIVAL_API_SERVER_URL
+                .parse()
+                .unwrap(),
             Self::Custom { url } => url.clone(),
         }
     }
