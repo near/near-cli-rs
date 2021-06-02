@@ -7,9 +7,55 @@ and that readers have passing familiarity with using command line tools. This
 also assumes a Unix-like system, although most commands are probably easily
 translatable to any command line shell environment.
 
+Before proceeding to the description of specific commands, it is necessary to consider two points common to these commands:
+
+1. _Online_ / _Offline_ mode
+
+    The result of the creation of any transaction in the _Offline_ mode (display)  is a prepared transaction in the form of a Base64-encoded string, which can then be [sent to the network via RPC](https://docs.near.org/docs/api/rpc#transactions). In _Online_ mode, such a function has already been added (send).
+    Also, the _Online_ mode provides automatic collection of data necessary to form and send a transaction, and in the _Offline_ mode, you will need to enter some parameters manually:
+
+      * _transaction nonce_
+
+        This number will need to be obtained using [View a nonce](#view-a-nonce), increasing by 1
+
+      * _recent block hash_
+
+        Information for this parameter should be found [here](https://explorer.testnet.near.org/blocks).
+
+    <details><summary><i>recent block hash</i></summary>
+        <img src="media/blocks.png" width="836"/>
+        <img src="media/block_hash.png" width="836"/>
+    </details>
+
+    <details><summary><i>Demonstration of the _Offline_ mode</i></summary>
+    <a href="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f?autoplay=1&t=1&speed=2">
+        <img src="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f.png" width="836"/>
+    </a>
+    </details>
+
+2. Sign transaction
+
+    _near-cli_ offers several ways to sign the created transaction. Let's take a closer look at each.
+
+      * _I want to sign the transaction with my private key_
+
+        When choosing this signature option, _near-cli_ will ask the user to enter access keys:
+          "public_key":"ed25519:Ebx7...",
+          "private_key":"ed25519:2qM8..."
+
+      * _I want to sign the transaction with keychain_
+        
+        If you select this signature option, _near-cli_ will find the access keys itself in the *username.json* file located in */Users/user/.near-credentials/default/*.  
+        For example, */Users/frovolod/.near-credentials/default/volodymyr.testnet.json*.
+
+      * _I want to construct the transaction and sign it somewhere else_
+        
+        This option assumes that a third-party software product will sign the created transaction.
+
+
 ### Actions
 
-* [View account, contract code, contract state, transaction](#view-account-contract-code-contract-state-transaction)
+* [View account, contract code, contract state, transaction, nonce](#view-account-contract-code-contract-state-transaction-nonce)
 * [Transfer tokens](#transfer-tokens)
 * [Execute function (contract method)](#execute-function-contract-method)
 * [Add access key, contract code, stake proposal, sub-account, implicit-account](#add-access-key-contract-code-stake-proposal-sub-account-implicit-account)
@@ -18,49 +64,112 @@ translatable to any command line shell environment.
 * [Helpers](#helpers)
 
 
-### View account, contract code, contract state, transaction
+### View account, contract code, contract state, transaction, nonce
+
+It is possible to [View properties for an account](#view-properties-for-an-account), to [View a contract code](#view-a-contract-code) and to [View a contract state](#view-a-contract-state) in real time (__at-final-block__) and in the mode of archived data (__at-block-height__, __at-block-hash__). The examples below show how these modes can be used.
 
 #### View properties for an account
+
+##### at-final-block
 
 To view account information, in the terminal command line type:
 ```txt
 ./near-cli view account-summary \
         network testnet \
-        account '26.volodymyr.testnet'
+        account 'volodymyr.testnet' \
+        at-final-block
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-AccountView {
-    amount: 999272571364280200000000,
-    locked: 0,
-    code_hash: `8WGGK1GDYrVzkgYmgomWvESH8kSy6miFJj8yAu32RFLp`,
-    storage_usage: 43952,
-    storage_paid_at: 0,
-}
-
-AccessKeyList {
-    keys: [
-        AccessKeyInfoView {
-            public_key: ed25519:3LwQh4RgaPEV4oyPcKoL2MdUK4aLRtBrixBp4WhoGxAB,
-            access_key: AccessKeyView {
-                nonce: 2,
-                permission: FullAccess,
-            },
-        },
-    ],
-}
+Account details for 'volodymyr.testnet' at block #49787790 (33RYuu9YoLDVCidWig8uKtuSb7jr3NmcJDzVeeKmSkiW)
+Native account balance: 256.718 NEAR
+Validator stake: 0 NEAR
+Storage used by the account: 115385 bytes
+Contract code SHA-256 checksum (hex): 4de7df8ee6ff3780cfed298ceafde26e7477041ca8e2af7ae8c749de7068c0f2
+Number of access keys: 7
+   1. ed25519:2KZwhWEM5hbtP28kpx9TER3zyz9rL3Az1fcHsgr2Fzd1 (nonce: 9) is granted to full access
+   2. ed25519:36u45LFDfgKQYr8ApgBi1kUHN5FpkTQRqvt66cwEdqiK (nonce: 0) is granted to full access
+   3. ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS (nonce: 168) is granted to full access
+   4. ed25519:8b6ghV9BLNNB7RwaxSxjbH636bfM9m6NL7bmLBSXPqK8 (nonce: 2) is granted to full access
+   5. ed25519:937VyVwszEH13quNuPM4nNQTrDssNzRNnLMjPbN92tgu (nonce: 3) is granted to full access
+   6. ed25519:ApWodksvd7grTjFFimCroLxvrVDi7WD6g6gDE7RuhoGH (nonce: 1) is granted to full access
+   7. ed25519:JC5R9H6wjthHeumnUePRjvJNJrRm6ZTFUoi1NYuj9DBZ (nonce: 0) is granted to full access
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4.png" width="836"/>
+<a href="https://asciinema.org/a/8sdSrqPbi1TVaoZgQ5luKJgod?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/8sdSrqPbi1TVaoZgQ5luKJgod.png" width="836"/>
 </a>
 </details>
 
+##### at-block-height
+
+To view account information, in the terminal command line type:
+```txt
+./near-cli view account-summary \
+        network testnet \
+        account 'volodymyr.testnet' \
+        at-block-height 42775277
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Account details for 'volodymyr.testnet' at block #42775277 (FrMNHB5y2fZZVfgC6VgfykSRWoTViT2KeWGhgkXKgtTe)
+Native account balance: 377.874 NEAR
+Validator stake: 0 NEAR
+Storage used by the account: 592 bytes
+Contract code is not deployed to this account.
+Number of access keys: 6
+   1. ed25519:36u45LFDfgKQYr8ApgBi1kUHN5FpkTQRqvt66cwEdqiK (nonce: 0) is granted to full access
+   2. ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS (nonce: 111) is granted to full access
+   3. ed25519:8b6ghV9BLNNB7RwaxSxjbH636bfM9m6NL7bmLBSXPqK8 (nonce: 1) is granted to full access
+   4. ed25519:937VyVwszEH13quNuPM4nNQTrDssNzRNnLMjPbN92tgu (nonce: 3) is granted to full access
+   5. ed25519:ApWodksvd7grTjFFimCroLxvrVDi7WD6g6gDE7RuhoGH (nonce: 1) is granted to full access
+   6. ed25519:JC5R9H6wjthHeumnUePRjvJNJrRm6ZTFUoi1NYuj9DBZ (nonce: 0) is granted to full access
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+</details>
+
+##### at-block-hash
+
+To view account information, in the terminal command line type:
+```txt
+./near-cli view account-summary \
+        network testnet \
+        account 'volodymyr.testnet' \
+        at-block-hash BWUZMBHPnsQR1u69keUZcYKpsjREqtGFNNGkXq74c8JN
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Account details for 'volodymyr.testnet' at block #42466273 (BWUZMBHPnsQR1u69keUZcYKpsjREqtGFNNGkXq74c8JN)
+Native account balance: 377.874 NEAR
+Validator stake: 0 NEAR
+Storage used by the account: 592 bytes
+Contract code is not deployed to this account.
+Number of access keys: 6
+   1. ed25519:36u45LFDfgKQYr8ApgBi1kUHN5FpkTQRqvt66cwEdqiK (nonce: 0) is granted to full access
+   2. ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS (nonce: 111) is granted to full access
+   3. ed25519:8b6ghV9BLNNB7RwaxSxjbH636bfM9m6NL7bmLBSXPqK8 (nonce: 1) is granted to full access
+   4. ed25519:937VyVwszEH13quNuPM4nNQTrDssNzRNnLMjPbN92tgu (nonce: 3) is granted to full access
+   5. ed25519:ApWodksvd7grTjFFimCroLxvrVDi7WD6g6gDE7RuhoGH (nonce: 1) is granted to full access
+   6. ed25519:JC5R9H6wjthHeumnUePRjvJNJrRm6ZTFUoi1NYuj9DBZ (nonce: 0) is granted to full access
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+</details>
+
 #### View a contract code
+
+Real-time (__at-final-block__) and archived data (__at-block-height__, __at-block-hash__) modes should be used in the same way as [View properties for an account](#view-properties-for-an-account).  
 
   * In order to get the contract file, type the following in the terminal command line:
 
@@ -68,19 +177,20 @@ AccessKeyList {
     ./near-cli view contract-code \
             network testnet \
             contract 'volodymyr.testnet' \
-            download './volodymyr.testnet.wasm'
+            download './contract-volodymyr.testnet.wasm' \
+            at-final-block
     ```
 
     <details><summary><i>The result of this command will be as follows:</i></summary>
     
     ```txt
-    The file Some("volodymyr.testnet.wasm") was downloaded successfully
+    The file "contract-volodymyr.testnet.wasm" was downloaded successfully
     ```
     </details>
 
     <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-    <a href="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz?autoplay=1&t=1&speed=2">
-        <img src="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz.png" width="836"/>
+    <a href="https://asciinema.org/a/4sJOszIaaH3zfGzpWAlR9Gxpk?autoplay=1&t=1&speed=2">
+        <img src="https://asciinema.org/a/4sJOszIaaH3zfGzpWAlR9Gxpk.png" width="836"/>
     </a>
     </details>
 
@@ -90,7 +200,8 @@ AccessKeyList {
     ./near-cli view contract-code \
             network testnet \
             contract 'volodymyr.testnet' \
-            hash
+            hash \
+            at-final-block
     ```
     
     <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -101,18 +212,21 @@ AccessKeyList {
     </details>
 
     <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-    <a href="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea?autoplay=1&t=1&speed=2">
-        <img src="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea.png" width="836"/>
+    <a href="https://asciinema.org/a/JQPVxVliUflaVqUeyfOShXqqQ?autoplay=1&t=1&speed=2">
+        <img src="https://asciinema.org/a/JQPVxVliUflaVqUeyfOShXqqQ.png" width="836"/>
     </a>
     </details>
 
 #### View a contract state
 
+Real-time (__at-final-block__) and archived data (__at-block-height__, __at-block-hash__) modes should be used in the same way as [View properties for an account](#view-properties-for-an-account).  
+
 To view the status of the contract, type the following in the terminal command line:
 ```txt
 ./near-cli view contract-state \
         network testnet \
-        account 'volodymyr.testnet'
+        account 'volodymyr.testnet' \
+        at-final-block
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -134,8 +248,8 @@ Contract state (proof):
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i.png" width="836"/>
+<a href="https://asciinema.org/a/P1jqzFGpF9qjm5XbKA1yr8RqZ?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/P1jqzFGpF9qjm5XbKA1yr8RqZ.png" width="836"/>
 </a>
 </details>
 
@@ -228,6 +342,29 @@ Transactiion status: FinalExecutionOutcome {
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6.png" width="836"/>
+</a>
+</details>
+
+#### View a nonce
+
+To view the _nonce_ of the desired public access key, type the following in the terminal command line:
+```txt
+./near-cli view nonce \
+        network testnet \
+        account 'volodymyr.testnet' \
+        public-key 'ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS'
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/g2WZpFu6njjxoklP4J7Ibc5Q6?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/g2WZpFu6njjxoklP4J7Ibc5Q6.png" width="836"/>
 </a>
 </details>
 
@@ -361,12 +498,15 @@ In order to execute this command, in the terminal command line type:
 
 #### View a method
 
+Real-time (__at-final-block__) and archived data (__at-block-height__, __at-block-hash__) modes should be used in the same way as [View properties for an account](#view-properties-for-an-account).  
+
 In order to execute this command, in the terminal command line type:
 ```txt
 ./near-cli execute view-method \
         network mainnet \
         contract zavodil.poolv1.near \
-        call 'get_accounts' '{"from_index": 0, "limit": 3}'
+        call 'get_accounts' '{"from_index": 0, "limit": 3}' \
+        at-final-block
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -376,28 +516,28 @@ In order to execute this command, in the terminal command line type:
   {
     "account_id": "zavodil.near",
     "unstaked_balance": "8",
-    "staked_balance": "11324123436434018378485148158",
+    "staked_balance": "11662078846731298726428263471",
     "can_withdraw": true
   },
   {
     "account_id": "gagdiez.near",
     "unstaked_balance": "4",
-    "staked_balance": "2190787031154122258592953066",
+    "staked_balance": "2195619736137302553610087167",
     "can_withdraw": true
   },
   {
     "account_id": "5ff98e7c85755e0f77c78eaf4a8aeca24846d8b5.lockup.near",
-    "unstaked_balance": "0",
-    "staked_balance": "12033408649269474452976655376",
-    "can_withdraw": true
+    "unstaked_balance": "1300000000000000000000000001",
+    "staked_balance": "10759346016497580677112779659",
+    "can_withdraw": false
   }
 ]
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI.png" width="836"/>
+<a href="https://asciinema.org/a/0v0TBnInhHeXv3N85dRmyXEZM?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/0v0TBnInhHeXv3N85dRmyXEZM.png" width="836"/>
 </a>
 </details>
 

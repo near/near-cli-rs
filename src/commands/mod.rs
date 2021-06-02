@@ -34,7 +34,7 @@ pub enum CliTopLevelCommand {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
     #[strum_discriminants(strum(
-        message = "View account, contract code, contract state, transaction"
+        message = "View account, contract code, contract state, transaction, nonce"
     ))]
     View(self::view_command::ViewQueryRequest),
     #[strum_discriminants(strum(message = "Transfer tokens"))]
