@@ -7,9 +7,55 @@ and that readers have passing familiarity with using command line tools. This
 also assumes a Unix-like system, although most commands are probably easily
 translatable to any command line shell environment.
 
+Before proceeding to the description of specific commands, it is necessary to consider two points common to these commands:
+
+1. _Online_ / _Offline_ mode
+
+    The result of the creation of any transaction in the _Offline_ mode (display)  is a prepared transaction in the form of a Base64-encoded string, which can then be [sent to the network via RPC](https://docs.near.org/docs/api/rpc#transactions). In _Online_ mode, such a function has already been added (send).
+    Also, the _Online_ mode provides automatic collection of data necessary to form and send a transaction, and in the _Offline_ mode, you will need to enter some parameters manually:
+
+      * _transaction nonce_
+
+        This number will need to be obtained using [View a nonce](#view-a-nonce), increasing by 1
+
+      * _recent block hash_
+
+        Information for this parameter should be found [here](https://explorer.testnet.near.org/blocks).
+
+    <details><summary><i>recent block hash</i></summary>
+        <img src="media/blocks.png" width="836"/>
+        <img src="media/block_hash.png" width="836"/>
+    </details>
+
+    <details><summary><i>Demonstration of the _Offline_ mode</i></summary>
+    <a href="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f?autoplay=1&t=1&speed=2">
+        <img src="https://asciinema.org/a/REcIXg1yQqLpz42EzNQt8B99f.png" width="836"/>
+    </a>
+    </details>
+
+2. Sign transaction
+
+    _near-cli_ offers several ways to sign the created transaction. Let's take a closer look at each.
+
+      * _I want to sign the transaction with my private key_
+
+        When choosing this signature option, _near-cli_ will ask the user to enter access keys:
+          "public_key":"ed25519:Ebx7...",
+          "private_key":"ed25519:2qM8..."
+
+      * _I want to sign the transaction with keychain_
+        
+        If you select this signature option, _near-cli_ will find the access keys itself in the *username.json* file located in */Users/user/.near-credentials/default/*.  
+        For example, */Users/frovolod/.near-credentials/default/volodymyr.testnet.json*.
+
+      * _I want to construct the transaction and sign it somewhere else_
+        
+        This option assumes that a third-party software product will sign the created transaction.
+
+
 ### Actions
 
-* [View account, contract code, contract state, transaction](#view-account-contract-code-contract-state-transaction)
+* [View account, contract code, contract state, transaction, nonce](#view-account-contract-code-contract-state-transaction-nonce)
 * [Transfer tokens](#transfer-tokens)
 * [Execute function (contract method)](#execute-function-contract-method)
 * [Add access key, contract code, stake proposal, sub-account, implicit-account](#add-access-key-contract-code-stake-proposal-sub-account-implicit-account)
@@ -18,7 +64,7 @@ translatable to any command line shell environment.
 * [Helpers](#helpers)
 
 
-### View account, contract code, contract state, transaction
+### View account, contract code, contract state, transaction, nonce
 
 It is possible to [View properties for an account](#view-properties-for-an-account), to [View a contract code](#view-a-contract-code) and to [View a contract state](#view-a-contract-state) in real time (__at-final-block__) and in the mode of archived data (__at-block-height__, __at-block-hash__). The examples below show how these modes can be used.
 
@@ -296,6 +342,29 @@ Transactiion status: FinalExecutionOutcome {
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/HYNfgJ5Gze7fFKntubz7TW6r6.png" width="836"/>
+</a>
+</details>
+
+#### View a nonce
+
+To view the _nonce_ of the desired public access key, type the following in the terminal command line:
+```txt
+./near-cli view nonce \
+        network testnet \
+        account 'volodymyr.testnet' \
+        public-key 'ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS'
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/g2WZpFu6njjxoklP4J7Ibc5Q6?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/g2WZpFu6njjxoklP4J7Ibc5Q6.png" width="836"/>
 </a>
 </details>
 

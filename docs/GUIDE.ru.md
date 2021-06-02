@@ -69,47 +69,108 @@
 
 #### View properties for an account
 
-Для просмотра сведений об аккаунте в командной строке терминала необходимо ввести:
+##### at-final-block
+
+Для просмотра сведений об аккаунте необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli view account-summary \
         network testnet \
-        account '26.volodymyr.testnet'
+        account 'volodymyr.testnet' \
+        at-final-block
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-AccountView {
-    amount: 999272571364280200000000,
-    locked: 0,
-    code_hash: `8WGGK1GDYrVzkgYmgomWvESH8kSy6miFJj8yAu32RFLp`,
-    storage_usage: 43952,
-    storage_paid_at: 0,
-}
-
-AccessKeyList {
-    keys: [
-        AccessKeyInfoView {
-            public_key: ed25519:3LwQh4RgaPEV4oyPcKoL2MdUK4aLRtBrixBp4WhoGxAB,
-            access_key: AccessKeyView {
-                nonce: 2,
-                permission: FullAccess,
-            },
-        },
-    ],
-}
+Account details for 'volodymyr.testnet' at block #49787790 (33RYuu9YoLDVCidWig8uKtuSb7jr3NmcJDzVeeKmSkiW)
+Native account balance: 256.718 NEAR
+Validator stake: 0 NEAR
+Storage used by the account: 115385 bytes
+Contract code SHA-256 checksum (hex): 4de7df8ee6ff3780cfed298ceafde26e7477041ca8e2af7ae8c749de7068c0f2
+Number of access keys: 7
+   1. ed25519:2KZwhWEM5hbtP28kpx9TER3zyz9rL3Az1fcHsgr2Fzd1 (nonce: 9) is granted to full access
+   2. ed25519:36u45LFDfgKQYr8ApgBi1kUHN5FpkTQRqvt66cwEdqiK (nonce: 0) is granted to full access
+   3. ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS (nonce: 168) is granted to full access
+   4. ed25519:8b6ghV9BLNNB7RwaxSxjbH636bfM9m6NL7bmLBSXPqK8 (nonce: 2) is granted to full access
+   5. ed25519:937VyVwszEH13quNuPM4nNQTrDssNzRNnLMjPbN92tgu (nonce: 3) is granted to full access
+   6. ed25519:ApWodksvd7grTjFFimCroLxvrVDi7WD6g6gDE7RuhoGH (nonce: 1) is granted to full access
+   7. ed25519:JC5R9H6wjthHeumnUePRjvJNJrRm6ZTFUoi1NYuj9DBZ (nonce: 0) is granted to full access
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/K2I3vG72TULfbWCwa6J1ul3n4.png" width="836"/>
+<a href="https://asciinema.org/a/8sdSrqPbi1TVaoZgQ5luKJgod?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/8sdSrqPbi1TVaoZgQ5luKJgod.png" width="836"/>
 </a>
+</details>
+
+##### at-block-height
+
+Для просмотра сведений об аккаунте необходимо ввести в командной строке терминала:
+```txt
+./near-cli view account-summary \
+        network testnet \
+        account 'volodymyr.testnet' \
+        at-block-height 42775277
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Account details for 'volodymyr.testnet' at block #42775277 (FrMNHB5y2fZZVfgC6VgfykSRWoTViT2KeWGhgkXKgtTe)
+Native account balance: 377.874 NEAR
+Validator stake: 0 NEAR
+Storage used by the account: 592 bytes
+Contract code is not deployed to this account.
+Number of access keys: 6
+   1. ed25519:36u45LFDfgKQYr8ApgBi1kUHN5FpkTQRqvt66cwEdqiK (nonce: 0) is granted to full access
+   2. ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS (nonce: 111) is granted to full access
+   3. ed25519:8b6ghV9BLNNB7RwaxSxjbH636bfM9m6NL7bmLBSXPqK8 (nonce: 1) is granted to full access
+   4. ed25519:937VyVwszEH13quNuPM4nNQTrDssNzRNnLMjPbN92tgu (nonce: 3) is granted to full access
+   5. ed25519:ApWodksvd7grTjFFimCroLxvrVDi7WD6g6gDE7RuhoGH (nonce: 1) is granted to full access
+   6. ed25519:JC5R9H6wjthHeumnUePRjvJNJrRm6ZTFUoi1NYuj9DBZ (nonce: 0) is granted to full access
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+</details>
+
+##### at-block-hash
+
+Для просмотра сведений об аккаунте необходимо ввести в командной строке терминала:
+```txt
+./near-cli view account-summary \
+        network testnet \
+        account 'volodymyr.testnet' \
+        at-block-hash BWUZMBHPnsQR1u69keUZcYKpsjREqtGFNNGkXq74c8JN
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Account details for 'volodymyr.testnet' at block #42466273 (BWUZMBHPnsQR1u69keUZcYKpsjREqtGFNNGkXq74c8JN)
+Native account balance: 377.874 NEAR
+Validator stake: 0 NEAR
+Storage used by the account: 592 bytes
+Contract code is not deployed to this account.
+Number of access keys: 6
+   1. ed25519:36u45LFDfgKQYr8ApgBi1kUHN5FpkTQRqvt66cwEdqiK (nonce: 0) is granted to full access
+   2. ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS (nonce: 111) is granted to full access
+   3. ed25519:8b6ghV9BLNNB7RwaxSxjbH636bfM9m6NL7bmLBSXPqK8 (nonce: 1) is granted to full access
+   4. ed25519:937VyVwszEH13quNuPM4nNQTrDssNzRNnLMjPbN92tgu (nonce: 3) is granted to full access
+   5. ed25519:ApWodksvd7grTjFFimCroLxvrVDi7WD6g6gDE7RuhoGH (nonce: 1) is granted to full access
+   6. ed25519:JC5R9H6wjthHeumnUePRjvJNJrRm6ZTFUoi1NYuj9DBZ (nonce: 0) is granted to full access
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 </details>
 
 #### View a contract code
 
-  * Для получения файла контракта в командной строке терминала необходимо ввести:
+Режимами реального времени (__at-final-block__) и  архивных данных (__at-block-height__, __at-block-hash__) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-properties-for-an-account)).
+
+  * Для получения файла контракта необходимо ввести в командной строке терминала:
 
     ```txt
     ./near-cli view contract-code \
@@ -122,23 +183,24 @@ AccessKeyList {
     <details><summary><i>Результат выполнения команды</i></summary>
     
     ```txt
-    The file Some("volodymyr.testnet.wasm") was downloaded successfully
+    The file "contract-volodymyr.testnet.wasm" was downloaded successfully
     ```
     </details>
 
     <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-    <a href="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz?autoplay=1&t=1&speed=2">
-        <img src="https://asciinema.org/a/ukTRXXUwzqp6HtFjqw1QmurDz.png" width="836"/>
+    <a href="https://asciinema.org/a/4sJOszIaaH3zfGzpWAlR9Gxpk?autoplay=1&t=1&speed=2">
+        <img src="https://asciinema.org/a/4sJOszIaaH3zfGzpWAlR9Gxpk.png" width="836"/>
     </a>
     </details>
 
-  * Для получения хэша контракта в командной строке терминала необходимо ввести:
+  * Для получения хэша контракта необходимо ввести в командной строке терминала:
 
     ```txt
     ./near-cli view contract-code \
             network testnet \
             contract 'volodymyr.testnet' \
-            hash
+            hash \
+            at-final-block
     ```
     
     <details><summary><i>Результат выполнения команды</i></summary>
@@ -149,18 +211,21 @@ AccessKeyList {
     </details>
 
     <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-    <a href="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea?autoplay=1&t=1&speed=2">
-        <img src="https://asciinema.org/a/LwK2piAS8Wf7jQWzSUVgJuiea.png" width="836"/>
+    <a href="https://asciinema.org/a/JQPVxVliUflaVqUeyfOShXqqQ?autoplay=1&t=1&speed=2">
+        <img src="https://asciinema.org/a/JQPVxVliUflaVqUeyfOShXqqQ.png" width="836"/>
     </a>
     </details>
 
 #### View a contract state
 
-Для просмотра состояния контракта в командной строке терминала необходимо ввести:
+Режимами реального времени (__at-final-block__) и  архивных данных (__at-block-height__, __at-block-hash__) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-properties-for-an-account)).  
+
+Для просмотра состояния контракта необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli view contract-state \
         network testnet \
-        account 'volodymyr.testnet'
+        account 'volodymyr.testnet' \
+        at-final-block
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
@@ -182,14 +247,14 @@ Contract state (proof):
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/AWsKNDXtgjqdAzHwMQ5D3nZ1i.png" width="836"/>
+<a href="https://asciinema.org/a/P1jqzFGpF9qjm5XbKA1yr8RqZ?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/P1jqzFGpF9qjm5XbKA1yr8RqZ.png" width="836"/>
 </a>
 </details>
 
 #### View a transaction status
 
-Для просмотра статуса желаемой транзакции в командной строке терминала необходимо ввести её хэш:
+Для просмотра статуса желаемой транзакции необходимо ввести в командной строке терминала её хэш:
 ```txt
 ./near-cli view transaction \
         network testnet \
@@ -281,11 +346,11 @@ Transactiion status: FinalExecutionOutcome {
 
 #### View a nonce
 
-Для просмотра _nonce_ желаемого публичного ключа доступа в командной строке терминала необходимо ввести:
+Для просмотра _nonce_ желаемого публичного ключа доступа необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli view nonce \
         network testnet \
-        signer 'volodymyr.testnet' \
+        account 'volodymyr.testnet' \
         public-key 'ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS'
 ```
 
@@ -306,7 +371,7 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 ### Transfer tokens
 
 Данная команда служит для перевода средств между аккаунтами. Обратите внимание, что количество пересылаемых токенов указывается совместно с размерной единицей (это NEAR либо yoctoNEAR).
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli transfer near \
         network testnet \
@@ -368,7 +433,7 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 
 #### Change a method
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli execute change-method \
         network testnet \
@@ -432,12 +497,15 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 
 #### View a method
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Режимами реального времени (__at-final-block__) и  архивных данных (__at-block-height__, __at-block-hash__) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-properties-for-an-account)).  
+
+Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli execute view-method \
         network mainnet \
         contract zavodil.poolv1.near \
-        call 'get_accounts' '{"from_index": 0, "limit": 3}'
+        call 'get_accounts' '{"from_index": 0, "limit": 3}' \
+        at-final-block
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
@@ -447,28 +515,28 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
   {
     "account_id": "zavodil.near",
     "unstaked_balance": "8",
-    "staked_balance": "11324123436434018378485148158",
+    "staked_balance": "11662078846731298726428263471",
     "can_withdraw": true
   },
   {
     "account_id": "gagdiez.near",
     "unstaked_balance": "4",
-    "staked_balance": "2190787031154122258592953066",
+    "staked_balance": "2195619736137302553610087167",
     "can_withdraw": true
   },
   {
     "account_id": "5ff98e7c85755e0f77c78eaf4a8aeca24846d8b5.lockup.near",
-    "unstaked_balance": "0",
-    "staked_balance": "12033408649269474452976655376",
-    "can_withdraw": true
+    "unstaked_balance": "1300000000000000000000000001",
+    "staked_balance": "10759346016497580677112779659",
+    "can_withdraw": false
   }
 ]
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/LyqVoMk2Rr8bh05aAN7WOcFWI.png" width="836"/>
+<a href="https://asciinema.org/a/0v0TBnInhHeXv3N85dRmyXEZM?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/0v0TBnInhHeXv3N85dRmyXEZM.png" width="836"/>
 </a>
 </details>
 
@@ -482,7 +550,7 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
   * ключи будут иметь полный доступ
   * транзакция будет подписана автоматически (при наличии файла с ключами доступа)
 
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli add access-key \
         network testnet \
@@ -628,7 +696,7 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 
 #### Add a new contract code
 
-Для добавления нового контракта в командной строке терминала необходимо ввести:
+Для добавления нового контракта необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli add contract-code \
         network testnet \
@@ -697,7 +765,7 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 #### Add an implicit-account
 
 Данная команда автоматически генерирует ключи доступа и сохраняет их в файле.
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli add implicit-account \
         generate-keypair
@@ -788,7 +856,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 
 #### Add a new sub-account
 
-Для создания суб-аккаунта в командной строке терминала необходимо ввести:
+Для создания суб-аккаунта необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli add sub-account \
         network testnet \
@@ -864,7 +932,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 
 #### Delete an access key for this account
 
-Для удаления ключей доступа в командной строке терминала необходимо ввести:
+Для удаления ключей доступа необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli delete access-key \
         network testnet \
@@ -922,7 +990,7 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 #### Delete this account
 
 Данная команда предназначена для удаления текущего аккаунта. Важно помнить, что все средства удаляемого аккаунта перейдут на счет "_beneficiary_".
-Для выполнения этой команды в командной строке терминала необходимо ввести:
+Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli delete account \
         network testnet \
