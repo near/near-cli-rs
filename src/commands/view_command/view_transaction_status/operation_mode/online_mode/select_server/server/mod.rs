@@ -4,7 +4,7 @@ use dialoguer::Input;
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliServer {
     #[clap(subcommand)]
-    pub transaction_status: Option<super::super::super::super::CliTransactionStatus>,
+    pub transaction_status: Option<super::super::super::super::transaction::CliTransaction>,
 }
 
 /// данные для custom server
@@ -13,25 +13,25 @@ pub struct CliCustomServer {
     #[clap(long)]
     pub url: Option<crate::common::AvailableRpcServerUrl>,
     #[clap(subcommand)]
-    transaction_status: Option<super::super::super::super::CliTransactionStatus>,
+    transaction_status: Option<super::super::super::super::transaction::CliTransaction>,
 }
 
 #[derive(Debug)]
 pub struct Server {
-    pub url: url::Url,
-    pub transaction_status: super::super::super::super::TransactionStatus,
+    pub connection_config: super::ConnectionConfig,
+    pub transaction_status: super::super::super::super::transaction::Transaction,
 }
 
 impl CliServer {
-    pub fn into_server(self, url: url::Url) -> Server {
+    pub fn into_server(self, connection_config: super::ConnectionConfig) -> Server {
         let transaction_status = match self.transaction_status {
             Some(cli_transaction_status) => {
-                super::super::super::super::TransactionStatus::from(cli_transaction_status)
+                super::super::super::super::transaction::Transaction::from(cli_transaction_status)
             }
-            None => super::super::super::super::TransactionStatus::choose_transaction_status(),
+            None => super::super::super::super::transaction::Transaction::transaction(),
         };
         Server {
-            url,
+            connection_config,
             transaction_status,
         }
     }
@@ -48,12 +48,12 @@ impl CliCustomServer {
         };
         let transaction_status = match self.transaction_status {
             Some(cli_transaction_status) => {
-                super::super::super::super::TransactionStatus::from(cli_transaction_status)
+                super::super::super::super::transaction::Transaction::from(cli_transaction_status)
             }
-            None => super::super::super::super::TransactionStatus::choose_transaction_status(),
+            None => super::super::super::super::transaction::Transaction::transaction(),
         };
         Server {
-            url: url.inner,
+            connection_config: super::ConnectionConfig::Custom { url: url.inner },
             transaction_status,
         }
     }
@@ -61,7 +61,8 @@ impl CliCustomServer {
 
 impl Server {
     pub async fn process(self) -> crate::CliResult {
-        let selected_server_url = self.url.clone();
-        self.transaction_status.process(selected_server_url).await
+        self.transaction_status
+            .process(self.connection_config)
+            .await
     }
 }
