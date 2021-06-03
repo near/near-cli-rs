@@ -58,13 +58,13 @@ impl CallFunctionView {
 
     pub async fn process(
         self,
-        selected_server_url: url::Url,
+        network_connection_config: crate::common::ConnectionConfig,
         contract_account_id: String,
     ) -> crate::CliResult {
         self.selected_block_id
             .process(
                 contract_account_id,
-                selected_server_url,
+                network_connection_config,
                 self.method_name,
                 self.args,
             )

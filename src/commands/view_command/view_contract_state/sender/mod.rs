@@ -29,7 +29,7 @@ impl SendTo {
 
     pub async fn process(
         self,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         match self {
             SendTo::Account(sender) => sender.process(network_connection_config).await,
@@ -79,7 +79,7 @@ impl Sender {
 
     pub async fn process(
         self,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         self.selected_block_id
             .process(self.sender_account_id, network_connection_config)

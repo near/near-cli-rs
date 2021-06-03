@@ -27,9 +27,12 @@ impl SendTo {
         Self::from(CliSendTo::Contract(Default::default()))
     }
 
-    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
+    pub async fn process(
+        self,
+        network_connection_config: crate::common::ConnectionConfig,
+    ) -> crate::CliResult {
         match self {
-            SendTo::Contract(receiver) => receiver.process(selected_server_url).await,
+            SendTo::Contract(receiver) => receiver.process(network_connection_config).await,
         }
     }
 }
@@ -73,9 +76,12 @@ impl Receiver {
             .unwrap()
     }
 
-    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
+    pub async fn process(
+        self,
+        network_connection_config: crate::common::ConnectionConfig,
+    ) -> crate::CliResult {
         self.call
-            .process(selected_server_url, self.contract_account_id)
+            .process(network_connection_config, self.contract_account_id)
             .await
     }
 }

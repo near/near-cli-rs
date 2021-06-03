@@ -31,7 +31,7 @@ impl TransactionsSigning {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
         stake: u128,
     ) -> crate::CliResult {
         match self {
@@ -39,7 +39,7 @@ impl TransactionsSigning {
                 transactions_sign_action
                     .process(
                         prepopulated_unsigned_transaction,
-                        selected_server_url,
+                        network_connection_config,
                         stake,
                     )
                     .await
@@ -94,7 +94,7 @@ impl TransactionsSigningAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
         stake: u128,
     ) -> crate::CliResult {
         let action = near_primitives::transaction::Action::Stake(
@@ -110,7 +110,7 @@ impl TransactionsSigningAction {
             ..prepopulated_unsigned_transaction
         };
         self.sign_option
-            .process(unsigned_transaction, selected_server_url)
+            .process(unsigned_transaction, network_connection_config)
             .await
     }
 }

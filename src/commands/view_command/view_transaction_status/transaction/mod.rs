@@ -28,7 +28,7 @@ impl Transaction {
 
     pub async fn process(
         self,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         match self {
             Transaction::TransactionHash(transaction_type) => {
@@ -80,7 +80,7 @@ impl TransactionType {
 
     pub async fn process(
         self,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         self.send_from
             .process(network_connection_config, self.transaction_hash)

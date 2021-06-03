@@ -80,16 +80,16 @@ impl SignTransaction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             SignTransaction::SignPrivateKey(keys) => {
-                keys.process(prepopulated_unsigned_transaction, selected_server_url)
+                keys.process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             SignTransaction::SignWithKeychain(chain) => {
                 chain
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             SignTransaction::SignManually(args_manually) => {

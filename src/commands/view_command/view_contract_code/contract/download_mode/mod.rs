@@ -58,7 +58,7 @@ impl DownloadMode {
     pub async fn process(
         self,
         contract_id: String,
-        network_connection_config: super::super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         match self {
             DownloadMode::Download(contract_file) => {

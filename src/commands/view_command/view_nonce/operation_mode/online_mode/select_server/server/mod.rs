@@ -18,12 +18,12 @@ pub struct CliCustomServer {
 
 #[derive(Debug)]
 pub struct Server {
-    pub connection_config: super::ConnectionConfig,
+    pub connection_config: crate::common::ConnectionConfig,
     pub send_to: super::super::super::super::account::SendTo,
 }
 
 impl CliServer {
-    pub fn into_server(self, connection_config: super::ConnectionConfig) -> Server {
+    pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
         let send_to = match self.send_to {
             Some(cli_send_to) => super::super::super::super::account::SendTo::from(cli_send_to),
             None => super::super::super::super::account::SendTo::send_to(),
@@ -49,7 +49,7 @@ impl CliCustomServer {
             None => super::super::super::super::account::SendTo::send_to(),
         };
         Server {
-            connection_config: super::ConnectionConfig::Custom { url: url.inner },
+            connection_config: crate::common::ConnectionConfig::Custom { url: url.inner },
             send_to,
         }
     }

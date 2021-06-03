@@ -29,7 +29,7 @@ impl SendFrom {
 
     pub async fn process(
         self,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
         transaction_hash: String,
     ) -> crate::CliResult {
         match self {
@@ -78,7 +78,7 @@ impl Sender {
 
     pub async fn process(
         self,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
         transaction_hash: String,
     ) -> crate::CliResult {
         let account_id = self.account_id.clone();

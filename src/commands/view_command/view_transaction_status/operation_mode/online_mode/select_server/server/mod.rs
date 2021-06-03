@@ -18,12 +18,12 @@ pub struct CliCustomServer {
 
 #[derive(Debug)]
 pub struct Server {
-    pub connection_config: super::ConnectionConfig,
+    pub connection_config: crate::common::ConnectionConfig,
     pub transaction_status: super::super::super::super::transaction::Transaction,
 }
 
 impl CliServer {
-    pub fn into_server(self, connection_config: super::ConnectionConfig) -> Server {
+    pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
         let transaction_status = match self.transaction_status {
             Some(cli_transaction_status) => {
                 super::super::super::super::transaction::Transaction::from(cli_transaction_status)
@@ -53,7 +53,7 @@ impl CliCustomServer {
             None => super::super::super::super::transaction::Transaction::transaction(),
         };
         Server {
-            connection_config: super::ConnectionConfig::Custom { url: url.inner },
+            connection_config: crate::common::ConnectionConfig::Custom { url: url.inner },
             transaction_status,
         }
     }

@@ -36,7 +36,7 @@ impl BlockIdHash {
     pub async fn process(
         self,
         sender_account_id: String,
-        network_connection_config: super::super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self
             .rpc_client(network_connection_config.archival_rpc_url().as_str())

@@ -29,7 +29,7 @@ impl AccessKey {
     pub async fn process(
         self,
         account_id: String,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         match self {
             AccessKey::PublicKey(access_key_type) => {
@@ -77,7 +77,7 @@ impl AccessKeyType {
     pub async fn process(
         self,
         account_id: String,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let public_key = self.public_key.clone();
         let online_signer_access_key_response = self

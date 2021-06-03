@@ -18,18 +18,18 @@ pub struct CliCustomServer {
 
 #[derive(Debug)]
 pub struct Server {
-    pub url: Option<url::Url>,
+    pub connection_config: Option<crate::common::ConnectionConfig>,
     pub send_from: SendFrom,
 }
 
 impl CliServer {
-    pub fn into_server(self, url: url::Url) -> Server {
+    pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
         let send_from = match self.send_from {
             Some(cli_send_from) => SendFrom::from(cli_send_from),
             None => SendFrom::choose_send_from(),
         };
         Server {
-            url: Some(url),
+            connection_config: Some(connection_config),
             send_from,
         }
     }
@@ -49,7 +49,7 @@ impl CliCustomServer {
             None => SendFrom::choose_send_from(),
         };
         Server {
-            url: Some(url.inner),
+            connection_config: Some(crate::common::ConnectionConfig::Custom { url: url.inner }),
             send_from,
         }
     }
@@ -60,9 +60,8 @@ impl Server {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        let selected_server_url = self.url.clone();
         self.send_from
-            .process(prepopulated_unsigned_transaction, selected_server_url)
+            .process(prepopulated_unsigned_transaction, self.connection_config)
             .await
     }
 }
@@ -94,12 +93,12 @@ impl SendFrom {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             SendFrom::Sender(sender) => {
                 sender
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, connection_config)
                     .await
             }
         }

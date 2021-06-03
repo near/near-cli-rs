@@ -65,7 +65,7 @@ impl BlockId {
     pub async fn process(
         self,
         contract_id: String,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
         file_path: Option<std::path::PathBuf>,
     ) -> crate::CliResult {
         println!();
@@ -94,7 +94,7 @@ impl BlockId {
     async fn at_final_block(
         self,
         contract_id: String,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
         file_path: Option<std::path::PathBuf>,
     ) -> crate::CliResult {
         let query_view_method_response = self

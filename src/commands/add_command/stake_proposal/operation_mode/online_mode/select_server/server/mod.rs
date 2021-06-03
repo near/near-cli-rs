@@ -18,18 +18,18 @@ pub struct CliCustomServer {
 
 #[derive(Debug)]
 pub struct Server {
-    pub url: Option<url::Url>,
+    pub network_connection_config: Option<crate::common::ConnectionConfig>,
     pub send_from: SendFrom,
 }
 
 impl CliServer {
-    pub fn into_server(self, url: url::Url) -> Server {
+    pub fn into_server(self, network_connection_config: crate::common::ConnectionConfig) -> Server {
         let send_from = match self.send_from {
             Some(cli_send_from) => SendFrom::from(cli_send_from),
             None => SendFrom::choose_send_from(),
         };
         Server {
-            url: Some(url),
+            network_connection_config: Some(network_connection_config),
             send_from,
         }
     }
@@ -49,7 +49,9 @@ impl CliCustomServer {
             None => SendFrom::choose_send_from(),
         };
         Server {
-            url: Some(url.inner),
+            network_connection_config: Some(crate::common::ConnectionConfig::Custom {
+                url: url.inner,
+            }),
             send_from,
         }
     }
@@ -60,9 +62,11 @@ impl Server {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        let selected_server_url = self.url.clone();
         self.send_from
-            .process(prepopulated_unsigned_transaction, selected_server_url)
+            .process(
+                prepopulated_unsigned_transaction,
+                self.network_connection_config,
+            )
             .await
     }
 }
@@ -70,12 +74,12 @@ impl Server {
 #[derive(Debug, clap::Clap)]
 pub enum CliSendFrom {
     /// Specify a validator
-    Validator(crate::commands::add_command::stake_proposal::sender::CliSender),
+    Validator(super::super::super::super::sender::CliSender),
 }
 
 #[derive(Debug)]
 pub enum SendFrom {
-    Validator(crate::commands::add_command::stake_proposal::sender::Sender),
+    Validator(super::super::super::super::sender::Sender),
 }
 
 impl From<CliSendFrom> for SendFrom {
@@ -94,12 +98,12 @@ impl SendFrom {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             SendFrom::Validator(sender) => {
                 sender
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }

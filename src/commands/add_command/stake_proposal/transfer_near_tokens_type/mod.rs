@@ -29,12 +29,12 @@ impl Transfer {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             Transfer::Amount(transfer_near_action) => {
                 transfer_near_action
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }
@@ -83,12 +83,12 @@ impl TransferNEARTokensAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         self.sign_transactions
             .process(
                 prepopulated_unsigned_transaction,
-                selected_server_url,
+                network_connection_config,
                 self.amount.to_yoctonear(),
             )
             .await

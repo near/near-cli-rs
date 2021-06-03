@@ -109,7 +109,7 @@ impl CallFunctionAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let action = near_primitives::transaction::Action::FunctionCall(
             near_primitives::transaction::FunctionCallAction {
@@ -126,7 +126,7 @@ impl CallFunctionAction {
             ..prepopulated_unsigned_transaction
         };
         self.send_from
-            .process(unsigned_transaction, selected_server_url)
+            .process(unsigned_transaction, network_connection_config)
             .await
     }
 }

@@ -134,7 +134,7 @@ impl FunctionCallType {
         self,
         nonce: near_primitives::types::Nonce,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
         public_key: near_crypto::PublicKey,
     ) -> crate::CliResult {
         let access_key: near_primitives::account::AccessKey = near_primitives::account::AccessKey {
@@ -160,7 +160,7 @@ impl FunctionCallType {
             ..prepopulated_unsigned_transaction
         };
         self.sign_option
-            .process(unsigned_transaction, selected_server_url)
+            .process(unsigned_transaction, network_connection_config)
             .await
     }
 }

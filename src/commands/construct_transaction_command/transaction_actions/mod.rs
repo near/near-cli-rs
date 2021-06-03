@@ -90,17 +90,17 @@ impl NextAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             NextAction::AddAction(select_action) => {
                 select_action
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             NextAction::Skip(skip_action) => {
                 skip_action
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }
@@ -135,10 +135,10 @@ impl SelectAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         self.transaction_subcommand
-            .process(prepopulated_unsigned_transaction, selected_server_url)
+            .process(prepopulated_unsigned_transaction, network_connection_config)
             .await
     }
 }
@@ -251,42 +251,42 @@ impl ActionSubcommand {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             ActionSubcommand::TransferNEARTokens(args_transfer) => {
                 args_transfer
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             ActionSubcommand::CallFunction(args_function) => {
                 args_function
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             ActionSubcommand::StakeNEARTokens(args_stake) => {
                 args_stake
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             ActionSubcommand::CreateAccount(args_create_account) => {
                 args_create_account
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             ActionSubcommand::DeleteAccount(args_delete_account) => {
                 args_delete_account
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             ActionSubcommand::AddAccessKey(args_add_access_key) => {
                 args_add_access_key
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             ActionSubcommand::DeleteAccessKey(args_delete_access_key) => {
                 args_delete_access_key
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }
@@ -319,10 +319,10 @@ impl SkipAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         self.sign_option
-            .process(prepopulated_unsigned_transaction, selected_server_url)
+            .process(prepopulated_unsigned_transaction, network_connection_config)
             .await
     }
 }

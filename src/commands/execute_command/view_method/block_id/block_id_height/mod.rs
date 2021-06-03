@@ -35,7 +35,7 @@ impl BlockIdHeight {
 
     pub async fn process(
         self,
-        selected_server_url: url::Url,
+        network_connection_config: crate::common::ConnectionConfig,
         contract_account_id: String,
         method_name: String,
         args: Vec<u8>,
@@ -43,7 +43,7 @@ impl BlockIdHeight {
         let args: near_primitives::types::FunctionArgs =
             near_primitives::types::FunctionArgs::from(args);
         let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.archival_rpc_url().as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::BlockReference::BlockId(
                     near_primitives::types::BlockId::Height(self.block_id_height.clone()),

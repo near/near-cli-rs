@@ -64,7 +64,7 @@ impl BlockId {
     pub async fn process(
         self,
         sender_account_id: String,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         println!();
         match self {
@@ -92,7 +92,7 @@ impl BlockId {
     async fn at_final_block(
         self,
         sender_account_id: String,
-        network_connection_config: super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self
             .rpc_client(network_connection_config.rpc_url().as_str())

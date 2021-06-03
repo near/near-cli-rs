@@ -46,7 +46,7 @@ impl ContractFile {
     pub async fn process(
         self,
         contract_id: String,
-        network_connection_config: super::super::super::operation_mode::online_mode::select_server::ConnectionConfig,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         self.selected_block_id
             .process(contract_id, network_connection_config, self.file_path)

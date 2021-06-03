@@ -33,7 +33,7 @@ impl SignKeychain {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
         let file_name = format!("{}.json", prepopulated_unsigned_transaction.signer_id);
@@ -48,7 +48,7 @@ impl SignKeychain {
             submit: self.submit.clone(),
         };
         sign_with_private_key
-            .process(prepopulated_unsigned_transaction, selected_server_url)
+            .process(prepopulated_unsigned_transaction, network_connection_config)
             .await
     }
 }
