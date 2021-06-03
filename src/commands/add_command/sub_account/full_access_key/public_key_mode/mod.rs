@@ -60,17 +60,17 @@ impl PublicKeyMode {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             PublicKeyMode::PublicKey(add_access_key_action) => {
                 add_access_key_action
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             PublicKeyMode::GenerateKeypair(cli_generate_keypair) => {
                 cli_generate_keypair
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }

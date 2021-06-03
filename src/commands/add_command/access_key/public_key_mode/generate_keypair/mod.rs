@@ -49,7 +49,7 @@ impl GenerateKeypair {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let new_master_seed_phrase_words_count: usize = 12;
         let seed_phrase_hd_path = slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
@@ -132,7 +132,7 @@ impl GenerateKeypair {
                     .process(
                         0,
                         prepopulated_unsigned_transaction,
-                        selected_server_url,
+                        network_connection_config,
                         public_key,
                     )
                     .await
@@ -144,7 +144,7 @@ impl GenerateKeypair {
                     .process(
                         0,
                         prepopulated_unsigned_transaction,
-                        selected_server_url,
+                        network_connection_config,
                         public_key,
                     )
                     .await

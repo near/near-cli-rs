@@ -59,17 +59,17 @@ impl NextAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             NextAction::Initialize(call_function_action) => {
                 call_function_action
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             NextAction::NoInitialize(no_initialize) => {
                 no_initialize
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }
@@ -105,10 +105,10 @@ impl NoInitialize {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         self.sign_option
-            .process(prepopulated_unsigned_transaction, selected_server_url)
+            .process(prepopulated_unsigned_transaction, network_connection_config)
             .await
     }
 }

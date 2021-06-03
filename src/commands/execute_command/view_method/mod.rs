@@ -1,13 +1,14 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
+mod block_id;
 mod call_function_type;
 pub mod operation_mode;
 mod receiver;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliCallFunction {
-    /// вызов метода просмотра
+    /// Call view function
     Call(self::call_function_type::CliCallFunctionView),
 }
 
@@ -50,13 +51,13 @@ impl CallFunction {
 
     pub async fn process(
         self,
-        selected_server_url: url::Url,
+        network_connection_config: crate::common::ConnectionConfig,
         contract_account_id: String,
     ) -> crate::CliResult {
         match self {
             Self::Call(call_function_action) => {
                 call_function_action
-                    .process(selected_server_url, contract_account_id)
+                    .process(network_connection_config, contract_account_id)
                     .await
             }
         }

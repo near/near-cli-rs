@@ -69,10 +69,7 @@ impl CurrencySelection {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_currency = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(
-                "To construct a transaction you will need to provide information about sender (signer) and receiver accounts, and actions that needs to be performed.
-                 \nDo you want to derive some information required for transaction construction automatically querying it online?"
-            )
+            .with_prompt("What do you want to transfer?")
             .items(&currencies)
             .default(0)
             .interact()

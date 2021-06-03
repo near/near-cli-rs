@@ -49,7 +49,7 @@ impl AddAccessKeyAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self.permission {
             AccessKeyPermission::GrantFullAccess(full_access_type) => {
@@ -57,7 +57,7 @@ impl AddAccessKeyAction {
                     .process(
                         self.nonce,
                         prepopulated_unsigned_transaction,
-                        selected_server_url,
+                        network_connection_config,
                         self.public_key,
                     )
                     .await
@@ -67,7 +67,7 @@ impl AddAccessKeyAction {
                     .process(
                         self.nonce,
                         prepopulated_unsigned_transaction,
-                        selected_server_url,
+                        network_connection_config,
                         self.public_key,
                     )
                     .await

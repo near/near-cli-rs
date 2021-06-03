@@ -18,17 +18,20 @@ pub struct CliCustomServer {
 
 #[derive(Debug)]
 pub struct Server {
-    pub url: url::Url,
+    pub connection_config: crate::common::ConnectionConfig,
     pub send_to: super::super::super::super::contract::SendTo,
 }
 
 impl CliServer {
-    pub fn into_server(self, url: url::Url) -> Server {
+    pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
         let send_to = match self.send_to {
             Some(cli_send_to) => super::super::super::super::contract::SendTo::from(cli_send_to),
             None => super::super::super::super::contract::SendTo::send_to(),
         };
-        Server { url, send_to }
+        Server {
+            connection_config,
+            send_to,
+        }
     }
 }
 
@@ -46,7 +49,7 @@ impl CliCustomServer {
             None => super::super::super::super::contract::SendTo::send_to(),
         };
         Server {
-            url: url.inner,
+            connection_config: crate::common::ConnectionConfig::Custom { url: url.inner },
             send_to,
         }
     }
@@ -54,7 +57,6 @@ impl CliCustomServer {
 
 impl Server {
     pub async fn process(self) -> crate::CliResult {
-        let selected_server_url = self.url.clone();
-        self.send_to.process(selected_server_url).await
+        self.send_to.process(self.connection_config).await
     }
 }

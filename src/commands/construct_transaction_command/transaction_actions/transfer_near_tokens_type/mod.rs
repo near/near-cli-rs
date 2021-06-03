@@ -44,7 +44,7 @@ impl TransferNEARTokensAction {
     pub async fn process(
         self,
         mut prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let action = near_primitives::transaction::Action::Transfer(
             near_primitives::transaction::TransferAction {
@@ -55,12 +55,12 @@ impl TransferNEARTokensAction {
         match *self.next_action {
             super::NextAction::AddAction(select_action) => {
                 select_action
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
             super::NextAction::Skip(skip_action) => {
                 skip_action
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }

@@ -1,36 +1,33 @@
 use dialoguer::Input;
 use std::io::Write;
 
-// download contract file
+/// Specify the block_id hash for this contract to view
 #[derive(Debug, Default, clap::Clap)]
-pub struct CliContractFile {
-    file_path: Option<std::path::PathBuf>,
+pub struct CliBlockIdHash {
+    block_id_hash: Option<near_primitives::hash::CryptoHash>,
 }
 
 #[derive(Debug)]
-pub struct ContractFile {
-    pub file_path: Option<std::path::PathBuf>,
+pub struct BlockIdHash {
+    block_id_hash: near_primitives::hash::CryptoHash,
 }
 
-impl ContractFile {
-    pub fn from(item: CliContractFile, contract_id: &str) -> Self {
-        let file_path = match item.file_path {
-            Some(cli_file_path) => Some(cli_file_path),
-            None => ContractFile::input_file_path(contract_id),
+impl From<CliBlockIdHash> for BlockIdHash {
+    fn from(item: CliBlockIdHash) -> Self {
+        let block_id_hash: near_primitives::hash::CryptoHash = match item.block_id_hash {
+            Some(cli_block_id_hash) => cli_block_id_hash,
+            None => BlockIdHash::input_block_id_hash(),
         };
-        ContractFile { file_path }
+        Self { block_id_hash }
     }
 }
 
-impl ContractFile {
-    fn input_file_path(contract_id: &str) -> Option<std::path::PathBuf> {
-        println!();
-        let input_file_path: String = Input::new()
-            .with_prompt("Where to download the contract file?")
-            .with_initial_text(format!("{}.wasm", contract_id))
+impl BlockIdHash {
+    pub fn input_block_id_hash() -> near_primitives::hash::CryptoHash {
+        Input::new()
+            .with_prompt("Type the block ID hash for this contract")
             .interact_text()
-            .unwrap();
-        Some(input_file_path.into())
+            .unwrap()
     }
 
     fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
@@ -40,12 +37,15 @@ impl ContractFile {
     pub async fn process(
         self,
         contract_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: crate::common::ConnectionConfig,
+        file_path: Option<std::path::PathBuf>,
     ) -> crate::CliResult {
         let query_view_method_response = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.archival_rpc_url().as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
+                block_reference: near_primitives::types::BlockReference::BlockId(
+                    near_primitives::types::BlockId::Hash(self.block_id_hash.clone()),
+                ),
                 request: near_primitives::views::QueryRequest::ViewCode {
                     account_id: contract_id,
                 },
@@ -65,7 +65,7 @@ impl ContractFile {
             } else {
                 return Err(color_eyre::Report::msg(format!("Error call result")));
             };
-        match &self.file_path {
+        match &file_path {
             Some(file_path) => {
                 std::fs::File::create(file_path)
                     .map_err(|err| {
@@ -75,10 +75,7 @@ impl ContractFile {
                     .map_err(|err| {
                         color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
                     })?;
-                println!(
-                    "\nThe file {:?} was downloaded successfully",
-                    self.file_path
-                );
+                println!("\nThe file {:?} was downloaded successfully", file_path);
             }
             None => {
                 println!("\nHash of the contract: {}", &call_access_view.hash)

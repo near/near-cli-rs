@@ -50,12 +50,12 @@ impl Contract {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             Contract::ContractFile(contract_file) => {
                 contract_file
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }
@@ -109,7 +109,7 @@ impl ContractFile {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let mut f = std::fs::File::open(&self.file_path.clone())
             .map_err(|err| color_eyre::Report::msg(format!("Failed to open file: {:?}", err)))?;
@@ -126,7 +126,7 @@ impl ContractFile {
             ..prepopulated_unsigned_transaction
         };
         self.next_action
-            .process(unsigned_transaction, selected_server_url)
+            .process(unsigned_transaction, network_connection_config)
             .await
     }
 }

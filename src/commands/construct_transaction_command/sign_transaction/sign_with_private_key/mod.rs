@@ -74,12 +74,12 @@ impl SignPrivateKey {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
         let signer_secret_key: near_crypto::SecretKey = self.signer_secret_key.clone();
         let submit: Option<Submit> = self.submit.clone();
-        match selected_server_url {
+        match network_connection_config {
             None => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
                     public_key,
@@ -108,9 +108,9 @@ impl SignPrivateKey {
                     }
                 }
             }
-            Some(selected_server_url) => {
+            Some(network_connection_config) => {
                 let online_signer_access_key_response = self
-                    .rpc_client(&selected_server_url.as_str())
+                    .rpc_client(network_connection_config.rpc_url().as_str())
                     .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                         block_reference: near_primitives::types::Finality::Final.into(),
                         request: near_primitives::views::QueryRequest::ViewAccessKey {
@@ -160,7 +160,7 @@ impl SignPrivateKey {
                         let submit = Submit::choose_submit();
                         submit
                             .process_online(
-                                selected_server_url,
+                                network_connection_config,
                                 signed_transaction,
                                 serialize_to_base64,
                             )
@@ -169,7 +169,7 @@ impl SignPrivateKey {
                     Some(submit) => {
                         submit
                             .process_online(
-                                selected_server_url,
+                                network_connection_config,
                                 signed_transaction,
                                 serialize_to_base64,
                             )
@@ -231,7 +231,7 @@ impl Submit {
 
     pub async fn process_online(
         self,
-        selected_server_url: url::Url,
+        network_connection_config: crate::common::ConnectionConfig,
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String,
     ) -> crate::CliResult {
@@ -247,7 +247,7 @@ impl Submit {
                     &serialize_to_base64
                 );
                 let json_rcp_client =
-                    near_jsonrpc_client::new_client(&selected_server_url.as_str());
+                    near_jsonrpc_client::new_client(network_connection_config.rpc_url().as_str());
                 let transaction_info = loop {
                     let transaction_info_result = json_rcp_client
                         .broadcast_tx_commit(near_primitives::serialize::to_base64(

@@ -51,12 +51,12 @@ impl FullAccessKey {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             FullAccessKey::SubAccountFullAccess(sub_account_full_access) => {
                 sub_account_full_access
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }
@@ -91,10 +91,10 @@ impl SubAccountFullAccess {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         self.public_key_mode
-            .process(prepopulated_unsigned_transaction, selected_server_url)
+            .process(prepopulated_unsigned_transaction, network_connection_config)
             .await
     }
 }

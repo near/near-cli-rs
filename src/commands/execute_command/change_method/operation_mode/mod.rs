@@ -2,7 +2,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod offline_mode;
-pub mod online_mode;
+mod online_mode;
 
 /// инструмент выбора режима online/offline
 #[derive(Debug, Default, clap::Clap)]
@@ -37,9 +37,9 @@ impl OperationMode {
 
 #[derive(Debug, clap::Clap)]
 pub enum CliMode {
-    /// Execute a change method with online mode
+    /// Prepare and, optionally, submit a new transaction with online mode
     Network(self::online_mode::CliNetworkArgs),
-    /// Execute a change method with offline mode
+    /// Prepare and, optionally, submit a new transaction with offline mode
     Offline(self::offline_mode::CliOfflineArgs),
 }
 
@@ -73,8 +73,8 @@ impl Mode {
             .collect::<Vec<_>>();
         let selected_mode = Select::with_theme(&ColorfulTheme::default())
             .with_prompt(
-                "To execute a change method you will need to provide information about sender (signer) and receiver accounts.
-                 \nDo you want to derive some information required for execute a change method automatically querying it online?"
+                "To construct a transaction you will need to provide information about sender (signer) and receiver accounts, and actions that needs to be performed.
+                 \nDo you want to derive some information required for transaction construction automatically querying it online?"
             )
             .items(&modes)
             .default(0)

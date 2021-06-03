@@ -28,51 +28,17 @@ pub enum SelectServer {
     Custom(self::server::Server),
 }
 
-#[derive(Debug)]
-pub enum ConnectionConfig {
-    Testnet,
-    Mainnet,
-    Betanet,
-    Custom { url: url::Url },
-}
-
-impl ConnectionConfig {
-    pub fn rpc_url(&self) -> url::Url {
-        match self {
-            Self::Testnet => crate::consts::TESTNET_API_SERVER_URL.parse().unwrap(),
-            Self::Mainnet => crate::consts::MAINNET_API_SERVER_URL.parse().unwrap(),
-            Self::Betanet => crate::consts::BETANET_API_SERVER_URL.parse().unwrap(),
-            Self::Custom { url } => url.clone(),
-        }
-    }
-
-    pub fn archival_rpc_url(&self) -> url::Url {
-        match self {
-            Self::Testnet => crate::consts::TESTNET_ARCHIVAL_API_SERVER_URL
-                .parse()
-                .unwrap(),
-            Self::Mainnet => crate::consts::MAINNET_ARCHIVAL_API_SERVER_URL
-                .parse()
-                .unwrap(),
-            Self::Betanet => crate::consts::BETANET_ARCHIVAL_API_SERVER_URL
-                .parse()
-                .unwrap(),
-            Self::Custom { url } => url.clone(),
-        }
-    }
-}
-
 impl From<CliSelectServer> for SelectServer {
     fn from(item: CliSelectServer) -> Self {
         match item {
             CliSelectServer::Testnet(cli_server) => {
-                Self::Testnet(cli_server.into_server(ConnectionConfig::Testnet))
+                Self::Testnet(cli_server.into_server(crate::common::ConnectionConfig::Testnet))
             }
             CliSelectServer::Mainnet(cli_server) => {
-                Self::Mainnet(cli_server.into_server(ConnectionConfig::Mainnet))
+                Self::Mainnet(cli_server.into_server(crate::common::ConnectionConfig::Mainnet))
             }
             CliSelectServer::Betanet(cli_server) => {
-                Self::Betanet(cli_server.into_server(ConnectionConfig::Betanet))
+                Self::Betanet(cli_server.into_server(crate::common::ConnectionConfig::Betanet))
             }
             CliSelectServer::Custom(cli_custom_server) => {
                 Self::Custom(cli_custom_server.into_server())

@@ -45,7 +45,7 @@ impl AddAccessKeyAction {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let access_key: near_primitives::account::AccessKey = near_primitives::account::AccessKey {
             nonce: self.nonce.clone(),
@@ -64,7 +64,7 @@ impl AddAccessKeyAction {
             ..prepopulated_unsigned_transaction
         };
         self.deposit
-            .process(unsigned_transaction, selected_server_url)
+            .process(unsigned_transaction, network_connection_config)
             .await
     }
 }

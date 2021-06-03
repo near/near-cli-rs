@@ -27,12 +27,12 @@ impl SendFrom {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             SendFrom::Signer(sender) => {
                 sender
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }
@@ -85,14 +85,14 @@ impl Sender {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let unsigned_transaction = near_primitives::transaction::Transaction {
             signer_id: self.sender_account_id.clone(),
             ..prepopulated_unsigned_transaction
         };
         self.sign_option
-            .process(unsigned_transaction, selected_server_url)
+            .process(unsigned_transaction, network_connection_config)
             .await
     }
 }

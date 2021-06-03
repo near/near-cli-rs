@@ -18,18 +18,18 @@ pub struct CliCustomServer {
 
 #[derive(Debug)]
 pub struct Server {
-    pub url: Option<url::Url>,
+    pub network_connection_config: Option<crate::common::ConnectionConfig>,
     pub send_to: super::super::super::super::receiver::SendTo,
 }
 
 impl CliServer {
-    pub fn into_server(self, url: url::Url) -> Server {
+    pub fn into_server(self, network_connection_config: crate::common::ConnectionConfig) -> Server {
         let send_to = match self.send_to {
             Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(cli_send_to),
             None => super::super::super::super::receiver::SendTo::send_to(),
         };
         Server {
-            url: Some(url),
+            network_connection_config: Some(network_connection_config),
             send_to,
         }
     }
@@ -49,7 +49,9 @@ impl CliCustomServer {
             None => super::super::super::super::receiver::SendTo::send_to(),
         };
         Server {
-            url: Some(url.inner),
+            network_connection_config: Some(crate::common::ConnectionConfig::Custom {
+                url: url.inner,
+            }),
             send_to,
         }
     }
@@ -60,9 +62,11 @@ impl Server {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        let selected_server_url = self.url.clone();
         self.send_to
-            .process(prepopulated_unsigned_transaction, selected_server_url)
+            .process(
+                prepopulated_unsigned_transaction,
+                self.network_connection_config,
+            )
             .await
     }
 }

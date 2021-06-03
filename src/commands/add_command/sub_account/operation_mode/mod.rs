@@ -73,7 +73,7 @@ impl Mode {
             .collect::<Vec<_>>();
         let selected_mode = Select::with_theme(&ColorfulTheme::default())
             .with_prompt(
-                "To create a sub-account you will need to provide information about owner-account (signer) and sub-account, and actions that needs to be performed.
+                "To construct a transaction you will need to provide information about sender (signer) and receiver accounts, and actions that needs to be performed.
                  \nDo you want to derive some information required for transaction construction automatically querying it online?"
             )
             .items(&modes)

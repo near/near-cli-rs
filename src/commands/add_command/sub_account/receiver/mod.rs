@@ -30,12 +30,12 @@ impl SendTo {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
             SendTo::SubAccount(receiver) => {
                 receiver
-                    .process(prepopulated_unsigned_transaction, selected_server_url)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }
@@ -86,7 +86,7 @@ impl SubAccount {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        selected_server_url: Option<url::Url>,
+        network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let action = near_primitives::transaction::Action::CreateAccount(
             near_primitives::transaction::CreateAccountAction {},
@@ -99,7 +99,7 @@ impl SubAccount {
             ..prepopulated_unsigned_transaction
         };
         self.full_access_key
-            .process(unsigned_transaction, selected_server_url)
+            .process(unsigned_transaction, network_connection_config)
             .await
     }
 }

@@ -29,12 +29,12 @@ impl AccessKey {
     pub async fn process(
         self,
         account_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         match self {
             AccessKey::PublicKey(access_key_type) => {
                 access_key_type
-                    .process(account_id, selected_server_url)
+                    .process(account_id, network_connection_config)
                     .await
             }
         }
@@ -77,11 +77,11 @@ impl AccessKeyType {
     pub async fn process(
         self,
         account_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let public_key = self.public_key.clone();
         let online_signer_access_key_response = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.rpc_url().as_str())
             .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewAccessKey {

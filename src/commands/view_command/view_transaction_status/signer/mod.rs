@@ -29,11 +29,15 @@ impl SendFrom {
 
     pub async fn process(
         self,
-        selected_server_url: url::Url,
+        network_connection_config: crate::common::ConnectionConfig,
         transaction_hash: String,
     ) -> crate::CliResult {
         match self {
-            SendFrom::Signer(sender) => sender.process(selected_server_url, transaction_hash).await,
+            SendFrom::Signer(sender) => {
+                sender
+                    .process(network_connection_config, transaction_hash)
+                    .await
+            }
         }
     }
 }
@@ -41,21 +45,21 @@ impl SendFrom {
 /// Specify the account that signed the transaction
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliSender {
-    pub sender_account_id: Option<String>,
+    pub account_id: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Sender {
-    pub sender_account_id: String,
+    pub account_id: String,
 }
 
 impl From<CliSender> for Sender {
     fn from(item: CliSender) -> Self {
-        let sender_account_id: String = match item.sender_account_id {
-            Some(cli_sender_account_id) => cli_sender_account_id,
+        let account_id: String = match item.account_id {
+            Some(cli_account_id) => cli_account_id,
             None => Sender::input_sender_account_id(),
         };
-        Self { sender_account_id }
+        Self { account_id }
     }
 }
 
@@ -74,12 +78,12 @@ impl Sender {
 
     pub async fn process(
         self,
-        selected_server_url: url::Url,
+        network_connection_config: crate::common::ConnectionConfig,
         transaction_hash: String,
     ) -> crate::CliResult {
-        let account_id = self.sender_account_id.clone();
+        let account_id = self.account_id.clone();
         let query_view_transaction_status = self
-            .rpc_client(&selected_server_url.as_str())
+            .rpc_client(network_connection_config.archival_rpc_url().as_str())
             .tx(transaction_hash, account_id)
             .await
             .map_err(|err| {

@@ -1,32 +1,35 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-pub mod download;
+mod download_contract;
+mod hash_contract;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliDownloadMode {
     /// Download a contract file
-    Download(self::download::CliContractFile),
+    Download(self::download_contract::CliContractFile),
     /// View a contract hash
-    Hash,
+    Hash(self::hash_contract::CliContractHash),
 }
 
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum DownloadMode {
     #[strum_discriminants(strum(message = "Download a contract file"))]
-    Download(self::download::ContractFile),
+    Download(self::download_contract::ContractFile),
     #[strum_discriminants(strum(message = "View a contract hash"))]
-    Hash,
+    Hash(self::hash_contract::ContractHash),
 }
 
 impl DownloadMode {
     pub fn from(item: CliDownloadMode, contract_id: &str) -> Self {
         match item {
             CliDownloadMode::Download(cli_contract_file) => DownloadMode::Download(
-                self::download::ContractFile::from(cli_contract_file, contract_id),
+                self::download_contract::ContractFile::from(cli_contract_file, contract_id),
             ),
-            CliDownloadMode::Hash => DownloadMode::Hash,
+            CliDownloadMode::Hash(cli_contract_hash) => {
+                DownloadMode::Hash(self::hash_contract::ContractHash::from(cli_contract_hash))
+            }
         }
     }
 }
@@ -47,7 +50,7 @@ impl DownloadMode {
             .unwrap();
         let cli_mode = match variants[selected_mode] {
             DownloadModeDiscriminants::Download => CliDownloadMode::Download(Default::default()),
-            DownloadModeDiscriminants::Hash => CliDownloadMode::Hash,
+            DownloadModeDiscriminants::Hash => CliDownloadMode::Hash(Default::default()),
         };
         Self::from(cli_mode, contract_id)
     }
@@ -55,18 +58,17 @@ impl DownloadMode {
     pub async fn process(
         self,
         contract_id: String,
-        selected_server_url: url::Url,
+        network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         match self {
             DownloadMode::Download(contract_file) => {
                 contract_file
-                    .process(contract_id, selected_server_url)
+                    .process(contract_id, network_connection_config)
                     .await
             }
-            DownloadMode::Hash => {
-                let contract_hash = self::download::ContractFile { file_path: None };
+            DownloadMode::Hash(contract_hash) => {
                 contract_hash
-                    .process(contract_id, selected_server_url)
+                    .process(contract_id, network_connection_config)
                     .await
             }
         }

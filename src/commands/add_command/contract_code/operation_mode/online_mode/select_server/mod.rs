@@ -31,15 +31,15 @@ pub enum SelectServer {
 impl From<CliSelectServer> for SelectServer {
     fn from(item: CliSelectServer) -> Self {
         match item {
-            CliSelectServer::Testnet(cli_server) => Self::Testnet(
-                cli_server.into_server(crate::consts::TESTNET_API_SERVER_URL.parse().unwrap()),
-            ),
-            CliSelectServer::Mainnet(cli_server) => Self::Mainnet(
-                cli_server.into_server(crate::consts::MAINNET_API_SERVER_URL.parse().unwrap()),
-            ),
-            CliSelectServer::Betanet(cli_server) => Self::Betanet(
-                cli_server.into_server(crate::consts::BETANET_API_SERVER_URL.parse().unwrap()),
-            ),
+            CliSelectServer::Testnet(cli_server) => {
+                Self::Testnet(cli_server.into_server(crate::common::ConnectionConfig::Testnet))
+            }
+            CliSelectServer::Mainnet(cli_server) => {
+                Self::Mainnet(cli_server.into_server(crate::common::ConnectionConfig::Mainnet))
+            }
+            CliSelectServer::Betanet(cli_server) => {
+                Self::Betanet(cli_server.into_server(crate::common::ConnectionConfig::Betanet))
+            }
             CliSelectServer::Custom(cli_custom_server) => {
                 Self::Custom(cli_custom_server.into_server())
             }

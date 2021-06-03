@@ -29,9 +29,12 @@ impl SendTo {
         Self::from(CliSendTo::Contract(Default::default()))
     }
 
-    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
+    pub async fn process(
+        self,
+        network_connection_config: crate::common::ConnectionConfig,
+    ) -> crate::CliResult {
         match self {
-            SendTo::Contract(sender) => sender.process(selected_server_url).await,
+            SendTo::Contract(sender) => sender.process(network_connection_config).await,
         }
     }
 }
@@ -78,9 +81,12 @@ impl Contract {
             .unwrap()
     }
 
-    pub async fn process(self, selected_server_url: url::Url) -> crate::CliResult {
+    pub async fn process(
+        self,
+        network_connection_config: crate::common::ConnectionConfig,
+    ) -> crate::CliResult {
         self.download_mode
-            .process(self.contract_id, selected_server_url)
+            .process(self.contract_id, network_connection_config)
             .await
     }
 }

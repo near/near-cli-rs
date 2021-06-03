@@ -2,7 +2,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod offline_mode;
-mod online_mode;
+pub mod online_mode;
 
 /// инструмент выбора режима online/offline
 #[derive(Debug, Default, clap::Clap)]
