@@ -7,6 +7,10 @@ near-cli is a command line utility for working with the Near Protocol blockchain
 * en [English](docs/README.en.md)
 * ru [Русский](docs/README.ru.md)
 
+<!-- <p>Here is a demo of the CLI prompts from <a href="https://github.com/termapps/enquirer">enquirer crate</a>:</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://raw.githubusercontent.com/termapps/enquirer/master/media/select.svg"><img src="https://raw.githubusercontent.com/termapps/enquirer/master/media/select.svg" alt="" style="max-width:100%;"></a></p> -->
+
+<img src="media/417406.svg" width="836"/>
 
 ### Usage
 
