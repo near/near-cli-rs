@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
   # pull_request:
   #   branches: [master]
-  push:    
+  # push:    
     #Enable when testing release infrastructure on a branch.
-    branches: [master]
+    # branches: [master]
 jobs:
   create-release:
     name: create-release
