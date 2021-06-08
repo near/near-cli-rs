@@ -6,6 +6,7 @@ pub mod construct_transaction_command;
 pub mod delete_command;
 pub mod execute_command;
 pub mod generate_shell_completions_command;
+pub mod login;
 pub mod transfer_command;
 pub mod utils_command;
 pub mod view_command;
@@ -22,6 +23,8 @@ pub enum CliTopLevelCommand {
     Execute(self::execute_command::CliOptionMethod),
     /// Use these to generate static shell completions
     GenerateShellCompletions(self::generate_shell_completions_command::CliGenerateShellCompletions),
+    /// Use these to login with wallet authorization
+    Login(self::login::operation_mode::CliOperationMode),
     /// Use these to transfer tokens
     Transfer(self::transfer_command::CliCurrency),
     /// Helpers
@@ -33,6 +36,8 @@ pub enum CliTopLevelCommand {
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
+    #[strum_discriminants(strum(message = "Login with wallet authorization"))]
+    Login(self::login::operation_mode::OperationMode),
     #[strum_discriminants(strum(
         message = "View account, contract code, contract state, transaction, nonce"
     ))]
@@ -69,6 +74,9 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             CliTopLevelCommand::GenerateShellCompletions(_) => {
                 unreachable!("This variant is handled in the main function")
             }
+            CliTopLevelCommand::Login(cli_option_method) => {
+                TopLevelCommand::Login(cli_option_method.into())
+            }
             CliTopLevelCommand::Transfer(cli_currency) => {
                 TopLevelCommand::Transfer(cli_currency.into())
             }
@@ -103,6 +111,7 @@ impl TopLevelCommand {
             TopLevelCommandDiscriminants::Execute => {
                 CliTopLevelCommand::Execute(Default::default())
             }
+            TopLevelCommandDiscriminants::Login => CliTopLevelCommand::Login(Default::default()),
             TopLevelCommandDiscriminants::Transfer => {
                 CliTopLevelCommand::Transfer(Default::default())
             }
@@ -126,6 +135,7 @@ impl TopLevelCommand {
             Self::ConstructTransaction(mode) => mode.process(unsigned_transaction).await,
             Self::Delete(delete_action) => delete_action.process(unsigned_transaction).await,
             Self::Execute(option_method) => option_method.process(unsigned_transaction).await,
+            Self::Login(mode) => mode.process(unsigned_transaction).await,
             Self::Transfer(currency) => currency.process(unsigned_transaction).await,
             Self::Utils(util_type) => util_type.process().await,
             Self::View(view_query_request) => view_query_request.process().await,

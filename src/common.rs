@@ -4,6 +4,7 @@ use near_primitives::borsh::BorshDeserialize;
 
 #[derive(
     Debug,
+    Clone,
     strum_macros::IntoStaticStr,
     strum_macros::EnumString,
     strum_macros::EnumVariantNames,

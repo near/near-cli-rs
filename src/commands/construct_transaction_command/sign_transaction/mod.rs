@@ -2,8 +2,8 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod sign_manually;
-mod sign_with_keychain;
-mod sign_with_private_key;
+pub mod sign_with_keychain;
+pub mod sign_with_private_key;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliSignTransaction {

@@ -2,7 +2,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod combine_transaction_subcommand_with_signature;
-mod generate_keypair_subcommand;
+pub mod generate_keypair_subcommand;
 mod sign_transaction_subcommand_with_secret_key;
 
 /// набор утилит-помощников
