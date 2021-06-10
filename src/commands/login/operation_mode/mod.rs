@@ -25,11 +25,8 @@ impl From<CliOperationMode> for OperationMode {
 }
 
 impl OperationMode {
-    pub async fn process(
-        self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        self.mode.process(prepopulated_unsigned_transaction).await
+    pub async fn process(self) -> crate::CliResult {
+        self.mode.process().await
     }
 }
 
@@ -59,16 +56,9 @@ impl Mode {
         Self::from(CliMode::Network(Default::default()))
     }
 
-    pub async fn process(
-        self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
+    pub async fn process(self) -> crate::CliResult {
         match self {
-            Self::Network(network_args) => {
-                network_args
-                    .process(prepopulated_unsigned_transaction)
-                    .await
-            }
+            Self::Network(network_args) => network_args.process().await,
         }
     }
 }

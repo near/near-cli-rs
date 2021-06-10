@@ -56,7 +56,7 @@ impl SelectServer {
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_server = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select NEAR protocol RPC server:")
+            .with_prompt("Select NEAR protocol wallet url")
             .items(&servers)
             .default(0)
             .interact()
@@ -70,22 +70,19 @@ impl SelectServer {
         Self::from(cli_select_server)
     }
 
-    pub async fn process(
-        self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
+    pub async fn process(self) -> crate::CliResult {
         Ok(match self {
             SelectServer::Testnet(server) => {
-                server.process(prepopulated_unsigned_transaction).await?;
+                server.process().await?;
             }
             SelectServer::Mainnet(server) => {
-                server.process(prepopulated_unsigned_transaction).await?;
+                server.process().await?;
             }
             SelectServer::Betanet(server) => {
-                server.process(prepopulated_unsigned_transaction).await?;
+                server.process().await?;
             }
             SelectServer::Custom(server) => {
-                server.process(prepopulated_unsigned_transaction).await?;
+                server.process().await?;
             }
         })
     }

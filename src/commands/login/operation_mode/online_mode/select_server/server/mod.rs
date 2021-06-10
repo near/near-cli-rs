@@ -12,7 +12,7 @@ pub struct CliServer {}
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliCustomServer {
     #[clap(long)]
-    pub url: Option<crate::common::AvailableRpcServerUrl>,
+    pub url: Option<url::Url>,
 }
 
 #[derive(Debug)]
@@ -28,52 +28,46 @@ impl CliServer {
 
 impl CliCustomServer {
     pub fn into_server(self) -> Server {
-        let url: crate::common::AvailableRpcServerUrl = match self.url {
+        let url: url::Url = match self.url {
             Some(url) => url,
             None => Input::new()
-                .with_prompt("What is the RPC endpoint?")
+                .with_prompt("What is the wallet url?")
                 .interact_text()
                 .unwrap(),
         };
         Server {
-            connection_config: crate::common::ConnectionConfig::Custom { url: url.inner },
+            connection_config: crate::common::ConnectionConfig::Custom { url },
         }
     }
 }
 
 impl Server {
-    pub async fn process(
-        self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
+    pub async fn process(self) -> crate::CliResult {
         let generate_keypair: crate::commands::utils_command::generate_keypair_subcommand::CliGenerateKeypair =
             crate::commands::utils_command::generate_keypair_subcommand::CliGenerateKeypair::default();
 
-        let key_pair_properties: crate::commands::utils_command::generate_keypair_subcommand::KeyPairProperties =
-            generate_keypair.generate_keypair().await?;
+        let key_pair_properties: crate::common::KeyPairProperties =
+            crate::common::generate_keypair(
+                generate_keypair.master_seed_phrase.clone(),
+                generate_keypair.new_master_seed_phrase_words_count.clone(),
+                generate_keypair.seed_phrase_hd_path.clone(),
+            )
+            .await?;
 
-        let url_wallet: url::Url = crate::consts::WALLET_URL.parse()?;
-        let url_login: url::Url = url_wallet.join("login/?title=NEAR+CLI")?;
-        let url: url::Url = url::Url::parse_with_params(
-            url_login.as_str(),
-            &[
-                ("public_key", &key_pair_properties.public_key_str),
-                ("success_url", &"http://127.0.0.1:8080".to_string()),
-            ],
-        )?;
+        let mut url: url::Url = self.connection_config.wallet_url().join("login/")?;
+        url.query_pairs_mut()
+            .append_pair("title", "NEAR+CLI")
+            .append_pair("public_key", &key_pair_properties.public_key_str)
+            .append_pair("success_url", "http://127.0.0.1:8080");
+        println!("url: {}", &url.as_str());
         url.open();
 
         let public_key: near_crypto::PublicKey =
             near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
 
-        let account_id = get_account_from_cli(
-            public_key,
-            prepopulated_unsigned_transaction,
-            Some(self.connection_config),
-        )
-        .await?;
+        let account_id = get_account_from_cli(public_key, self.connection_config.clone()).await?;
         if !account_id.is_empty() {
-            save_account(&account_id, key_pair_properties).await?
+            save_account(&account_id, key_pair_properties, self.connection_config).await?
         };
         Ok(())
     }
@@ -81,55 +75,34 @@ impl Server {
 
 async fn get_account_from_cli(
     public_key: near_crypto::PublicKey,
-    prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    network_connection_config: Option<crate::common::ConnectionConfig>,
+    network_connection_config: crate::common::ConnectionConfig,
 ) -> color_eyre::eyre::Result<String> {
-    let account_id: String = "volodymyr.testnet".to_string();
-    add_full_access_key(
-        account_id.clone(),
-        public_key,
-        prepopulated_unsigned_transaction,
-        network_connection_config,
-    )
-    .await?;
+    let account_id = input_account_id();
+    verify_account_id(account_id.clone(), public_key, network_connection_config)
+        .await
+        .map_err(|err| color_eyre::Report::msg(format!("Failed account ID: {:?}", err)))?;
     Ok(account_id)
 }
 
-async fn add_full_access_key(
+fn input_account_id() -> String {
+    Input::new()
+        .with_prompt("Enter account ID")
+        .interact_text()
+        .unwrap()
+}
+
+async fn verify_account_id(
     account_id: String,
     public_key: near_crypto::PublicKey,
-    prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    network_connection_config: Option<crate::common::ConnectionConfig>,
+    network_connection_config: crate::common::ConnectionConfig,
 ) -> crate::CliResult {
-    let access_key: near_primitives::account::AccessKey = near_primitives::account::AccessKey {
-        nonce: 0,
-        permission: near_primitives::account::AccessKeyPermission::FullAccess,
-    };
-    let action =
-        near_primitives::transaction::Action::AddKey(near_primitives::transaction::AddKeyAction {
-            public_key,
-            access_key,
-        });
-    let mut actions = prepopulated_unsigned_transaction.actions.clone();
-    actions.push(action);
-    let unsigned_transaction = near_primitives::transaction::Transaction {
-        actions,
-        signer_id: account_id.clone(),
-        receiver_id: account_id.clone(),
-        ..prepopulated_unsigned_transaction
-    };
-
-    let sign_with_key_chain = crate::commands::construct_transaction_command::sign_transaction::sign_with_keychain::SignKeychain {
-        submit: Some(crate::commands::construct_transaction_command::sign_transaction::sign_with_private_key::Submit::Send)
-    };
-    sign_with_key_chain
-        .process(unsigned_transaction, network_connection_config)
-        .await
+    Ok(())
 }
 
 async fn save_account(
     account_id: &str,
-    key_pair_properties: crate::commands::utils_command::generate_keypair_subcommand::KeyPairProperties,
+    key_pair_properties: crate::common::KeyPairProperties,
+    network_connection_config: crate::common::ConnectionConfig,
 ) -> crate::CliResult {
     let buf = format!(
         "{}",
@@ -142,7 +115,8 @@ async fn save_account(
     let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
     let file_name: std::path::PathBuf = format!("{}.json", &account_id).into();
     let mut path = std::path::PathBuf::from(&home_dir);
-    path.push(crate::consts::DIR_NAME_TESTNET);
+    path.push(network_connection_config.dir_name());
+    std::fs::create_dir_all(&path)?;
     path.push(file_name);
     std::fs::File::create(&path)
         .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?

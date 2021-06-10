@@ -25,12 +25,7 @@ impl From<CliNetworkArgs> for NetworkArgs {
 }
 
 impl NetworkArgs {
-    pub async fn process(
-        self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        self.selected_server
-            .process(prepopulated_unsigned_transaction)
-            .await
+    pub async fn process(self) -> crate::CliResult {
+        self.selected_server.process().await
     }
 }
