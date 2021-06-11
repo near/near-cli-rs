@@ -57,9 +57,12 @@ impl Server {
         let mut url: url::Url = self.connection_config.wallet_url().join("login/")?;
         url.query_pairs_mut()
             .append_pair("title", "NEAR+CLI")
-            .append_pair("public_key", &key_pair_properties.public_key_str)
-            .append_pair("success_url", "http://127.0.0.1:8080");
-        println!("url: {}", &url.as_str());
+            .append_pair("public_key", &key_pair_properties.public_key_str);
+        // .append_pair("success_url", "http://127.0.0.1:8080");
+        println!(
+            "If your browser doesn't automatically open, please visit this URL:\n {}\n",
+            &url.as_str()
+        );
         url.open();
 
         let public_key: near_crypto::PublicKey =
