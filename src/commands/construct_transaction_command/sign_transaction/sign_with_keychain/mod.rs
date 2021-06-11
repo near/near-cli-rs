@@ -11,7 +11,7 @@ pub struct CliSignKeychain {
 
 #[derive(Debug)]
 pub struct SignKeychain {
-    submit: Option<super::sign_with_private_key::Submit>,
+    pub submit: Option<super::sign_with_private_key::Submit>,
 }
 
 impl From<CliSignKeychain> for SignKeychain {

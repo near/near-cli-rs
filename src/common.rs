@@ -4,6 +4,7 @@ use near_primitives::borsh::BorshDeserialize;
 
 #[derive(
     Debug,
+    Clone,
     strum_macros::IntoStaticStr,
     strum_macros::EnumString,
     strum_macros::EnumVariantNames,
@@ -236,7 +237,7 @@ impl NearGas {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ConnectionConfig {
     Testnet,
     Mainnet,
@@ -268,6 +269,83 @@ impl ConnectionConfig {
             Self::Custom { url } => url.clone(),
         }
     }
+
+    pub fn wallet_url(&self) -> url::Url {
+        match self {
+            Self::Testnet => crate::consts::TESTNET_WALLET_URL.parse().unwrap(),
+            Self::Mainnet => crate::consts::MAINNET_WALLET_URL.parse().unwrap(),
+            Self::Betanet => crate::consts::BETANET_WALLET_URL.parse().unwrap(),
+            Self::Custom { url } => url.clone(),
+        }
+    }
+
+    pub fn dir_name(&self) -> &str {
+        match self {
+            Self::Testnet => crate::consts::DIR_NAME_TESTNET,
+            Self::Mainnet => crate::consts::DIR_NAME_MAINNET,
+            Self::Betanet => crate::consts::DIR_NAME_BETANET,
+            Self::Custom { url: _ } => crate::consts::DIR_NAME_CUSTOM,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct KeyPairProperties {
+    pub seed_phrase_hd_path: slip10::BIP32Path,
+    pub master_seed_phrase: String,
+    pub implicit_account_id: String,
+    pub public_key_str: String,
+    pub secret_keypair_str: String,
+}
+
+pub async fn generate_keypair(
+    master_seed_phrase: Option<&str>,
+    new_master_seed_phrase_words_count: usize,
+    seed_phrase_hd_path: slip10::BIP32Path,
+) -> color_eyre::eyre::Result<KeyPairProperties> {
+    let (master_seed_phrase, master_seed) = if let Some(master_seed_phrase) = master_seed_phrase {
+        (
+            master_seed_phrase.to_owned(),
+            bip39::Mnemonic::parse(master_seed_phrase)?.to_seed(""),
+        )
+    } else {
+        let mnemonic = bip39::Mnemonic::generate(new_master_seed_phrase_words_count)?;
+        let master_seed_phrase = mnemonic.word_iter().collect::<Vec<&str>>().join(" ");
+        (master_seed_phrase, mnemonic.to_seed(""))
+    };
+
+    let derived_private_key =
+        slip10::derive_key_from_path(&master_seed, slip10::Curve::Ed25519, &seed_phrase_hd_path)
+            .map_err(|err| {
+                color_eyre::Report::msg(format!(
+                    "Failed to derive a key from the master key: {}",
+                    err
+                ))
+            })?;
+
+    let secret_keypair = {
+        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
+        let public = ed25519_dalek::PublicKey::from(&secret);
+        ed25519_dalek::Keypair { secret, public }
+    };
+
+    let implicit_account_id = hex::encode(&secret_keypair.public);
+    let public_key_str = format!(
+        "ed25519:{}",
+        bs58::encode(&secret_keypair.public).into_string()
+    );
+    let secret_keypair_str = format!(
+        "ed25519:{}",
+        bs58::encode(secret_keypair.to_bytes()).into_string()
+    );
+    let key_pair_properties: KeyPairProperties = KeyPairProperties {
+        seed_phrase_hd_path,
+        master_seed_phrase,
+        implicit_account_id,
+        public_key_str,
+        secret_keypair_str,
+    };
+    Ok(key_pair_properties)
 }
 
 #[cfg(test)]

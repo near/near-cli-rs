@@ -1821,6 +1821,7 @@ dependencies = [
  "strum 0.20.1",
  "strum_macros 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "url",
+ "url_open",
 ]
 
 [[package]]
@@ -3461,6 +3462,16 @@ dependencies = [
  "matches",
  "percent-encoding",
  "serde",
+]
+
+[[package]]
+name = "url_open"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae0b8a775e36e692c64e6a15a5cd854cc58dee7636d380b07738f6f816e3dc78"
+dependencies = [
+ "url",
+ "winapi",
 ]
 
 [[package]]

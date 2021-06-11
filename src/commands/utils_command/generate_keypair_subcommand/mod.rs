@@ -21,7 +21,7 @@ fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
 
 /// Generate a key pair of secret and public keys (use it anywhere you need
 /// Ed25519 keys)
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, clap::Clap, Clone)]
 pub struct CliGenerateKeypair {
     pub master_seed_phrase: Option<String>,
     pub new_master_seed_phrase_words_count: usize,
@@ -42,73 +42,34 @@ impl Default for CliGenerateKeypair {
 
 impl CliGenerateKeypair {
     pub async fn process(self) -> crate::CliResult {
-        let (master_seed_phrase, master_seed) =
-            if let Some(ref master_seed_phrase) = self.master_seed_phrase {
-                (
-                    master_seed_phrase.clone(),
-                    bip39::Mnemonic::parse(master_seed_phrase)?.to_seed(""),
-                )
-            } else {
-                let mnemonic = bip39::Mnemonic::generate(self.new_master_seed_phrase_words_count)?;
-                let mut master_seed_phrase = String::new();
-                for (index, word) in mnemonic.word_iter().enumerate() {
-                    if index != 0 {
-                        master_seed_phrase.push(' ');
-                    }
-                    master_seed_phrase.push_str(word);
-                }
-                (master_seed_phrase, mnemonic.to_seed(""))
-            };
-
-        let derived_private_key = slip10::derive_key_from_path(
-            &master_seed,
-            slip10::Curve::Ed25519,
-            &self.seed_phrase_hd_path,
+        let key_pair_properties = crate::common::generate_keypair(
+            self.master_seed_phrase.as_deref(),
+            self.new_master_seed_phrase_words_count,
+            self.seed_phrase_hd_path,
         )
-        .map_err(|err| {
-            color_eyre::Report::msg(format!(
-                "Failed to derive a key from the master key: {}",
-                err
-            ))
-        })?;
-
-        let secret_keypair = {
-            let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-            let public = ed25519_dalek::PublicKey::from(&secret);
-            ed25519_dalek::Keypair { secret, public }
-        };
-
-        let implicit_account_id = hex::encode(&secret_keypair.public);
-        let public_key_str = format!(
-            "ed25519:{}",
-            bs58::encode(&secret_keypair.public).into_string()
-        );
-        let secret_keypair_str = format!(
-            "ed25519:{}",
-            bs58::encode(secret_keypair.to_bytes()).into_string()
-        );
+        .await?;
 
         match self.format {
             crate::common::OutputFormat::Plaintext => {
                 println!(
                     "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
-                    master_seed_phrase,
-                    bip32path_to_string(&self.seed_phrase_hd_path),
-                    implicit_account_id,
-                    public_key_str,
-                    secret_keypair_str,
+                    key_pair_properties.master_seed_phrase,
+                    bip32path_to_string(&key_pair_properties.seed_phrase_hd_path),
+                    key_pair_properties.implicit_account_id,
+                    key_pair_properties.public_key_str,
+                    key_pair_properties.secret_keypair_str,
                 );
             }
             crate::common::OutputFormat::Json => {
                 println!(
-                    "{:#?}",
-                    serde_json::json!({
-                        "master_seed_phrase": master_seed_phrase,
-                        "seed_phrase_hd_path": bip32path_to_string(&self.seed_phrase_hd_path),
-                        "account_id": implicit_account_id,
-                        "public_key": public_key_str,
-                        "private_key": secret_keypair_str,
-                    })
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "master_seed_phrase": key_pair_properties.master_seed_phrase,
+                        "seed_phrase_hd_path": bip32path_to_string(&key_pair_properties.seed_phrase_hd_path),
+                        "account_id": key_pair_properties.implicit_account_id,
+                        "public_key": key_pair_properties.public_key_str,
+                        "private_key": key_pair_properties.secret_keypair_str,
+                    })).unwrap()
                 );
             }
         };
