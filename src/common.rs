@@ -303,8 +303,7 @@ pub async fn generate_keypair(
     new_master_seed_phrase_words_count: usize,
     seed_phrase_hd_path: slip10::BIP32Path,
 ) -> color_eyre::eyre::Result<KeyPairProperties> {
-    let (master_seed_phrase, master_seed) = if let Some(master_seed_phrase) = master_seed_phrase
-    {
+    let (master_seed_phrase, master_seed) = if let Some(master_seed_phrase) = master_seed_phrase {
         (
             master_seed_phrase.to_owned(),
             bip39::Mnemonic::parse(master_seed_phrase)?.to_seed(""),
