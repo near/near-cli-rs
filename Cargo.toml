@@ -33,6 +33,7 @@ dirs = "3.0"
 # The fix is needed for seemless clap integration: https://github.com/wusyong/slip10/pull/3
 slip10 = { git = "https://github.com/frol/slip10", rev = "a3235dd0acf3a485f547cf23e2dd56838adb45f8" }
 url = { version = "2", features = ["serde"] }
+url_open = "0.0.1"
 
 color-eyre = "0.5"
 

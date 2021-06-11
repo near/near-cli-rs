@@ -82,6 +82,7 @@ impl CliGenerateKeypair {
         let file_name: std::path::PathBuf = format!("{}.json", &implicit_account_id).into();
         let mut path = std::path::PathBuf::from(&home_dir);
         path.push(crate::consts::DIR_NAME_KEY_CHAIN);
+        std::fs::create_dir_all(&path)?;
         path.push(file_name);
         if path.exists() {
             return Err(color_eyre::Report::msg(format!(
