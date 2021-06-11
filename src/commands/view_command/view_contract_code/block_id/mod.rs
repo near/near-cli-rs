@@ -122,6 +122,8 @@ impl BlockId {
             };
         match &file_path {
             Some(file_path) => {
+                let dir_name = &file_path.parent().unwrap();
+                std::fs::create_dir_all(&dir_name)?;
                 std::fs::File::create(file_path)
                     .map_err(|err| {
                         color_eyre::Report::msg(format!("Failed to create file: {:?}", err))

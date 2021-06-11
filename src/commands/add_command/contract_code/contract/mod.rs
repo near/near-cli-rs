@@ -111,10 +111,10 @@ impl ContractFile {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
-        let mut f = std::fs::File::open(&self.file_path.clone())
-            .map_err(|err| color_eyre::Report::msg(format!("Failed to open file: {:?}", err)))?;
         let mut code = Vec::new();
-        f.read_to_end(&mut code)
+        std::fs::File::open(&self.file_path.clone())
+            .map_err(|err| color_eyre::Report::msg(format!("Failed to open file: {:?}", err)))?
+            .read_to_end(&mut code)
             .map_err(|err| color_eyre::Report::msg(format!("Failed to read file: {:?}", err)))?;
         let action = near_primitives::transaction::Action::DeployContract(
             near_primitives::transaction::DeployContractAction { code },
