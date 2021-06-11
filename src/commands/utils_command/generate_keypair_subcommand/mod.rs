@@ -42,9 +42,7 @@ impl Default for CliGenerateKeypair {
 
 impl CliGenerateKeypair {
     pub async fn process(self) -> crate::CliResult {
-        let self_clone = self.clone();
-
-        let seed_phrase_hd_path = bip32path_to_string(&self_clone.seed_phrase_hd_path);
+        let seed_phrase_hd_path = bip32path_to_string(&self.seed_phrase_hd_path);
 
         let key_pair_properties = crate::common::generate_keypair(
             self.master_seed_phrase.clone(),
@@ -53,7 +51,7 @@ impl CliGenerateKeypair {
         )
         .await?;
 
-        match self_clone.format {
+        match self.format {
             crate::common::OutputFormat::Plaintext => {
                 println!(
                     "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
