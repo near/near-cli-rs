@@ -42,12 +42,10 @@ impl Default for CliGenerateKeypair {
 
 impl CliGenerateKeypair {
     pub async fn process(self) -> crate::CliResult {
-        let seed_phrase_hd_path = bip32path_to_string(&self.seed_phrase_hd_path);
-
         let key_pair_properties = crate::common::generate_keypair(
-            self.master_seed_phrase.clone(),
-            self.new_master_seed_phrase_words_count.clone(),
-            self.seed_phrase_hd_path.clone(),
+            self.master_seed_phrase.as_deref(),
+            self.new_master_seed_phrase_words_count,
+            self.seed_phrase_hd_path,
         )
         .await?;
 
@@ -56,7 +54,7 @@ impl CliGenerateKeypair {
                 println!(
                     "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
                     key_pair_properties.master_seed_phrase,
-                    seed_phrase_hd_path,
+                    bip32path_to_string(&key_pair_properties.seed_phrase_hd_path),
                     key_pair_properties.implicit_account_id,
                     key_pair_properties.public_key_str,
                     key_pair_properties.secret_keypair_str,
@@ -64,14 +62,14 @@ impl CliGenerateKeypair {
             }
             crate::common::OutputFormat::Json => {
                 println!(
-                    "{:#?}",
-                    serde_json::json!({
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
                         "master_seed_phrase": key_pair_properties.master_seed_phrase,
-                        "seed_phrase_hd_path": seed_phrase_hd_path,
+                        "seed_phrase_hd_path": bip32path_to_string(&key_pair_properties.seed_phrase_hd_path),
                         "account_id": key_pair_properties.implicit_account_id,
                         "public_key": key_pair_properties.public_key_str,
                         "private_key": key_pair_properties.secret_keypair_str,
-                    })
+                    })).unwrap()
                 );
             }
         };

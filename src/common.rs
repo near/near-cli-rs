@@ -289,7 +289,9 @@ impl ConnectionConfig {
     }
 }
 
+#[derive(Debug)]
 pub struct KeyPairProperties {
+    pub seed_phrase_hd_path: slip10::BIP32Path,
     pub master_seed_phrase: String,
     pub implicit_account_id: String,
     pub public_key_str: String,
@@ -297,25 +299,19 @@ pub struct KeyPairProperties {
 }
 
 pub async fn generate_keypair(
-    master_seed_phrase: Option<String>,
+    master_seed_phrase: Option<&str>,
     new_master_seed_phrase_words_count: usize,
     seed_phrase_hd_path: slip10::BIP32Path,
 ) -> color_eyre::eyre::Result<KeyPairProperties> {
-    let (master_seed_phrase, master_seed) = if let Some(ref master_seed_phrase) = master_seed_phrase
+    let (master_seed_phrase, master_seed) = if let Some(master_seed_phrase) = master_seed_phrase
     {
         (
-            master_seed_phrase.clone(),
+            master_seed_phrase.to_owned(),
             bip39::Mnemonic::parse(master_seed_phrase)?.to_seed(""),
         )
     } else {
         let mnemonic = bip39::Mnemonic::generate(new_master_seed_phrase_words_count)?;
-        let mut master_seed_phrase = String::new();
-        for (index, word) in mnemonic.word_iter().enumerate() {
-            if index != 0 {
-                master_seed_phrase.push(' ');
-            }
-            master_seed_phrase.push_str(word);
-        }
+        let master_seed_phrase = mnemonic.word_iter().collect::<Vec<&str>>().join(" ");
         (master_seed_phrase, mnemonic.to_seed(""))
     };
 
@@ -344,6 +340,7 @@ pub async fn generate_keypair(
         bs58::encode(secret_keypair.to_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
+        seed_phrase_hd_path,
         master_seed_phrase,
         implicit_account_id,
         public_key_str,
