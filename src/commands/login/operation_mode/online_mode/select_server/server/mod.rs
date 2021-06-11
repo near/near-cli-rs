@@ -48,17 +48,18 @@ impl Server {
 
         let key_pair_properties: crate::common::KeyPairProperties =
             crate::common::generate_keypair(
-                generate_keypair.master_seed_phrase.clone(),
-                generate_keypair.new_master_seed_phrase_words_count.clone(),
-                generate_keypair.seed_phrase_hd_path.clone(),
+                generate_keypair.master_seed_phrase.as_deref(),
+                generate_keypair.new_master_seed_phrase_words_count,
+                generate_keypair.seed_phrase_hd_path,
             )
             .await?;
 
         let mut url: url::Url = self.connection_config.wallet_url().join("login/")?;
         url.query_pairs_mut()
-            .append_pair("title", "NEAR+CLI")
+            .append_pair("title", "NEAR CLI")
             .append_pair("public_key", &key_pair_properties.public_key_str);
-        // .append_pair("success_url", "http://127.0.0.1:8080");
+            // Use `success_url` once capture mode is implemented
+            //.append_pair("success_url", "http://127.0.0.1:8080");
         println!(
             "If your browser doesn't automatically open, please visit this URL:\n {}\n",
             &url.as_str()
