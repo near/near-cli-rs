@@ -1808,6 +1808,7 @@ dependencies = [
  "dialoguer",
  "dirs",
  "ed25519-dalek",
+ "futures",
  "hex",
  "near-crypto",
  "near-jsonrpc-client",
@@ -1820,6 +1821,7 @@ dependencies = [
  "smart-default",
  "strum 0.20.1",
  "strum_macros 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio",
  "url",
  "url_open",
 ]
@@ -2928,7 +2930,7 @@ checksum = "c111b5bd5695e56cffe5129854aa230b39c93a305372fdbb2668ca2394eea9f8"
 [[package]]
 name = "slip10"
 version = "0.4.2"
-source = "git+https://github.com/frol/slip10?rev=a3235dd0acf3a485f547cf23e2dd56838adb45f8#a3235dd0acf3a485f547cf23e2dd56838adb45f8"
+source = "git+https://github.com/wusyong/slip10?rev=8d509d0b2a3eb79928d5e9ddb89adebfabadba15#8d509d0b2a3eb79928d5e9ddb89adebfabadba15"
 dependencies = [
  "ed25519-dalek",
  "hmac",
