@@ -4,6 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod combine_transaction_subcommand_with_signature;
 pub mod generate_keypair_subcommand;
 mod sign_transaction_subcommand_with_secret_key;
+mod view_serialized_transaction;
 
 /// набор утилит-помощников
 #[derive(Debug, Default, clap::Clap)]
@@ -35,6 +36,7 @@ impl Utils {
 
 #[derive(Debug, clap::Clap)]
 enum CliUtil {
+    /// It generates a random key pair
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
     /// Предоставьте данные для подписания данных с помощью privte key
     SignTransactionSecretKey(
@@ -44,6 +46,8 @@ enum CliUtil {
     CombineTransactionSignature(
         self::combine_transaction_subcommand_with_signature::CliCombineTransactionSignature,
     ),
+    /// Using this module, you can view the contents of a serialized transaction (whether signed or not).
+    ViewSerializedTransaction(self::view_serialized_transaction::CliViewSerializedTransaction)
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -59,6 +63,8 @@ pub enum Util {
     CombineTransactionSignature(
         self::combine_transaction_subcommand_with_signature::CombineTransactionSignature,
     ),
+    #[strum_discriminants(strum(message = "Deserializing the bytes from base64"))]
+    ViewSerializedTransaction(self::view_serialized_transaction::ViewSerializedTransaction)
 }
 
 impl From<CliUtil> for Util {
@@ -74,6 +80,11 @@ impl From<CliUtil> for Util {
                 let combine_transaction =
                     self::combine_transaction_subcommand_with_signature::CombineTransactionSignature::from(cli_combine_transaction);
                 Util::CombineTransactionSignature(combine_transaction)
+            }
+            CliUtil::ViewSerializedTransaction(cli_view_serialized_transaction) => {
+                let view_serialized_transaction =
+                    self::view_serialized_transaction::ViewSerializedTransaction::from(cli_view_serialized_transaction);
+                Util::ViewSerializedTransaction(view_serialized_transaction)
             }
         }
     }
@@ -103,6 +114,9 @@ impl Util {
             UtilDiscriminants::CombineTransactionSignature => {
                 CliUtil::CombineTransactionSignature(Default::default())
             }
+            UtilDiscriminants::ViewSerializedTransaction => {
+                CliUtil::ViewSerializedTransaction(Default::default())
+            }
         };
         Self::from(cli_util)
     }
@@ -114,6 +128,7 @@ impl Util {
             Self::CombineTransactionSignature(combine_transaction) => {
                 combine_transaction.process().await
             }
+            Self::ViewSerializedTransaction(view_serialized_transaction) => {view_serialized_transaction.process().await},
         }
     }
 }
