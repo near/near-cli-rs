@@ -60,6 +60,7 @@ impl NextAction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
+        file_path: std::path::PathBuf,
     ) -> crate::CliResult {
         match self {
             NextAction::Initialize(call_function_action) => {
@@ -69,7 +70,11 @@ impl NextAction {
             }
             NextAction::NoInitialize(no_initialize) => {
                 no_initialize
-                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .process(
+                        prepopulated_unsigned_transaction,
+                        network_connection_config,
+                        file_path,
+                    )
                     .await
             }
         }
@@ -106,9 +111,23 @@ impl NoInitialize {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
+        file_path: std::path::PathBuf,
     ) -> crate::CliResult {
-        self.sign_option
+        match self
+            .sign_option
             .process(prepopulated_unsigned_transaction, network_connection_config)
-            .await
+            .await?
+        {
+            Some(transaction_info) => {
+                println!(
+                    "\n Contract code {:?} has been successfully deployed.",
+                    file_path
+                );
+                println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
+                    \nhttps://explorer.testnet.near.org/transactions/{id}\n", id=transaction_info.transaction_outcome.id);
+            }
+            None => {}
+        };
+        Ok(())
     }
 }

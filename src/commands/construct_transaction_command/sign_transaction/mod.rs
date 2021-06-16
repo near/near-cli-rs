@@ -81,7 +81,7 @@ impl SignTransaction {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         match self {
             SignTransaction::SignPrivateKey(keys) => {
                 keys.process(prepopulated_unsigned_transaction, network_connection_config)

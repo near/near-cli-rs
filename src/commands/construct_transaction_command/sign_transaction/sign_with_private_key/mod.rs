@@ -75,7 +75,7 @@ impl SignPrivateKey {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
         let signer_secret_key: near_crypto::SecretKey = self.signer_secret_key.clone();
         let submit: Option<Submit> = self.submit.clone();
@@ -216,7 +216,7 @@ impl Submit {
         self,
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         println!("\n\n\n===========  DISPLAY  ==========");
         println!(
             "\n\n---  Signed transaction:   ---\n    {:#?}",
@@ -226,7 +226,7 @@ impl Submit {
             "\n\n---  serialize_to_base64:   --- \n   {:#?}",
             &serialize_to_base64
         );
-        Ok(())
+        Ok(None)
     }
 
     pub async fn process_online(
@@ -234,18 +234,10 @@ impl Submit {
         network_connection_config: crate::common::ConnectionConfig,
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         match self {
             Submit::Send => {
-                println!("\n\n\n========= SENT =========");
-                println!(
-                    "\n\n---  Signed transaction:   ---\n    {:#?}",
-                    &signed_transaction
-                );
-                println!(
-                    "\n\n---  serialize_to_base64:   --- \n   {:#?}",
-                    &serialize_to_base64
-                );
+                println!("\n\n\n--- Transaction sent ---");
                 let json_rcp_client =
                     near_jsonrpc_client::new_client(network_connection_config.rpc_url().as_str());
                 let transaction_info = loop {
@@ -274,7 +266,8 @@ impl Submit {
                         }
                     };
                 };
-                println!("\n\n---  Success:  ---\n {:#?}", &transaction_info);
+                println!("\n\n--- Transaction execution: ---\n");
+                Ok(Some(transaction_info))
             }
             Submit::Display => {
                 println!("\n\n\n===========  DISPLAY  ==========");
@@ -286,8 +279,8 @@ impl Submit {
                     "\n\n---  serialize_to_base64:   --- \n {:#?}",
                     &serialize_to_base64
                 );
+                Ok(None)
             }
         }
-        Ok(())
     }
 }

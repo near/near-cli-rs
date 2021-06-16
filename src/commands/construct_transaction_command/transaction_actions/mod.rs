@@ -321,8 +321,21 @@ impl SkipAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
-        self.sign_option
+        match self
+            .sign_option
             .process(prepopulated_unsigned_transaction, network_connection_config)
-            .await
+            .await?
+        {
+            Some(transaction_info) => {
+                // println!("\nAdded function access key = {:?} to {}.",
+                //         public_key,
+                //         unsigned_transaction.signer_id,
+                //     );
+                println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
+                    \nhttps://explorer.testnet.near.org/transactions/{id}\n", id=transaction_info.transaction_outcome.id);
+            }
+            None => {}
+        };
+        Ok(())
     }
 }

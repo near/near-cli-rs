@@ -99,8 +99,42 @@ impl TransferNEARTokensAction {
             actions,
             ..prepopulated_unsigned_transaction
         };
-        self.sign_option
+        match self
+            .sign_option
             .process(unsigned_transaction, network_connection_config)
-            .await
+            .await?
+        {
+            Some(transaction_info) => {
+                match transaction_info.status {
+                    near_primitives::views::FinalExecutionStatus::NotStarted => {
+                        println!("NotStarted")
+                    }
+                    near_primitives::views::FinalExecutionStatus::Started => println!("Started"),
+                    near_primitives::views::FinalExecutionStatus::Failure(e) => {
+                        println!("Failure({:?})", e)
+                    }
+                    near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
+                        let deposit =
+                            if let near_primitives::views::ActionView::Transfer { deposit } =
+                                transaction_info.transaction.actions[0]
+                            {
+                                deposit
+                            } else {
+                                0
+                            };
+                        println!(
+                            "\n<{}> has transferred {} to <{}> successfully.",
+                            transaction_info.transaction.signer_id,
+                            crate::common::NearBalance::from_yoctonear(deposit),
+                            transaction_info.transaction.receiver_id,
+                        );
+                    }
+                }
+                println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
+                    \nhttps://explorer.testnet.near.org/transactions/{id}\n", id=transaction_info.transaction_outcome.id);
+            }
+            None => {}
+        };
+        Ok(())
     }
 }
