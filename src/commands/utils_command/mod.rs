@@ -47,7 +47,7 @@ enum CliUtil {
         self::combine_transaction_subcommand_with_signature::CliCombineTransactionSignature,
     ),
     /// Using this module, you can view the contents of a serialized transaction (whether signed or not).
-    ViewSerializedTransaction(self::view_serialized_transaction::CliViewSerializedTransaction)
+    ViewSerializedTransaction(self::view_serialized_transaction::CliViewSerializedTransaction),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -64,7 +64,7 @@ pub enum Util {
         self::combine_transaction_subcommand_with_signature::CombineTransactionSignature,
     ),
     #[strum_discriminants(strum(message = "Deserializing the bytes from base64"))]
-    ViewSerializedTransaction(self::view_serialized_transaction::ViewSerializedTransaction)
+    ViewSerializedTransaction(self::view_serialized_transaction::ViewSerializedTransaction),
 }
 
 impl From<CliUtil> for Util {
@@ -83,7 +83,9 @@ impl From<CliUtil> for Util {
             }
             CliUtil::ViewSerializedTransaction(cli_view_serialized_transaction) => {
                 let view_serialized_transaction =
-                    self::view_serialized_transaction::ViewSerializedTransaction::from(cli_view_serialized_transaction);
+                    self::view_serialized_transaction::ViewSerializedTransaction::from(
+                        cli_view_serialized_transaction,
+                    );
                 Util::ViewSerializedTransaction(view_serialized_transaction)
             }
         }
@@ -128,7 +130,9 @@ impl Util {
             Self::CombineTransactionSignature(combine_transaction) => {
                 combine_transaction.process().await
             }
-            Self::ViewSerializedTransaction(view_serialized_transaction) => {view_serialized_transaction.process().await},
+            Self::ViewSerializedTransaction(view_serialized_transaction) => {
+                view_serialized_transaction.process().await
+            }
         }
     }
 }
