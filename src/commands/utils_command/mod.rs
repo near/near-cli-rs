@@ -5,6 +5,7 @@ mod combine_transaction_subcommand_with_signature;
 pub mod generate_keypair_subcommand;
 mod sign_transaction_subcommand_with_secret_key;
 mod view_serialized_transaction;
+mod ledger_publickey_subcommand;
 
 /// набор утилит-помощников
 #[derive(Debug, Default, clap::Clap)]
@@ -38,7 +39,7 @@ impl Utils {
 enum CliUtil {
     /// It generates a random key pair
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
-    /// Предоставьте данные для подписания данных с помощью privte key
+    /// Предоставьте данные для подписания данных с помощью private key
     SignTransactionSecretKey(
         self::sign_transaction_subcommand_with_secret_key::CliSignTransactionSecretKey,
     ),
@@ -48,6 +49,8 @@ enum CliUtil {
     ),
     /// Using this module, you can view the contents of a serialized transaction (whether signed or not).
     ViewSerializedTransaction(self::view_serialized_transaction::CliViewSerializedTransaction),
+    /// Get Public Key from Ledger
+    LedgerPublicKey(self::ledger_publickey_subcommand::CliLedgerPublicKey),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -65,6 +68,8 @@ pub enum Util {
     ),
     #[strum_discriminants(strum(message = "Deserializing the bytes from base64"))]
     ViewSerializedTransaction(self::view_serialized_transaction::ViewSerializedTransaction),
+    #[strum_discriminants(strum(message = "Get public key from Ledger device"))]
+    LedgerPublicKey(self::ledger_publickey_subcommand::CliLedgerPublicKey),
 }
 
 impl From<CliUtil> for Util {
@@ -88,6 +93,7 @@ impl From<CliUtil> for Util {
                     );
                 Util::ViewSerializedTransaction(view_serialized_transaction)
             }
+            CliUtil::LedgerPublicKey(ledger_publickey) => Util::LedgerPublicKey(ledger_publickey)
         }
     }
 }
@@ -119,6 +125,7 @@ impl Util {
             UtilDiscriminants::ViewSerializedTransaction => {
                 CliUtil::ViewSerializedTransaction(Default::default())
             }
+            UtilDiscriminants::LedgerPublicKey => CliUtil::LedgerPublicKey(self::ledger_publickey_subcommand::CliLedgerPublicKey::default()),
         };
         Self::from(cli_util)
     }
@@ -133,6 +140,7 @@ impl Util {
             Self::ViewSerializedTransaction(view_serialized_transaction) => {
                 view_serialized_transaction.process().await
             }
+            Self::LedgerPublicKey(ledger_publickey) => ledger_publickey.process().await,
         }
     }
 }
