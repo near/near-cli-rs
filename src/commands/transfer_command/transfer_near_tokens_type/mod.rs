@@ -110,8 +110,8 @@ impl TransferNEARTokensAction {
                         println!("NotStarted")
                     }
                     near_primitives::views::FinalExecutionStatus::Started => println!("Started"),
-                    near_primitives::views::FinalExecutionStatus::Failure(e) => {
-                        println!("Failure({:?})", e)
+                    near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+                        crate::common::print_transaction_error(tx_execution_error).await
                     }
                     near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
                         let deposit =
