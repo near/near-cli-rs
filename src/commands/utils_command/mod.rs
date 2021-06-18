@@ -3,9 +3,9 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod combine_transaction_subcommand_with_signature;
 pub mod generate_keypair_subcommand;
-mod sign_transaction_subcommand_with_secret_key;
 mod view_serialized_transaction;
 mod ledger_publickey_subcommand;
+mod sign_transaction_subcommand_with_secret_key;
 
 /// набор утилит-помощников
 #[derive(Debug, Default, clap::Clap)]

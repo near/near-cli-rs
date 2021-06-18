@@ -42,23 +42,26 @@ impl Default for CliLedgerPublicKey {
 
 impl CliLedgerPublicKey {
     pub async fn process(self) -> crate::CliResult {
-        // Get public key from ledger
-        // let key_pair_properties = crate::common::generate_keypair(
-        //     self.master_seed_phrase.as_deref(),
-        //     self.new_master_seed_phrase_words_count,
-        //     self.seed_phrase_hd_path,
-        // )
-        // .await?;
+        let public_key = match near_ledger::get_public_key(self.seed_phrase_hd_path.clone()).await {
+            Ok(public_key) => public_key,
+            Err(near_ledger_error) => {
+                println!(
+                    "An error occurred while trying to get PublicKey from Ledger device: {:?}",
+                    near_ledger_error
+                );
+                return Ok(());
+            }
+        };
 
-        near_ledger::get_public_key(self.seed_phrase_hd_path.clone()).await;
+        let implicit_account_id = hex::encode(&public_key);
 
         match self.format {
             crate::common::OutputFormat::Plaintext => {
                 println!(
                     "Seed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}",
                     bip32path_to_string(&self.seed_phrase_hd_path),
-                    "TBP",
-                    "TBP"
+                    implicit_account_id,
+                    format!("ed25519:{}", bs58::encode(&public_key).into_string()),
                 );
             }
             crate::common::OutputFormat::Json => {
@@ -66,8 +69,8 @@ impl CliLedgerPublicKey {
                     "{}",
                     serde_json::to_string_pretty(&serde_json::json!({
                         "seed_phrase_hd_path": bip32path_to_string(&self.seed_phrase_hd_path),
-                        "account_id": "TBP",
-                        "public_key": "TBP",
+                        "account_id": implicit_account_id,
+                        "public_key": format!("ed25519:{}" ,bs58::encode(&public_key).into_string()),
                     })).unwrap()
                 );
             }

@@ -1460,12 +1460,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "644f9158b2f133fd50f5fb3242878846d9eb792e445c893805ff0e3824006e35"
 
 [[package]]
-name = "hex-slice"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5491a308e0214554f07a81d8944abe45f552871c12e3c3c6e7e5d354039a6c4c"
-
-[[package]]
 name = "hidapi"
 version = "1.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1878,7 +1872,6 @@ dependencies = [
  "dirs",
  "ed25519-dalek",
  "hex",
- "hex-slice",
  "ledger-apdu",
  "ledger-transport",
  "ledger-transport-hid",
