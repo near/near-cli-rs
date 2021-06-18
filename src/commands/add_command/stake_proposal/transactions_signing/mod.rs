@@ -111,15 +111,13 @@ impl TransactionsSigningAction {
         };
         match self
             .sign_option
-            .process(unsigned_transaction, network_connection_config)
+            .process(unsigned_transaction, network_connection_config.clone())
             .await?
         {
             Some(transaction_info) => {
                 match transaction_info.status {
-                    near_primitives::views::FinalExecutionStatus::NotStarted => {
-                        println!("NotStarted")
-                    }
-                    near_primitives::views::FinalExecutionStatus::Started => println!("Started"),
+                    near_primitives::views::FinalExecutionStatus::NotStarted
+                    | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
                     near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
                         crate::common::print_transaction_error(tx_execution_error).await
                     }
@@ -135,12 +133,16 @@ impl TransactionsSigningAction {
                                     crate::common::NearBalance::from_yoctonear(stake),
                                 );
                             }
-                            _ => unreachable!("Error")
+                            _ => unreachable!("Error"),
                         }
                     }
                 }
+                let transaction_explorer: url::Url = match network_connection_config {
+                    Some(connection_config) => connection_config.transaction_explorer(),
+                    None => unreachable!("Error"),
+                };
                 println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
-                    \nhttps://explorer.testnet.near.org/transactions/{id}\n", id=transaction_info.transaction_outcome.id);
+                    \n{path}{id}\n", id=transaction_info.transaction_outcome.id, path=transaction_explorer);
             }
             None => {}
         };

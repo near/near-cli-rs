@@ -10,6 +10,10 @@ pub const TESTNET_WALLET_URL: &str = "https://wallet.testnet.near.org";
 pub const MAINNET_WALLET_URL: &str = "https://wallet.mainnet.near.org";
 pub const BETANET_WALLET_URL: &str = "https://wallet.betanet.near.org";
 
+pub const TESTNET_TRANSACTION_URL: &str = "https://explorer.wallet.testnet.near.org";
+pub const MAINNET_TRANSACTION_URL: &str = "https://explorer.wallet.mainnet.near.org";
+pub const BETANET_TRANSACTION_URL: &str = "https://explorer.wallet.betanet.near.org";
+
 pub const DIR_NAME_KEY_CHAIN: &str = ".near-credentials/default/";
 pub const DIR_NAME_TESTNET: &str = ".near-credentials/testnet/";
 pub const DIR_NAME_MAINNET: &str = ".near-credentials/mainnet/";

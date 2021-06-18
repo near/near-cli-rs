@@ -279,6 +279,15 @@ impl ConnectionConfig {
         }
     }
 
+    pub fn transaction_explorer(&self) -> url::Url {
+        match self {
+            Self::Testnet => crate::consts::TESTNET_TRANSACTION_URL.parse().unwrap(),
+            Self::Mainnet => crate::consts::MAINNET_TRANSACTION_URL.parse().unwrap(),
+            Self::Betanet => crate::consts::BETANET_TRANSACTION_URL.parse().unwrap(),
+            Self::Custom { url } => url.clone(),
+        }
+    }
+
     pub fn dir_name(&self) -> &str {
         match self {
             Self::Testnet => crate::consts::DIR_NAME_TESTNET,
