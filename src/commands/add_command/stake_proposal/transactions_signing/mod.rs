@@ -124,20 +124,19 @@ impl TransactionsSigningAction {
                         crate::common::print_transaction_error(tx_execution_error).await
                     }
                     near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
-                        let stake: u128 = if let near_primitives::views::ActionView::Stake {
-                            stake,
-                            public_key: _,
-                        } = transaction_info.transaction.actions[0]
-                        {
-                            stake
-                        } else {
-                            0
-                        };
-                        println!(
-                            "\nValidator <{}> has successfully staked {}.",
-                            transaction_info.transaction.signer_id,
-                            crate::common::NearBalance::from_yoctonear(stake),
-                        );
+                        match transaction_info.transaction.actions[0] {
+                            near_primitives::views::ActionView::Stake {
+                                stake,
+                                public_key: _,
+                            } => {
+                                println!(
+                                    "\nValidator <{}> has successfully staked {}.",
+                                    transaction_info.transaction.signer_id,
+                                    crate::common::NearBalance::from_yoctonear(stake),
+                                );
+                            }
+                            _ => unreachable!("Error")
+                        }
                     }
                 }
                 println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:

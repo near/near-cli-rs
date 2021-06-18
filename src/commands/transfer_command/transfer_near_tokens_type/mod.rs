@@ -114,20 +114,17 @@ impl TransferNEARTokensAction {
                         crate::common::print_transaction_error(tx_execution_error).await
                     }
                     near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
-                        let deposit =
-                            if let near_primitives::views::ActionView::Transfer { deposit } =
-                                transaction_info.transaction.actions[0]
-                            {
-                                deposit
-                            } else {
-                                0
-                            };
-                        println!(
-                            "\n<{}> has transferred {} to <{}> successfully.",
-                            transaction_info.transaction.signer_id,
-                            crate::common::NearBalance::from_yoctonear(deposit),
-                            transaction_info.transaction.receiver_id,
-                        );
+                        match transaction_info.transaction.actions[0] {
+                            near_primitives::views::ActionView::Transfer { deposit } => {
+                                println!(
+                                    "\n<{}> has transferred {} to <{}> successfully.",
+                                    transaction_info.transaction.signer_id,
+                                    crate::common::NearBalance::from_yoctonear(deposit),
+                                    transaction_info.transaction.receiver_id,
+                                );
+                            }
+                            _ => unreachable!("Error")
+                        }
                     }
                 }
                 println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:

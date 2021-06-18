@@ -65,7 +65,11 @@ impl NextAction {
         match self {
             NextAction::Initialize(call_function_action) => {
                 call_function_action
-                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .process(
+                        prepopulated_unsigned_transaction,
+                        network_connection_config,
+                        file_path,
+                    )
                     .await
             }
             NextAction::NoInitialize(no_initialize) => {
@@ -119,12 +123,28 @@ impl NoInitialize {
             .await?
         {
             Some(transaction_info) => {
-                println!(
-                    "\n Contract code {:?} has been successfully deployed.",
-                    file_path
-                );
+                match transaction_info.status {
+                    near_primitives::views::FinalExecutionStatus::NotStarted => {
+                        println!("NotStarted")
+                    }
+                    near_primitives::views::FinalExecutionStatus::Started => println!("Started"),
+                    near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+                        crate::common::print_transaction_error(tx_execution_error).await
+                    }
+                    near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
+                        match transaction_info.transaction.actions[0] {
+                            near_primitives::views::ActionView::DeployContract { code: _ } => {
+                                println!(
+                                    "\n Contract code {:?} has been successfully deployed.",
+                                    file_path
+                                );
+                            }
+                            _ => unreachable!("Error")
+                        }
+                    }
+                }
                 println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
-                    \nhttps://explorer.testnet.near.org/transactions/{id}\n", id=transaction_info.transaction_outcome.id);
+                        \nhttps://explorer.testnet.near.org/transactions/{id}\n", id=transaction_info.transaction_outcome.id);
             }
             None => {}
         };

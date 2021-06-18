@@ -327,12 +327,88 @@ impl SkipAction {
             .await?
         {
             Some(transaction_info) => {
-                // println!("\nAdded function access key = {:?} to {}.",
-                //         public_key,
-                //         unsigned_transaction.signer_id,
-                //     );
+                match transaction_info.status {
+                    near_primitives::views::FinalExecutionStatus::NotStarted => {
+                        println!("NotStarted")
+                    }
+                    near_primitives::views::FinalExecutionStatus::Started => println!("Started"),
+                    near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+                        crate::common::print_transaction_error(tx_execution_error).await
+                    }
+                    near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
+                        let mut actions = transaction_info.transaction.actions.iter();
+                        loop {
+                            match actions.next().unwrap().to_owned() {
+                                near_primitives::views::ActionView::CreateAccount => {
+                                    println!(
+                                        "\nNew account <{}> has been successfully created.",
+                                        transaction_info.transaction.signer_id,
+                                    );
+                                }
+                                near_primitives::views::ActionView::DeployContract { code: _ } => {
+                                    println!("\n Contract code has been successfully deployed.",);
+                                }
+                                near_primitives::views::ActionView::FunctionCall {
+                                    method_name,
+                                    args: _,
+                                    gas: _,
+                                    deposit: _,
+                                } => {
+                                    println!(
+                                        "\nThe \"{}\" call to <{}> on behalf of <{}> succeeded.",
+                                        method_name,
+                                        transaction_info.transaction.receiver_id,
+                                        transaction_info.transaction.signer_id,
+                                    );
+                                }
+                                near_primitives::views::ActionView::Transfer { deposit } => {
+                                    println!(
+                                        "\n<{}> has transferred {} to <{}> successfully.",
+                                        transaction_info.transaction.signer_id,
+                                        crate::common::NearBalance::from_yoctonear(deposit),
+                                        transaction_info.transaction.receiver_id,
+                                    );
+                                }
+                                near_primitives::views::ActionView::Stake {
+                                    stake,
+                                    public_key: _,
+                                } => {
+                                    println!(
+                                        "\nValidator <{}> has successfully staked {}.",
+                                        transaction_info.transaction.signer_id,
+                                        crate::common::NearBalance::from_yoctonear(stake),
+                                    );
+                                }
+                                near_primitives::views::ActionView::AddKey {
+                                    public_key,
+                                    access_key: _,
+                                } => {
+                                    println!(
+                                        "Added access key = {:?} to {}.",
+                                        public_key, transaction_info.transaction.signer_id,
+                                    );
+                                }
+                                near_primitives::views::ActionView::DeleteKey { public_key } => {
+                                    println!(
+                                        "\nAccess key <{}> for account <{}> has been successfully deletted.",
+                                        public_key,
+                                        transaction_info.transaction.signer_id,
+                                    );
+                                }
+                                near_primitives::views::ActionView::DeleteAccount {
+                                    beneficiary_id: _,
+                                } => {
+                                    println!(
+                                        "\nAccount <{}> has been successfully deletted.",
+                                        transaction_info.transaction.signer_id,
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
                 println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
-                    \nhttps://explorer.testnet.near.org/transactions/{id}\n", id=transaction_info.transaction_outcome.id);
+                        \nhttps://explorer.testnet.near.org/transactions/{id}\n", id=transaction_info.transaction_outcome.id);
             }
             None => {}
         };
