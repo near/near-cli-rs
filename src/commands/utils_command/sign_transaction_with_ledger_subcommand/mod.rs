@@ -21,7 +21,7 @@ impl From<CliSignTransactionWithLedger> for SignTransactionWithLedger {
     fn from(item: CliSignTransactionWithLedger) -> Self {
         let seed_phrase_hd_path = match item.seed_phrase_hd_path {
             Some(hd_path) => hd_path,
-            None => slip10::BIP32Path::from_str("44'/397'/0'/0'/1'").unwrap(),
+            None => SignTransactionWithLedger::input_seed_phrase_hd_path(),
         };
         let unsigned_transaction: near_primitives::transaction::Transaction =
             match item.unsigned_transaction {
@@ -42,6 +42,15 @@ impl SignTransactionWithLedger {
             .interact_text()
             .unwrap();
         input.inner
+    }
+
+    pub fn input_seed_phrase_hd_path() -> slip10::BIP32Path {
+        let input: String = Input::new()
+            .with_prompt("Enter seed phrase HD Path (if you not sure leave blank for default)")
+            .default("44'/397'/0'/0'/1'".into())
+            .interact_text()
+            .unwrap();
+        slip10::BIP32Path::from_str(input.as_str()).unwrap()
     }
 
     pub async fn process(self) -> crate::CliResult {

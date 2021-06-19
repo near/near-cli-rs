@@ -1,4 +1,4 @@
-use dialoguer::{theme::ColorfulTheme, Select};
+use dialoguer::{theme::ColorfulTheme, Input, Select};
 use near_primitives::borsh::BorshSerialize;
 use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
@@ -22,7 +22,7 @@ impl From<CliSignLedger> for SignLedger {
     fn from(item: CliSignLedger) -> Self {
         let seed_phrase_hd_path = match item.seed_phrase_hd_path {
             Some(hd_path) => hd_path,
-            None => slip10::BIP32Path::from_str("44'/397'/0'/0'/1'").unwrap(),
+            None => SignLedger::input_seed_phrase_hd_path(),
         };
         let submit: Option<Submit> = item.submit;
 
@@ -36,6 +36,15 @@ impl From<CliSignLedger> for SignLedger {
 impl SignLedger {
     fn rpc_client(self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
         near_jsonrpc_client::new_client(&selected_server_url)
+    }
+
+    pub fn input_seed_phrase_hd_path() -> slip10::BIP32Path {
+        let input: String = Input::new()
+            .with_prompt("Enter seed phrase HD Path (if you not sure leave blank for default)")
+            .default("44'/397'/0'/0'/1'".into())
+            .interact_text()
+            .unwrap();
+        slip10::BIP32Path::from_str(input.as_str()).unwrap()
     }
 
     pub async fn process(
