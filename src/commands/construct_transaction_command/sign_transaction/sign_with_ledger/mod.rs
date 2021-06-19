@@ -1,6 +1,6 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use near_primitives::borsh::BorshSerialize;
-use std::str::FromStr;
+
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 /// Sign constructed transaction with Ledger
@@ -39,12 +39,11 @@ impl SignLedger {
     }
 
     pub fn input_seed_phrase_hd_path() -> slip10::BIP32Path {
-        let input: String = Input::new()
+        Input::new()
             .with_prompt("Enter seed phrase HD Path (if you not sure leave blank for default)")
-            .default("44'/397'/0'/0'/1'".into())
+            .with_initial_text("44'/397'/0'/0'/1'")
             .interact_text()
-            .unwrap();
-        slip10::BIP32Path::from_str(input.as_str()).unwrap()
+            .unwrap()
     }
 
     pub async fn process(

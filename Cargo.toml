@@ -36,7 +36,7 @@ url_open = "0.0.1"
 
 color-eyre = "0.5"
 
-near-ledger = "0.1.0"
+near-ledger = "0.1.1"
 
 near-crypto = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }
 near-primitives = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }
