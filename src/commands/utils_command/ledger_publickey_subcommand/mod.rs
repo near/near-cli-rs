@@ -1,7 +1,5 @@
 use std::str::FromStr;
 
-pub mod near_ledger;
-
 fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
     const HARDEND: u32 = 1 << 31;
 
@@ -42,16 +40,17 @@ impl Default for CliLedgerPublicKey {
 
 impl CliLedgerPublicKey {
     pub async fn process(self) -> crate::CliResult {
-        let public_key = match near_ledger::get_public_key(self.seed_phrase_hd_path.clone()).await {
-            Ok(public_key) => public_key,
-            Err(near_ledger_error) => {
-                println!(
-                    "An error occurred while trying to get PublicKey from Ledger device: {:?}",
-                    near_ledger_error
-                );
-                return Ok(());
-            }
-        };
+        let public_key =
+            match near_ledger::get_public_key(self.seed_phrase_hd_path.clone()).await {
+                Ok(public_key) => public_key,
+                Err(near_ledger_error) => {
+                    println!(
+                        "An error occurred while trying to get PublicKey from Ledger device: {:?}",
+                        near_ledger_error
+                    );
+                    return Ok(());
+                }
+            };
 
         let implicit_account_id = hex::encode(&public_key);
 

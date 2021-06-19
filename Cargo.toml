@@ -30,16 +30,13 @@ hex = "0.4.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
 dirs = "3.0"
-# The fix is needed for seemless clap integration: https://github.com/wusyong/slip10/pull/3
-slip10 = { git = "https://github.com/frol/slip10", rev = "159d5fd46a44b9251d0748ef1f343f908bf57a22" }
+slip10 = "0.4.3"
 url = { version = "2", features = ["serde"] }
 url_open = "0.0.1"
 
-ledger-transport = "0.8.0"
-ledger-transport-hid = "0.8.0"
-ledger-apdu = "0.8.0"
-
 color-eyre = "0.5"
+
+near-ledger = "0.1.0"
 
 near-crypto = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }
 near-primitives = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }

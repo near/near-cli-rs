@@ -1872,12 +1872,10 @@ dependencies = [
  "dirs",
  "ed25519-dalek",
  "hex",
- "ledger-apdu",
- "ledger-transport",
- "ledger-transport-hid",
  "near-crypto",
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
+ "near-ledger",
  "near-primitives",
  "openssl-probe",
  "serde",
@@ -1966,6 +1964,19 @@ dependencies = [
  "thiserror",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "near-ledger"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfeb155d192db5e00fcee69963f97fbbd51d9fa97218a92bf216b02a07d560ae"
+dependencies = [
+ "ed25519-dalek",
+ "ledger-apdu",
+ "ledger-transport",
+ "ledger-transport-hid",
+ "slip10",
 ]
 
 [[package]]
@@ -3006,8 +3017,9 @@ checksum = "c111b5bd5695e56cffe5129854aa230b39c93a305372fdbb2668ca2394eea9f8"
 
 [[package]]
 name = "slip10"
-version = "0.4.2"
-source = "git+https://github.com/frol/slip10?rev=159d5fd46a44b9251d0748ef1f343f908bf57a22#159d5fd46a44b9251d0748ef1f343f908bf57a22"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28724a6e6f70b0cb115c580891483da6f3aa99e6a353598303a57f89d23aa6bc"
 dependencies = [
  "ed25519-dalek",
  "hmac",

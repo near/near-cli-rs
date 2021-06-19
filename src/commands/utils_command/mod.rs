@@ -6,6 +6,7 @@ pub mod generate_keypair_subcommand;
 mod view_serialized_transaction;
 mod ledger_publickey_subcommand;
 mod sign_transaction_subcommand_with_secret_key;
+mod sign_transaction_with_ledger_subcommand;
 
 /// набор утилит-помощников
 #[derive(Debug, Default, clap::Clap)]
@@ -43,6 +44,10 @@ enum CliUtil {
     SignTransactionSecretKey(
         self::sign_transaction_subcommand_with_secret_key::CliSignTransactionSecretKey,
     ),
+    // Provide an unsigned transaction to be signed with Ledger
+    SignTransactionWithLedger(
+        self::sign_transaction_with_ledger_subcommand::CliSignTransactionWithLedger,
+    ),
     /// Предоставьте данные для соединения подготовленной неподписаной транзакции с сигнатурой
     CombineTransactionSignature(
         self::combine_transaction_subcommand_with_signature::CliCombineTransactionSignature,
@@ -62,6 +67,10 @@ pub enum Util {
     SignTransactionSecretKey(
         self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey,
     ),
+    #[strum_discriminants(strum(message = "Sign a transaction with Ledger"))]
+    SignTransactionWithLedger(
+        self::sign_transaction_with_ledger_subcommand::SignTransactionWithLedger,
+    ),
     #[strum_discriminants(strum(message = "Combine unsigned transaction with signature"))]
     CombineTransactionSignature(
         self::combine_transaction_subcommand_with_signature::CombineTransactionSignature,
@@ -80,6 +89,13 @@ impl From<CliUtil> for Util {
                 let sign_transaction =
                     self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey::from(cli_sign_transaction);
                 Util::SignTransactionSecretKey(sign_transaction)
+            }
+            CliUtil::SignTransactionWithLedger(cli_sign_transaction_with_ledger) => {
+                let sign_transaction =
+                    self::sign_transaction_with_ledger_subcommand::SignTransactionWithLedger::from(
+                        cli_sign_transaction_with_ledger,
+                    );
+                Util::SignTransactionWithLedger(sign_transaction)
             }
             CliUtil::CombineTransactionSignature(cli_combine_transaction) => {
                 let combine_transaction =
@@ -119,6 +135,9 @@ impl Util {
             UtilDiscriminants::SignTransactionSecretKey => {
                 CliUtil::SignTransactionSecretKey(Default::default())
             }
+            UtilDiscriminants::SignTransactionWithLedger => {
+                CliUtil::SignTransactionWithLedger(Default::default())
+            }
             UtilDiscriminants::CombineTransactionSignature => {
                 CliUtil::CombineTransactionSignature(Default::default())
             }
@@ -134,6 +153,7 @@ impl Util {
         match self {
             Self::GenerateKeypair(generate_keypair) => generate_keypair.process().await,
             Self::SignTransactionSecretKey(sign_transaction) => sign_transaction.process().await,
+            Self::SignTransactionWithLedger(sign_transaction) => sign_transaction.process().await,
             Self::CombineTransactionSignature(combine_transaction) => {
                 combine_transaction.process().await
             }
