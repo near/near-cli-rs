@@ -1,24 +1,5 @@
 use std::str::FromStr;
 
-fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
-    const HARDEND: u32 = 1 << 31;
-
-    format!(
-        "m/{}",
-        (0..bip32path.depth())
-            .map(|index| {
-                let value = *bip32path.index(index).unwrap();
-                if value < HARDEND {
-                    value.to_string()
-                } else {
-                    format!("{}'", value - HARDEND)
-                }
-            })
-            .collect::<Vec<String>>()
-            .join("/")
-    )
-}
-
 /// Generate a key pair of secret and public keys (use it anywhere you need
 /// Ed25519 keys)
 #[derive(Debug, clap::Clap, Clone)]
@@ -58,7 +39,7 @@ impl CliGenerateKeypair {
                 println!(
                     "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
                     key_pair_properties.master_seed_phrase,
-                    bip32path_to_string(&key_pair_properties.seed_phrase_hd_path),
+                    key_pair_properties.seed_phrase_hd_path.to_string(),
                     key_pair_properties.implicit_account_id,
                     key_pair_properties.public_key_str,
                     key_pair_properties.secret_keypair_str,
@@ -69,11 +50,12 @@ impl CliGenerateKeypair {
                     "{}",
                     serde_json::to_string_pretty(&serde_json::json!({
                         "master_seed_phrase": key_pair_properties.master_seed_phrase,
-                        "seed_phrase_hd_path": bip32path_to_string(&key_pair_properties.seed_phrase_hd_path),
+                        "seed_phrase_hd_path": key_pair_properties.seed_phrase_hd_path.to_string(),
                         "account_id": key_pair_properties.implicit_account_id,
                         "public_key": key_pair_properties.public_key_str,
                         "private_key": key_pair_properties.secret_keypair_str,
-                    })).unwrap()
+                    }))
+                    .unwrap()
                 );
             }
         };

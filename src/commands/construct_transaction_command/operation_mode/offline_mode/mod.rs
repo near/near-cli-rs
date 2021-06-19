@@ -4,6 +4,8 @@ use dialoguer::Input;
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliOfflineArgs {
     #[clap(long)]
+    signer_public_key: Option<near_crypto::PublicKey>,
+    #[clap(long)]
     nonce: Option<u64>,
     #[clap(long)]
     block_hash: Option<crate::common::BlockHashAsBase58>,
@@ -13,6 +15,7 @@ pub struct CliOfflineArgs {
 
 #[derive(Debug)]
 pub struct OfflineArgs {
+    signer_public_key: near_crypto::PublicKey,
     nonce: u64,
     block_hash: near_primitives::hash::CryptoHash,
     send_from: super::online_mode::select_server::server::SendFrom,
@@ -20,6 +23,10 @@ pub struct OfflineArgs {
 
 impl From<CliOfflineArgs> for OfflineArgs {
     fn from(item: CliOfflineArgs) -> Self {
+        let signer_public_key = match item.signer_public_key {
+            Some(cli_public_key) => cli_public_key,
+            None => OfflineArgs::input_signer_public_key(),
+        };
         let nonce: u64 = match item.nonce {
             Some(cli_nonce) => cli_nonce,
             None => OfflineArgs::input_nonce(),
@@ -35,6 +42,7 @@ impl From<CliOfflineArgs> for OfflineArgs {
             None => super::online_mode::select_server::server::SendFrom::choose_send_from(),
         };
         Self {
+            signer_public_key,
             nonce,
             block_hash,
             send_from,
@@ -43,6 +51,12 @@ impl From<CliOfflineArgs> for OfflineArgs {
 }
 
 impl OfflineArgs {
+    fn input_signer_public_key() -> near_crypto::PublicKey {
+        Input::new()
+            .with_prompt("Enter signer public key")
+            .interact_text()
+            .unwrap()
+    }
     fn input_nonce() -> u64 {
         Input::new()
             .with_prompt(
@@ -67,9 +81,11 @@ impl OfflineArgs {
     ) -> crate::CliResult {
         let nonce = self.nonce.clone();
         let block_hash = self.block_hash.clone();
+        let signer_public_key = self.signer_public_key.clone();
         let unsigned_transaction = near_primitives::transaction::Transaction {
             block_hash,
             nonce,
+            public_key: signer_public_key,
             ..prepopulated_unsigned_transaction
         };
         let selected_server_url = None;
