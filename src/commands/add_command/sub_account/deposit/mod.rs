@@ -114,7 +114,7 @@ impl TransferNEARTokensAction {
                     near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
                         println!(
                             "\nNew account <{}> has been successfully created.",
-                            transaction_info.transaction.signer_id,
+                            transaction_info.transaction.receiver_id,
                         );
                     }
                 }

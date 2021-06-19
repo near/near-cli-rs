@@ -403,8 +403,9 @@ pub async fn print_transaction_error(
                     crate::common::NearBalance::from_yoctonear(stake)
                     )
                 },
-                near_primitives::errors::ActionErrorKind::InsufficientStake{account_id:_, stake:_, minimum_stake} => {
-                    println!("Error: Insufficient stake.\nThe minimum rate must be {}.",
+                near_primitives::errors::ActionErrorKind::InsufficientStake{account_id:_, stake, minimum_stake} => {
+                    println!("Error: Insufficient stake {}.\nThe minimum rate must be {}.",
+                        crate::common::NearBalance::from_yoctonear(stake),
                         crate::common::NearBalance::from_yoctonear(minimum_stake)
                     )
                 },

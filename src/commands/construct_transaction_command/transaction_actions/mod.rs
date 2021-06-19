@@ -343,7 +343,7 @@ impl SkipAction {
                                 near_primitives::views::ActionView::CreateAccount => {
                                     println!(
                                         "\nNew account <{}> has been successfully created.",
-                                        transaction_info.transaction.signer_id,
+                                        transaction_info.transaction.receiver_id,
                                     );
                                 }
                                 near_primitives::views::ActionView::DeployContract { code: _ } => {
@@ -385,8 +385,8 @@ impl SkipAction {
                                     access_key: _,
                                 } => {
                                     println!(
-                                        "Added access key = {:?} to {}.",
-                                        public_key, transaction_info.transaction.signer_id,
+                                        "Added access key = {} to {}.",
+                                        public_key, transaction_info.transaction.receiver_id,
                                     );
                                 }
                                 near_primitives::views::ActionView::DeleteKey { public_key } => {
