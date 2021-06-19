@@ -54,11 +54,10 @@ impl SignLedger {
                 public_key.to_bytes(),
             )),
             Err(near_ledger_error) => {
-                println!(
+                return Err(color_eyre::Report::msg(format!(
                     "An error occurred while trying to get PublicKey from Ledger device: {:?}",
                     near_ledger_error
-                );
-                return Ok(());
+                )));
             }
         };
 
@@ -87,12 +86,10 @@ impl SignLedger {
                     )
                     .expect("Signature is not expected to fail on deserialization"),
                     Err(near_ledger_error) => {
-                        println!("LEDGER ERROR {:?}", near_ledger_error);
-                        color_eyre::Report::msg(format!(
-                            "Transaction is not expected to fail on serialization: {:?}",
+                        return Err(color_eyre::Report::msg(format!(
+                            "Error occurred while signing the transaction: {:?}",
                             near_ledger_error
-                        ));
-                        return Ok(());
+                        )));
                     }
                 };
 

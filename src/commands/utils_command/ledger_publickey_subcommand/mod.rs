@@ -42,7 +42,9 @@ impl CliLedgerPublicKey {
                     "Seed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}",
                     self.seed_phrase_hd_path.to_string(),
                     implicit_account_id,
-                    format!("ed25519:{}", bs58::encode(&public_key).into_string()),
+                    near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+                        public_key.to_bytes(),
+                    )),
                 );
             }
             crate::common::OutputFormat::Json => {
@@ -51,8 +53,13 @@ impl CliLedgerPublicKey {
                     serde_json::to_string_pretty(&serde_json::json!({
                         "seed_phrase_hd_path": self.seed_phrase_hd_path.to_string(),
                         "account_id": implicit_account_id,
-                        "public_key": format!("ed25519:{}" ,bs58::encode(&public_key).into_string()),
-                    })).unwrap()
+                        "public_key": near_crypto::PublicKey::ED25519(
+                            near_crypto::ED25519PublicKey::from(
+                                public_key.to_bytes(),
+                            )
+                        ),
+                    }))
+                    .unwrap()
                 );
             }
         };
