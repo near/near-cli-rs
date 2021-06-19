@@ -23,18 +23,16 @@ impl CliLedgerPublicKey {
     pub async fn process(self) -> crate::CliResult {
         println!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
-            crate::common::bip32path_to_string(&self.seed_phrase_hd_path)
+            self.seed_phrase_hd_path.to_string(),
         );
-        let public_key = match near_ledger::get_public_key(self.seed_phrase_hd_path.clone()).await {
-            Ok(public_key) => public_key,
-            Err(near_ledger_error) => {
-                println!(
+        let public_key = near_ledger::get_public_key(self.seed_phrase_hd_path.clone())
+            .await
+            .map_err(|near_ledger_error| {
+                color_eyre::Report::msg(format!(
                     "An error occurred while trying to get PublicKey from Ledger device: {:?}",
                     near_ledger_error
-                );
-                return Ok(());
-            }
-        };
+                ))
+            })?;
 
         let implicit_account_id = hex::encode(&public_key);
 
@@ -42,7 +40,7 @@ impl CliLedgerPublicKey {
             crate::common::OutputFormat::Plaintext => {
                 println!(
                     "Seed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}",
-                    crate::common::bip32path_to_string(&self.seed_phrase_hd_path),
+                    self.seed_phrase_hd_path.to_string(),
                     implicit_account_id,
                     format!("ed25519:{}", bs58::encode(&public_key).into_string()),
                 );
@@ -51,7 +49,7 @@ impl CliLedgerPublicKey {
                 println!(
                     "{}",
                     serde_json::to_string_pretty(&serde_json::json!({
-                        "seed_phrase_hd_path": crate::common::bip32path_to_string(&self.seed_phrase_hd_path),
+                        "seed_phrase_hd_path": self.seed_phrase_hd_path.to_string(),
                         "account_id": implicit_account_id,
                         "public_key": format!("ed25519:{}" ,bs58::encode(&public_key).into_string()),
                     })).unwrap()

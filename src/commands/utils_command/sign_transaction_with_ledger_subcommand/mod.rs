@@ -52,7 +52,7 @@ impl SignTransactionWithLedger {
 
         println!(
             "Please confirm transaction signing on Ledger Device (HD Path {})",
-            crate::common::bip32path_to_string(&self.seed_phrase_hd_path)
+            self.seed_phrase_hd_path.to_string()
         );
         let signature = match near_ledger::sign_transaction(
             self.unsigned_transaction
@@ -67,12 +67,10 @@ impl SignTransactionWithLedger {
                     .expect("Signature is not expected to fail on deserialization")
             }
             Err(near_ledger_error) => {
-                println!("LEDGER ERROR {:?}", near_ledger_error);
-                color_eyre::Report::msg(format!(
-                    "Transaction is not expected to fail on serialization: {:?}",
+                return Err(color_eyre::Report::msg(format!(
+                    "Error occurred while signing the transaction: {:?}",
                     near_ledger_error
-                ));
-                return Ok(());
+                )));
             }
         };
 

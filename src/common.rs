@@ -348,26 +348,6 @@ pub async fn generate_keypair(
     Ok(key_pair_properties)
 }
 
-/// Convert &BIP32Path to String
-pub(crate) fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
-    const HARDEND: u32 = 1 << 31;
-
-    format!(
-        "m/{}",
-        (0..bip32path.depth())
-            .map(|index| {
-                let value = *bip32path.index(index).unwrap();
-                if value < HARDEND {
-                    value.to_string()
-                } else {
-                    format!("{}'", value - HARDEND)
-                }
-            })
-            .collect::<Vec<String>>()
-            .join("/")
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

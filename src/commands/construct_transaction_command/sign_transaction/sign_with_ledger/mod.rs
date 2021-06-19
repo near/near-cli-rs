@@ -47,7 +47,7 @@ impl SignLedger {
 
         println!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
-            crate::common::bip32path_to_string(&seed_phrase_hd_path)
+            seed_phrase_hd_path
         );
         let public_key = match near_ledger::get_public_key(seed_phrase_hd_path.clone()).await {
             Ok(public_key) => near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
@@ -71,8 +71,7 @@ impl SignLedger {
                 };
                 println!(
                     "{:#?}\n Confirm transaction signing on your Ledger device (HD Path: {})",
-                    unsigned_transaction,
-                    crate::common::bip32path_to_string(&seed_phrase_hd_path),
+                    unsigned_transaction, seed_phrase_hd_path,
                 );
                 let signature = match near_ledger::sign_transaction(
                     unsigned_transaction
@@ -153,8 +152,7 @@ impl SignLedger {
 
                 println!(
                     "{:#?}\n Confirm transaction signing on your Ledger device (HD Path: {})",
-                    unsigned_transaction,
-                    crate::common::bip32path_to_string(&seed_phrase_hd_path),
+                    unsigned_transaction, seed_phrase_hd_path,
                 );
                 let signature = match near_ledger::sign_transaction(
                     unsigned_transaction
