@@ -1,24 +1,5 @@
 use std::str::FromStr;
 
-fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
-    const HARDEND: u32 = 1 << 31;
-
-    format!(
-        "m/{}",
-        (0..bip32path.depth())
-            .map(|index| {
-                let value = *bip32path.index(index).unwrap();
-                if value < HARDEND {
-                    value.to_string()
-                } else {
-                    format!("{}'", value - HARDEND)
-                }
-            })
-            .collect::<Vec<String>>()
-            .join("/")
-    )
-}
-
 /// Generate a key pair of secret and public keys (use it anywhere you need
 /// Ed25519 keys)
 #[derive(Debug, clap::Clap, Clone)]
@@ -40,6 +21,10 @@ impl Default for CliLedgerPublicKey {
 
 impl CliLedgerPublicKey {
     pub async fn process(self) -> crate::CliResult {
+        println!(
+            "Please allow getting the PublicKey on Ledger device (HD Path: {})",
+            crate::common::bip32path_to_string(&self.seed_phrase_hd_path)
+        );
         let public_key =
             match near_ledger::get_public_key(self.seed_phrase_hd_path.clone()).await {
                 Ok(public_key) => public_key,
@@ -58,7 +43,7 @@ impl CliLedgerPublicKey {
             crate::common::OutputFormat::Plaintext => {
                 println!(
                     "Seed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}",
-                    bip32path_to_string(&self.seed_phrase_hd_path),
+                    crate::common::bip32path_to_string(&self.seed_phrase_hd_path),
                     implicit_account_id,
                     format!("ed25519:{}", bs58::encode(&public_key).into_string()),
                 );
@@ -67,7 +52,7 @@ impl CliLedgerPublicKey {
                 println!(
                     "{}",
                     serde_json::to_string_pretty(&serde_json::json!({
-                        "seed_phrase_hd_path": bip32path_to_string(&self.seed_phrase_hd_path),
+                        "seed_phrase_hd_path": crate::common::bip32path_to_string(&self.seed_phrase_hd_path),
                         "account_id": implicit_account_id,
                         "public_key": format!("ed25519:{}" ,bs58::encode(&public_key).into_string()),
                     })).unwrap()
