@@ -50,6 +50,10 @@ impl SignTransactionWithLedger {
             self.unsigned_transaction
         );
 
+        println!(
+            "Please confirm transaction signing on Ledger Device (HD Path {})",
+            crate::common::bip32path_to_string(&self.seed_phrase_hd_path)
+        );
         let signature = match near_ledger::sign_transaction(
             self.unsigned_transaction
                 .try_to_vec()
