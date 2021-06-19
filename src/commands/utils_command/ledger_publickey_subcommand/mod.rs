@@ -25,17 +25,16 @@ impl CliLedgerPublicKey {
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             crate::common::bip32path_to_string(&self.seed_phrase_hd_path)
         );
-        let public_key =
-            match near_ledger::get_public_key(self.seed_phrase_hd_path.clone()).await {
-                Ok(public_key) => public_key,
-                Err(near_ledger_error) => {
-                    println!(
-                        "An error occurred while trying to get PublicKey from Ledger device: {:?}",
-                        near_ledger_error
-                    );
-                    return Ok(());
-                }
-            };
+        let public_key = match near_ledger::get_public_key(self.seed_phrase_hd_path.clone()).await {
+            Ok(public_key) => public_key,
+            Err(near_ledger_error) => {
+                println!(
+                    "An error occurred while trying to get PublicKey from Ledger device: {:?}",
+                    near_ledger_error
+                );
+                return Ok(());
+            }
+        };
 
         let implicit_account_id = hex::encode(&public_key);
 

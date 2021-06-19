@@ -3,8 +3,8 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod sign_manually;
 pub mod sign_with_keychain;
-pub mod sign_with_private_key;
 pub mod sign_with_ledger;
+pub mod sign_with_private_key;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliSignTransaction {
@@ -27,7 +27,9 @@ pub enum SignTransaction {
     SignPrivateKey(self::sign_with_private_key::SignPrivateKey),
     #[strum_discriminants(strum(message = "Yes, I want to sign the transaction with keychain"))]
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
-    #[strum_discriminants(strum(message = "Yes, I want to sign the transaction with Ledger device"))]
+    #[strum_discriminants(strum(
+        message = "Yes, I want to sign the transaction with Ledger device"
+    ))]
     SignWithLedger(self::sign_with_ledger::SignLedger),
     #[strum_discriminants(strum(
         message = "No, I want to construct the transaction and sign it somewhere else"
@@ -106,10 +108,8 @@ impl SignTransaction {
             }
             SignTransaction::SignWithLedger(ledger) => {
                 ledger
-                    .process(
-                        prepopulated_unsigned_transaction,
-                        network_connection_config,
-                    ).await
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .await
             }
             SignTransaction::SignManually(args_manually) => {
                 args_manually

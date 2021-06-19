@@ -3,10 +3,10 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod combine_transaction_subcommand_with_signature;
 pub mod generate_keypair_subcommand;
-mod view_serialized_transaction;
 mod ledger_publickey_subcommand;
 mod sign_transaction_subcommand_with_secret_key;
 mod sign_transaction_with_ledger_subcommand;
+mod view_serialized_transaction;
 
 /// набор утилит-помощников
 #[derive(Debug, Default, clap::Clap)]
@@ -109,7 +109,7 @@ impl From<CliUtil> for Util {
                     );
                 Util::ViewSerializedTransaction(view_serialized_transaction)
             }
-            CliUtil::LedgerPublicKey(ledger_publickey) => Util::LedgerPublicKey(ledger_publickey)
+            CliUtil::LedgerPublicKey(ledger_publickey) => Util::LedgerPublicKey(ledger_publickey),
         }
     }
 }
@@ -144,7 +144,9 @@ impl Util {
             UtilDiscriminants::ViewSerializedTransaction => {
                 CliUtil::ViewSerializedTransaction(Default::default())
             }
-            UtilDiscriminants::LedgerPublicKey => CliUtil::LedgerPublicKey(self::ledger_publickey_subcommand::CliLedgerPublicKey::default()),
+            UtilDiscriminants::LedgerPublicKey => CliUtil::LedgerPublicKey(
+                self::ledger_publickey_subcommand::CliLedgerPublicKey::default(),
+            ),
         };
         Self::from(cli_util)
     }

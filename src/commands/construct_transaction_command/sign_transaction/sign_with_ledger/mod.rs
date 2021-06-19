@@ -1,6 +1,6 @@
-use std::str::FromStr;
 use dialoguer::{theme::ColorfulTheme, Select};
 use near_primitives::borsh::BorshSerialize;
+use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 /// Sign constructed transaction with Ledger
@@ -50,9 +50,9 @@ impl SignLedger {
             crate::common::bip32path_to_string(&seed_phrase_hd_path)
         );
         let public_key = match near_ledger::get_public_key(seed_phrase_hd_path.clone()).await {
-            Ok(public_key) => near_crypto::PublicKey::ED25519(
-                near_crypto::ED25519PublicKey::from(public_key.to_bytes())
-            ),
+            Ok(public_key) => near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+                public_key.to_bytes(),
+            )),
             Err(near_ledger_error) => {
                 println!(
                     "An error occurred while trying to get PublicKey from Ledger device: {:?}",
@@ -82,10 +82,11 @@ impl SignLedger {
                 )
                 .await
                 {
-                    Ok(signature) => {
-                        near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                            .expect("Signature is not expected to fail on deserialization")
-                    }
+                    Ok(signature) => near_crypto::Signature::from_parts(
+                        near_crypto::KeyType::ED25519,
+                        &signature,
+                    )
+                    .expect("Signature is not expected to fail on deserialization"),
                     Err(near_ledger_error) => {
                         println!("LEDGER ERROR {:?}", near_ledger_error);
                         color_eyre::Report::msg(format!(
@@ -163,10 +164,11 @@ impl SignLedger {
                 )
                 .await
                 {
-                    Ok(signature) => {
-                        near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                            .expect("Signature is not expected to fail on deserialization")
-                    }
+                    Ok(signature) => near_crypto::Signature::from_parts(
+                        near_crypto::KeyType::ED25519,
+                        &signature,
+                    )
+                    .expect("Signature is not expected to fail on deserialization"),
                     Err(near_ledger_error) => {
                         println!("LEDGER ERROR {:?}", near_ledger_error);
                         color_eyre::Report::msg(format!(
