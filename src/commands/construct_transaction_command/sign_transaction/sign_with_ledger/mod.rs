@@ -173,12 +173,10 @@ impl SignLedger {
                     )
                     .expect("Signature is not expected to fail on deserialization"),
                     Err(near_ledger_error) => {
-                        println!("LEDGER ERROR {:?}", near_ledger_error);
-                        color_eyre::Report::msg(format!(
-                            "Transaction is not expected to fail on serialization: {:?}",
+                        return Err(color_eyre::Report::msg(format!(
+                            "Error occurred while signing the transaction: {:?}",
                             near_ledger_error
-                        ));
-                        return Ok(());
+                        )));
                     }
                 };
 
