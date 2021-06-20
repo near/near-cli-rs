@@ -17,7 +17,7 @@ impl SignManually {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         println!();
         println!(
             "Unsigned transaction:\n\n {:#?}",
@@ -33,6 +33,6 @@ impl SignManually {
             "---  serialize_to_base64:   --- \n   {:#?}",
             &serialize_to_base64
         );
-        Ok(())
+        Ok(None)
     }
 }

@@ -34,7 +34,7 @@ impl SignKeychain {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
         let file_name = format!("{}.json", prepopulated_unsigned_transaction.signer_id);
         let mut path = PathBuf::from(&home_dir);

@@ -385,46 +385,25 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-========= SENT =========
+--- Transaction sent ---
 
 
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "volodymyr.testnet",
-        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-        nonce: 164,
-        receiver_id: "21.volodymyr.testnet",
-        block_hash: `9fsPJ5b4cjcbSA9gdjTX9BskZW4u3cyg7dq4rFixB3hk`,
-        actions: [
-            Transfer(
-                TransferAction {
-                    deposit: 1000000000000000000000000,
-                },
-            ),
-        ],
-    },
-    signature: ed25519:62QgUt5Co689BGJP1UDpirACSSWkgouaP2WAfZBTbsvxeEso3LjUZLVBfg9vVDpjp4K8mACqBvyrr8WQoR2Kjrm,
-    hash: `7xGzEbUY6PZvt9LiNeYXX8euBU8KsJgAm9K1GnGkU3jH`,
-    size: 139,
-}
+--- Transaction execution: ---
 
 
----  serialize_to_base64:   --- 
-   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPpAAAAAAAAAAUAAAAMjEudm9sb2R5bXlyLnRlc3RuZXSA0ok08Tobo8iXW81D3qGvMJe3ET6uqbRv4GavXwZbIwEAAAADAAAAoe3MzhvC0wAAAAAAAAAEVS8LAOAofbvpp0zIXP5R/3RWTfT36bX21H5pi1fv8WBa1KABh5cuaG+bcKWSTqsv24Wbw4seW4Q56Mk7tW4O"
+<volodymyr.testnet> has transferred 1.000 NEAR to <21.volodymyr.testnet> successfully.
 
+Transaction Id 3Xw8R58BTmoRrJufpy5utej8MzNuA11Zw6pnS8vUcCNG.
 
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(``),
-    ...
- }
+To see the transaction in the transaction explorer, please open this url in your browser:
+                    
+https://explorer.wallet.testnet.near.org/3Xw8R58BTmoRrJufpy5utej8MzNuA11Zw6pnS8vUcCNG
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/Mxp7m2Vzyxps0xQXSci1vCGUa.png" width="836"/>
+<a href="https://asciinema.org/a/NjCuGbC6IDyz5VsrXZrgrSF17?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/NjCuGbC6IDyz5VsrXZrgrSF17.png" width="836"/>
 </a>
 </details>
 
@@ -449,49 +428,25 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-========= SENT =========
+--- Transaction sent ---
 
 
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "volodymyr.testnet",
-        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-        nonce: 162,
-        receiver_id: "meta.pool.testnet",
-        block_hash: `7KXacoKThQRRQwwU1U6W2fRvpRUwgbKMQ7fM7ZEhnWcU`,
-        actions: [
-            FunctionCall(
-                FunctionCallAction {
-                    method_name: distribute_staking,
-                    args: `{}`,
-                    gas: 3000000000000,
-                    deposit: 0,
-                },
-            ),
-        ],
-    },
-    signature: ed25519:q1zT9bniKLqnyCpt3EcRQotegTcJmjkXmSWDKq2MWyvMYzigAF4TZ3WETn6cCw5x5NSUSahRVS8rc11QvDiSXYB,
-    hash: `A42ik23MSkHy5uCTV7PxMTePgirVQzNExFhvbRCjx7ia`,
-    size: 172,
-}
+--- Transaction execution: ---
 
 
----  serialize_to_base64:   --- 
-   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPogAAAAAAAAARAAAAbWV0YS5wb29sLnRlc3RuZXRd5ScQXuimrSNf3tsuUd4q0M4/exg3UIqPOFt5oVKoxQEAAAACEgAAAGRpc3RyaWJ1dGVfc3Rha2luZwIAAAB7fQAw7326AgAAAAAAAAAAAAAAAAAAAAAAAAApaHmaMzRKvhnhTuQia80ae5baaGMQpBkmq438MreboP2Xlbg/9pNUSX8CouiUOqjvGw/xdzIozjiWeLJRvJsA"
+The "distribute_staking" call to <meta.pool.testnet> on behalf of <volodymyr.testnet> succeeded.
 
+Transaction Id CK4ZT2NfJhqfQAjVsvoTuyJs74SY4DQfgwKC79tZGEfw.
 
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(`false`),
-    ...
- }
+To see the transaction in the transaction explorer, please open this url in your browser:
+                    
+https://explorer.wallet.testnet.near.org/CK4ZT2NfJhqfQAjVsvoTuyJs74SY4DQfgwKC79tZGEfw
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/OlDp8UoRmBsOL8eZq4hxxWNIc.png" width="836"/>
+<a href="https://asciinema.org/a/wyk4o4FltmUD00tmToCSoH24l?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/wyk4o4FltmUD00tmToCSoH24l.png" width="836"/>
 </a>
 </details>
 
@@ -564,50 +519,24 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-========= SENT =========
+--- Transaction sent ---
 
 
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "volodymyr.testnet",
-        public_key: ed25519:7FmD...,
-        nonce: 149,
-        receiver_id: "volodymyr.testnet",
-        block_hash: `Am5ZGCMSeEyY4BJqqwMBKA9AV8uB77m5Yn52P4rbEFu6`,
-        actions: [
-            AddKey(
-                AddKeyAction {
-                    public_key: ed25519:Ebx7...,
-                    access_key: AccessKey {
-                        nonce: 0,
-                        permission: FullAccess,
-                    },
-                },
-            ),
-        ],
-    },
-    signature: ed25519:2iqJLi9K6kTtkTR1e4dVXJfa1wYN5Js34WtufurJDzfGy9SXvAnxiDXKAUYey1CFi3xTQDsHwKDYvELswWHfV8EY,
-    hash: `Fjt8PQtmk6HiFz59sA1wnbDmUvKmUBTYmSkwT4wMSgct`,
-    size: 162,
-}
+--- Transaction execution: ---
 
+Added full access key = ed25519:2Xh8n53G5YCjEj6eangH6PZjf2YdfogxikMV6q6MxFRH to volodymyr.testnet.
 
----  serialize_to_base64:   --- 
-   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPlQAAAAAAAAARAAAAdm9sb2R5bXlyLnRlc3RuZXSRA+PDDBgYWU9gZ3tQIeY9mOpLdU/AofbhOJ+e3ZFGTQEAAAAFAMob/ZK9JLsyX0GsR1RyW9L2ZAclRYRiqIZwzCPP7dmEAAAAAAAAAAABAFYXixaHv0sQnm9oNnoSTV1tIKOa5nTf3BRr2Lxn4dHXLbVTB6WBjJHh10mRVoXxmqoE5JhiVpY3/U/oXgYoHg0="
+Transaction Id Am9bmTSaaG1SoDU2m1MyXz3cbU4uY2XxghxeHGkeBX4x.
 
-
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(``),
-    ...
- }
+To see the transaction in the transaction explorer, please open this url in your browser:
+                    
+https://explorer.wallet.testnet.near.org/Am9bmTSaaG1SoDU2m1MyXz3cbU4uY2XxghxeHGkeBX4x
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/2hsXeOrB3Kt13DSTDC5BVcqau?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/2hsXeOrB3Kt13DSTDC5BVcqau.png" width="836"/>
+<a href="https://asciinema.org/a/bXhJzaCUNf3FHih268NJZ8Fit?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/bXhJzaCUNf3FHih268NJZ8Fit.png" width="836"/>
 </a>
 </details>
 
@@ -636,61 +565,24 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-========= SENT =========
+--- Transaction sent ---
 
 
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "21.volodymyr.testnet",
-        public_key: ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF,
-        nonce: 19,
-        receiver_id: "21.volodymyr.testnet",
-        block_hash: `54idHezkbgmzcmpBdCH5Fksr4gZHRamdV9UWeBUG3mf1`,
-        actions: [
-            AddKey(
-                AddKeyAction {
-                    public_key: ed25519:4YDJbW2GDDgzgNUW5UmC7iDxEy8e2JJenKbUyUMUxhzG,
-                    access_key: AccessKey {
-                        nonce: 0,
-                        permission: FunctionCall(
-                            FunctionCallPermission {
-                                allowance: Some(
-                                    10000000000000000000000000,
-                                ),
-                                receiver_id: "meta.pool.testnet",
-                                method_names: [
-                                    "set_a",
-                                    " set_b",
-                                ],
-                            },
-                        ),
-                    },
-                },
-            ),
-        ],
-    },
-    signature: ed25519:6EvuDd9GsZEqUgnr9KPaRv3TexVz4rPdEJ6MiorCFvfpd5bCVKHAxAdvYQdL7n76sr4NFDZrmtXhJmuHreAMdDv,
-    hash: `CAKAx4MGnmvCbFiuRfjNZpvivdbtvMWw15ftDJAbzqAa`,
-    size: 229,
-}
+--- Transaction execution: ---
 
+Added function access key = ed25519:ECPLXJyLv3emQ9g76fxUHM98hP5MkXD5mcyRe6KiqGK2 to 21.volodymyr.testnet.
 
----  serialize_to_base64:   --- 
-   "FAAAADIxLnZvbG9keW15ci50ZXN0bmV0AMob/ZK9JLsyX0GsR1RyW9L2ZAclRYRiqIZwzCPP7dmEEwAAAAAAAAAUAAAAMjEudm9sb2R5bXlyLnRlc3RuZXQ8Yo5v35DY5uHEw5CTtRQycg1L8uIrXLMhASkPPkHI7AEAAAAFADSR+jEvIqz/Mmw2d7LyuyJIWd3pdV72ZFx+sX7CTw4hAAAAAAAAAAAAAQAAAEpIARQWlUUIAAAAAAARAAAAbWV0YS5wb29sLnRlc3RuZXQCAAAABQAAAHNldF9hBgAAACBzZXRfYgAEhNenJczDVbUDfaxLFyd5Vo5/PIROxP9IuyFE9aE1n9G4FeGT23KBBf8z/HMok6ebbmarbmm5BLlmBK9UlEcN"
+Transaction Id PTab8ENhtLJfNqsUwVpiPw3sLPySwpzJuSNX9yEHhLD.
 
-
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(``),
-    ...
- }
+To see the transaction in the transaction explorer, please open this url in your browser:
+                    
+https://explorer.testnet.near.org/transactions/PTab8ENhtLJfNqsUwVpiPw3sLPySwpzJuSNX9yEHhLD
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/s9Z0eRw9fuxTrRDSTvpzcNZGo?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/s9Z0eRw9fuxTrRDSTvpzcNZGo.png" width="836"/>
+<a href="https://asciinema.org/a/DOOZ2yQfUUzuRUY1S3LaktHRm?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/DOOZ2yQfUUzuRUY1S3LaktHRm.png" width="836"/>
 </a>
 </details>
 
@@ -700,7 +592,7 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 ```txt
 ./near-cli add contract-code \
         network testnet \
-        account '21.volodymyr.testnet' \
+        account 'volodymyr.testnet' \
         contract-file '/Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm' \
         initialize 'increment' '{}'     \
             --attached-deposit '0 NEAR' \
@@ -712,53 +604,25 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-========= SENT =========
+--- Transaction sent ---
 
 
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "21.volodymyr.testnet",
-        public_key: ed25519:HmCeumE9k2fLiMjE3wJ1LATRd5yPb1k7cQN8TsLGcze6,
-        nonce: 48893912000002,
-        receiver_id: "21.volodymyr.testnet",
-        block_hash: `2xRPh4zLhA6D5m79U9u88r83VHFYVuKqERgijEbw3D89`,
-        actions: [
-            DeployContract(
-                DeployContractAction {
-                    code: (43724)[0, 97, … 116, 101],
-                },
-            ),
-            FunctionCall(
-                FunctionCallAction {
-                    method_name: increment,
-                    args: `{}`,
-                    gas: 1000000000000,
-                    deposit: 0,
-                },
-            ),
-        ],
-    },
-    signature: ed25519:22zhdvQ2nyNvp9UVrNtpsr6G1xGvht3NF6xZpFWRuawgw3PsUFWdQd4ewybWvwDUV7Wa2dRwQBbUy6dfGSDBtSH5,
-    hash: `AcEaHwNtiZW6EcK7WqwxEhubRss9Z4ZwZ9iLkkqVSzSK`,
-    size: 43898,
-}
+--- Transaction execution: ---
 
 
----  serialize_to_base64:   --- 
-   "FAAAADIxLnZvbG9keW15ci50ZXN0bmV0APkN..."
+ Contract code "/Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm" has been successfully deployed.
 
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(``),
-    ...
- }
+Transaction Id 2p8VM2bWpdXeQKeTufgYFRYgvk93ZuriHxLJHwT4cxiQ.
+
+To see the transaction in the transaction explorer, please open this url in your browser:
+                    
+https://explorer.wallet.testnet.near.org/2p8VM2bWpdXeQKeTufgYFRYgvk93ZuriHxLJHwT4cxiQ
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/741GlX4ul4yh5GLEASd9GnYVk?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/741GlX4ul4yh5GLEASd9GnYVk.png" width="836"/>
+<a href="https://asciinema.org/a/wO3YVUR8GOh5KoYjpSWxGwlQB?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/wO3YVUR8GOh5KoYjpSWxGwlQB.png" width="836"/>
 </a>
 </details>
 
@@ -800,57 +664,25 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-========= SENT =========
+--- Transaction sent ---
 
 
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "volodymyr.testnet",
-        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-        nonce: 154,
-        receiver_id: "volodymyr.testnet",
-        block_hash: `2wxpayfaEA9C3U6MkYG2boua4hrnhSiKscykAsffGbmB`,
-        actions: [
-            Stake(
-                StakeAction {
-                    stake: 100000000000000000000000000,
-                    public_key: ed25519:7ctWiPKSxdvPmAbwCBDT7dBCcJ5iqP14ohwVr7vf4whJ,
-                },
-            ),
-        ],
-    },
-    signature: ed25519:5zhdfYzsozFBFsEeKhLPgyRuedrwX2AiXmSLvytGqJPtuUgSAGLK8Fpx94AEVKxJuVYLhS98C1KD5N92wSyVvNSd,
-    hash: `JCuG5fEJrUwZCm96F2A9GKKMo2wwiT9XcQGdFvDSzVCQ`,
-    size: 169,
-}
+--- Transaction execution: ---
 
+Error: Insufficient stake 100.000 NEAR.
+The minimum rate must be 28626.505 NEAR.
 
----  serialize_to_base64:   --- 
-   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPmgAAAAAAAAARAAAAdm9sb2R5bXlyLnRlc3RuZXQc8CrAK5bMKhRavTEAahbeqsxhebqylCjpSZB4z3WFQgEAAAAEAAAA5NIMyNzSt1IAAAAAAABiV7Hs7169DLWMR17J9abg/dr9VE/Pc6Jmzm+sBXbnsQD506ahN6go2Ddst/RUX3TR/Eyu9GnMf/BG413NWzKrr2nSlw1MrqLWGQiDgMthh8XdcmGNIdQQzVXsI3NHa0UK"
+Transaction Id 92TdRcwGXyVCgMniE1aX8kWTzBB58s9Y5i8dHAnh74Y8.
 
-
----  Success:  ---
- FinalExecutionOutcome {
-    status: Failure(ActionError(ActionError { index: Some(0), kind: InsufficientStake { account_id: "volodymyr.testnet", stake: 100000000000000000000000000, minimum_stake: 30119755168554099401425301718 } })),
-    ...
-    outcome: ExecutionOutcomeView {
-                logs: [],
-                receipt_ids: [],
-                gas_burnt: 210277125000,
-                tokens_burnt: 21027712500000000000,
-                executor_id: "volodymyr.testnet",
-                status: Failure(ActionError(ActionError { index: Some(0), kind: InsufficientStake { account_id: "volodymyr.testnet", stake: 100000000000000000000000000, minimum_stake: 30119755168554099401425301718 } })),
-            },
-        },
-    ],
-}
+To see the transaction in the transaction explorer, please open this url in your browser:
+                    
+https://explorer.wallet.testnet.near.org/92TdRcwGXyVCgMniE1aX8kWTzBB58s9Y5i8dHAnh74Y8
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/j9X09oohB30K0jj1DgMjGaqz7?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/j9X09oohB30K0jj1DgMjGaqz7.png" width="836"/>
+<a href="https://asciinema.org/a/nMovygVG9GyKSVU0ywtk5z0RT?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/nMovygVG9GyKSVU0ywtk5z0RT.png" width="836"/>
 </a>
 </details>
 
@@ -872,58 +704,25 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-========= SENT =========
+--- Transaction sent ---
 
 
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "volodymyr.testnet",
-        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-        nonce: 155,
-        receiver_id: "22.volodymyr.testnet",
-        block_hash: `3aeuuGbAr3ckC8beii6E7qa7j3Fos1LNFzvk8ESj3E1L`,
-        actions: [
-            CreateAccount(
-                CreateAccountAction,
-            ),
-            AddKey(
-                AddKeyAction {
-                    public_key: ed25519:DAKCQXSbTTu52HYCvvJEZt4Qpk9s2J3xb2DrVTPwxgs4,
-                    access_key: AccessKey {
-                        nonce: 0,
-                        permission: FullAccess,
-                    },
-                },
-            ),
-            Transfer(
-                TransferAction {
-                    deposit: 1000000000000000000000000,
-                },
-            ),
-        ],
-    },
-    signature: ed25519:3829dxbPvQ3cH66MwaKYw61HVcEazRam52foPJKBbT7KXPpA29h85C4h82qug1TSXmckq6j3Q2GPSuPzv5qCCkcX,
-    hash: `AyHBkKfbfJxSLNhSUpHi6fqhRiDr4FbsuFUPTESDR867`,
-    size: 183,
-}
+--- Transaction execution: ---
 
 
----  serialize_to_base64:   --- 
-   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPmwAAAAAAAAAUAAAAMjIudm9sb2R5bXlyLnRlc3RuZXQmVmhrXs42DaCrmIuhbAbmK7JeKrX5uN7X0nkiNUgMNwMAAAAABQC0rwugO8t0SplsrnfivSg6TjskRq+Yc1BZyeegdY9dCwAAAAAAAAAAAQMAAACh7czOG8LTAAAAAAAAAGoWbdbqW1kIs2qbVTxybDVLX7QLoLAEOKpBp0EfjMb76JEj7aqrnxejcrFeTXazM1Hlu9T3sacg86r2dZjebQA="
+New account <22.volodymyr.testnet> has been successfully created.
 
+Transaction Id He1D8DoYEkazhVw5PJ4TxNgafmsqj7Yb72YQebM3a98p.
 
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(``),
-    ...
- }
+To see the transaction in the transaction explorer, please open this url in your browser:
+                    
+https://explorer.wallet.testnet.near.org/He1D8DoYEkazhVw5PJ4TxNgafmsqj7Yb72YQebM3a98p
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/jY2eKCQuT8WvdtQMzbCBuWU60?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/jY2eKCQuT8WvdtQMzbCBuWU60.png" width="836"/>
+<a href="https://asciinema.org/a/nW78yyzNhkK09sAxSFTgk0zX8?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/nW78yyzNhkK09sAxSFTgk0zX8.png" width="836"/>
 </a>
 </details>
 
@@ -937,7 +736,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 ./near-cli delete access-key \
         network testnet \
         account 'volodymyr.testnet' \
-        public-key 'ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF' \
+        public-key 'ed25519:HaUQJkxYtTXrJVLNHEtHPmvLJ1fuUczwocm53Xn5eFJy' \
         sign-with-keychain \
         send
 ```
@@ -945,45 +744,25 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-========= SENT =========
+--- Transaction sent ---
 
 
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "volodymyr.testnet",
-        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-        nonce: 150,
-        receiver_id: "volodymyr.testnet",
-        block_hash: `2QN6AYjHoiZ7zyCBbzw7Z51tTNLvNRqjNvBnGc9NxD4G`,
-        actions: [
-            DeleteKey(
-                DeleteKeyAction {
-                    public_key: ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF,
-                },
-            ),
-        ],
-    },
-    signature: ed25519:2F5TxjosufprDseWP8bwFud3EsBCnWHsYwYXPYYdxxM5eEaiYHmFRxbdcuNGGEDCPvVJcQz7a81W7wWhq5CdhCcu,
-    hash: `GJuD1v2VmCDJ4kftgRDs1jb7G3mupyKTNJQyBeQfqYth`,
-    size: 153,
-}
+--- Transaction execution: ---
 
----  serialize_to_base64:  ---
-   "EQAAAHZvbG9keW15ci50ZXN0bmV0AFzuPvN68GwMEHmmSd/z+SfoSEHUz9773txWhikaAcDPlgAAAAAAAAARAAAAdm9sb2R5bXlyLnRlc3RuZXQU1+QYMaiaEUDB28Q59LkkxXAAgogf5VYGGB8hyePhlQEAAAAGAMob/ZK9JLsyX0GsR1RyW9L2ZAclRYRiqIZwzCPP7dm
-EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8zHclNdg4=" 
 
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(``),
-    ...
- }
+Access key <ed25519:HaUQJkxYtTXrJVLNHEtHPmvLJ1fuUczwocm53Xn5eFJy> for account <volodymyr.testnet> has been successfully deletted.
+
+Transaction Id 6Du4cGn1go9EQdrsRzD6D2az4jGGQUW9361cLG1GVxNp.
+
+To see the transaction in the transaction explorer, please open this url in your browser:
+                    
+https://explorer.wallet.testnet.near.org/6Du4cGn1go9EQdrsRzD6D2az4jGGQUW9361cLG1GVxNp
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/WJUEWxlzOR9Qiwujdsf0dhY6s?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/WJUEWxlzOR9Qiwujdsf0dhY6s.png" width="836"/>
+<a href="https://asciinema.org/a/KSZkGbwnQbG5vGtlG2fGIrawm?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/KSZkGbwnQbG5vGtlG2fGIrawm.png" width="836"/>
 </a>
 </details>
 
@@ -994,7 +773,7 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 ```txt
 ./near-cli delete account \
         network testnet \
-        account '21.volodymyr.testnet' \
+        account '22.volodymyr.testnet' \
         beneficiary 'volodymyr.testnet' \
         sign-with-keychain \
         send
@@ -1003,45 +782,25 @@ EAD4oDTdPyEk+d7Sk+Btmq3AKbnjvfwZDwi/XPTmKIFYa2dzKiT1EUNctNbA3rWvu349kG9n/ABf5QJ8
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-========= SENT =========
+--- Transaction sent ---
 
 
----  Signed transaction:   ---
-    SignedTransaction {
-    transaction: Transaction {
-        signer_id: "21.volodymyr.testnet",
-        public_key: ed25519:7o9NPr6QvRCCDkrDi85kv58cvsRDiHbR2Qde6viRJqsM,
-        nonce: 48892160000001,
-        receiver_id: "21.volodymyr.testnet",
-        block_hash: `MPjKkZYAPnhgkKYZ2CrNrW5yii2hVhoEPDquqMGoiGq`,
-        actions: [
-            DeleteAccount(
-                DeleteAccountAction {
-                    beneficiary_id: "volodymyr.testnet",
-                },
-            ),
-        ],
-    },
-    signature: ed25519:4iigeP2QHYaRF9mL1BkfWUgThWQ6pog7WZpwtaDLh6Arzmy6SsYyB1hCNv8WdqLuNPLK39LVaE4Sg94zjPRDPjZh,
-    hash: `BTYjZgmASV4vZzgd4VFvrM9sPw11UySDYtZDecLQ1CWi`,
-    size: 147,
-}                                                                                                                                   
+--- Transaction execution: ---
 
----  serialize_to_base64:   ---                                              
-   "FAAAADIxLnZvbG9keW15ci50ZXN0bmV0AGT4TS2LaX8JfN8qL9cGgPautk2wLgrfwWWjFd8z4r+wAUDUl3csAAAUAAAAMjEudm9sb2R5bXlyLnRlc3RuZXQFOVEWckb5UkAyG8Llhx7dxfnTWLeA1g5jlCgFAmgb+gEAAAAHEQAAAHZvbG9keW15ci50ZXN0bmV0ALoHEPR
-pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA=" 
 
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(``),
-    ...
- }
+Account <22.volodymyr.testnet> has been successfully deletted.
+
+Transaction Id EhhLMtUEmLHV4bzdvSmzv9pLyUbKChGgtWKhuPRXx2w5.
+
+To see the transaction in the transaction explorer, please open this url in your browser:
+                    
+https://explorer.wallet.testnet.near.org/EhhLMtUEmLHV4bzdvSmzv9pLyUbKChGgtWKhuPRXx2w5
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/Lr0Y0eAuMK2pu5O639i4hpIFr?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/Lr0Y0eAuMK2pu5O639i4hpIFr.png" width="836"/>
+<a href="https://asciinema.org/a/XEwJ4NVkuG7mnDiADiNPQ2L7n?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/XEwJ4NVkuG7mnDiADiNPQ2L7n.png" width="836"/>
 </a>
 </details>
 
@@ -1056,8 +815,8 @@ pyYc0jWocOZRXuNzrq150bLSIvARIE+fhf0ywxEr1kj/aObFoEPCuQYS5IN/oox5/BJGwoCHdWX+SxAA
 Для этого воспользуемся конструктором транзакции:
 
 <details><summary>Construct a new transaction (демонстрация работы команды)</summary>
-<a href="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/9kuNItY3K5ee116ReSvrOnb4R.png" width="836"/>
+<a href="https://asciinema.org/a/2HPsb14qsgkr05eesfzXAKTXb?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/2HPsb14qsgkr05eesfzXAKTXb.png" width="836"/>
 </a>
 </details>
 

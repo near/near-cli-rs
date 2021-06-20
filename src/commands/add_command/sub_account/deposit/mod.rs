@@ -99,8 +99,34 @@ impl TransferNEARTokensAction {
             actions,
             ..prepopulated_unsigned_transaction
         };
-        self.sign_option
-            .process(unsigned_transaction, network_connection_config)
-            .await
+        match self
+            .sign_option
+            .process(unsigned_transaction, network_connection_config.clone())
+            .await?
+        {
+            Some(transaction_info) => {
+                match transaction_info.status {
+                    near_primitives::views::FinalExecutionStatus::NotStarted
+                    | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
+                    near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+                        crate::common::print_transaction_error(tx_execution_error).await
+                    }
+                    near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
+                        println!(
+                            "\nNew account <{}> has been successfully created.",
+                            transaction_info.transaction.receiver_id,
+                        );
+                    }
+                }
+                let transaction_explorer: url::Url = match network_connection_config {
+                    Some(connection_config) => connection_config.transaction_explorer(),
+                    None => unreachable!("Error"),
+                };
+                println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
+                    \n{path}{id}\n", id=transaction_info.transaction_outcome.id, path=transaction_explorer);
+            }
+            None => {}
+        };
+        Ok(())
     }
 }

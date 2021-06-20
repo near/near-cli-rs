@@ -149,7 +149,7 @@ impl FunctionCallType {
         };
         let action = near_primitives::transaction::Action::AddKey(
             near_primitives::transaction::AddKeyAction {
-                public_key,
+                public_key: public_key.clone(),
                 access_key,
             },
         );
@@ -159,8 +159,21 @@ impl FunctionCallType {
             actions,
             ..prepopulated_unsigned_transaction
         };
-        self.sign_option
-            .process(unsigned_transaction, network_connection_config)
-            .await
+        match self
+            .sign_option
+            .process(unsigned_transaction.clone(), network_connection_config)
+            .await?
+        {
+            Some(transaction_info) => {
+                println!(
+                    "Added function access key = {:?} to {}.",
+                    public_key, unsigned_transaction.signer_id,
+                );
+                println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
+                    \nhttps://explorer.testnet.near.org/transactions/{id}\n", id=transaction_info.transaction_outcome.id);
+            }
+            None => {}
+        };
+        Ok(())
     }
 }
