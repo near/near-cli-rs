@@ -849,3 +849,12 @@ https://explorer.wallet.testnet.near.org/EhhLMtUEmLHV4bzdvSmzv9pLyUbKChGgtWKhuPR
     <img src="https://asciinema.org/a/HfsutLZKnWS8w1PnY1kGIUYid.png" width="836"/>
 </a>
 </details>
+
+#### Deserializing the bytes from base64
+
+Данная утилита позволяет закодированную в Base64 транзакцию (подписанную или неподписанную) представить в удобочитаемом формате.
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/Gtb4M13a8QW5VaVmfgBLEcq3X?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Gtb4M13a8QW5VaVmfgBLEcq3X.png" width="836"/>
+</a>
+</details>

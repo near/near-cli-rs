@@ -837,3 +837,13 @@ This utility allows you to sign a previously generated and unsigned transaction 
     <img src="https://asciinema.org/a/HfsutLZKnWS8w1PnY1kGIUYid.png" width="836"/>
 </a>
 </details>
+
+#### Deserializing the bytes from base64
+
+It might be useful to view the contents of a serialized transaction (either signed or not).
+Given a base64-encoded string, we should be able to view the human-readable representation.
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/Gtb4M13a8QW5VaVmfgBLEcq3X?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Gtb4M13a8QW5VaVmfgBLEcq3X.png" width="836"/>
+</a>
+</details>
