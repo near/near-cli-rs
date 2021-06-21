@@ -2,8 +2,8 @@ name: ci
 on:
   pull_request:
     branches: [master]
-  # push:
-  #   branches: [master]
+  push:
+    branches: [master]
   # schedule:
   # - cron: '00 01 * * *'
 jobs:
@@ -122,7 +122,7 @@ jobs:
 
     - name: View contract code for 'volodymyr.testnet'
       run: |
-        ./target/debug/near-cli view contract-code network testnet contract 'volodymyr.testnet' hash
+        ./target/debug/near-cli view contract-code network testnet contract 'volodymyr.testnet' hash at-final-block
 
     - name: Run tests (sans cross)
       if: matrix.target == ''
