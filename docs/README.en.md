@@ -59,7 +59,7 @@ The resulting directory contains the executable file _near-cli_, which is accomp
 
 near-cli is written in Rust, so you'll need to grab a
 [Rust installation](https://www.rust-lang.org/) in order to compile it.
-near-cli compiles with Rust 1.50.0 (stable) or newer. In general, near-cli tracks the latest stable release of the Rust compiler.
+near-cli compiles with Rust 1.53.0 (stable) or newer. In general, near-cli tracks the latest stable release of the Rust compiler.
 
 To build near-cli:
 
