@@ -1,7 +1,7 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-mod add_access_key_type;
+mod add_access_key_mode;
 mod call_function_type;
 mod create_account_type;
 mod delete_access_key_type;
@@ -156,7 +156,7 @@ pub enum CliActionSubcommand {
     /// Предоставьте данные для удаления аккаунта
     DeleteAccount(self::delete_account_type::CliDeleteAccountAction),
     /// Предоставьте данные для добавления ключа доступа пользователю
-    AddAccessKey(self::add_access_key_type::CliAddAccessKeyAction),
+    AddAccessKey(self::add_access_key_mode::CliAddAccessKeyMode),
     /// Предоставьте данные для удаления ключа доступа у пользователя
     DeleteAccessKey(self::delete_access_key_type::CliDeleteAccessKeyAction),
 }
@@ -175,7 +175,7 @@ pub enum ActionSubcommand {
     #[strum_discriminants(strum(message = "Delete an Account"))]
     DeleteAccount(self::delete_account_type::DeleteAccountAction),
     #[strum_discriminants(strum(message = "Add an Access Key"))]
-    AddAccessKey(self::add_access_key_type::AddAccessKeyAction),
+    AddAccessKey(self::add_access_key_mode::AddAccessKeyMode),
     #[strum_discriminants(strum(message = "Detete an Access Key"))]
     DeleteAccessKey(self::delete_access_key_type::DeleteAccessKeyAction),
 }
