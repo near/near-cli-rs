@@ -4,19 +4,19 @@ use async_recursion::async_recursion;
 #[derive(Debug, Default, clap::Clap)]
 pub struct CliFullAccessType {
     #[clap(subcommand)]
-    next_action: Option<super::super::CliSkipNextAction>,
+    next_action: Option<super::super::super::CliSkipNextAction>,
 }
 
 #[derive(Debug)]
 pub struct FullAccessType {
-    pub next_action: Box<super::super::NextAction>,
+    pub next_action: Box<super::super::super::NextAction>,
 }
 
 impl From<CliFullAccessType> for FullAccessType {
     fn from(item: CliFullAccessType) -> Self {
-        let skip_next_action: super::super::NextAction = match item.next_action {
-            Some(cli_skip_action) => super::super::NextAction::from(cli_skip_action),
-            None => super::super::NextAction::input_next_action(),
+        let skip_next_action: super::super::super::NextAction = match item.next_action {
+            Some(cli_skip_action) => super::super::super::NextAction::from(cli_skip_action),
+            None => super::super::super::NextAction::input_next_action(),
         };
         Self {
             next_action: Box::new(skip_next_action),
@@ -50,12 +50,12 @@ impl FullAccessType {
             ..prepopulated_unsigned_transaction
         };
         match *self.next_action {
-            super::super::NextAction::AddAction(select_action) => {
+            super::super::super::NextAction::AddAction(select_action) => {
                 select_action
                     .process(unsigned_transaction, network_connection_config)
                     .await
             }
-            super::super::NextAction::Skip(skip_action) => {
+            super::super::super::NextAction::Skip(skip_action) => {
                 skip_action
                     .process(unsigned_transaction, network_connection_config)
                     .await

@@ -12,7 +12,7 @@ pub struct CliFunctionCallType {
     #[clap(long)]
     method_names: Option<String>,
     #[clap(subcommand)]
-    next_action: Option<super::super::CliSkipNextAction>,
+    next_action: Option<super::super::super::CliSkipNextAction>,
 }
 
 #[derive(Debug)]
@@ -20,7 +20,7 @@ pub struct FunctionCallType {
     pub allowance: Option<near_primitives::types::Balance>,
     pub receiver_id: near_primitives::types::AccountId,
     pub method_names: Vec<String>,
-    pub next_action: Box<super::super::NextAction>,
+    pub next_action: Box<super::super::super::NextAction>,
 }
 
 impl From<CliFunctionCallType> for FunctionCallType {
@@ -46,9 +46,9 @@ impl From<CliFunctionCallType> for FunctionCallType {
             }
             None => FunctionCallType::input_method_names(),
         };
-        let skip_next_action: super::super::NextAction = match item.next_action {
-            Some(cli_skip_action) => super::super::NextAction::from(cli_skip_action),
-            None => super::super::NextAction::input_next_action(),
+        let skip_next_action: super::super::super::NextAction = match item.next_action {
+            Some(cli_skip_action) => super::super::super::NextAction::from(cli_skip_action),
+            None => super::super::super::NextAction::input_next_action(),
         };
         Self {
             allowance,
@@ -159,12 +159,12 @@ impl FunctionCallType {
             ..prepopulated_unsigned_transaction
         };
         match *self.next_action {
-            super::super::NextAction::AddAction(select_action) => {
+            super::super::super::NextAction::AddAction(select_action) => {
                 select_action
                     .process(unsigned_transaction, network_connection_config)
                     .await
             }
-            super::super::NextAction::Skip(skip_action) => {
+            super::super::super::NextAction::Skip(skip_action) => {
                 skip_action
                     .process(unsigned_transaction, network_connection_config)
                     .await
