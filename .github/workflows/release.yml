@@ -109,7 +109,8 @@ jobs:
           libssl-dev \
           curl \
           llvm \
-          clang
+          clang \
+          libudev-dev
 
     - name: Install packages (macOS)
       if: matrix.os == 'macos-latest'
