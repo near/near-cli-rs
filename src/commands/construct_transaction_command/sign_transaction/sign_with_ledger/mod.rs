@@ -50,7 +50,7 @@ impl SignLedger {
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let seed_phrase_hd_path = self.seed_phrase_hd_path.clone();
 
         println!(
@@ -254,7 +254,7 @@ impl Submit {
         self,
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         println!("\n\n\n===========  DISPLAY  ==========");
         println!(
             "\n\n---  Signed transaction:   ---\n    {:#?}",
@@ -264,7 +264,7 @@ impl Submit {
             "\n\n---  serialize_to_base64:   --- \n   {:#?}",
             &serialize_to_base64
         );
-        Ok(())
+        Ok(None)
     }
 
     pub async fn process_online(
@@ -272,7 +272,7 @@ impl Submit {
         network_connection_config: crate::common::ConnectionConfig,
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         match self {
             Submit::Send => {
                 println!("\n\n\n========= SENT =========");
@@ -312,7 +312,8 @@ impl Submit {
                         }
                     };
                 };
-                println!("\n\n---  Success:  ---\n {:#?}", &transaction_info);
+                println!("\n\n--- Transaction execution: ---\n");
+                Ok(Some(transaction_info))
             }
             Submit::Display => {
                 println!("\n\n\n===========  DISPLAY  ==========");
@@ -324,8 +325,8 @@ impl Submit {
                     "\n\n---  serialize_to_base64:   --- \n {:#?}",
                     &serialize_to_base64
                 );
+                Ok(None)
             }
         }
-        Ok(())
     }
 }
