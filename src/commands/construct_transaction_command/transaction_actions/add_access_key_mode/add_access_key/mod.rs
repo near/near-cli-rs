@@ -66,7 +66,7 @@ impl AddAccessKeyAction {
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self.permission {
-            AccessKeyPermission::FullAccessAction(full_access_type) => {
+            AccessKeyPermission::GrantFullAccess(full_access_type) => {
                 full_access_type
                     .process(
                         self.nonce,
@@ -76,7 +76,7 @@ impl AddAccessKeyAction {
                     )
                     .await
             }
-            AccessKeyPermission::FunctionCallAction(function_call_type) => {
+            AccessKeyPermission::GrantFunctionCallAccess(function_call_type) => {
                 function_call_type
                     .process(
                         self.nonce,
@@ -93,32 +93,32 @@ impl AddAccessKeyAction {
 #[derive(Debug, clap::Clap)]
 pub enum CliAccessKeyPermission {
     /// Предоставьте данные для ключа с function call
-    FunctionCallAction(self::function_call_type::CliFunctionCallType),
+    GrantFunctionCallAccess(self::function_call_type::CliFunctionCallType),
     /// Предоставьте данные для ключа с полным доступом
-    FullAccessAction(self::full_access_type::CliFullAccessType),
+    GrantFullAccess(self::full_access_type::CliFullAccessType),
 }
 
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum AccessKeyPermission {
     #[strum_discriminants(strum(message = "A permission with function call"))]
-    FunctionCallAction(self::function_call_type::FunctionCallType),
+    GrantFunctionCallAccess(self::function_call_type::FunctionCallType),
     #[strum_discriminants(strum(message = "A permission with full access"))]
-    FullAccessAction(self::full_access_type::FullAccessType),
+    GrantFullAccess(self::full_access_type::FullAccessType),
 }
 
 impl From<CliAccessKeyPermission> for AccessKeyPermission {
     fn from(item: CliAccessKeyPermission) -> Self {
         match item {
-            CliAccessKeyPermission::FunctionCallAction(cli_function_call_type) => {
+            CliAccessKeyPermission::GrantFunctionCallAccess(cli_function_call_type) => {
                 let function_call_type =
                     self::function_call_type::FunctionCallType::from(cli_function_call_type);
-                AccessKeyPermission::FunctionCallAction(function_call_type)
+                AccessKeyPermission::GrantFunctionCallAccess(function_call_type)
             }
-            CliAccessKeyPermission::FullAccessAction(cli_full_access_type) => {
+            CliAccessKeyPermission::GrantFullAccess(cli_full_access_type) => {
                 let full_access_type =
                     self::full_access_type::FullAccessType::from(cli_full_access_type);
-                AccessKeyPermission::FullAccessAction(full_access_type)
+                AccessKeyPermission::GrantFullAccess(full_access_type)
             }
         }
     }
@@ -138,11 +138,11 @@ impl AccessKeyPermission {
             .interact()
             .unwrap();
         match variants[select_permission] {
-            AccessKeyPermissionDiscriminants::FunctionCallAction => Self::from(
-                CliAccessKeyPermission::FunctionCallAction(Default::default()),
+            AccessKeyPermissionDiscriminants::GrantFunctionCallAccess => Self::from(
+                CliAccessKeyPermission::GrantFunctionCallAccess(Default::default()),
             ),
-            AccessKeyPermissionDiscriminants::FullAccessAction => {
-                Self::from(CliAccessKeyPermission::FullAccessAction(Default::default()))
+            AccessKeyPermissionDiscriminants::GrantFullAccess => {
+                Self::from(CliAccessKeyPermission::GrantFullAccess(Default::default()))
             }
         }
     }
