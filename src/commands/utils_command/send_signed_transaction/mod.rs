@@ -59,13 +59,8 @@ impl Transaction {
                 }
             };
         };
-        if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) =
-            transaction_info.status
-        {
-            crate::common::print_velue_successful_transaction(transaction_info).await;
-        } else {
-            crate::common::print_transaction_status(transaction_info).await;
-        }
+        crate::common::print_transaction_status(transaction_info, Some(network_connection_config))
+            .await;
         Ok(())
     }
 }

@@ -357,7 +357,7 @@ pub async fn generate_keypair(
     Ok(key_pair_properties)
 }
 
-pub async fn print_velue_successful_transaction(
+async fn print_value_successful_transaction(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
 ) {
     println!("Successful transaction");
@@ -425,19 +425,6 @@ pub async fn print_velue_successful_transaction(
                 );
             }
         }
-    }
-}
-
-pub async fn print_transaction_status(
-    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
-) {
-    match transaction_info.status {
-        near_primitives::views::FinalExecutionStatus::NotStarted
-        | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
-        near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-            print_transaction_error(tx_execution_error).await
-        }
-        near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {}
     }
 }
 
@@ -623,6 +610,30 @@ pub async fn print_transaction_error(
             }
         },
     }
+}
+
+pub async fn print_transaction_status(
+    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
+    network_connection_config: Option<crate::common::ConnectionConfig>,
+) {
+    match transaction_info.status {
+        near_primitives::views::FinalExecutionStatus::NotStarted
+        | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
+        near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+            print_transaction_error(tx_execution_error).await
+        }
+        near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
+            print_value_successful_transaction(transaction_info.clone()).await
+        }
+    };
+    let transaction_explorer: url::Url = match network_connection_config {
+        Some(connection_config) => connection_config.transaction_explorer(),
+        None => unreachable!("Error"),
+    };
+    println!("Transaction ID: {id}.\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+        id=transaction_info.transaction_outcome.id,
+        path=transaction_explorer
+    );
 }
 
 #[cfg(test)]

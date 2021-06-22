@@ -275,15 +275,7 @@ impl Submit {
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         match self {
             Submit::Send => {
-                println!("\n\n\n========= SENT =========");
-                println!(
-                    "\n\n---  Signed transaction:   ---\n    {:#?}",
-                    &signed_transaction
-                );
-                println!(
-                    "\n\n---  serialize_to_base64:   --- \n   {:#?}",
-                    &serialize_to_base64
-                );
+                println!("Transaction sent ...");
                 let json_rcp_client =
                     near_jsonrpc_client::new_client(network_connection_config.rpc_url().as_str());
                 let transaction_info = loop {
@@ -312,7 +304,6 @@ impl Submit {
                         }
                     };
                 };
-                println!("\n\n--- Transaction execution: ---\n");
                 Ok(Some(transaction_info))
             }
             Submit::Display => {
