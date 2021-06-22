@@ -4,6 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod combine_transaction_subcommand_with_signature;
 pub mod generate_keypair_subcommand;
 mod ledger_publickey_subcommand;
+mod send_signed_transaction;
 mod sign_transaction_subcommand_with_secret_key;
 mod sign_transaction_with_ledger_subcommand;
 mod view_serialized_transaction;
@@ -56,6 +57,8 @@ enum CliUtil {
     ViewSerializedTransaction(self::view_serialized_transaction::CliViewSerializedTransaction),
     /// Get Public Key from Ledger
     LedgerPublicKey(self::ledger_publickey_subcommand::CliLedgerPublicKey),
+    /// Send signed transaction
+    SendSignedTransaction(self::send_signed_transaction::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -79,6 +82,8 @@ pub enum Util {
     ViewSerializedTransaction(self::view_serialized_transaction::ViewSerializedTransaction),
     #[strum_discriminants(strum(message = "Get public key from Ledger device"))]
     LedgerPublicKey(self::ledger_publickey_subcommand::CliLedgerPublicKey),
+    #[strum_discriminants(strum(message = "Send signed transaction"))]
+    SendSignedTransaction(self::send_signed_transaction::operation_mode::OperationMode),
 }
 
 impl From<CliUtil> for Util {
@@ -110,6 +115,7 @@ impl From<CliUtil> for Util {
                 Util::ViewSerializedTransaction(view_serialized_transaction)
             }
             CliUtil::LedgerPublicKey(ledger_publickey) => Util::LedgerPublicKey(ledger_publickey),
+            CliUtil::SendSignedTransaction(cli_operation_mode) => Util::SendSignedTransaction(cli_operation_mode.into()),
         }
     }
 }
@@ -147,6 +153,9 @@ impl Util {
             UtilDiscriminants::LedgerPublicKey => CliUtil::LedgerPublicKey(
                 self::ledger_publickey_subcommand::CliLedgerPublicKey::default(),
             ),
+            UtilDiscriminants::SendSignedTransaction => {
+                CliUtil::SendSignedTransaction(Default::default())
+            }
         };
         Self::from(cli_util)
     }
@@ -163,6 +172,7 @@ impl Util {
                 view_serialized_transaction.process().await
             }
             Self::LedgerPublicKey(ledger_publickey) => ledger_publickey.process().await,
+            Self::SendSignedTransaction(operation_mode) => operation_mode.process().await,
         }
     }
 }
