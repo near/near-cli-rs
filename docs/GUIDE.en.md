@@ -847,3 +847,12 @@ Given a base64-encoded string, we should be able to view the human-readable repr
     <img src="https://asciinema.org/a/Gtb4M13a8QW5VaVmfgBLEcq3X.png" width="836"/>
 </a>
 </details>
+
+#### Send signed transaction
+
+Given the base64 encoded string, we should be able to send it for execution.
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/4g9yN7PFBdBSeQRxPc8ydfpWs?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/4g9yN7PFBdBSeQRxPc8ydfpWs.png" width="836"/>
+</a>
+</details>
