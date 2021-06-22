@@ -357,9 +357,94 @@ pub async fn generate_keypair(
     Ok(key_pair_properties)
 }
 
+pub async fn print_velue_successful_transaction(
+    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
+) {
+    println!("Successful transaction");
+    for action in transaction_info.transaction.actions {
+        match action {
+            near_primitives::views::ActionView::CreateAccount => {
+                println!(
+                    "New account <{}> has been successfully created.",
+                    transaction_info.transaction.receiver_id,
+                );
+            }
+            near_primitives::views::ActionView::DeployContract { code: _ } => {
+                println!("Contract code has been successfully deployed.",);
+            }
+            near_primitives::views::ActionView::FunctionCall {
+                method_name,
+                args: _,
+                gas: _,
+                deposit: _,
+            } => {
+                println!(
+                    "The \"{}\" call to <{}> on behalf of <{}> succeeded.",
+                    method_name,
+                    transaction_info.transaction.receiver_id,
+                    transaction_info.transaction.signer_id,
+                );
+            }
+            near_primitives::views::ActionView::Transfer { deposit } => {
+                println!(
+                    "<{}> has transferred {} to <{}> successfully.",
+                    transaction_info.transaction.signer_id,
+                    crate::common::NearBalance::from_yoctonear(deposit),
+                    transaction_info.transaction.receiver_id,
+                );
+            }
+            near_primitives::views::ActionView::Stake {
+                stake,
+                public_key: _,
+            } => {
+                println!(
+                    "Validator <{}> has successfully staked {}.",
+                    transaction_info.transaction.signer_id,
+                    crate::common::NearBalance::from_yoctonear(stake),
+                );
+            }
+            near_primitives::views::ActionView::AddKey {
+                public_key,
+                access_key: _,
+            } => {
+                println!(
+                    "Added access key = {} to {}.",
+                    public_key, transaction_info.transaction.receiver_id,
+                );
+            }
+            near_primitives::views::ActionView::DeleteKey { public_key } => {
+                println!(
+                    "Access key <{}> for account <{}> has been successfully deletted.",
+                    public_key, transaction_info.transaction.signer_id,
+                );
+            }
+            near_primitives::views::ActionView::DeleteAccount { beneficiary_id: _ } => {
+                println!(
+                    "Account <{}> has been successfully deletted.",
+                    transaction_info.transaction.signer_id,
+                );
+            }
+        }
+    }
+}
+
+pub async fn print_transaction_status(
+    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
+) {
+    match transaction_info.status {
+        near_primitives::views::FinalExecutionStatus::NotStarted
+        | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
+        near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+            print_transaction_error(tx_execution_error).await
+        }
+        near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {}
+    }
+}
+
 pub async fn print_transaction_error(
     tx_execution_error: near_primitives::errors::TxExecutionError,
 ) {
+    println!("Failed transaction");
     match tx_execution_error {
         near_primitives::errors::TxExecutionError::ActionError(action_error) => {
             match action_error.kind {

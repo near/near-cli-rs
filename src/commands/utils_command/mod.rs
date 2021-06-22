@@ -115,7 +115,9 @@ impl From<CliUtil> for Util {
                 Util::ViewSerializedTransaction(view_serialized_transaction)
             }
             CliUtil::LedgerPublicKey(ledger_publickey) => Util::LedgerPublicKey(ledger_publickey),
-            CliUtil::SendSignedTransaction(cli_operation_mode) => Util::SendSignedTransaction(cli_operation_mode.into()),
+            CliUtil::SendSignedTransaction(cli_operation_mode) => {
+                Util::SendSignedTransaction(cli_operation_mode.into())
+            }
         }
     }
 }
