@@ -76,10 +76,10 @@ impl CallFunctionAction {
             let gas: u64 = match input_gas {
                 crate::common::NearGas { inner: num } => num,
             };
-            if gas <= 200000000000000 {
+            if gas <= 300000000000000 {
                 break gas;
             } else {
-                println!("You need to enter a value of no more than 200 TERAGAS")
+                println!("You need to enter a value of no more than 300 TERAGAS")
             }
         };
         gas
