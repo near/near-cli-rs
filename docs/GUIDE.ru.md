@@ -858,3 +858,12 @@ https://explorer.wallet.testnet.near.org/EhhLMtUEmLHV4bzdvSmzv9pLyUbKChGgtWKhuPR
     <img src="https://asciinema.org/a/Gtb4M13a8QW5VaVmfgBLEcq3X.png" width="836"/>
 </a>
 </details>
+
+#### Send signed transaction
+
+Данная утилита позволяет закодированную в Base64 подписанную транзакцию отправить в обработку.
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/4g9yN7PFBdBSeQRxPc8ydfpWs?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/4g9yN7PFBdBSeQRxPc8ydfpWs.png" width="836"/>
+</a>
+</details>
