@@ -161,16 +161,18 @@ impl FunctionCallType {
         };
         match self
             .sign_option
-            .process(unsigned_transaction.clone(), network_connection_config)
+            .process(
+                unsigned_transaction.clone(),
+                network_connection_config.clone(),
+            )
             .await?
         {
             Some(transaction_info) => {
-                println!(
-                    "Added function access key = {:?} to {}.",
-                    public_key, unsigned_transaction.signer_id,
-                );
-                println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
-                    \nhttps://explorer.testnet.near.org/transactions/{id}\n", id=transaction_info.transaction_outcome.id);
+                crate::common::print_transaction_status(
+                    transaction_info,
+                    network_connection_config,
+                )
+                .await;
             }
             None => {}
         };

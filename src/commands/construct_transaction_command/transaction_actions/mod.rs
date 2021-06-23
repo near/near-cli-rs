@@ -330,89 +330,11 @@ impl SkipAction {
             .await?
         {
             Some(transaction_info) => {
-                match transaction_info.status {
-                    near_primitives::views::FinalExecutionStatus::NotStarted
-                    | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
-                    near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-                        crate::common::print_transaction_error(tx_execution_error).await
-                    }
-                    near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
-                        for action in transaction_info.transaction.actions {
-                            match action {
-                                near_primitives::views::ActionView::CreateAccount => {
-                                    println!(
-                                        "\nNew account <{}> has been successfully created.",
-                                        transaction_info.transaction.receiver_id,
-                                    );
-                                }
-                                near_primitives::views::ActionView::DeployContract { code: _ } => {
-                                    println!("\n Contract code has been successfully deployed.",);
-                                }
-                                near_primitives::views::ActionView::FunctionCall {
-                                    method_name,
-                                    args: _,
-                                    gas: _,
-                                    deposit: _,
-                                } => {
-                                    println!(
-                                        "\nThe \"{}\" call to <{}> on behalf of <{}> succeeded.",
-                                        method_name,
-                                        transaction_info.transaction.receiver_id,
-                                        transaction_info.transaction.signer_id,
-                                    );
-                                }
-                                near_primitives::views::ActionView::Transfer { deposit } => {
-                                    println!(
-                                        "\n<{}> has transferred {} to <{}> successfully.",
-                                        transaction_info.transaction.signer_id,
-                                        crate::common::NearBalance::from_yoctonear(deposit),
-                                        transaction_info.transaction.receiver_id,
-                                    );
-                                }
-                                near_primitives::views::ActionView::Stake {
-                                    stake,
-                                    public_key: _,
-                                } => {
-                                    println!(
-                                        "\nValidator <{}> has successfully staked {}.",
-                                        transaction_info.transaction.signer_id,
-                                        crate::common::NearBalance::from_yoctonear(stake),
-                                    );
-                                }
-                                near_primitives::views::ActionView::AddKey {
-                                    public_key,
-                                    access_key: _,
-                                } => {
-                                    println!(
-                                        "Added access key = {} to {}.",
-                                        public_key, transaction_info.transaction.receiver_id,
-                                    );
-                                }
-                                near_primitives::views::ActionView::DeleteKey { public_key } => {
-                                    println!(
-                                        "\nAccess key <{}> for account <{}> has been successfully deletted.",
-                                        public_key,
-                                        transaction_info.transaction.signer_id,
-                                    );
-                                }
-                                near_primitives::views::ActionView::DeleteAccount {
-                                    beneficiary_id: _,
-                                } => {
-                                    println!(
-                                        "\nAccount <{}> has been successfully deletted.",
-                                        transaction_info.transaction.signer_id,
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-                let transaction_explorer: url::Url = match network_connection_config {
-                    Some(connection_config) => connection_config.transaction_explorer(),
-                    None => unreachable!("Error"),
-                };
-                println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
-                    \n{path}{id}\n", id=transaction_info.transaction_outcome.id, path=transaction_explorer);
+                crate::common::print_transaction_status(
+                    transaction_info,
+                    network_connection_config,
+                )
+                .await;
             }
             None => {}
         };

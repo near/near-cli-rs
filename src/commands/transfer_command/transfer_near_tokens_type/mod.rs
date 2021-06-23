@@ -105,32 +105,11 @@ impl TransferNEARTokensAction {
             .await?
         {
             Some(transaction_info) => {
-                match transaction_info.status {
-                    near_primitives::views::FinalExecutionStatus::NotStarted
-                    | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
-                    near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-                        crate::common::print_transaction_error(tx_execution_error).await
-                    }
-                    near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
-                        match transaction_info.transaction.actions[0] {
-                            near_primitives::views::ActionView::Transfer { deposit } => {
-                                println!(
-                                    "\n<{}> has transferred {} to <{}> successfully.",
-                                    transaction_info.transaction.signer_id,
-                                    crate::common::NearBalance::from_yoctonear(deposit),
-                                    transaction_info.transaction.receiver_id,
-                                );
-                            }
-                            _ => unreachable!("Error"),
-                        }
-                    }
-                }
-                let transaction_explorer: url::Url = match network_connection_config {
-                    Some(connection_config) => connection_config.transaction_explorer(),
-                    None => unreachable!("Error"),
-                };
-                println!("\nTransaction Id {id}.\n\nTo see the transaction in the transaction explorer, please open this url in your browser:
-                    \n{path}{id}\n", id=transaction_info.transaction_outcome.id, path=transaction_explorer);
+                crate::common::print_transaction_status(
+                    transaction_info,
+                    network_connection_config,
+                )
+                .await;
             }
             None => {}
         };

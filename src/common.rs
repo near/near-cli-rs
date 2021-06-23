@@ -357,9 +357,81 @@ pub async fn generate_keypair(
     Ok(key_pair_properties)
 }
 
+async fn print_value_successful_transaction(
+    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
+) {
+    println!("Successful transaction");
+    for action in transaction_info.transaction.actions {
+        match action {
+            near_primitives::views::ActionView::CreateAccount => {
+                println!(
+                    "New account <{}> has been successfully created.",
+                    transaction_info.transaction.receiver_id,
+                );
+            }
+            near_primitives::views::ActionView::DeployContract { code: _ } => {
+                println!("Contract code has been successfully deployed.",);
+            }
+            near_primitives::views::ActionView::FunctionCall {
+                method_name,
+                args: _,
+                gas: _,
+                deposit: _,
+            } => {
+                println!(
+                    "The \"{}\" call to <{}> on behalf of <{}> succeeded.",
+                    method_name,
+                    transaction_info.transaction.receiver_id,
+                    transaction_info.transaction.signer_id,
+                );
+            }
+            near_primitives::views::ActionView::Transfer { deposit } => {
+                println!(
+                    "<{}> has transferred {} to <{}> successfully.",
+                    transaction_info.transaction.signer_id,
+                    crate::common::NearBalance::from_yoctonear(deposit),
+                    transaction_info.transaction.receiver_id,
+                );
+            }
+            near_primitives::views::ActionView::Stake {
+                stake,
+                public_key: _,
+            } => {
+                println!(
+                    "Validator <{}> has successfully staked {}.",
+                    transaction_info.transaction.signer_id,
+                    crate::common::NearBalance::from_yoctonear(stake),
+                );
+            }
+            near_primitives::views::ActionView::AddKey {
+                public_key,
+                access_key: _,
+            } => {
+                println!(
+                    "Added access key = {} to {}.",
+                    public_key, transaction_info.transaction.receiver_id,
+                );
+            }
+            near_primitives::views::ActionView::DeleteKey { public_key } => {
+                println!(
+                    "Access key <{}> for account <{}> has been successfully deletted.",
+                    public_key, transaction_info.transaction.signer_id,
+                );
+            }
+            near_primitives::views::ActionView::DeleteAccount { beneficiary_id: _ } => {
+                println!(
+                    "Account <{}> has been successfully deletted.",
+                    transaction_info.transaction.signer_id,
+                );
+            }
+        }
+    }
+}
+
 pub async fn print_transaction_error(
     tx_execution_error: near_primitives::errors::TxExecutionError,
 ) {
+    println!("Failed transaction");
     match tx_execution_error {
         near_primitives::errors::TxExecutionError::ActionError(action_error) => {
             match action_error.kind {
@@ -538,6 +610,30 @@ pub async fn print_transaction_error(
             }
         },
     }
+}
+
+pub async fn print_transaction_status(
+    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
+    network_connection_config: Option<crate::common::ConnectionConfig>,
+) {
+    match transaction_info.status {
+        near_primitives::views::FinalExecutionStatus::NotStarted
+        | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
+        near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+            print_transaction_error(tx_execution_error).await
+        }
+        near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
+            print_value_successful_transaction(transaction_info.clone()).await
+        }
+    };
+    let transaction_explorer: url::Url = match network_connection_config {
+        Some(connection_config) => connection_config.transaction_explorer(),
+        None => unreachable!("Error"),
+    };
+    println!("Transaction ID: {id}.\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+        id=transaction_info.transaction_outcome.id,
+        path=transaction_explorer
+    );
 }
 
 #[cfg(test)]

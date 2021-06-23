@@ -126,11 +126,7 @@ impl ContractFile {
             ..prepopulated_unsigned_transaction
         };
         self.next_action
-            .process(
-                unsigned_transaction,
-                network_connection_config,
-                self.file_path,
-            )
+            .process(unsigned_transaction, network_connection_config)
             .await
     }
 }
