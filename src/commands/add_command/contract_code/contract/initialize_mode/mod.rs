@@ -78,6 +78,11 @@ impl NextAction {
 
 /// данные для инициализации
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliNoInitialize {
     #[clap(subcommand)]
     pub sign_option: Option<

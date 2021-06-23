@@ -6,6 +6,11 @@ mod generate_keypair;
 
 /// данные об отправителе транзакции
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliAddAccessKeyMode {
     #[clap(subcommand)]
     public_key_mode: Option<CliPublicKeyMode>,

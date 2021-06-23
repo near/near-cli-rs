@@ -2,6 +2,11 @@ pub mod select_server;
 
 /// аргументы, необходимые для создания транзакции в online mode
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliNetworkArgs {
     #[clap(subcommand)]
     selected_server: Option<self::select_server::CliSelectServer>,

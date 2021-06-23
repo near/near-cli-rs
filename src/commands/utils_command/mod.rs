@@ -11,6 +11,11 @@ mod view_serialized_transaction;
 
 /// набор утилит-помощников
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliUtils {
     #[clap(subcommand)]
     util: Option<CliUtil>,

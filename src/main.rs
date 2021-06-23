@@ -15,7 +15,7 @@ type CliResult = color_eyre::eyre::Result<()>;
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::VersionlessSubcommands),
-    setting(clap::AppSettings::NextLineHelp)
+    // setting(clap::AppSettings::NextLineHelp)
 )]
 struct CliArgs {
     #[clap(subcommand)]

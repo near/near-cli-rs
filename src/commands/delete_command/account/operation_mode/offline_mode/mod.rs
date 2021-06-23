@@ -2,6 +2,11 @@ use dialoguer::Input;
 
 /// аргументы, необходимые для создания трансфера в offline mode
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliOfflineArgs {
     #[clap(long)]
     nonce: Option<u64>,

@@ -44,6 +44,11 @@ impl SendTo {
 
 /// Specify a sub-account
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliSubAccount {
     sub_account_id: Option<String>,
     #[clap(subcommand)]

@@ -50,6 +50,11 @@ impl TransactionsSigning {
 
 /// данные о получателе транзакции
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliTransactionsSigningAction {
     transactions_signing_public_key: Option<near_crypto::PublicKey>,
     #[clap(subcommand)]

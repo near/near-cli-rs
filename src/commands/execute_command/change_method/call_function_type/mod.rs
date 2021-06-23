@@ -2,6 +2,11 @@ use dialoguer::Input;
 
 /// вызов CallFunction
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliCallFunctionAction {
     method_name: Option<String>,
     args: Option<String>,

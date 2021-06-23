@@ -23,6 +23,11 @@ fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
 /// Generate a key pair of secret and public keys (use it anywhere you need
 /// Ed25519 keys)
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliGenerateKeypair {
     #[clap(subcommand)]
     permission: Option<super::add_access_key::CliAccessKeyPermission>,

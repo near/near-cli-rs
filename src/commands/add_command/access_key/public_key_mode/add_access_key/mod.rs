@@ -6,6 +6,11 @@ mod function_call_type;
 
 /// добавление ключа пользователю
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliAddAccessKeyAction {
     public_key: Option<near_crypto::PublicKey>,
     nonce: Option<u64>,

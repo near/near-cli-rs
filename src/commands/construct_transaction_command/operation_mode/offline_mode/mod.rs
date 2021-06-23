@@ -2,6 +2,11 @@ use dialoguer::Input;
 
 /// аргументы, необходимые для создания транзакции в offline mode
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliOfflineArgs {
     #[clap(long)]
     signer_public_key: Option<near_crypto::PublicKey>,

@@ -109,6 +109,11 @@ impl NextAction {
 
 /// инструмент для добавления команды в транзакцию
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliSelectAction {
     #[clap(subcommand)]
     transaction_subcommand: Option<CliActionSubcommand>,
@@ -295,6 +300,11 @@ impl ActionSubcommand {
 
 /// инструмент, показывающий окончание набора команд в одной транзакции
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliSkipAction {
     #[clap(subcommand)]
     sign_option: Option<super::sign_transaction::CliSignTransaction>,

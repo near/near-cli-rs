@@ -2,6 +2,11 @@ use async_recursion::async_recursion;
 
 /// данные для определения ключа с полным доступом
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliFullAccessType {
     #[clap(subcommand)]
     next_action: Option<super::super::super::CliSkipNextAction>,

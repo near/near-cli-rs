@@ -46,6 +46,11 @@ impl DeleteAccessKeyAction {
 
 /// Specify the access key to be deleted
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliDeleteAccessKeyType {
     public_key: Option<near_crypto::PublicKey>,
     #[clap(subcommand)]

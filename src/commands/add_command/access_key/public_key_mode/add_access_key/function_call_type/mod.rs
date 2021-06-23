@@ -3,6 +3,11 @@ use std::vec;
 
 /// данные для определения ключа с function call
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliFunctionCallType {
     #[clap(long)]
     allowance: Option<crate::common::NearBalance>,

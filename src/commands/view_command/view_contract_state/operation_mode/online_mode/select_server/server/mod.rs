@@ -2,6 +2,11 @@ use dialoguer::Input;
 
 /// предустановленный RPC-сервер
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliServer {
     #[clap(subcommand)]
     pub send_to: Option<super::super::super::super::sender::CliSendTo>,
@@ -9,6 +14,11 @@ pub struct CliServer {
 
 /// данные для custom server
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliCustomServer {
     #[clap(long)]
     pub url: Option<crate::common::AvailableRpcServerUrl>,

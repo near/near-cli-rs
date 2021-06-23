@@ -3,6 +3,11 @@ use dialoguer::Input;
 
 /// создание ставки
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliStakeNEARTokensAction {
     stake: Option<crate::common::NearBalance>,
     public_key: Option<near_crypto::PublicKey>,

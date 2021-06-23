@@ -8,6 +8,11 @@ pub mod transfer_near_tokens_type;
 
 /// инструмент выбора переводимой валюты
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliCurrency {
     #[clap(subcommand)]
     currency_selection: Option<CliCurrencySelection>,

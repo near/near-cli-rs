@@ -2,6 +2,11 @@ use dialoguer::Input;
 
 // download contract file
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliContractFile {
     file_path: Option<std::path::PathBuf>,
     #[clap(subcommand)]

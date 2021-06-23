@@ -9,6 +9,11 @@ mod view_transaction_status;
 
 /// инструмент выбора to view
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliViewQueryRequest {
     #[clap(subcommand)]
     query: Option<CliQueryRequest>,

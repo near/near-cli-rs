@@ -1,5 +1,10 @@
 // view a contract hash
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliContractHash {
     #[clap(subcommand)]
     selected_block_id: Option<super::super::super::block_id::CliBlockId>,

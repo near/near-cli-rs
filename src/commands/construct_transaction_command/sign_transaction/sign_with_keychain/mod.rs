@@ -4,6 +4,11 @@ use std::path::PathBuf;
 
 /// подписание сформированной транзакции с помощью файла с ключами
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliSignKeychain {
     #[clap(subcommand)]
     submit: Option<super::sign_with_private_key::Submit>,

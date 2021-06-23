@@ -2,6 +2,11 @@ use clap::IntoApp;
 
 /// инструмент для настройки терминала пользователя
 #[derive(Debug, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliGenerateShellCompletions {
     #[clap(subcommand)]
     shell_type: CliShellCompletionType,

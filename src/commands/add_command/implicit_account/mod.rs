@@ -5,6 +5,11 @@ mod generate_keypair;
 
 /// Generate key pair
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliImplicitAccount {
     #[clap(subcommand)]
     public_key_mode: Option<CliPublicKeyMode>,

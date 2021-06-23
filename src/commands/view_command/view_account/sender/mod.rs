@@ -39,6 +39,11 @@ impl SendTo {
 
 /// Specify the account to be view
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliSender {
     pub sender_account_id: Option<String>,
     #[clap(subcommand)]

@@ -3,6 +3,11 @@ use dialoguer::Input;
 
 /// создание перевода токенов
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliTransferNEARTokensAction {
     amount: Option<crate::common::NearBalance>,
     #[clap(subcommand)]

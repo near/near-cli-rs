@@ -3,6 +3,11 @@ use dialoguer::Input;
 
 /// удаление ключа доступа у пользователя
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliDeleteAccessKeyAction {
     #[clap(long)]
     public_key: Option<near_crypto::PublicKey>,

@@ -4,6 +4,11 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 /// подписание сформированной транзакции с помощью личных ключей
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliSignPrivateKey {
     #[clap(long)]
     signer_public_key: Option<near_crypto::PublicKey>,

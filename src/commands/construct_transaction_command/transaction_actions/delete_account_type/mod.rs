@@ -3,6 +3,11 @@ use dialoguer::Input;
 
 /// удаление аккаунта
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliDeleteAccountAction {
     #[clap(long)]
     beneficiary_id: Option<near_primitives::types::AccountId>,

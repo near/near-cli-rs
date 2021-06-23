@@ -9,6 +9,11 @@ mod sub_account;
 
 /// инструмент выбора to add action
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliAddAction {
     #[clap(subcommand)]
     action: Option<CliAction>,

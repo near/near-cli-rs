@@ -6,6 +6,11 @@ mod view_method;
 
 /// выбор метода для выполнения
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliOptionMethod {
     #[clap(subcommand)]
     method: Option<CliMethod>,

@@ -65,6 +65,11 @@ impl FullAccessKey {
 
 /// данные о ключе доступа
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliSubAccountFullAccess {
     #[clap(subcommand)]
     public_key_mode: Option<self::public_key_mode::CliPublicKeyMode>,

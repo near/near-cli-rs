@@ -2,6 +2,11 @@ use async_recursion::async_recursion;
 
 /// создание аккаунта
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliCreateAccountAction {
     #[clap(subcommand)]
     next_action: Option<super::CliSkipNextAction>,

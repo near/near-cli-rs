@@ -39,6 +39,11 @@ impl SendTo {
 
 /// Specify account to view the nonce for public key
 #[derive(Debug, Default, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliAccount {
     account_id: Option<String>,
     #[clap(subcommand)]
