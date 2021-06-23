@@ -1,4 +1,5 @@
 use std::convert::TryInto;
+use std::io::Write;
 
 use near_primitives::borsh::BorshDeserialize;
 
@@ -634,6 +635,34 @@ pub async fn print_transaction_status(
         id=transaction_info.transaction_outcome.id,
         path=transaction_explorer
     );
+}
+
+pub async fn save_access_key_to_path(
+    network_connection_config: Option<crate::common::ConnectionConfig>,
+    public_key_str: &str,
+    account_id: &str,
+    buf: String,
+) -> crate::CliResult {
+    let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
+    let dir_name = match &network_connection_config {
+        Some(connection_config) => connection_config.dir_name(),
+        None => crate::consts::DIR_NAME_KEY_CHAIN,
+    };
+    let file_name: std::path::PathBuf = format!("{}.json", public_key_str.replace(":", "_")).into();
+    let mut path = std::path::PathBuf::from(&home_dir);
+    path.push(dir_name);
+    path.push(account_id);
+    std::fs::create_dir_all(&path)?;
+    path.push(file_name);
+    std::fs::File::create(&path)
+        .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
+        .write(buf.as_bytes())
+        .map_err(|err| color_eyre::Report::msg(format!("Failed to write to file: {:?}", err)))?;
+    println!(
+        "The data for the access key is saved in a file {}",
+        &path.display()
+    );
+    Ok(())
 }
 
 #[cfg(test)]

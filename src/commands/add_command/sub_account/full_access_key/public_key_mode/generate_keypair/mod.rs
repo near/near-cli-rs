@@ -1,4 +1,3 @@
-use std::io::Write;
 use std::str::FromStr;
 
 fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
@@ -105,29 +104,16 @@ impl GenerateKeypair {
             "private_key": secret_keypair_str,
             })
         );
-        let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
-        let file_name: std::path::PathBuf =
-            format!("{}.json", &prepopulated_unsigned_transaction.receiver_id).into();
-        let mut path = std::path::PathBuf::from(&home_dir);
-        path.push(crate::consts::DIR_NAME_KEY_CHAIN);
-        std::fs::create_dir_all(&path)?;
-        path.push(file_name);
-        if path.exists() {
-            return Err(color_eyre::Report::msg(format!(
-                "The file: {} already exists!",
-                &path.display()
-            )));
-        };
-        std::fs::File::create(&path)
-            .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
-            .write(buf.as_bytes())
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
-            })?;
-        println!(
-            "The data for the access key is saved in a file {}",
-            &path.display()
-        );
+        crate::common::save_access_key_to_path(
+            network_connection_config.clone(),
+            &public_key_str,
+            &prepopulated_unsigned_transaction.receiver_id,
+            buf,
+        )
+        .await
+        .map_err(|err| {
+            color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
+        })?;
 
         let access_key: near_primitives::account::AccessKey = near_primitives::account::AccessKey {
             nonce: 0,

@@ -1,4 +1,3 @@
-use std::io::Write;
 use std::str::FromStr;
 
 use dialoguer::Input;
@@ -135,20 +134,16 @@ async fn save_account(
         "private_key": key_pair_properties.secret_keypair_str.clone(),
         })
     );
-    let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
-    let file_name: std::path::PathBuf = format!("{}.json", &account_id).into();
-    let mut path = std::path::PathBuf::from(&home_dir);
-    path.push(network_connection_config.dir_name());
-    std::fs::create_dir_all(&path)?;
-    path.push(file_name);
-    std::fs::File::create(&path)
-        .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
-        .write(buf.as_bytes())
-        .map_err(|err| color_eyre::Report::msg(format!("Failed to write to file: {:?}", err)))?;
-    println!(
-        "\n\n\nThe data for the access key is saved in a file {}",
-        &path.display()
-    );
+    crate::common::save_access_key_to_path(
+        Some(network_connection_config),
+        &key_pair_properties.public_key_str,
+        account_id,
+        buf,
+    )
+    .await
+    .map_err(|err| {
+        color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
+    })?;
     println!(
         "Logged in as [ {} ] with public key [ {} ] successfully",
         account_id, key_pair_properties.public_key_str
