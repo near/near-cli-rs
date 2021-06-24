@@ -299,7 +299,7 @@ impl ConnectionConfig {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KeyPairProperties {
     pub seed_phrase_hd_path: slip10::BIP32Path,
     pub master_seed_phrase: String,
@@ -308,30 +308,33 @@ pub struct KeyPairProperties {
     pub secret_keypair_str: String,
 }
 
-pub async fn generate_keypair(
-    master_seed_phrase: Option<&str>,
-    new_master_seed_phrase_words_count: usize,
-    seed_phrase_hd_path: slip10::BIP32Path,
-) -> color_eyre::eyre::Result<KeyPairProperties> {
-    let (master_seed_phrase, master_seed) = if let Some(master_seed_phrase) = master_seed_phrase {
-        (
-            master_seed_phrase.to_owned(),
-            bip39::Mnemonic::parse(master_seed_phrase)?.to_seed(""),
-        )
-    } else {
-        let mnemonic = bip39::Mnemonic::generate(new_master_seed_phrase_words_count)?;
-        let master_seed_phrase = mnemonic.word_iter().collect::<Vec<&str>>().join(" ");
-        (master_seed_phrase, mnemonic.to_seed(""))
-    };
+pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
+    let generate_keypair: crate::commands::utils_command::generate_keypair_subcommand::CliGenerateKeypair =
+        crate::commands::utils_command::generate_keypair_subcommand::CliGenerateKeypair::default();
+    let (master_seed_phrase, master_seed) =
+        if let Some(master_seed_phrase) = generate_keypair.master_seed_phrase.as_deref() {
+            (
+                master_seed_phrase.to_owned(),
+                bip39::Mnemonic::parse(master_seed_phrase)?.to_seed(""),
+            )
+        } else {
+            let mnemonic =
+                bip39::Mnemonic::generate(generate_keypair.new_master_seed_phrase_words_count)?;
+            let master_seed_phrase = mnemonic.word_iter().collect::<Vec<&str>>().join(" ");
+            (master_seed_phrase, mnemonic.to_seed(""))
+        };
 
-    let derived_private_key =
-        slip10::derive_key_from_path(&master_seed, slip10::Curve::Ed25519, &seed_phrase_hd_path)
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to derive a key from the master key: {}",
-                    err
-                ))
-            })?;
+    let derived_private_key = slip10::derive_key_from_path(
+        &master_seed,
+        slip10::Curve::Ed25519,
+        &generate_keypair.seed_phrase_hd_path,
+    )
+    .map_err(|err| {
+        color_eyre::Report::msg(format!(
+            "Failed to derive a key from the master key: {}",
+            err
+        ))
+    })?;
 
     let secret_keypair = {
         let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
@@ -349,7 +352,7 @@ pub async fn generate_keypair(
         bs58::encode(secret_keypair.to_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
-        seed_phrase_hd_path,
+        seed_phrase_hd_path: generate_keypair.seed_phrase_hd_path,
         master_seed_phrase,
         implicit_account_id,
         public_key_str,
@@ -639,16 +642,29 @@ pub async fn print_transaction_status(
 
 pub async fn save_access_key_to_keychain(
     network_connection_config: Option<crate::common::ConnectionConfig>,
-    public_key_str: &str,
+    key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
-    buf: String,
 ) -> crate::CliResult {
+    let buf = format!(
+        "{}",
+        serde_json::json!({
+            "master_seed_phrase": key_pair_properties.master_seed_phrase,
+            "seed_phrase_hd_path": key_pair_properties.seed_phrase_hd_path.to_string(),
+            "account_id": account_id,
+            "public_key": key_pair_properties.public_key_str,
+            "private_key": key_pair_properties.secret_keypair_str,
+        })
+    );
     let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
     let dir_name = match &network_connection_config {
         Some(connection_config) => connection_config.dir_name(),
         None => crate::consts::DIR_NAME_KEY_CHAIN,
     };
-    let file_with_key_name: std::path::PathBuf = format!("{}.json", public_key_str.replace(":", "_")).into();
+    let file_with_key_name: std::path::PathBuf = format!(
+        "{}.json",
+        key_pair_properties.public_key_str.replace(":", "_")
+    )
+    .into();
     let mut path_with_key_name = std::path::PathBuf::from(&home_dir);
     path_with_key_name.push(dir_name);
     path_with_key_name.push(account_id);
@@ -666,10 +682,12 @@ pub async fn save_access_key_to_keychain(
     let file_with_account_name: std::path::PathBuf = format!("{}.json", account_id).into();
     let mut path_with_account_name = std::path::PathBuf::from(&home_dir);
     path_with_account_name.push(dir_name);
-    std::fs::create_dir_all(&path_with_account_name)?;
     path_with_account_name.push(file_with_account_name);
     if path_with_account_name.exists() {
-        println!("The file: {} already exists! Therefore it was not overwritten.", &path_with_account_name.display());
+        println!(
+            "The file: {} already exists! Therefore it was not overwritten.",
+            &path_with_account_name.display()
+        );
     } else {
         std::fs::File::create(&path_with_account_name)
             .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?

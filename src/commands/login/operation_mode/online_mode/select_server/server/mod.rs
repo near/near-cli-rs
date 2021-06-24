@@ -42,17 +42,8 @@ impl CliCustomServer {
 
 impl Server {
     pub async fn process(self) -> crate::CliResult {
-        let generate_keypair: crate::commands::utils_command::generate_keypair_subcommand::CliGenerateKeypair =
-            crate::commands::utils_command::generate_keypair_subcommand::CliGenerateKeypair::default();
-
         let key_pair_properties: crate::common::KeyPairProperties =
-            crate::common::generate_keypair(
-                generate_keypair.master_seed_phrase.as_deref(),
-                generate_keypair.new_master_seed_phrase_words_count,
-                generate_keypair.seed_phrase_hd_path,
-            )
-            .await?;
-
+            crate::common::generate_keypair().await?;
         let mut url: url::Url = self.connection_config.wallet_url().join("login/")?;
         url.query_pairs_mut()
             .append_pair("title", "NEAR CLI")
@@ -70,7 +61,16 @@ impl Server {
 
         let account_id = get_account_from_cli(public_key, self.connection_config.clone()).await?;
         if !account_id.is_empty() {
-            save_account(&account_id, key_pair_properties, self.connection_config).await?
+            // save_account(&account_id, key_pair_properties, self.connection_config).await?
+            crate::common::save_access_key_to_keychain(
+                Some(self.connection_config),
+                key_pair_properties.clone(),
+                &account_id,
+            )
+            .await
+            .map_err(|err| {
+                color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
+            })?;
         };
         Ok(())
     }
@@ -118,35 +118,5 @@ async fn verify_account_id(
                 err
             ))
         })?;
-    Ok(())
-}
-
-async fn save_account(
-    account_id: &str,
-    key_pair_properties: crate::common::KeyPairProperties,
-    network_connection_config: crate::common::ConnectionConfig,
-) -> crate::CliResult {
-    let buf = format!(
-        "{}",
-        serde_json::json!({
-        "account_id": account_id,
-        "public_key": key_pair_properties.public_key_str.clone(),
-        "private_key": key_pair_properties.secret_keypair_str.clone(),
-        })
-    );
-    crate::common::save_access_key_to_keychain(
-        Some(network_connection_config),
-        &key_pair_properties.public_key_str,
-        account_id,
-        buf,
-    )
-    .await
-    .map_err(|err| {
-        color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
-    })?;
-    println!(
-        "Logged in as [ {} ] with public key [ {} ] successfully",
-        account_id, key_pair_properties.public_key_str
-    );
     Ok(())
 }
