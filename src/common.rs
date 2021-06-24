@@ -637,7 +637,7 @@ pub async fn print_transaction_status(
     );
 }
 
-pub async fn save_access_key_to_path(
+pub async fn save_access_key_to_keychain(
     network_connection_config: Option<crate::common::ConnectionConfig>,
     public_key_str: &str,
     account_id: &str,
@@ -648,20 +648,40 @@ pub async fn save_access_key_to_path(
         Some(connection_config) => connection_config.dir_name(),
         None => crate::consts::DIR_NAME_KEY_CHAIN,
     };
-    let file_name: std::path::PathBuf = format!("{}.json", public_key_str.replace(":", "_")).into();
-    let mut path = std::path::PathBuf::from(&home_dir);
-    path.push(dir_name);
-    path.push(account_id);
-    std::fs::create_dir_all(&path)?;
-    path.push(file_name);
-    std::fs::File::create(&path)
+    let file_with_key_name: std::path::PathBuf = format!("{}.json", public_key_str.replace(":", "_")).into();
+    let mut path_with_key_name = std::path::PathBuf::from(&home_dir);
+    path_with_key_name.push(dir_name);
+    path_with_key_name.push(account_id);
+    std::fs::create_dir_all(&path_with_key_name)?;
+    path_with_key_name.push(file_with_key_name);
+    std::fs::File::create(&path_with_key_name)
         .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
         .write(buf.as_bytes())
         .map_err(|err| color_eyre::Report::msg(format!("Failed to write to file: {:?}", err)))?;
     println!(
         "The data for the access key is saved in a file {}",
-        &path.display()
+        &path_with_key_name.display()
     );
+
+    let file_with_account_name: std::path::PathBuf = format!("{}.json", account_id).into();
+    let mut path_with_account_name = std::path::PathBuf::from(&home_dir);
+    path_with_account_name.push(dir_name);
+    std::fs::create_dir_all(&path_with_account_name)?;
+    path_with_account_name.push(file_with_account_name);
+    if path_with_account_name.exists() {
+        println!("The file: {} already exists! Therefore it was not overwritten.", &path_with_account_name.display());
+    } else {
+        std::fs::File::create(&path_with_account_name)
+            .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
+            .write(buf.as_bytes())
+            .map_err(|err| {
+                color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
+            })?;
+        println!(
+            "The data for the access key is saved in a file {}",
+            &path_with_account_name.display()
+        );
+    };
     Ok(())
 }
 

@@ -134,7 +134,7 @@ async fn save_account(
         "private_key": key_pair_properties.secret_keypair_str.clone(),
         })
     );
-    crate::common::save_access_key_to_path(
+    crate::common::save_access_key_to_keychain(
         Some(network_connection_config),
         &key_pair_properties.public_key_str,
         account_id,

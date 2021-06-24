@@ -107,7 +107,7 @@ impl GenerateKeypair {
             "private_key": secret_keypair_str,
             })
         );
-        crate::common::save_access_key_to_path(
+        crate::common::save_access_key_to_keychain(
             network_connection_config.clone(),
             &public_key_str,
             &prepopulated_unsigned_transaction.receiver_id,
