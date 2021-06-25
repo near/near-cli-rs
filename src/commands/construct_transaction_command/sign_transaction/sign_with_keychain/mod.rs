@@ -45,80 +45,93 @@ impl SignKeychain {
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
-        let connection_config: crate::common::ConnectionConfig = match &network_connection_config {
-            Some(connection_config) => connection_config.clone(),
-            None => crate::common::ConnectionConfig::Custom {            // it's temporary
-                url: "https://rpc.default.near.org".parse().unwrap(),
-            },
-        };
-        let dir_name = &connection_config.dir_name();
         let file_name = format!("{}.json", prepopulated_unsigned_transaction.signer_id);
         let mut path = std::path::PathBuf::from(&home_dir);
-        path.push(dir_name);
-        path.push(file_name);
-        let data_path: std::path::PathBuf = if let true = &path.exists() {
-            path
-        } else {
-            let query_view_method_response = self
-                .rpc_client(connection_config.rpc_url().as_str())
-                .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
-                    block_reference: near_primitives::types::Finality::Final.into(),
-                    request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                        account_id: prepopulated_unsigned_transaction.signer_id.clone(),
-                    },
-                })
-                .await
-                .map_err(|err| {
-                    color_eyre::Report::msg(format!(
-                        "Failed to fetch query for view key list: {:?}",
-                        err
-                    ))
-                })?;
-            let access_key_view =
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
-                    result,
-                ) = query_view_method_response.kind
-                {
-                    result
+
+        let data_path: std::path::PathBuf = match &network_connection_config {
+            None => {
+                let dir_name = crate::consts::DIR_NAME_KEY_CHAIN;
+                path.push(dir_name);
+                path.push(file_name);
+                let data_path: std::path::PathBuf = if path.exists() {
+                    path
                 } else {
-                    return Err(color_eyre::Report::msg(format!("Error call result")));
+                    return Err(color_eyre::Report::msg(format!(
+                        "Error: Access key file not found!"
+                    )));
                 };
-            let mut path = std::path::PathBuf::from(&home_dir);
-            path.push(dir_name);
-            path.push(&prepopulated_unsigned_transaction.signer_id);
-            let mut data_path = std::path::PathBuf::new();
-            'outer: for access_key in access_key_view.keys {
-                let account_public_key = access_key.public_key.to_string();
-                let is_full_access_key: bool = match &access_key.access_key.permission {
-                    near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                    near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                        allowance: _,
-                        receiver_id: _,
-                        method_names: _,
-                    } => false,
-                };
-                for entry in path.read_dir().expect("read_dir call failed") {
-                    if let Ok(entry) = entry {
-                        if entry
-                            .path()
-                            .file_stem()
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .contains(account_public_key.rsplit(':').next().unwrap())
-                            && is_full_access_key
+                data_path
+            }
+            Some(connection_config) => {
+                let dir_name = connection_config.dir_name();
+                path.push(dir_name);
+                path.push(file_name);
+
+                if path.exists() {
+                    path
+                } else {
+                    let query_view_method_response = self
+                        .rpc_client(connection_config.rpc_url().as_str())
+                        .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
+                            block_reference: near_primitives::types::Finality::Final.into(),
+                            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                                account_id: prepopulated_unsigned_transaction.signer_id.clone(),
+                            },
+                        })
+                        .await
+                        .map_err(|err| {
+                            color_eyre::Report::msg(format!(
+                                "Failed to fetch query for view key list: {:?}",
+                                err
+                            ))
+                        })?;
+                    let access_key_view =
+                        if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
+                            result,
+                        ) = query_view_method_response.kind
                         {
-                            data_path.push(entry.path());
-                            break 'outer;
+                            result
+                        } else {
+                            return Err(color_eyre::Report::msg(format!("Error call result")));
+                        };
+                    let mut path = std::path::PathBuf::from(&home_dir);
+                    path.push(dir_name);
+                    path.push(&prepopulated_unsigned_transaction.signer_id);
+                    let mut data_path = std::path::PathBuf::new();
+                    'outer: for access_key in access_key_view.keys {
+                        let account_public_key = access_key.public_key.to_string();
+                        let is_full_access_key: bool = match &access_key.access_key.permission {
+                            near_primitives::views::AccessKeyPermissionView::FullAccess => true,
+                            near_primitives::views::AccessKeyPermissionView::FunctionCall {
+                                allowance: _,
+                                receiver_id: _,
+                                method_names: _,
+                            } => false,
+                        };
+                        for entry in path.read_dir().expect("read_dir call failed") {
+                            if let Ok(entry) = entry {
+                                if entry
+                                    .path()
+                                    .file_stem()
+                                    .unwrap()
+                                    .to_str()
+                                    .unwrap()
+                                    .contains(account_public_key.rsplit(':').next().unwrap())
+                                    && is_full_access_key
+                                {
+                                    data_path.push(entry.path());
+                                    break 'outer;
+                                }
+                            } else {
+                                return Err(color_eyre::Report::msg(format!(
+                                    "Error: Access key file not found!"
+                                )));
+                            };
                         }
-                    } else {
-                        return Err(color_eyre::Report::msg(format!(
-                            "Error: Access key file not found!"
-                        )));
-                    };
+                    }
+                    data_path
                 }
             }
-            data_path
         };
         let data = std::fs::read_to_string(data_path).unwrap();
         let account_json: User = serde_json::from_str(&data).unwrap();
