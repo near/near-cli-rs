@@ -108,7 +108,12 @@ impl SignKeychain {
                                 method_names: _,
                             } => false,
                         };
-                        for entry in path.read_dir().expect("read_dir call failed") {
+                        let dir = path
+                            .read_dir()
+                            .map_err(|err| {
+                                color_eyre::Report::msg(format!("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain. {}", err))
+                            })?;
+                        for entry in dir {
                             if let Ok(entry) = entry {
                                 if entry
                                     .path()
@@ -124,7 +129,7 @@ impl SignKeychain {
                                 }
                             } else {
                                 return Err(color_eyre::Report::msg(format!(
-                                    "Error: Access key file not found!"
+                                    "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain."
                                 )));
                             };
                         }
