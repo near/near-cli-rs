@@ -52,7 +52,6 @@ impl FullAccessType {
             actions,
             ..prepopulated_unsigned_transaction
         };
-        println!("\nunsigned transaction: {:?}", unsigned_transaction);
         println!(
             "\nAdding full access key = {:?} to {:?}.",
             public_key, unsigned_transaction.signer_id

@@ -23,7 +23,6 @@ impl SignManually {
             "Unsigned transaction:\n\n {:#?}",
             &prepopulated_unsigned_transaction
         );
-        println!();
         let serialize_to_base64 = near_primitives::serialize::to_base64(
             prepopulated_unsigned_transaction
                 .try_to_vec()
