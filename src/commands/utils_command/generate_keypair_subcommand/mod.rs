@@ -27,13 +27,7 @@ impl Default for CliGenerateKeypair {
 
 impl CliGenerateKeypair {
     pub async fn process(self) -> crate::CliResult {
-        let key_pair_properties = crate::common::generate_keypair(
-            self.master_seed_phrase.as_deref(),
-            self.new_master_seed_phrase_words_count,
-            self.seed_phrase_hd_path,
-        )
-        .await?;
-
+        let key_pair_properties = crate::common::generate_keypair().await?;
         match self.format {
             crate::common::OutputFormat::Plaintext => {
                 println!(
