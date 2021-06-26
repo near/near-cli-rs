@@ -29,7 +29,7 @@ pub enum CliTopLevelCommand {
     Transfer(self::transfer_command::CliCurrency),
     /// Helpers
     Utils(self::utils_command::CliUtils),
-    /// View account, contract code, contract state, transaction
+    /// View account, contract code, contract state, transaction, nonce, recent block hash
     View(self::view_command::CliViewQueryRequest),
 }
 
@@ -39,7 +39,7 @@ pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "Login with wallet authorization"))]
     Login(self::login::operation_mode::OperationMode),
     #[strum_discriminants(strum(
-        message = "View account, contract code, contract state, transaction, nonce"
+        message = "View account, contract code, contract state, transaction, nonce, recent block hash"
     ))]
     View(self::view_command::ViewQueryRequest),
     #[strum_discriminants(strum(message = "Transfer tokens"))]
