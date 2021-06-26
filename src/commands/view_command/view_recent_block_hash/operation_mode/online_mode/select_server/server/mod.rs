@@ -7,8 +7,7 @@ use dialoguer::Input;
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
-pub struct CliServer {
-}
+pub struct CliServer {}
 
 /// данные для custom server
 #[derive(Debug, Default, clap::Clap)]
@@ -29,9 +28,7 @@ pub struct Server {
 
 impl CliServer {
     pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
-        Server {
-            connection_config,
-        }
+        Server { connection_config }
     }
 }
 
@@ -61,7 +58,10 @@ impl Server {
                     err
                 ))
             })?;
-        println!("recent block hash: {:?}", status.sync_info.latest_block_hash);
+        println!(
+            "recent block hash: {:?}",
+            status.sync_info.latest_block_hash
+        );
         Ok(())
     }
 }

@@ -50,7 +50,10 @@ impl OfflineArgs {
         Input::new()
             .with_prompt(
                 "Enter transaction nonce (query the access key information with \
-                `near-cli utils view-access-key frol4.testnet ed25519:...` incremented by 1)",
+                `./near-cli view nonce \
+                    network testnet \
+                    account 'volodymyr.testnet' \
+                    public-key ed25519:...` incremented by 1)",
             )
             .interact_text()
             .unwrap()
@@ -58,7 +61,10 @@ impl OfflineArgs {
 
     fn input_block_hash() -> near_primitives::hash::CryptoHash {
         let input_block_hash: crate::common::BlockHashAsBase58 = Input::new()
-            .with_prompt("Enter recent block hash")
+            .with_prompt(
+                "Enter recent block hash (query information about the hash of the last block with \
+                `./near-cli view recent-block-hash network testnet`)",
+            )
             .interact_text()
             .unwrap();
         input_block_hash.inner

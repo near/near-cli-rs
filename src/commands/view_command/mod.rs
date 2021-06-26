@@ -54,7 +54,7 @@ pub enum CliQueryRequest {
     /// View a nonce for a public key
     Nonce(self::view_nonce::operation_mode::CliOperationMode),
     /// View recent block hash for this network
-    RecentBlockHash(self::view_recent_block_hash::operation_mode::CliOperationMode)
+    RecentBlockHash(self::view_recent_block_hash::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -127,7 +127,9 @@ impl QueryRequest {
                 CliQueryRequest::Transaction(Default::default())
             }
             QueryRequestDiscriminants::Nonce => CliQueryRequest::Nonce(Default::default()),
-            QueryRequestDiscriminants::RecentBlockHash => CliQueryRequest::RecentBlockHash(Default::default()),
+            QueryRequestDiscriminants::RecentBlockHash => {
+                CliQueryRequest::RecentBlockHash(Default::default())
+            }
         };
         Self::from(cli_request)
     }
