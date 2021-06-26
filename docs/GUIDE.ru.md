@@ -19,7 +19,7 @@
 
       * _recent block hash_
 
-        Информацию для этого параметра нужно искать [здесь](https://explorer.testnet.near.org/blocks).
+        Информацию для этого параметра нужно искать [здесь](https://explorer.testnet.near.org/blocks) либо получить при помощи [View recent block hash](#view-recent-block-hash)
 
     <details><summary><i>recent block hash</i></summary>
         <img src="media/blocks.png" width="836"/>
@@ -364,6 +364,27 @@ current nonce: 168  for a public key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdA
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/g2WZpFu6njjxoklP4J7Ibc5Q6?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/g2WZpFu6njjxoklP4J7Ibc5Q6.png" width="836"/>
+</a>
+</details>
+
+#### View recent block hash
+
+Для просмотра _recent block hash_ выбранной сети необходимо ввести в командной строке терминала:
+```txt
+./near-cli view recent-block-hash \
+        network testnet
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+recent block hash: `CDgRvkv2qv2c8e5m2WDKFUFqAtXrq2fiUteM6XHpy58t`
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/vF2X1zKIMg2rdByGCKHDIYDKa?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/vF2X1zKIMg2rdByGCKHDIYDKa.png" width="836"/>
 </a>
 </details>
 
