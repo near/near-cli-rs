@@ -113,7 +113,7 @@ impl SignTransaction {
             }
             SignTransaction::SignManually(args_manually) => {
                 args_manually
-                    .process(prepopulated_unsigned_transaction)
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
         }
