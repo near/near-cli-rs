@@ -1,10 +1,10 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-pub mod add_command;
+// pub mod add_command;
 pub mod construct_transaction_command;
-pub mod delete_command;
-pub mod execute_command;
+// pub mod delete_command;
+// pub mod execute_command;
 pub mod generate_shell_completions_command;
 pub mod login;
 pub mod transfer_command;
@@ -14,13 +14,13 @@ pub mod view_command;
 #[derive(Debug, clap::Clap)]
 pub enum CliTopLevelCommand {
     /// Use these to add access key, contract code, stake proposal, sub-account, implicit-account
-    Add(self::add_command::CliAddAction),
+    // Add(self::add_command::CliAddAction),
     /// Prepare and, optionally, submit a new transaction
-    ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
+    // ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
     /// Use these to delete access key, sub-account
-    Delete(self::delete_command::CliDeleteAction),
+    // Delete(self::delete_command::CliDeleteAction),
     /// Execute function (contract method)
-    Execute(self::execute_command::CliOptionMethod),
+    // Execute(self::execute_command::CliOptionMethod),
     /// Use these to generate static shell completions
     GenerateShellCompletions(self::generate_shell_completions_command::CliGenerateShellCompletions),
     /// Use these to login with wallet authorization
@@ -44,16 +44,16 @@ pub enum TopLevelCommand {
     View(self::view_command::ViewQueryRequest),
     #[strum_discriminants(strum(message = "Transfer tokens"))]
     Transfer(self::transfer_command::Currency),
-    #[strum_discriminants(strum(message = "Execute function (contract method)"))]
-    Execute(self::execute_command::OptionMethod),
-    #[strum_discriminants(strum(
-        message = "Add access key, contract code, stake proposal, sub-account, implicit-account"
-    ))]
-    Add(self::add_command::AddAction),
-    #[strum_discriminants(strum(message = "Delete access key, account"))]
-    Delete(self::delete_command::DeleteAction),
-    #[strum_discriminants(strum(message = "Construct a new transaction"))]
-    ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
+    // #[strum_discriminants(strum(message = "Execute function (contract method)"))]
+    // Execute(self::execute_command::OptionMethod),
+    // #[strum_discriminants(strum(
+    //     message = "Add access key, contract code, stake proposal, sub-account, implicit-account"
+    // ))]
+    // Add(self::add_command::AddAction),
+    // #[strum_discriminants(strum(message = "Delete access key, account"))]
+    // Delete(self::delete_command::DeleteAction),
+    // #[strum_discriminants(strum(message = "Construct a new transaction"))]
+    // ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Helpers"))]
     Utils(self::utils_command::Utils),
 }
@@ -61,16 +61,16 @@ pub enum TopLevelCommand {
 impl From<CliTopLevelCommand> for TopLevelCommand {
     fn from(cli_top_level_command: CliTopLevelCommand) -> Self {
         match cli_top_level_command {
-            CliTopLevelCommand::Add(cli_add_action) => TopLevelCommand::Add(cli_add_action.into()),
-            CliTopLevelCommand::ConstructTransaction(cli_operation_mode) => {
-                TopLevelCommand::ConstructTransaction(cli_operation_mode.into())
-            }
-            CliTopLevelCommand::Delete(cli_delete_action) => {
-                TopLevelCommand::Delete(cli_delete_action.into())
-            }
-            CliTopLevelCommand::Execute(cli_option_method) => {
-                TopLevelCommand::Execute(cli_option_method.into())
-            }
+            // CliTopLevelCommand::Add(cli_add_action) => TopLevelCommand::Add(cli_add_action.into()),
+            // CliTopLevelCommand::ConstructTransaction(cli_operation_mode) => {
+            //     TopLevelCommand::ConstructTransaction(cli_operation_mode.into())
+            // }
+            // CliTopLevelCommand::Delete(cli_delete_action) => {
+            //     TopLevelCommand::Delete(cli_delete_action.into())
+            // }
+            // CliTopLevelCommand::Execute(cli_option_method) => {
+            //     TopLevelCommand::Execute(cli_option_method.into())
+            // }
             CliTopLevelCommand::GenerateShellCompletions(_) => {
                 unreachable!("This variant is handled in the main function")
             }
@@ -103,14 +103,14 @@ impl TopLevelCommand {
             .interact()
             .unwrap();
         let cli_top_level_command = match variants[selection] {
-            TopLevelCommandDiscriminants::Add => CliTopLevelCommand::Add(Default::default()),
-            TopLevelCommandDiscriminants::ConstructTransaction => {
-                CliTopLevelCommand::ConstructTransaction(Default::default())
-            }
-            TopLevelCommandDiscriminants::Delete => CliTopLevelCommand::Delete(Default::default()),
-            TopLevelCommandDiscriminants::Execute => {
-                CliTopLevelCommand::Execute(Default::default())
-            }
+            // TopLevelCommandDiscriminants::Add => CliTopLevelCommand::Add(Default::default()),
+            // TopLevelCommandDiscriminants::ConstructTransaction => {
+            //     CliTopLevelCommand::ConstructTransaction(Default::default())
+            // }
+            // TopLevelCommandDiscriminants::Delete => CliTopLevelCommand::Delete(Default::default()),
+            // TopLevelCommandDiscriminants::Execute => {
+            //     CliTopLevelCommand::Execute(Default::default())
+            // }
             TopLevelCommandDiscriminants::Login => CliTopLevelCommand::Login(Default::default()),
             TopLevelCommandDiscriminants::Transfer => {
                 CliTopLevelCommand::Transfer(Default::default())
@@ -131,10 +131,10 @@ impl TopLevelCommand {
             actions: vec![],
         };
         match self {
-            Self::Add(add_action) => add_action.process(unsigned_transaction).await,
-            Self::ConstructTransaction(mode) => mode.process(unsigned_transaction).await,
-            Self::Delete(delete_action) => delete_action.process(unsigned_transaction).await,
-            Self::Execute(option_method) => option_method.process(unsigned_transaction).await,
+            // Self::Add(add_action) => add_action.process(unsigned_transaction).await,
+            // Self::ConstructTransaction(mode) => mode.process(unsigned_transaction).await,
+            // Self::Delete(delete_action) => delete_action.process(unsigned_transaction).await,
+            // Self::Execute(option_method) => option_method.process(unsigned_transaction).await,
             Self::Login(mode) => mode.process().await,
             Self::Transfer(currency) => currency.process(unsigned_transaction).await,
             Self::Utils(util_type) => util_type.process().await,

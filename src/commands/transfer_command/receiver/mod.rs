@@ -11,11 +11,14 @@ pub enum SendTo {
     Receiver(Receiver),
 }
 
-impl From<CliSendTo> for SendTo {
-    fn from(item: CliSendTo) -> Self {
+impl SendTo {
+    pub fn from(
+        item: CliSendTo,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
         match item {
             CliSendTo::Receiver(cli_receiver) => {
-                let receiver = Receiver::from(cli_receiver);
+                let receiver = Receiver::from(cli_receiver, connection_config);
                 Self::Receiver(receiver)
             }
         }
@@ -23,8 +26,8 @@ impl From<CliSendTo> for SendTo {
 }
 
 impl SendTo {
-    pub fn send_to() -> Self {
-        Self::from(CliSendTo::Receiver(Default::default()))
+    pub fn send_to(connection_config: Option<crate::common::ConnectionConfig>) -> Self {
+        Self::from(CliSendTo::Receiver(Default::default()), connection_config)
     }
 
     pub async fn process(
@@ -61,15 +64,19 @@ pub struct Receiver {
     pub transfer: super::transfer_near_tokens_type::Transfer,
 }
 
-impl From<CliReceiver> for Receiver {
-    fn from(item: CliReceiver) -> Self {
+impl Receiver {
+    fn from(item: CliReceiver, connection_config: Option<crate::common::ConnectionConfig>) -> Self {
         let receiver_account_id: String = match item.receiver_account_id {
             Some(cli_receiver_account_id) => cli_receiver_account_id,
             None => Receiver::input_receiver_account_id(),
         };
         let transfer: super::transfer_near_tokens_type::Transfer = match item.transfer {
-            Some(cli_transfer) => cli_transfer.into(),
-            None => super::transfer_near_tokens_type::Transfer::choose_transfer_near(),
+            Some(cli_transfer) => {
+                super::transfer_near_tokens_type::Transfer::from(cli_transfer, connection_config)
+            }
+            None => {
+                super::transfer_near_tokens_type::Transfer::choose_transfer_near(connection_config)
+            }
         };
         Self {
             receiver_account_id,

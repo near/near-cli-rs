@@ -11,20 +11,65 @@ use near_primitives::borsh::BorshSerialize;
 pub struct CliSignManually {
     #[clap(long)]
     signer_public_key: Option<near_crypto::PublicKey>,
+    #[clap(long)]
+    nonce: Option<u64>,
+    #[clap(long)]
+    block_hash: Option<near_primitives::hash::CryptoHash>,
 }
 
 #[derive(Debug)]
 pub struct SignManually {
     pub signer_public_key: near_crypto::PublicKey,
+    nonce: u64,
+    block_hash: near_primitives::hash::CryptoHash,
 }
 
-impl From<CliSignManually> for SignManually {
-    fn from(item: CliSignManually) -> Self {
-        let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
-            Some(cli_public_key) => cli_public_key,
-            None => SignManually::signer_public_key(),
-        };
-        SignManually { signer_public_key }
+impl Default for SignManually {
+    fn default() -> Self {
+        Self {
+            signer_public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
+            nonce: 0,
+            block_hash: Default::default(),
+        }
+    }
+}
+
+impl SignManually {
+    pub fn from(
+        item: CliSignManually,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
+        match connection_config {
+            Some(_) => {
+                let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
+                    Some(cli_public_key) => cli_public_key,
+                    None => SignManually::signer_public_key(),
+                };
+                Self {
+                    signer_public_key,
+                    ..Default::default()
+                }
+            }
+            None => {
+                let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
+                    Some(cli_public_key) => cli_public_key,
+                    None => SignManually::signer_public_key(),
+                };
+                let nonce: u64 = match item.nonce {
+                    Some(cli_nonce) => cli_nonce,
+                    None => SignManually::input_nonce(),
+                };
+                let block_hash = match item.block_hash {
+                    Some(cli_block_hash) => cli_block_hash,
+                    None => SignManually::input_block_hash(),
+                };
+                Self {
+                    signer_public_key,
+                    nonce,
+                    block_hash,
+                }
+            }
+        }
     }
 }
 
@@ -34,6 +79,30 @@ impl SignManually {
             .with_prompt("To create an unsigned transaction enter sender's public key")
             .interact_text()
             .unwrap()
+    }
+
+    fn input_nonce() -> u64 {
+        Input::new()
+            .with_prompt(
+                "Enter transaction nonce (query the access key information with \
+                `./near-cli view nonce \
+                    network testnet \
+                    account 'volodymyr.testnet' \
+                    public-key ed25519:...` incremented by 1)",
+            )
+            .interact_text()
+            .unwrap()
+    }
+
+    fn input_block_hash() -> near_primitives::hash::CryptoHash {
+        let input_block_hash: crate::common::BlockHashAsBase58 = Input::new()
+            .with_prompt(
+                "Enter recent block hash (query information about the hash of the last block with \
+                `./near-cli view recent-block-hash network testnet`)",
+            )
+            .interact_text()
+            .unwrap();
+        input_block_hash.inner
     }
 
     fn rpc_client(self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
@@ -50,6 +119,8 @@ impl SignManually {
         let unsigned_transaction = match network_connection_config {
             None => near_primitives::transaction::Transaction {
                 public_key,
+                nonce: self.nonce.clone(),
+                block_hash: self.block_hash.clone(),
                 ..prepopulated_unsigned_transaction
             },
             Some(network_connection_config) => {

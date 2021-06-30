@@ -11,19 +11,24 @@ pub enum Transfer {
     Amount(TransferNEARTokensAction),
 }
 
-impl From<CliTransfer> for Transfer {
-    fn from(item: CliTransfer) -> Self {
+impl Transfer {
+    pub fn from(
+        item: CliTransfer,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
         match item {
-            CliTransfer::Amount(cli_transfer_near_action) => {
-                Self::Amount(cli_transfer_near_action.into())
-            }
+            CliTransfer::Amount(cli_transfer_near_action) => Self::Amount(
+                TransferNEARTokensAction::from(cli_transfer_near_action, connection_config),
+            ),
         }
     }
 }
 
 impl Transfer {
-    pub fn choose_transfer_near() -> Self {
-        Self::from(CliTransfer::Amount(Default::default()))
+    pub fn choose_transfer_near(
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
+        Self::from(CliTransfer::Amount(Default::default()), connection_config)
     }
 
     pub async fn process(
@@ -63,15 +68,18 @@ pub struct TransferNEARTokensAction {
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
-impl From<CliTransferNEARTokensAction> for TransferNEARTokensAction {
-    fn from(item: CliTransferNEARTokensAction) -> Self {
+impl TransferNEARTokensAction {
+    fn from(
+        item: CliTransferNEARTokensAction,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
         let amount: crate::common::NearBalance = match item.amount {
             Some(cli_amount) => cli_amount,
             None => TransferNEARTokensAction::input_amount(),
         };
         let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => cli_sign_transaction.into(),
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(),
+            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config),
+            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config),
         };
         Self {
             amount,

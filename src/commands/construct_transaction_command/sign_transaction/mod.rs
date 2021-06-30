@@ -37,8 +37,11 @@ pub enum SignTransaction {
     SignManually(self::sign_manually::SignManually),
 }
 
-impl From<CliSignTransaction> for SignTransaction {
-    fn from(item: CliSignTransaction) -> Self {
+impl SignTransaction {
+    pub fn from(
+        item: CliSignTransaction,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
         match item {
             CliSignTransaction::SignPrivateKey(cli_private_key) => {
                 let privat_key = self::sign_with_private_key::SignPrivateKey::from(cli_private_key);
@@ -53,7 +56,8 @@ impl From<CliSignTransaction> for SignTransaction {
                 SignTransaction::SignWithLedger(ledger)
             }
             CliSignTransaction::SignManually(cli_manually) => {
-                let manually = self::sign_manually::SignManually::from(cli_manually);
+                let manually =
+                    self::sign_manually::SignManually::from(cli_manually, connection_config);
                 SignTransaction::SignManually(manually)
             }
         }
@@ -61,7 +65,7 @@ impl From<CliSignTransaction> for SignTransaction {
 }
 
 impl SignTransaction {
-    pub fn choose_sign_option() -> Self {
+    pub fn choose_sign_option(connection_config: Option<crate::common::ConnectionConfig>) -> Self {
         println!();
         let variants = SignTransactionDiscriminants::iter().collect::<Vec<_>>();
         let sign_options = variants
@@ -88,7 +92,7 @@ impl SignTransaction {
                 CliSignTransaction::SignManually(Default::default())
             }
         };
-        Self::from(cli_sign_option)
+        Self::from(cli_sign_option, connection_config)
     }
 
     pub async fn process(
