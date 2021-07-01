@@ -1,6 +1,6 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use near_primitives::borsh::BorshSerialize;
-
+use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 /// Sign constructed transaction with Ledger
@@ -13,6 +13,10 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 pub struct CliSignLedger {
     #[clap(long)]
     seed_phrase_hd_path: Option<slip10::BIP32Path>,
+    #[clap(long)]
+    nonce: Option<u64>,
+    #[clap(long)]
+    block_hash: Option<near_primitives::hash::CryptoHash>,
     #[clap(subcommand)]
     submit: Option<Submit>,
 }
@@ -20,20 +24,66 @@ pub struct CliSignLedger {
 #[derive(Debug)]
 pub struct SignLedger {
     pub seed_phrase_hd_path: slip10::BIP32Path,
+    pub signer_public_key: near_crypto::PublicKey,
+    nonce: u64,
+    block_hash: near_primitives::hash::CryptoHash,
     pub submit: Option<Submit>,
 }
 
-impl From<CliSignLedger> for SignLedger {
-    fn from(item: CliSignLedger) -> Self {
-        let seed_phrase_hd_path = match item.seed_phrase_hd_path {
-            Some(hd_path) => hd_path,
-            None => SignLedger::input_seed_phrase_hd_path(),
-        };
-        let submit: Option<Submit> = item.submit;
-
+impl Default for SignLedger {
+    fn default() -> Self {
         Self {
-            seed_phrase_hd_path,
-            submit,
+            seed_phrase_hd_path: slip10::BIP32Path::from_str("44'/397'/0'/0'/1'").unwrap(),
+            signer_public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
+            nonce: 0,
+            block_hash: Default::default(),
+            submit: None,
+        }
+    }
+}
+
+impl SignLedger {
+    pub fn from(
+        item: CliSignLedger,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
+        match connection_config {
+            Some(_) => Self::default(),
+            None => {
+                let seed_phrase_hd_path = match item.seed_phrase_hd_path {
+                    Some(hd_path) => hd_path,
+                    None => SignLedger::input_seed_phrase_hd_path(),
+                };
+                let public_key = actix::System::new()
+                    .block_on(async { near_ledger::get_public_key(seed_phrase_hd_path.clone()).await })
+                    .map_err(|near_ledger_error| {
+                        color_eyre::Report::msg(format!(
+                            "An error occurred while trying to get PublicKey from Ledger device: {:?}",
+                            near_ledger_error
+                        ))
+                    })
+                    .unwrap();
+                let signer_public_key = near_crypto::PublicKey::ED25519(
+                    near_crypto::ED25519PublicKey::from(public_key.to_bytes()),
+                );
+                let nonce: u64 = match item.nonce {
+                    Some(cli_nonce) => cli_nonce,
+                    None => super::input_nonce(&signer_public_key.to_string().clone()),
+                };
+                let block_hash = match item.block_hash {
+                    Some(cli_block_hash) => cli_block_hash,
+                    None => super::input_block_hash(),
+                };
+                let submit: Option<Submit> = item.submit;
+
+                Self {
+                    seed_phrase_hd_path,
+                    signer_public_key,
+                    nonce,
+                    block_hash,
+                    submit,
+                }
+            }
         }
     }
 }
@@ -57,28 +107,16 @@ impl SignLedger {
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let seed_phrase_hd_path = self.seed_phrase_hd_path.clone();
-
-        println!(
-            "Please allow getting the PublicKey on Ledger device (HD Path: {})",
-            seed_phrase_hd_path
-        );
-        let public_key = match near_ledger::get_public_key(seed_phrase_hd_path.clone()).await {
-            Ok(public_key) => near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
-                public_key.to_bytes(),
-            )),
-            Err(near_ledger_error) => {
-                return Err(color_eyre::Report::msg(format!(
-                    "An error occurred while trying to get PublicKey from Ledger device: {:?}",
-                    near_ledger_error
-                )));
-            }
-        };
-
+        let public_key = self.signer_public_key.clone();
+        let nonce = self.nonce.clone();
+        let block_hash = self.block_hash.clone();
         let submit: Option<Submit> = self.submit.clone();
         match network_connection_config {
             None => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
                     public_key,
+                    nonce,
+                    block_hash,
                     ..prepopulated_unsigned_transaction
                 };
                 println!(
@@ -89,7 +127,7 @@ impl SignLedger {
                     unsigned_transaction
                         .try_to_vec()
                         .expect("Transaction is not expected to fail on serialization"),
-                    self.seed_phrase_hd_path,
+                    seed_phrase_hd_path,
                 )
                 .await
                 {
@@ -128,6 +166,23 @@ impl SignLedger {
                 }
             }
             Some(network_connection_config) => {
+                println!(
+                    "Please allow getting the PublicKey on Ledger device (HD Path: {})",
+                    seed_phrase_hd_path
+                );
+                let public_key = match near_ledger::get_public_key(seed_phrase_hd_path.clone())
+                    .await
+                {
+                    Ok(public_key) => near_crypto::PublicKey::ED25519(
+                        near_crypto::ED25519PublicKey::from(public_key.to_bytes()),
+                    ),
+                    Err(near_ledger_error) => {
+                        return Err(color_eyre::Report::msg(format!(
+                            "An error occurred while trying to get PublicKey from Ledger device: {:?}",
+                            near_ledger_error
+                        )));
+                    }
+                };
                 let online_signer_access_key_response = self
                     .rpc_client(network_connection_config.rpc_url().as_str())
                     .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
@@ -266,7 +321,7 @@ impl Submit {
             &signed_transaction
         );
         println!(
-            "\n\n---  serialize_to_base64:   --- \n   {:#?}",
+            "\n\n---  serialize_to_base64:   --- \n   {}",
             &serialize_to_base64
         );
         Ok(None)
@@ -318,7 +373,7 @@ impl Submit {
                     &signed_transaction
                 );
                 println!(
-                    "\n\n---  serialize_to_base64:   --- \n {:#?}",
+                    "\n\n---  serialize_to_base64:   --- \n {}",
                     &serialize_to_base64
                 );
                 Ok(None)

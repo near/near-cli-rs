@@ -1,4 +1,3 @@
-use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
 
 /// подписание сформированной транзакции в режиме manually
@@ -43,7 +42,7 @@ impl SignManually {
             Some(_) => {
                 let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
                     Some(cli_public_key) => cli_public_key,
-                    None => SignManually::signer_public_key(),
+                    None => super::signer_public_key(),
                 };
                 Self {
                     signer_public_key,
@@ -53,15 +52,15 @@ impl SignManually {
             None => {
                 let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
                     Some(cli_public_key) => cli_public_key,
-                    None => SignManually::signer_public_key(),
+                    None => super::signer_public_key(),
                 };
                 let nonce: u64 = match item.nonce {
                     Some(cli_nonce) => cli_nonce,
-                    None => SignManually::input_nonce(),
+                    None => super::input_nonce(&signer_public_key.to_string()),
                 };
                 let block_hash = match item.block_hash {
                     Some(cli_block_hash) => cli_block_hash,
-                    None => SignManually::input_block_hash(),
+                    None => super::input_block_hash(),
                 };
                 Self {
                     signer_public_key,
@@ -74,37 +73,6 @@ impl SignManually {
 }
 
 impl SignManually {
-    pub fn signer_public_key() -> near_crypto::PublicKey {
-        Input::new()
-            .with_prompt("To create an unsigned transaction enter sender's public key")
-            .interact_text()
-            .unwrap()
-    }
-
-    fn input_nonce() -> u64 {
-        Input::new()
-            .with_prompt(
-                "Enter transaction nonce (query the access key information with \
-                `./near-cli view nonce \
-                    network testnet \
-                    account 'volodymyr.testnet' \
-                    public-key ed25519:...` incremented by 1)",
-            )
-            .interact_text()
-            .unwrap()
-    }
-
-    fn input_block_hash() -> near_primitives::hash::CryptoHash {
-        let input_block_hash: crate::common::BlockHashAsBase58 = Input::new()
-            .with_prompt(
-                "Enter recent block hash (query information about the hash of the last block with \
-                `./near-cli view recent-block-hash network testnet`)",
-            )
-            .interact_text()
-            .unwrap();
-        input_block_hash.inner
-    }
-
     fn rpc_client(self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
         near_jsonrpc_client::new_client(&selected_server_url)
     }
@@ -166,7 +134,7 @@ impl SignManually {
                 .expect("Transaction is not expected to fail on serialization"),
         );
         println!(
-            "---  serialize_to_base64:   --- \n   {:#?}",
+            "---  serialize_to_base64:   --- \n   {}",
             &serialize_to_base64
         );
         Ok(None)

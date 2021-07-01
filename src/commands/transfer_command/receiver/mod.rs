@@ -15,10 +15,11 @@ impl SendTo {
     pub fn from(
         item: CliSendTo,
         connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
     ) -> Self {
         match item {
             CliSendTo::Receiver(cli_receiver) => {
-                let receiver = Receiver::from(cli_receiver, connection_config);
+                let receiver = Receiver::from(cli_receiver, connection_config, sender_account_id);
                 Self::Receiver(receiver)
             }
         }
@@ -26,8 +27,15 @@ impl SendTo {
 }
 
 impl SendTo {
-    pub fn send_to(connection_config: Option<crate::common::ConnectionConfig>) -> Self {
-        Self::from(CliSendTo::Receiver(Default::default()), connection_config)
+    pub fn send_to(
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
+        Self::from(
+            CliSendTo::Receiver(Default::default()),
+            connection_config,
+            sender_account_id,
+        )
     }
 
     pub async fn process(
@@ -65,18 +73,25 @@ pub struct Receiver {
 }
 
 impl Receiver {
-    fn from(item: CliReceiver, connection_config: Option<crate::common::ConnectionConfig>) -> Self {
+    fn from(
+        item: CliReceiver,
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
         let receiver_account_id: String = match item.receiver_account_id {
             Some(cli_receiver_account_id) => cli_receiver_account_id,
             None => Receiver::input_receiver_account_id(),
         };
         let transfer: super::transfer_near_tokens_type::Transfer = match item.transfer {
-            Some(cli_transfer) => {
-                super::transfer_near_tokens_type::Transfer::from(cli_transfer, connection_config)
-            }
-            None => {
-                super::transfer_near_tokens_type::Transfer::choose_transfer_near(connection_config)
-            }
+            Some(cli_transfer) => super::transfer_near_tokens_type::Transfer::from(
+                cli_transfer,
+                connection_config,
+                sender_account_id,
+            ),
+            None => super::transfer_near_tokens_type::Transfer::choose_transfer_near(
+                connection_config,
+                sender_account_id,
+            ),
         };
         Self {
             receiver_account_id,

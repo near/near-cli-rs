@@ -10,19 +10,67 @@ use serde::Deserialize;
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliSignKeychain {
+    #[clap(long)]
+    nonce: Option<u64>,
+    #[clap(long)]
+    block_hash: Option<near_primitives::hash::CryptoHash>,
     #[clap(subcommand)]
     submit: Option<super::sign_with_private_key::Submit>,
 }
 
 #[derive(Debug)]
 pub struct SignKeychain {
+    nonce: u64,
+    block_hash: near_primitives::hash::CryptoHash,
     pub submit: Option<super::sign_with_private_key::Submit>,
 }
 
-impl From<CliSignKeychain> for SignKeychain {
-    fn from(item: CliSignKeychain) -> Self {
-        SignKeychain {
-            submit: item.submit,
+impl Default for SignKeychain {
+    fn default() -> Self {
+        Self {
+            nonce: 0,
+            block_hash: Default::default(),
+            submit: None,
+        }
+    }
+}
+
+impl SignKeychain {
+    pub fn from(
+        item: CliSignKeychain,
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
+        match connection_config {
+            Some(_) => Self::default(),
+            None => {
+                let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
+                let file_name = format!("{}.json", sender_account_id);
+                let mut path = std::path::PathBuf::from(&home_dir);
+                let dir_name = crate::consts::DIR_NAME_KEY_CHAIN;
+                path.push(dir_name);
+                path.push(file_name);
+                let data_path: std::path::PathBuf = match path.exists() {
+                    true => path,
+                    false => unreachable!("Error: Access key file not found!"),
+                };
+                let data = std::fs::read_to_string(data_path).unwrap();
+                let account_json: User = serde_json::from_str(&data).unwrap();
+
+                let nonce: u64 = match item.nonce {
+                    Some(cli_nonce) => cli_nonce,
+                    None => super::input_nonce(&account_json.public_key.to_string()),
+                };
+                let block_hash = match item.block_hash {
+                    Some(cli_block_hash) => cli_block_hash,
+                    None => super::input_block_hash(),
+                };
+                SignKeychain {
+                    nonce,
+                    block_hash,
+                    submit: item.submit,
+                }
+            }
         }
     }
 }
@@ -143,6 +191,8 @@ impl SignKeychain {
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
             signer_public_key: account_json.public_key,
             signer_secret_key: account_json.private_key,
+            nonce: self.nonce.clone(),
+            block_hash: self.block_hash.clone(),
             submit: self.submit.clone(),
         };
         sign_with_private_key

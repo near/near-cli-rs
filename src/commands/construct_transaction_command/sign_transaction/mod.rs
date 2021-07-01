@@ -1,4 +1,4 @@
-use dialoguer::{theme::ColorfulTheme, Select};
+use dialoguer::{theme::ColorfulTheme, Input, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod sign_manually;
@@ -41,18 +41,27 @@ impl SignTransaction {
     pub fn from(
         item: CliSignTransaction,
         connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
     ) -> Self {
         match item {
             CliSignTransaction::SignPrivateKey(cli_private_key) => {
-                let privat_key = self::sign_with_private_key::SignPrivateKey::from(cli_private_key);
+                let privat_key = self::sign_with_private_key::SignPrivateKey::from(
+                    cli_private_key,
+                    connection_config,
+                );
                 SignTransaction::SignPrivateKey(privat_key)
             }
             CliSignTransaction::SignWithKeychain(cli_key_chain) => {
-                let key_chain = self::sign_with_keychain::SignKeychain::from(cli_key_chain);
+                let key_chain = self::sign_with_keychain::SignKeychain::from(
+                    cli_key_chain,
+                    connection_config,
+                    sender_account_id,
+                );
                 SignTransaction::SignWithKeychain(key_chain)
             }
             CliSignTransaction::SignWithLedger(cli_ledger) => {
-                let ledger = self::sign_with_ledger::SignLedger::from(cli_ledger);
+                let ledger =
+                    self::sign_with_ledger::SignLedger::from(cli_ledger, connection_config);
                 SignTransaction::SignWithLedger(ledger)
             }
             CliSignTransaction::SignManually(cli_manually) => {
@@ -65,7 +74,10 @@ impl SignTransaction {
 }
 
 impl SignTransaction {
-    pub fn choose_sign_option(connection_config: Option<crate::common::ConnectionConfig>) -> Self {
+    pub fn choose_sign_option(
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
         println!();
         let variants = SignTransactionDiscriminants::iter().collect::<Vec<_>>();
         let sign_options = variants
@@ -92,7 +104,7 @@ impl SignTransaction {
                 CliSignTransaction::SignManually(Default::default())
             }
         };
-        Self::from(cli_sign_option, connection_config)
+        Self::from(cli_sign_option, connection_config, sender_account_id)
     }
 
     pub async fn process(
@@ -122,4 +134,43 @@ impl SignTransaction {
             }
         }
     }
+}
+
+fn signer_public_key() -> near_crypto::PublicKey {
+    Input::new()
+        .with_prompt("To create an unsigned transaction enter sender's public key")
+        .interact_text()
+        .unwrap()
+}
+
+fn signer_secret_key() -> near_crypto::SecretKey {
+    Input::new()
+        .with_prompt("Enter sender's private key")
+        .interact_text()
+        .unwrap()
+}
+
+fn input_nonce(public_key: &str) -> u64 {
+    println!("Your public key: `{}`", public_key);
+    Input::new()
+        .with_prompt(
+            "Enter transaction nonce for this public key (query the access key information with \
+            `./near-cli view nonce \
+                network testnet \
+                account 'volodymyr.testnet' \
+                public-key ed25519:...` incremented by 1)",
+        )
+        .interact_text()
+        .unwrap()
+}
+
+fn input_block_hash() -> near_primitives::hash::CryptoHash {
+    let input_block_hash: crate::common::BlockHashAsBase58 = Input::new()
+        .with_prompt(
+            "Enter recent block hash (query information about the hash of the last block with \
+            `./near-cli view recent-block-hash network testnet`)",
+        )
+        .interact_text()
+        .unwrap();
+    input_block_hash.inner
 }

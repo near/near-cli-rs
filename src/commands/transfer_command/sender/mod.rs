@@ -29,8 +29,12 @@ impl Sender {
             None => Sender::input_sender_account_id(),
         };
         let send_to: super::receiver::SendTo = match item.send_to {
-            Some(cli_send_to) => super::receiver::SendTo::from(cli_send_to, connection_config),
-            None => super::receiver::SendTo::send_to(connection_config),
+            Some(cli_send_to) => super::receiver::SendTo::from(
+                cli_send_to,
+                connection_config,
+                sender_account_id.clone(),
+            ),
+            None => super::receiver::SendTo::send_to(connection_config, sender_account_id.clone()),
         };
         Self {
             sender_account_id,
