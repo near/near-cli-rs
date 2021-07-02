@@ -19,18 +19,24 @@ pub enum CallFunction {
     Call(self::call_function_type::CallFunctionAction),
 }
 
-impl From<CliCallFunction> for CallFunction {
-    fn from(item: CliCallFunction) -> Self {
+impl CallFunction {
+    pub fn from(
+        item: CliCallFunction,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
         match item {
             CliCallFunction::Call(cli_call_function_action) => {
-                CallFunction::Call(cli_call_function_action.into())
+                CallFunction::Call(self::call_function_type::CallFunctionAction::from(
+                    cli_call_function_action,
+                    connection_config,
+                ))
             }
         }
     }
 }
 
 impl CallFunction {
-    fn choose_call_function() -> Self {
+    fn choose_call_function(connection_config: Option<crate::common::ConnectionConfig>) -> Self {
         println!();
         let variants = CallFunctionDiscriminants::iter().collect::<Vec<_>>();
         let commands = variants
@@ -46,7 +52,7 @@ impl CallFunction {
         let cli_call = match variants[selection] {
             CallFunctionDiscriminants::Call => CliCallFunction::Call(Default::default()),
         };
-        Self::from(cli_call)
+        Self::from(cli_call, connection_config)
     }
 
     pub async fn process(

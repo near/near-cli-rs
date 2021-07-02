@@ -11,11 +11,14 @@ pub enum SendTo {
     Contract(Receiver),
 }
 
-impl From<CliSendTo> for SendTo {
-    fn from(item: CliSendTo) -> Self {
+impl SendTo {
+    pub fn from(
+        item: CliSendTo,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
         match item {
             CliSendTo::Contract(cli_receiver) => {
-                let receiver = Receiver::from(cli_receiver);
+                let receiver = Receiver::from(cli_receiver, connection_config);
                 Self::Contract(receiver)
             }
         }
@@ -23,8 +26,8 @@ impl From<CliSendTo> for SendTo {
 }
 
 impl SendTo {
-    pub fn send_to() -> Self {
-        Self::from(CliSendTo::Contract(Default::default()))
+    pub fn send_to(connection_config: Option<crate::common::ConnectionConfig>) -> Self {
+        Self::from(CliSendTo::Contract(Default::default()), connection_config)
     }
 
     pub async fn process(
@@ -61,15 +64,18 @@ pub struct Receiver {
     pub call: super::CallFunction,
 }
 
-impl From<CliReceiver> for Receiver {
-    fn from(item: CliReceiver) -> Self {
+impl Receiver {
+    pub fn from(
+        item: CliReceiver,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
         let receiver_account_id: String = match item.receiver_account_id {
             Some(cli_receiver_account_id) => cli_receiver_account_id,
             None => Receiver::input_receiver_account_id(),
         };
         let call = match item.call {
-            Some(cli_call) => cli_call.into(),
-            None => super::CallFunction::choose_call_function(),
+            Some(cli_call) => super::CallFunction::from(cli_call, connection_config),
+            None => super::CallFunction::choose_call_function(connection_config),
         };
         Self {
             receiver_account_id,
