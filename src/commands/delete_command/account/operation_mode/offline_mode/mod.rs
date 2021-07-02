@@ -23,9 +23,7 @@ impl From<CliOfflineArgs> for OfflineArgs {
             }
             None => super::online_mode::select_server::server::SendFrom::choose_send_from(None),
         };
-        Self {
-            send_from,
-        }
+        Self { send_from }
     }
 }
 

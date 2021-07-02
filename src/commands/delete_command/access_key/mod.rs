@@ -14,19 +14,34 @@ pub enum DeleteAccessKeyAction {
     PublicKey(DeleteAccessKeyType),
 }
 
-impl From<CliDeleteAccessKeyAction> for DeleteAccessKeyAction {
-    fn from(item: CliDeleteAccessKeyAction) -> Self {
+impl DeleteAccessKeyAction {
+    pub fn from(
+        item: CliDeleteAccessKeyAction,
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
         match item {
             CliDeleteAccessKeyAction::PublicKey(cli_delete_access_key_type) => {
-                Self::PublicKey(cli_delete_access_key_type.into())
+                Self::PublicKey(DeleteAccessKeyType::from(
+                    cli_delete_access_key_type,
+                    connection_config,
+                    sender_account_id,
+                ))
             }
         }
     }
 }
 
 impl DeleteAccessKeyAction {
-    pub fn choose_delete_access_key_action() -> Self {
-        Self::from(CliDeleteAccessKeyAction::PublicKey(Default::default()))
+    pub fn choose_delete_access_key_action(
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
+        Self::from(
+            CliDeleteAccessKeyAction::PublicKey(Default::default()),
+            connection_config,
+            sender_account_id,
+        )
     }
 
     pub async fn process(
@@ -66,15 +81,19 @@ pub struct DeleteAccessKeyType {
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
-impl From<CliDeleteAccessKeyType> for DeleteAccessKeyType {
-    fn from(item: CliDeleteAccessKeyType) -> Self {
+impl DeleteAccessKeyType {
+    fn from(
+        item: CliDeleteAccessKeyType,
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,
             None => DeleteAccessKeyType::input_public_key(),
         };
         let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => cli_sign_transaction.into(),
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(),
+            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id),
+            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config, sender_account_id),
         };
         Self {
             public_key,
