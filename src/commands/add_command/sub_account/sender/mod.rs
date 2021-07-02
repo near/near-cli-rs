@@ -19,15 +19,22 @@ pub struct Sender {
     pub send_to: super::receiver::SendTo,
 }
 
-impl From<CliSender> for Sender {
-    fn from(item: CliSender) -> Self {
+impl Sender {
+    pub fn from(
+        item: CliSender,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
         let owner_account_id: String = match item.owner_account_id {
             Some(cli_owner_account_id) => cli_owner_account_id,
             None => Sender::input_owner_account_id(),
         };
         let send_to: super::receiver::SendTo = match item.send_to {
-            Some(cli_send_to) => super::receiver::SendTo::from(cli_send_to),
-            None => super::receiver::SendTo::send_to(),
+            Some(cli_send_to) => super::receiver::SendTo::from(
+                cli_send_to,
+                connection_config,
+                owner_account_id.clone(),
+            ),
+            None => super::receiver::SendTo::send_to(connection_config, owner_account_id.clone()),
         };
         Self {
             owner_account_id,

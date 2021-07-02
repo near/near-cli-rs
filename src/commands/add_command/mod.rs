@@ -5,7 +5,7 @@ mod access_key;
 mod contract_code;
 mod implicit_account;
 mod stake_proposal;
-// mod sub_account;
+mod sub_account;
 
 /// инструмент выбора to add action
 #[derive(Debug, Default, clap::Clap)]
@@ -53,8 +53,8 @@ pub enum CliAction {
     ImplicitAccount(self::implicit_account::CliImplicitAccount),
     /// Add a new stake proposal
     StakeProposal(self::stake_proposal::operation_mode::CliOperationMode),
-    // Add a new sub-account
-    // SubAccount(self::sub_account::operation_mode::CliOperationMode),
+    /// Add a new sub-account
+    SubAccount(self::sub_account::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -68,8 +68,8 @@ pub enum Action {
     ImplicitAccount(self::implicit_account::ImplicitAccount),
     #[strum_discriminants(strum(message = "Add a new stake proposal"))]
     StakeProposal(self::stake_proposal::operation_mode::OperationMode),
-    // #[strum_discriminants(strum(message = "Add a new sub-account"))]
-    // SubAccount(self::sub_account::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "Add a new sub-account"))]
+    SubAccount(self::sub_account::operation_mode::OperationMode),
 }
 
 impl From<CliAction> for Action {
@@ -86,9 +86,10 @@ impl From<CliAction> for Action {
             }
             CliAction::StakeProposal(cli_operation_mode) => {
                 Action::StakeProposal(cli_operation_mode.into())
-            } // CliAction::SubAccount(cli_operation_mode) => {
-              //     Action::SubAccount(cli_operation_mode.into())
-              // }
+            }
+            CliAction::SubAccount(cli_operation_mode) => {
+                Action::SubAccount(cli_operation_mode.into())
+            }
         }
     }
 }
@@ -112,7 +113,7 @@ impl Action {
             ActionDiscriminants::ContractCode => CliAction::ContractCode(Default::default()),
             ActionDiscriminants::ImplicitAccount => CliAction::ImplicitAccount(Default::default()),
             ActionDiscriminants::StakeProposal => CliAction::StakeProposal(Default::default()),
-            // ActionDiscriminants::SubAccount => CliAction::SubAccount(Default::default()),
+            ActionDiscriminants::SubAccount => CliAction::SubAccount(Default::default()),
         };
         Self::from(cli_action)
     }
@@ -137,11 +138,12 @@ impl Action {
                 operation_mode
                     .process(prepopulated_unsigned_transaction)
                     .await
-            } // Action::SubAccount(operation_mode) => {
-              //     operation_mode
-              //         .process(prepopulated_unsigned_transaction)
-              //         .await
-              // }
+            }
+            Action::SubAccount(operation_mode) => {
+                operation_mode
+                    .process(prepopulated_unsigned_transaction)
+                    .await
+            }
         }
     }
 }

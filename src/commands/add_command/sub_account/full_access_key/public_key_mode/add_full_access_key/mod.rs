@@ -21,15 +21,26 @@ pub struct AddAccessKeyAction {
     pub deposit: super::super::super::deposit::Deposit,
 }
 
-impl From<CliAddAccessKeyAction> for AddAccessKeyAction {
-    fn from(item: CliAddAccessKeyAction) -> Self {
+impl AddAccessKeyAction {
+    pub fn from(
+        item: CliAddAccessKeyAction,
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,
             None => AddAccessKeyAction::input_public_key(),
         };
         let deposit = match item.deposit {
-            Some(cli_deposit) => super::super::super::deposit::Deposit::from(cli_deposit),
-            None => super::super::super::deposit::Deposit::choose_deposit(),
+            Some(cli_deposit) => super::super::super::deposit::Deposit::from(
+                cli_deposit,
+                connection_config,
+                sender_account_id,
+            ),
+            None => super::super::super::deposit::Deposit::choose_deposit(
+                connection_config,
+                sender_account_id,
+            ),
         };
         Self {
             public_key,
