@@ -45,11 +45,11 @@ impl SignTransaction {
     ) -> Self {
         match item {
             CliSignTransaction::SignPrivateKey(cli_private_key) => {
-                let privat_key = self::sign_with_private_key::SignPrivateKey::from(
+                let private_key = self::sign_with_private_key::SignPrivateKey::from(
                     cli_private_key,
                     connection_config,
                 );
-                SignTransaction::SignPrivateKey(privat_key)
+                SignTransaction::SignPrivateKey(private_key)
             }
             CliSignTransaction::SignWithKeychain(cli_key_chain) => {
                 let key_chain = self::sign_with_keychain::SignKeychain::from(
