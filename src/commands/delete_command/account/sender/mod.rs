@@ -19,15 +19,20 @@ pub struct Sender {
     pub send_to: SendTo,
 }
 
-impl From<CliSender> for Sender {
-    fn from(item: CliSender) -> Self {
+impl Sender {
+    pub fn from(
+        item: CliSender,
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> Self {
         let sender_account_id: String = match item.sender_account_id {
             Some(cli_sender_account_id) => cli_sender_account_id,
             None => Sender::input_sender_account_id(),
         };
         let send_to: SendTo = match item.send_to {
-            Some(cli_send_to) => SendTo::from(cli_send_to),
-            None => SendTo::send_to(),
+            Some(cli_send_to) => {
+                SendTo::from(cli_send_to, connection_config, sender_account_id.clone())
+            }
+            None => SendTo::send_to(connection_config, sender_account_id.clone()),
         };
         Self {
             sender_account_id,
@@ -72,11 +77,19 @@ pub enum SendTo {
     Beneficiary(super::DeleteAccountAction),
 }
 
-impl From<CliSendTo> for SendTo {
-    fn from(item: CliSendTo) -> Self {
+impl SendTo {
+    fn from(
+        item: CliSendTo,
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
         match item {
             CliSendTo::Beneficiary(cli_delete_accaunt) => {
-                let delete_accaunt = super::DeleteAccountAction::from(cli_delete_accaunt);
+                let delete_accaunt = super::DeleteAccountAction::from(
+                    cli_delete_accaunt,
+                    connection_config,
+                    sender_account_id,
+                );
                 Self::Beneficiary(delete_accaunt)
             }
         }
@@ -84,8 +97,15 @@ impl From<CliSendTo> for SendTo {
 }
 
 impl SendTo {
-    pub fn send_to() -> Self {
-        Self::from(CliSendTo::Beneficiary(Default::default()))
+    pub fn send_to(
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
+        Self::from(
+            CliSendTo::Beneficiary(Default::default()),
+            connection_config,
+            sender_account_id,
+        )
     }
 
     pub async fn process(
