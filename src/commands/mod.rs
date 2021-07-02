@@ -1,7 +1,7 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-// pub mod add_command;
+pub mod add_command;
 pub mod construct_transaction_command;
 // pub mod delete_command;
 pub mod execute_command;
@@ -14,7 +14,7 @@ pub mod view_command;
 #[derive(Debug, clap::Clap)]
 pub enum CliTopLevelCommand {
     /// Use these to add access key, contract code, stake proposal, sub-account, implicit-account
-    // Add(self::add_command::CliAddAction),
+    Add(self::add_command::CliAddAction),
     /// Prepare and, optionally, submit a new transaction
     // ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
     /// Use these to delete access key, sub-account
@@ -46,10 +46,10 @@ pub enum TopLevelCommand {
     Transfer(self::transfer_command::Currency),
     #[strum_discriminants(strum(message = "Execute function (contract method)"))]
     Execute(self::execute_command::OptionMethod),
-    // #[strum_discriminants(strum(
-    //     message = "Add access key, contract code, stake proposal, sub-account, implicit-account"
-    // ))]
-    // Add(self::add_command::AddAction),
+    #[strum_discriminants(strum(
+        message = "Add access key, contract code, stake proposal, sub-account, implicit-account"
+    ))]
+    Add(self::add_command::AddAction),
     // #[strum_discriminants(strum(message = "Delete access key, account"))]
     // Delete(self::delete_command::DeleteAction),
     // #[strum_discriminants(strum(message = "Construct a new transaction"))]
@@ -61,7 +61,7 @@ pub enum TopLevelCommand {
 impl From<CliTopLevelCommand> for TopLevelCommand {
     fn from(cli_top_level_command: CliTopLevelCommand) -> Self {
         match cli_top_level_command {
-            // CliTopLevelCommand::Add(cli_add_action) => TopLevelCommand::Add(cli_add_action.into()),
+            CliTopLevelCommand::Add(cli_add_action) => TopLevelCommand::Add(cli_add_action.into()),
             // CliTopLevelCommand::ConstructTransaction(cli_operation_mode) => {
             //     TopLevelCommand::ConstructTransaction(cli_operation_mode.into())
             // }
@@ -103,7 +103,7 @@ impl TopLevelCommand {
             .interact()
             .unwrap();
         let cli_top_level_command = match variants[selection] {
-            // TopLevelCommandDiscriminants::Add => CliTopLevelCommand::Add(Default::default()),
+            TopLevelCommandDiscriminants::Add => CliTopLevelCommand::Add(Default::default()),
             // TopLevelCommandDiscriminants::ConstructTransaction => {
             //     CliTopLevelCommand::ConstructTransaction(Default::default())
             // }
@@ -131,7 +131,7 @@ impl TopLevelCommand {
             actions: vec![],
         };
         match self {
-            // Self::Add(add_action) => add_action.process(unsigned_transaction).await,
+            Self::Add(add_action) => add_action.process(unsigned_transaction).await,
             // Self::ConstructTransaction(mode) => mode.process(unsigned_transaction).await,
             // Self::Delete(delete_action) => delete_action.process(unsigned_transaction).await,
             Self::Execute(option_method) => option_method.process(unsigned_transaction).await,

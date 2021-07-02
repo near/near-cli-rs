@@ -2,10 +2,10 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod access_key;
-mod contract_code;
-mod implicit_account;
-mod stake_proposal;
-mod sub_account;
+// mod contract_code;
+// mod implicit_account;
+// mod stake_proposal;
+// mod sub_account;
 
 /// инструмент выбора to add action
 #[derive(Debug, Default, clap::Clap)]
@@ -47,14 +47,14 @@ impl AddAction {
 pub enum CliAction {
     /// Add a new access key for an account
     AccessKey(self::access_key::operation_mode::CliOperationMode),
-    /// Add a new contract code
-    ContractCode(self::contract_code::operation_mode::CliOperationMode),
-    /// Add an implicit-account
-    ImplicitAccount(self::implicit_account::CliImplicitAccount),
-    /// Add a new stake proposal
-    StakeProposal(self::stake_proposal::operation_mode::CliOperationMode),
-    /// Add a new sub-account
-    SubAccount(self::sub_account::operation_mode::CliOperationMode),
+    // Add a new contract code
+    // ContractCode(self::contract_code::operation_mode::CliOperationMode),
+    // Add an implicit-account
+    // ImplicitAccount(self::implicit_account::CliImplicitAccount),
+    // Add a new stake proposal
+    // StakeProposal(self::stake_proposal::operation_mode::CliOperationMode),
+    // Add a new sub-account
+    // SubAccount(self::sub_account::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -62,14 +62,14 @@ pub enum CliAction {
 pub enum Action {
     #[strum_discriminants(strum(message = "Add a new access key for an account"))]
     AccessKey(self::access_key::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "Add a new contract code"))]
-    ContractCode(self::contract_code::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "Add an implicit-account"))]
-    ImplicitAccount(self::implicit_account::ImplicitAccount),
-    #[strum_discriminants(strum(message = "Add a new stake proposal"))]
-    StakeProposal(self::stake_proposal::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "Add a new sub-account"))]
-    SubAccount(self::sub_account::operation_mode::OperationMode),
+    // #[strum_discriminants(strum(message = "Add a new contract code"))]
+    // ContractCode(self::contract_code::operation_mode::OperationMode),
+    // #[strum_discriminants(strum(message = "Add an implicit-account"))]
+    // ImplicitAccount(self::implicit_account::ImplicitAccount),
+    // #[strum_discriminants(strum(message = "Add a new stake proposal"))]
+    // StakeProposal(self::stake_proposal::operation_mode::OperationMode),
+    // #[strum_discriminants(strum(message = "Add a new sub-account"))]
+    // SubAccount(self::sub_account::operation_mode::OperationMode),
 }
 
 impl From<CliAction> for Action {
@@ -77,19 +77,18 @@ impl From<CliAction> for Action {
         match item {
             CliAction::AccessKey(cli_operation_mode) => {
                 Action::AccessKey(cli_operation_mode.into())
-            }
-            CliAction::ContractCode(cli_operation_mode) => {
-                Action::ContractCode(cli_operation_mode.into())
-            }
-            CliAction::ImplicitAccount(cli_generate_keypair) => {
-                Action::ImplicitAccount(cli_generate_keypair.into())
-            }
-            CliAction::StakeProposal(cli_operation_mode) => {
-                Action::StakeProposal(cli_operation_mode.into())
-            }
-            CliAction::SubAccount(cli_operation_mode) => {
-                Action::SubAccount(cli_operation_mode.into())
-            }
+            } // CliAction::ContractCode(cli_operation_mode) => {
+              //     Action::ContractCode(cli_operation_mode.into())
+              // }
+              // CliAction::ImplicitAccount(cli_generate_keypair) => {
+              //     Action::ImplicitAccount(cli_generate_keypair.into())
+              // }
+              // CliAction::StakeProposal(cli_operation_mode) => {
+              //     Action::StakeProposal(cli_operation_mode.into())
+              // }
+              // CliAction::SubAccount(cli_operation_mode) => {
+              //     Action::SubAccount(cli_operation_mode.into())
+              // }
         }
     }
 }
@@ -110,10 +109,10 @@ impl Action {
             .unwrap();
         let cli_action = match variants[selected_action] {
             ActionDiscriminants::AccessKey => CliAction::AccessKey(Default::default()),
-            ActionDiscriminants::ContractCode => CliAction::ContractCode(Default::default()),
-            ActionDiscriminants::ImplicitAccount => CliAction::ImplicitAccount(Default::default()),
-            ActionDiscriminants::StakeProposal => CliAction::StakeProposal(Default::default()),
-            ActionDiscriminants::SubAccount => CliAction::SubAccount(Default::default()),
+            // ActionDiscriminants::ContractCode => CliAction::ContractCode(Default::default()),
+            // ActionDiscriminants::ImplicitAccount => CliAction::ImplicitAccount(Default::default()),
+            // ActionDiscriminants::StakeProposal => CliAction::StakeProposal(Default::default()),
+            // ActionDiscriminants::SubAccount => CliAction::SubAccount(Default::default()),
         };
         Self::from(cli_action)
     }
@@ -127,23 +126,22 @@ impl Action {
                 operation_mode
                     .process(prepopulated_unsigned_transaction)
                     .await
-            }
-            Action::ContractCode(operation_mode) => {
-                operation_mode
-                    .process(prepopulated_unsigned_transaction)
-                    .await
-            }
-            Action::ImplicitAccount(generate_keypair) => generate_keypair.process().await,
-            Action::StakeProposal(operation_mode) => {
-                operation_mode
-                    .process(prepopulated_unsigned_transaction)
-                    .await
-            }
-            Action::SubAccount(operation_mode) => {
-                operation_mode
-                    .process(prepopulated_unsigned_transaction)
-                    .await
-            }
+            } // Action::ContractCode(operation_mode) => {
+              //     operation_mode
+              //         .process(prepopulated_unsigned_transaction)
+              //         .await
+              // }
+              // Action::ImplicitAccount(generate_keypair) => generate_keypair.process().await,
+              // Action::StakeProposal(operation_mode) => {
+              //     operation_mode
+              //         .process(prepopulated_unsigned_transaction)
+              //         .await
+              // }
+              // Action::SubAccount(operation_mode) => {
+              //     operation_mode
+              //         .process(prepopulated_unsigned_transaction)
+              //         .await
+              // }
         }
     }
 }

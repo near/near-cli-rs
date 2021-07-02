@@ -18,11 +18,15 @@ pub struct FullAccessType {
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
-impl From<CliFullAccessType> for FullAccessType {
-    fn from(item: CliFullAccessType) -> Self {
+impl FullAccessType {
+    pub fn from(
+        item: CliFullAccessType,
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: String,
+    ) -> Self {
         let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => cli_sign_transaction.into(),
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(),
+            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config,sender_account_id),
+            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config,sender_account_id),
         };
         Self { sign_option }
     }
