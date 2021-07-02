@@ -2,7 +2,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod access_key;
-// mod contract_code;
+mod contract_code;
 // mod implicit_account;
 // mod stake_proposal;
 // mod sub_account;
@@ -47,8 +47,8 @@ impl AddAction {
 pub enum CliAction {
     /// Add a new access key for an account
     AccessKey(self::access_key::operation_mode::CliOperationMode),
-    // Add a new contract code
-    // ContractCode(self::contract_code::operation_mode::CliOperationMode),
+    /// Add a new contract code
+    ContractCode(self::contract_code::operation_mode::CliOperationMode),
     // Add an implicit-account
     // ImplicitAccount(self::implicit_account::CliImplicitAccount),
     // Add a new stake proposal
@@ -62,8 +62,8 @@ pub enum CliAction {
 pub enum Action {
     #[strum_discriminants(strum(message = "Add a new access key for an account"))]
     AccessKey(self::access_key::operation_mode::OperationMode),
-    // #[strum_discriminants(strum(message = "Add a new contract code"))]
-    // ContractCode(self::contract_code::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "Add a new contract code"))]
+    ContractCode(self::contract_code::operation_mode::OperationMode),
     // #[strum_discriminants(strum(message = "Add an implicit-account"))]
     // ImplicitAccount(self::implicit_account::ImplicitAccount),
     // #[strum_discriminants(strum(message = "Add a new stake proposal"))]
@@ -77,10 +77,10 @@ impl From<CliAction> for Action {
         match item {
             CliAction::AccessKey(cli_operation_mode) => {
                 Action::AccessKey(cli_operation_mode.into())
-            } // CliAction::ContractCode(cli_operation_mode) => {
-              //     Action::ContractCode(cli_operation_mode.into())
-              // }
-              // CliAction::ImplicitAccount(cli_generate_keypair) => {
+            }
+            CliAction::ContractCode(cli_operation_mode) => {
+                Action::ContractCode(cli_operation_mode.into())
+            } // CliAction::ImplicitAccount(cli_generate_keypair) => {
               //     Action::ImplicitAccount(cli_generate_keypair.into())
               // }
               // CliAction::StakeProposal(cli_operation_mode) => {
@@ -109,7 +109,7 @@ impl Action {
             .unwrap();
         let cli_action = match variants[selected_action] {
             ActionDiscriminants::AccessKey => CliAction::AccessKey(Default::default()),
-            // ActionDiscriminants::ContractCode => CliAction::ContractCode(Default::default()),
+            ActionDiscriminants::ContractCode => CliAction::ContractCode(Default::default()),
             // ActionDiscriminants::ImplicitAccount => CliAction::ImplicitAccount(Default::default()),
             // ActionDiscriminants::StakeProposal => CliAction::StakeProposal(Default::default()),
             // ActionDiscriminants::SubAccount => CliAction::SubAccount(Default::default()),
@@ -126,12 +126,12 @@ impl Action {
                 operation_mode
                     .process(prepopulated_unsigned_transaction)
                     .await
-            } // Action::ContractCode(operation_mode) => {
-              //     operation_mode
-              //         .process(prepopulated_unsigned_transaction)
-              //         .await
-              // }
-              // Action::ImplicitAccount(generate_keypair) => generate_keypair.process().await,
+            }
+            Action::ContractCode(operation_mode) => {
+                operation_mode
+                    .process(prepopulated_unsigned_transaction)
+                    .await
+            } // Action::ImplicitAccount(generate_keypair) => generate_keypair.process().await,
               // Action::StakeProposal(operation_mode) => {
               //     operation_mode
               //         .process(prepopulated_unsigned_transaction)
