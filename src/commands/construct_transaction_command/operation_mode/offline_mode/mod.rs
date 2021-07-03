@@ -27,7 +27,7 @@ impl From<CliOfflineArgs> for OfflineArgs {
     fn from(item: CliOfflineArgs) -> Self {
         let nonce: u64 = match item.nonce {
             Some(cli_nonce) => cli_nonce,
-            None => OfflineArgs::input_nonce(),
+            None => OfflineArgs::input_access_key_nonce(),
         };
         let block_hash = match item.block_hash {
             Some(cli_block_hash) => cli_block_hash.inner,
@@ -48,7 +48,7 @@ impl From<CliOfflineArgs> for OfflineArgs {
 }
 
 impl OfflineArgs {
-    fn input_nonce() -> u64 {
+    fn input_access_key_nonce() -> u64 {
         Input::new()
             .with_prompt(
                 "Enter transaction nonce (query the access key information with \

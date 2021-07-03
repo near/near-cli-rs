@@ -59,7 +59,7 @@ impl SignKeychain {
 
                 let nonce: u64 = match item.nonce {
                     Some(cli_nonce) => cli_nonce,
-                    None => super::input_nonce(&account_json.public_key.to_string()),
+                    None => super::input_access_key_nonce(&account_json.public_key.to_string()),
                 };
                 let block_hash = match item.block_hash {
                     Some(cli_block_hash) => cli_block_hash,

@@ -136,21 +136,21 @@ impl SignTransaction {
     }
 }
 
-fn signer_public_key() -> near_crypto::PublicKey {
+fn input_signer_public_key() -> near_crypto::PublicKey {
     Input::new()
         .with_prompt("To create an unsigned transaction enter sender's public key")
         .interact_text()
         .unwrap()
 }
 
-fn signer_secret_key() -> near_crypto::SecretKey {
+fn input_signer_secret_key() -> near_crypto::SecretKey {
     Input::new()
         .with_prompt("Enter sender's private key")
         .interact_text()
         .unwrap()
 }
 
-fn input_nonce(public_key: &str) -> u64 {
+fn input_access_key_nonce(public_key: &str) -> u64 {
     println!("Your public key: `{}`", public_key);
     Input::new()
         .with_prompt(

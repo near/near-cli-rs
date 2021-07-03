@@ -52,11 +52,11 @@ impl SignPrivateKey {
             Some(_) => {
                 let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
                     Some(cli_public_key) => cli_public_key,
-                    None => super::signer_public_key(),
+                    None => super::input_signer_public_key(),
                 };
                 let signer_secret_key: near_crypto::SecretKey = match item.signer_secret_key {
                     Some(cli_secret_key) => cli_secret_key,
-                    None => super::signer_secret_key(),
+                    None => super::input_signer_secret_key(),
                 };
                 Self {
                     signer_public_key,
@@ -67,15 +67,15 @@ impl SignPrivateKey {
             None => {
                 let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
                     Some(cli_public_key) => cli_public_key,
-                    None => super::signer_public_key(),
+                    None => super::input_signer_public_key(),
                 };
                 let signer_secret_key: near_crypto::SecretKey = match item.signer_secret_key {
                     Some(cli_secret_key) => cli_secret_key,
-                    None => super::signer_secret_key(),
+                    None => super::input_signer_secret_key(),
                 };
                 let nonce: u64 = match item.nonce {
                     Some(cli_nonce) => cli_nonce,
-                    None => super::input_nonce(&signer_public_key.to_string()),
+                    None => super::input_access_key_nonce(&signer_public_key.to_string()),
                 };
                 let block_hash = match item.block_hash {
                     Some(cli_block_hash) => cli_block_hash,
@@ -94,8 +94,10 @@ impl SignPrivateKey {
                     }
                 } else {
                     println!("\nError: The key pair does not match. Re-enter the keys.\n");
-                    let signer_public_key: near_crypto::PublicKey = super::signer_public_key();
-                    let signer_secret_key: near_crypto::SecretKey = super::signer_secret_key();
+                    let signer_public_key: near_crypto::PublicKey =
+                        super::input_signer_public_key();
+                    let signer_secret_key: near_crypto::SecretKey =
+                        super::input_signer_secret_key();
                     Self::from(
                         CliSignPrivateKey {
                             signer_public_key: Some(signer_public_key),

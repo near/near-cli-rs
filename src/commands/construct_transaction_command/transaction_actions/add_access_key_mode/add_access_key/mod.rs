@@ -35,7 +35,7 @@ impl From<CliAddAccessKeyAction> for AddAccessKeyAction {
         };
         let nonce: near_primitives::types::Nonce = match item.nonce {
             Some(cli_nonce) => near_primitives::types::Nonce::from(cli_nonce),
-            None => AddAccessKeyAction::input_nonce(),
+            None => AddAccessKeyAction::input_access_key_nonce(),
         };
         let permission: AccessKeyPermission = match item.permission {
             Some(cli_permission) => AccessKeyPermission::from(cli_permission),
@@ -50,7 +50,7 @@ impl From<CliAddAccessKeyAction> for AddAccessKeyAction {
 }
 
 impl AddAccessKeyAction {
-    pub fn input_nonce() -> near_primitives::types::Nonce {
+    pub fn input_access_key_nonce() -> near_primitives::types::Nonce {
         Input::new()
             .with_prompt("Enter the nonce for this access key")
             .interact_text()

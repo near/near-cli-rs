@@ -42,7 +42,7 @@ impl SignManually {
             Some(_) => {
                 let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
                     Some(cli_public_key) => cli_public_key,
-                    None => super::signer_public_key(),
+                    None => super::input_signer_public_key(),
                 };
                 Self {
                     signer_public_key,
@@ -52,11 +52,11 @@ impl SignManually {
             None => {
                 let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
                     Some(cli_public_key) => cli_public_key,
-                    None => super::signer_public_key(),
+                    None => super::input_signer_public_key(),
                 };
                 let nonce: u64 = match item.nonce {
                     Some(cli_nonce) => cli_nonce,
-                    None => super::input_nonce(&signer_public_key.to_string()),
+                    None => super::input_access_key_nonce(&signer_public_key.to_string()),
                 };
                 let block_hash = match item.block_hash {
                     Some(cli_block_hash) => cli_block_hash,
