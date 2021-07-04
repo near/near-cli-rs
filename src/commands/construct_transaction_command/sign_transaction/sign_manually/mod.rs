@@ -23,37 +23,22 @@ pub struct SignManually {
     block_hash: near_primitives::hash::CryptoHash,
 }
 
-impl Default for SignManually {
-    fn default() -> Self {
-        Self {
-            signer_public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-            nonce: 0,
-            block_hash: Default::default(),
-        }
-    }
-}
-
 impl SignManually {
     pub fn from(
         item: CliSignManually,
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> Self {
+        let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
+            Some(cli_public_key) => cli_public_key,
+            None => super::input_signer_public_key(),
+        };
         match connection_config {
-            Some(_) => {
-                let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
-                    Some(cli_public_key) => cli_public_key,
-                    None => super::input_signer_public_key(),
-                };
-                Self {
-                    signer_public_key,
-                    ..Default::default()
-                }
-            }
+            Some(_) => Self {
+                signer_public_key,
+                nonce: 0,
+                block_hash: Default::default(),
+            },
             None => {
-                let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
-                    Some(cli_public_key) => cli_public_key,
-                    None => super::input_signer_public_key(),
-                };
                 let nonce: u64 = match item.nonce {
                     Some(cli_nonce) => cli_nonce,
                     None => super::input_access_key_nonce(&signer_public_key.to_string()),

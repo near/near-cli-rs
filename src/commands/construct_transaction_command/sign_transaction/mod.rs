@@ -42,32 +42,32 @@ impl SignTransaction {
         item: CliSignTransaction,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSignTransaction::SignPrivateKey(cli_private_key) => {
                 let private_key = self::sign_with_private_key::SignPrivateKey::from(
                     cli_private_key,
                     connection_config,
                 );
-                SignTransaction::SignPrivateKey(private_key)
+                Ok(SignTransaction::SignPrivateKey(private_key))
             }
             CliSignTransaction::SignWithKeychain(cli_key_chain) => {
                 let key_chain = self::sign_with_keychain::SignKeychain::from(
                     cli_key_chain,
                     connection_config,
                     sender_account_id,
-                );
-                SignTransaction::SignWithKeychain(key_chain)
+                )?;
+                Ok(SignTransaction::SignWithKeychain(key_chain))
             }
             CliSignTransaction::SignWithLedger(cli_ledger) => {
                 let ledger =
-                    self::sign_with_ledger::SignLedger::from(cli_ledger, connection_config);
-                SignTransaction::SignWithLedger(ledger)
+                    self::sign_with_ledger::SignLedger::from(cli_ledger, connection_config)?;
+                Ok(SignTransaction::SignWithLedger(ledger))
             }
             CliSignTransaction::SignManually(cli_manually) => {
                 let manually =
                     self::sign_manually::SignManually::from(cli_manually, connection_config);
-                SignTransaction::SignManually(manually)
+                Ok(SignTransaction::SignManually(manually))
             }
         }
     }
@@ -77,7 +77,7 @@ impl SignTransaction {
     pub fn choose_sign_option(
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = SignTransactionDiscriminants::iter().collect::<Vec<_>>();
         let sign_options = variants

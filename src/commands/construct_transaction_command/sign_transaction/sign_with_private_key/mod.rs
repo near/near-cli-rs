@@ -31,48 +31,29 @@ pub struct SignPrivateKey {
     pub submit: Option<Submit>,
 }
 
-impl Default for SignPrivateKey {
-    fn default() -> Self {
-        Self {
-            signer_public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-            signer_secret_key: near_crypto::SecretKey::from_random(near_crypto::KeyType::ED25519),
-            nonce: 0,
-            block_hash: Default::default(),
-            submit: None,
-        }
-    }
-}
-
 impl SignPrivateKey {
     pub fn from(
         item: CliSignPrivateKey,
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> Self {
+        let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
+            Some(cli_public_key) => cli_public_key,
+            None => super::input_signer_public_key(),
+        };
+        let signer_secret_key: near_crypto::SecretKey = match item.signer_secret_key {
+            Some(cli_secret_key) => cli_secret_key,
+            None => super::input_signer_secret_key(),
+        };
+        let submit: Option<Submit> = item.submit;
         match connection_config {
-            Some(_) => {
-                let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
-                    Some(cli_public_key) => cli_public_key,
-                    None => super::input_signer_public_key(),
-                };
-                let signer_secret_key: near_crypto::SecretKey = match item.signer_secret_key {
-                    Some(cli_secret_key) => cli_secret_key,
-                    None => super::input_signer_secret_key(),
-                };
-                Self {
-                    signer_public_key,
-                    signer_secret_key,
-                    ..Default::default()
-                }
-            }
+            Some(_) => Self {
+                signer_public_key,
+                signer_secret_key,
+                nonce: 0,
+                block_hash: Default::default(),
+                submit,
+            },
             None => {
-                let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
-                    Some(cli_public_key) => cli_public_key,
-                    None => super::input_signer_public_key(),
-                };
-                let signer_secret_key: near_crypto::SecretKey = match item.signer_secret_key {
-                    Some(cli_secret_key) => cli_secret_key,
-                    None => super::input_signer_secret_key(),
-                };
                 let nonce: u64 = match item.nonce {
                     Some(cli_nonce) => cli_nonce,
                     None => super::input_access_key_nonce(&signer_public_key.to_string()),
@@ -81,7 +62,6 @@ impl SignPrivateKey {
                     Some(cli_block_hash) => cli_block_hash,
                     None => super::input_block_hash(),
                 };
-                let submit: Option<Submit> = item.submit;
                 let public_key_origin: near_crypto::PublicKey =
                     near_crypto::SecretKey::public_key(&signer_secret_key);
                 if &signer_public_key == &public_key_origin {
