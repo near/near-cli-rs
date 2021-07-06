@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod add_access_key_mode;
 // mod call_function_type;
-// mod create_account_type;
+mod create_account_type;
 mod delete_access_key_type;
 // mod delete_account_type;
 // mod stake_near_tokens_type;
@@ -183,7 +183,7 @@ pub enum CliActionSubcommand {
     /// Предоставьте данные для ставки
     // StakeNEARTokens(self::stake_near_tokens_type::CliStakeNEARTokensAction),
     /// Предоставьте данные для создания аккаунта
-    // CreateAccount(self::create_account_type::CliCreateAccountAction),
+    CreateAccount(self::create_account_type::CliCreateAccountAction),
     /// Предоставьте данные для удаления аккаунта
     // DeleteAccount(self::delete_account_type::CliDeleteAccountAction),
     /// Предоставьте данные для добавления ключа доступа пользователю
@@ -201,8 +201,8 @@ pub enum ActionSubcommand {
     // CallFunction(self::call_function_type::CallFunctionAction),
     // #[strum_discriminants(strum(message = "Stake NEAR Tokens"))]
     // StakeNEARTokens(self::stake_near_tokens_type::StakeNEARTokensAction),
-    // #[strum_discriminants(strum(message = "Create an Account"))]
-    // CreateAccount(self::create_account_type::CreateAccountAction),
+    #[strum_discriminants(strum(message = "Create an Account"))]
+    CreateAccount(self::create_account_type::CreateAccountAction),
     // #[strum_discriminants(strum(message = "Delete an Account"))]
     // DeleteAccount(self::delete_account_type::DeleteAccountAction),
     #[strum_discriminants(strum(message = "Add an Access Key"))]
@@ -227,9 +227,15 @@ impl ActionSubcommand {
                     )
                     .unwrap(),
                 )
-            } // CliActionSubcommand::CreateAccount(cli_create_account) => {
-            //     Self::CreateAccount(cli_create_account.into())
-            // }
+            }
+            CliActionSubcommand::CreateAccount(cli_create_account) => Self::CreateAccount(
+                self::create_account_type::CreateAccountAction::from(
+                    cli_create_account,
+                    connection_config,
+                    sender_account_id,
+                )
+                .unwrap(),
+            ),
             // CliActionSubcommand::DeleteAccount(cli_delete_account) => {
             //     Self::DeleteAccount(cli_delete_account.into())
             // }
@@ -284,9 +290,9 @@ impl ActionSubcommand {
             // ActionSubcommandDiscriminants::StakeNEARTokens => {
             //     CliActionSubcommand::StakeNEARTokens(Default::default())
             // }
-            // ActionSubcommandDiscriminants::CreateAccount => {
-            //     CliActionSubcommand::CreateAccount(Default::default())
-            // }
+            ActionSubcommandDiscriminants::CreateAccount => {
+                CliActionSubcommand::CreateAccount(Default::default())
+            }
             // ActionSubcommandDiscriminants::DeleteAccount => {
             //     CliActionSubcommand::DeleteAccount(Default::default())
             // }
@@ -320,11 +326,11 @@ impl ActionSubcommand {
             //         .process(prepopulated_unsigned_transaction, network_connection_config)
             //         .await
             // }
-            // ActionSubcommand::CreateAccount(args_create_account) => {
-            //     args_create_account
-            //         .process(prepopulated_unsigned_transaction, network_connection_config)
-            //         .await
-            // }
+            ActionSubcommand::CreateAccount(args_create_account) => {
+                args_create_account
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .await
+            }
             // ActionSubcommand::DeleteAccount(args_delete_account) => {
             //     args_delete_account
             //         .process(prepopulated_unsigned_transaction, network_connection_config)
