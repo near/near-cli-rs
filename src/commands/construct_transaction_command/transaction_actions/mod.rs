@@ -2,7 +2,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod add_access_key_mode;
-// mod call_function_type;
+mod call_function_type;
 mod create_account_type;
 mod delete_access_key_type;
 mod delete_account_type;
@@ -179,7 +179,7 @@ pub enum CliActionSubcommand {
     /// Предоставьте данные для перевода Near
     TransferNEARTokens(self::transfer_near_tokens_type::CliTransferNEARTokensAction),
     /// Предоставьте данные для call function
-    // CallFunction(self::call_function_type::CliCallFunctionAction),
+    CallFunction(self::call_function_type::CliCallFunctionAction),
     /// Предоставьте данные для ставки
     // StakeNEARTokens(self::stake_near_tokens_type::CliStakeNEARTokensAction),
     /// Предоставьте данные для создания аккаунта
@@ -197,8 +197,8 @@ pub enum CliActionSubcommand {
 pub enum ActionSubcommand {
     #[strum_discriminants(strum(message = "Transfer NEAR Tokens"))]
     TransferNEARTokens(self::transfer_near_tokens_type::TransferNEARTokensAction),
-    // #[strum_discriminants(strum(message = "Call a Function"))]
-    // CallFunction(self::call_function_type::CallFunctionAction),
+    #[strum_discriminants(strum(message = "Call a Function"))]
+    CallFunction(self::call_function_type::CallFunctionAction),
     // #[strum_discriminants(strum(message = "Stake NEAR Tokens"))]
     // StakeNEARTokens(self::stake_near_tokens_type::StakeNEARTokensAction),
     #[strum_discriminants(strum(message = "Create an Account"))]
@@ -260,11 +260,16 @@ impl ActionSubcommand {
                 )
                 .unwrap(),
             ), // CliActionSubcommand::StakeNEARTokens(cli_stake_near_token) => {
-               //     Self::StakeNEARTokens(cli_stake_near_token.into())
-               // }
-               // CliActionSubcommand::CallFunction(cli_call_function) => {
-               //     Self::CallFunction(cli_call_function.into())
-               // }
+            //     Self::StakeNEARTokens(cli_stake_near_token.into())
+            // }
+            CliActionSubcommand::CallFunction(cli_call_function) => Self::CallFunction(
+                self::call_function_type::CallFunctionAction::from(
+                    cli_call_function,
+                    connection_config,
+                    sender_account_id,
+                )
+                .unwrap(),
+            ),
         }
     }
 }
@@ -289,9 +294,10 @@ impl ActionSubcommand {
         let cli_action_subcomand = match variants[select_action_subcommand] {
             ActionSubcommandDiscriminants::TransferNEARTokens => {
                 CliActionSubcommand::TransferNEARTokens(Default::default())
-            } // ActionSubcommandDiscriminants::CallFunction => {
-            //     CliActionSubcommand::CallFunction(Default::default())
-            // }
+            }
+            ActionSubcommandDiscriminants::CallFunction => {
+                CliActionSubcommand::CallFunction(Default::default())
+            }
             // ActionSubcommandDiscriminants::StakeNEARTokens => {
             //     CliActionSubcommand::StakeNEARTokens(Default::default())
             // }
@@ -321,11 +327,12 @@ impl ActionSubcommand {
                 args_transfer
                     .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
-            } // ActionSubcommand::CallFunction(args_function) => {
-            //     args_function
-            //         .process(prepopulated_unsigned_transaction, network_connection_config)
-            //         .await
-            // }
+            }
+            ActionSubcommand::CallFunction(args_function) => {
+                args_function
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .await
+            }
             // ActionSubcommand::StakeNEARTokens(args_stake) => {
             //     args_stake
             //         .process(prepopulated_unsigned_transaction, network_connection_config)
