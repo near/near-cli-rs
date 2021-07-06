@@ -16,11 +16,12 @@ impl SendTo {
         item: CliSendTo,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSendTo::SubAccount(cli_receiver) => {
-                let receiver = SubAccount::from(cli_receiver, connection_config, sender_account_id);
-                Self::SubAccount(receiver)
+                let receiver =
+                    SubAccount::from(cli_receiver, connection_config, sender_account_id)?;
+                Ok(Self::SubAccount(receiver))
             }
         }
     }
@@ -30,12 +31,12 @@ impl SendTo {
     pub fn send_to(
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
-        Self::from(
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self::from(
             CliSendTo::SubAccount(Default::default()),
             connection_config,
             sender_account_id,
-        )
+        )?)
     }
 
     pub async fn process(
@@ -77,7 +78,7 @@ impl SubAccount {
         item: CliSubAccount,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let sub_account_id: String = match item.sub_account_id {
             Some(cli_sub_account_id) => cli_sub_account_id,
             None => SubAccount::input_sub_account_id(),
@@ -87,21 +88,21 @@ impl SubAccount {
                 cli_full_access_key,
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
             None => super::full_access_key::FullAccessKey::choose_full_access_key(
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
         };
-        Self {
+        Ok(Self {
             sub_account_id,
             full_access_key,
-        }
+        })
     }
 }
 
 impl SubAccount {
-    pub fn input_sub_account_id() -> String {
+    fn input_sub_account_id() -> String {
         Input::new()
             .with_prompt("What is the sub-account ID?")
             .interact_text()

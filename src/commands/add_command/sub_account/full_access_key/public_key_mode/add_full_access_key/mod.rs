@@ -26,7 +26,7 @@ impl AddAccessKeyAction {
         item: CliAddAccessKeyAction,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,
             None => AddAccessKeyAction::input_public_key(),
@@ -36,22 +36,22 @@ impl AddAccessKeyAction {
                 cli_deposit,
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
             None => super::super::super::deposit::Deposit::choose_deposit(
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
         };
-        Self {
+        Ok(Self {
             public_key,
             nonce: 0,
             deposit,
-        }
+        })
     }
 }
 
 impl AddAccessKeyAction {
-    pub fn input_public_key() -> near_crypto::PublicKey {
+    fn input_public_key() -> near_crypto::PublicKey {
         Input::new()
             .with_prompt("Enter a public key for this access key")
             .interact_text()

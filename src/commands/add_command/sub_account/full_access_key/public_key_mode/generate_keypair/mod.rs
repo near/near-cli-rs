@@ -23,19 +23,19 @@ impl GenerateKeypair {
         item: CliGenerateKeypair,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let deposit = match item.deposit {
             Some(cli_deposit) => super::super::super::deposit::Deposit::from(
                 cli_deposit,
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
             None => super::super::super::deposit::Deposit::choose_deposit(
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
         };
-        Self { deposit }
+        Ok(Self { deposit })
     }
 }
 

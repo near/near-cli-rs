@@ -23,7 +23,7 @@ impl Sender {
     pub fn from(
         item: CliSender,
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let owner_account_id: String = match item.owner_account_id {
             Some(cli_owner_account_id) => cli_owner_account_id,
             None => Sender::input_owner_account_id(),
@@ -33,18 +33,18 @@ impl Sender {
                 cli_send_to,
                 connection_config,
                 owner_account_id.clone(),
-            ),
-            None => super::receiver::SendTo::send_to(connection_config, owner_account_id.clone()),
+            )?,
+            None => super::receiver::SendTo::send_to(connection_config, owner_account_id.clone())?,
         };
-        Self {
+        Ok(Self {
             owner_account_id,
             send_to,
-        }
+        })
     }
 }
 
 impl Sender {
-    pub fn input_owner_account_id() -> String {
+    fn input_owner_account_id() -> String {
         println!();
         Input::new()
             .with_prompt("What is the owner account ID?")

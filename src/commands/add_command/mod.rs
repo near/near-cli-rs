@@ -5,7 +5,7 @@ mod access_key;
 // mod contract_code;
 mod implicit_account;
 // mod stake_proposal;
-// mod sub_account;
+mod sub_account;
 
 /// инструмент выбора to add action
 #[derive(Debug, Default, clap::Clap)]
@@ -52,7 +52,7 @@ pub enum CliAction {
     /// Add a new stake proposal
     // StakeProposal(self::stake_proposal::operation_mode::CliOperationMode),
     /// Add a new sub-account
-    // SubAccount(self::sub_account::operation_mode::CliOperationMode),
+    SubAccount(self::sub_account::operation_mode::CliOperationMode),
     /// Add a new access key for an account
     AccessKey(self::access_key::operation_mode::CliOperationMode),
 }
@@ -68,12 +68,12 @@ pub enum Action {
     ImplicitAccount(self::implicit_account::ImplicitAccount),
     // #[strum_discriminants(strum(message = "Add a new stake proposal"))]
     // StakeProposal(self::stake_proposal::operation_mode::OperationMode),
-    // #[strum_discriminants(strum(message = "Add a new sub-account"))]
-    // SubAccount(self::sub_account::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "Add a new sub-account"))]
+    SubAccount(self::sub_account::operation_mode::OperationMode),
 }
 
 impl Action {
-    pub fn from(item: CliAction) -> color_eyre::eyre::Result<Self> {
+    fn from(item: CliAction) -> color_eyre::eyre::Result<Self> {
         match item {
             CliAction::AccessKey(cli_operation_mode) => Ok(Action::AccessKey(
                 self::access_key::operation_mode::OperationMode::from(cli_operation_mode)?,
@@ -84,11 +84,11 @@ impl Action {
             CliAction::ImplicitAccount(cli_generate_keypair) => {
                 Ok(Action::ImplicitAccount(cli_generate_keypair.into()))
             } // CliAction::StakeProposal(cli_operation_mode) => {
-              //     Action::StakeProposal(cli_operation_mode.into())
-              // }
-              // CliAction::SubAccount(cli_operation_mode) => {
-              //     Action::SubAccount(cli_operation_mode.into())
-              // }
+            //     Action::StakeProposal(cli_operation_mode.into())
+            // }
+            CliAction::SubAccount(cli_operation_mode) => Ok(Action::SubAccount(
+                self::sub_account::operation_mode::OperationMode::from(cli_operation_mode).unwrap(),
+            )),
         }
     }
 }
@@ -112,7 +112,7 @@ impl Action {
             // ActionDiscriminants::ContractCode => CliAction::ContractCode(Default::default()),
             ActionDiscriminants::ImplicitAccount => CliAction::ImplicitAccount(Default::default()),
             // ActionDiscriminants::StakeProposal => CliAction::StakeProposal(Default::default()),
-            // ActionDiscriminants::SubAccount => CliAction::SubAccount(Default::default()),
+            ActionDiscriminants::SubAccount => CliAction::SubAccount(Default::default()),
         };
         Ok(Self::from(cli_action)?)
     }
@@ -138,11 +138,11 @@ impl Action {
             //         .process(prepopulated_unsigned_transaction)
             //         .await
             // }
-            // Action::SubAccount(operation_mode) => {
-            //     operation_mode
-            //         .process(prepopulated_unsigned_transaction)
-            //         .await
-            // }
+            Action::SubAccount(operation_mode) => {
+                operation_mode
+                    .process(prepopulated_unsigned_transaction)
+                    .await
+            }
         }
     }
 }

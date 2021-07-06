@@ -21,15 +21,15 @@ impl FullAccessKey {
         item: CliFullAccessKey,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         match item {
-            CliFullAccessKey::SubAccountFullAccess(cli_sub_account_full_access) => {
+            CliFullAccessKey::SubAccountFullAccess(cli_sub_account_full_access) => Ok(
                 FullAccessKey::SubAccountFullAccess(SubAccountFullAccess::from(
                     cli_sub_account_full_access,
                     connection_config,
                     sender_account_id,
-                ))
-            }
+                )?),
+            ),
         }
     }
 }
@@ -38,7 +38,7 @@ impl FullAccessKey {
     pub fn choose_full_access_key(
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = FullAccessKeyDiscriminants::iter().collect::<Vec<_>>();
         let actions = variants
@@ -56,7 +56,11 @@ impl FullAccessKey {
                 CliFullAccessKey::SubAccountFullAccess(Default::default())
             }
         };
-        Self::from(cli_action, connection_config, sender_account_id)
+        Ok(Self::from(
+            cli_action,
+            connection_config,
+            sender_account_id,
+        )?)
     }
 
     pub async fn process(
@@ -96,19 +100,19 @@ impl SubAccountFullAccess {
         item: CliSubAccountFullAccess,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let public_key_mode = match item.public_key_mode {
             Some(cli_public_key_mode) => self::public_key_mode::PublicKeyMode::from(
                 cli_public_key_mode,
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
             None => self::public_key_mode::PublicKeyMode::choose_public_key_mode(
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
         };
-        Self { public_key_mode }
+        Ok(Self { public_key_mode })
     }
 }
 

@@ -73,7 +73,7 @@ impl Mode {
 }
 
 impl Mode {
-    pub fn choose_mode() -> color_eyre::eyre::Result<Self> {
+    fn choose_mode() -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = ModeDiscriminants::iter().collect::<Vec<_>>();
         let modes = variants
