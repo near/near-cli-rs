@@ -6,7 +6,7 @@ mod call_function_type;
 mod create_account_type;
 mod delete_access_key_type;
 mod delete_account_type;
-// mod stake_near_tokens_type;
+mod stake_near_tokens_type;
 mod transfer_near_tokens_type;
 
 #[derive(Debug, clap::Clap)]
@@ -181,7 +181,7 @@ pub enum CliActionSubcommand {
     /// Предоставьте данные для call function
     CallFunction(self::call_function_type::CliCallFunctionAction),
     /// Предоставьте данные для ставки
-    // StakeNEARTokens(self::stake_near_tokens_type::CliStakeNEARTokensAction),
+    StakeNEARTokens(self::stake_near_tokens_type::CliStakeNEARTokensAction),
     /// Предоставьте данные для создания аккаунта
     CreateAccount(self::create_account_type::CliCreateAccountAction),
     /// Предоставьте данные для удаления аккаунта
@@ -199,8 +199,8 @@ pub enum ActionSubcommand {
     TransferNEARTokens(self::transfer_near_tokens_type::TransferNEARTokensAction),
     #[strum_discriminants(strum(message = "Call a Function"))]
     CallFunction(self::call_function_type::CallFunctionAction),
-    // #[strum_discriminants(strum(message = "Stake NEAR Tokens"))]
-    // StakeNEARTokens(self::stake_near_tokens_type::StakeNEARTokensAction),
+    #[strum_discriminants(strum(message = "Stake NEAR Tokens"))]
+    StakeNEARTokens(self::stake_near_tokens_type::StakeNEARTokensAction),
     #[strum_discriminants(strum(message = "Create an Account"))]
     CreateAccount(self::create_account_type::CreateAccountAction),
     #[strum_discriminants(strum(message = "Delete an Account"))]
@@ -259,9 +259,15 @@ impl ActionSubcommand {
                     sender_account_id,
                 )
                 .unwrap(),
-            ), // CliActionSubcommand::StakeNEARTokens(cli_stake_near_token) => {
-            //     Self::StakeNEARTokens(cli_stake_near_token.into())
-            // }
+            ),
+            CliActionSubcommand::StakeNEARTokens(cli_stake_near_token) => Self::StakeNEARTokens(
+                self::stake_near_tokens_type::StakeNEARTokensAction::from(
+                    cli_stake_near_token,
+                    connection_config,
+                    sender_account_id,
+                )
+                .unwrap(),
+            ),
             CliActionSubcommand::CallFunction(cli_call_function) => Self::CallFunction(
                 self::call_function_type::CallFunctionAction::from(
                     cli_call_function,
@@ -298,9 +304,9 @@ impl ActionSubcommand {
             ActionSubcommandDiscriminants::CallFunction => {
                 CliActionSubcommand::CallFunction(Default::default())
             }
-            // ActionSubcommandDiscriminants::StakeNEARTokens => {
-            //     CliActionSubcommand::StakeNEARTokens(Default::default())
-            // }
+            ActionSubcommandDiscriminants::StakeNEARTokens => {
+                CliActionSubcommand::StakeNEARTokens(Default::default())
+            }
             ActionSubcommandDiscriminants::CreateAccount => {
                 CliActionSubcommand::CreateAccount(Default::default())
             }
@@ -333,11 +339,11 @@ impl ActionSubcommand {
                     .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
-            // ActionSubcommand::StakeNEARTokens(args_stake) => {
-            //     args_stake
-            //         .process(prepopulated_unsigned_transaction, network_connection_config)
-            //         .await
-            // }
+            ActionSubcommand::StakeNEARTokens(args_stake) => {
+                args_stake
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .await
+            }
             ActionSubcommand::CreateAccount(args_create_account) => {
                 args_create_account
                     .process(prepopulated_unsigned_transaction, network_connection_config)
