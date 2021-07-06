@@ -30,27 +30,27 @@ impl AddAccessKeyAction {
         item: CliAddAccessKeyAction,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,
             None => AddAccessKeyAction::input_public_key(),
         };
         let permission: AccessKeyPermission = match item.permission {
             Some(cli_permission) => {
-                AccessKeyPermission::from(cli_permission, connection_config, sender_account_id)
+                AccessKeyPermission::from(cli_permission, connection_config, sender_account_id)?
             }
-            None => AccessKeyPermission::choose_permission(connection_config, sender_account_id),
+            None => AccessKeyPermission::choose_permission(connection_config, sender_account_id)?,
         };
-        Self {
+        Ok(Self {
             public_key,
             nonce: 0,
             permission,
-        }
+        })
     }
 }
 
 impl AddAccessKeyAction {
-    pub fn input_public_key() -> near_crypto::PublicKey {
+    fn input_public_key() -> near_crypto::PublicKey {
         Input::new()
             .with_prompt("Enter a public key for this access key")
             .interact_text()
@@ -109,23 +109,25 @@ impl AccessKeyPermission {
         item: CliAccessKeyPermission,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliAccessKeyPermission::GrantFunctionCallAccess(cli_function_call_type) => {
                 let function_call_type = self::function_call_type::FunctionCallType::from(
                     cli_function_call_type,
                     connection_config,
                     sender_account_id,
-                );
-                AccessKeyPermission::GrantFunctionCallAccess(function_call_type)
+                )?;
+                Ok(AccessKeyPermission::GrantFunctionCallAccess(
+                    function_call_type,
+                ))
             }
             CliAccessKeyPermission::GrantFullAccess(cli_full_access_type) => {
                 let full_access_type = self::full_access_type::FullAccessType::from(
                     cli_full_access_type,
                     connection_config,
                     sender_account_id,
-                );
-                AccessKeyPermission::GrantFullAccess(full_access_type)
+                )?;
+                Ok(AccessKeyPermission::GrantFullAccess(full_access_type))
             }
         }
     }
@@ -135,7 +137,7 @@ impl AccessKeyPermission {
     pub fn choose_permission(
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let variants = AccessKeyPermissionDiscriminants::iter().collect::<Vec<_>>();
         let permissions = variants
             .iter()
@@ -148,16 +150,16 @@ impl AccessKeyPermission {
             .interact()
             .unwrap();
         match variants[select_permission] {
-            AccessKeyPermissionDiscriminants::GrantFunctionCallAccess => Self::from(
+            AccessKeyPermissionDiscriminants::GrantFunctionCallAccess => Ok(Self::from(
                 CliAccessKeyPermission::GrantFunctionCallAccess(Default::default()),
                 connection_config,
                 sender_account_id,
-            ),
-            AccessKeyPermissionDiscriminants::GrantFullAccess => Self::from(
+            )?),
+            AccessKeyPermissionDiscriminants::GrantFullAccess => Ok(Self::from(
                 CliAccessKeyPermission::GrantFullAccess(Default::default()),
                 connection_config,
                 sender_account_id,
-            ),
+            )?),
         }
     }
 }

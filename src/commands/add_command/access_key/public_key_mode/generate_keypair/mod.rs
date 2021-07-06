@@ -23,19 +23,19 @@ impl GenerateKeypair {
         item: CliGenerateKeypair,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let permission: super::add_access_key::AccessKeyPermission = match item.permission {
             Some(cli_permission) => super::add_access_key::AccessKeyPermission::from(
                 cli_permission,
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
             None => super::add_access_key::AccessKeyPermission::choose_permission(
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
         };
-        Self { permission }
+        Ok(Self { permission })
     }
 }
 
