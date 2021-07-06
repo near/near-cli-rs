@@ -5,7 +5,7 @@ mod add_access_key_mode;
 // mod call_function_type;
 mod create_account_type;
 mod delete_access_key_type;
-// mod delete_account_type;
+mod delete_account_type;
 // mod stake_near_tokens_type;
 mod transfer_near_tokens_type;
 
@@ -185,7 +185,7 @@ pub enum CliActionSubcommand {
     /// Предоставьте данные для создания аккаунта
     CreateAccount(self::create_account_type::CliCreateAccountAction),
     /// Предоставьте данные для удаления аккаунта
-    // DeleteAccount(self::delete_account_type::CliDeleteAccountAction),
+    DeleteAccount(self::delete_account_type::CliDeleteAccountAction),
     /// Предоставьте данные для добавления ключа доступа пользователю
     AddAccessKey(self::add_access_key_mode::CliAddAccessKeyMode),
     /// Предоставьте данные для удаления ключа доступа у пользователя
@@ -203,8 +203,8 @@ pub enum ActionSubcommand {
     // StakeNEARTokens(self::stake_near_tokens_type::StakeNEARTokensAction),
     #[strum_discriminants(strum(message = "Create an Account"))]
     CreateAccount(self::create_account_type::CreateAccountAction),
-    // #[strum_discriminants(strum(message = "Delete an Account"))]
-    // DeleteAccount(self::delete_account_type::DeleteAccountAction),
+    #[strum_discriminants(strum(message = "Delete an Account"))]
+    DeleteAccount(self::delete_account_type::DeleteAccountAction),
     #[strum_discriminants(strum(message = "Add an Access Key"))]
     AddAccessKey(self::add_access_key_mode::AddAccessKeyMode),
     #[strum_discriminants(strum(message = "Detete an Access Key"))]
@@ -236,9 +236,14 @@ impl ActionSubcommand {
                 )
                 .unwrap(),
             ),
-            // CliActionSubcommand::DeleteAccount(cli_delete_account) => {
-            //     Self::DeleteAccount(cli_delete_account.into())
-            // }
+            CliActionSubcommand::DeleteAccount(cli_delete_account) => Self::DeleteAccount(
+                self::delete_account_type::DeleteAccountAction::from(
+                    cli_delete_account,
+                    connection_config,
+                    sender_account_id,
+                )
+                .unwrap(),
+            ),
             CliActionSubcommand::AddAccessKey(cli_add_access_key) => Self::AddAccessKey(
                 self::add_access_key_mode::AddAccessKeyMode::from(
                     cli_add_access_key,
@@ -293,9 +298,9 @@ impl ActionSubcommand {
             ActionSubcommandDiscriminants::CreateAccount => {
                 CliActionSubcommand::CreateAccount(Default::default())
             }
-            // ActionSubcommandDiscriminants::DeleteAccount => {
-            //     CliActionSubcommand::DeleteAccount(Default::default())
-            // }
+            ActionSubcommandDiscriminants::DeleteAccount => {
+                CliActionSubcommand::DeleteAccount(Default::default())
+            }
             ActionSubcommandDiscriminants::AddAccessKey => {
                 CliActionSubcommand::AddAccessKey(Default::default())
             }
@@ -331,11 +336,11 @@ impl ActionSubcommand {
                     .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
-            // ActionSubcommand::DeleteAccount(args_delete_account) => {
-            //     args_delete_account
-            //         .process(prepopulated_unsigned_transaction, network_connection_config)
-            //         .await
-            // }
+            ActionSubcommand::DeleteAccount(args_delete_account) => {
+                args_delete_account
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .await
+            }
             ActionSubcommand::AddAccessKey(args_add_access_key) => {
                 args_add_access_key
                     .process(prepopulated_unsigned_transaction, network_connection_config)
