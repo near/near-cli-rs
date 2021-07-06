@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 // mod add_access_key_mode;
 // mod call_function_type;
 // mod create_account_type;
-// mod delete_access_key_type;
+mod delete_access_key_type;
 // mod delete_account_type;
 // mod stake_near_tokens_type;
 mod transfer_near_tokens_type;
@@ -176,6 +176,8 @@ impl SelectAction {
 
 #[derive(Debug, clap::Clap)]
 pub enum CliActionSubcommand {
+    /// Предоставьте данные для перевода Near
+    TransferNEARTokens(self::transfer_near_tokens_type::CliTransferNEARTokensAction),
     /// Предоставьте данные для call function
     // CallFunction(self::call_function_type::CliCallFunctionAction),
     /// Предоставьте данные для ставки
@@ -187,9 +189,7 @@ pub enum CliActionSubcommand {
     /// Предоставьте данные для добавления ключа доступа пользователю
     // AddAccessKey(self::add_access_key_mode::CliAddAccessKeyMode),
     /// Предоставьте данные для удаления ключа доступа у пользователя
-    // DeleteAccessKey(self::delete_access_key_type::CliDeleteAccessKeyAction),
-    /// Предоставьте данные для перевода Near
-    TransferNEARTokens(self::transfer_near_tokens_type::CliTransferNEARTokensAction),
+    DeleteAccessKey(self::delete_access_key_type::CliDeleteAccessKeyAction),
 }
 
 #[derive(Debug, EnumDiscriminants)]
@@ -207,8 +207,8 @@ pub enum ActionSubcommand {
     // DeleteAccount(self::delete_account_type::DeleteAccountAction),
     // #[strum_discriminants(strum(message = "Add an Access Key"))]
     // AddAccessKey(self::add_access_key_mode::AddAccessKeyMode),
-    // #[strum_discriminants(strum(message = "Detete an Access Key"))]
-    // DeleteAccessKey(self::delete_access_key_type::DeleteAccessKeyAction),
+    #[strum_discriminants(strum(message = "Detete an Access Key"))]
+    DeleteAccessKey(self::delete_access_key_type::DeleteAccessKeyAction),
 }
 
 impl ActionSubcommand {
@@ -228,23 +228,27 @@ impl ActionSubcommand {
                     .unwrap(),
                 )
             } // CliActionSubcommand::CreateAccount(cli_create_account) => {
-              //     Self::CreateAccount(cli_create_account.into())
-              // }
-              // CliActionSubcommand::DeleteAccount(cli_delete_account) => {
-              //     Self::DeleteAccount(cli_delete_account.into())
-              // }
-              // CliActionSubcommand::AddAccessKey(cli_add_access_key) => {
-              //     Self::AddAccessKey(cli_add_access_key.into())
-              // }
-              // CliActionSubcommand::DeleteAccessKey(cli_delete_access_key) => {
-              //     Self::DeleteAccessKey(cli_delete_access_key.into())
-              // }
-              // CliActionSubcommand::StakeNEARTokens(cli_stake_near_token) => {
-              //     Self::StakeNEARTokens(cli_stake_near_token.into())
-              // }
-              // CliActionSubcommand::CallFunction(cli_call_function) => {
-              //     Self::CallFunction(cli_call_function.into())
-              // }
+            //     Self::CreateAccount(cli_create_account.into())
+            // }
+            // CliActionSubcommand::DeleteAccount(cli_delete_account) => {
+            //     Self::DeleteAccount(cli_delete_account.into())
+            // }
+            // CliActionSubcommand::AddAccessKey(cli_add_access_key) => {
+            //     Self::AddAccessKey(cli_add_access_key.into())
+            // }
+            CliActionSubcommand::DeleteAccessKey(cli_delete_access_key) => Self::DeleteAccessKey(
+                self::delete_access_key_type::DeleteAccessKeyAction::from(
+                    cli_delete_access_key,
+                    connection_config,
+                    sender_account_id,
+                )
+                .unwrap(),
+            ), // CliActionSubcommand::StakeNEARTokens(cli_stake_near_token) => {
+               //     Self::StakeNEARTokens(cli_stake_near_token.into())
+               // }
+               // CliActionSubcommand::CallFunction(cli_call_function) => {
+               //     Self::CallFunction(cli_call_function.into())
+               // }
         }
     }
 }
@@ -270,23 +274,23 @@ impl ActionSubcommand {
             ActionSubcommandDiscriminants::TransferNEARTokens => {
                 CliActionSubcommand::TransferNEARTokens(Default::default())
             } // ActionSubcommandDiscriminants::CallFunction => {
-              //     CliActionSubcommand::CallFunction(Default::default())
-              // }
-              // ActionSubcommandDiscriminants::StakeNEARTokens => {
-              //     CliActionSubcommand::StakeNEARTokens(Default::default())
-              // }
-              // ActionSubcommandDiscriminants::CreateAccount => {
-              //     CliActionSubcommand::CreateAccount(Default::default())
-              // }
-              // ActionSubcommandDiscriminants::DeleteAccount => {
-              //     CliActionSubcommand::DeleteAccount(Default::default())
-              // }
-              // ActionSubcommandDiscriminants::AddAccessKey => {
-              //     CliActionSubcommand::AddAccessKey(Default::default())
-              // }
-              // ActionSubcommandDiscriminants::DeleteAccessKey => {
-              //     CliActionSubcommand::DeleteAccessKey(Default::default())
-              // }
+            //     CliActionSubcommand::CallFunction(Default::default())
+            // }
+            // ActionSubcommandDiscriminants::StakeNEARTokens => {
+            //     CliActionSubcommand::StakeNEARTokens(Default::default())
+            // }
+            // ActionSubcommandDiscriminants::CreateAccount => {
+            //     CliActionSubcommand::CreateAccount(Default::default())
+            // }
+            // ActionSubcommandDiscriminants::DeleteAccount => {
+            //     CliActionSubcommand::DeleteAccount(Default::default())
+            // }
+            // ActionSubcommandDiscriminants::AddAccessKey => {
+            //     CliActionSubcommand::AddAccessKey(Default::default())
+            // }
+            ActionSubcommandDiscriminants::DeleteAccessKey => {
+                CliActionSubcommand::DeleteAccessKey(Default::default())
+            }
         };
         Self::from(cli_action_subcomand, connection_config, sender_account_id)
     }
@@ -302,35 +306,35 @@ impl ActionSubcommand {
                     .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             } // ActionSubcommand::CallFunction(args_function) => {
-              //     args_function
-              //         .process(prepopulated_unsigned_transaction, network_connection_config)
-              //         .await
-              // }
-              // ActionSubcommand::StakeNEARTokens(args_stake) => {
-              //     args_stake
-              //         .process(prepopulated_unsigned_transaction, network_connection_config)
-              //         .await
-              // }
-              // ActionSubcommand::CreateAccount(args_create_account) => {
-              //     args_create_account
-              //         .process(prepopulated_unsigned_transaction, network_connection_config)
-              //         .await
-              // }
-              // ActionSubcommand::DeleteAccount(args_delete_account) => {
-              //     args_delete_account
-              //         .process(prepopulated_unsigned_transaction, network_connection_config)
-              //         .await
-              // }
-              // ActionSubcommand::AddAccessKey(args_add_access_key) => {
-              //     args_add_access_key
-              //         .process(prepopulated_unsigned_transaction, network_connection_config)
-              //         .await
-              // }
-              // ActionSubcommand::DeleteAccessKey(args_delete_access_key) => {
-              //     args_delete_access_key
-              //         .process(prepopulated_unsigned_transaction, network_connection_config)
-              //         .await
-              // }
+            //     args_function
+            //         .process(prepopulated_unsigned_transaction, network_connection_config)
+            //         .await
+            // }
+            // ActionSubcommand::StakeNEARTokens(args_stake) => {
+            //     args_stake
+            //         .process(prepopulated_unsigned_transaction, network_connection_config)
+            //         .await
+            // }
+            // ActionSubcommand::CreateAccount(args_create_account) => {
+            //     args_create_account
+            //         .process(prepopulated_unsigned_transaction, network_connection_config)
+            //         .await
+            // }
+            // ActionSubcommand::DeleteAccount(args_delete_account) => {
+            //     args_delete_account
+            //         .process(prepopulated_unsigned_transaction, network_connection_config)
+            //         .await
+            // }
+            // ActionSubcommand::AddAccessKey(args_add_access_key) => {
+            //     args_add_access_key
+            //         .process(prepopulated_unsigned_transaction, network_connection_config)
+            //         .await
+            // }
+            ActionSubcommand::DeleteAccessKey(args_delete_access_key) => {
+                args_delete_access_key
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .await
+            }
         }
     }
 }
