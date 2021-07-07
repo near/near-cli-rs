@@ -35,7 +35,7 @@ impl CallFunctionAction {
         item: CliCallFunctionAction,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let method_name: String = match item.method_name {
             Some(cli_method_name) => cli_method_name,
             None => CallFunctionAction::input_method_name(),
@@ -55,16 +55,16 @@ impl CallFunctionAction {
             None => CallFunctionAction::input_deposit(),
         };
         let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id),
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config, sender_account_id),
+            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id)?,
+            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config, sender_account_id)?,
         };
-        Self {
+        Ok(Self {
             method_name,
             args,
             gas,
             deposit,
             sign_option,
-        }
+        })
     }
 }
 

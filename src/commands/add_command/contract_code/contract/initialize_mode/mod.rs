@@ -25,18 +25,18 @@ impl NextAction {
         item: CliNextAction,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         match item {
-            CliNextAction::Initialize(cli_call_function_action) => {
-                NextAction::Initialize(self::call_function_type::CallFunctionAction::from(
+            CliNextAction::Initialize(cli_call_function_action) => Ok(NextAction::Initialize(
+                self::call_function_type::CallFunctionAction::from(
                     cli_call_function_action,
                     connection_config,
                     sender_account_id,
-                ))
-            }
-            CliNextAction::NoInitialize(cli_no_initialize) => NextAction::NoInitialize(
-                NoInitialize::from(cli_no_initialize, connection_config, sender_account_id),
-            ),
+                )?,
+            )),
+            CliNextAction::NoInitialize(cli_no_initialize) => Ok(NextAction::NoInitialize(
+                NoInitialize::from(cli_no_initialize, connection_config, sender_account_id)?,
+            )),
         }
     }
 }
@@ -45,7 +45,7 @@ impl NextAction {
     pub fn choose_next_action(
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = NextActionDiscriminants::iter().collect::<Vec<_>>();
         let actions = variants
@@ -64,7 +64,11 @@ impl NextAction {
                 CliNextAction::NoInitialize(Default::default())
             }
         };
-        Self::from(cli_action, connection_config, sender_account_id)
+        Ok(Self::from(
+            cli_action,
+            connection_config,
+            sender_account_id,
+        )?)
     }
 
     pub async fn process(
@@ -112,12 +116,12 @@ impl NoInitialize {
         item: CliNoInitialize,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id),
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config, sender_account_id),
+            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id)?,
+            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config, sender_account_id)?,
         };
-        Self { sign_option }
+        Ok(Self { sign_option })
     }
 }
 

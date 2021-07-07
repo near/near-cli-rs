@@ -33,20 +33,23 @@ pub struct Server {
 }
 
 impl CliServer {
-    pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
+    pub fn into_server(
+        self,
+        connection_config: crate::common::ConnectionConfig,
+    ) -> color_eyre::eyre::Result<Server> {
         let send_from = match self.send_from {
-            Some(cli_send_from) => SendFrom::from(cli_send_from, Some(connection_config.clone())),
-            None => SendFrom::choose_send_from(Some(connection_config.clone())),
+            Some(cli_send_from) => SendFrom::from(cli_send_from, Some(connection_config.clone()))?,
+            None => SendFrom::choose_send_from(Some(connection_config.clone()))?,
         };
-        Server {
+        Ok(Server {
             connection_config: Some(connection_config),
             send_from,
-        }
+        })
     }
 }
 
 impl CliCustomServer {
-    pub fn into_server(self) -> Server {
+    pub fn into_server(self) -> color_eyre::eyre::Result<Server> {
         let url: crate::common::AvailableRpcServerUrl = match self.url {
             Some(url) => url,
             None => Input::new()
@@ -54,17 +57,15 @@ impl CliCustomServer {
                 .interact_text()
                 .unwrap(),
         };
-        let connection_config = Some(crate::common::ConnectionConfig::Custom {
-            url: url.inner.clone(),
-        });
+        let connection_config = Some(crate::common::ConnectionConfig::Custom { url: url.inner });
         let send_from = match self.send_from {
-            Some(cli_send_from) => SendFrom::from(cli_send_from, connection_config),
-            None => SendFrom::choose_send_from(connection_config),
-        };
-        Server {
-            connection_config: Some(crate::common::ConnectionConfig::Custom { url: url.inner }),
+            Some(cli_send_from) => SendFrom::from(cli_send_from, connection_config.clone()),
+            None => SendFrom::choose_send_from(connection_config.clone()),
+        }?;
+        Ok(Server {
+            connection_config,
             send_from,
-        }
+        })
     }
 }
 
@@ -94,21 +95,26 @@ impl SendFrom {
     pub fn from(
         item: CliSendFrom,
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         match item {
-            CliSendFrom::Account(cli_sender) => {
-                Self::Account(super::super::super::super::sender::Sender::from(
+            CliSendFrom::Account(cli_sender) => Ok(Self::Account(
+                super::super::super::super::sender::Sender::from(
                     cli_sender,
                     connection_config.clone(),
-                ))
-            }
+                )?,
+            )),
         }
     }
 }
 
 impl SendFrom {
-    pub fn choose_send_from(connection_config: Option<crate::common::ConnectionConfig>) -> Self {
-        Self::from(CliSendFrom::Account(Default::default()), connection_config)
+    pub fn choose_send_from(
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self::from(
+            CliSendFrom::Account(Default::default()),
+            connection_config,
+        )?)
     }
 
     pub async fn process(
