@@ -23,7 +23,7 @@ impl Sender {
     pub fn from(
         item: CliSender,
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let sender_account_id: String = match item.sender_account_id {
             Some(cli_sender_account_id) => cli_sender_account_id,
             None => Sender::input_sender_account_id(),
@@ -33,21 +33,21 @@ impl Sender {
                 cli_delete_access_key,
                 connection_config,
                 sender_account_id.clone(),
-            ),
+            )?,
             None => super::DeleteAccessKeyAction::choose_delete_access_key_action(
                 connection_config,
                 sender_account_id.clone(),
-            ),
+            )?,
         };
-        Self {
+        Ok(Self {
             sender_account_id,
             public_key,
-        }
+        })
     }
 }
 
 impl Sender {
-    pub fn input_sender_account_id() -> String {
+    fn input_sender_account_id() -> String {
         println!();
         Input::new()
             .with_prompt("Which account ID do you need to remove the key from?")

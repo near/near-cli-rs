@@ -1,7 +1,7 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-// mod access_key;
+mod access_key;
 mod account;
 
 /// инструмент выбора to delete action
@@ -43,7 +43,7 @@ impl DeleteAction {
 #[derive(Debug, clap::Clap)]
 pub enum CliAction {
     /// Delete an access key for an account
-    // AccessKey(self::access_key::operation_mode::CliOperationMode),
+    AccessKey(self::access_key::operation_mode::CliOperationMode),
     /// Delete this account
     Account(self::account::operation_mode::CliOperationMode),
 }
@@ -51,18 +51,18 @@ pub enum CliAction {
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Action {
-    // #[strum_discriminants(strum(message = "Delete an access key for this account"))]
-    // AccessKey(self::access_key::operation_mode::OperationMode),
-    // #[strum_discriminants(strum(message = "Delete this account"))]
+    #[strum_discriminants(strum(message = "Delete an access key for this account"))]
+    AccessKey(self::access_key::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "Delete this account"))]
     Account(self::account::operation_mode::OperationMode),
 }
 
 impl Action {
     fn from(item: CliAction) -> color_eyre::eyre::Result<Self> {
         match item {
-            // CliAction::AccessKey(cli_operation_mode) => {
-            //     Ok(Action::AccessKey(cli_operation_mode.into()))
-            // }
+            CliAction::AccessKey(cli_operation_mode) => Ok(Action::AccessKey(
+                self::access_key::operation_mode::OperationMode::from(cli_operation_mode).unwrap(),
+            )),
             CliAction::Account(cli_operation_mode) => Ok(Action::Account(
                 self::account::operation_mode::OperationMode::from(cli_operation_mode).unwrap(),
             )),
@@ -85,7 +85,7 @@ impl Action {
             .interact()
             .unwrap();
         let cli_action = match variants[selected_action] {
-            // ActionDiscriminants::AccessKey => CliAction::AccessKey(Default::default()),
+            ActionDiscriminants::AccessKey => CliAction::AccessKey(Default::default()),
             ActionDiscriminants::Account => CliAction::Account(Default::default()),
         };
         Ok(Self::from(cli_action)?)
@@ -96,11 +96,11 @@ impl Action {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
         match self {
-            // Action::AccessKey(operation_mode) => {
-            //     operation_mode
-            //         .process(prepopulated_unsigned_transaction)
-            //         .await
-            // }
+            Action::AccessKey(operation_mode) => {
+                operation_mode
+                    .process(prepopulated_unsigned_transaction)
+                    .await
+            }
             Action::Account(operation_mode) => {
                 operation_mode
                     .process(prepopulated_unsigned_transaction)
