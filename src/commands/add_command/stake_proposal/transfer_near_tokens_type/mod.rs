@@ -16,14 +16,14 @@ impl Transfer {
         item: CliTransfer,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliTransfer::Amount(cli_transfer_near_action) => {
-                Self::Amount(TransferNEARTokensAction::from(
+                Ok(Self::Amount(TransferNEARTokensAction::from(
                     cli_transfer_near_action,
                     connection_config,
                     sender_account_id,
-                ))
+                )?))
             }
         }
     }
@@ -33,12 +33,12 @@ impl Transfer {
     pub fn choose_transfer_near(
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
-        Self::from(
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self::from(
             CliTransfer::Amount(Default::default()),
             connection_config,
             sender_account_id,
-        )
+        )?)
     }
 
     pub async fn process(
@@ -80,7 +80,7 @@ impl TransferNEARTokensAction {
         item: CliTransferNEARTokensAction,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let amount: crate::common::NearBalance = match item.amount {
             Some(cli_amount) => cli_amount,
             None => TransferNEARTokensAction::input_amount(),
@@ -90,21 +90,21 @@ impl TransferNEARTokensAction {
                 cli_sign_transaction,
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
             None => super::transactions_signing::TransactionsSigning::choose_sign_transactions(
                 connection_config,
                 sender_account_id,
-            ),
+            )?,
         };
-        Self {
+        Ok(Self {
             amount,
             sign_transactions,
-        }
+        })
     }
 }
 
 impl TransferNEARTokensAction {
-    pub fn input_amount() -> crate::common::NearBalance {
+    fn input_amount() -> crate::common::NearBalance {
         Input::new()
             .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
             .interact_text()
