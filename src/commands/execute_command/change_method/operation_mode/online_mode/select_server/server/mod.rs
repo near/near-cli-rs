@@ -33,25 +33,28 @@ pub struct Server {
 }
 
 impl CliServer {
-    pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
+    pub fn into_server(
+        self,
+        connection_config: crate::common::ConnectionConfig,
+    ) -> color_eyre::eyre::Result<Server> {
         let send_to = match self.send_to {
             Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(
                 cli_send_to,
                 Some(connection_config.clone()),
-            ),
+            )?,
             None => super::super::super::super::receiver::SendTo::send_to(Some(
                 connection_config.clone(),
-            )),
+            ))?,
         };
-        Server {
+        Ok(Server {
             connection_config: Some(connection_config),
             send_to,
-        }
+        })
     }
 }
 
 impl CliCustomServer {
-    pub fn into_server(self) -> Server {
+    pub fn into_server(self) -> color_eyre::eyre::Result<Server> {
         let url: crate::common::AvailableRpcServerUrl = match self.url {
             Some(url) => url,
             None => Input::new()
@@ -63,17 +66,18 @@ impl CliCustomServer {
             url: url.inner.clone(),
         });
         let send_to = match self.send_to {
-            Some(cli_send_to) => {
-                super::super::super::super::receiver::SendTo::from(cli_send_to, connection_config)
-            }
+            Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(
+                cli_send_to,
+                connection_config.clone(),
+            )?,
             None => {
-                super::super::super::super::receiver::SendTo::send_to(connection_config.clone())
+                super::super::super::super::receiver::SendTo::send_to(connection_config.clone())?
             }
         };
-        Server {
-            connection_config: Some(crate::common::ConnectionConfig::Custom { url: url.inner }),
+        Ok(Server {
+            connection_config,
             send_to,
-        }
+        })
     }
 }
 

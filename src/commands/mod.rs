@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 pub mod add_command;
 pub mod construct_transaction_command;
 pub mod delete_command;
-// pub mod execute_command;
+pub mod execute_command;
 pub mod generate_shell_completions_command;
 pub mod login;
 pub mod transfer_command;
@@ -20,7 +20,7 @@ pub enum CliTopLevelCommand {
     /// Use these to delete access key, sub-account
     Delete(self::delete_command::CliDeleteAction),
     /// Execute function (contract method)
-    // Execute(self::execute_command::CliOptionMethod),
+    Execute(self::execute_command::CliOptionMethod),
     /// Use these to generate static shell completions
     GenerateShellCompletions(self::generate_shell_completions_command::CliGenerateShellCompletions),
     /// Use these to login with wallet authorization
@@ -44,8 +44,8 @@ pub enum TopLevelCommand {
     View(self::view_command::ViewQueryRequest),
     #[strum_discriminants(strum(message = "Transfer tokens"))]
     Transfer(self::transfer_command::Currency),
-    // #[strum_discriminants(strum(message = "Execute function (contract method)"))]
-    // Execute(self::execute_command::OptionMethod),
+    #[strum_discriminants(strum(message = "Execute function (contract method)"))]
+    Execute(self::execute_command::OptionMethod),
     #[strum_discriminants(strum(
         message = "Add access key, contract code, stake proposal, sub-account, implicit-account"
     ))]
@@ -75,9 +75,9 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             CliTopLevelCommand::Delete(cli_delete_action) => TopLevelCommand::Delete(
                 self::delete_command::DeleteAction::from(cli_delete_action).unwrap(),
             ),
-            // CliTopLevelCommand::Execute(cli_option_method) => {
-            //     TopLevelCommand::Execute(cli_option_method.into())
-            // }
+            CliTopLevelCommand::Execute(cli_option_method) => {
+                TopLevelCommand::Execute(cli_option_method.into())
+            }
             CliTopLevelCommand::GenerateShellCompletions(_) => {
                 unreachable!("This variant is handled in the main function")
             }
@@ -115,9 +115,9 @@ impl TopLevelCommand {
                 CliTopLevelCommand::ConstructTransaction(Default::default())
             }
             TopLevelCommandDiscriminants::Delete => CliTopLevelCommand::Delete(Default::default()),
-            // TopLevelCommandDiscriminants::Execute => {
-            //     CliTopLevelCommand::Execute(Default::default())
-            // }
+            TopLevelCommandDiscriminants::Execute => {
+                CliTopLevelCommand::Execute(Default::default())
+            }
             TopLevelCommandDiscriminants::Login => CliTopLevelCommand::Login(Default::default()),
             TopLevelCommandDiscriminants::Transfer => {
                 CliTopLevelCommand::Transfer(Default::default())
@@ -141,7 +141,7 @@ impl TopLevelCommand {
             Self::Add(add_action) => add_action.process(unsigned_transaction).await,
             Self::ConstructTransaction(mode) => mode.process(unsigned_transaction).await,
             Self::Delete(delete_action) => delete_action.process(unsigned_transaction).await,
-            // Self::Execute(option_method) => option_method.process(unsigned_transaction).await,
+            Self::Execute(option_method) => option_method.process(unsigned_transaction).await,
             Self::Login(mode) => mode.process().await,
             Self::Transfer(currency) => currency.process(unsigned_transaction).await,
             Self::Utils(util_type) => util_type.process().await,

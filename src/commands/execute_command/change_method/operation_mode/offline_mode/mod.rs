@@ -15,13 +15,13 @@ pub struct OfflineArgs {
     send_to: super::super::receiver::SendTo,
 }
 
-impl From<CliOfflineArgs> for OfflineArgs {
-    fn from(item: CliOfflineArgs) -> Self {
+impl OfflineArgs {
+    pub fn from(item: CliOfflineArgs) -> color_eyre::eyre::Result<Self> {
         let send_to = match item.send_to {
-            Some(cli_send_to) => super::super::receiver::SendTo::from(cli_send_to, None),
-            None => super::super::receiver::SendTo::send_to(None),
+            Some(cli_send_to) => super::super::receiver::SendTo::from(cli_send_to, None)?,
+            None => super::super::receiver::SendTo::send_to(None)?,
         };
-        Self { send_to }
+        Ok(Self { send_to })
     }
 }
 
