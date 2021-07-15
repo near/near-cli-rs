@@ -48,7 +48,7 @@ impl Transaction {
                 Err(err) => {
                     if let Some(serde_json::Value::String(data)) = &err.data {
                         if data.contains("Timeout") {
-                            println!("Timeout error for transaction: {:?}", err);
+                            println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
                             continue;
                         }
                     }
