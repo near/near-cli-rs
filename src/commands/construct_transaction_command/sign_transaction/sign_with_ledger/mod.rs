@@ -331,14 +331,13 @@ impl Submit {
                         Err(err) => {
                             if let Some(serde_json::Value::String(data)) = &err.data {
                                 if data.contains("Timeout") {
-                                    println!("Error transaction: {:?}", err);
+                                    println!("Timeout error transaction: {:#?}", err);
                                     continue;
+                                } else {
+                                    println!("Error transaction: {:#?}", err)
                                 }
-                            }
-                            return Err(color_eyre::Report::msg(format!(
-                                "Error transaction: {:?}",
-                                err
-                            )));
+                            };
+                            return Ok(None);
                         }
                     };
                 };
