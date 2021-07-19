@@ -69,13 +69,14 @@ impl NextAction {
     }
 }
 
-impl CliNextAction {
-    fn from(item: CliSkipNextAction) -> color_eyre::eyre::Result<Self> {
-        match item {
-            CliSkipNextAction::Skip(cli_skip_action) => Ok(Self::Skip(cli_skip_action)),
-        }
-    }
-}
+/// This mode is not provided now
+// impl CliNextAction {
+//     fn from(item: CliSkipNextAction) -> color_eyre::eyre::Result<Self> {
+//         match item {
+//             CliSkipNextAction::Skip(cli_skip_action) => Ok(Self::Skip(cli_skip_action)),
+//         }
+//     }
+// }
 
 impl NextAction {
     pub fn input_next_action(
