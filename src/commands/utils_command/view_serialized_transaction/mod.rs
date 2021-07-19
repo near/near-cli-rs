@@ -39,7 +39,11 @@ impl ViewSerializedTransaction {
                 match near_primitives::transaction::SignedTransaction::try_from_slice(
                     &serialize_from_base64,
                 ) {
-                    Ok(signed_transaction) => println!("\n{:#?}", signed_transaction),
+                    Ok(signed_transaction) => {
+                        println!("\nSigned transaction:\n");
+                        crate::common::print_transaction(signed_transaction.transaction.clone());
+                        println!("{:<13} {}", "signature:", signed_transaction.signature)
+                    }
                     Err(err) => {
                         println!("\nError: Base64 transaction sequence is invalid: {}", err)
                     }

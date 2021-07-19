@@ -114,9 +114,11 @@ impl SignLedger {
                     block_hash,
                     ..prepopulated_unsigned_transaction
                 };
+                println!("\nUnsigned transaction:\n");
+                crate::common::print_transaction(unsigned_transaction.clone());
                 println!(
-                    "{:#?}\n Confirm transaction signing on your Ledger device (HD Path: {})",
-                    unsigned_transaction, seed_phrase_hd_path,
+                    "Confirm transaction signing on your Ledger device (HD Path: {})",
+                    seed_phrase_hd_path,
                 );
                 let signature = match near_ledger::sign_transaction(
                     unsigned_transaction
@@ -148,15 +150,12 @@ impl SignLedger {
                         .try_to_vec()
                         .expect("Transaction is not expected to fail on serialization"),
                 );
-                println!(
-                    "\n\n---  Signed transaction:   ---\n    {:#?}",
-                    &signed_transaction
-                );
+                println!("Your transaction was signed successfully.");
                 match submit {
-                    Some(submit) => submit.process_offline(signed_transaction, serialize_to_base64),
+                    Some(submit) => submit.process_offline(serialize_to_base64),
                     None => {
                         let submit = Submit::choose_submit();
-                        submit.process_offline(signed_transaction, serialize_to_base64)
+                        submit.process_offline(serialize_to_base64)
                     }
                 }
             }
@@ -192,10 +191,11 @@ impl SignLedger {
                     nonce: current_nonce + 1,
                     ..prepopulated_unsigned_transaction
                 };
-
+                println!("\nUnsigned transaction:\n");
+                crate::common::print_transaction(unsigned_transaction.clone());
                 println!(
-                    "{:#?}\n Confirm transaction signing on your Ledger device (HD Path: {})",
-                    unsigned_transaction, seed_phrase_hd_path,
+                    "Confirm transaction signing on your Ledger device (HD Path: {})",
+                    seed_phrase_hd_path,
                 );
                 let signature = match near_ledger::sign_transaction(
                     unsigned_transaction
@@ -227,10 +227,7 @@ impl SignLedger {
                         .try_to_vec()
                         .expect("Transaction is not expected to fail on serialization"),
                 );
-                println!(
-                    "\n\n---  Signed transaction:   ---\n    {:#?}",
-                    &signed_transaction
-                );
+                println!("Your transaction was signed successfully.");
                 match submit {
                     None => {
                         let submit = Submit::choose_submit();
@@ -290,18 +287,9 @@ impl Submit {
 
     pub fn process_offline(
         self,
-        signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        println!("\n\n\n===========  DISPLAY  ==========");
-        println!(
-            "\n\n---  Signed transaction:   ---\n    {:#?}",
-            &signed_transaction
-        );
-        println!(
-            "\n\n---  serialize_to_base64:   --- \n   {}",
-            &serialize_to_base64
-        );
+        println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
         Ok(None)
     }
 
@@ -344,15 +332,7 @@ impl Submit {
                 Ok(Some(transaction_info))
             }
             Submit::Display => {
-                println!("\n\n\n===========  DISPLAY  ==========");
-                println!(
-                    "\n\n---  Signed transaction:   ---\n {:#?}",
-                    &signed_transaction
-                );
-                println!(
-                    "\n\n---  serialize_to_base64:   --- \n {}",
-                    &serialize_to_base64
-                );
+                println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
                 Ok(None)
             }
         }

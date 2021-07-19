@@ -112,16 +112,14 @@ impl SignManually {
         };
 
         println!();
-        println!("Unsigned transaction:\n\n {:#?}", &unsigned_transaction);
+        println!("Unsigned transaction:");
+        crate::common::print_transaction(unsigned_transaction.clone());
         let serialize_to_base64 = near_primitives::serialize::to_base64(
             unsigned_transaction
                 .try_to_vec()
                 .expect("Transaction is not expected to fail on serialization"),
         );
-        println!(
-            "---  serialize_to_base64:   --- \n   {}",
-            &serialize_to_base64
-        );
+        println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
         Ok(None)
     }
 }

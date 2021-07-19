@@ -52,11 +52,8 @@ impl SignTransactionWithLedger {
     }
 
     pub async fn process(self) -> crate::CliResult {
-        println!(
-            "Going to sign transaction:\n{:#?}",
-            self.unsigned_transaction
-        );
-
+        println!("\nGoing to sign transaction:");
+        crate::common::print_transaction(self.unsigned_transaction.clone());
         println!(
             "Please confirm transaction signing on Ledger Device (HD Path {})",
             self.seed_phrase_hd_path.to_string()
@@ -86,14 +83,19 @@ impl SignTransactionWithLedger {
             self.unsigned_transaction,
         );
 
-        println!("Signed transaction:\n{:#?}", signed_transaction);
+        println!("\nSigned transaction:\n");
+        crate::common::print_transaction(signed_transaction.transaction.clone());
+        println!("{:<13} {}", "signature:", signed_transaction.signature);
 
         let serialize_to_base64 = near_primitives::serialize::to_base64(
             signed_transaction
                 .try_to_vec()
                 .expect("Signed transaction is not expected to fail on serialization"),
         );
-        println!("Base64-encoded signed transaction: {}", serialize_to_base64);
+        println!(
+            "Base64-encoded signed transaction:\n{}",
+            serialize_to_base64
+        );
         Ok(())
     }
 }
