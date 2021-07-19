@@ -66,11 +66,14 @@ impl SignTransactionSecretKey {
                 ))
             })?,
         );
+        println!("\n\nThe transaction has been successfully signed.");
+        println!("Signed transaction:");
+        crate::common::print_transaction(signed_transaction.transaction.clone());
+        println!("{:<13} {}", "signature:", signed_transaction.signature);
         println!(
-            "\n\nThe transaction has been successfully signed:\n{:#?}",
-            signed_transaction
+            "Base64-encoded signed transaction:\n{}",
+            serialize_to_base64
         );
-        println!("Base64-encoded signed transaction: {}", serialize_to_base64);
         Ok(())
     }
 }
