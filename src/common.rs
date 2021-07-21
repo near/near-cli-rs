@@ -97,7 +97,7 @@ const ONE_NEAR: u128 = 10u128.pow(24);
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct NearBalance {
-    yoctonear_amount: u128,
+    pub yoctonear_amount: u128,
 }
 
 impl NearBalance {
@@ -315,6 +315,35 @@ impl ConnectionConfig {
             Self::Betanet => crate::consts::DIR_NAME_BETANET,
             Self::Custom { url: _ } => crate::consts::DIR_NAME_CUSTOM,
         }
+    }
+}
+
+pub fn check_account_id(
+    connection_config: ConnectionConfig,
+    account_id: String,
+) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
+    let query_view_method_response = actix::System::new().block_on(async {
+        near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
+            .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
+                block_reference: near_primitives::types::Finality::Final.into(),
+                request: near_primitives::views::QueryRequest::ViewAccount { account_id },
+            })
+            .await
+    });
+    match query_view_method_response {
+        Ok(rpc_query_response) => {
+            let account_view =
+                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
+                    result,
+                ) = rpc_query_response.kind
+                {
+                    result
+                } else {
+                    return Err(color_eyre::Report::msg(format!("Error call result")));
+                };
+            Ok(Some(account_view))
+        }
+        Err(_) => return Ok(None),
     }
 }
 

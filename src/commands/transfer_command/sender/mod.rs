@@ -26,7 +26,19 @@ impl Sender {
     ) -> color_eyre::eyre::Result<Self> {
         let sender_account_id: String = match item.sender_account_id {
             Some(cli_sender_account_id) => cli_sender_account_id,
-            None => Sender::input_sender_account_id(),
+            None => match &connection_config {
+                Some(connection_config) => loop {
+                    let account_id: String = Sender::input_sender_account_id();
+                    match crate::common::check_account_id(
+                        connection_config.clone(),
+                        account_id.clone(),
+                    )? {
+                        Some(_) => break account_id,
+                        None => println!("This account ID don't exist"),
+                    };
+                },
+                None => Sender::input_sender_account_id(),
+            },
         };
         let send_to: super::receiver::SendTo = match item.send_to {
             Some(cli_send_to) => super::receiver::SendTo::from(
