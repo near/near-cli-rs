@@ -95,7 +95,7 @@ impl std::fmt::Display for AvailableRpcServerUrl {
 
 const ONE_NEAR: u128 = 10u128.pow(24);
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, PartialOrd)]
 pub struct NearBalance {
     pub yoctonear_amount: u128,
 }

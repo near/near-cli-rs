@@ -79,20 +79,20 @@ impl Receiver {
         sender_account_id: String,
     ) -> color_eyre::eyre::Result<Self> {
         let receiver_account_id: String = match item.receiver_account_id {
-            Some(cli_receiver_account_id) => cli_receiver_account_id,
-            None => match &connection_config {
-                Some(connection_config) => loop {
-                    let account_id: String = Receiver::input_receiver_account_id();
-                    match crate::common::check_account_id(
-                        connection_config.clone(),
-                        account_id.clone(),
-                    )? {
-                        Some(_) => break account_id,
-                        None => println!("This account ID don't exist"),
-                    };
+            Some(cli_receiver_account_id) => match &connection_config {
+                Some(network_connection_config) => match crate::common::check_account_id(
+                    network_connection_config.clone(),
+                    cli_receiver_account_id.clone(),
+                )? {
+                    Some(_) => cli_receiver_account_id,
+                    None => {
+                        println!("This account ID don't exist");
+                        Receiver::input_receiver_account_id(connection_config.clone())?
+                    }
                 },
-                None => Receiver::input_receiver_account_id(),
+                None => cli_receiver_account_id,
             },
+            None => Receiver::input_receiver_account_id(connection_config.clone())?,
         };
         let transfer: super::transfer_near_tokens_type::Transfer = match item.transfer {
             Some(cli_transfer) => super::transfer_near_tokens_type::Transfer::from(
@@ -113,11 +113,28 @@ impl Receiver {
 }
 
 impl Receiver {
-    pub fn input_receiver_account_id() -> String {
-        Input::new()
-            .with_prompt("What is the account ID of the receiver?")
-            .interact_text()
-            .unwrap()
+    fn input_receiver_account_id(
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> color_eyre::eyre::Result<String> {
+        match &connection_config {
+            Some(connection_config) => loop {
+                let account_id: String = Input::new()
+                    .with_prompt("What is the account ID of the receiver?")
+                    .interact_text()
+                    .unwrap();
+                match crate::common::check_account_id(
+                    connection_config.clone(),
+                    account_id.clone(),
+                )? {
+                    Some(_) => break Ok(account_id),
+                    None => println!("This account ID don't exist"),
+                };
+            },
+            None => Ok(Input::new()
+                .with_prompt("What is the account ID of the receiver?")
+                .interact_text()
+                .unwrap()),
+        }
     }
 
     pub async fn process(
