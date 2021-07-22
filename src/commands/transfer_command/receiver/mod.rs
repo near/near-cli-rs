@@ -87,7 +87,10 @@ impl Receiver {
                     Some(_) => cli_receiver_account_id,
                     None => {
                         if !crate::common::is_64_len_hex(&cli_receiver_account_id) {
-                            println!("This account ID <{}> doesn't exist", cli_receiver_account_id);
+                            println!(
+                                "This account ID <{}> doesn't exist",
+                                cli_receiver_account_id
+                            );
                             Receiver::input_receiver_account_id(connection_config.clone())?
                         } else {
                             cli_receiver_account_id
@@ -135,7 +138,7 @@ impl Receiver {
                         if !crate::common::is_64_len_hex(&account_id) {
                             println!("This account ID <{}> doesn't exist", account_id);
                         } else {
-                            break Ok(account_id)
+                            break Ok(account_id);
                         }
                     }
                 };

@@ -351,7 +351,10 @@ pub fn check_account_id(
 pub fn is_64_len_hex(account_id: impl AsRef<str>) -> bool {
     let account_id = account_id.as_ref();
     account_id.len() == 64
-        && account_id.as_bytes().iter().all(|b| matches!(b, b'a'..=b'f' | b'0'..=b'9'))
+        && account_id
+            .as_bytes()
+            .iter()
+            .all(|b| matches!(b, b'a'..=b'f' | b'0'..=b'9'))
 }
 
 #[derive(Debug, Clone)]

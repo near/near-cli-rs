@@ -21,13 +21,13 @@ pub struct OptionMethod {
     method: Method,
 }
 
-impl From<CliOptionMethod> for OptionMethod {
-    fn from(item: CliOptionMethod) -> Self {
+impl OptionMethod {
+    pub fn from(item: CliOptionMethod) -> color_eyre::eyre::Result<Self> {
         let method = match item.method {
-            Some(cli_method) => Method::from(cli_method),
-            None => Method::choose_method(),
+            Some(cli_method) => Method::from(cli_method)?,
+            None => Method::choose_method()?,
         };
-        Self { method }
+        Ok(Self { method })
     }
 }
 
@@ -57,22 +57,21 @@ enum Method {
     ViewMethod(self::view_method::operation_mode::OperationMode),
 }
 
-impl From<CliMethod> for Method {
-    fn from(item: CliMethod) -> Self {
+impl Method {
+    fn from(item: CliMethod) -> color_eyre::eyre::Result<Self> {
         match item {
-            CliMethod::ChangeMethod(cli_operation_mode) => Method::ChangeMethod(
-                self::change_method::operation_mode::OperationMode::from(cli_operation_mode)
-                    .unwrap(),
-            ),
-            CliMethod::ViewMethod(cli_operation_mode) => {
-                Method::ViewMethod(cli_operation_mode.into())
-            }
+            CliMethod::ChangeMethod(cli_operation_mode) => Ok(Method::ChangeMethod(
+                self::change_method::operation_mode::OperationMode::from(cli_operation_mode)?,
+            )),
+            CliMethod::ViewMethod(cli_operation_mode) => Ok(Method::ViewMethod(
+                self::view_method::operation_mode::OperationMode::from(cli_operation_mode)?,
+            )),
         }
     }
 }
 
 impl Method {
-    fn choose_method() -> Self {
+    fn choose_method() -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = MethodDiscriminants::iter().collect::<Vec<_>>();
         let methods = variants
