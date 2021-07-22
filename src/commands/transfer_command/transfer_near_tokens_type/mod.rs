@@ -103,13 +103,13 @@ impl TransferNEARTokensAction {
                                 "You need to enter a value of no more than {}",
                                 crate::common::NearBalance::from_yoctonear(account_balance)
                             );
-                            TransferNEARTokensAction::input_amount(account_balance)?
+                            TransferNEARTokensAction::input_amount(account_balance)
                         }
                     }
-                    None => TransferNEARTokensAction::input_amount(account_balance)?,
+                    None => TransferNEARTokensAction::input_amount(account_balance),
                 }
             }
-            None => TransferNEARTokensAction::input_amount(0)?,
+            None => TransferNEARTokensAction::input_amount(0),
         };
         let sign_option = match item.sign_option {
             Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id)?,
@@ -123,7 +123,7 @@ impl TransferNEARTokensAction {
 }
 
 impl TransferNEARTokensAction {
-    fn input_amount(account_balance: u128) -> color_eyre::eyre::Result<crate::common::NearBalance> {
+    fn input_amount(account_balance: u128) -> crate::common::NearBalance {
         loop {
             let input_amount: crate::common::NearBalance = Input::new()
                         .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
@@ -131,7 +131,7 @@ impl TransferNEARTokensAction {
                         .interact_text()
                         .unwrap();
             if input_amount <= crate::common::NearBalance::from_yoctonear(account_balance) {
-                break Ok(input_amount);
+                break input_amount;
             } else {
                 println!(
                     "You need to enter a value of no more than {}",

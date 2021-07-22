@@ -347,6 +347,13 @@ pub fn check_account_id(
     }
 }
 
+/// Returns true if the account ID length is 64 characters and it's a hex representation. This is used to check the implicit account.
+pub fn is_64_len_hex(account_id: impl AsRef<str>) -> bool {
+    let account_id = account_id.as_ref();
+    account_id.len() == 64
+        && account_id.as_bytes().iter().all(|b| matches!(b, b'a'..=b'f' | b'0'..=b'9'))
+}
+
 #[derive(Debug, Clone)]
 pub struct KeyPairProperties {
     pub seed_phrase_hd_path: slip10::BIP32Path,
