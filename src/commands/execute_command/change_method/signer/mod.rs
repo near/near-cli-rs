@@ -28,10 +28,7 @@ impl SendFrom {
     pub fn choose_send_from(
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Self> {
-        Ok(Self::from(
-            CliSendFrom::Signer(Default::default()),
-            connection_config,
-        )?)
+        Self::from(CliSendFrom::Signer(Default::default()), connection_config)
     }
 
     pub async fn process(

@@ -2,13 +2,13 @@ use dialoguer::Input;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliSendTo {
-    /// Specify a receiver
-    Contract(CliReceiver),
+    /// Specify a contract ID
+    Contract(CliContract),
 }
 
 #[derive(Debug)]
 pub enum SendTo {
-    Contract(Receiver),
+    Contract(Contract),
 }
 
 impl SendTo {
@@ -17,9 +17,9 @@ impl SendTo {
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
-            CliSendTo::Contract(cli_receiver) => {
-                let receiver = Receiver::from(cli_receiver, connection_config)?;
-                Ok(Self::Contract(receiver))
+            CliSendTo::Contract(cli_contract) => {
+                let contract = Contract::from(cli_contract, connection_config)?;
+                Ok(Self::Contract(contract))
             }
         }
     }
@@ -29,10 +29,7 @@ impl SendTo {
     pub fn send_to(
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Self> {
-        Ok(Self::from(
-            CliSendTo::Contract(Default::default()),
-            connection_config,
-        )?)
+        Self::from(CliSendTo::Contract(Default::default()), connection_config)
     }
 
     pub async fn process(
@@ -57,39 +54,39 @@ impl SendTo {
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
-pub struct CliReceiver {
-    receiver_account_id: Option<String>,
+pub struct CliContract {
+    contract_account_id: Option<String>,
     #[clap(subcommand)]
     call: Option<super::CliCallFunction>,
 }
 
 #[derive(Debug)]
-pub struct Receiver {
-    pub receiver_account_id: String,
+pub struct Contract {
+    pub contract_account_id: String,
     pub call: super::CallFunction,
 }
 
-impl Receiver {
+impl Contract {
     fn from(
-        item: CliReceiver,
+        item: CliContract,
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Self> {
-        let receiver_account_id: String = match item.receiver_account_id {
-            Some(cli_receiver_account_id) => cli_receiver_account_id,
-            None => Receiver::input_receiver_account_id(),
+        let contract_account_id: String = match item.contract_account_id {
+            Some(cli_contract_account_id) => cli_contract_account_id,
+            None => Contract::input_receiver_account_id(),
         };
         let call = match item.call {
             Some(cli_call) => super::CallFunction::from(cli_call, connection_config)?,
             None => super::CallFunction::choose_call_function(connection_config)?,
         };
         Ok(Self {
-            receiver_account_id,
+            contract_account_id,
             call,
         })
     }
 }
 
-impl Receiver {
+impl Contract {
     fn input_receiver_account_id() -> String {
         Input::new()
             .with_prompt("What is the account ID of the contract?")
@@ -103,7 +100,7 @@ impl Receiver {
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let unsigned_transaction = near_primitives::transaction::Transaction {
-            receiver_id: self.receiver_account_id.clone(),
+            receiver_id: self.contract_account_id.clone(),
             ..prepopulated_unsigned_transaction
         };
         self.call

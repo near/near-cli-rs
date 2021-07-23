@@ -15,7 +15,7 @@ pub struct CliCallFunctionAction {
     #[clap(long = "prepaid-gas")]
     gas: Option<crate::common::NearGas>,
     #[clap(subcommand)]
-    send_from: Option<super::sender::CliSendFrom>,
+    send_from: Option<super::signer::CliSendFrom>,
 }
 
 #[derive(Debug)]
@@ -24,7 +24,7 @@ pub struct CallFunctionAction {
     args: Vec<u8>,
     gas: near_primitives::types::Gas,
     deposit: near_primitives::types::Balance,
-    send_from: super::sender::SendFrom,
+    send_from: super::signer::SendFrom,
 }
 
 impl CallFunctionAction {
@@ -51,8 +51,8 @@ impl CallFunctionAction {
             None => CallFunctionAction::input_deposit(),
         };
         let send_from = match item.send_from {
-            Some(cli_send_from) => super::sender::SendFrom::from(cli_send_from, connection_config)?,
-            None => super::sender::SendFrom::choose_send_from(connection_config)?,
+            Some(cli_send_from) => super::signer::SendFrom::from(cli_send_from, connection_config)?,
+            None => super::signer::SendFrom::choose_send_from(connection_config)?,
         };
         Ok(Self {
             method_name,

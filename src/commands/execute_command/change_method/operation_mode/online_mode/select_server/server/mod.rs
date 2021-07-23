@@ -9,7 +9,7 @@ use dialoguer::Input;
 )]
 pub struct CliServer {
     #[clap(subcommand)]
-    pub send_to: Option<super::super::super::super::receiver::CliSendTo>,
+    pub send_to: Option<super::super::super::super::contract::CliSendTo>,
 }
 
 /// данные для custom server
@@ -23,13 +23,13 @@ pub struct CliCustomServer {
     #[clap(long)]
     pub url: Option<crate::common::AvailableRpcServerUrl>,
     #[clap(subcommand)]
-    send_to: Option<super::super::super::super::receiver::CliSendTo>,
+    send_to: Option<super::super::super::super::contract::CliSendTo>,
 }
 
 #[derive(Debug)]
 pub struct Server {
     pub connection_config: Option<crate::common::ConnectionConfig>,
-    pub send_to: super::super::super::super::receiver::SendTo,
+    pub send_to: super::super::super::super::contract::SendTo,
 }
 
 impl CliServer {
@@ -38,11 +38,11 @@ impl CliServer {
         connection_config: crate::common::ConnectionConfig,
     ) -> color_eyre::eyre::Result<Server> {
         let send_to = match self.send_to {
-            Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(
+            Some(cli_send_to) => super::super::super::super::contract::SendTo::from(
                 cli_send_to,
                 Some(connection_config.clone()),
             )?,
-            None => super::super::super::super::receiver::SendTo::send_to(Some(
+            None => super::super::super::super::contract::SendTo::send_to(Some(
                 connection_config.clone(),
             ))?,
         };
@@ -66,12 +66,12 @@ impl CliCustomServer {
             url: url.inner.clone(),
         });
         let send_to = match self.send_to {
-            Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(
+            Some(cli_send_to) => super::super::super::super::contract::SendTo::from(
                 cli_send_to,
                 connection_config.clone(),
             )?,
             None => {
-                super::super::super::super::receiver::SendTo::send_to(connection_config.clone())?
+                super::super::super::super::contract::SendTo::send_to(connection_config.clone())?
             }
         };
         Ok(Server {
