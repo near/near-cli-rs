@@ -66,7 +66,7 @@
 
 ### Группы команд
 
-* [View account, contract code, contract state, transaction, nonce](#view-account-contract-code-contract-state-transaction-nonce)
+* [View account, contract code, contract state, transaction, nonce, recent block hash](#view-account-contract-code-contract-state-transaction-nonce-recent-block-hash)
 * [Transfer tokens](#transfer-tokens)
 * [Execute function (contract method)](#execute-function-contract-method)
 * [Add access key, contract code, stake proposal, sub-account, implicit-account](#add-access-key-contract-code-stake-proposal-sub-account-implicit-account)
@@ -75,7 +75,7 @@
 * [Helpers](#helpers)
 
 
-### View account, contract code, contract state, transaction, nonce
+### View account, contract code, contract state, transaction, nonce, recent block hash
 
 Просмотреть сведения об аккаунте ([View properties for an account](#view-properties-for-an-account)), скачать код контракта ([View a contract code](#view-a-contract-code)) и просмотреть состояние контракта ([View a contract state](#view-a-contract-state)) возможно в режиме реального времени (__at-final-block__) и режиме архивных данных (__at-block-height__, __at-block-hash__). На примерах ниже показаны варианты применения этих режимов.
 

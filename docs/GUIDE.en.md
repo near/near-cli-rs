@@ -68,7 +68,7 @@ Before proceeding to the description of specific commands, it is necessary to co
 
 ### Actions
 
-* [View account, contract code, contract state, transaction, nonce](#view-account-contract-code-contract-state-transaction-nonce)
+* [View account, contract code, contract state, transaction, nonce, recent block hash](#view-account-contract-code-contract-state-transaction-nonce-recent-block-hash)
 * [Transfer tokens](#transfer-tokens)
 * [Execute function (contract method)](#execute-function-contract-method)
 * [Add access key, contract code, stake proposal, sub-account, implicit-account](#add-access-key-contract-code-stake-proposal-sub-account-implicit-account)
@@ -77,7 +77,7 @@ Before proceeding to the description of specific commands, it is necessary to co
 * [Helpers](#helpers)
 
 
-### View account, contract code, contract state, transaction, nonce
+### View account, contract code, contract state, transaction, nonce, recent block hash
 
 It is possible to [View properties for an account](#view-properties-for-an-account), to [View a contract code](#view-a-contract-code) and to [View a contract state](#view-a-contract-state) in real time (__at-final-block__) and in the mode of archived data (__at-block-height__, __at-block-hash__). The examples below show how these modes can be used.
 
