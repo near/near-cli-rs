@@ -86,12 +86,12 @@ impl TransferNEARTokensAction {
     ) -> color_eyre::eyre::Result<Self> {
         let amount: crate::common::NearBalance = match &connection_config {
             Some(network_connection_config) => {
-                let account_balance: u128 = match crate::common::check_account_id(
+                let account_balance: crate::common::NearBalance = match crate::common::check_account_id(
                     network_connection_config.clone(),
                     sender_account_id.clone(),
                 )? {
-                    Some(account_view) => account_view.amount,
-                    None => 0,
+                    Some(account_view) => crate::common::NearBalance::from_yoctonear(account_view.amount),
+                    None => crate::common::NearBalance::from_yoctonear(0),
                 };
                 match item.amount {
                     Some(cli_amount) => {
