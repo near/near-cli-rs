@@ -62,24 +62,23 @@ impl Sender {
     fn input_sender_account_id(
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<String> {
-        match &connection_config {
-            Some(connection_config) => loop {
-                let account_id: String = Input::new()
+        loop {
+            let account_id: String = Input::new()
                     .with_prompt("What account ID do you need to add a key?")
                     .interact_text()
                     .unwrap();
-                match crate::common::check_account_id(
+            if let Some(connection_config) = &connection_config {
+                if let Some(_) = crate::common::check_account_id(
                     connection_config.clone(),
                     account_id.clone(),
                 )? {
-                    Some(_) => break Ok(account_id),
-                    None => println!("This account ID <{}> doesn't exist", account_id),
-                };
-            },
-            None => Ok(Input::new()
-                .with_prompt("What account ID do you need to add a key?")
-                .interact_text()
-                .unwrap()),
+                    break Ok(account_id);
+                } else {
+                    println!("Account <{}> doesn't exist", account_id);
+                }
+            } else {
+                break Ok(account_id);
+            }   
         }
     }
 
