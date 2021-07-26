@@ -80,7 +80,7 @@ impl Contract {
                     Some(_) => cli_contract_account_id,
                     None => {
                         println!(
-                            "This account ID <{}> doesn't exist",
+                            "Account <{}> doesn't exist",
                             cli_contract_account_id
                         );
                         Contract::input_receiver_account_id(connection_config.clone())?
@@ -116,7 +116,7 @@ impl Contract {
                     account_id.clone(),
                 )? {
                     Some(_) => break Ok(account_id),
-                    None => println!("This account ID <{}> doesn't exist", account_id),
+                    None => println!("Account <{}> doesn't exist", account_id),
                 };
             },
             None => Ok(Input::new()

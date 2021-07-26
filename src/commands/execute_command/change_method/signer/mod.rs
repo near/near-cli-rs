@@ -81,7 +81,7 @@ impl Sender {
                 )? {
                     Some(_) => cli_sender_account_id,
                     None => {
-                        println!("This account ID <{}> doesn't exist", cli_sender_account_id);
+                        println!("Account <{}> doesn't exist", cli_sender_account_id);
                         Sender::input_sender_account_id(connection_config.clone())?
                     }
                 },
@@ -115,7 +115,7 @@ impl Sender {
                     account_id.clone(),
                 )? {
                     Some(_) => break Ok(account_id),
-                    None => println!("This account ID <{}> doesn't exist", account_id),
+                    None => println!("Account <{}> doesn't exist", account_id),
                 };
             },
             None => Ok(Input::new()

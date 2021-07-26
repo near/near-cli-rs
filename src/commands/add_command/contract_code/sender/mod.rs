@@ -73,7 +73,7 @@ impl Sender {
                     account_id.clone(),
                 )? {
                     Some(_) => break Ok(account_id),
-                    None => println!("This account ID <{}> doesn't exist", account_id),
+                    None => println!("Account <{}> doesn't exist", account_id),
                 };
             },
             None => Ok(Input::new()

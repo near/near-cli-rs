@@ -39,7 +39,7 @@ impl DeleteAccountAction {
                 )? {
                     Some(_) => cli_account_id,
                     None => {
-                        println!("This account ID <{}> doesn't exist", cli_account_id);
+                        println!("Account <{}> doesn't exist", cli_account_id);
                         DeleteAccountAction::input_beneficiary_id(connection_config.clone())?
                     }
                 },
@@ -73,7 +73,7 @@ impl DeleteAccountAction {
                     account_id.clone(),
                 )? {
                     Some(_) => break Ok(account_id),
-                    None => println!("This account ID <{}> doesn't exist", account_id),
+                    None => println!("Account <{}> doesn't exist", account_id),
                 };
             },
             None => Ok(Input::new()
