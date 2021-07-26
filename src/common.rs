@@ -95,9 +95,9 @@ impl std::fmt::Display for AvailableRpcServerUrl {
 
 const ONE_NEAR: u128 = 10u128.pow(24);
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, PartialOrd)]
 pub struct NearBalance {
-    yoctonear_amount: u128,
+    pub yoctonear_amount: u128,
 }
 
 impl NearBalance {
@@ -316,6 +316,45 @@ impl ConnectionConfig {
             Self::Custom { url: _ } => crate::consts::DIR_NAME_CUSTOM,
         }
     }
+}
+
+pub fn check_account_id(
+    connection_config: ConnectionConfig,
+    account_id: String,
+) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
+    let query_view_method_response = actix::System::new().block_on(async {
+        near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
+            .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
+                block_reference: near_primitives::types::Finality::Final.into(),
+                request: near_primitives::views::QueryRequest::ViewAccount { account_id },
+            })
+            .await
+    });
+    match query_view_method_response {
+        Ok(rpc_query_response) => {
+            let account_view =
+                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
+                    result,
+                ) = rpc_query_response.kind
+                {
+                    result
+                } else {
+                    return Err(color_eyre::Report::msg(format!("Error call result")));
+                };
+            Ok(Some(account_view))
+        }
+        Err(_) => return Ok(None),
+    }
+}
+
+/// Returns true if the account ID length is 64 characters and it's a hex representation. This is used to check the implicit account.
+pub fn is_64_len_hex(account_id: impl AsRef<str>) -> bool {
+    let account_id = account_id.as_ref();
+    account_id.len() == 64
+        && account_id
+            .as_bytes()
+            .iter()
+            .all(|b| matches!(b, b'a'..=b'f' | b'0'..=b'9'))
 }
 
 #[derive(Debug, Clone)]

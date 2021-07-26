@@ -32,8 +32,20 @@ impl DeleteAccountAction {
         sender_account_id: String,
     ) -> color_eyre::eyre::Result<Self> {
         let beneficiary_id: near_primitives::types::AccountId = match item.beneficiary_id {
-            Some(cli_account_id) => cli_account_id,
-            None => DeleteAccountAction::input_beneficiary_id(),
+            Some(cli_account_id) => match &connection_config {
+                Some(network_connection_config) => match crate::common::check_account_id(
+                    network_connection_config.clone(),
+                    cli_account_id.clone(),
+                )? {
+                    Some(_) => cli_account_id,
+                    None => {
+                        println!("Account <{}> doesn't exist", cli_account_id);
+                        DeleteAccountAction::input_beneficiary_id(connection_config.clone())?
+                    }
+                },
+                None => cli_account_id,
+            },
+            None => DeleteAccountAction::input_beneficiary_id(connection_config.clone())?,
         };
         let sign_option = match item.sign_option {
             Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id)?,
@@ -47,12 +59,26 @@ impl DeleteAccountAction {
 }
 
 impl DeleteAccountAction {
-    pub fn input_beneficiary_id() -> near_primitives::types::AccountId {
-        println!();
-        Input::new()
-            .with_prompt("Enter the beneficiary ID to delete this account ID")
-            .interact_text()
-            .unwrap()
+    pub fn input_beneficiary_id(
+        connection_config: Option<crate::common::ConnectionConfig>,
+    ) -> color_eyre::eyre::Result<String> {
+        loop {
+            let account_id: String = Input::new()
+                .with_prompt("Enter the beneficiary ID to delete this account ID")
+                .interact_text()
+                .unwrap();
+            if let Some(connection_config) = &connection_config {
+                if let Some(_) =
+                    crate::common::check_account_id(connection_config.clone(), account_id.clone())?
+                {
+                    break Ok(account_id);
+                } else {
+                    println!("Account <{}> doesn't exist", account_id);
+                }
+            } else {
+                break Ok(account_id);
+            }
+        }
     }
 
     pub async fn process(

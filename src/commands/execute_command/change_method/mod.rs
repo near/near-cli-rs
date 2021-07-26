@@ -2,9 +2,9 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod call_function_type;
+mod contract;
 pub mod operation_mode;
-mod receiver;
-mod sender;
+mod signer;
 
 #[derive(Debug, clap::Clap)]
 pub enum CliCallFunction {

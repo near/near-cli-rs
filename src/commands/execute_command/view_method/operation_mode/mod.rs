@@ -19,13 +19,13 @@ pub struct OperationMode {
     pub mode: Mode,
 }
 
-impl From<CliOperationMode> for OperationMode {
-    fn from(item: CliOperationMode) -> Self {
+impl OperationMode {
+    pub fn from(item: CliOperationMode) -> color_eyre::eyre::Result<Self> {
         let mode = match item.mode {
-            Some(cli_mode) => Mode::from(cli_mode),
-            None => Mode::choose_mode(),
+            Some(cli_mode) => Mode::from(cli_mode)?,
+            None => Mode::choose_mode()?,
         };
-        Self { mode }
+        Ok(Self { mode })
     }
 }
 
@@ -48,16 +48,18 @@ pub enum Mode {
     Network(self::online_mode::NetworkArgs),
 }
 
-impl From<CliMode> for Mode {
-    fn from(item: CliMode) -> Self {
+impl Mode {
+    fn from(item: CliMode) -> color_eyre::eyre::Result<Self> {
         match item {
-            CliMode::Network(cli_network_args) => Self::Network(cli_network_args.into()),
+            CliMode::Network(cli_network_args) => Ok(Self::Network(
+                self::online_mode::NetworkArgs::from(cli_network_args)?,
+            )),
         }
     }
 }
 
 impl Mode {
-    pub fn choose_mode() -> Self {
+    fn choose_mode() -> color_eyre::eyre::Result<Self> {
         Self::from(CliMode::Network(Default::default()))
     }
 
