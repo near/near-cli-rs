@@ -64,21 +64,20 @@ impl Sender {
     ) -> color_eyre::eyre::Result<String> {
         loop {
             let account_id: String = Input::new()
-                    .with_prompt("What account ID do you need to add a key?")
-                    .interact_text()
-                    .unwrap();
+                .with_prompt("What account ID do you need to add a key?")
+                .interact_text()
+                .unwrap();
             if let Some(connection_config) = &connection_config {
-                if let Some(_) = crate::common::check_account_id(
-                    connection_config.clone(),
-                    account_id.clone(),
-                )? {
+                if let Some(_) =
+                    crate::common::check_account_id(connection_config.clone(), account_id.clone())?
+                {
                     break Ok(account_id);
                 } else {
                     println!("Account <{}> doesn't exist", account_id);
                 }
             } else {
                 break Ok(account_id);
-            }   
+            }
         }
     }
 

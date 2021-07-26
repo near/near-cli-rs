@@ -109,12 +109,10 @@ impl TransferNEARTokensAction {
                     None => TransferNEARTokensAction::input_amount(Some(account_balance)),
                 }
             }
-            None => {
-                match item.amount {
-                    Some(cli_amount) => cli_amount,
-                    None => TransferNEARTokensAction::input_amount(None),
-                }
-            }
+            None => match item.amount {
+                Some(cli_amount) => cli_amount,
+                None => TransferNEARTokensAction::input_amount(None),
+            },
         };
         let sign_option = match item.sign_option {
             Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id)?,
