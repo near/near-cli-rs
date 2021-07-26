@@ -61,25 +61,23 @@ impl DeleteAccountAction {
 impl DeleteAccountAction {
     pub fn input_beneficiary_id(
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-        match &connection_config {
-            Some(connection_config) => loop {
-                let account_id: String = Input::new()
-                    .with_prompt("Enter the beneficiary ID to delete this account ID")
-                    .interact_text()
-                    .unwrap();
-                match crate::common::check_account_id(
-                    connection_config.clone(),
-                    account_id.clone(),
-                )? {
-                    Some(_) => break Ok(account_id),
-                    None => println!("Account <{}> doesn't exist", account_id),
-                };
-            },
-            None => Ok(Input::new()
+    ) -> color_eyre::eyre::Result<String> {
+        loop {
+            let account_id: String = Input::new()
                 .with_prompt("Enter the beneficiary ID to delete this account ID")
                 .interact_text()
-                .unwrap()),
+                .unwrap();
+            if let Some(connection_config) = &connection_config {
+                if let Some(_) =
+                    crate::common::check_account_id(connection_config.clone(), account_id.clone())?
+                {
+                    break Ok(account_id);
+                } else {
+                    println!("Account <{}> doesn't exist", account_id);
+                }
+            } else {
+                break Ok(account_id);
+            }
         }
     }
 

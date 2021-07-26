@@ -120,30 +120,26 @@ impl Receiver {
     fn input_receiver_account_id(
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<String> {
-        match &connection_config {
-            Some(connection_config) => loop {
-                let account_id: String = Input::new()
-                    .with_prompt("What is the account ID of the receiver?")
-                    .interact_text()
-                    .unwrap();
-                match crate::common::check_account_id(
-                    connection_config.clone(),
-                    account_id.clone(),
-                )? {
-                    Some(_) => break Ok(account_id),
-                    None => {
-                        if !crate::common::is_64_len_hex(&account_id) {
-                            println!("Account <{}> doesn't exist", account_id);
-                        } else {
-                            break Ok(account_id);
-                        }
-                    }
-                };
-            },
-            None => Ok(Input::new()
+        loop {
+            let account_id: String = Input::new()
                 .with_prompt("What is the account ID of the receiver?")
                 .interact_text()
-                .unwrap()),
+                .unwrap();
+            if let Some(connection_config) = &connection_config {
+                if let Some(_) =
+                    crate::common::check_account_id(connection_config.clone(), account_id.clone())?
+                {
+                    break Ok(account_id);
+                } else {
+                    if !crate::common::is_64_len_hex(&account_id) {
+                        println!("Account <{}> doesn't exist", account_id);
+                    } else {
+                        break Ok(account_id);
+                    }
+                }
+            } else {
+                break Ok(account_id);
+            }
         }
     }
 
