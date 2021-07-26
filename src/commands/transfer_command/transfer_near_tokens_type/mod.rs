@@ -86,22 +86,24 @@ impl TransferNEARTokensAction {
     ) -> color_eyre::eyre::Result<Self> {
         let amount: crate::common::NearBalance = match &connection_config {
             Some(network_connection_config) => {
-                let account_balance: crate::common::NearBalance = match crate::common::check_account_id(
-                    network_connection_config.clone(),
-                    sender_account_id.clone(),
-                )? {
-                    Some(account_view) => crate::common::NearBalance::from_yoctonear(account_view.amount),
-                    None => crate::common::NearBalance::from_yoctonear(0),
-                };
+                let account_balance: crate::common::NearBalance =
+                    match crate::common::check_account_id(
+                        network_connection_config.clone(),
+                        sender_account_id.clone(),
+                    )? {
+                        Some(account_view) => {
+                            crate::common::NearBalance::from_yoctonear(account_view.amount)
+                        }
+                        None => crate::common::NearBalance::from_yoctonear(0),
+                    };
                 match item.amount {
                     Some(cli_amount) => {
-                        if cli_amount <= crate::common::NearBalance::from_yoctonear(account_balance)
-                        {
+                        if cli_amount <= account_balance {
                             cli_amount
                         } else {
                             println!(
                                 "You need to enter a value of no more than {}",
-                                crate::common::NearBalance::from_yoctonear(account_balance)
+                                account_balance
                             );
                             TransferNEARTokensAction::input_amount(Some(account_balance))
                         }
@@ -126,20 +128,22 @@ impl TransferNEARTokensAction {
 }
 
 impl TransferNEARTokensAction {
-    fn input_amount(account_balance: Option<u128>) -> crate::common::NearBalance {
+    fn input_amount(
+        account_balance: Option<crate::common::NearBalance>,
+    ) -> crate::common::NearBalance {
         match account_balance {
             Some(account_balance) => loop {
                 let input_amount: crate::common::NearBalance = Input::new()
                             .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
-                            .with_initial_text(format!("{}", crate::common::NearBalance::from_yoctonear(account_balance)))
+                            .with_initial_text(format!("{}", account_balance))
                             .interact_text()
                             .unwrap();
-                if input_amount <= crate::common::NearBalance::from_yoctonear(account_balance) {
+                if input_amount <= account_balance {
                     break input_amount;
                 } else {
                     println!(
                         "You need to enter a value of no more than {}",
-                        crate::common::NearBalance::from_yoctonear(account_balance)
+                        account_balance
                     )
                 }
             }
