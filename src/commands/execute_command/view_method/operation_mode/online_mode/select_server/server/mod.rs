@@ -33,20 +33,28 @@ pub struct Server {
 }
 
 impl CliServer {
-    pub fn into_server(self, network_connection_config: crate::common::ConnectionConfig) -> Server {
+    pub fn into_server(
+        self,
+        network_connection_config: crate::common::ConnectionConfig,
+    ) -> color_eyre::eyre::Result<Server> {
         let send_to = match self.send_to {
-            Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(cli_send_to),
-            None => super::super::super::super::receiver::SendTo::send_to(),
+            Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(
+                cli_send_to,
+                network_connection_config.clone(),
+            )?,
+            None => super::super::super::super::receiver::SendTo::send_to(
+                network_connection_config.clone(),
+            )?,
         };
-        Server {
+        Ok(Server {
             network_connection_config,
             send_to,
-        }
+        })
     }
 }
 
 impl CliCustomServer {
-    pub fn into_server(self) -> Server {
+    pub fn into_server(self) -> color_eyre::eyre::Result<Server> {
         let url: crate::common::AvailableRpcServerUrl = match self.url {
             Some(url) => url,
             None => Input::new()
@@ -54,14 +62,20 @@ impl CliCustomServer {
                 .interact_text()
                 .unwrap(),
         };
-        let send_to = match self.send_to {
-            Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(cli_send_to),
-            None => super::super::super::super::receiver::SendTo::send_to(),
+        let connection_config = crate::common::ConnectionConfig::Custom {
+            url: url.inner.clone(),
         };
-        Server {
+        let send_to = match self.send_to {
+            Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(
+                cli_send_to,
+                connection_config.clone(),
+            )?,
+            None => super::super::super::super::receiver::SendTo::send_to(connection_config)?,
+        };
+        Ok(Server {
             network_connection_config: crate::common::ConnectionConfig::Custom { url: url.inner },
             send_to,
-        }
+        })
     }
 }
 

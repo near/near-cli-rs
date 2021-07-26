@@ -75,9 +75,9 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             CliTopLevelCommand::Delete(cli_delete_action) => TopLevelCommand::Delete(
                 self::delete_command::DeleteAction::from(cli_delete_action).unwrap(),
             ),
-            CliTopLevelCommand::Execute(cli_option_method) => {
-                TopLevelCommand::Execute(cli_option_method.into())
-            }
+            CliTopLevelCommand::Execute(cli_option_method) => TopLevelCommand::Execute(
+                self::execute_command::OptionMethod::from(cli_option_method).unwrap(),
+            ),
             CliTopLevelCommand::GenerateShellCompletions(_) => {
                 unreachable!("This variant is handled in the main function")
             }
