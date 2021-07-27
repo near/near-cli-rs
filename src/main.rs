@@ -27,6 +27,26 @@ struct Args {
     top_level_command: self::commands::TopLevelCommand,
 }
 
+impl CliArgs {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .top_level_command
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args.push_front("./near-cli".to_owned());
+        args
+    }
+}
+
+impl From<Args> for CliArgs {
+    fn from(cli_args: Args) -> Self {
+        Self {
+            top_level_command: Some(cli_args.top_level_command.into()),
+        }
+    }
+}
+
 impl From<CliArgs> for Args {
     fn from(cli_args: CliArgs) -> Self {
         let top_level_command = match cli_args.top_level_command {
@@ -55,7 +75,12 @@ fn main() -> CliResult {
 
     let args = Args::from(cli);
 
+    //let completed_cli = CliArgs::from(args.clone());
+    let completed_cli = CliArgs::from(args);
+    println!("{:?}", completed_cli.to_cli_args());
+
     color_eyre::install()?;
 
-    actix::System::new().block_on(args.process())
+    //actix::System::new().block_on(args.process())
+    Ok(())
 }

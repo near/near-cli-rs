@@ -21,6 +21,23 @@ pub struct OperationMode {
     pub mode: Mode,
 }
 
+impl CliOperationMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        // todo
+        let mut args = std::collections::VecDeque::new();
+        args.push_front("...".to_owned());
+        args
+    }
+}
+
+impl From<OperationMode> for CliOperationMode {
+    fn from(item: OperationMode) -> Self {
+        // todo
+        //Self { mode: Some(item.into()) }
+        Self { mode: None }
+    }
+}
+
 impl OperationMode {
     pub fn from(item: CliOperationMode) -> color_eyre::eyre::Result<Self> {
         let mode = match item.mode {

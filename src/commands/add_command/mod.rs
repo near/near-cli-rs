@@ -24,6 +24,23 @@ pub struct AddAction {
     pub action: Action,
 }
 
+impl CliAddAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<AddAction> for CliAddAction {
+    fn from(item: AddAction) -> Self {
+        Self {
+            action: Some(item.action.into()),
+        }
+    }
+}
+
 impl AddAction {
     pub fn from(item: CliAddAction) -> color_eyre::eyre::Result<Self> {
         let action = match item.action {
@@ -70,6 +87,28 @@ pub enum Action {
     StakeProposal(self::stake_proposal::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Add a new sub-account"))]
     SubAccount(self::sub_account::operation_mode::OperationMode),
+}
+
+impl CliAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::ContractCode(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("contact-code".to_owned());
+                command
+            }
+            _ => todo!(),
+        }
+    }
+}
+
+impl From<Action> for CliAction {
+    fn from(item: Action) -> Self {
+        match item {
+            Action::ContractCode(operation_mode) => Self::ContractCode(operation_mode.into()),
+            _ => todo!(),
+        }
+    }
 }
 
 impl Action {
