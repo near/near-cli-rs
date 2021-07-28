@@ -14,7 +14,7 @@ pub struct CliAddAccessKeyAction {
     deposit: Option<super::super::super::deposit::CliDeposit>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AddAccessKeyAction {
     pub public_key: near_crypto::PublicKey,
     pub nonce: near_primitives::types::Nonce,

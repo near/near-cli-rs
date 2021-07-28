@@ -10,7 +10,7 @@ pub enum CliContract {
     ContractFile(CliContractFile),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Contract {
     #[strum_discriminants(strum(message = "Add a contract file"))]
@@ -86,7 +86,7 @@ pub struct CliContractFile {
     next_action: Option<self::initialize_mode::CliNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContractFile {
     pub file_path: std::path::PathBuf,
     next_action: self::initialize_mode::NextAction,

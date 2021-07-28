@@ -20,7 +20,7 @@ pub struct CliViewQueryRequest {
     query: Option<CliQueryRequest>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ViewQueryRequest {
     pub query: QueryRequest,
 }
@@ -57,7 +57,7 @@ pub enum CliQueryRequest {
     RecentBlockHash(self::view_recent_block_hash::operation_mode::CliOperationMode),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum QueryRequest {
     #[strum_discriminants(strum(message = "View properties for an account"))]

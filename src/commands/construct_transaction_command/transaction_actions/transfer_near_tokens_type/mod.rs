@@ -14,7 +14,7 @@ pub struct CliTransferNEARTokensAction {
     next_action: Option<super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransferNEARTokensAction {
     pub amount: crate::common::NearBalance,
     pub next_action: Box<super::NextAction>,

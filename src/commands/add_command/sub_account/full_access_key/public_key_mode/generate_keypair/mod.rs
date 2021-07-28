@@ -13,7 +13,7 @@ pub struct CliGenerateKeypair {
     pub deposit: Option<super::super::super::deposit::CliDeposit>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GenerateKeypair {
     pub deposit: super::super::super::deposit::Deposit,
 }

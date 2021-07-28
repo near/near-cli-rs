@@ -6,7 +6,7 @@ pub enum CliTransfer {
     Amount(CliTransferNEARTokensAction),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Transfer {
     Amount(TransferNEARTokensAction),
 }
@@ -69,7 +69,7 @@ pub struct CliTransferNEARTokensAction {
     sign_transactions: Option<super::transactions_signing::CliTransactionsSigning>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransferNEARTokensAction {
     pub amount: crate::common::NearBalance,
     pub sign_transactions: super::transactions_signing::TransactionsSigning,

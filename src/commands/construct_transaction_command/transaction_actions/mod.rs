@@ -23,7 +23,7 @@ pub enum CliSkipNextAction {
     Skip(CliSkipAction),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum NextAction {
     #[strum_discriminants(strum(message = "Select a new action"))]
@@ -138,7 +138,7 @@ pub struct CliSelectAction {
     transaction_subcommand: Option<CliActionSubcommand>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SelectAction {
     transaction_subcommand: ActionSubcommand,
 }
@@ -193,7 +193,7 @@ pub enum CliActionSubcommand {
     DeleteAccessKey(self::delete_access_key_type::CliDeleteAccessKeyAction),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum ActionSubcommand {
     #[strum_discriminants(strum(message = "Transfer NEAR Tokens"))]
@@ -381,7 +381,7 @@ pub struct CliSkipAction {
     sign_option: Option<super::sign_transaction::CliSignTransaction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SkipAction {
     pub sign_option: super::sign_transaction::SignTransaction,
 }

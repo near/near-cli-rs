@@ -6,7 +6,7 @@ pub enum CliSendTo {
     Account(CliSender),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendTo {
     Account(Sender),
 }
@@ -50,7 +50,7 @@ pub struct CliSender {
     selected_block_id: Option<super::block_id::CliBlockId>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sender {
     pub sender_account_id: String,
     selected_block_id: super::block_id::BlockId,

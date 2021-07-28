@@ -26,7 +26,7 @@ pub struct CliCustomServer {
     send_to: Option<super::super::super::super::account::CliSendTo>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Server {
     pub connection_config: crate::common::ConnectionConfig,
     pub send_to: super::super::super::super::account::SendTo,

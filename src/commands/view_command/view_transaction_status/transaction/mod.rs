@@ -6,7 +6,7 @@ pub enum CliTransaction {
     TransactionHash(CliTransactionType),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Transaction {
     TransactionHash(TransactionType),
 }
@@ -51,7 +51,7 @@ pub struct CliTransactionType {
     send_from: Option<super::signer::CliSendFrom>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransactionType {
     pub transaction_hash: String,
     send_from: super::signer::SendFrom,

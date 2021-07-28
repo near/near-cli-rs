@@ -15,7 +15,7 @@ pub struct CliStakeNEARTokensAction {
     next_action: Option<super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StakeNEARTokensAction {
     pub stake: crate::common::NearBalance,
     pub public_key: near_crypto::PublicKey,

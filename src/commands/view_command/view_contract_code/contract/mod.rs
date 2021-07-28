@@ -8,7 +8,7 @@ pub enum CliSendTo {
     Contract(CliContract),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendTo {
     Contract(Contract),
 }
@@ -52,7 +52,7 @@ pub struct CliContract {
     download_mode: Option<self::download_mode::CliDownloadMode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Contract {
     pub contract_id: String,
     pub download_mode: self::download_mode::DownloadMode,

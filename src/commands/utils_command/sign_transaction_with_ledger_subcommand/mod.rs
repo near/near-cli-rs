@@ -10,7 +10,7 @@ pub struct CliSignTransactionWithLedger {
     unsigned_transaction: Option<crate::common::TransactionAsBase64>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SignTransactionWithLedger {
     pub seed_phrase_hd_path: slip10::BIP32Path,
     pub unsigned_transaction: near_primitives::transaction::Transaction,

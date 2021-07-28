@@ -6,7 +6,7 @@ pub enum CliSendTo {
     Account(CliAccount),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendTo {
     Account(Account),
 }
@@ -50,7 +50,7 @@ pub struct CliAccount {
     public_key: Option<super::public_key::CliAccessKey>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Account {
     account_id: String,
     pub public_key: super::public_key::AccessKey,

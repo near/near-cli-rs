@@ -19,7 +19,7 @@ pub struct CliAddAction {
     action: Option<CliAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AddAction {
     pub action: Action,
 }
@@ -74,7 +74,7 @@ pub enum CliAction {
     AccessKey(self::access_key::operation_mode::CliOperationMode),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Action {
     #[strum_discriminants(strum(message = "Add a new access key for an account"))]

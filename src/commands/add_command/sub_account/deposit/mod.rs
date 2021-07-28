@@ -6,7 +6,7 @@ pub enum CliDeposit {
     Deposit(CliTransferNEARTokensAction),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Deposit {
     Deposit(TransferNEARTokensAction),
 }
@@ -71,7 +71,7 @@ pub struct CliTransferNEARTokensAction {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransferNEARTokensAction {
     pub amount: crate::common::NearBalance,
     pub sign_option:

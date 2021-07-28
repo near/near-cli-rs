@@ -15,7 +15,7 @@ pub struct CliDeleteAccountAction {
     next_action: Option<super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeleteAccountAction {
     pub beneficiary_id: near_primitives::types::AccountId,
     pub next_action: Box<super::NextAction>,

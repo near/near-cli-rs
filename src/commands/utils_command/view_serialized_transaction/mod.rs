@@ -7,7 +7,7 @@ pub struct CliViewSerializedTransaction {
     transaction: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ViewSerializedTransaction {
     transaction: String,
 }

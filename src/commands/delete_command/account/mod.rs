@@ -18,7 +18,7 @@ pub struct CliDeleteAccountAction {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeleteAccountAction {
     pub beneficiary_id: near_primitives::types::AccountId,
     pub sign_option:

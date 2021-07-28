@@ -21,7 +21,7 @@ pub struct CliUtils {
     util: Option<CliUtil>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Utils {
     pub util: Util,
 }
@@ -66,7 +66,7 @@ enum CliUtil {
     SendSignedTransaction(self::send_signed_transaction::operation_mode::CliOperationMode),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Util {
     #[strum_discriminants(strum(message = "Generate a key pair"))]

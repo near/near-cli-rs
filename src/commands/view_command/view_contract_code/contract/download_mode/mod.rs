@@ -12,7 +12,7 @@ pub enum CliDownloadMode {
     Hash(self::hash_contract::CliContractHash),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum DownloadMode {
     #[strum_discriminants(strum(message = "Download a contract file"))]

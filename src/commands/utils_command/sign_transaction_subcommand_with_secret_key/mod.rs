@@ -10,7 +10,7 @@ pub struct CliSignTransactionSecretKey {
     unsigned_transaction: Option<crate::common::TransactionAsBase64>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SignTransactionSecretKey {
     pub signer_secret_key: near_crypto::SecretKey,
     pub unsigned_transaction: near_primitives::transaction::Transaction,

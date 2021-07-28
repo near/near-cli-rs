@@ -6,7 +6,7 @@ pub enum CliAccessKey {
     PublicKey(CliAccessKeyType),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AccessKey {
     PublicKey(AccessKeyType),
 }
@@ -47,7 +47,7 @@ pub struct CliAccessKeyType {
     public_key: Option<near_crypto::PublicKey>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AccessKeyType {
     pub public_key: near_crypto::PublicKey,
 }

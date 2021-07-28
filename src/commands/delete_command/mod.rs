@@ -16,7 +16,7 @@ pub struct CliDeleteAction {
     action: Option<CliAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeleteAction {
     pub action: Action,
 }
@@ -48,7 +48,7 @@ pub enum CliAction {
     Account(self::account::operation_mode::CliOperationMode),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Action {
     #[strum_discriminants(strum(message = "Delete an access key for this account"))]

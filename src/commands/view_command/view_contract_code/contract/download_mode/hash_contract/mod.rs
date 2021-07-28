@@ -10,7 +10,7 @@ pub struct CliContractHash {
     selected_block_id: Option<super::super::super::block_id::CliBlockId>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContractHash {
     pub selected_block_id: super::super::super::block_id::BlockId,
 }

@@ -10,7 +10,7 @@ pub struct CliOfflineArgs {
     pub send_to: Option<super::super::contract::CliSendTo>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OfflineArgs {
     send_to: super::super::contract::SendTo,
 }

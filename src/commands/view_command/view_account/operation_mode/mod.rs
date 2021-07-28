@@ -14,7 +14,7 @@ pub struct CliOperationMode {
     mode: Option<CliMode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OperationMode {
     pub mode: Mode,
 }
@@ -41,7 +41,7 @@ pub enum CliMode {
     Network(self::online_mode::CliNetworkArgs),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Mode {
     #[strum_discriminants(strum(message = "Yes, I keep it simple"))]

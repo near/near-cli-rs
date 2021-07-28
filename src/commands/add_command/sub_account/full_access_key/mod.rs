@@ -9,7 +9,7 @@ pub enum CliFullAccessKey {
     SubAccountFullAccess(CliSubAccountFullAccess),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum FullAccessKey {
     #[strum_discriminants(strum(message = "Add a full access key for the sub-account"))]
@@ -90,7 +90,7 @@ pub struct CliSubAccountFullAccess {
     public_key_mode: Option<self::public_key_mode::CliPublicKeyMode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SubAccountFullAccess {
     pub public_key_mode: self::public_key_mode::PublicKeyMode,
 }

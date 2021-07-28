@@ -13,7 +13,7 @@ pub struct CliSender {
     contract: Option<super::contract::CliContract>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sender {
     pub sender_account_id: String,
     pub contract: super::contract::Contract,

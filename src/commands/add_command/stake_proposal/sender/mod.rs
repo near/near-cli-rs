@@ -13,7 +13,7 @@ pub struct CliSender {
     transfer: Option<super::transfer_near_tokens_type::CliTransfer>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sender {
     pub sender_account_id: String,
     pub transfer: super::transfer_near_tokens_type::Transfer,

@@ -13,7 +13,7 @@ pub struct CliSender {
     public_key: Option<super::CliDeleteAccessKeyAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sender {
     pub sender_account_id: String,
     pub public_key: super::DeleteAccessKeyAction,

@@ -13,7 +13,7 @@ pub struct CliContractFile {
     selected_block_id: Option<super::super::super::block_id::CliBlockId>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContractFile {
     pub file_path: Option<std::path::PathBuf>,
     pub selected_block_id: super::super::super::block_id::BlockId,

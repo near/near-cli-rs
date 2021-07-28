@@ -12,7 +12,7 @@ pub enum CliPublicKeyMode {
     GenerateKeypair(self::generate_keypair::CliGenerateKeypair),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum PublicKeyMode {
     #[strum_discriminants(strum(message = "Enter public key"))]

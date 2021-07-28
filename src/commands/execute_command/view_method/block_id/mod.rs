@@ -14,7 +14,7 @@ pub enum CliBlockId {
     AtBlockHash(self::block_id_hash::CliBlockIdHash),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum BlockId {
     #[strum_discriminants(strum(message = "View this contract at final block"))]

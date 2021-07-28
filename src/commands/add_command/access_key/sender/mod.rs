@@ -13,7 +13,7 @@ pub struct CliSender {
     public_key_mode: Option<super::public_key_mode::CliPublicKeyMode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sender {
     pub sender_account_id: String,
     pub public_key_mode: super::public_key_mode::PublicKeyMode,

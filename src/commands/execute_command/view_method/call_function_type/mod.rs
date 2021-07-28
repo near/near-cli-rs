@@ -14,7 +14,7 @@ pub struct CliCallFunctionView {
     selected_block_id: Option<super::block_id::CliBlockId>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CallFunctionView {
     method_name: String,
     args: Vec<u8>,

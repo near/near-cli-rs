@@ -22,7 +22,7 @@ fn bip32path_to_string(bip32path: &slip10::BIP32Path) -> String {
 
 /// Generate a key pair of secret and public keys (use it anywhere you need
 /// Ed25519 keys)
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Clone, Default, clap::Clap)]
 pub struct CliGenerateKeypair {}
 
 impl CliGenerateKeypair {

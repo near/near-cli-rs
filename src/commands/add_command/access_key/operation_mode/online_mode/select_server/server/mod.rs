@@ -26,7 +26,7 @@ pub struct CliCustomServer {
     send_from: Option<CliSendFrom>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Server {
     pub connection_config: Option<crate::common::ConnectionConfig>,
     pub send_from: SendFrom,
@@ -88,7 +88,7 @@ pub enum CliSendFrom {
     Account(super::super::super::super::sender::CliSender),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendFrom {
     Account(super::super::super::super::sender::Sender),
 }

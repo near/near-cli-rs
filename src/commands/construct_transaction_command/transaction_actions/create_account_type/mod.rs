@@ -12,7 +12,7 @@ pub struct CliCreateAccountAction {
     next_action: Option<super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CreateAccountAction {
     pub next_action: Box<super::NextAction>,
 }

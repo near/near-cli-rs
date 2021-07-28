@@ -18,7 +18,7 @@ pub struct CliCallFunctionAction {
     send_from: Option<super::signer::CliSendFrom>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CallFunctionAction {
     method_name: String,
     args: Vec<u8>,

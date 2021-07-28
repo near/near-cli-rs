@@ -12,7 +12,7 @@ pub struct CliFullAccessType {
     next_action: Option<super::super::super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FullAccessType {
     pub next_action: Box<super::super::super::NextAction>,
 }

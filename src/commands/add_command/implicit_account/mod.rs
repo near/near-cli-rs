@@ -15,7 +15,7 @@ pub struct CliImplicitAccount {
     public_key_mode: Option<CliPublicKeyMode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ImplicitAccount {
     pub public_key_mode: PublicKeyMode,
 }
@@ -42,7 +42,7 @@ pub enum CliPublicKeyMode {
     GenerateKeypair(self::generate_keypair::CliGenerateKeypair),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum PublicKeyMode {
     #[strum_discriminants(strum(message = "Generate key pair"))]

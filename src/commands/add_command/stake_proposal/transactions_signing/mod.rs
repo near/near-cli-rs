@@ -6,7 +6,7 @@ pub enum CliTransactionsSigning {
     TransactionsSigningPublicKey(CliTransactionsSigningAction),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TransactionsSigning {
     TransactionsSigningPublicKey(TransactionsSigningAction),
 }
@@ -78,7 +78,7 @@ pub struct CliTransactionsSigningAction {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransactionsSigningAction {
     pub transactions_signing_public_key: near_crypto::PublicKey,
     pub sign_option:

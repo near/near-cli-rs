@@ -16,7 +16,7 @@ pub struct CliCustomServer {
     send: Option<CliSend>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Server {
     pub connection_config: crate::common::ConnectionConfig,
     send: Send,
@@ -67,7 +67,7 @@ pub enum CliSend {
     Transaction(super::super::super::super::CliTransaction),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Send {
     Transaction(super::super::super::super::Transaction),
 }

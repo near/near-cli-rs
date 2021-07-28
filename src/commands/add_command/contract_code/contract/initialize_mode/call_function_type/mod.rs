@@ -20,7 +20,7 @@ pub struct CliCallFunctionAction {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CallFunctionAction {
     method_name: String,
     args: Vec<u8>,

@@ -7,7 +7,7 @@ pub struct CliNetworkArgs {
     selected_server: Option<self::select_server::CliSelectServer>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NetworkArgs {
     selected_server: self::select_server::SelectServer,
 }

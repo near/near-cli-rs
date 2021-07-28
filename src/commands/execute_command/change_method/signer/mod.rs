@@ -6,7 +6,7 @@ pub enum CliSendFrom {
     Signer(CliSender),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendFrom {
     Signer(Sender),
 }
@@ -61,7 +61,7 @@ pub struct CliSender {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sender {
     pub sender_account_id: String,
     pub sign_option:

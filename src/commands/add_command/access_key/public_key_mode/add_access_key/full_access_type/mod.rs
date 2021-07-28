@@ -12,7 +12,7 @@ pub struct CliFullAccessType {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FullAccessType {
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,

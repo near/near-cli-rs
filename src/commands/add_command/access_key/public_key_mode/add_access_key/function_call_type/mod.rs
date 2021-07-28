@@ -21,7 +21,7 @@ pub struct CliFunctionCallType {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunctionCallType {
     pub allowance: Option<near_primitives::types::Balance>,
     pub receiver_id: near_primitives::types::AccountId,

@@ -12,7 +12,7 @@ pub enum CliCallFunction {
     Call(self::call_function_type::CliCallFunctionAction),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum CallFunction {
     #[strum_discriminants(strum(message = "Call function"))]

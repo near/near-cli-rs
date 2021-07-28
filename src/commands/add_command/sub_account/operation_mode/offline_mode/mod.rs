@@ -10,7 +10,7 @@ pub struct CliOfflineArgs {
     pub send_from: Option<super::online_mode::select_server::server::CliSendFrom>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OfflineArgs {
     send_from: super::online_mode::select_server::server::SendFrom,
 }

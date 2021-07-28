@@ -15,7 +15,7 @@ pub struct CliDeleteAccessKeyAction {
     next_action: Option<super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeleteAccessKeyAction {
     pub public_key: near_crypto::PublicKey,
     pub next_action: Box<super::NextAction>,

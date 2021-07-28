@@ -6,7 +6,7 @@ pub enum CliSendTo {
     SubAccount(CliSubAccount),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendTo {
     SubAccount(SubAccount),
 }
@@ -67,7 +67,7 @@ pub struct CliSubAccount {
     full_access_key: Option<super::full_access_key::CliFullAccessKey>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SubAccount {
     pub sub_account_id: String,
     pub full_access_key: super::full_access_key::FullAccessKey,

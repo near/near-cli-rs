@@ -13,7 +13,7 @@ pub struct CliSender {
     send_to: Option<super::receiver::CliSendTo>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sender {
     pub owner_account_id: String,
     pub send_to: super::receiver::SendTo,

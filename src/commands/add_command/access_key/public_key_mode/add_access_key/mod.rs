@@ -18,7 +18,7 @@ pub struct CliAddAccessKeyAction {
     permission: Option<CliAccessKeyPermission>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AddAccessKeyAction {
     pub public_key: near_crypto::PublicKey,
     pub nonce: near_primitives::types::Nonce,
@@ -95,7 +95,7 @@ pub enum CliAccessKeyPermission {
     GrantFullAccess(self::full_access_type::CliFullAccessType),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum AccessKeyPermission {
     #[strum_discriminants(strum(message = "A permission with function call"))]

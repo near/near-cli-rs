@@ -16,7 +16,7 @@ pub struct CliOptionMethod {
     method: Option<CliMethod>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OptionMethod {
     method: Method,
 }
@@ -48,7 +48,7 @@ enum CliMethod {
     ViewMethod(self::view_method::operation_mode::CliOperationMode),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 enum Method {
     #[strum_discriminants(strum(message = "Change a method"))]

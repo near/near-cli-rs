@@ -13,7 +13,7 @@ pub struct CliGenerateKeypair {
     permission: Option<super::add_access_key::CliAccessKeyPermission>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GenerateKeypair {
     pub permission: super::add_access_key::AccessKeyPermission,
 }

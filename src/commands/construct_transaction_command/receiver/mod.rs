@@ -6,7 +6,7 @@ pub enum CliSendTo {
     Receiver(CliReceiver),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendTo {
     Receiver(Receiver),
 }
@@ -66,7 +66,7 @@ pub struct CliReceiver {
     action: Option<super::transaction_actions::CliNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Receiver {
     pub receiver_account_id: String,
     pub action: super::transaction_actions::NextAction,

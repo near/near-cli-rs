@@ -6,7 +6,7 @@ pub struct CliBlockIdHeight {
     block_id_height: Option<near_primitives::types::BlockHeight>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockIdHeight {
     block_id_height: near_primitives::types::BlockHeight,
 }

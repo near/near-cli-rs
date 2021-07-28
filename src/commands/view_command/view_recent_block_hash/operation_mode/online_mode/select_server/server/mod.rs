@@ -21,7 +21,7 @@ pub struct CliCustomServer {
     pub url: Option<crate::common::AvailableRpcServerUrl>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Server {
     pub connection_config: crate::common::ConnectionConfig,
 }

@@ -11,7 +11,7 @@ pub enum CliNextAction {
     NoInitialize(CliNoInitialize),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum NextAction {
     #[strum_discriminants(strum(message = "Add an initialize"))]
@@ -105,7 +105,7 @@ pub struct CliNoInitialize {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NoInitialize {
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,

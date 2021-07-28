@@ -6,7 +6,7 @@ pub enum CliSendTo {
     Contract(CliReceiver),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendTo {
     Contract(Receiver),
 }
@@ -55,7 +55,7 @@ pub struct CliReceiver {
     call: Option<super::CliCallFunction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Receiver {
     pub contract_account_id: String,
     pub call: super::CallFunction,

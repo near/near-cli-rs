@@ -7,7 +7,7 @@ pub struct CliBlockIdHash {
     block_id_hash: Option<near_primitives::hash::CryptoHash>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockIdHash {
     block_id_hash: near_primitives::hash::CryptoHash,
 }

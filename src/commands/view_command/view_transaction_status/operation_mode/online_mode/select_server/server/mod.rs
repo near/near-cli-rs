@@ -26,7 +26,7 @@ pub struct CliCustomServer {
     transaction_status: Option<super::super::super::super::transaction::CliTransaction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Server {
     pub connection_config: crate::common::ConnectionConfig,
     pub transaction_status: super::super::super::super::transaction::Transaction,

@@ -9,7 +9,7 @@ pub enum CliDeleteAccessKeyAction {
     PublicKey(CliDeleteAccessKeyType),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum DeleteAccessKeyAction {
     PublicKey(DeleteAccessKeyType),
 }
@@ -74,7 +74,7 @@ pub struct CliDeleteAccessKeyType {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeleteAccessKeyType {
     pub public_key: near_crypto::PublicKey,
     pub sign_option:

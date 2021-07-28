@@ -13,7 +13,7 @@ pub struct CliSender {
     send_to: Option<CliSendTo>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sender {
     pub sender_account_id: String,
     pub send_to: SendTo,
@@ -98,7 +98,7 @@ pub enum CliSendTo {
     Beneficiary(super::CliDeleteAccountAction),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendTo {
     Beneficiary(super::DeleteAccountAction),
 }

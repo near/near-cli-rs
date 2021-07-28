@@ -21,7 +21,7 @@ pub struct CliCallFunctionAction {
     next_action: Option<super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CallFunctionAction {
     method_name: String,
     args: Vec<u8>,

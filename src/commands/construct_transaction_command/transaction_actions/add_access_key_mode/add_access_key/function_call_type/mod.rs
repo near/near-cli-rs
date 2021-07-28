@@ -20,7 +20,7 @@ pub struct CliFunctionCallType {
     next_action: Option<super::super::super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunctionCallType {
     pub allowance: Option<near_primitives::types::Balance>,
     pub receiver_id: near_primitives::types::AccountId,

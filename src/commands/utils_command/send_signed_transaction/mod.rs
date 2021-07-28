@@ -7,7 +7,7 @@ pub struct CliTransaction {
     transaction: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Transaction {
     transaction: String,
 }

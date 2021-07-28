@@ -6,7 +6,7 @@ pub enum CliSendFrom {
     Signer(CliSender),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendFrom {
     Signer(Sender),
 }
