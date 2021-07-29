@@ -1,7 +1,7 @@
 pub mod select_server;
 
 /// аргументы, необходимые для создания транзакции в online mode
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

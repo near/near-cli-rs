@@ -3,7 +3,7 @@ use dialoguer::Input;
 pub mod operation_mode;
 mod sender;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliDeleteAccessKeyAction {
     /// Specify public key
     PublicKey(CliDeleteAccessKeyType),
@@ -60,7 +60,7 @@ impl DeleteAccessKeyAction {
 }
 
 /// Specify the access key to be deleted
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

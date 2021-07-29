@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 pub mod online_mode;
 
 /// инструмент выбора режима online/offline
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliOperationMode {
     #[clap(subcommand)]
     mode: Option<CliMode>,
@@ -30,7 +30,7 @@ impl OperationMode {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliMode {
     /// Execute a change method with online mode
     Network(self::online_mode::CliNetworkArgs),

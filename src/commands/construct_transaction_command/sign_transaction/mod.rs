@@ -6,7 +6,7 @@ pub mod sign_with_keychain;
 pub mod sign_with_ledger;
 pub mod sign_with_private_key;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSignTransaction {
     /// Provide arguments to sign a private key transaction
     SignPrivateKey(self::sign_with_private_key::CliSignPrivateKey),

@@ -1,6 +1,6 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendTo {
     /// Specify a receiver
     Receiver(CliReceiver),
@@ -54,7 +54,7 @@ impl SendTo {
 }
 
 /// данные о получателе транзакции
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

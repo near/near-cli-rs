@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod call_function_type;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliNextAction {
     /// Add an initialize
     Initialize(self::call_function_type::CliCallFunctionAction),
@@ -92,7 +92,7 @@ impl NextAction {
 }
 
 /// данные для инициализации
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

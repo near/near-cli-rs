@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 /// Specify the account to be deleted
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -92,7 +92,7 @@ impl Sender {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendTo {
     /// Specify a beneficiary
     Beneficiary(super::CliDeleteAccountAction),

@@ -11,7 +11,7 @@ pub mod transfer_command;
 pub mod utils_command;
 pub mod view_command;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliTopLevelCommand {
     /// Use these to add access key, contract code, stake proposal, sub-account, implicit-account
     Add(self::add_command::CliAddAction),

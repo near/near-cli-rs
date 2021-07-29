@@ -3,7 +3,7 @@ extern crate dirs;
 use serde::Deserialize;
 
 /// подписание сформированной транзакции с помощью файла с ключами
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

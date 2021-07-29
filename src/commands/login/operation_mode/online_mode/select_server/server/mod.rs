@@ -4,11 +4,11 @@ use dialoguer::Input;
 use url_open::UrlOpen;
 
 /// предустановленный RPC-сервер
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliServer {}
 
 /// данные для custom server
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliCustomServer {
     #[clap(long)]
     pub url: Option<url::Url>,

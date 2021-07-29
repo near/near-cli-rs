@@ -2,7 +2,7 @@ use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
 
 /// утилита, позволяющая подписать транзакцию личным ключом
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliSignTransactionSecretKey {
     #[clap(long)]
     signer_secret_key: Option<near_crypto::SecretKey>,

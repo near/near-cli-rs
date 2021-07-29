@@ -2,7 +2,7 @@ use dialoguer::Input;
 use near_primitives::borsh::BorshDeserialize;
 
 /// Using this utility, you can view the contents of a serialized transaction (signed or not).
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliViewSerializedTransaction {
     transaction: Option<String>,
 }

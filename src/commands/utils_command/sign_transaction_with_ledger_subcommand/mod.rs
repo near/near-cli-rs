@@ -2,7 +2,7 @@ use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
 
 /// Utility to sign transaction on Ledger
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliSignTransactionWithLedger {
     #[clap(long)]
     seed_phrase_hd_path: Option<slip10::BIP32Path>,

@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod add_access_key;
 mod generate_keypair;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliPublicKeyMode {
     /// Enter public key
     PublicKey(self::add_access_key::CliAddAccessKeyAction),

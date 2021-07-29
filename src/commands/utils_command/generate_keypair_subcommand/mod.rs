@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 /// Generate a key pair of secret and public keys (use it anywhere you need
 /// Ed25519 keys)
-#[derive(Debug, clap::Clap, Clone)]
+#[derive(Debug, Clone, clap::Clap, Clone)]
 pub struct CliGenerateKeypair {
     #[clap(long)]
     pub master_seed_phrase: Option<String>,

@@ -5,7 +5,7 @@ mod change_method;
 mod view_method;
 
 /// выбор метода для выполнения
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -40,7 +40,7 @@ impl OptionMethod {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 enum CliMethod {
     /// Specify a change method
     ChangeMethod(self::change_method::operation_mode::CliOperationMode),

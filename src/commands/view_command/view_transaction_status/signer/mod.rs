@@ -1,6 +1,6 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendFrom {
     /// Specify a signer
     Signer(CliSender),
@@ -43,7 +43,7 @@ impl SendFrom {
 }
 
 /// Specify the account that signed the transaction
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliSender {
     pub account_id: Option<String>,
 }

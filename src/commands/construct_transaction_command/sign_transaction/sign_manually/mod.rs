@@ -1,7 +1,7 @@
 use near_primitives::borsh::BorshSerialize;
 
 /// подписание сформированной транзакции в режиме manually
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

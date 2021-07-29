@@ -5,7 +5,7 @@ mod access_key;
 mod account;
 
 /// инструмент выбора to delete action
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -40,7 +40,7 @@ impl DeleteAction {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliAction {
     /// Delete an access key for an account
     AccessKey(self::access_key::operation_mode::CliOperationMode),

@@ -9,7 +9,7 @@ mod delete_account_type;
 mod stake_near_tokens_type;
 mod transfer_near_tokens_type;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliNextAction {
     /// Choose next action
     AddAction(CliSelectAction),
@@ -17,7 +17,7 @@ pub enum CliNextAction {
     Skip(CliSkipAction),
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSkipNextAction {
     /// Go to transaction signing
     Skip(CliSkipAction),
@@ -127,7 +127,7 @@ impl NextAction {
 }
 
 /// инструмент для добавления команды в транзакцию
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -175,7 +175,7 @@ impl SelectAction {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliActionSubcommand {
     /// Предоставьте данные для перевода Near
     TransferNEARTokens(self::transfer_near_tokens_type::CliTransferNEARTokensAction),
@@ -370,7 +370,7 @@ impl ActionSubcommand {
 }
 
 /// инструмент, показывающий окончание набора команд в одной транзакции
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

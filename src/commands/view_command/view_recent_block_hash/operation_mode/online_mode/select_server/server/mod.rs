@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 /// предустановленный RPC-сервер
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -10,7 +10,7 @@ use dialoguer::Input;
 pub struct CliServer {}
 
 /// данные для custom server
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

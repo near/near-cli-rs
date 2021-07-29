@@ -2,7 +2,7 @@ use dialoguer::Input;
 
 pub mod operation_mode;
 
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliTransaction {
     transaction: Option<String>,
 }

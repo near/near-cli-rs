@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 /// Specify the block_id hash for this contract to view
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliBlockIdHash {
     block_id_hash: Option<near_primitives::hash::CryptoHash>,
 }

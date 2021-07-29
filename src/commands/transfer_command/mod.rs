@@ -7,7 +7,7 @@ mod sender;
 pub mod transfer_near_tokens_type;
 
 /// инструмент выбора переводимой валюты
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

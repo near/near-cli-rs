@@ -6,7 +6,7 @@ mod full_access_type;
 mod function_call_type;
 
 /// добавление ключа пользователю
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -101,7 +101,7 @@ impl AddAccessKeyAction {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliAccessKeyPermission {
     /// Предоставьте данные для ключа с function call
     GrantFunctionCallAccess(self::function_call_type::CliFunctionCallType),

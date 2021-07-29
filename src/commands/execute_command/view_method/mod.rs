@@ -6,7 +6,7 @@ mod call_function_type;
 pub mod operation_mode;
 mod receiver;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliCallFunction {
     /// Call view function
     Call(self::call_function_type::CliCallFunctionView),

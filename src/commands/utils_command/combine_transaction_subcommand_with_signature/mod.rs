@@ -2,7 +2,7 @@ use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
 
 /// утилита, соединяющая подготовленную неподписанную транзакцию с синатурой
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliCombineTransactionSignature {
     #[clap(long)]
     signature: Option<near_crypto::Signature>,

@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 /// предустановленный RPC-сервер
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -13,7 +13,7 @@ pub struct CliServer {
 }
 
 /// данные для custom server
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -80,7 +80,7 @@ impl Server {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendFrom {
     /// Specify a validator
     Validator(super::super::super::super::sender::CliSender),

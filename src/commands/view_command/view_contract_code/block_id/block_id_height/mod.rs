@@ -2,7 +2,7 @@ use dialoguer::Input;
 use std::io::Write;
 
 /// Specify the block_id height for this contract to view
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliBlockIdHeight {
     block_id_height: Option<near_primitives::types::BlockHeight>,
 }

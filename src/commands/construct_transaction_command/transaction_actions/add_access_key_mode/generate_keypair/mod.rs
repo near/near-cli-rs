@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 /// Generate a key pair of secret and public keys (use it anywhere you need
 /// Ed25519 keys)
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

@@ -1,6 +1,6 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliAccessKey {
     /// Specify public key
     PublicKey(CliAccessKeyType),
@@ -42,7 +42,7 @@ impl AccessKey {
 }
 
 /// Specify the access key to be deleted
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliAccessKeyType {
     public_key: Option<near_crypto::PublicKey>,
 }

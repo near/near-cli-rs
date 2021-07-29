@@ -1,6 +1,6 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendFrom {
     /// Specify a signer
     Signer(CliSender),
@@ -47,7 +47,7 @@ impl SendFrom {
 }
 
 /// Specify a signer
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

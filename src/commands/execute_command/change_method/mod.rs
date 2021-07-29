@@ -6,7 +6,7 @@ mod contract;
 pub mod operation_mode;
 mod signer;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliCallFunction {
     /// вызов метода изменения
     Call(self::call_function_type::CliCallFunctionAction),

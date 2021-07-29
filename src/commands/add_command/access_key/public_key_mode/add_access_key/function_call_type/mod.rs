@@ -2,7 +2,7 @@ use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 use std::vec;
 
 /// данные для определения ключа с function call
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

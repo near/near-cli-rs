@@ -5,7 +5,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod block_id_hash;
 mod block_id_height;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliBlockId {
     /// Specify a block ID final to view this contract
     AtFinalBlock,

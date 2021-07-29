@@ -8,7 +8,7 @@ mod stake_proposal;
 mod sub_account;
 
 /// инструмент выбора to add action
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -60,7 +60,7 @@ impl AddAction {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliAction {
     /// Add a new contract code
     ContractCode(self::contract_code::operation_mode::CliOperationMode),

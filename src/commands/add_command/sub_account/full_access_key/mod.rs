@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod public_key_mode;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliFullAccessKey {
     /// Specify a full access key for the sub-account
     SubAccountFullAccess(CliSubAccountFullAccess),
@@ -79,7 +79,7 @@ impl FullAccessKey {
 }
 
 /// данные о ключе доступа
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

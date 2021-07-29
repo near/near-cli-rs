@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod server;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSelectServer {
     /// предоставление данных для сервера https://rpc.testnet.near.org
     Testnet(self::server::CliServer),

@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod download_contract;
 mod hash_contract;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliDownloadMode {
     /// Download a contract file
     Download(self::download_contract::CliContractFile),

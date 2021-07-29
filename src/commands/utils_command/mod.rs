@@ -10,7 +10,7 @@ mod sign_transaction_with_ledger_subcommand;
 mod view_serialized_transaction;
 
 /// набор утилит-помощников
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -42,7 +42,7 @@ impl Utils {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 enum CliUtil {
     /// It generates a random key pair
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),

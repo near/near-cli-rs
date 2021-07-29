@@ -5,7 +5,7 @@ mod add_access_key;
 mod generate_keypair;
 
 /// данные об отправителе транзакции
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -49,7 +49,7 @@ impl AddAccessKeyMode {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliPublicKeyMode {
     /// Enter public key
     PublicKey(self::add_access_key::CliAddAccessKeyAction),

@@ -9,7 +9,7 @@ mod view_recent_block_hash;
 mod view_transaction_status;
 
 /// инструмент выбора to view
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -41,7 +41,7 @@ impl ViewQueryRequest {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliQueryRequest {
     /// View properties for an account
     AccountSummary(self::view_account::operation_mode::CliOperationMode),

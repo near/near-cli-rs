@@ -1,14 +1,14 @@
 use dialoguer::Input;
 
 /// предустановленный RPC-сервер
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliServer {
     #[clap(subcommand)]
     send: Option<CliSend>,
 }
 
 /// данные для custom server
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliCustomServer {
     #[clap(long)]
     pub url: Option<crate::common::AvailableRpcServerUrl>,
@@ -61,7 +61,7 @@ impl Server {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSend {
     /// Specify a transaction
     Transaction(super::super::super::super::CliTransaction),

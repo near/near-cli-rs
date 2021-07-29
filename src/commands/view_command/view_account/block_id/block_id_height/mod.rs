@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 /// Specify the block_id height for this account to view
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliBlockIdHeight {
     block_id_height: Option<near_primitives::types::BlockHeight>,
 }

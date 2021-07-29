@@ -2,7 +2,7 @@ use async_recursion::async_recursion;
 use dialoguer::Input;
 
 /// удаление ключа доступа у пользователя
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
