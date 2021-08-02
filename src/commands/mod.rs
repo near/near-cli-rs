@@ -33,7 +33,7 @@ pub enum CliTopLevelCommand {
     View(self::view_command::CliViewQueryRequest),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "Login with wallet authorization"))]
@@ -66,6 +66,11 @@ impl CliTopLevelCommand {
                 args.push_front("add".to_owned());
                 args
             }
+            Self::Transfer(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("transfer".to_owned());
+                args
+            }
             _ => todo!(),
         }
     }
@@ -75,6 +80,9 @@ impl From<TopLevelCommand> for CliTopLevelCommand {
     fn from(top_level_command: TopLevelCommand) -> Self {
         match top_level_command {
             TopLevelCommand::Add(add_action) => Self::Add(add_action.into()),
+            TopLevelCommand::Transfer(currency) => {
+                Self::Transfer(self::transfer_command::CliCurrency::from(currency))
+            }
             _ => todo!(),
         }
     }

@@ -16,11 +16,40 @@ pub struct CliSignManually {
     block_hash: Option<near_primitives::hash::CryptoHash>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SignManually {
     pub signer_public_key: near_crypto::PublicKey,
-    nonce: u64,
-    block_hash: near_primitives::hash::CryptoHash,
+    nonce: Option<u64>,
+    block_hash: Option<near_primitives::hash::CryptoHash>,
+}
+
+impl CliSignManually {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(signer_public_key) = &self.signer_public_key {
+            args.push_front(signer_public_key.to_string());
+            args.push_front("--signer-public-key".to_owned())
+        }
+        if let Some(nonce) = &self.nonce {
+            args.push_front(nonce.to_string());
+            args.push_front("--nonce".to_owned())
+        }
+        if let Some(block_hash) = &self.block_hash {
+            args.push_front(block_hash.to_string());
+            args.push_front("--block-hash".to_owned())
+        }
+        args
+    }
+}
+
+impl From<SignManually> for CliSignManually {
+    fn from(sign_manually: SignManually) -> Self {
+        Self {
+            signer_public_key: Some(sign_manually.signer_public_key),
+            nonce: sign_manually.nonce,
+            block_hash: sign_manually.block_hash,
+        }
+    }
 }
 
 impl SignManually {
@@ -35,8 +64,8 @@ impl SignManually {
         match connection_config {
             Some(_) => Self {
                 signer_public_key,
-                nonce: 0,
-                block_hash: Default::default(),
+                nonce: None,
+                block_hash: None,
             },
             None => {
                 let nonce: u64 = match item.nonce {
@@ -49,8 +78,8 @@ impl SignManually {
                 };
                 Self {
                     signer_public_key,
-                    nonce,
-                    block_hash,
+                    nonce: Some(nonce),
+                    block_hash: Some(block_hash),
                 }
             }
         }
@@ -72,8 +101,8 @@ impl SignManually {
         let unsigned_transaction = match network_connection_config {
             None => near_primitives::transaction::Transaction {
                 public_key,
-                nonce: self.nonce.clone(),
-                block_hash: self.block_hash.clone(),
+                nonce: self.nonce.unwrap_or_default().clone(),
+                block_hash: self.block_hash.unwrap_or_default().clone(),
                 ..prepopulated_unsigned_transaction
             },
             Some(network_connection_config) => {

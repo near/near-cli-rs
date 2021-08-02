@@ -1,6 +1,6 @@
 [package]
 name = "near-cli"
-version = "0.1.0"
+version = "0.1.10"
 authors = ["FroVolod <frol_off@meta.ua>"]
 edition = "2018"
 
@@ -33,6 +33,7 @@ dirs = "3.0"
 slip10 = "0.4.3"
 url = { version = "2", features = ["serde"] }
 url_open = "0.0.1"
+shell-words = "1.0.0"
 
 color-eyre = "0.5"
 

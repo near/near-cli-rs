@@ -13,7 +13,7 @@ pub struct CliSignPrivateKey {
     #[clap(long)]
     signer_public_key: Option<near_crypto::PublicKey>,
     #[clap(long)]
-    signer_secret_key: Option<near_crypto::SecretKey>,
+    signer_private_key: Option<near_crypto::SecretKey>,
     #[clap(long)]
     nonce: Option<u64>,
     #[clap(long)]
@@ -22,13 +22,52 @@ pub struct CliSignPrivateKey {
     submit: Option<Submit>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SignPrivateKey {
     pub signer_public_key: near_crypto::PublicKey,
-    pub signer_secret_key: near_crypto::SecretKey,
-    pub nonce: u64,
-    pub block_hash: near_primitives::hash::CryptoHash,
+    pub signer_private_key: near_crypto::SecretKey,
+    pub nonce: Option<u64>,
+    pub block_hash: Option<near_primitives::hash::CryptoHash>,
     pub submit: Option<Submit>,
+}
+
+impl CliSignPrivateKey {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .submit
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(block_hash) = &self.block_hash {
+            args.push_front(block_hash.to_string());
+            args.push_front("--block-hash".to_owned())
+        }
+        if let Some(nonce) = &self.nonce {
+            args.push_front(nonce.to_string());
+            args.push_front("--nonce".to_owned())
+        }
+        if let Some(signer_secret_key) = &self.signer_private_key {
+            args.push_front(signer_secret_key.to_string());
+            args.push_front("--signer-private-key".to_owned())
+        }
+        if let Some(signer_public_key) = &self.signer_public_key {
+            args.push_front(signer_public_key.to_string());
+            args.push_front("--signer-public-key".to_owned())
+        }
+        args
+    }
+}
+
+impl From<SignPrivateKey> for CliSignPrivateKey {
+    fn from(sign_private_key: SignPrivateKey) -> Self {
+        Self {
+            signer_public_key: Some(sign_private_key.signer_public_key),
+            signer_private_key: Some(sign_private_key.signer_private_key),
+            nonce: sign_private_key.nonce,
+            block_hash: sign_private_key.block_hash,
+            submit: sign_private_key.submit,
+        }
+    }
 }
 
 impl SignPrivateKey {
@@ -40,17 +79,17 @@ impl SignPrivateKey {
             Some(cli_public_key) => cli_public_key,
             None => super::input_signer_public_key(),
         };
-        let signer_secret_key: near_crypto::SecretKey = match item.signer_secret_key {
-            Some(cli_secret_key) => cli_secret_key,
-            None => super::input_signer_secret_key(),
+        let signer_private_key: near_crypto::SecretKey = match item.signer_private_key {
+            Some(signer_private_key) => signer_private_key,
+            None => super::input_signer_private_key(),
         };
         let submit: Option<Submit> = item.submit;
         match connection_config {
             Some(_) => Self {
                 signer_public_key,
-                signer_secret_key,
-                nonce: 0,
-                block_hash: Default::default(),
+                signer_private_key,
+                nonce: None,
+                block_hash: None,
                 submit,
             },
             None => {
@@ -63,13 +102,13 @@ impl SignPrivateKey {
                     None => super::input_block_hash(),
                 };
                 let public_key_origin: near_crypto::PublicKey =
-                    near_crypto::SecretKey::public_key(&signer_secret_key);
+                    near_crypto::SecretKey::public_key(&signer_private_key);
                 if &signer_public_key == &public_key_origin {
                     Self {
                         signer_public_key,
-                        signer_secret_key,
-                        nonce,
-                        block_hash,
+                        signer_private_key,
+                        nonce: Some(nonce),
+                        block_hash: Some(block_hash),
                         submit,
                     }
                 } else {
@@ -77,11 +116,11 @@ impl SignPrivateKey {
                     let signer_public_key: near_crypto::PublicKey =
                         super::input_signer_public_key();
                     let signer_secret_key: near_crypto::SecretKey =
-                        super::input_signer_secret_key();
+                        super::input_signer_private_key();
                     Self::from(
                         CliSignPrivateKey {
                             signer_public_key: Some(signer_public_key),
-                            signer_secret_key: Some(signer_secret_key),
+                            signer_private_key: Some(signer_secret_key),
                             nonce: Some(nonce),
                             block_hash: Some(block_hash),
                             submit: None,
@@ -105,9 +144,10 @@ impl SignPrivateKey {
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
-        let signer_secret_key: near_crypto::SecretKey = self.signer_secret_key.clone();
-        let nonce: u64 = self.nonce.clone();
-        let block_hash: near_primitives::hash::CryptoHash = self.block_hash.clone();
+        let signer_secret_key: near_crypto::SecretKey = self.signer_private_key.clone();
+        let nonce: u64 = self.nonce.unwrap_or_default().clone();
+        let block_hash: near_primitives::hash::CryptoHash =
+            self.block_hash.unwrap_or_default().clone();
         let submit: Option<Submit> = self.submit.clone();
         match network_connection_config {
             None => {
@@ -223,6 +263,21 @@ pub enum Submit {
 }
 
 impl Submit {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Send => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("send".to_owned());
+                args
+            }
+            Self::Display => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("display".to_owned());
+                args
+            }
+        }
+    }
+
     pub fn choose_submit() -> Self {
         println!();
         let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();

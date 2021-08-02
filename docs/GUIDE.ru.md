@@ -570,7 +570,7 @@ https://explorer.testnet.near.org/transactions/59LEJEQT7jVMXdVi3ab4y8nbQ7uFJ8wRn
             --method-names 'set_a, set_b' \
         sign-private-key \
             --signer-public-key ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF \
-            --signer-secret-key  ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB \
+            --signer-private-key  ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB \
         send
 
 ```
@@ -808,7 +808,7 @@ https://explorer.testnet.near.org/transactions/CfRvfMvEY7vtKM2ub18nKsMivNo95wUC5
 </a>
 </details>
 
-#### Sign a transaction with secret key
+#### Sign a transaction with private key
 
 Данныя утилита позволяет подписать своими ключами ранее сформированную и неподписанную транзакцию.
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>

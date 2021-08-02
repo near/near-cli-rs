@@ -71,7 +71,7 @@ enum CliUtil {
 pub enum Util {
     #[strum_discriminants(strum(message = "Generate a key pair"))]
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
-    #[strum_discriminants(strum(message = "Sign a transaction with secret key"))]
+    #[strum_discriminants(strum(message = "Sign a transaction with private key"))]
     SignTransactionSecretKey(
         self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey,
     ),

@@ -1,8 +1,8 @@
 use std::str::FromStr;
 
-/// Generate a key pair of secret and public keys (use it anywhere you need
+/// Generate a key pair of private and public keys (use it anywhere you need
 /// Ed25519 keys)
-#[derive(Debug, Clone, clap::Clap, Clone)]
+#[derive(Debug, Clone, clap::Clap)]
 pub struct CliLedgerPublicKey {
     #[clap(long, default_value = "44'/397'/0'/0'/1'")]
     pub seed_phrase_hd_path: slip10::BIP32Path,

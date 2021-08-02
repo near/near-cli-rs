@@ -18,7 +18,7 @@ pub enum CliSignTransaction {
     SignManually(self::sign_manually::CliSignManually),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum SignTransaction {
     #[strum_discriminants(strum(
@@ -35,6 +35,52 @@ pub enum SignTransaction {
         message = "No, I want to construct the transaction and sign it somewhere else"
     ))]
     SignManually(self::sign_manually::SignManually),
+}
+
+impl CliSignTransaction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            CliSignTransaction::SignPrivateKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sign-private-key".to_owned());
+                args
+            }
+            CliSignTransaction::SignWithKeychain(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sign-with-keychain".to_owned());
+                args
+            }
+            CliSignTransaction::SignWithLedger(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sign-with-ledger".to_owned());
+                args
+            }
+            CliSignTransaction::SignManually(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sign-manually".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SignTransaction> for CliSignTransaction {
+    fn from(sign_transaction: SignTransaction) -> Self {
+        match sign_transaction {
+            SignTransaction::SignPrivateKey(sign_with_private_key) => Self::SignPrivateKey(
+                self::sign_with_private_key::CliSignPrivateKey::from(sign_with_private_key),
+            ),
+            SignTransaction::SignWithKeychain(sign_with_keychain) => Self::SignWithKeychain(
+                self::sign_with_keychain::CliSignKeychain::from(sign_with_keychain),
+            ),
+            SignTransaction::SignWithLedger(sign_with_ledger) => Self::SignWithLedger(
+                self::sign_with_ledger::CliSignLedger::from(sign_with_ledger),
+            ),
+            SignTransaction::SignManually(sign_manually) => {
+                Self::SignManually(self::sign_manually::CliSignManually::from(sign_manually))
+            }
+        }
+    }
 }
 
 impl SignTransaction {
@@ -143,7 +189,7 @@ fn input_signer_public_key() -> near_crypto::PublicKey {
         .unwrap()
 }
 
-fn input_signer_secret_key() -> near_crypto::SecretKey {
+fn input_signer_private_key() -> near_crypto::SecretKey {
     Input::new()
         .with_prompt("Enter sender's private key")
         .interact_text()

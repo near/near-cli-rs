@@ -20,7 +20,7 @@ impl From<CliSignTransactionSecretKey> for SignTransactionSecretKey {
     fn from(item: CliSignTransactionSecretKey) -> Self {
         let signer_secret_key: near_crypto::SecretKey = match item.signer_secret_key {
             Some(cli_signer_secret_key) => cli_signer_secret_key,
-            None => SignTransactionSecretKey::input_signer_secret_key(),
+            None => SignTransactionSecretKey::input_signer_private_key(),
         };
         let unsigned_transaction: near_primitives::transaction::Transaction =
             match item.unsigned_transaction {
@@ -35,9 +35,9 @@ impl From<CliSignTransactionSecretKey> for SignTransactionSecretKey {
 }
 
 impl SignTransactionSecretKey {
-    pub fn input_signer_secret_key() -> near_crypto::SecretKey {
+    pub fn input_signer_private_key() -> near_crypto::SecretKey {
         Input::new()
-            .with_prompt("Enter the secret key")
+            .with_prompt("Enter the private key")
             .interact_text()
             .unwrap()
     }

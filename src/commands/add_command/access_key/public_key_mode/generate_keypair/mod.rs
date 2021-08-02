@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-/// Generate a key pair of secret and public keys (use it anywhere you need
+/// Generate a key pair of private and public keys (use it anywhere you need
 /// Ed25519 keys)
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(

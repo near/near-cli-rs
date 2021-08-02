@@ -18,11 +18,40 @@ pub struct CliSignKeychain {
     submit: Option<super::sign_with_private_key::Submit>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SignKeychain {
-    nonce: u64,
-    block_hash: near_primitives::hash::CryptoHash,
+    nonce: Option<u64>,
+    block_hash: Option<near_primitives::hash::CryptoHash>,
     pub submit: Option<super::sign_with_private_key::Submit>,
+}
+
+impl CliSignKeychain {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .submit
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(nonce) = &self.nonce {
+            args.push_front(nonce.to_string());
+            args.push_front("--nonce".to_owned())
+        }
+        if let Some(block_hash) = &self.block_hash {
+            args.push_front(block_hash.to_string());
+            args.push_front("--block-hash".to_owned())
+        }
+        args
+    }
+}
+
+impl From<SignKeychain> for CliSignKeychain {
+    fn from(sign_keychain: SignKeychain) -> Self {
+        Self {
+            nonce: sign_keychain.nonce,
+            block_hash: sign_keychain.block_hash,
+            submit: sign_keychain.submit,
+        }
+    }
 }
 
 impl SignKeychain {
@@ -34,8 +63,8 @@ impl SignKeychain {
         let submit: Option<super::sign_with_private_key::Submit> = item.submit;
         match connection_config {
             Some(_) => Ok(Self {
-                nonce: 0,
-                block_hash: Default::default(),
+                nonce: None,
+                block_hash: None,
                 submit,
             }),
             None => {
@@ -64,8 +93,8 @@ impl SignKeychain {
                     None => super::input_block_hash(),
                 };
                 Ok(SignKeychain {
-                    nonce,
-                    block_hash,
+                    nonce: Some(nonce),
+                    block_hash: Some(block_hash),
                     submit,
                 })
             }
@@ -184,7 +213,7 @@ impl SignKeychain {
             .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
             signer_public_key: account_json.public_key,
-            signer_secret_key: account_json.private_key,
+            signer_private_key: account_json.private_key,
             nonce: self.nonce.clone(),
             block_hash: self.block_hash.clone(),
             submit: self.submit.clone(),

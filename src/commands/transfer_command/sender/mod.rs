@@ -13,10 +13,33 @@ pub struct CliSender {
     send_to: Option<super::receiver::CliSendTo>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sender {
     pub sender_account_id: String,
     pub send_to: super::receiver::SendTo,
+}
+
+impl CliSender {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .send_to
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(sender_account_id) = &self.sender_account_id {
+            args.push_front(sender_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Sender> for CliSender {
+    fn from(sender: Sender) -> Self {
+        Self {
+            sender_account_id: Some(sender.sender_account_id),
+            send_to: Some(super::receiver::CliSendTo::from(sender.send_to)),
+        }
+    }
 }
 
 impl Sender {

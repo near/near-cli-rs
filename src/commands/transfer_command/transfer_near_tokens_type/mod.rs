@@ -6,9 +6,31 @@ pub enum CliTransfer {
     Amount(CliTransferNEARTokensAction),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Transfer {
     Amount(TransferNEARTokensAction),
+}
+
+impl CliTransfer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Amount(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("amount".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<Transfer> for CliTransfer {
+    fn from(transfer: Transfer) -> Self {
+        match transfer {
+            Transfer::Amount(transfer_near_token_action) => Self::Amount(
+                CliTransferNEARTokensAction::from(transfer_near_token_action),
+            ),
+        }
+    }
 }
 
 impl Transfer {
@@ -71,11 +93,34 @@ pub struct CliTransferNEARTokensAction {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransferNEARTokensAction {
     pub amount: crate::common::NearBalance,
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+}
+
+impl CliTransferNEARTokensAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(amount) = &self.amount {
+            args.push_front(amount.to_string());
+        }
+        args
+    }
+}
+
+impl From<TransferNEARTokensAction> for CliTransferNEARTokensAction {
+    fn from(transfer_near_tokens_action: TransferNEARTokensAction) -> Self {
+        Self{
+            amount: Some(transfer_near_tokens_action.amount),
+            sign_option: Some(crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction::from(transfer_near_tokens_action.sign_option))
+        }
+    }
 }
 
 impl TransferNEARTokensAction {
