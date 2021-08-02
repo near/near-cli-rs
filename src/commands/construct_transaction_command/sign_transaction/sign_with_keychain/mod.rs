@@ -15,14 +15,14 @@ pub struct CliSignKeychain {
     #[clap(long)]
     block_hash: Option<near_primitives::hash::CryptoHash>,
     #[clap(subcommand)]
-    submit: Option<super::sign_with_private_key::Submit>,
+    submit: Option<super::Submit>,
 }
 
 #[derive(Debug, Clone)]
 pub struct SignKeychain {
     nonce: Option<u64>,
     block_hash: Option<near_primitives::hash::CryptoHash>,
-    pub submit: Option<super::sign_with_private_key::Submit>,
+    pub submit: Option<super::Submit>,
 }
 
 impl CliSignKeychain {
@@ -60,7 +60,7 @@ impl SignKeychain {
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
     ) -> color_eyre::eyre::Result<Self> {
-        let submit: Option<super::sign_with_private_key::Submit> = item.submit;
+        let submit: Option<super::Submit> = item.submit;
         match connection_config {
             Some(_) => Ok(Self {
                 nonce: None,
@@ -117,21 +117,21 @@ impl SignKeychain {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_connection_config: Option<crate::common::ConnectionConfig>,
+        connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
         let file_name = format!("{}.json", prepopulated_unsigned_transaction.signer_id);
         let mut path = std::path::PathBuf::from(&home_dir);
 
-        let data_path: std::path::PathBuf = match &network_connection_config {
+        let data_path: std::path::PathBuf = match &connection_config {
             None => {
                 let dir_name = crate::consts::DIR_NAME_KEY_CHAIN;
                 path.push(dir_name);
                 path.push(file_name);
                 path
             }
-            Some(connection_config) => {
-                let dir_name = connection_config.dir_name();
+            Some(network_connection_config) => {
+                let dir_name = network_connection_config.dir_name();
                 path.push(dir_name);
                 path.push(file_name);
 
@@ -139,7 +139,7 @@ impl SignKeychain {
                     path
                 } else {
                     let query_view_method_response = self
-                        .rpc_client(connection_config.rpc_url().as_str())
+                        .rpc_client(network_connection_config.rpc_url().as_str())
                         .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                             block_reference: near_primitives::types::Finality::Final.into(),
                             request: near_primitives::views::QueryRequest::ViewAccessKeyList {
@@ -219,7 +219,7 @@ impl SignKeychain {
             submit: self.submit.clone(),
         };
         sign_with_private_key
-            .process(prepopulated_unsigned_transaction, network_connection_config)
+            .process(prepopulated_unsigned_transaction, connection_config)
             .await
     }
 }

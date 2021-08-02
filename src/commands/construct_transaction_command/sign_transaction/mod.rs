@@ -1,4 +1,5 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
+use near_primitives::borsh::BorshSerialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod sign_manually;
@@ -219,4 +220,109 @@ fn input_block_hash() -> near_primitives::hash::CryptoHash {
         .interact_text()
         .unwrap();
     input_block_hash.inner
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, clap::Clap)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+pub enum Submit {
+    #[strum_discriminants(strum(
+        message = "Do you want send the transaction to the server (it's works only for online mode)"
+    ))]
+    Send,
+    #[strum_discriminants(strum(message = "Do you want show the transaction on display?"))]
+    Display,
+}
+
+impl Submit {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Send => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("send".to_owned());
+                args
+            }
+            Self::Display => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("display".to_owned());
+                args
+            }
+        }
+    }
+
+    pub fn choose_submit(connection_config: Option<crate::common::ConnectionConfig>) -> Self {
+        println!();
+        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
+
+        let submits = if let Some(_) = connection_config {
+            variants
+                .iter()
+                .map(|p| p.get_message().unwrap().to_owned())
+                .collect::<Vec<_>>()
+        } else {
+            vec!["Do you want show the transaction on display?".to_string()]
+        };
+        let select_submit = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Select an action that you want to add to the action:")
+            .items(&submits)
+            .default(0)
+            .interact()
+            .unwrap();
+        match variants[select_submit] {
+            SubmitDiscriminants::Send => Submit::Send,
+            SubmitDiscriminants::Display => Submit::Display,
+        }
+    }
+
+    pub fn process_offline(
+        self,
+        serialize_to_base64: String,
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
+        println!("Srialize_to_base64:\n{}", &serialize_to_base64);
+        Ok(None)
+    }
+
+    pub async fn process_online(
+        self,
+        network_connection_config: crate::common::ConnectionConfig,
+        signed_transaction: near_primitives::transaction::SignedTransaction,
+        serialize_to_base64: String,
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
+        match self {
+            Submit::Send => {
+                println!("Transaction sent ...");
+                let json_rcp_client =
+                    near_jsonrpc_client::new_client(network_connection_config.rpc_url().as_str());
+                let transaction_info = loop {
+                    let transaction_info_result = json_rcp_client
+                        .broadcast_tx_commit(near_primitives::serialize::to_base64(
+                            signed_transaction
+                                .try_to_vec()
+                                .expect("Transaction is not expected to fail on serialization"),
+                        ))
+                        .await;
+                    match transaction_info_result {
+                        Ok(response) => {
+                            break response;
+                        }
+                        Err(err) => {
+                            if let Some(serde_json::Value::String(data)) = &err.data {
+                                if data.contains("Timeout") {
+                                    println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+                                    continue;
+                                } else {
+                                    println!("Error transaction: {:#?}", err)
+                                }
+                            };
+                            return Ok(None);
+                        }
+                    };
+                };
+                Ok(Some(transaction_info))
+            }
+            Submit::Display => {
+                println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
+                Ok(None)
+            }
+        }
+    }
 }

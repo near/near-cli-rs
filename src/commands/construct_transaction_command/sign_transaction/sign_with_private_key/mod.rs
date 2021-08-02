@@ -1,6 +1,4 @@
-use dialoguer::{theme::ColorfulTheme, Select};
 use near_primitives::borsh::BorshSerialize;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 /// подписание сформированной транзакции с помощью личных ключей
 #[derive(Debug, Default, Clone, clap::Clap)]
@@ -19,7 +17,7 @@ pub struct CliSignPrivateKey {
     #[clap(long)]
     block_hash: Option<near_primitives::hash::CryptoHash>,
     #[clap(subcommand)]
-    submit: Option<Submit>,
+    submit: Option<super::Submit>,
 }
 
 #[derive(Debug, Clone)]
@@ -28,7 +26,7 @@ pub struct SignPrivateKey {
     pub signer_private_key: near_crypto::SecretKey,
     pub nonce: Option<u64>,
     pub block_hash: Option<near_primitives::hash::CryptoHash>,
-    pub submit: Option<Submit>,
+    pub submit: Option<super::Submit>,
 }
 
 impl CliSignPrivateKey {
@@ -83,7 +81,7 @@ impl SignPrivateKey {
             Some(signer_private_key) => signer_private_key,
             None => super::input_signer_private_key(),
         };
-        let submit: Option<Submit> = item.submit;
+        let submit: Option<super::Submit> = item.submit;
         match connection_config {
             Some(_) => Self {
                 signer_public_key,
@@ -141,15 +139,15 @@ impl SignPrivateKey {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_connection_config: Option<crate::common::ConnectionConfig>,
+        connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
         let signer_secret_key: near_crypto::SecretKey = self.signer_private_key.clone();
         let nonce: u64 = self.nonce.unwrap_or_default().clone();
         let block_hash: near_primitives::hash::CryptoHash =
             self.block_hash.unwrap_or_default().clone();
-        let submit: Option<Submit> = self.submit.clone();
-        match network_connection_config {
+        let submit: Option<super::Submit> = self.submit.clone();
+        match connection_config.clone() {
             None => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
                     public_key,
@@ -174,7 +172,7 @@ impl SignPrivateKey {
                 match submit {
                     Some(submit) => submit.process_offline(serialize_to_base64),
                     None => {
-                        let submit = Submit::choose_submit();
+                        let submit = super::Submit::choose_submit(connection_config.clone());
                         submit.process_offline(serialize_to_base64)
                     }
                 }
@@ -227,7 +225,7 @@ impl SignPrivateKey {
                 println!("Your transaction was signed successfully.");
                 match submit {
                     None => {
-                        let submit = Submit::choose_submit();
+                        let submit = super::Submit::choose_submit(connection_config);
                         submit
                             .process_online(
                                 network_connection_config,
@@ -246,106 +244,6 @@ impl SignPrivateKey {
                             .await
                     }
                 }
-            }
-        }
-    }
-}
-
-#[derive(Debug, EnumDiscriminants, Clone, clap::Clap)]
-#[strum_discriminants(derive(EnumMessage, EnumIter))]
-pub enum Submit {
-    #[strum_discriminants(strum(
-        message = "Do you want send the transaction to the server (it's works only for online mode)"
-    ))]
-    Send,
-    #[strum_discriminants(strum(message = "Do you want show the transaction on display?"))]
-    Display,
-}
-
-impl Submit {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        match self {
-            Self::Send => {
-                let mut args = std::collections::VecDeque::new();
-                args.push_front("send".to_owned());
-                args
-            }
-            Self::Display => {
-                let mut args = std::collections::VecDeque::new();
-                args.push_front("display".to_owned());
-                args
-            }
-        }
-    }
-
-    pub fn choose_submit() -> Self {
-        println!();
-        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
-        let submits = variants
-            .iter()
-            .map(|p| p.get_message().unwrap().to_owned())
-            .collect::<Vec<_>>();
-        let select_submit = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select an action that you want to add to the action:")
-            .items(&submits)
-            .default(0)
-            .interact()
-            .unwrap();
-        match variants[select_submit] {
-            SubmitDiscriminants::Send => Submit::Send,
-            SubmitDiscriminants::Display => Submit::Display,
-        }
-    }
-
-    pub fn process_offline(
-        self,
-        serialize_to_base64: String,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        println!("Srialize_to_base64:\n{}", &serialize_to_base64);
-        Ok(None)
-    }
-
-    pub async fn process_online(
-        self,
-        network_connection_config: crate::common::ConnectionConfig,
-        signed_transaction: near_primitives::transaction::SignedTransaction,
-        serialize_to_base64: String,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        match self {
-            Submit::Send => {
-                println!("Transaction sent ...");
-                let json_rcp_client =
-                    near_jsonrpc_client::new_client(network_connection_config.rpc_url().as_str());
-                let transaction_info = loop {
-                    let transaction_info_result = json_rcp_client
-                        .broadcast_tx_commit(near_primitives::serialize::to_base64(
-                            signed_transaction
-                                .try_to_vec()
-                                .expect("Transaction is not expected to fail on serialization"),
-                        ))
-                        .await;
-                    match transaction_info_result {
-                        Ok(response) => {
-                            break response;
-                        }
-                        Err(err) => {
-                            if let Some(serde_json::Value::String(data)) = &err.data {
-                                if data.contains("Timeout") {
-                                    println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
-                                    continue;
-                                } else {
-                                    println!("Error transaction: {:#?}", err)
-                                }
-                            };
-                            return Ok(None);
-                        }
-                    };
-                };
-                Ok(Some(transaction_info))
-            }
-            Submit::Display => {
-                println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
-                Ok(None)
             }
         }
     }

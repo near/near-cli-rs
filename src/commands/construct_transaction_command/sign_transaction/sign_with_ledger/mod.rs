@@ -16,7 +16,7 @@ pub struct CliSignLedger {
     #[clap(long)]
     block_hash: Option<near_primitives::hash::CryptoHash>,
     #[clap(subcommand)]
-    submit: Option<super::sign_with_private_key::Submit>,
+    submit: Option<super::Submit>,
 }
 
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ pub struct SignLedger {
     pub signer_public_key: near_crypto::PublicKey,
     nonce: Option<u64>,
     block_hash: Option<near_primitives::hash::CryptoHash>,
-    pub submit: Option<super::sign_with_private_key::Submit>,
+    pub submit: Option<super::Submit>,
 }
 
 impl CliSignLedger {
@@ -82,7 +82,7 @@ impl SignLedger {
         let signer_public_key = near_crypto::PublicKey::ED25519(
             near_crypto::ED25519PublicKey::from(public_key.to_bytes()),
         );
-        let submit: Option<super::sign_with_private_key::Submit> = item.submit;
+        let submit: Option<super::Submit> = item.submit;
         match connection_config {
             Some(_) => Ok(Self {
                 seed_phrase_hd_path,
@@ -128,14 +128,14 @@ impl SignLedger {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_connection_config: Option<crate::common::ConnectionConfig>,
+        connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let seed_phrase_hd_path = self.seed_phrase_hd_path.clone();
         let public_key = self.signer_public_key.clone();
         let nonce = self.nonce.unwrap_or_default().clone();
         let block_hash = self.block_hash.unwrap_or_default().clone();
-        let submit: Option<super::sign_with_private_key::Submit> = self.submit.clone();
-        match network_connection_config {
+        let submit: Option<super::Submit> = self.submit.clone();
+        match connection_config.clone() {
             None => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
                     public_key,
@@ -183,7 +183,7 @@ impl SignLedger {
                 match submit {
                     Some(submit) => submit.process_offline(serialize_to_base64),
                     None => {
-                        let submit = super::sign_with_private_key::Submit::choose_submit();
+                        let submit = super::Submit::choose_submit(connection_config.clone());
                         submit.process_offline(serialize_to_base64)
                     }
                 }
@@ -259,7 +259,7 @@ impl SignLedger {
                 println!("Your transaction was signed successfully.");
                 match submit {
                     None => {
-                        let submit = super::sign_with_private_key::Submit::choose_submit();
+                        let submit = super::Submit::choose_submit(connection_config);
                         submit
                             .process_online(
                                 network_connection_config,
