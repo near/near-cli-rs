@@ -154,9 +154,7 @@ impl CliSendFrom {
 impl From<SendFrom> for CliSendFrom {
     fn from(send_from: SendFrom) -> Self {
         match send_from {
-            SendFrom::Account(sender) => {
-                Self::Account(super::super::super::super::sender::CliSender::from(sender))
-            }
+            SendFrom::Account(sender) => Self::Account(sender.into()),
         }
     }
 }

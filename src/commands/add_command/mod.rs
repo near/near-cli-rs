@@ -97,6 +97,11 @@ impl CliAction {
                 command.push_front("contract-code".to_owned());
                 command
             }
+            Self::AccessKey(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("access-key".to_owned());
+                command
+            }
             _ => todo!(),
         }
     }
@@ -106,6 +111,7 @@ impl From<Action> for CliAction {
     fn from(item: Action) -> Self {
         match item {
             Action::ContractCode(operation_mode) => Self::ContractCode(operation_mode.into()),
+            Action::AccessKey(operation_mode) => Self::AccessKey(operation_mode.into()),
             _ => todo!(),
         }
     }

@@ -18,6 +18,25 @@ pub struct FullAccessType {
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
+impl CliFullAccessType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<FullAccessType> for CliFullAccessType {
+    fn from(full_access_type: FullAccessType) -> Self {
+        Self{
+            sign_option: Some(crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction::from(full_access_type.sign_option)),
+        }
+    }
+}
+
 impl FullAccessType {
     pub fn from(
         item: CliFullAccessType,

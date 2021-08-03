@@ -154,9 +154,7 @@ impl CliSendFrom {
 impl From<SendFrom> for CliSendFrom {
     fn from(send_from: SendFrom) -> Self {
         match send_from {
-            SendFrom::Sender(sender) => Self::Sender(
-                crate::commands::transfer_command::sender::CliSender::from(sender),
-            ),
+            SendFrom::Sender(sender) => Self::Sender(sender.into()),
         }
     }
 }
