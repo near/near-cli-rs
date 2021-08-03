@@ -19,6 +19,29 @@ pub struct Sender {
     pub contract: super::contract::Contract,
 }
 
+impl CliSender {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .contract
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(sender_account_id) = &self.sender_account_id {
+            args.push_front(sender_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Sender> for CliSender {
+    fn from(sender: Sender) -> Self {
+        Self {
+            sender_account_id: Some(sender.sender_account_id),
+            contract: Some(sender.contract.into()),
+        }
+    }
+}
+
 impl Sender {
     pub fn from(
         item: CliSender,

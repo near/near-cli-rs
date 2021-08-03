@@ -80,9 +80,7 @@ impl From<TopLevelCommand> for CliTopLevelCommand {
     fn from(top_level_command: TopLevelCommand) -> Self {
         match top_level_command {
             TopLevelCommand::Add(add_action) => Self::Add(add_action.into()),
-            TopLevelCommand::Transfer(currency) => {
-                Self::Transfer(self::transfer_command::CliCurrency::from(currency))
-            }
+            TopLevelCommand::Transfer(currency) => Self::Transfer(currency.into()),
             _ => todo!(),
         }
     }

@@ -15,6 +15,27 @@ pub struct OfflineArgs {
     send_from: super::online_mode::select_server::server::SendFrom,
 }
 
+impl CliOfflineArgs {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.send_from
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<OfflineArgs> for CliOfflineArgs {
+    fn from(offline_args: OfflineArgs) -> Self {
+        Self {
+            send_from: Some(
+                super::online_mode::select_server::server::CliSendFrom::from(
+                    offline_args.send_from,
+                ),
+            ),
+        }
+    }
+}
+
 impl OfflineArgs {
     pub fn from(item: CliOfflineArgs) -> color_eyre::eyre::Result<Self> {
         let send_from = match item.send_from {

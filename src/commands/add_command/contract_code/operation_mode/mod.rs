@@ -23,18 +23,18 @@ pub struct OperationMode {
 
 impl CliOperationMode {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        // todo
-        let mut args = std::collections::VecDeque::new();
-        args.push_front("...".to_owned());
-        args
+        self.mode
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
     }
 }
 
 impl From<OperationMode> for CliOperationMode {
     fn from(item: OperationMode) -> Self {
-        // todo
-        //Self { mode: Some(item.into()) }
-        Self { mode: None }
+        Self {
+            mode: Some(CliMode::from(item.mode)),
+        }
     }
 }
 
@@ -74,6 +74,36 @@ pub enum Mode {
         message = "No, I want to work in no-network (air-gapped) environment"
     ))]
     Offline(self::offline_mode::OfflineArgs),
+}
+
+impl CliMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Network(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("network".to_owned());
+                args
+            }
+            Self::Offline(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("offline".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<Mode> for CliMode {
+    fn from(mode: Mode) -> Self {
+        match mode {
+            Mode::Network(network_args) => {
+                Self::Network(self::online_mode::CliNetworkArgs::from(network_args))
+            }
+            Mode::Offline(offline_args) => {
+                Self::Offline(self::offline_mode::CliOfflineArgs::from(offline_args))
+            }
+        }
+    }
 }
 
 impl Mode {

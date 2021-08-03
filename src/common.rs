@@ -223,6 +223,12 @@ impl std::str::FromStr for NearGas {
     }
 }
 
+impl From<u64> for NearGas {
+    fn from(num: u64) -> Self {
+        Self { inner: num }
+    }
+}
+
 impl NearGas {
     fn into_tera_gas(num: &str) -> Result<u64, String> {
         let res_split: Vec<&str> = num.split('.').collect();

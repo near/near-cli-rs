@@ -36,7 +36,6 @@ pub struct Server {
 
 impl CliCustomServer {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        // let url = self.url.unwrap().inner;
         let mut args = self
             .send_from
             .as_ref()

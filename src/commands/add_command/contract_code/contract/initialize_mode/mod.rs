@@ -20,6 +20,34 @@ pub enum NextAction {
     NoInitialize(NoInitialize),
 }
 
+impl CliNextAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Initialize(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("initialize".to_owned());
+                args
+            }
+            Self::NoInitialize(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("no-initialize".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<NextAction> for CliNextAction {
+    fn from(next_action: NextAction) -> Self {
+        match next_action {
+            NextAction::Initialize(call_function_action) => {
+                Self::Initialize(call_function_action.into())
+            }
+            NextAction::NoInitialize(no_initialize) => Self::NoInitialize(no_initialize.into()),
+        }
+    }
+}
+
 impl NextAction {
     pub fn from(
         item: CliNextAction,
@@ -109,6 +137,23 @@ pub struct CliNoInitialize {
 pub struct NoInitialize {
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+}
+
+impl CliNoInitialize {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<NoInitialize> for CliNoInitialize {
+    fn from(no_initialize: NoInitialize) -> Self {
+        Self{sign_option: Some(crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction::from(no_initialize.sign_option))}
+    }
 }
 
 impl NoInitialize {

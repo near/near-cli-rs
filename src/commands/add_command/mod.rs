@@ -94,7 +94,7 @@ impl CliAction {
         match self {
             Self::ContractCode(subcommand) => {
                 let mut command = subcommand.to_cli_args();
-                command.push_front("contact-code".to_owned());
+                command.push_front("contract-code".to_owned());
                 command
             }
             _ => todo!(),
