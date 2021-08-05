@@ -58,7 +58,7 @@ impl From<Server> for CliCustomServer {
                 )
                 .unwrap(),
             ),
-            send_from: Some(CliSendFrom::from(server.send_from)),
+            send_from: Some(server.send_from.into()),
         }
     }
 }
@@ -75,7 +75,7 @@ impl CliServer {
 impl From<Server> for CliServer {
     fn from(server: Server) -> Self {
         Self {
-            send_from: Some(CliSendFrom::from(server.send_from)),
+            send_from: Some(server.send_from.into()),
         }
     }
 }

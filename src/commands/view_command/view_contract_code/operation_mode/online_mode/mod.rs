@@ -17,6 +17,25 @@ pub struct NetworkArgs {
     selected_server: self::select_server::SelectServer,
 }
 
+impl CliNetworkArgs {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.selected_server
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<NetworkArgs> for CliNetworkArgs {
+    fn from(network_args: NetworkArgs) -> Self {
+        Self {
+            selected_server: Some(self::select_server::CliSelectServer::from(
+                network_args.selected_server,
+            )),
+        }
+    }
+}
+
 impl From<CliNetworkArgs> for NetworkArgs {
     fn from(item: CliNetworkArgs) -> Self {
         let selected_server = match item.selected_server {

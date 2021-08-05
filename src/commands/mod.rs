@@ -71,6 +71,11 @@ impl CliTopLevelCommand {
                 args.push_front("transfer".to_owned());
                 args
             }
+            Self::View(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("view".to_owned());
+                args
+            }
             _ => todo!(),
         }
     }
@@ -81,6 +86,7 @@ impl From<TopLevelCommand> for CliTopLevelCommand {
         match top_level_command {
             TopLevelCommand::Add(add_action) => Self::Add(add_action.into()),
             TopLevelCommand::Transfer(currency) => Self::Transfer(currency.into()),
+            TopLevelCommand::View(view_query_request) => Self::View(view_query_request.into()),
             _ => todo!(),
         }
     }

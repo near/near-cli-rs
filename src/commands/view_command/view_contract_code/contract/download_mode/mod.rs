@@ -21,6 +21,32 @@ pub enum DownloadMode {
     Hash(self::hash_contract::ContractHash),
 }
 
+impl CliDownloadMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Download(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("download".to_owned());
+                args
+            }
+            Self::Hash(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("hash".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<DownloadMode> for CliDownloadMode {
+    fn from(download_mode: DownloadMode) -> Self {
+        match download_mode {
+            DownloadMode::Download(contract_file) => Self::Download(contract_file.into()),
+            DownloadMode::Hash(contract_hash) => Self::Hash(contract_hash.into()),
+        }
+    }
+}
+
 impl DownloadMode {
     pub fn from(item: CliDownloadMode, contract_id: &str) -> Self {
         match item {

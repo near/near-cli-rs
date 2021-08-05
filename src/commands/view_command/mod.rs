@@ -25,6 +25,25 @@ pub struct ViewQueryRequest {
     pub query: QueryRequest,
 }
 
+impl CliViewQueryRequest {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .query
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<ViewQueryRequest> for CliViewQueryRequest {
+    fn from(view_query_request: ViewQueryRequest) -> Self {
+        Self {
+            query: Some(view_query_request.query.into()),
+        }
+    }
+}
+
 impl From<CliViewQueryRequest> for ViewQueryRequest {
     fn from(item: CliViewQueryRequest) -> Self {
         let query = match item.query {
@@ -72,6 +91,32 @@ pub enum QueryRequest {
     Nonce(self::view_nonce::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View recent block hash for this network"))]
     RecentBlockHash(self::view_recent_block_hash::operation_mode::OperationMode),
+}
+
+impl CliQueryRequest {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::ContractCode(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("contract-code".to_owned());
+                args
+            }
+            _ => todo!(),
+        }
+    }
+}
+
+impl From<QueryRequest> for CliQueryRequest {
+    fn from(query_request: QueryRequest) -> Self {
+        match query_request {
+            QueryRequest::AccountSummary(operation_mode) => todo!(),
+            QueryRequest::ContractCode(operation_mode) => Self::ContractCode(operation_mode.into()),
+            QueryRequest::ContractState(operation_mode) => todo!(),
+            QueryRequest::Transaction(operation_mode) => todo!(),
+            QueryRequest::Nonce(operation_mode) => todo!(),
+            QueryRequest::RecentBlockHash(operation_mode) => todo!(),
+        }
+    }
 }
 
 impl From<CliQueryRequest> for QueryRequest {

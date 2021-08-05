@@ -15,6 +15,25 @@ pub struct ContractHash {
     pub selected_block_id: super::super::super::block_id::BlockId,
 }
 
+impl CliContractHash {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .selected_block_id
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<ContractHash> for CliContractHash {
+    fn from(contract_hash: ContractHash) -> Self {
+        Self {
+            selected_block_id: Some(contract_hash.selected_block_id.into()),
+        }
+    }
+}
+
 impl ContractHash {
     pub fn from(item: CliContractHash) -> Self {
         let selected_block_id: super::super::super::block_id::BlockId = match item.selected_block_id

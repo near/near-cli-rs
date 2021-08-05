@@ -19,6 +19,29 @@ pub struct ContractFile {
     pub selected_block_id: super::super::super::block_id::BlockId,
 }
 
+impl CliContractFile {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .selected_block_id
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(file_path) = &self.file_path {
+            args.push_front(file_path.as_path().display().to_string());
+        };
+        args
+    }
+}
+
+impl From<ContractFile> for CliContractFile {
+    fn from(contract_file: ContractFile) -> Self {
+        Self {
+            file_path: contract_file.file_path,
+            selected_block_id: Some(contract_file.selected_block_id.into()),
+        }
+    }
+}
+
 impl ContractFile {
     pub fn from(item: CliContractFile, contract_id: &str) -> Self {
         let file_path = match item.file_path {

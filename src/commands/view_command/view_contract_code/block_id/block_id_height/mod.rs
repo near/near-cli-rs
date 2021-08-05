@@ -12,6 +12,24 @@ pub struct BlockIdHeight {
     block_id_height: near_primitives::types::BlockHeight,
 }
 
+impl CliBlockIdHeight {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(block_id_height) = &self.block_id_height {
+            args.push_front(block_id_height.to_string());
+        }
+        args
+    }
+}
+
+impl From<BlockIdHeight> for CliBlockIdHeight {
+    fn from(block_id_height: BlockIdHeight) -> Self {
+        Self {
+            block_id_height: Some(block_id_height.block_id_height),
+        }
+    }
+}
+
 impl From<CliBlockIdHeight> for BlockIdHeight {
     fn from(item: CliBlockIdHeight) -> Self {
         let block_id_height: near_primitives::types::BlockHeight = match item.block_id_height {
