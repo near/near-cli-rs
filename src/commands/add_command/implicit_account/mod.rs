@@ -20,6 +20,25 @@ pub struct ImplicitAccount {
     pub public_key_mode: PublicKeyMode,
 }
 
+impl CliImplicitAccount {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .public_key_mode
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<ImplicitAccount> for CliImplicitAccount {
+    fn from(implicit_account: ImplicitAccount) -> Self {
+        Self {
+            public_key_mode: Some(implicit_account.public_key_mode.into()),
+        }
+    }
+}
+
 impl From<CliImplicitAccount> for ImplicitAccount {
     fn from(item: CliImplicitAccount) -> Self {
         let public_key_mode = match item.public_key_mode {
@@ -47,6 +66,28 @@ pub enum CliPublicKeyMode {
 pub enum PublicKeyMode {
     #[strum_discriminants(strum(message = "Generate key pair"))]
     GenerateKeypair(self::generate_keypair::CliGenerateKeypair),
+}
+
+impl CliPublicKeyMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::GenerateKeypair(_) => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("generate-keypair".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<PublicKeyMode> for CliPublicKeyMode {
+    fn from(public_key_mode: PublicKeyMode) -> Self {
+        match public_key_mode {
+            PublicKeyMode::GenerateKeypair(generate_keypair) => {
+                Self::GenerateKeypair(generate_keypair)
+            }
+        }
+    }
 }
 
 impl From<CliPublicKeyMode> for PublicKeyMode {

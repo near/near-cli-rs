@@ -102,6 +102,11 @@ impl CliAction {
                 command.push_front("access-key".to_owned());
                 command
             }
+            Self::ImplicitAccount(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("implicit-account".to_owned());
+                command
+            }
             _ => todo!(),
         }
     }
@@ -112,6 +117,9 @@ impl From<Action> for CliAction {
         match item {
             Action::ContractCode(operation_mode) => Self::ContractCode(operation_mode.into()),
             Action::AccessKey(operation_mode) => Self::AccessKey(operation_mode.into()),
+            Action::ImplicitAccount(implicit_account) => {
+                Self::ImplicitAccount(implicit_account.into())
+            }
             _ => todo!(),
         }
     }
