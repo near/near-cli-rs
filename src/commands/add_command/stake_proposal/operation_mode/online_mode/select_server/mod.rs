@@ -28,6 +28,46 @@ pub enum SelectServer {
     Custom(self::server::Server),
 }
 
+impl CliSelectServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Testnet(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("testnet".to_owned());
+                args
+            }
+            Self::Mainnet(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("mainnet".to_owned());
+                args
+            }
+            Self::Betanet(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("betanet".to_owned());
+                args
+            }
+            Self::Custom(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("custom".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SelectServer> for CliSelectServer {
+    fn from(select_server: SelectServer) -> Self {
+        match select_server {
+            SelectServer::Testnet(server) => Self::Testnet(self::server::CliServer::from(server)),
+            SelectServer::Mainnet(server) => Self::Mainnet(self::server::CliServer::from(server)),
+            SelectServer::Betanet(server) => Self::Betanet(self::server::CliServer::from(server)),
+            SelectServer::Custom(server) => {
+                Self::Custom(self::server::CliCustomServer::from(server))
+            }
+        }
+    }
+}
+
 impl SelectServer {
     pub fn from(item: CliSelectServer) -> color_eyre::eyre::Result<Self> {
         match item {

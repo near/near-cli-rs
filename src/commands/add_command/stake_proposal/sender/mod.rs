@@ -19,6 +19,29 @@ pub struct Sender {
     pub transfer: super::transfer_near_tokens_type::Transfer,
 }
 
+impl CliSender {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .transfer
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(sender_account_id) = &self.sender_account_id {
+            args.push_front(sender_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Sender> for CliSender {
+    fn from(sender: Sender) -> Self {
+        Self {
+            sender_account_id: Some(sender.sender_account_id),
+            transfer: Some(sender.transfer.into()),
+        }
+    }
+}
+
 impl Sender {
     pub fn from(
         item: CliSender,

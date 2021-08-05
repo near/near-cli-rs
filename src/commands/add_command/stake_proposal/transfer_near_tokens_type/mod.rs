@@ -11,6 +11,28 @@ pub enum Transfer {
     Amount(TransferNEARTokensAction),
 }
 
+impl CliTransfer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Amount(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("amount".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<Transfer> for CliTransfer {
+    fn from(transfer: Transfer) -> Self {
+        match transfer {
+            Transfer::Amount(transfer_near_tokens_action) => {
+                Self::Amount(transfer_near_tokens_action.into())
+            }
+        }
+    }
+}
+
 impl Transfer {
     pub fn from(
         item: CliTransfer,
@@ -75,22 +97,75 @@ pub struct TransferNEARTokensAction {
     pub sign_transactions: super::transactions_signing::TransactionsSigning,
 }
 
+impl CliTransferNEARTokensAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .sign_transactions
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(amount) = &self.amount {
+            args.push_front(amount.to_string());
+        }
+        args
+    }
+}
+
+impl From<TransferNEARTokensAction> for CliTransferNEARTokensAction {
+    fn from(transfer_near_tokens_action: TransferNEARTokensAction) -> Self {
+        Self {
+            amount: Some(transfer_near_tokens_action.amount),
+            sign_transactions: Some(transfer_near_tokens_action.sign_transactions.into()),
+        }
+    }
+}
+
 impl TransferNEARTokensAction {
     fn from(
         item: CliTransferNEARTokensAction,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: String,
     ) -> color_eyre::eyre::Result<Self> {
-        let amount: crate::common::NearBalance = match item.amount {
-            Some(cli_amount) => cli_amount,
-            None => TransferNEARTokensAction::input_amount(),
+        let amount: crate::common::NearBalance = match &connection_config {
+            Some(network_connection_config) => {
+                let account_balance: crate::common::NearBalance =
+                    match crate::common::check_account_id(
+                        network_connection_config.clone(),
+                        sender_account_id.clone(),
+                    )? {
+                        Some(account_view) => {
+                            crate::common::NearBalance::from_yoctonear(account_view.amount)
+                        }
+                        None => crate::common::NearBalance::from_yoctonear(0),
+                    };
+                match item.amount {
+                    Some(cli_amount) => {
+                        if cli_amount <= account_balance {
+                            cli_amount
+                        } else {
+                            println!(
+                                "You need to enter a value of no more than {}",
+                                account_balance
+                            );
+                            TransferNEARTokensAction::input_amount(Some(account_balance))
+                        }
+                    }
+                    None => TransferNEARTokensAction::input_amount(Some(account_balance)),
+                }
+            }
+            None => match item.amount {
+                Some(cli_amount) => cli_amount,
+                None => TransferNEARTokensAction::input_amount(None),
+            },
         };
         let sign_transactions = match item.sign_transactions {
-            Some(cli_sign_transaction) => super::transactions_signing::TransactionsSigning::from(
-                cli_sign_transaction,
-                connection_config,
-                sender_account_id,
-            )?,
+            Some(cli_transaction_signing) => {
+                super::transactions_signing::TransactionsSigning::from(
+                    cli_transaction_signing,
+                    connection_config,
+                    sender_account_id,
+                )?
+            }
             None => super::transactions_signing::TransactionsSigning::choose_sign_transactions(
                 connection_config,
                 sender_account_id,
@@ -104,11 +179,30 @@ impl TransferNEARTokensAction {
 }
 
 impl TransferNEARTokensAction {
-    fn input_amount() -> crate::common::NearBalance {
-        Input::new()
-            .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
-            .interact_text()
-            .unwrap()
+    fn input_amount(
+        account_balance: Option<crate::common::NearBalance>,
+    ) -> crate::common::NearBalance {
+        match account_balance {
+            Some(account_balance) => loop {
+                let input_amount: crate::common::NearBalance = Input::new()
+                            .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
+                            .with_initial_text(format!("{}", account_balance))
+                            .interact_text()
+                            .unwrap();
+                if input_amount <= account_balance {
+                    break input_amount;
+                } else {
+                    println!(
+                        "You need to enter a value of no more than {}",
+                        account_balance
+                    )
+                }
+            }
+            None => Input::new()
+                        .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
+                        .interact_text()
+                        .unwrap()
+        }
     }
 
     pub async fn process(

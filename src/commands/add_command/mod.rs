@@ -107,6 +107,11 @@ impl CliAction {
                 command.push_front("implicit-account".to_owned());
                 command
             }
+            Self::StakeProposal(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("stake-proposal".to_owned());
+                command
+            }
             _ => todo!(),
         }
     }
@@ -120,6 +125,7 @@ impl From<Action> for CliAction {
             Action::ImplicitAccount(implicit_account) => {
                 Self::ImplicitAccount(implicit_account.into())
             }
+            Action::StakeProposal(operation_mode) => Self::StakeProposal(operation_mode.into()),
             _ => todo!(),
         }
     }

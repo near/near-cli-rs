@@ -11,6 +11,28 @@ pub enum TransactionsSigning {
     TransactionsSigningPublicKey(TransactionsSigningAction),
 }
 
+impl CliTransactionsSigning {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::TransactionsSigningPublicKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("transactions-signing-public-key".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<TransactionsSigning> for CliTransactionsSigning {
+    fn from(transactions_signing: TransactionsSigning) -> Self {
+        match transactions_signing {
+            TransactionsSigning::TransactionsSigningPublicKey(transactions_signing_action) => {
+                Self::TransactionsSigningPublicKey(transactions_signing_action.into())
+            }
+        }
+    }
+}
+
 impl TransactionsSigning {
     pub fn from(
         item: CliTransactionsSigning,
@@ -83,6 +105,31 @@ pub struct TransactionsSigningAction {
     pub transactions_signing_public_key: near_crypto::PublicKey,
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+}
+
+impl CliTransactionsSigningAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(transactions_signing_public_key) = &self.transactions_signing_public_key {
+            args.push_front(transactions_signing_public_key.to_string());
+        }
+        args
+    }
+}
+
+impl From<TransactionsSigningAction> for CliTransactionsSigningAction {
+    fn from(transactions_signing_action: TransactionsSigningAction) -> Self {
+        Self {
+            transactions_signing_public_key: Some(
+                transactions_signing_action.transactions_signing_public_key,
+            ),
+            sign_option: Some(transactions_signing_action.sign_option.into()),
+        }
+    }
 }
 
 impl TransactionsSigningAction {

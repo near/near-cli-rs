@@ -1,4 +1,5 @@
 use dialoguer::Input;
+use std::str::FromStr;
 
 /// предустановленный RPC-сервер
 #[derive(Debug, Default, Clone, clap::Clap)]
@@ -30,6 +31,52 @@ pub struct CliCustomServer {
 pub struct Server {
     pub connection_config: Option<crate::common::ConnectionConfig>,
     pub send_from: SendFrom,
+}
+
+impl CliCustomServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .send_from
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(url) = &self.url {
+            args.push_front(url.to_string());
+            args.push_front("--url".to_string());
+        }
+        args
+    }
+}
+
+impl From<Server> for CliCustomServer {
+    fn from(server: Server) -> Self {
+        Self {
+            url: Some(
+                crate::common::AvailableRpcServerUrl::from_str(
+                    server.connection_config.unwrap().rpc_url().as_str(),
+                )
+                .unwrap(),
+            ),
+            send_from: Some(server.send_from.into()),
+        }
+    }
+}
+
+impl CliServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.send_from
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<Server> for CliServer {
+    fn from(server: Server) -> Self {
+        Self {
+            send_from: Some(server.send_from.into()),
+        }
+    }
 }
 
 impl CliServer {
@@ -89,6 +136,26 @@ pub enum CliSendFrom {
 #[derive(Debug, Clone)]
 pub enum SendFrom {
     Validator(super::super::super::super::sender::Sender),
+}
+
+impl CliSendFrom {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Validator(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("validator".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendFrom> for CliSendFrom {
+    fn from(send_from: SendFrom) -> Self {
+        match send_from {
+            SendFrom::Validator(sender) => Self::Validator(sender.into()),
+        }
+    }
 }
 
 impl SendFrom {
