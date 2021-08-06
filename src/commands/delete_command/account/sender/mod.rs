@@ -19,6 +19,28 @@ pub struct Sender {
     pub send_to: SendTo,
 }
 
+impl CliSender {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .send_to
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(sender_account_id) = &self.sender_account_id {
+            args.push_front(sender_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Sender> for CliSender {
+    fn from(sender: Sender) -> Self {
+        Self {
+            sender_account_id: Some(sender.sender_account_id),
+            send_to: Some(sender.send_to.into()),
+        }
+    }
+}
 impl Sender {
     pub fn from(
         item: CliSender,
@@ -101,6 +123,28 @@ pub enum CliSendTo {
 #[derive(Debug, Clone)]
 pub enum SendTo {
     Beneficiary(super::DeleteAccountAction),
+}
+
+impl CliSendTo {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Beneficiary(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("beneficiary".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendTo> for CliSendTo {
+    fn from(send_to: SendTo) -> Self {
+        match send_to {
+            SendTo::Beneficiary(delete_account_action) => {
+                Self::Beneficiary(delete_account_action.into())
+            }
+        }
+    }
 }
 
 impl SendTo {

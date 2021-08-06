@@ -25,6 +25,29 @@ pub struct DeleteAccountAction {
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
+impl CliDeleteAccountAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(beneficiary_id) = &self.beneficiary_id {
+            args.push_front(beneficiary_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<DeleteAccountAction> for CliDeleteAccountAction {
+    fn from(delete_account_action: DeleteAccountAction) -> Self {
+        Self {
+            beneficiary_id: Some(delete_account_action.beneficiary_id),
+            sign_option: Some(delete_account_action.sign_option.into()),
+        }
+    }
+}
+
 impl DeleteAccountAction {
     pub fn from(
         item: CliDeleteAccountAction,

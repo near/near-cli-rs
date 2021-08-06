@@ -82,7 +82,11 @@ impl CliAction {
                 command.push_front("access-key".to_owned());
                 command
             }
-            _ => todo!(),
+            Self::Account(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("account".to_owned());
+                command
+            }
         }
     }
 }
@@ -91,7 +95,7 @@ impl From<Action> for CliAction {
     fn from(action: Action) -> Self {
         match action {
             Action::AccessKey(operation_mode) => Self::AccessKey(operation_mode.into()),
-            Action::Account(operation_mode) => todo!(),
+            Action::Account(operation_mode) => Self::Account(operation_mode.into()),
         }
     }
 }
