@@ -33,7 +33,7 @@ impl CliOperationMode {
 impl From<OperationMode> for CliOperationMode {
     fn from(item: OperationMode) -> Self {
         Self {
-            mode: Some(CliMode::from(item.mode)),
+            mode: Some(item.mode.into()),
         }
     }
 }

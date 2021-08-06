@@ -27,11 +27,7 @@ impl CliOfflineArgs {
 impl From<OfflineArgs> for CliOfflineArgs {
     fn from(offline_args: OfflineArgs) -> Self {
         Self {
-            send_from: Some(
-                super::online_mode::select_server::server::CliSendFrom::from(
-                    offline_args.send_from,
-                ),
-            ),
+            send_from: Some(offline_args.send_from.into()),
         }
     }
 }

@@ -29,9 +29,7 @@ impl CliNetworkArgs {
 impl From<NetworkArgs> for CliNetworkArgs {
     fn from(network_args: NetworkArgs) -> Self {
         Self {
-            selected_server: Some(
-                network_args.selected_server.into()
-            )
+            selected_server: Some(network_args.selected_server.into()),
         }
     }
 }

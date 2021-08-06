@@ -26,9 +26,9 @@ impl CliTransfer {
 impl From<Transfer> for CliTransfer {
     fn from(transfer: Transfer) -> Self {
         match transfer {
-            Transfer::Amount(transfer_near_token_action) => Self::Amount(
-                CliTransferNEARTokensAction::from(transfer_near_token_action),
-            ),
+            Transfer::Amount(transfer_near_token_action) => {
+                Self::Amount(transfer_near_token_action.into())
+            }
         }
     }
 }
