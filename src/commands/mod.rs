@@ -66,6 +66,11 @@ impl CliTopLevelCommand {
                 args.push_front("add".to_owned());
                 args
             }
+            Self::Delete(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("delete".to_owned());
+                args
+            }
             Self::Transfer(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("transfer".to_owned());
@@ -85,6 +90,7 @@ impl From<TopLevelCommand> for CliTopLevelCommand {
     fn from(top_level_command: TopLevelCommand) -> Self {
         match top_level_command {
             TopLevelCommand::Add(add_action) => Self::Add(add_action.into()),
+            TopLevelCommand::Delete(delete_action) => Self::Delete(delete_action.into()),
             TopLevelCommand::Transfer(currency) => Self::Transfer(currency.into()),
             TopLevelCommand::View(view_query_request) => Self::View(view_query_request.into()),
             _ => todo!(),

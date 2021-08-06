@@ -21,6 +21,23 @@ pub struct DeleteAction {
     pub action: Action,
 }
 
+impl CliDeleteAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<DeleteAction> for CliDeleteAction {
+    fn from(delete_action: DeleteAction) -> Self {
+        Self {
+            action: Some(delete_action.action.into()),
+        }
+    }
+}
+
 impl DeleteAction {
     pub fn from(item: CliDeleteAction) -> color_eyre::eyre::Result<Self> {
         let action = match item.action {
@@ -55,6 +72,28 @@ pub enum Action {
     AccessKey(self::access_key::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Delete this account"))]
     Account(self::account::operation_mode::OperationMode),
+}
+
+impl CliAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::AccessKey(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("access-key".to_owned());
+                command
+            }
+            _ => todo!(),
+        }
+    }
+}
+
+impl From<Action> for CliAction {
+    fn from(action: Action) -> Self {
+        match action {
+            Action::AccessKey(operation_mode) => Self::AccessKey(operation_mode.into()),
+            Action::Account(operation_mode) => todo!(),
+        }
+    }
 }
 
 impl Action {

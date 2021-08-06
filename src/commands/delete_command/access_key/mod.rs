@@ -14,6 +14,28 @@ pub enum DeleteAccessKeyAction {
     PublicKey(DeleteAccessKeyType),
 }
 
+impl CliDeleteAccessKeyAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::PublicKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("public-key".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<DeleteAccessKeyAction> for CliDeleteAccessKeyAction {
+    fn from(delete_access_key_action: DeleteAccessKeyAction) -> Self {
+        match delete_access_key_action {
+            DeleteAccessKeyAction::PublicKey(delete_access_key_type) => {
+                Self::PublicKey(delete_access_key_type.into())
+            }
+        }
+    }
+}
+
 impl DeleteAccessKeyAction {
     pub fn from(
         item: CliDeleteAccessKeyAction,
@@ -79,6 +101,29 @@ pub struct DeleteAccessKeyType {
     pub public_key: near_crypto::PublicKey,
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+}
+
+impl CliDeleteAccessKeyType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(public_key) = &self.public_key {
+            args.push_front(public_key.to_string());
+        }
+        args
+    }
+}
+
+impl From<DeleteAccessKeyType> for CliDeleteAccessKeyType {
+    fn from(delete_access_key_type: DeleteAccessKeyType) -> Self {
+        Self {
+            public_key: Some(delete_access_key_type.public_key),
+            sign_option: Some(delete_access_key_type.sign_option.into()),
+        }
+    }
 }
 
 impl DeleteAccessKeyType {
