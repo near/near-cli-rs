@@ -15,6 +15,23 @@ pub struct OfflineArgs {
     send_to: super::super::contract::SendTo,
 }
 
+impl CliOfflineArgs {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.send_to
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<OfflineArgs> for CliOfflineArgs {
+    fn from(offline_args: OfflineArgs) -> Self {
+        Self {
+            send_to: Some(offline_args.send_to.into()),
+        }
+    }
+}
+
 impl OfflineArgs {
     pub fn from(item: CliOfflineArgs) -> color_eyre::eyre::Result<Self> {
         let send_to = match item.send_to {

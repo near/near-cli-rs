@@ -61,6 +61,11 @@ pub enum TopLevelCommand {
 impl CliTopLevelCommand {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         match self {
+            Self::Execute(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("execute".to_owned());
+                args
+            }
             Self::Add(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("add".to_owned());
@@ -89,6 +94,7 @@ impl CliTopLevelCommand {
 impl From<TopLevelCommand> for CliTopLevelCommand {
     fn from(top_level_command: TopLevelCommand) -> Self {
         match top_level_command {
+            TopLevelCommand::Execute(option_method) => Self::Execute(option_method.into()),
             TopLevelCommand::Add(add_action) => Self::Add(add_action.into()),
             TopLevelCommand::Delete(delete_action) => Self::Delete(delete_action.into()),
             TopLevelCommand::Transfer(currency) => Self::Transfer(currency.into()),

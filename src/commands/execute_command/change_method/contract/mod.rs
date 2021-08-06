@@ -11,6 +11,26 @@ pub enum SendTo {
     Contract(Contract),
 }
 
+impl CliSendTo {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Contract(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("contract".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendTo> for CliSendTo {
+    fn from(send_to: SendTo) -> Self {
+        match send_to {
+            SendTo::Contract(contract) => Self::Contract(contract.into()),
+        }
+    }
+}
+
 impl SendTo {
     pub fn from(
         item: CliSendTo,
@@ -64,6 +84,29 @@ pub struct CliContract {
 pub struct Contract {
     pub contract_account_id: String,
     pub call: super::CallFunction,
+}
+
+impl CliContract {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .call
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(contract_account_id) = &self.contract_account_id {
+            args.push_front(contract_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Contract> for CliContract {
+    fn from(contract: Contract) -> Self {
+        Self {
+            contract_account_id: Some(contract.contract_account_id),
+            call: Some(contract.call.into()),
+        }
+    }
 }
 
 impl Contract {

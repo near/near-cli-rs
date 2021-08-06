@@ -27,6 +27,45 @@ pub struct CallFunctionAction {
     send_from: super::signer::SendFrom,
 }
 
+impl CliCallFunctionAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .send_from
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(gas) = &self.gas {
+            args.push_front(gas.to_string());
+            args.push_front("--prepaid-gas".to_owned())
+        };
+        if let Some(deposit) = &self.deposit {
+            args.push_front(deposit.to_string());
+            args.push_front("--attached-deposit".to_owned())
+        };
+        if let Some(function_args) = &self.args {
+            args.push_front(function_args.to_owned());
+        };
+        if let Some(method_name) = &self.method_name {
+            args.push_front(method_name.to_string());
+        };
+        args
+    }
+}
+
+impl From<CallFunctionAction> for CliCallFunctionAction {
+    fn from(call_function_action: CallFunctionAction) -> Self {
+        Self {
+            method_name: Some(call_function_action.method_name),
+            args: Some(String::from_utf8(call_function_action.args).unwrap_or_default()),
+            gas: Some(call_function_action.gas.into()),
+            deposit: Some(crate::common::NearBalance::from_yoctonear(
+                call_function_action.deposit,
+            )),
+            send_from: Some(call_function_action.send_from.into()),
+        }
+    }
+}
+
 impl CallFunctionAction {
     pub fn from(
         item: CliCallFunctionAction,

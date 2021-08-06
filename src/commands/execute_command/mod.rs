@@ -21,6 +21,23 @@ pub struct OptionMethod {
     method: Method,
 }
 
+impl CliOptionMethod {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.method
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<OptionMethod> for CliOptionMethod {
+    fn from(option_method: OptionMethod) -> Self {
+        Self {
+            method: Some(option_method.method.into()),
+        }
+    }
+}
+
 impl OptionMethod {
     pub fn from(item: CliOptionMethod) -> color_eyre::eyre::Result<Self> {
         let method = match item.method {
@@ -55,6 +72,28 @@ enum Method {
     ChangeMethod(self::change_method::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a method"))]
     ViewMethod(self::view_method::operation_mode::OperationMode),
+}
+
+impl CliMethod {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::ChangeMethod(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("change-method".to_owned());
+                command
+            }
+            _ => todo!(),
+        }
+    }
+}
+
+impl From<Method> for CliMethod {
+    fn from(method: Method) -> Self {
+        match method {
+            Method::ChangeMethod(operation_mode) => Self::ChangeMethod(operation_mode.into()),
+            Method::ViewMethod(operation_mode) => todo!(),
+        }
+    }
 }
 
 impl Method {
