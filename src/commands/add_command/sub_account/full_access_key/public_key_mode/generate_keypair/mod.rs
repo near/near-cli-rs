@@ -18,6 +18,25 @@ pub struct GenerateKeypair {
     pub deposit: super::super::super::deposit::Deposit,
 }
 
+impl CliGenerateKeypair {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .deposit
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<GenerateKeypair> for CliGenerateKeypair {
+    fn from(generate_keypair: GenerateKeypair) -> Self {
+        Self {
+            deposit: Some(generate_keypair.deposit.into()),
+        }
+    }
+}
+
 impl GenerateKeypair {
     pub fn from(
         item: CliGenerateKeypair,

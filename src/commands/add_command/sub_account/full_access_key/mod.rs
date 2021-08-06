@@ -16,6 +16,28 @@ pub enum FullAccessKey {
     SubAccountFullAccess(SubAccountFullAccess),
 }
 
+impl CliFullAccessKey {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::SubAccountFullAccess(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("sub-account-full-access".to_owned());
+                command
+            }
+        }
+    }
+}
+
+impl From<FullAccessKey> for CliFullAccessKey {
+    fn from(full_access_key: FullAccessKey) -> Self {
+        match full_access_key {
+            FullAccessKey::SubAccountFullAccess(sub_account_full_access) => {
+                Self::SubAccountFullAccess(sub_account_full_access.into())
+            }
+        }
+    }
+}
+
 impl FullAccessKey {
     pub fn from(
         item: CliFullAccessKey,
@@ -93,6 +115,25 @@ pub struct CliSubAccountFullAccess {
 #[derive(Debug, Clone)]
 pub struct SubAccountFullAccess {
     pub public_key_mode: self::public_key_mode::PublicKeyMode,
+}
+
+impl CliSubAccountFullAccess {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .public_key_mode
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<SubAccountFullAccess> for CliSubAccountFullAccess {
+    fn from(sub_account_full_access: SubAccountFullAccess) -> Self {
+        Self {
+            public_key_mode: Some(sub_account_full_access.public_key_mode.into()),
+        }
+    }
 }
 
 impl SubAccountFullAccess {

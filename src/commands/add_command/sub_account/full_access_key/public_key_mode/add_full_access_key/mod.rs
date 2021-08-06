@@ -21,6 +21,33 @@ pub struct AddAccessKeyAction {
     pub deposit: super::super::super::deposit::Deposit,
 }
 
+impl CliAddAccessKeyAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .deposit
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(nonce) = &self.nonce {
+            args.push_front(nonce.to_string());
+        }
+        if let Some(public_key) = &self.public_key {
+            args.push_front(public_key.to_string());
+        }
+        args
+    }
+}
+
+impl From<AddAccessKeyAction> for CliAddAccessKeyAction {
+    fn from(add_access_key_action: AddAccessKeyAction) -> Self {
+        Self {
+            public_key: Some(add_access_key_action.public_key),
+            nonce: Some(add_access_key_action.nonce),
+            deposit: Some(add_access_key_action.deposit.into()),
+        }
+    }
+}
+
 impl AddAccessKeyAction {
     pub fn from(
         item: CliAddAccessKeyAction,

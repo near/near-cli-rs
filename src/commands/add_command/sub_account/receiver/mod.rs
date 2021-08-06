@@ -11,6 +11,26 @@ pub enum SendTo {
     SubAccount(SubAccount),
 }
 
+impl CliSendTo {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::SubAccount(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sub-account".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendTo> for CliSendTo {
+    fn from(send_to: SendTo) -> Self {
+        match send_to {
+            SendTo::SubAccount(sub_account) => Self::SubAccount(sub_account.into()),
+        }
+    }
+}
+
 impl SendTo {
     pub fn from(
         item: CliSendTo,
@@ -71,6 +91,29 @@ pub struct CliSubAccount {
 pub struct SubAccount {
     pub sub_account_id: String,
     pub full_access_key: super::full_access_key::FullAccessKey,
+}
+
+impl CliSubAccount {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .full_access_key
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(sub_account_id) = &self.sub_account_id {
+            args.push_front(sub_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<SubAccount> for CliSubAccount {
+    fn from(sub_account: SubAccount) -> Self {
+        Self {
+            sub_account_id: Some(sub_account.sub_account_id),
+            full_access_key: Some(sub_account.full_access_key.into()),
+        }
+    }
 }
 
 impl SubAccount {
