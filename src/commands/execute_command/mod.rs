@@ -82,7 +82,11 @@ impl CliMethod {
                 command.push_front("change-method".to_owned());
                 command
             }
-            _ => todo!(),
+            Self::ViewMethod(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("view-method".to_owned());
+                command
+            }
         }
     }
 }
@@ -91,7 +95,7 @@ impl From<Method> for CliMethod {
     fn from(method: Method) -> Self {
         match method {
             Method::ChangeMethod(operation_mode) => Self::ChangeMethod(operation_mode.into()),
-            Method::ViewMethod(operation_mode) => todo!(),
+            Method::ViewMethod(operation_mode) => Self::ViewMethod(operation_mode.into()),
         }
     }
 }

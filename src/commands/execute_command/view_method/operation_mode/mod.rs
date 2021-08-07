@@ -29,6 +29,23 @@ impl OperationMode {
     }
 }
 
+impl CliOperationMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.mode
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<OperationMode> for CliOperationMode {
+    fn from(item: OperationMode) -> Self {
+        Self {
+            mode: Some(item.mode.into()),
+        }
+    }
+}
+
 impl OperationMode {
     pub async fn process(self) -> crate::CliResult {
         self.mode.process().await
@@ -46,6 +63,28 @@ pub enum CliMode {
 pub enum Mode {
     #[strum_discriminants(strum(message = "Yes, I keep it simple"))]
     Network(self::online_mode::NetworkArgs),
+}
+
+impl CliMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Network(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("network".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<Mode> for CliMode {
+    fn from(mode: Mode) -> Self {
+        match mode {
+            Mode::Network(network_args) => {
+                Self::Network(self::online_mode::CliNetworkArgs::from(network_args))
+            }
+        }
+    }
 }
 
 impl Mode {
