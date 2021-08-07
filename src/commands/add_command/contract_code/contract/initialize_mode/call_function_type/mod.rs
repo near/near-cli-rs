@@ -61,8 +61,10 @@ impl From<CallFunctionAction> for CliCallFunctionAction {
             method_name: Some(call_function_action.method_name),
             args: Some(String::from_utf8(call_function_action.args).unwrap_or_default()),
             gas: Some(call_function_action.gas.into()),
-            deposit: Some(crate::common::NearBalance::from_yoctonear(call_function_action.deposit)),
-            sign_option: Some(crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction::from(call_function_action.sign_option)),
+            deposit: Some(crate::common::NearBalance::from_yoctonear(
+                call_function_action.deposit,
+            )),
+            sign_option: Some(call_function_action.sign_option.into()),
         }
     }
 }

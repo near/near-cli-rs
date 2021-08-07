@@ -116,9 +116,9 @@ impl CliTransferNEARTokensAction {
 
 impl From<TransferNEARTokensAction> for CliTransferNEARTokensAction {
     fn from(transfer_near_tokens_action: TransferNEARTokensAction) -> Self {
-        Self{
+        Self {
             amount: Some(transfer_near_tokens_action.amount),
-            sign_option: Some(crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction::from(transfer_near_tokens_action.sign_option))
+            sign_option: Some(transfer_near_tokens_action.sign_option.into()),
         }
     }
 }

@@ -31,8 +31,8 @@ impl CliFullAccessType {
 
 impl From<FullAccessType> for CliFullAccessType {
     fn from(full_access_type: FullAccessType) -> Self {
-        Self{
-            sign_option: Some(crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction::from(full_access_type.sign_option)),
+        Self {
+            sign_option: Some(full_access_type.sign_option.into()),
         }
     }
 }

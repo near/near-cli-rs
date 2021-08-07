@@ -152,7 +152,9 @@ impl CliNoInitialize {
 
 impl From<NoInitialize> for CliNoInitialize {
     fn from(no_initialize: NoInitialize) -> Self {
-        Self{sign_option: Some(crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction::from(no_initialize.sign_option))}
+        Self {
+            sign_option: Some(no_initialize.sign_option.into()),
+        }
     }
 }
 
