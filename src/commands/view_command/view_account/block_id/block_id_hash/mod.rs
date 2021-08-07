@@ -11,6 +11,24 @@ pub struct BlockIdHash {
     block_id_hash: near_primitives::hash::CryptoHash,
 }
 
+impl CliBlockIdHash {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(block_id_hash) = &self.block_id_hash {
+            args.push_front(block_id_hash.to_string());
+        }
+        args
+    }
+}
+
+impl From<BlockIdHash> for CliBlockIdHash {
+    fn from(block_id_hash: BlockIdHash) -> Self {
+        Self {
+            block_id_hash: Some(block_id_hash.block_id_hash),
+        }
+    }
+}
+
 impl From<CliBlockIdHash> for BlockIdHash {
     fn from(item: CliBlockIdHash) -> Self {
         let block_id_hash: near_primitives::hash::CryptoHash = match item.block_id_hash {

@@ -96,6 +96,11 @@ pub enum QueryRequest {
 impl CliQueryRequest {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         match self {
+            Self::AccountSummary(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("account-summary".to_owned());
+                args
+            }
             Self::ContractCode(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("contract-code".to_owned());
@@ -109,7 +114,9 @@ impl CliQueryRequest {
 impl From<QueryRequest> for CliQueryRequest {
     fn from(query_request: QueryRequest) -> Self {
         match query_request {
-            QueryRequest::AccountSummary(operation_mode) => todo!(),
+            QueryRequest::AccountSummary(operation_mode) => {
+                Self::AccountSummary(operation_mode.into())
+            }
             QueryRequest::ContractCode(operation_mode) => Self::ContractCode(operation_mode.into()),
             QueryRequest::ContractState(operation_mode) => todo!(),
             QueryRequest::Transaction(operation_mode) => todo!(),

@@ -11,6 +11,26 @@ pub enum SendTo {
     Account(Sender),
 }
 
+impl CliSendTo {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Account(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("account".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendTo> for CliSendTo {
+    fn from(send_to: SendTo) -> Self {
+        match send_to {
+            SendTo::Account(sender) => Self::Account(sender.into()),
+        }
+    }
+}
+
 impl From<CliSendTo> for SendTo {
     fn from(item: CliSendTo) -> Self {
         match item {
@@ -54,6 +74,29 @@ pub struct CliSender {
 pub struct Sender {
     pub sender_account_id: String,
     selected_block_id: super::block_id::BlockId,
+}
+
+impl CliSender {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .selected_block_id
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(sender_account_id) = &self.sender_account_id {
+            args.push_front(sender_account_id.to_string());
+        };
+        args
+    }
+}
+
+impl From<Sender> for CliSender {
+    fn from(sender: Sender) -> Self {
+        Self {
+            sender_account_id: Some(sender.sender_account_id),
+            selected_block_id: Some(sender.selected_block_id.into()),
+        }
+    }
 }
 
 impl From<CliSender> for Sender {
