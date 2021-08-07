@@ -35,7 +35,7 @@ pub struct Server {
 impl CliServer {
     pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
         let send_to = match self.send_to {
-            Some(cli_send_to) => super::super::super::super::sender::SendTo::from(cli_send_to),
+            Some(cli_send_to) => cli_send_to.into(),
             None => super::super::super::super::sender::SendTo::send_to(),
         };
         Server {
@@ -55,7 +55,7 @@ impl CliCustomServer {
                 .unwrap(),
         };
         let send_to = match self.send_to {
-            Some(cli_send_to) => super::super::super::super::sender::SendTo::from(cli_send_to),
+            Some(cli_send_to) => cli_send_to.into(),
             None => super::super::super::super::sender::SendTo::send_to(),
         };
         Server {

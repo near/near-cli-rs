@@ -35,9 +35,7 @@ pub struct Server {
 impl CliServer {
     pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
         let transaction_status = match self.transaction_status {
-            Some(cli_transaction_status) => {
-                super::super::super::super::transaction::Transaction::from(cli_transaction_status)
-            }
+            Some(cli_transaction_status) => cli_transaction_status.into(),
             None => super::super::super::super::transaction::Transaction::transaction(),
         };
         Server {
@@ -57,9 +55,7 @@ impl CliCustomServer {
                 .unwrap(),
         };
         let transaction_status = match self.transaction_status {
-            Some(cli_transaction_status) => {
-                super::super::super::super::transaction::Transaction::from(cli_transaction_status)
-            }
+            Some(cli_transaction_status) => cli_transaction_status.into(),
             None => super::super::super::super::transaction::Transaction::transaction(),
         };
         Server {
