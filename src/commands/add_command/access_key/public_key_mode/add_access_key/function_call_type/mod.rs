@@ -54,11 +54,13 @@ impl CliFunctionCallType {
 
 impl From<FunctionCallType> for CliFunctionCallType {
     fn from(function_call_type: FunctionCallType) -> Self {
-        Self{
-            allowance: Some(crate::common::NearBalance::from_yoctonear(function_call_type.allowance.unwrap_or_default())),
+        Self {
+            allowance: Some(crate::common::NearBalance::from_yoctonear(
+                function_call_type.allowance.unwrap_or_default(),
+            )),
             receiver_id: Some(function_call_type.receiver_id),
             method_names: Some(function_call_type.method_names.join(", ")),
-            sign_option: Some(crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction::from(function_call_type.sign_option)),
+            sign_option: Some(function_call_type.sign_option.into()),
         }
     }
 }
