@@ -106,6 +106,11 @@ impl CliQueryRequest {
                 args.push_front("contract-code".to_owned());
                 args
             }
+            Self::ContractState(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("contract-state".to_owned());
+                args
+            }
             _ => todo!(),
         }
     }
@@ -118,7 +123,9 @@ impl From<QueryRequest> for CliQueryRequest {
                 Self::AccountSummary(operation_mode.into())
             }
             QueryRequest::ContractCode(operation_mode) => Self::ContractCode(operation_mode.into()),
-            QueryRequest::ContractState(operation_mode) => todo!(),
+            QueryRequest::ContractState(operation_mode) => {
+                Self::ContractState(operation_mode.into())
+            }
             QueryRequest::Transaction(operation_mode) => todo!(),
             QueryRequest::Nonce(operation_mode) => todo!(),
             QueryRequest::RecentBlockHash(operation_mode) => todo!(),

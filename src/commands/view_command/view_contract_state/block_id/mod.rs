@@ -25,6 +25,38 @@ pub enum BlockId {
     AtBlockHash(self::block_id_hash::BlockIdHash),
 }
 
+impl CliBlockId {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::AtFinalBlock => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("at-final-block".to_owned());
+                args
+            }
+            Self::AtBlockHeight(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("at-block-height".to_owned());
+                args
+            }
+            Self::AtBlockHash(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("at-block-hash".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<BlockId> for CliBlockId {
+    fn from(block_id: BlockId) -> Self {
+        match block_id {
+            BlockId::AtFinalBlock => Self::AtFinalBlock,
+            BlockId::AtBlockHeight(block_id_height) => Self::AtBlockHeight(block_id_height.into()),
+            BlockId::AtBlockHash(block_id_hash) => Self::AtBlockHash(block_id_hash.into()),
+        }
+    }
+}
+
 impl From<CliBlockId> for BlockId {
     fn from(item: CliBlockId) -> Self {
         match item {
