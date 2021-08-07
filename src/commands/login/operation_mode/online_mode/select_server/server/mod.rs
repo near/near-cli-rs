@@ -19,6 +19,43 @@ pub struct Server {
     pub connection_config: crate::common::ConnectionConfig,
 }
 
+impl CliCustomServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(url) = &self.url {
+            args.push_front(url.to_string());
+            args.push_front("--url".to_string());
+        }
+        args
+    }
+}
+
+impl From<Server> for CliCustomServer {
+    fn from(server: Server) -> Self {
+        Self {
+            url: Some(
+                crate::common::AvailableRpcServerUrl::from_str(
+                    server.connection_config.rpc_url().as_str(),
+                )
+                .unwrap()
+                .inner,
+            ),
+        }
+    }
+}
+
+impl CliServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        std::collections::VecDeque::new()
+    }
+}
+
+impl From<Server> for CliServer {
+    fn from(_: Server) -> Self {
+        Self {}
+    }
+}
+
 impl CliServer {
     pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
         Server { connection_config }
