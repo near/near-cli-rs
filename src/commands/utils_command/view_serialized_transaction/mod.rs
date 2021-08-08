@@ -12,6 +12,24 @@ pub struct ViewSerializedTransaction {
     transaction: String,
 }
 
+impl CliViewSerializedTransaction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(transaction) = &self.transaction {
+            args.push_front(transaction.to_string());
+        }
+        args
+    }
+}
+
+impl From<ViewSerializedTransaction> for CliViewSerializedTransaction {
+    fn from(view_serialized_transaction: ViewSerializedTransaction) -> Self {
+        Self {
+            transaction: Some(view_serialized_transaction.transaction),
+        }
+    }
+}
+
 impl From<CliViewSerializedTransaction> for ViewSerializedTransaction {
     fn from(item: CliViewSerializedTransaction) -> Self {
         let transaction: String = match item.transaction {

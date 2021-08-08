@@ -131,6 +131,11 @@ impl CliUtil {
                 args.push_front("combine-transaction-signature".to_owned());
                 args
             }
+            Self::ViewSerializedTransaction(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("view-serialized-transaction".to_owned());
+                args
+            }
             _ => todo!(),
         }
     }
@@ -148,6 +153,9 @@ impl From<Util> for CliUtil {
             }
             Util::CombineTransactionSignature(combine_transaction_signaturte) => {
                 Self::CombineTransactionSignature(combine_transaction_signaturte.into())
+            }
+            Util::ViewSerializedTransaction(view_serialized_transaction) => {
+                Self::ViewSerializedTransaction(view_serialized_transaction.into())
             }
             _ => todo!(),
         }
