@@ -38,7 +38,7 @@ impl std::str::FromStr for TransactionAsBase64 {
 
 impl std::fmt::Display for TransactionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Transaction {}", self.inner.get_hash_and_size().0)
+        write!(f, "{}", self.inner.get_hash_and_size().0)
     }
 }
 

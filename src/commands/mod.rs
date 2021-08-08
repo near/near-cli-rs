@@ -91,6 +91,11 @@ impl CliTopLevelCommand {
                 args.push_front("view".to_owned());
                 args
             }
+            Self::Utils(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("utils".to_owned());
+                args
+            }
             _ => todo!(),
         }
     }
@@ -105,6 +110,7 @@ impl From<TopLevelCommand> for CliTopLevelCommand {
             TopLevelCommand::Delete(delete_action) => Self::Delete(delete_action.into()),
             TopLevelCommand::Transfer(currency) => Self::Transfer(currency.into()),
             TopLevelCommand::View(view_query_request) => Self::View(view_query_request.into()),
+            TopLevelCommand::Utils(utils) => Self::Utils(utils.into()),
             _ => todo!(),
         }
     }

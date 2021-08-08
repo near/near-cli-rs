@@ -22,6 +22,38 @@ impl std::fmt::Display for CombineTransactionSignature {
     }
 }
 
+impl CliCombineTransactionSignature {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(unsigned_transaction) = &self.unsigned_transaction {
+            let unsigned_transaction_serialized_to_base64 = near_primitives::serialize::to_base64(
+                unsigned_transaction
+                    .inner
+                    .try_to_vec()
+                    .expect("Transaction is not expected to fail on serialization"),
+            );
+            args.push_front(unsigned_transaction_serialized_to_base64);
+            args.push_front("--unsigned-transaction".to_string());
+        }
+        if let Some(signature) = &self.signature {
+            args.push_front(signature.to_string());
+            args.push_front("--signature".to_string());
+        }
+        args
+    }
+}
+
+impl From<CombineTransactionSignature> for CliCombineTransactionSignature {
+    fn from(combine_transaction_signature: CombineTransactionSignature) -> Self {
+        Self {
+            signature: Some(combine_transaction_signature.signature),
+            unsigned_transaction: Some(crate::common::TransactionAsBase64 {
+                inner: combine_transaction_signature.unsigned_transaction,
+            }),
+        }
+    }
+}
+
 impl From<CliCombineTransactionSignature> for CombineTransactionSignature {
     fn from(item: CliCombineTransactionSignature) -> Self {
         let signature: near_crypto::Signature = match item.signature {

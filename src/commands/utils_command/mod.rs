@@ -26,6 +26,23 @@ pub struct Utils {
     pub util: Util,
 }
 
+impl CliUtils {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.util
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<Utils> for CliUtils {
+    fn from(utils: Utils) -> Self {
+        Self {
+            util: Some(utils.util.into()),
+        }
+    }
+}
+
 impl From<CliUtils> for Utils {
     fn from(item: CliUtils) -> Self {
         let util = match item.util {
@@ -89,6 +106,30 @@ pub enum Util {
     LedgerPublicKey(self::ledger_publickey_subcommand::CliLedgerPublicKey),
     #[strum_discriminants(strum(message = "Send signed transaction"))]
     SendSignedTransaction(self::send_signed_transaction::operation_mode::OperationMode),
+}
+
+impl CliUtil {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::CombineTransactionSignature(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("combine-transaction-signature".to_owned());
+                args
+            }
+            _ => todo!(),
+        }
+    }
+}
+
+impl From<Util> for CliUtil {
+    fn from(util: Util) -> Self {
+        match util {
+            Util::CombineTransactionSignature(combine_transaction_signaturte) => {
+                Self::CombineTransactionSignature(combine_transaction_signaturte.into())
+            }
+            _ => todo!(),
+        }
+    }
 }
 
 impl From<CliUtil> for Util {
