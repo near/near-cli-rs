@@ -11,6 +11,26 @@ pub enum SendTo {
     Account(Account),
 }
 
+impl CliSendTo {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Account(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("account".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendTo> for CliSendTo {
+    fn from(send_to: SendTo) -> Self {
+        match send_to {
+            SendTo::Account(account) => Self::Account(account.into()),
+        }
+    }
+}
+
 impl From<CliSendTo> for SendTo {
     fn from(item: CliSendTo) -> Self {
         match item {
@@ -54,6 +74,29 @@ pub struct CliAccount {
 pub struct Account {
     account_id: String,
     pub public_key: super::public_key::AccessKey,
+}
+
+impl CliAccount {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .public_key
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(account_id) = &self.account_id {
+            args.push_front(account_id.to_string());
+        };
+        args
+    }
+}
+
+impl From<Account> for CliAccount {
+    fn from(account: Account) -> Self {
+        Self {
+            account_id: Some(account.account_id),
+            public_key: Some(account.public_key.into()),
+        }
+    }
 }
 
 impl From<CliAccount> for Account {

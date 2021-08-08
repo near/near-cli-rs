@@ -11,6 +11,26 @@ pub enum AccessKey {
     PublicKey(AccessKeyType),
 }
 
+impl CliAccessKey {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::PublicKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("public-key".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<AccessKey> for CliAccessKey {
+    fn from(access_key: AccessKey) -> Self {
+        match access_key {
+            AccessKey::PublicKey(access_key_type) => Self::PublicKey(access_key_type.into()),
+        }
+    }
+}
+
 impl From<CliAccessKey> for AccessKey {
     fn from(item: CliAccessKey) -> Self {
         match item {
@@ -50,6 +70,24 @@ pub struct CliAccessKeyType {
 #[derive(Debug, Clone)]
 pub struct AccessKeyType {
     pub public_key: near_crypto::PublicKey,
+}
+
+impl CliAccessKeyType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(public_key) = &self.public_key {
+            args.push_front(public_key.to_string());
+        }
+        args
+    }
+}
+
+impl From<AccessKeyType> for CliAccessKeyType {
+    fn from(access_key_type: AccessKeyType) -> Self {
+        Self {
+            public_key: access_key_type.public_key.into(),
+        }
+    }
 }
 
 impl From<CliAccessKeyType> for AccessKeyType {
