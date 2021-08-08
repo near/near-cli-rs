@@ -64,8 +64,8 @@ enum CliUtil {
     /// It generates a random key pair
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
     /// Предоставьте данные для подписания данных с помощью private key
-    SignTransactionSecretKey(
-        self::sign_transaction_subcommand_with_secret_key::CliSignTransactionSecretKey,
+    SignTransactionPrivateKey(
+        self::sign_transaction_subcommand_with_secret_key::CliSignTransactionPrivateKey,
     ),
     // Provide an unsigned transaction to be signed with Ledger
     SignTransactionWithLedger(
@@ -89,8 +89,8 @@ pub enum Util {
     #[strum_discriminants(strum(message = "Generate a key pair"))]
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
     #[strum_discriminants(strum(message = "Sign a transaction with private key"))]
-    SignTransactionSecretKey(
-        self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey,
+    SignTransactionPrivateKey(
+        self::sign_transaction_subcommand_with_secret_key::SignTransactionPrivateKey,
     ),
     #[strum_discriminants(strum(message = "Sign a transaction with Ledger"))]
     SignTransactionWithLedger(
@@ -116,6 +116,11 @@ impl CliUtil {
                 args.push_front("generate-keypair".to_owned());
                 args
             }
+            Self::SignTransactionPrivateKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sign-transaction-private-key".to_owned());
+                args
+            }
             Self::CombineTransactionSignature(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("combine-transaction-signature".to_owned());
@@ -130,6 +135,9 @@ impl From<Util> for CliUtil {
     fn from(util: Util) -> Self {
         match util {
             Util::GenerateKeypair(generate_keypair) => Self::GenerateKeypair(generate_keypair),
+            Util::SignTransactionPrivateKey(sign_transaction_secret_key) => {
+                Self::SignTransactionPrivateKey(sign_transaction_secret_key.into())
+            }
             Util::CombineTransactionSignature(combine_transaction_signaturte) => {
                 Self::CombineTransactionSignature(combine_transaction_signaturte.into())
             }
@@ -142,10 +150,10 @@ impl From<CliUtil> for Util {
     fn from(item: CliUtil) -> Self {
         match item {
             CliUtil::GenerateKeypair(generate_keypair) => Util::GenerateKeypair(generate_keypair),
-            CliUtil::SignTransactionSecretKey(cli_sign_transaction) => {
+            CliUtil::SignTransactionPrivateKey(cli_sign_transaction) => {
                 let sign_transaction =
-                    self::sign_transaction_subcommand_with_secret_key::SignTransactionSecretKey::from(cli_sign_transaction);
-                Util::SignTransactionSecretKey(sign_transaction)
+                    self::sign_transaction_subcommand_with_secret_key::SignTransactionPrivateKey::from(cli_sign_transaction);
+                Util::SignTransactionPrivateKey(sign_transaction)
             }
             CliUtil::SignTransactionWithLedger(cli_sign_transaction_with_ledger) => {
                 let sign_transaction =
@@ -192,8 +200,8 @@ impl Util {
             UtilDiscriminants::GenerateKeypair => CliUtil::GenerateKeypair(
                 self::generate_keypair_subcommand::CliGenerateKeypair::default(),
             ),
-            UtilDiscriminants::SignTransactionSecretKey => {
-                CliUtil::SignTransactionSecretKey(Default::default())
+            UtilDiscriminants::SignTransactionPrivateKey => {
+                CliUtil::SignTransactionPrivateKey(Default::default())
             }
             UtilDiscriminants::SignTransactionWithLedger => {
                 CliUtil::SignTransactionWithLedger(Default::default())
@@ -217,7 +225,7 @@ impl Util {
     pub async fn process(self) -> crate::CliResult {
         match self {
             Self::GenerateKeypair(generate_keypair) => generate_keypair.process().await,
-            Self::SignTransactionSecretKey(sign_transaction) => sign_transaction.process().await,
+            Self::SignTransactionPrivateKey(sign_transaction) => sign_transaction.process().await,
             Self::SignTransactionWithLedger(sign_transaction) => sign_transaction.process().await,
             Self::CombineTransactionSignature(combine_transaction) => {
                 combine_transaction.process().await
