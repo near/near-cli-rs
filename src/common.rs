@@ -18,6 +18,15 @@ pub enum OutputFormat {
     Json,
 }
 
+impl std::fmt::Display for OutputFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OutputFormat::Plaintext => write!(f, "plaintext"),
+            OutputFormat::Json => write!(f, "json"),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TransactionAsBase64 {
     pub inner: near_primitives::transaction::Transaction,

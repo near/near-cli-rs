@@ -136,6 +136,11 @@ impl CliUtil {
                 args.push_front("view-serialized-transaction".to_owned());
                 args
             }
+            Self::LedgerPublicKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("ledger-public-key".to_owned());
+                args
+            }
             _ => todo!(),
         }
     }
@@ -157,6 +162,7 @@ impl From<Util> for CliUtil {
             Util::ViewSerializedTransaction(view_serialized_transaction) => {
                 Self::ViewSerializedTransaction(view_serialized_transaction.into())
             }
+            Util::LedgerPublicKey(ledger_publickey) => Self::LedgerPublicKey(ledger_publickey),
             _ => todo!(),
         }
     }
