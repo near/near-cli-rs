@@ -1,4 +1,5 @@
 use dialoguer::Input;
+use std::str::FromStr;
 
 /// предустановленный RPC-сервер
 #[derive(Debug, Default, Clone, clap::Clap)]
@@ -30,6 +31,52 @@ pub struct CliCustomServer {
 pub struct Server {
     pub connection_config: crate::common::ConnectionConfig,
     pub transaction_status: super::super::super::super::transaction::Transaction,
+}
+
+impl CliCustomServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .transaction_status
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(url) = &self.url {
+            args.push_front(url.to_string());
+            args.push_front("--url".to_string());
+        }
+        args
+    }
+}
+
+impl From<Server> for CliCustomServer {
+    fn from(server: Server) -> Self {
+        Self {
+            url: Some(
+                crate::common::AvailableRpcServerUrl::from_str(
+                    server.connection_config.rpc_url().as_str(),
+                )
+                .unwrap(),
+            ),
+            transaction_status: Some(server.transaction_status.into()),
+        }
+    }
+}
+
+impl CliServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.transaction_status
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<Server> for CliServer {
+    fn from(server: Server) -> Self {
+        Self {
+            transaction_status: Some(server.transaction_status.into()),
+        }
+    }
 }
 
 impl CliServer {

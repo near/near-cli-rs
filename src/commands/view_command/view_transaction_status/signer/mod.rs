@@ -11,6 +11,26 @@ pub enum SendFrom {
     Signer(Sender),
 }
 
+impl CliSendFrom {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Signer(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("signer".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendFrom> for CliSendFrom {
+    fn from(send_from: SendFrom) -> Self {
+        match send_from {
+            SendFrom::Signer(sender) => Self::Signer(sender.into()),
+        }
+    }
+}
+
 impl From<CliSendFrom> for SendFrom {
     fn from(item: CliSendFrom) -> Self {
         match item {
@@ -51,6 +71,24 @@ pub struct CliSender {
 #[derive(Debug, Clone)]
 pub struct Sender {
     pub account_id: String,
+}
+
+impl CliSender {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(account_id) = &self.account_id {
+            args.push_front(account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Sender> for CliSender {
+    fn from(sender: Sender) -> Self {
+        Self {
+            account_id: Some(sender.account_id),
+        }
+    }
 }
 
 impl From<CliSender> for Sender {

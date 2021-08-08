@@ -111,6 +111,11 @@ impl CliQueryRequest {
                 args.push_front("contract-state".to_owned());
                 args
             }
+            Self::Transaction(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("transaction".to_owned());
+                args
+            }
             Self::Nonce(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("nonce".to_owned());
@@ -121,7 +126,6 @@ impl CliQueryRequest {
                 args.push_front("recent-block-hash".to_owned());
                 args
             }
-            _ => todo!(),
         }
     }
 }
@@ -136,7 +140,7 @@ impl From<QueryRequest> for CliQueryRequest {
             QueryRequest::ContractState(operation_mode) => {
                 Self::ContractState(operation_mode.into())
             }
-            QueryRequest::Transaction(operation_mode) => todo!(),
+            QueryRequest::Transaction(operation_mode) => Self::Transaction(operation_mode.into()),
             QueryRequest::Nonce(operation_mode) => Self::Nonce(operation_mode.into()),
             QueryRequest::RecentBlockHash(operation_mode) => {
                 Self::RecentBlockHash(operation_mode.into())
