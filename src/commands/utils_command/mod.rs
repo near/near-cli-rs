@@ -111,6 +111,11 @@ pub enum Util {
 impl CliUtil {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         match self {
+            Self::GenerateKeypair(_) => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("generate-keypair".to_owned());
+                args
+            }
             Self::CombineTransactionSignature(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("combine-transaction-signature".to_owned());
@@ -124,6 +129,7 @@ impl CliUtil {
 impl From<Util> for CliUtil {
     fn from(util: Util) -> Self {
         match util {
+            Util::GenerateKeypair(generate_keypair) => Self::GenerateKeypair(generate_keypair),
             Util::CombineTransactionSignature(combine_transaction_signaturte) => {
                 Self::CombineTransactionSignature(combine_transaction_signaturte.into())
             }
