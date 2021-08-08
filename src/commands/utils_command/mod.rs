@@ -121,6 +121,11 @@ impl CliUtil {
                 args.push_front("sign-transaction-private-key".to_owned());
                 args
             }
+            Self::SignTransactionWithLedger(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sign-transaction-with-ledger".to_owned());
+                args
+            }
             Self::CombineTransactionSignature(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("combine-transaction-signature".to_owned());
@@ -137,6 +142,9 @@ impl From<Util> for CliUtil {
             Util::GenerateKeypair(generate_keypair) => Self::GenerateKeypair(generate_keypair),
             Util::SignTransactionPrivateKey(sign_transaction_secret_key) => {
                 Self::SignTransactionPrivateKey(sign_transaction_secret_key.into())
+            }
+            Util::SignTransactionWithLedger(sign_transaction_with_ledger) => {
+                Self::SignTransactionWithLedger(sign_transaction_with_ledger.into())
             }
             Util::CombineTransactionSignature(combine_transaction_signaturte) => {
                 Self::CombineTransactionSignature(combine_transaction_signaturte.into())

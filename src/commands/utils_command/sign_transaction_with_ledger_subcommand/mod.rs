@@ -16,6 +16,38 @@ pub struct SignTransactionWithLedger {
     pub unsigned_transaction: near_primitives::transaction::Transaction,
 }
 
+impl CliSignTransactionWithLedger {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(unsigned_transaction) = &self.unsigned_transaction {
+            let unsigned_transaction_serialized_to_base64 = near_primitives::serialize::to_base64(
+                unsigned_transaction
+                    .inner
+                    .try_to_vec()
+                    .expect("Transaction is not expected to fail on serialization"),
+            );
+            args.push_front(unsigned_transaction_serialized_to_base64);
+            args.push_front("--unsigned-transaction".to_string());
+        }
+        if let Some(seed_phrase_hd_path) = &self.seed_phrase_hd_path {
+            args.push_front(seed_phrase_hd_path.to_string());
+            args.push_front("--seed-phrase-hd-path".to_string());
+        }
+        args
+    }
+}
+
+impl From<SignTransactionWithLedger> for CliSignTransactionWithLedger {
+    fn from(sign_transaction_with_ledger: SignTransactionWithLedger) -> Self {
+        Self {
+            seed_phrase_hd_path: Some(sign_transaction_with_ledger.seed_phrase_hd_path),
+            unsigned_transaction: Some(crate::common::TransactionAsBase64 {
+                inner: sign_transaction_with_ledger.unsigned_transaction,
+            }),
+        }
+    }
+}
+
 impl From<CliSignTransactionWithLedger> for SignTransactionWithLedger {
     fn from(item: CliSignTransactionWithLedger) -> Self {
         let seed_phrase_hd_path = match item.seed_phrase_hd_path {
