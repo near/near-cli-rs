@@ -28,6 +28,44 @@ pub enum SelectServer {
     Custom(self::server::Server),
 }
 
+impl CliSelectServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Testnet(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("testnet".to_owned());
+                args
+            }
+            Self::Mainnet(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("mainnet".to_owned());
+                args
+            }
+            Self::Betanet(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("betanet".to_owned());
+                args
+            }
+            Self::Custom(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("custom".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SelectServer> for CliSelectServer {
+    fn from(select_server: SelectServer) -> Self {
+        match select_server {
+            SelectServer::Testnet(server) => Self::Testnet(server.into()),
+            SelectServer::Mainnet(server) => Self::Mainnet(server.into()),
+            SelectServer::Betanet(server) => Self::Betanet(server.into()),
+            SelectServer::Custom(server) => Self::Custom(server.into()),
+        }
+    }
+}
+
 impl From<CliSelectServer> for SelectServer {
     fn from(item: CliSelectServer) -> Self {
         match item {

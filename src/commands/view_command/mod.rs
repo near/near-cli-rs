@@ -116,6 +116,11 @@ impl CliQueryRequest {
                 args.push_front("nonce".to_owned());
                 args
             }
+            Self::RecentBlockHash(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("recent-block-hash".to_owned());
+                args
+            }
             _ => todo!(),
         }
     }
@@ -133,7 +138,9 @@ impl From<QueryRequest> for CliQueryRequest {
             }
             QueryRequest::Transaction(operation_mode) => todo!(),
             QueryRequest::Nonce(operation_mode) => Self::Nonce(operation_mode.into()),
-            QueryRequest::RecentBlockHash(operation_mode) => todo!(),
+            QueryRequest::RecentBlockHash(operation_mode) => {
+                Self::RecentBlockHash(operation_mode.into())
+            }
         }
     }
 }
