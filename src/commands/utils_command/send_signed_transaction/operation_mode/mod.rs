@@ -4,6 +4,11 @@ pub mod online_mode;
 
 /// инструмент выбора режима online/offline
 #[derive(Debug, Default, Clone, clap::Clap)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
 pub struct CliOperationMode {
     #[clap(subcommand)]
     mode: Option<CliMode>,
@@ -12,6 +17,23 @@ pub struct CliOperationMode {
 #[derive(Debug, Clone)]
 pub struct OperationMode {
     pub mode: Mode,
+}
+
+impl CliOperationMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.mode
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<OperationMode> for CliOperationMode {
+    fn from(item: OperationMode) -> Self {
+        Self {
+            mode: Some(item.mode.into()),
+        }
+    }
 }
 
 impl From<CliOperationMode> for OperationMode {
@@ -41,6 +63,28 @@ pub enum CliMode {
 pub enum Mode {
     #[strum_discriminants(strum(message = "Yes, I keep it simple"))]
     Network(self::online_mode::NetworkArgs),
+}
+
+impl CliMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Network(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("network".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<Mode> for CliMode {
+    fn from(mode: Mode) -> Self {
+        match mode {
+            Mode::Network(network_args) => {
+                Self::Network(self::online_mode::CliNetworkArgs::from(network_args))
+            }
+        }
+    }
 }
 
 impl From<CliMode> for Mode {
