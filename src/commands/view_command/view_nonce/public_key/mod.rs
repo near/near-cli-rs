@@ -48,7 +48,7 @@ impl AccessKey {
 
     pub async fn process(
         self,
-        account_id: String,
+        account_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         match self {
@@ -114,7 +114,7 @@ impl AccessKeyType {
 
     pub async fn process(
         self,
-        account_id: String,
+        account_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let public_key = self.public_key.clone();

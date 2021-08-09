@@ -67,14 +67,14 @@ impl SendTo {
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliContract {
-    pub contract_id: Option<String>,
+    pub contract_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     download_mode: Option<self::download_mode::CliDownloadMode>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Contract {
-    pub contract_id: String,
+    pub contract_id: near_primitives::types::AccountId,
     pub download_mode: self::download_mode::DownloadMode,
 }
 
@@ -103,15 +103,15 @@ impl From<Contract> for CliContract {
 
 impl From<CliContract> for Contract {
     fn from(item: CliContract) -> Self {
-        let contract_id: String = match item.contract_id {
+        let contract_id: near_primitives::types::AccountId = match item.contract_id {
             Some(cli_contract_id) => cli_contract_id,
             None => Contract::input_contract_id(),
         };
         let download_mode = match item.download_mode {
             Some(cli_download_mode) => {
-                self::download_mode::DownloadMode::from(cli_download_mode, &contract_id)
+                self::download_mode::DownloadMode::from(cli_download_mode, &contract_id.to_string())
             }
-            None => self::download_mode::DownloadMode::choose_download_mode(&contract_id),
+            None => self::download_mode::DownloadMode::choose_download_mode(&contract_id.to_string()),
         };
         Self {
             contract_id,
@@ -121,7 +121,7 @@ impl From<CliContract> for Contract {
 }
 
 impl Contract {
-    pub fn input_contract_id() -> String {
+    pub fn input_contract_id() -> near_primitives::types::AccountId {
         println!();
         Input::new()
             .with_prompt("What contract do you need to view?")

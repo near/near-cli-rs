@@ -53,7 +53,7 @@ impl AddAccessKeyAction {
     pub fn from(
         item: CliAddAccessKeyAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,
@@ -162,7 +162,7 @@ impl AccessKeyPermission {
     pub fn from(
         item: CliAccessKeyPermission,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliAccessKeyPermission::GrantFunctionCallAccess(cli_function_call_type) => {
@@ -190,7 +190,7 @@ impl AccessKeyPermission {
 impl AccessKeyPermission {
     pub fn choose_permission(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let variants = AccessKeyPermissionDiscriminants::iter().collect::<Vec<_>>();
         let permissions = variants

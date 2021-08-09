@@ -75,14 +75,14 @@ impl SendTo {
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliContract {
-    contract_account_id: Option<String>,
+    contract_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     call: Option<super::CliCallFunction>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Contract {
-    pub contract_account_id: String,
+    pub contract_account_id: near_primitives::types::AccountId,
     pub call: super::CallFunction,
 }
 
@@ -114,7 +114,7 @@ impl Contract {
         item: CliContract,
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Self> {
-        let contract_account_id: String = match item.contract_account_id {
+        let contract_account_id: near_primitives::types::AccountId = match item.contract_account_id {
             Some(cli_contract_account_id) => match &connection_config {
                 Some(network_connection_config) => match crate::common::check_account_id(
                     network_connection_config.clone(),
@@ -144,9 +144,9 @@ impl Contract {
 impl Contract {
     fn input_receiver_account_id(
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         loop {
-            let account_id: String = Input::new()
+            let account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("What is the account ID of the contract?")
                 .interact_text()
                 .unwrap();
@@ -156,7 +156,7 @@ impl Contract {
                 {
                     break Ok(account_id);
                 } else {
-                    println!("Account <{}> doesn't exist", account_id);
+                    println!("Account <{}> doesn't exist", account_id.to_string());
                 }
             } else {
                 break Ok(account_id);

@@ -32,7 +32,7 @@ impl FunctionCallType {
     pub fn from(
         item: CliFunctionCallType,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let allowance: Option<near_primitives::types::Balance> = match item.allowance {
             Some(cli_allowance) => Some(cli_allowance.to_yoctonear()),
@@ -157,7 +157,7 @@ impl FunctionCallType {
             permission: near_primitives::account::AccessKeyPermission::FunctionCall(
                 near_primitives::account::FunctionCallPermission {
                     allowance: self.allowance.clone(),
-                    receiver_id: self.receiver_id.clone(),
+                    receiver_id: self.receiver_id.to_string().clone(),
                     method_names: self.method_names.clone(),
                 },
             ),

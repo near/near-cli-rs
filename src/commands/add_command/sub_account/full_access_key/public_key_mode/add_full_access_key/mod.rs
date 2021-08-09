@@ -52,7 +52,7 @@ impl AddAccessKeyAction {
     pub fn from(
         item: CliAddAccessKeyAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,

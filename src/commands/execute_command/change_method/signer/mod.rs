@@ -73,7 +73,7 @@ impl SendFrom {
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliSender {
-    pub sender_account_id: Option<String>,
+    pub sender_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     pub sign_option: Option<
         crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
@@ -82,7 +82,7 @@ pub struct CliSender {
 
 #[derive(Debug, Clone)]
 pub struct Sender {
-    pub sender_account_id: String,
+    pub sender_account_id: near_primitives::types::AccountId,
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
@@ -115,7 +115,7 @@ impl Sender {
         item: CliSender,
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Self> {
-        let sender_account_id: String = match item.sender_account_id {
+        let sender_account_id: near_primitives::types::AccountId = match item.sender_account_id {
             Some(cli_sender_account_id) => match &connection_config {
                 Some(network_connection_config) => match crate::common::check_account_id(
                     network_connection_config.clone(),
@@ -145,9 +145,9 @@ impl Sender {
 impl Sender {
     fn input_sender_account_id(
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         loop {
-            let account_id: String = Input::new()
+            let account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("What is the account ID of the signer?")
                 .interact_text()
                 .unwrap();
@@ -157,7 +157,7 @@ impl Sender {
                 {
                     break Ok(account_id);
                 } else {
-                    println!("Account <{}> doesn't exist", account_id);
+                    println!("Account <{}> doesn't exist", account_id.to_string());
                 }
             } else {
                 break Ok(account_id);

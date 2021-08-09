@@ -35,7 +35,7 @@ impl SendTo {
     pub fn from(
         item: CliSendTo,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSendTo::Receiver(cli_receiver) => {
@@ -49,7 +49,7 @@ impl SendTo {
 impl SendTo {
     pub fn send_to(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliSendTo::Receiver(Default::default()),
@@ -81,14 +81,14 @@ impl SendTo {
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliReceiver {
-    receiver_account_id: Option<String>,
+    receiver_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     transfer: Option<super::transfer_near_tokens_type::CliTransfer>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Receiver {
-    pub receiver_account_id: String,
+    pub receiver_account_id: near_primitives::types::AccountId,
     pub transfer: super::transfer_near_tokens_type::Transfer,
 }
 
@@ -121,9 +121,9 @@ impl Receiver {
     fn from(
         item: CliReceiver,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
-        let receiver_account_id: String = match item.receiver_account_id {
+        let receiver_account_id: near_primitives::types::AccountId = match item.receiver_account_id {
             Some(cli_receiver_account_id) => match &connection_config {
                 Some(network_connection_config) => match crate::common::check_account_id(
                     network_connection_config.clone(),
@@ -164,9 +164,9 @@ impl Receiver {
 impl Receiver {
     fn input_receiver_account_id(
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         loop {
-            let account_id: String = Input::new()
+            let account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("What is the account ID of the receiver?")
                 .interact_text()
                 .unwrap();
@@ -177,7 +177,7 @@ impl Receiver {
                     break Ok(account_id);
                 } else {
                     if !crate::common::is_64_len_hex(&account_id) {
-                        println!("Account <{}> doesn't exist", account_id);
+                        println!("Account <{}> doesn't exist", account_id.to_string());
                     } else {
                         break Ok(account_id);
                     }

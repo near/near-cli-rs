@@ -96,7 +96,7 @@ impl BlockId {
 
     pub async fn process(
         self,
-        contract_id: String,
+        contract_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
         file_path: Option<std::path::PathBuf>,
     ) -> crate::CliResult {
@@ -125,7 +125,7 @@ impl BlockId {
 
     async fn at_final_block(
         self,
-        contract_id: String,
+        contract_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
         file_path: Option<std::path::PathBuf>,
     ) -> crate::CliResult {

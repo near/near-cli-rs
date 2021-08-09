@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 
 use near_primitives::borsh::BorshDeserialize;
@@ -335,7 +335,7 @@ impl ConnectionConfig {
 
 pub fn check_account_id(
     connection_config: ConnectionConfig,
-    account_id: String,
+    account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
     let query_view_method_response = actix::System::new().block_on(async {
         near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
@@ -376,7 +376,7 @@ pub fn is_64_len_hex(account_id: impl AsRef<str>) -> bool {
 pub struct KeyPairProperties {
     pub seed_phrase_hd_path: slip10::BIP32Path,
     pub master_seed_phrase: String,
-    pub implicit_account_id: String,
+    pub implicit_account_id: near_primitives::types::AccountId,
     pub public_key_str: String,
     pub secret_keypair_str: String,
 }
@@ -415,7 +415,7 @@ pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         ed25519_dalek::Keypair { secret, public }
     };
 
-    let implicit_account_id = hex::encode(&secret_keypair.public);
+    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(&secret_keypair.public))?;
     let public_key_str = format!(
         "ed25519:{}",
         bs58::encode(&secret_keypair.public).into_string()
@@ -785,6 +785,9 @@ pub async fn print_transaction_error(
                         }
                     }
                 },
+                near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
+                    println!("Error: The size ({}) of serialized transaction exceeded the limit ({}).", size, limit)
+                }
             }
         },
     }

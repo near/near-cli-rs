@@ -72,7 +72,7 @@ impl CallFunction {
     pub async fn process(
         self,
         network_connection_config: crate::common::ConnectionConfig,
-        contract_account_id: String,
+        contract_account_id: near_primitives::types::AccountId,
     ) -> crate::CliResult {
         match self {
             Self::Call(call_function_action) => {

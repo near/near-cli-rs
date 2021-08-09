@@ -25,7 +25,7 @@ impl DeleteAccountAction {
     pub fn from(
         item: CliDeleteAccountAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let beneficiary_id: near_primitives::types::AccountId = match item.beneficiary_id {
             Some(cli_account_id) => cli_account_id,

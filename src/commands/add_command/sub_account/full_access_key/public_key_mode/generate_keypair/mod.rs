@@ -41,7 +41,7 @@ impl GenerateKeypair {
     pub fn from(
         item: CliGenerateKeypair,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let deposit = match item.deposit {
             Some(cli_deposit) => super::super::super::deposit::Deposit::from(
@@ -69,7 +69,7 @@ impl GenerateKeypair {
         crate::common::save_access_key_to_keychain(
             network_connection_config.clone(),
             key_pair_properties.clone(),
-            &prepopulated_unsigned_transaction.receiver_id,
+            &prepopulated_unsigned_transaction.receiver_id.to_string(),
         )
         .await
         .map_err(|err| {

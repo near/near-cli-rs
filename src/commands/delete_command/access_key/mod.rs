@@ -40,7 +40,7 @@ impl DeleteAccessKeyAction {
     pub fn from(
         item: CliDeleteAccessKeyAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliDeleteAccessKeyAction::PublicKey(cli_delete_access_key_type) => {
@@ -57,7 +57,7 @@ impl DeleteAccessKeyAction {
 impl DeleteAccessKeyAction {
     pub fn choose_delete_access_key_action(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliDeleteAccessKeyAction::PublicKey(Default::default()),
@@ -130,7 +130,7 @@ impl DeleteAccessKeyType {
     fn from(
         item: CliDeleteAccessKeyType,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,

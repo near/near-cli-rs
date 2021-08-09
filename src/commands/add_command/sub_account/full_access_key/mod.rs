@@ -42,7 +42,7 @@ impl FullAccessKey {
     pub fn from(
         item: CliFullAccessKey,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliFullAccessKey::SubAccountFullAccess(cli_sub_account_full_access) => Ok(
@@ -59,7 +59,7 @@ impl FullAccessKey {
 impl FullAccessKey {
     pub fn choose_full_access_key(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = FullAccessKeyDiscriminants::iter().collect::<Vec<_>>();
@@ -140,7 +140,7 @@ impl SubAccountFullAccess {
     fn from(
         item: CliSubAccountFullAccess,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key_mode = match item.public_key_mode {
             Some(cli_public_key_mode) => self::public_key_mode::PublicKeyMode::from(

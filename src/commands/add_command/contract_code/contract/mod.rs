@@ -41,7 +41,7 @@ impl Contract {
     pub fn from(
         item: CliContract,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliContract::ContractFile(cli_contract_file) => Ok(Contract::ContractFile(
@@ -54,7 +54,7 @@ impl Contract {
 impl Contract {
     pub fn choose_contract(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = ContractDiscriminants::iter().collect::<Vec<_>>();
@@ -139,7 +139,7 @@ impl ContractFile {
     fn from(
         item: CliContractFile,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let file_path = match item.file_path {
             Some(cli_file_path) => cli_file_path,

@@ -65,14 +65,14 @@ impl SendTo {
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliAccount {
-    account_id: Option<String>,
+    account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     public_key: Option<super::public_key::CliAccessKey>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Account {
-    account_id: String,
+    account_id: near_primitives::types::AccountId,
     pub public_key: super::public_key::AccessKey,
 }
 
@@ -101,7 +101,7 @@ impl From<Account> for CliAccount {
 
 impl From<CliAccount> for Account {
     fn from(item: CliAccount) -> Self {
-        let account_id: String = match item.account_id {
+        let account_id: near_primitives::types::AccountId = match item.account_id {
             Some(cli_account_id) => cli_account_id,
             None => Account::input_account_id(),
         };
@@ -117,7 +117,7 @@ impl From<CliAccount> for Account {
 }
 
 impl Account {
-    fn input_account_id() -> String {
+    fn input_account_id() -> near_primitives::types::AccountId {
         println!();
         Input::new()
             .with_prompt("Enter your account ID")

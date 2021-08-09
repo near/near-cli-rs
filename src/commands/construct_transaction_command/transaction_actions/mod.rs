@@ -36,7 +36,7 @@ impl NextAction {
     pub fn from_cli_next_action(
         item: CliNextAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliNextAction::AddAction(cli_select_action) => {
@@ -57,7 +57,7 @@ impl NextAction {
     pub fn from_cli_skip_next_action(
         item: CliSkipNextAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSkipNextAction::Skip(cli_skip_action) => {
@@ -81,7 +81,7 @@ impl NextAction {
 impl NextAction {
     pub fn input_next_action(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = NextActionDiscriminants::iter().collect::<Vec<_>>();
@@ -147,7 +147,7 @@ impl SelectAction {
     fn from(
         item: CliSelectAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let transaction_subcommand: ActionSubcommand = match item.transaction_subcommand {
             Some(cli_transaction_subcommand) => ActionSubcommand::from(
@@ -216,7 +216,7 @@ impl ActionSubcommand {
     fn from(
         item: CliActionSubcommand,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> Self {
         match item {
             CliActionSubcommand::TransferNEARTokens(cli_transfer_near_token) => {
@@ -284,7 +284,7 @@ impl ActionSubcommand {
 impl ActionSubcommand {
     pub fn choose_action_command(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> ActionSubcommand {
         println!();
         let variants = ActionSubcommandDiscriminants::iter().collect::<Vec<_>>();
@@ -390,7 +390,7 @@ impl SkipAction {
     fn from(
         item: CliSkipAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let sign_option: super::sign_transaction::SignTransaction = match item.sign_option {
             Some(cli_sign_transaction) => super::sign_transaction::SignTransaction::from(

@@ -52,7 +52,7 @@ impl NextAction {
     pub fn from(
         item: CliNextAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliNextAction::Initialize(cli_call_function_action) => Ok(NextAction::Initialize(
@@ -72,7 +72,7 @@ impl NextAction {
 impl NextAction {
     pub fn choose_next_action(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = NextActionDiscriminants::iter().collect::<Vec<_>>();
@@ -162,7 +162,7 @@ impl NoInitialize {
     fn from(
         item: CliNoInitialize,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let sign_option = match item.sign_option {
             Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id)?,

@@ -21,7 +21,7 @@ impl FullAccessType {
     pub fn from(
         item: CliFullAccessType,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let skip_next_action: super::super::super::NextAction = match item.next_action {
             Some(cli_skip_action) => super::super::super::NextAction::from_cli_skip_next_action(

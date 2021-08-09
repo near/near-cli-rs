@@ -97,18 +97,16 @@ impl Server {
             near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
 
         let account_id = get_account_from_cli(public_key, self.connection_config.clone()).await?;
-        if !account_id.is_empty() {
-            // save_account(&account_id, key_pair_properties, self.connection_config).await?
-            crate::common::save_access_key_to_keychain(
-                Some(self.connection_config),
-                key_pair_properties.clone(),
-                &account_id,
-            )
-            .await
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
-            })?;
-        };
+        // save_account(&account_id, key_pair_properties, self.connection_config).await?
+        crate::common::save_access_key_to_keychain(
+            Some(self.connection_config),
+            key_pair_properties.clone(),
+            &account_id.to_string(),
+        )
+        .await
+        .map_err(|err| {
+            color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
+        })?;
         Ok(())
     }
 }
@@ -116,7 +114,7 @@ impl Server {
 async fn get_account_from_cli(
     public_key: near_crypto::PublicKey,
     network_connection_config: crate::common::ConnectionConfig,
-) -> color_eyre::eyre::Result<String> {
+) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
     let account_id = input_account_id();
     verify_account_id(account_id.clone(), public_key, network_connection_config)
         .await
@@ -124,7 +122,7 @@ async fn get_account_from_cli(
     Ok(account_id)
 }
 
-fn input_account_id() -> String {
+fn input_account_id() -> near_primitives::types::AccountId {
     Input::new()
         .with_prompt("Enter account ID")
         .interact_text()
@@ -136,7 +134,7 @@ fn rpc_client(selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
 }
 
 async fn verify_account_id(
-    account_id: String,
+    account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
     network_connection_config: crate::common::ConnectionConfig,
 ) -> crate::CliResult {

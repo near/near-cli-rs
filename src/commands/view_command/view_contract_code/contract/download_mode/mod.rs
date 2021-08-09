@@ -83,7 +83,7 @@ impl DownloadMode {
 
     pub async fn process(
         self,
-        contract_id: String,
+        contract_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         match self {

@@ -41,7 +41,7 @@ impl FullAccessType {
     pub fn from(
         item: CliFullAccessType,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let sign_option = match item.sign_option {
             Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config,sender_account_id)?,

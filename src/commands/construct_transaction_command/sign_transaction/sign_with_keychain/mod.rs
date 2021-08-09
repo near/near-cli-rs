@@ -58,7 +58,7 @@ impl SignKeychain {
     pub fn from(
         item: CliSignKeychain,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let submit: Option<super::Submit> = item.submit;
         match connection_config {
@@ -104,7 +104,7 @@ impl SignKeychain {
 
 #[derive(Debug, Deserialize)]
 struct User {
-    account_id: String,
+    account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
     private_key: near_crypto::SecretKey,
 }
@@ -164,7 +164,7 @@ impl SignKeychain {
                         };
                     let mut path = std::path::PathBuf::from(&home_dir);
                     path.push(dir_name);
-                    path.push(&prepopulated_unsigned_transaction.signer_id);
+                    path.push(&prepopulated_unsigned_transaction.signer_id.to_string());
                     let mut data_path = std::path::PathBuf::new();
                     'outer: for access_key in access_key_view.keys {
                         let account_public_key = access_key.public_key.to_string();

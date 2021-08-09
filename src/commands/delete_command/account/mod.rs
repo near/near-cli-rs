@@ -52,7 +52,7 @@ impl DeleteAccountAction {
     pub fn from(
         item: CliDeleteAccountAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let beneficiary_id: near_primitives::types::AccountId = match item.beneficiary_id {
             Some(cli_account_id) => match &connection_config {
@@ -84,9 +84,9 @@ impl DeleteAccountAction {
 impl DeleteAccountAction {
     pub fn input_beneficiary_id(
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         loop {
-            let account_id: String = Input::new()
+            let account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("Enter the beneficiary ID to delete this account ID")
                 .interact_text()
                 .unwrap();

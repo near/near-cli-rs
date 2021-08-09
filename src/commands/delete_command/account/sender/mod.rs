@@ -8,14 +8,14 @@ use dialoguer::Input;
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliSender {
-    pub sender_account_id: Option<String>,
+    pub sender_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     send_to: Option<CliSendTo>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Sender {
-    pub sender_account_id: String,
+    pub sender_account_id: near_primitives::types::AccountId,
     pub send_to: SendTo,
 }
 
@@ -46,7 +46,7 @@ impl Sender {
         item: CliSender,
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Self> {
-        let sender_account_id: String = match item.sender_account_id {
+        let sender_account_id: near_primitives::types::AccountId = match item.sender_account_id {
             Some(cli_sender_account_id) => match &connection_config {
                 Some(network_connection_config) => match crate::common::check_account_id(
                     network_connection_config.clone(),
@@ -78,9 +78,9 @@ impl Sender {
 impl Sender {
     fn input_sender_account_id(
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         loop {
-            let account_id: String = Input::new()
+            let account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("Which account ID do you need to remove?")
                 .interact_text()
                 .unwrap();
@@ -90,7 +90,7 @@ impl Sender {
                 {
                     break Ok(account_id);
                 } else {
-                    println!("Account <{}> doesn't exist", account_id);
+                    println!("Account <{}> doesn't exist", account_id.to_string());
                 }
             } else {
                 break Ok(account_id);
@@ -151,7 +151,7 @@ impl SendTo {
     fn from(
         item: CliSendTo,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSendTo::Beneficiary(cli_delete_accaunt) => {
@@ -169,7 +169,7 @@ impl SendTo {
 impl SendTo {
     pub fn send_to(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliSendTo::Beneficiary(Default::default()),

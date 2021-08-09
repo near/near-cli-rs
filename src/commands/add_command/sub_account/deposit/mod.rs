@@ -37,7 +37,7 @@ impl Deposit {
     pub fn from(
         item: CliDeposit,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliDeposit::Deposit(cli_transfer_near_action) => {
@@ -54,7 +54,7 @@ impl Deposit {
 impl Deposit {
     pub fn choose_deposit(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliDeposit::Deposit(Default::default()),
@@ -127,7 +127,7 @@ impl TransferNEARTokensAction {
     fn from(
         item: CliTransferNEARTokensAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let amount: crate::common::NearBalance = match &connection_config {
             Some(network_connection_config) => {

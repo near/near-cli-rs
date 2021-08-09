@@ -15,7 +15,7 @@ impl SendTo {
     pub fn from(
         item: CliSendTo,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSendTo::Receiver(cli_receiver) => {
@@ -29,7 +29,7 @@ impl SendTo {
 impl SendTo {
     pub fn send_to(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliSendTo::Receiver(Default::default()),
@@ -61,14 +61,14 @@ impl SendTo {
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliReceiver {
-    receiver_account_id: Option<String>,
+    receiver_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     action: Option<super::transaction_actions::CliNextAction>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Receiver {
-    pub receiver_account_id: String,
+    pub receiver_account_id: near_primitives::types::AccountId,
     pub action: super::transaction_actions::NextAction,
 }
 
@@ -76,9 +76,9 @@ impl Receiver {
     fn from(
         item: CliReceiver,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
-        let receiver_account_id: String = match item.receiver_account_id {
+        let receiver_account_id: near_primitives::types::AccountId = match item.receiver_account_id {
             Some(cli_receiver_account_id) => cli_receiver_account_id,
             None => Receiver::input_receiver_account_id(),
         };
@@ -101,7 +101,7 @@ impl Receiver {
 }
 
 impl Receiver {
-    pub fn input_receiver_account_id() -> String {
+    pub fn input_receiver_account_id() -> near_primitives::types::AccountId {
         Input::new()
             .with_prompt("What is the account ID of the receiver?")
             .interact_text()

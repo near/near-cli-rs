@@ -35,7 +35,7 @@ impl SendTo {
     pub fn from(
         item: CliSendTo,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSendTo::SubAccount(cli_receiver) => {
@@ -50,7 +50,7 @@ impl SendTo {
 impl SendTo {
     pub fn send_to(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliSendTo::SubAccount(Default::default()),
@@ -82,14 +82,14 @@ impl SendTo {
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliSubAccount {
-    sub_account_id: Option<String>,
+    sub_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     full_access_key: Option<super::full_access_key::CliFullAccessKey>,
 }
 
 #[derive(Debug, Clone)]
 pub struct SubAccount {
-    pub sub_account_id: String,
+    pub sub_account_id: near_primitives::types::AccountId,
     pub full_access_key: super::full_access_key::FullAccessKey,
 }
 
@@ -120,9 +120,9 @@ impl SubAccount {
     fn from(
         item: CliSubAccount,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
-        let sub_account_id: String = match item.sub_account_id {
+        let sub_account_id: near_primitives::types::AccountId = match item.sub_account_id {
             Some(cli_sub_account_id) => cli_sub_account_id,
             None => SubAccount::input_sub_account_id(),
         };
@@ -145,7 +145,7 @@ impl SubAccount {
 }
 
 impl SubAccount {
-    fn input_sub_account_id() -> String {
+    fn input_sub_account_id() -> near_primitives::types::AccountId {
         Input::new()
             .with_prompt("What is the sub-account ID?")
             .interact_text()

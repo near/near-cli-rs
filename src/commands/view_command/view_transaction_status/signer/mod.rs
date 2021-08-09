@@ -65,12 +65,12 @@ impl SendFrom {
 /// Specify the account that signed the transaction
 #[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliSender {
-    pub account_id: Option<String>,
+    pub account_id: Option<near_primitives::types::AccountId>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Sender {
-    pub account_id: String,
+    pub account_id: near_primitives::types::AccountId,
 }
 
 impl CliSender {
@@ -93,7 +93,7 @@ impl From<Sender> for CliSender {
 
 impl From<CliSender> for Sender {
     fn from(item: CliSender) -> Self {
-        let account_id: String = match item.account_id {
+        let account_id: near_primitives::types::AccountId = match item.account_id {
             Some(cli_account_id) => cli_account_id,
             None => Sender::input_sender_account_id(),
         };
@@ -102,7 +102,7 @@ impl From<CliSender> for Sender {
 }
 
 impl Sender {
-    pub fn input_sender_account_id() -> String {
+    pub fn input_sender_account_id() -> near_primitives::types::AccountId {
         println!();
         Input::new()
             .with_prompt("Specify the account that signed the transaction")

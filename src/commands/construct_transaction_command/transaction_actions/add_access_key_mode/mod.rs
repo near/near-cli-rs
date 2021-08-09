@@ -25,7 +25,7 @@ impl AddAccessKeyMode {
     pub fn from(
         item: CliAddAccessKeyMode,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key_mode = match item.public_key_mode {
             Some(cli_public_key_mode) => {
@@ -70,7 +70,7 @@ impl PublicKeyMode {
     fn from(
         item: CliPublicKeyMode,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliPublicKeyMode::PublicKey(cli_add_access_key_action) => Ok(PublicKeyMode::PublicKey(
@@ -94,7 +94,7 @@ impl PublicKeyMode {
 impl PublicKeyMode {
     fn choose_public_key_mode(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let variants = PublicKeyModeDiscriminants::iter().collect::<Vec<_>>();
         let modes = variants

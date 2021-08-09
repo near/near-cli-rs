@@ -37,7 +37,7 @@ impl Transfer {
     pub fn from(
         item: CliTransfer,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliTransfer::Amount(cli_transfer_near_action) => {
@@ -54,7 +54,7 @@ impl Transfer {
 impl Transfer {
     pub fn choose_transfer_near(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Self::from(
             CliTransfer::Amount(Default::default()),
@@ -127,7 +127,7 @@ impl TransferNEARTokensAction {
     fn from(
         item: CliTransferNEARTokensAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let amount: crate::common::NearBalance = match &connection_config {
             Some(network_connection_config) => {

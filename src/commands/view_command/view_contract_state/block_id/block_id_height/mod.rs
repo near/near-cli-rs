@@ -53,7 +53,7 @@ impl BlockIdHeight {
 
     pub async fn process(
         self,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self

@@ -54,7 +54,7 @@ impl BlockIdHeight {
     pub async fn process(
         self,
         network_connection_config: crate::common::ConnectionConfig,
-        contract_account_id: String,
+        contract_account_id: near_primitives::types::AccountId,
         method_name: String,
         args: Vec<u8>,
     ) -> crate::CliResult {

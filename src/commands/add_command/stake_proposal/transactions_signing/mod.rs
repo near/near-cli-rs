@@ -37,7 +37,7 @@ impl TransactionsSigning {
     pub fn from(
         item: CliTransactionsSigning,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliTransactionsSigning::TransactionsSigningPublicKey(
@@ -56,7 +56,7 @@ impl TransactionsSigning {
 impl TransactionsSigning {
     pub fn choose_sign_transactions(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliTransactionsSigning::TransactionsSigningPublicKey(Default::default()),
@@ -136,7 +136,7 @@ impl TransactionsSigningAction {
     fn from(
         item: CliTransactionsSigningAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let transactions_signing_public_key: near_crypto::PublicKey =
             match item.transactions_signing_public_key {

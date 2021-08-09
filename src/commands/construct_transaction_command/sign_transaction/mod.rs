@@ -88,7 +88,7 @@ impl SignTransaction {
     pub fn from(
         item: CliSignTransaction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSignTransaction::SignPrivateKey(cli_private_key) => {
@@ -123,7 +123,7 @@ impl SignTransaction {
 impl SignTransaction {
     pub fn choose_sign_option(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = SignTransactionDiscriminants::iter().collect::<Vec<_>>();

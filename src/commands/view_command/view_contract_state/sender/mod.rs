@@ -65,14 +65,14 @@ impl SendTo {
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliSender {
-    pub sender_account_id: Option<String>,
+    pub sender_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     selected_block_id: Option<super::block_id::CliBlockId>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Sender {
-    pub sender_account_id: String,
+    pub sender_account_id: near_primitives::types::AccountId,
     selected_block_id: super::block_id::BlockId,
 }
 
@@ -101,7 +101,7 @@ impl From<Sender> for CliSender {
 
 impl From<CliSender> for Sender {
     fn from(item: CliSender) -> Self {
-        let sender_account_id: String = match item.sender_account_id {
+        let sender_account_id: near_primitives::types::AccountId = match item.sender_account_id {
             Some(cli_sender_account_id) => cli_sender_account_id,
             None => Sender::input_sender_account_id(),
         };
@@ -117,7 +117,7 @@ impl From<CliSender> for Sender {
 }
 
 impl Sender {
-    pub fn input_sender_account_id() -> String {
+    pub fn input_sender_account_id() -> near_primitives::types::AccountId {
         println!();
         Input::new()
             .with_prompt("Enter your account ID to view your contract status")

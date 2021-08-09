@@ -70,14 +70,14 @@ impl SendTo {
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliReceiver {
-    contract_account_id: Option<String>,
+    contract_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     call: Option<super::CliCallFunction>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Receiver {
-    pub contract_account_id: String,
+    pub contract_account_id: near_primitives::types::AccountId,
     pub call: super::CallFunction,
 }
 
@@ -109,7 +109,7 @@ impl Receiver {
         item: CliReceiver,
         connection_config: crate::common::ConnectionConfig,
     ) -> color_eyre::eyre::Result<Self> {
-        let contract_account_id: String = match item.contract_account_id {
+        let contract_account_id: near_primitives::types::AccountId = match item.contract_account_id {
             Some(cli_contract_account_id) => {
                 let contract_code_hash: near_primitives::hash::CryptoHash =
                     match crate::common::check_account_id(
@@ -145,9 +145,9 @@ impl Receiver {
 impl Receiver {
     fn input_contract_account_id(
         connection_config: crate::common::ConnectionConfig,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         loop {
-            let contract_account_id: String = Input::new()
+            let contract_account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("What is the account ID of the contract?")
                 .interact_text()
                 .unwrap();
@@ -162,7 +162,7 @@ impl Receiver {
             if contract_code_hash == near_primitives::hash::CryptoHash::default() {
                 println!(
                     "Contract code is not deployed to this account <{}>.",
-                    contract_account_id
+                    contract_account_id.to_string()
                 )
             } else {
                 break Ok(contract_account_id);

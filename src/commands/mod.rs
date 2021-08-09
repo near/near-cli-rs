@@ -188,10 +188,10 @@ impl TopLevelCommand {
 
     pub async fn process(self) -> crate::CliResult {
         let unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: "".to_string(),
+            signer_id: near_primitives::types::AccountId::test_account(),
             public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
             nonce: 0,
-            receiver_id: "".to_string(),
+            receiver_id: near_primitives::types::AccountId::test_account(),
             block_hash: Default::default(),
             actions: vec![],
         };
