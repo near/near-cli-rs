@@ -277,7 +277,7 @@ impl Submit {
         self,
         serialize_to_base64: String,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        println!("Srialize_to_base64:\n{}", &serialize_to_base64);
+        println!("Serialize_to_base64:\n{}", &serialize_to_base64);
         Ok(None)
     }
 
