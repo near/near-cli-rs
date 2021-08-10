@@ -78,7 +78,8 @@ impl Receiver {
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
-        let receiver_account_id: near_primitives::types::AccountId = match item.receiver_account_id {
+        let receiver_account_id: near_primitives::types::AccountId = match item.receiver_account_id
+        {
             Some(cli_receiver_account_id) => cli_receiver_account_id,
             None => Receiver::input_receiver_account_id(),
         };

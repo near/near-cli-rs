@@ -415,7 +415,8 @@ pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         ed25519_dalek::Keypair { secret, public }
     };
 
-    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(&secret_keypair.public))?;
+    let implicit_account_id =
+        near_primitives::types::AccountId::try_from(hex::encode(&secret_keypair.public))?;
     let public_key_str = format!(
         "ed25519:{}",
         bs58::encode(&secret_keypair.public).into_string()

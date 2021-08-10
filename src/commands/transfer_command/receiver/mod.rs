@@ -123,7 +123,8 @@ impl Receiver {
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
-        let receiver_account_id: near_primitives::types::AccountId = match item.receiver_account_id {
+        let receiver_account_id: near_primitives::types::AccountId = match item.receiver_account_id
+        {
             Some(cli_receiver_account_id) => match &connection_config {
                 Some(network_connection_config) => match crate::common::check_account_id(
                     network_connection_config.clone(),

@@ -109,7 +109,8 @@ impl Receiver {
         item: CliReceiver,
         connection_config: crate::common::ConnectionConfig,
     ) -> color_eyre::eyre::Result<Self> {
-        let contract_account_id: near_primitives::types::AccountId = match item.contract_account_id {
+        let contract_account_id: near_primitives::types::AccountId = match item.contract_account_id
+        {
             Some(cli_contract_account_id) => {
                 let contract_code_hash: near_primitives::hash::CryptoHash =
                     match crate::common::check_account_id(

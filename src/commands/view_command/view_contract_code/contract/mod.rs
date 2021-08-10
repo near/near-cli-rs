@@ -111,7 +111,9 @@ impl From<CliContract> for Contract {
             Some(cli_download_mode) => {
                 self::download_mode::DownloadMode::from(cli_download_mode, &contract_id.to_string())
             }
-            None => self::download_mode::DownloadMode::choose_download_mode(&contract_id.to_string()),
+            None => {
+                self::download_mode::DownloadMode::choose_download_mode(&contract_id.to_string())
+            }
         };
         Self {
             contract_id,
