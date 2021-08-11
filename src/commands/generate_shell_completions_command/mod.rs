@@ -1,7 +1,7 @@
 use clap::IntoApp;
 
 /// инструмент для настройки терминала пользователя
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -12,7 +12,7 @@ pub struct CliGenerateShellCompletions {
     shell_type: CliShellCompletionType,
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliShellCompletionType {
     Bash,
     Elvish,

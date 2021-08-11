@@ -1,4 +1,5 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
+use near_primitives::borsh::BorshSerialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod sign_manually;
@@ -6,7 +7,7 @@ pub mod sign_with_keychain;
 pub mod sign_with_ledger;
 pub mod sign_with_private_key;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSignTransaction {
     /// Provide arguments to sign a private key transaction
     SignPrivateKey(self::sign_with_private_key::CliSignPrivateKey),
@@ -18,7 +19,7 @@ pub enum CliSignTransaction {
     SignManually(self::sign_manually::CliSignManually),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum SignTransaction {
     #[strum_discriminants(strum(
@@ -37,11 +38,57 @@ pub enum SignTransaction {
     SignManually(self::sign_manually::SignManually),
 }
 
+impl CliSignTransaction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            CliSignTransaction::SignPrivateKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sign-private-key".to_owned());
+                args
+            }
+            CliSignTransaction::SignWithKeychain(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sign-with-keychain".to_owned());
+                args
+            }
+            CliSignTransaction::SignWithLedger(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sign-with-ledger".to_owned());
+                args
+            }
+            CliSignTransaction::SignManually(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sign-manually".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SignTransaction> for CliSignTransaction {
+    fn from(sign_transaction: SignTransaction) -> Self {
+        match sign_transaction {
+            SignTransaction::SignPrivateKey(sign_with_private_key) => Self::SignPrivateKey(
+                self::sign_with_private_key::CliSignPrivateKey::from(sign_with_private_key),
+            ),
+            SignTransaction::SignWithKeychain(sign_with_keychain) => Self::SignWithKeychain(
+                self::sign_with_keychain::CliSignKeychain::from(sign_with_keychain),
+            ),
+            SignTransaction::SignWithLedger(sign_with_ledger) => Self::SignWithLedger(
+                self::sign_with_ledger::CliSignLedger::from(sign_with_ledger),
+            ),
+            SignTransaction::SignManually(sign_manually) => {
+                Self::SignManually(self::sign_manually::CliSignManually::from(sign_manually))
+            }
+        }
+    }
+}
+
 impl SignTransaction {
     pub fn from(
         item: CliSignTransaction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSignTransaction::SignPrivateKey(cli_private_key) => {
@@ -76,7 +123,7 @@ impl SignTransaction {
 impl SignTransaction {
     pub fn choose_sign_option(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = SignTransactionDiscriminants::iter().collect::<Vec<_>>();
@@ -143,7 +190,7 @@ fn input_signer_public_key() -> near_crypto::PublicKey {
         .unwrap()
 }
 
-fn input_signer_secret_key() -> near_crypto::SecretKey {
+fn input_signer_private_key() -> near_crypto::SecretKey {
     Input::new()
         .with_prompt("Enter sender's private key")
         .interact_text()
@@ -173,4 +220,109 @@ fn input_block_hash() -> near_primitives::hash::CryptoHash {
         .interact_text()
         .unwrap();
     input_block_hash.inner
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, clap::Clap)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+pub enum Submit {
+    #[strum_discriminants(strum(
+        message = "Do you want send the transaction to the server (it's works only for online mode)"
+    ))]
+    Send,
+    #[strum_discriminants(strum(message = "Do you want show the transaction on display?"))]
+    Display,
+}
+
+impl Submit {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Send => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("send".to_owned());
+                args
+            }
+            Self::Display => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("display".to_owned());
+                args
+            }
+        }
+    }
+
+    pub fn choose_submit(connection_config: Option<crate::common::ConnectionConfig>) -> Self {
+        println!();
+        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
+
+        let submits = if let Some(_) = connection_config {
+            variants
+                .iter()
+                .map(|p| p.get_message().unwrap().to_owned())
+                .collect::<Vec<_>>()
+        } else {
+            vec!["Do you want show the transaction on display?".to_string()]
+        };
+        let select_submit = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Select an action that you want to add to the action:")
+            .items(&submits)
+            .default(0)
+            .interact()
+            .unwrap();
+        match variants[select_submit] {
+            SubmitDiscriminants::Send => Submit::Send,
+            SubmitDiscriminants::Display => Submit::Display,
+        }
+    }
+
+    pub fn process_offline(
+        self,
+        serialize_to_base64: String,
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
+        println!("Serialize_to_base64:\n{}", &serialize_to_base64);
+        Ok(None)
+    }
+
+    pub async fn process_online(
+        self,
+        network_connection_config: crate::common::ConnectionConfig,
+        signed_transaction: near_primitives::transaction::SignedTransaction,
+        serialize_to_base64: String,
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
+        match self {
+            Submit::Send => {
+                println!("Transaction sent ...");
+                let json_rcp_client =
+                    near_jsonrpc_client::new_client(network_connection_config.rpc_url().as_str());
+                let transaction_info = loop {
+                    let transaction_info_result = json_rcp_client
+                        .broadcast_tx_commit(near_primitives::serialize::to_base64(
+                            signed_transaction
+                                .try_to_vec()
+                                .expect("Transaction is not expected to fail on serialization"),
+                        ))
+                        .await;
+                    match transaction_info_result {
+                        Ok(response) => {
+                            break response;
+                        }
+                        Err(err) => {
+                            if let Some(serde_json::Value::String(data)) = &err.data {
+                                if data.contains("Timeout") {
+                                    println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+                                    continue;
+                                } else {
+                                    println!("Error transaction: {:#?}", err)
+                                }
+                            };
+                            return Ok(None);
+                        }
+                    };
+                };
+                Ok(Some(transaction_info))
+            }
+            Submit::Display => {
+                println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
+                Ok(None)
+            }
+        }
+    }
 }

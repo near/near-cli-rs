@@ -1,6 +1,6 @@
 [package]
 name = "near-cli"
-version = "0.1.0"
+version = "0.1.11"
 authors = ["FroVolod <frol_off@meta.ua>"]
 edition = "2018"
 
@@ -19,7 +19,7 @@ derive_more = "0.99.9"
 async-recursion = "0.3.2"
 
 actix = "0.11.0-beta.2"
-actix-web = { version = "4.0.0-beta.3", features = [ "openssl" ] }
+actix-web = { version = "4.0.0-beta.6", features = [ "openssl" ] }
 openssl-probe = { version = "0.1.2" }
 
 base64 = "0.12.3"
@@ -33,12 +33,13 @@ dirs = "3.0"
 slip10 = "0.4.3"
 url = { version = "2", features = ["serde"] }
 url_open = "0.0.1"
+shell-words = "1.0.0"
 
 color-eyre = "0.5"
 
 near-ledger = "0.1.1"
 
-near-crypto = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }
-near-primitives = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }
-near-jsonrpc-client = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }
-near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="9a7d172adeefcfd522723d741c2fa2d134392b8f" }
+near-crypto = { git = "https://github.com/miraclx/nearcore", rev="be74434190ac20231c6f86599ee790c6e38724dd" }
+near-primitives = { git = "https://github.com/miraclx/nearcore", rev="be74434190ac20231c6f86599ee790c6e38724dd" }
+near-jsonrpc-client = { git = "https://github.com/miraclx/nearcore", rev="be74434190ac20231c6f86599ee790c6e38724dd" }
+near-jsonrpc-primitives = { git = "https://github.com/miraclx/nearcore", rev="be74434190ac20231c6f86599ee790c6e38724dd" }

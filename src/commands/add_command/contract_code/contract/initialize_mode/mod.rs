@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod call_function_type;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliNextAction {
     /// Add an initialize
     Initialize(self::call_function_type::CliCallFunctionAction),
@@ -11,7 +11,7 @@ pub enum CliNextAction {
     NoInitialize(CliNoInitialize),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum NextAction {
     #[strum_discriminants(strum(message = "Add an initialize"))]
@@ -20,11 +20,39 @@ pub enum NextAction {
     NoInitialize(NoInitialize),
 }
 
+impl CliNextAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Initialize(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("initialize".to_owned());
+                args
+            }
+            Self::NoInitialize(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("no-initialize".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<NextAction> for CliNextAction {
+    fn from(next_action: NextAction) -> Self {
+        match next_action {
+            NextAction::Initialize(call_function_action) => {
+                Self::Initialize(call_function_action.into())
+            }
+            NextAction::NoInitialize(no_initialize) => Self::NoInitialize(no_initialize.into()),
+        }
+    }
+}
+
 impl NextAction {
     pub fn from(
         item: CliNextAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliNextAction::Initialize(cli_call_function_action) => Ok(NextAction::Initialize(
@@ -44,7 +72,7 @@ impl NextAction {
 impl NextAction {
     pub fn choose_next_action(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = NextActionDiscriminants::iter().collect::<Vec<_>>();
@@ -92,7 +120,7 @@ impl NextAction {
 }
 
 /// данные для инициализации
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -105,17 +133,36 @@ pub struct CliNoInitialize {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NoInitialize {
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+}
+
+impl CliNoInitialize {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<NoInitialize> for CliNoInitialize {
+    fn from(no_initialize: NoInitialize) -> Self {
+        Self {
+            sign_option: Some(no_initialize.sign_option.into()),
+        }
+    }
 }
 
 impl NoInitialize {
     fn from(
         item: CliNoInitialize,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let sign_option = match item.sign_option {
             Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id)?,

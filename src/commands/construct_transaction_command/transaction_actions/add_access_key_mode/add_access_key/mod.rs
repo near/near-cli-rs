@@ -6,7 +6,7 @@ mod full_access_type;
 mod function_call_type;
 
 /// добавление ключа пользователю
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -14,24 +14,47 @@ mod function_call_type;
 )]
 pub struct CliAddAccessKeyAction {
     public_key: Option<near_crypto::PublicKey>,
-    #[clap(long)]
     nonce: Option<u64>,
     #[clap(subcommand)]
     permission: Option<CliAccessKeyPermission>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AddAccessKeyAction {
     pub public_key: near_crypto::PublicKey,
     pub nonce: near_primitives::types::Nonce,
     pub permission: AccessKeyPermission,
 }
 
+impl CliAddAccessKeyAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .permission
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(public_key) = &self.public_key {
+            args.push_front(public_key.to_string());
+        };
+        args
+    }
+}
+
+impl From<AddAccessKeyAction> for CliAddAccessKeyAction {
+    fn from(add_access_key_action: AddAccessKeyAction) -> Self {
+        Self {
+            public_key: Some(add_access_key_action.public_key),
+            nonce: Some(add_access_key_action.nonce),
+            permission: Some(add_access_key_action.permission.into()),
+        }
+    }
+}
+
 impl AddAccessKeyAction {
     pub fn from(
         item: CliAddAccessKeyAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,
@@ -101,7 +124,7 @@ impl AddAccessKeyAction {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliAccessKeyPermission {
     /// Предоставьте данные для ключа с function call
     GrantFunctionCallAccess(self::function_call_type::CliFunctionCallType),
@@ -109,7 +132,7 @@ pub enum CliAccessKeyPermission {
     GrantFullAccess(self::full_access_type::CliFullAccessType),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum AccessKeyPermission {
     #[strum_discriminants(strum(message = "A permission with function call"))]
@@ -118,11 +141,41 @@ pub enum AccessKeyPermission {
     GrantFullAccess(self::full_access_type::FullAccessType),
 }
 
+impl CliAccessKeyPermission {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::GrantFunctionCallAccess(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("grant-function-call-access".to_owned());
+                args
+            }
+            Self::GrantFullAccess(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("grant-full-access".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<AccessKeyPermission> for CliAccessKeyPermission {
+    fn from(access_key_permission: AccessKeyPermission) -> Self {
+        match access_key_permission {
+            AccessKeyPermission::GrantFunctionCallAccess(function_call_type) => {
+                Self::GrantFunctionCallAccess(function_call_type.into())
+            }
+            AccessKeyPermission::GrantFullAccess(full_access_type) => {
+                Self::GrantFullAccess(full_access_type.into())
+            }
+        }
+    }
+}
+
 impl AccessKeyPermission {
     pub fn from(
         item: CliAccessKeyPermission,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliAccessKeyPermission::GrantFunctionCallAccess(cli_function_call_type) => {
@@ -150,7 +203,7 @@ impl AccessKeyPermission {
 impl AccessKeyPermission {
     pub fn choose_permission(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let variants = AccessKeyPermissionDiscriminants::iter().collect::<Vec<_>>();
         let permissions = variants

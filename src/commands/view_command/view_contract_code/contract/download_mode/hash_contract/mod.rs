@@ -1,5 +1,5 @@
 // view a contract hash
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -10,9 +10,28 @@ pub struct CliContractHash {
     selected_block_id: Option<super::super::super::block_id::CliBlockId>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContractHash {
     pub selected_block_id: super::super::super::block_id::BlockId,
+}
+
+impl CliContractHash {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .selected_block_id
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<ContractHash> for CliContractHash {
+    fn from(contract_hash: ContractHash) -> Self {
+        Self {
+            selected_block_id: Some(contract_hash.selected_block_id.into()),
+        }
+    }
 }
 
 impl ContractHash {
@@ -29,7 +48,7 @@ impl ContractHash {
 impl ContractHash {
     pub async fn process(
         self,
-        contract_id: String,
+        contract_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         self.selected_block_id

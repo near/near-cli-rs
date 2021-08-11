@@ -5,7 +5,7 @@ mod change_method;
 mod view_method;
 
 /// выбор метода для выполнения
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -16,9 +16,26 @@ pub struct CliOptionMethod {
     method: Option<CliMethod>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OptionMethod {
     method: Method,
+}
+
+impl CliOptionMethod {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.method
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<OptionMethod> for CliOptionMethod {
+    fn from(option_method: OptionMethod) -> Self {
+        Self {
+            method: Some(option_method.method.into()),
+        }
+    }
 }
 
 impl OptionMethod {
@@ -40,7 +57,7 @@ impl OptionMethod {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 enum CliMethod {
     /// Specify a change method
     ChangeMethod(self::change_method::operation_mode::CliOperationMode),
@@ -48,13 +65,39 @@ enum CliMethod {
     ViewMethod(self::view_method::operation_mode::CliOperationMode),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 enum Method {
     #[strum_discriminants(strum(message = "Change a method"))]
     ChangeMethod(self::change_method::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a method"))]
     ViewMethod(self::view_method::operation_mode::OperationMode),
+}
+
+impl CliMethod {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::ChangeMethod(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("change-method".to_owned());
+                command
+            }
+            Self::ViewMethod(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("view-method".to_owned());
+                command
+            }
+        }
+    }
+}
+
+impl From<Method> for CliMethod {
+    fn from(method: Method) -> Self {
+        match method {
+            Method::ChangeMethod(operation_mode) => Self::ChangeMethod(operation_mode.into()),
+            Method::ViewMethod(operation_mode) => Self::ViewMethod(operation_mode.into()),
+        }
+    }
 }
 
 impl Method {

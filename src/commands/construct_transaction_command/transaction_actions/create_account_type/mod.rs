@@ -1,7 +1,7 @@
 use async_recursion::async_recursion;
 
 /// создание аккаунта
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -12,16 +12,35 @@ pub struct CliCreateAccountAction {
     next_action: Option<super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CreateAccountAction {
     pub next_action: Box<super::NextAction>,
+}
+
+impl CliCreateAccountAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<CreateAccountAction> for CliCreateAccountAction {
+    fn from(_create_account_action: CreateAccountAction) -> Self {
+        Self {
+            next_action: Some(super::CliSkipNextAction::Skip(super::CliSkipAction {
+                sign_option: None,
+            })),
+        }
+    }
 }
 
 impl CreateAccountAction {
     pub fn from(
         item: CliCreateAccountAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let skip_next_action: super::NextAction = match item.next_action {
             Some(cli_skip_action) => super::NextAction::from_cli_skip_next_action(

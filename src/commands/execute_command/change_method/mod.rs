@@ -6,17 +6,37 @@ mod contract;
 pub mod operation_mode;
 mod signer;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliCallFunction {
     /// вызов метода изменения
     Call(self::call_function_type::CliCallFunctionAction),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum CallFunction {
     #[strum_discriminants(strum(message = "Call function"))]
     Call(self::call_function_type::CallFunctionAction),
+}
+
+impl CliCallFunction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Call(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("call".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<CallFunction> for CliCallFunction {
+    fn from(call_function: CallFunction) -> Self {
+        match call_function {
+            CallFunction::Call(call_function_action) => Self::Call(call_function_action.into()),
+        }
+    }
 }
 
 impl CallFunction {

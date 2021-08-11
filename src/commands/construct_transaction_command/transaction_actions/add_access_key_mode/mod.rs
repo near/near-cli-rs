@@ -5,7 +5,7 @@ mod add_access_key;
 mod generate_keypair;
 
 /// данные об отправителе транзакции
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -16,16 +16,33 @@ pub struct CliAddAccessKeyMode {
     public_key_mode: Option<CliPublicKeyMode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AddAccessKeyMode {
     pub public_key_mode: PublicKeyMode,
+}
+
+impl CliAddAccessKeyMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.public_key_mode
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<AddAccessKeyMode> for CliAddAccessKeyMode {
+    fn from(add_access_key_mode: AddAccessKeyMode) -> Self {
+        Self {
+            public_key_mode: Some(add_access_key_mode.public_key_mode.into()),
+        }
+    }
 }
 
 impl AddAccessKeyMode {
     pub fn from(
         item: CliAddAccessKeyMode,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key_mode = match item.public_key_mode {
             Some(cli_public_key_mode) => {
@@ -49,7 +66,7 @@ impl AddAccessKeyMode {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliPublicKeyMode {
     /// Enter public key
     PublicKey(self::add_access_key::CliAddAccessKeyAction),
@@ -57,7 +74,7 @@ pub enum CliPublicKeyMode {
     GenerateKeypair(self::generate_keypair::CliGenerateKeypair),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum PublicKeyMode {
     #[strum_discriminants(strum(message = "Enter public key"))]
@@ -70,7 +87,7 @@ impl PublicKeyMode {
     fn from(
         item: CliPublicKeyMode,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliPublicKeyMode::PublicKey(cli_add_access_key_action) => Ok(PublicKeyMode::PublicKey(
@@ -91,10 +108,40 @@ impl PublicKeyMode {
     }
 }
 
+impl CliPublicKeyMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::PublicKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("public-key".to_owned());
+                args
+            }
+            Self::GenerateKeypair(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("generate-keypair".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<PublicKeyMode> for CliPublicKeyMode {
+    fn from(public_key_mode: PublicKeyMode) -> Self {
+        match public_key_mode {
+            PublicKeyMode::PublicKey(add_access_key_action) => {
+                Self::PublicKey(add_access_key_action.into())
+            }
+            PublicKeyMode::GenerateKeypair(generate_keypair) => {
+                Self::GenerateKeypair(generate_keypair.into())
+            }
+        }
+    }
+}
+
 impl PublicKeyMode {
     fn choose_public_key_mode(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let variants = PublicKeyModeDiscriminants::iter().collect::<Vec<_>>();
         let modes = variants

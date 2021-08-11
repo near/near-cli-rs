@@ -3,7 +3,7 @@ use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 use std::vec;
 
 /// данные для определения ключа с function call
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -20,7 +20,7 @@ pub struct CliFunctionCallType {
     next_action: Option<super::super::super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunctionCallType {
     pub allowance: Option<near_primitives::types::Balance>,
     pub receiver_id: near_primitives::types::AccountId,
@@ -28,11 +28,49 @@ pub struct FunctionCallType {
     pub next_action: Box<super::super::super::NextAction>,
 }
 
+impl CliFunctionCallType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(method_names) = &self.method_names {
+            args.push_front(method_names.to_string());
+            args.push_front("--method-names".to_owned())
+        };
+        if let Some(allowance) = &self.allowance {
+            args.push_front(allowance.to_string());
+            args.push_front("--allowance".to_owned())
+        };
+        if let Some(receiver_id) = &self.receiver_id {
+            args.push_front(receiver_id.to_string());
+            args.push_front("--receiver-id".to_owned())
+        };
+        args
+    }
+}
+
+impl From<FunctionCallType> for CliFunctionCallType {
+    fn from(function_call_type: FunctionCallType) -> Self {
+        Self {
+            allowance: Some(crate::common::NearBalance::from_yoctonear(
+                function_call_type.allowance.unwrap_or_default(),
+            )),
+            receiver_id: Some(function_call_type.receiver_id),
+            method_names: Some(function_call_type.method_names.join(", ")),
+            next_action: Some(super::super::super::CliSkipNextAction::Skip(
+                super::super::super::CliSkipAction { sign_option: None },
+            )),
+        }
+    }
+}
+
 impl FunctionCallType {
     pub fn from(
         item: CliFunctionCallType,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let allowance: Option<near_primitives::types::Balance> = match item.allowance {
             Some(cli_allowance) => Some(cli_allowance.to_yoctonear()),
@@ -157,7 +195,7 @@ impl FunctionCallType {
             permission: near_primitives::account::AccessKeyPermission::FunctionCall(
                 near_primitives::account::FunctionCallPermission {
                     allowance: self.allowance.clone(),
-                    receiver_id: self.receiver_id.clone(),
+                    receiver_id: self.receiver_id.to_string().clone(),
                     method_names: self.method_names.clone(),
                 },
             ),

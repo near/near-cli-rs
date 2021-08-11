@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 
 use near_primitives::borsh::BorshDeserialize;
@@ -16,6 +16,15 @@ pub enum OutputFormat {
     #[default]
     Plaintext,
     Json,
+}
+
+impl std::fmt::Display for OutputFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OutputFormat::Plaintext => write!(f, "plaintext"),
+            OutputFormat::Json => write!(f, "json"),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -38,7 +47,7 @@ impl std::str::FromStr for TransactionAsBase64 {
 
 impl std::fmt::Display for TransactionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Transaction {}", self.inner.get_hash_and_size().0)
+        write!(f, "{}", self.inner.get_hash_and_size().0)
     }
 }
 
@@ -89,7 +98,7 @@ impl std::str::FromStr for AvailableRpcServerUrl {
 
 impl std::fmt::Display for AvailableRpcServerUrl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Url {}", self.inner)
+        self.inner.fmt(f)
     }
 }
 
@@ -223,6 +232,12 @@ impl std::str::FromStr for NearGas {
     }
 }
 
+impl From<u64> for NearGas {
+    fn from(num: u64) -> Self {
+        Self { inner: num }
+    }
+}
+
 impl NearGas {
     fn into_tera_gas(num: &str) -> Result<u64, String> {
         let res_split: Vec<&str> = num.split('.').collect();
@@ -320,7 +335,7 @@ impl ConnectionConfig {
 
 pub fn check_account_id(
     connection_config: ConnectionConfig,
-    account_id: String,
+    account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
     let query_view_method_response = actix::System::new().block_on(async {
         near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
@@ -361,7 +376,7 @@ pub fn is_64_len_hex(account_id: impl AsRef<str>) -> bool {
 pub struct KeyPairProperties {
     pub seed_phrase_hd_path: slip10::BIP32Path,
     pub master_seed_phrase: String,
-    pub implicit_account_id: String,
+    pub implicit_account_id: near_primitives::types::AccountId,
     pub public_key_str: String,
     pub secret_keypair_str: String,
 }
@@ -400,7 +415,8 @@ pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         ed25519_dalek::Keypair { secret, public }
     };
 
-    let implicit_account_id = hex::encode(&secret_keypair.public);
+    let implicit_account_id =
+        near_primitives::types::AccountId::try_from(hex::encode(&secret_keypair.public))?;
     let public_key_str = format!(
         "ed25519:{}",
         bs58::encode(&secret_keypair.public).into_string()
@@ -770,6 +786,9 @@ pub async fn print_transaction_error(
                         }
                     }
                 },
+                near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
+                    println!("Error: The size ({}) of serialized transaction exceeded the limit ({}).", size, limit)
+                }
             }
         },
     }

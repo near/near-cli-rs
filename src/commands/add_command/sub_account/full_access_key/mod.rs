@@ -3,24 +3,46 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod public_key_mode;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliFullAccessKey {
     /// Specify a full access key for the sub-account
     SubAccountFullAccess(CliSubAccountFullAccess),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum FullAccessKey {
     #[strum_discriminants(strum(message = "Add a full access key for the sub-account"))]
     SubAccountFullAccess(SubAccountFullAccess),
 }
 
+impl CliFullAccessKey {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::SubAccountFullAccess(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("sub-account-full-access".to_owned());
+                command
+            }
+        }
+    }
+}
+
+impl From<FullAccessKey> for CliFullAccessKey {
+    fn from(full_access_key: FullAccessKey) -> Self {
+        match full_access_key {
+            FullAccessKey::SubAccountFullAccess(sub_account_full_access) => {
+                Self::SubAccountFullAccess(sub_account_full_access.into())
+            }
+        }
+    }
+}
+
 impl FullAccessKey {
     pub fn from(
         item: CliFullAccessKey,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliFullAccessKey::SubAccountFullAccess(cli_sub_account_full_access) => Ok(
@@ -37,7 +59,7 @@ impl FullAccessKey {
 impl FullAccessKey {
     pub fn choose_full_access_key(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = FullAccessKeyDiscriminants::iter().collect::<Vec<_>>();
@@ -79,7 +101,7 @@ impl FullAccessKey {
 }
 
 /// данные о ключе доступа
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -90,16 +112,35 @@ pub struct CliSubAccountFullAccess {
     public_key_mode: Option<self::public_key_mode::CliPublicKeyMode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SubAccountFullAccess {
     pub public_key_mode: self::public_key_mode::PublicKeyMode,
+}
+
+impl CliSubAccountFullAccess {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .public_key_mode
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<SubAccountFullAccess> for CliSubAccountFullAccess {
+    fn from(sub_account_full_access: SubAccountFullAccess) -> Self {
+        Self {
+            public_key_mode: Some(sub_account_full_access.public_key_mode.into()),
+        }
+    }
 }
 
 impl SubAccountFullAccess {
     fn from(
         item: CliSubAccountFullAccess,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key_mode = match item.public_key_mode {
             Some(cli_public_key_mode) => self::public_key_mode::PublicKeyMode::from(

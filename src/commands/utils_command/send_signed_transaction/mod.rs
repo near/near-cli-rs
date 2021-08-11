@@ -2,14 +2,32 @@ use dialoguer::Input;
 
 pub mod operation_mode;
 
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliTransaction {
     transaction: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Transaction {
     transaction: String,
+}
+
+impl CliTransaction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(transaction) = &self.transaction {
+            args.push_front(transaction.to_string());
+        }
+        args
+    }
+}
+
+impl From<Transaction> for CliTransaction {
+    fn from(transaction: Transaction) -> Self {
+        Self {
+            transaction: Some(transaction.transaction),
+        }
+    }
 }
 
 impl From<CliTransaction> for Transaction {

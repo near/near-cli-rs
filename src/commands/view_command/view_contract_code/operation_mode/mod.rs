@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 pub mod online_mode;
 
 /// инструмент выбора режима online/offline
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -14,9 +14,26 @@ pub struct CliOperationMode {
     mode: Option<CliMode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OperationMode {
     pub mode: Mode,
+}
+
+impl CliOperationMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.mode
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<OperationMode> for CliOperationMode {
+    fn from(item: OperationMode) -> Self {
+        Self {
+            mode: Some(item.mode.into()),
+        }
+    }
 }
 
 impl From<CliOperationMode> for OperationMode {
@@ -35,17 +52,39 @@ impl OperationMode {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliMode {
     /// Execute a change method with online mode
     Network(self::online_mode::CliNetworkArgs),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Mode {
     #[strum_discriminants(strum(message = "Yes, I keep it simple"))]
     Network(self::online_mode::NetworkArgs),
+}
+
+impl CliMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Network(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("network".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<Mode> for CliMode {
+    fn from(mode: Mode) -> Self {
+        match mode {
+            Mode::Network(network_args) => {
+                Self::Network(self::online_mode::CliNetworkArgs::from(network_args))
+            }
+        }
+    }
 }
 
 impl From<CliMode> for Mode {

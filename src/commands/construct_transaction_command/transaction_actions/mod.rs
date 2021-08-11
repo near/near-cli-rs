@@ -9,7 +9,7 @@ mod delete_account_type;
 mod stake_near_tokens_type;
 mod transfer_near_tokens_type;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliNextAction {
     /// Choose next action
     AddAction(CliSelectAction),
@@ -17,13 +17,13 @@ pub enum CliNextAction {
     Skip(CliSkipAction),
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSkipNextAction {
     /// Go to transaction signing
     Skip(CliSkipAction),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum NextAction {
     #[strum_discriminants(strum(message = "Select a new action"))]
@@ -32,11 +32,61 @@ pub enum NextAction {
     Skip(SkipAction),
 }
 
+impl CliSkipNextAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Skip(subcommand) => {
+                // let mut args = ;  it is not implemented now!!!
+                // args.push_front("skip".to_owned());
+                // args
+                subcommand.to_cli_args()
+            }
+        }
+    }
+}
+
+impl From<NextAction> for CliSkipNextAction {
+    fn from(next_action: NextAction) -> Self {
+        match next_action {
+            NextAction::AddAction(_select_action) => {
+                Self::Skip(CliSkipAction { sign_option: None })
+            }
+            NextAction::Skip(skip_action) => Self::Skip(skip_action.into()),
+        }
+    }
+}
+
+impl CliNextAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::AddAction(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("add-action".to_owned());
+                args
+            }
+            Self::Skip(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("skip".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<NextAction> for CliNextAction {
+    fn from(next_action: NextAction) -> Self {
+        match next_action {
+            NextAction::AddAction(select_action) => Self::AddAction(select_action.into()),
+            NextAction::Skip(skip_action) => Self::Skip(skip_action.into()),
+        }
+    }
+}
+
 impl NextAction {
     pub fn from_cli_next_action(
         item: CliNextAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliNextAction::AddAction(cli_select_action) => {
@@ -57,7 +107,7 @@ impl NextAction {
     pub fn from_cli_skip_next_action(
         item: CliSkipNextAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSkipNextAction::Skip(cli_skip_action) => {
@@ -81,7 +131,7 @@ impl NextAction {
 impl NextAction {
     pub fn input_next_action(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = NextActionDiscriminants::iter().collect::<Vec<_>>();
@@ -127,7 +177,7 @@ impl NextAction {
 }
 
 /// инструмент для добавления команды в транзакцию
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -138,16 +188,33 @@ pub struct CliSelectAction {
     transaction_subcommand: Option<CliActionSubcommand>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SelectAction {
     transaction_subcommand: ActionSubcommand,
+}
+
+impl CliSelectAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.transaction_subcommand
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<SelectAction> for CliSelectAction {
+    fn from(select_action: SelectAction) -> Self {
+        Self {
+            transaction_subcommand: Some(select_action.transaction_subcommand.into()),
+        }
+    }
 }
 
 impl SelectAction {
     fn from(
         item: CliSelectAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let transaction_subcommand: ActionSubcommand = match item.transaction_subcommand {
             Some(cli_transaction_subcommand) => ActionSubcommand::from(
@@ -175,7 +242,7 @@ impl SelectAction {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliActionSubcommand {
     /// Предоставьте данные для перевода Near
     TransferNEARTokens(self::transfer_near_tokens_type::CliTransferNEARTokensAction),
@@ -193,7 +260,7 @@ pub enum CliActionSubcommand {
     DeleteAccessKey(self::delete_access_key_type::CliDeleteAccessKeyAction),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum ActionSubcommand {
     #[strum_discriminants(strum(message = "Transfer NEAR Tokens"))]
@@ -212,11 +279,81 @@ pub enum ActionSubcommand {
     DeleteAccessKey(self::delete_access_key_type::DeleteAccessKeyAction),
 }
 
+impl CliActionSubcommand {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::TransferNEARTokens(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("transfer-near-tokens".to_owned());
+                args
+            }
+            Self::CallFunction(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("call-function".to_owned());
+                args
+            }
+            Self::StakeNEARTokens(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("stake-near-tokens".to_owned());
+                args
+            }
+            Self::CreateAccount(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("create-account".to_owned());
+                args
+            }
+            Self::DeleteAccount(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("delete-account".to_owned());
+                args
+            }
+            Self::AddAccessKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("add-access-key".to_owned());
+                args
+            }
+            Self::DeleteAccessKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("delete-access-key".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<ActionSubcommand> for CliActionSubcommand {
+    fn from(action_subcommand: ActionSubcommand) -> Self {
+        match action_subcommand {
+            ActionSubcommand::TransferNEARTokens(transfer_near_tokens_action) => {
+                Self::TransferNEARTokens(transfer_near_tokens_action.into())
+            }
+            ActionSubcommand::CallFunction(call_function_action) => {
+                Self::CallFunction(call_function_action.into())
+            }
+            ActionSubcommand::StakeNEARTokens(stake_near_tokens_action) => {
+                Self::StakeNEARTokens(stake_near_tokens_action.into())
+            }
+            ActionSubcommand::CreateAccount(create_account_action) => {
+                Self::CreateAccount(create_account_action.into())
+            }
+            ActionSubcommand::DeleteAccount(delete_account_action) => {
+                Self::DeleteAccount(delete_account_action.into())
+            }
+            ActionSubcommand::AddAccessKey(add_access_key_action) => {
+                Self::AddAccessKey(add_access_key_action.into())
+            }
+            ActionSubcommand::DeleteAccessKey(delete_access_key_action) => {
+                Self::DeleteAccessKey(delete_access_key_action.into())
+            }
+        }
+    }
+}
+
 impl ActionSubcommand {
     fn from(
         item: CliActionSubcommand,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> Self {
         match item {
             CliActionSubcommand::TransferNEARTokens(cli_transfer_near_token) => {
@@ -284,7 +421,7 @@ impl ActionSubcommand {
 impl ActionSubcommand {
     pub fn choose_action_command(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> ActionSubcommand {
         println!();
         let variants = ActionSubcommandDiscriminants::iter().collect::<Vec<_>>();
@@ -370,7 +507,7 @@ impl ActionSubcommand {
 }
 
 /// инструмент, показывающий окончание набора команд в одной транзакции
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -381,16 +518,41 @@ pub struct CliSkipAction {
     sign_option: Option<super::sign_transaction::CliSignTransaction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SkipAction {
     pub sign_option: super::sign_transaction::SignTransaction,
 }
+
+impl CliSkipAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<SkipAction> for CliSkipAction {
+    fn from(skip_action: SkipAction) -> Self {
+        Self {
+            sign_option: Some(skip_action.sign_option.into()),
+        }
+    }
+}
+
+// impl From<SelectAction> for CliSkipAction {
+//     fn from(select_action: SelectAction) -> Self {
+//         Self{
+//             sign_option:
+//         }
+//     }
+// }
 
 impl SkipAction {
     fn from(
         item: CliSkipAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let sign_option: super::sign_transaction::SignTransaction = match item.sign_option {
             Some(cli_sign_transaction) => super::sign_transaction::SignTransaction::from(

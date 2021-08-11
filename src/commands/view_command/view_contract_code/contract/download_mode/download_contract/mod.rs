@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 // download contract file
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -13,10 +13,33 @@ pub struct CliContractFile {
     selected_block_id: Option<super::super::super::block_id::CliBlockId>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContractFile {
     pub file_path: Option<std::path::PathBuf>,
     pub selected_block_id: super::super::super::block_id::BlockId,
+}
+
+impl CliContractFile {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .selected_block_id
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(file_path) = &self.file_path {
+            args.push_front(file_path.as_path().display().to_string());
+        };
+        args
+    }
+}
+
+impl From<ContractFile> for CliContractFile {
+    fn from(contract_file: ContractFile) -> Self {
+        Self {
+            file_path: contract_file.file_path,
+            selected_block_id: Some(contract_file.selected_block_id.into()),
+        }
+    }
 }
 
 impl ContractFile {
@@ -50,7 +73,7 @@ impl ContractFile {
 
     pub async fn process(
         self,
-        contract_id: String,
+        contract_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         self.selected_block_id

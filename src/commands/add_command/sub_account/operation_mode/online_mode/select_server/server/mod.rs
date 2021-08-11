@@ -1,7 +1,8 @@
 use dialoguer::Input;
+use std::str::FromStr;
 
 /// предустановленный RPC-сервер
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -13,7 +14,7 @@ pub struct CliServer {
 }
 
 /// данные для custom server
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -26,10 +27,56 @@ pub struct CliCustomServer {
     send_from: Option<CliSendFrom>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Server {
     pub connection_config: Option<crate::common::ConnectionConfig>,
     pub send_from: SendFrom,
+}
+
+impl CliCustomServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .send_from
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(url) = &self.url {
+            args.push_front(url.to_string());
+            args.push_front("--url".to_string());
+        }
+        args
+    }
+}
+
+impl From<Server> for CliCustomServer {
+    fn from(server: Server) -> Self {
+        Self {
+            url: Some(
+                crate::common::AvailableRpcServerUrl::from_str(
+                    server.connection_config.unwrap().rpc_url().as_str(),
+                )
+                .unwrap(),
+            ),
+            send_from: Some(server.send_from.into()),
+        }
+    }
+}
+
+impl CliServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.send_from
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<Server> for CliServer {
+    fn from(server: Server) -> Self {
+        Self {
+            send_from: Some(server.send_from.into()),
+        }
+    }
 }
 
 impl CliServer {
@@ -80,15 +127,35 @@ impl Server {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendFrom {
     /// Specify a sender
     OwnerAccount(super::super::super::super::sender::CliSender),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendFrom {
     OwnerAccount(super::super::super::super::sender::Sender),
+}
+
+impl CliSendFrom {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::OwnerAccount(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("owner-account".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendFrom> for CliSendFrom {
+    fn from(send_from: SendFrom) -> Self {
+        match send_from {
+            SendFrom::OwnerAccount(sender) => Self::OwnerAccount(sender.into()),
+        }
+    }
 }
 
 impl SendFrom {

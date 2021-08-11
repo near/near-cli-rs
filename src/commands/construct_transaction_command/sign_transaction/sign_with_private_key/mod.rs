@@ -1,9 +1,7 @@
-use dialoguer::{theme::ColorfulTheme, Select};
 use near_primitives::borsh::BorshSerialize;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 /// подписание сформированной транзакции с помощью личных ключей
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -13,22 +11,61 @@ pub struct CliSignPrivateKey {
     #[clap(long)]
     signer_public_key: Option<near_crypto::PublicKey>,
     #[clap(long)]
-    signer_secret_key: Option<near_crypto::SecretKey>,
+    signer_private_key: Option<near_crypto::SecretKey>,
     #[clap(long)]
     nonce: Option<u64>,
     #[clap(long)]
     block_hash: Option<near_primitives::hash::CryptoHash>,
     #[clap(subcommand)]
-    submit: Option<Submit>,
+    submit: Option<super::Submit>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SignPrivateKey {
     pub signer_public_key: near_crypto::PublicKey,
-    pub signer_secret_key: near_crypto::SecretKey,
-    pub nonce: u64,
-    pub block_hash: near_primitives::hash::CryptoHash,
-    pub submit: Option<Submit>,
+    pub signer_private_key: near_crypto::SecretKey,
+    pub nonce: Option<u64>,
+    pub block_hash: Option<near_primitives::hash::CryptoHash>,
+    pub submit: Option<super::Submit>,
+}
+
+impl CliSignPrivateKey {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .submit
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(block_hash) = &self.block_hash {
+            args.push_front(block_hash.to_string());
+            args.push_front("--block-hash".to_owned())
+        }
+        if let Some(nonce) = &self.nonce {
+            args.push_front(nonce.to_string());
+            args.push_front("--nonce".to_owned())
+        }
+        if let Some(signer_secret_key) = &self.signer_private_key {
+            args.push_front(signer_secret_key.to_string());
+            args.push_front("--signer-private-key".to_owned())
+        }
+        if let Some(signer_public_key) = &self.signer_public_key {
+            args.push_front(signer_public_key.to_string());
+            args.push_front("--signer-public-key".to_owned())
+        }
+        args
+    }
+}
+
+impl From<SignPrivateKey> for CliSignPrivateKey {
+    fn from(sign_private_key: SignPrivateKey) -> Self {
+        Self {
+            signer_public_key: Some(sign_private_key.signer_public_key),
+            signer_private_key: Some(sign_private_key.signer_private_key),
+            nonce: sign_private_key.nonce,
+            block_hash: sign_private_key.block_hash,
+            submit: sign_private_key.submit,
+        }
+    }
 }
 
 impl SignPrivateKey {
@@ -40,17 +77,17 @@ impl SignPrivateKey {
             Some(cli_public_key) => cli_public_key,
             None => super::input_signer_public_key(),
         };
-        let signer_secret_key: near_crypto::SecretKey = match item.signer_secret_key {
-            Some(cli_secret_key) => cli_secret_key,
-            None => super::input_signer_secret_key(),
+        let signer_private_key: near_crypto::SecretKey = match item.signer_private_key {
+            Some(signer_private_key) => signer_private_key,
+            None => super::input_signer_private_key(),
         };
-        let submit: Option<Submit> = item.submit;
+        let submit: Option<super::Submit> = item.submit;
         match connection_config {
             Some(_) => Self {
                 signer_public_key,
-                signer_secret_key,
-                nonce: 0,
-                block_hash: Default::default(),
+                signer_private_key,
+                nonce: None,
+                block_hash: None,
                 submit,
             },
             None => {
@@ -63,13 +100,13 @@ impl SignPrivateKey {
                     None => super::input_block_hash(),
                 };
                 let public_key_origin: near_crypto::PublicKey =
-                    near_crypto::SecretKey::public_key(&signer_secret_key);
+                    near_crypto::SecretKey::public_key(&signer_private_key);
                 if &signer_public_key == &public_key_origin {
                     Self {
                         signer_public_key,
-                        signer_secret_key,
-                        nonce,
-                        block_hash,
+                        signer_private_key,
+                        nonce: Some(nonce),
+                        block_hash: Some(block_hash),
                         submit,
                     }
                 } else {
@@ -77,11 +114,11 @@ impl SignPrivateKey {
                     let signer_public_key: near_crypto::PublicKey =
                         super::input_signer_public_key();
                     let signer_secret_key: near_crypto::SecretKey =
-                        super::input_signer_secret_key();
+                        super::input_signer_private_key();
                     Self::from(
                         CliSignPrivateKey {
                             signer_public_key: Some(signer_public_key),
-                            signer_secret_key: Some(signer_secret_key),
+                            signer_private_key: Some(signer_secret_key),
                             nonce: Some(nonce),
                             block_hash: Some(block_hash),
                             submit: None,
@@ -102,14 +139,15 @@ impl SignPrivateKey {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_connection_config: Option<crate::common::ConnectionConfig>,
+        connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
-        let signer_secret_key: near_crypto::SecretKey = self.signer_secret_key.clone();
-        let nonce: u64 = self.nonce.clone();
-        let block_hash: near_primitives::hash::CryptoHash = self.block_hash.clone();
-        let submit: Option<Submit> = self.submit.clone();
-        match network_connection_config {
+        let signer_secret_key: near_crypto::SecretKey = self.signer_private_key.clone();
+        let nonce: u64 = self.nonce.unwrap_or_default().clone();
+        let block_hash: near_primitives::hash::CryptoHash =
+            self.block_hash.unwrap_or_default().clone();
+        let submit: Option<super::Submit> = self.submit.clone();
+        match connection_config.clone() {
             None => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
                     public_key,
@@ -134,7 +172,7 @@ impl SignPrivateKey {
                 match submit {
                     Some(submit) => submit.process_offline(serialize_to_base64),
                     None => {
-                        let submit = Submit::choose_submit();
+                        let submit = super::Submit::choose_submit(connection_config.clone());
                         submit.process_offline(serialize_to_base64)
                     }
                 }
@@ -187,7 +225,7 @@ impl SignPrivateKey {
                 println!("Your transaction was signed successfully.");
                 match submit {
                     None => {
-                        let submit = Submit::choose_submit();
+                        let submit = super::Submit::choose_submit(connection_config);
                         submit
                             .process_online(
                                 network_connection_config,
@@ -206,91 +244,6 @@ impl SignPrivateKey {
                             .await
                     }
                 }
-            }
-        }
-    }
-}
-
-#[derive(Debug, EnumDiscriminants, Clone, clap::Clap)]
-#[strum_discriminants(derive(EnumMessage, EnumIter))]
-pub enum Submit {
-    #[strum_discriminants(strum(
-        message = "Do you want send the transaction to the server (it's works only for online mode)"
-    ))]
-    Send,
-    #[strum_discriminants(strum(message = "Do you want show the transaction on display?"))]
-    Display,
-}
-
-impl Submit {
-    pub fn choose_submit() -> Self {
-        println!();
-        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
-        let submits = variants
-            .iter()
-            .map(|p| p.get_message().unwrap().to_owned())
-            .collect::<Vec<_>>();
-        let select_submit = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select an action that you want to add to the action:")
-            .items(&submits)
-            .default(0)
-            .interact()
-            .unwrap();
-        match variants[select_submit] {
-            SubmitDiscriminants::Send => Submit::Send,
-            SubmitDiscriminants::Display => Submit::Display,
-        }
-    }
-
-    pub fn process_offline(
-        self,
-        serialize_to_base64: String,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        println!("Srialize_to_base64:\n{}", &serialize_to_base64);
-        Ok(None)
-    }
-
-    pub async fn process_online(
-        self,
-        network_connection_config: crate::common::ConnectionConfig,
-        signed_transaction: near_primitives::transaction::SignedTransaction,
-        serialize_to_base64: String,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        match self {
-            Submit::Send => {
-                println!("Transaction sent ...");
-                let json_rcp_client =
-                    near_jsonrpc_client::new_client(network_connection_config.rpc_url().as_str());
-                let transaction_info = loop {
-                    let transaction_info_result = json_rcp_client
-                        .broadcast_tx_commit(near_primitives::serialize::to_base64(
-                            signed_transaction
-                                .try_to_vec()
-                                .expect("Transaction is not expected to fail on serialization"),
-                        ))
-                        .await;
-                    match transaction_info_result {
-                        Ok(response) => {
-                            break response;
-                        }
-                        Err(err) => {
-                            if let Some(serde_json::Value::String(data)) = &err.data {
-                                if data.contains("Timeout") {
-                                    println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
-                                    continue;
-                                } else {
-                                    println!("Error transaction: {:#?}", err)
-                                }
-                            };
-                            return Ok(None);
-                        }
-                    };
-                };
-                Ok(Some(transaction_info))
-            }
-            Submit::Display => {
-                println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
-                Ok(None)
             }
         }
     }

@@ -7,7 +7,7 @@ mod sender;
 pub mod transfer_near_tokens_type;
 
 /// инструмент выбора переводимой валюты
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -18,9 +18,26 @@ pub struct CliCurrency {
     currency_selection: Option<CliCurrencySelection>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Currency {
     currency_selection: CurrencySelection,
+}
+
+impl CliCurrency {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.currency_selection
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<Currency> for CliCurrency {
+    fn from(currency: Currency) -> Self {
+        Self {
+            currency_selection: Some(CliCurrencySelection::from(currency.currency_selection)),
+        }
+    }
 }
 
 impl Currency {
@@ -44,17 +61,39 @@ impl Currency {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 enum CliCurrencySelection {
     /// отправка трансфера в NEAR tokens
     NEAR(self::operation_mode::CliOperationMode),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 enum CurrencySelection {
     #[strum_discriminants(strum(message = "NEAR tokens"))]
     NEAR(self::operation_mode::OperationMode),
+}
+
+impl CliCurrencySelection {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::NEAR(operation_mode) => {
+                let mut args = operation_mode.to_cli_args();
+                args.push_front("near".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<CurrencySelection> for CliCurrencySelection {
+    fn from(currency_selection: CurrencySelection) -> Self {
+        match currency_selection {
+            CurrencySelection::NEAR(operation_mode) => {
+                Self::NEAR(self::operation_mode::CliOperationMode::from(operation_mode))
+            }
+        }
+    }
 }
 
 impl CurrencySelection {

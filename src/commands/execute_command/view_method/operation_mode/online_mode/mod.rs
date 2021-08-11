@@ -1,7 +1,7 @@
 pub mod select_server;
 
 /// аргументы, необходимые для создания транзакции в online mode
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -12,9 +12,26 @@ pub struct CliNetworkArgs {
     selected_server: Option<self::select_server::CliSelectServer>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NetworkArgs {
     selected_server: self::select_server::SelectServer,
+}
+
+impl CliNetworkArgs {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.selected_server
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<NetworkArgs> for CliNetworkArgs {
+    fn from(network_args: NetworkArgs) -> Self {
+        Self {
+            selected_server: Some(network_args.selected_server.into()),
+        }
+    }
 }
 
 impl NetworkArgs {

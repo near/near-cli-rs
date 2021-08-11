@@ -2,7 +2,7 @@ use async_recursion::async_recursion;
 use dialoguer::Input;
 
 /// удаление аккаунта
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -15,17 +15,43 @@ pub struct CliDeleteAccountAction {
     next_action: Option<super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeleteAccountAction {
     pub beneficiary_id: near_primitives::types::AccountId,
     pub next_action: Box<super::NextAction>,
+}
+
+impl CliDeleteAccountAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(beneficiary_id) = &self.beneficiary_id {
+            args.push_front(beneficiary_id.to_string());
+            args.push_front("--beneficiary-id".to_owned())
+        };
+        args
+    }
+}
+
+impl From<DeleteAccountAction> for CliDeleteAccountAction {
+    fn from(delete_account_action: DeleteAccountAction) -> Self {
+        Self {
+            beneficiary_id: Some(delete_account_action.beneficiary_id),
+            next_action: Some(super::CliSkipNextAction::Skip(super::CliSkipAction {
+                sign_option: None,
+            })),
+        }
+    }
 }
 
 impl DeleteAccountAction {
     pub fn from(
         item: CliDeleteAccountAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let beneficiary_id: near_primitives::types::AccountId = match item.beneficiary_id {
             Some(cli_account_id) => cli_account_id,

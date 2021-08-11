@@ -4,24 +4,44 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod initialize_mode;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliContract {
     /// Add a contract file
     ContractFile(CliContractFile),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Contract {
     #[strum_discriminants(strum(message = "Add a contract file"))]
     ContractFile(ContractFile),
 }
 
+impl CliContract {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::ContractFile(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("contract-file".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<Contract> for CliContract {
+    fn from(contract: Contract) -> Self {
+        match contract {
+            Contract::ContractFile(contract_file) => Self::ContractFile(contract_file.into()),
+        }
+    }
+}
+
 impl Contract {
     pub fn from(
         item: CliContract,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliContract::ContractFile(cli_contract_file) => Ok(Contract::ContractFile(
@@ -34,7 +54,7 @@ impl Contract {
 impl Contract {
     pub fn choose_contract(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = ContractDiscriminants::iter().collect::<Vec<_>>();
@@ -74,7 +94,7 @@ impl Contract {
 }
 
 /// add contract file
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -86,17 +106,40 @@ pub struct CliContractFile {
     next_action: Option<self::initialize_mode::CliNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContractFile {
     pub file_path: std::path::PathBuf,
     next_action: self::initialize_mode::NextAction,
+}
+
+impl CliContractFile {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(file_path) = &self.file_path {
+            args.push_front(file_path.as_path().display().to_string());
+        }
+        args
+    }
+}
+
+impl From<ContractFile> for CliContractFile {
+    fn from(contract_file: ContractFile) -> Self {
+        Self {
+            file_path: Some(contract_file.file_path),
+            next_action: Some(contract_file.next_action.into()),
+        }
+    }
 }
 
 impl ContractFile {
     fn from(
         item: CliContractFile,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let file_path = match item.file_path {
             Some(cli_file_path) => cli_file_path,

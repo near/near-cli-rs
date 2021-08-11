@@ -11,7 +11,7 @@ pub mod transfer_command;
 pub mod utils_command;
 pub mod view_command;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliTopLevelCommand {
     /// Use these to add access key, contract code, stake proposal, sub-account, implicit-account
     Add(self::add_command::CliAddAction),
@@ -33,7 +33,7 @@ pub enum CliTopLevelCommand {
     View(self::view_command::CliViewQueryRequest),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "Login with wallet authorization"))]
@@ -56,6 +56,71 @@ pub enum TopLevelCommand {
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Helpers"))]
     Utils(self::utils_command::Utils),
+}
+
+impl CliTopLevelCommand {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Login(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("login".to_owned());
+                args
+            }
+            Self::Execute(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("execute".to_owned());
+                args
+            }
+            Self::Add(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("add".to_owned());
+                args
+            }
+            Self::Delete(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("delete".to_owned());
+                args
+            }
+            Self::Transfer(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("transfer".to_owned());
+                args
+            }
+            Self::View(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("view".to_owned());
+                args
+            }
+            Self::ConstructTransaction(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("construct-transaction".to_owned());
+                args
+            }
+            Self::Utils(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("utils".to_owned());
+                args
+            }
+            Self::GenerateShellCompletions(_) => std::collections::VecDeque::new(),
+        }
+    }
+}
+
+impl From<TopLevelCommand> for CliTopLevelCommand {
+    fn from(top_level_command: TopLevelCommand) -> Self {
+        match top_level_command {
+            TopLevelCommand::Login(operation_mode) => Self::Login(operation_mode.into()),
+            TopLevelCommand::Execute(option_method) => Self::Execute(option_method.into()),
+            TopLevelCommand::Add(add_action) => Self::Add(add_action.into()),
+            TopLevelCommand::Delete(delete_action) => Self::Delete(delete_action.into()),
+            TopLevelCommand::Transfer(currency) => Self::Transfer(currency.into()),
+            TopLevelCommand::View(view_query_request) => Self::View(view_query_request.into()),
+            TopLevelCommand::ConstructTransaction(operation_mode) => {
+                Self::ConstructTransaction(operation_mode.into())
+            }
+            TopLevelCommand::Utils(utils) => Self::Utils(utils.into()),
+        }
+    }
 }
 
 impl From<CliTopLevelCommand> for TopLevelCommand {
@@ -130,10 +195,10 @@ impl TopLevelCommand {
 
     pub async fn process(self) -> crate::CliResult {
         let unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: "".to_string(),
+            signer_id: near_primitives::types::AccountId::test_account(),
             public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
             nonce: 0,
-            receiver_id: "".to_string(),
+            receiver_id: near_primitives::types::AccountId::test_account(),
             block_hash: Default::default(),
             actions: vec![],
         };
