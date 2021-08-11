@@ -18,6 +18,25 @@ pub struct GenerateKeypair {
     pub permission: super::add_access_key::AccessKeyPermission,
 }
 
+impl CliGenerateKeypair {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .permission
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<GenerateKeypair> for CliGenerateKeypair {
+    fn from(generate_keypair: GenerateKeypair) -> Self {
+        Self {
+            permission: Some(generate_keypair.permission.into()),
+        }
+    }
+}
+
 impl GenerateKeypair {
     pub fn from(
         item: CliGenerateKeypair,

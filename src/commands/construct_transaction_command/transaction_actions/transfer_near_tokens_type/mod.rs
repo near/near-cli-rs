@@ -20,6 +20,31 @@ pub struct TransferNEARTokensAction {
     pub next_action: Box<super::NextAction>,
 }
 
+impl CliTransferNEARTokensAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(amount) = &self.amount {
+            args.push_front(amount.to_string());
+        }
+        args
+    }
+}
+
+impl From<TransferNEARTokensAction> for CliTransferNEARTokensAction {
+    fn from(transfer_near_tokens_action: TransferNEARTokensAction) -> Self {
+        Self {
+            amount: Some(transfer_near_tokens_action.amount),
+            next_action: Some(super::CliSkipNextAction::Skip(super::CliSkipAction {
+                sign_option: None,
+            })),
+        }
+    }
+}
+
 impl TransferNEARTokensAction {
     pub fn from(
         item: CliTransferNEARTokensAction,

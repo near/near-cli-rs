@@ -9,7 +9,6 @@ use dialoguer::Input;
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliDeleteAccessKeyAction {
-    #[clap(long)]
     public_key: Option<near_crypto::PublicKey>,
     #[clap(subcommand)]
     next_action: Option<super::CliSkipNextAction>,
@@ -19,6 +18,31 @@ pub struct CliDeleteAccessKeyAction {
 pub struct DeleteAccessKeyAction {
     pub public_key: near_crypto::PublicKey,
     pub next_action: Box<super::NextAction>,
+}
+
+impl CliDeleteAccessKeyAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(public_key) = &self.public_key {
+            args.push_front(public_key.to_string());
+        }
+        args
+    }
+}
+
+impl From<DeleteAccessKeyAction> for CliDeleteAccessKeyAction {
+    fn from(delete_access_key_action: DeleteAccessKeyAction) -> Self {
+        Self {
+            public_key: Some(delete_access_key_action.public_key),
+            next_action: Some(super::CliSkipNextAction::Skip(super::CliSkipAction {
+                sign_option: None,
+            })),
+        }
+    }
 }
 
 impl DeleteAccessKeyAction {

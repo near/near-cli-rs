@@ -14,7 +14,6 @@ mod function_call_type;
 )]
 pub struct CliAddAccessKeyAction {
     public_key: Option<near_crypto::PublicKey>,
-    #[clap(long)]
     nonce: Option<u64>,
     #[clap(subcommand)]
     permission: Option<CliAccessKeyPermission>,
@@ -25,6 +24,30 @@ pub struct AddAccessKeyAction {
     pub public_key: near_crypto::PublicKey,
     pub nonce: near_primitives::types::Nonce,
     pub permission: AccessKeyPermission,
+}
+
+impl CliAddAccessKeyAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .permission
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(public_key) = &self.public_key {
+            args.push_front(public_key.to_string());
+        };
+        args
+    }
+}
+
+impl From<AddAccessKeyAction> for CliAddAccessKeyAction {
+    fn from(add_access_key_action: AddAccessKeyAction) -> Self {
+        Self {
+            public_key: Some(add_access_key_action.public_key),
+            nonce: Some(add_access_key_action.nonce),
+            permission: Some(add_access_key_action.permission.into()),
+        }
+    }
 }
 
 impl AddAccessKeyAction {
@@ -116,6 +139,36 @@ pub enum AccessKeyPermission {
     GrantFunctionCallAccess(self::function_call_type::FunctionCallType),
     #[strum_discriminants(strum(message = "A permission with full access"))]
     GrantFullAccess(self::full_access_type::FullAccessType),
+}
+
+impl CliAccessKeyPermission {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::GrantFunctionCallAccess(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("grant-function-call-access".to_owned());
+                args
+            }
+            Self::GrantFullAccess(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("grant-full-access".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<AccessKeyPermission> for CliAccessKeyPermission {
+    fn from(access_key_permission: AccessKeyPermission) -> Self {
+        match access_key_permission {
+            AccessKeyPermission::GrantFunctionCallAccess(function_call_type) => {
+                Self::GrantFunctionCallAccess(function_call_type.into())
+            }
+            AccessKeyPermission::GrantFullAccess(full_access_type) => {
+                Self::GrantFullAccess(full_access_type.into())
+            }
+        }
+    }
 }
 
 impl AccessKeyPermission {

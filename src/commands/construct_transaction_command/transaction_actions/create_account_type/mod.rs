@@ -17,6 +17,25 @@ pub struct CreateAccountAction {
     pub next_action: Box<super::NextAction>,
 }
 
+impl CliCreateAccountAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<CreateAccountAction> for CliCreateAccountAction {
+    fn from(_create_account_action: CreateAccountAction) -> Self {
+        Self {
+            next_action: Some(super::CliSkipNextAction::Skip(super::CliSkipAction {
+                sign_option: None,
+            })),
+        }
+    }
+}
+
 impl CreateAccountAction {
     pub fn from(
         item: CliCreateAccountAction,

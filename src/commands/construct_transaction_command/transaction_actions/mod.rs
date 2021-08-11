@@ -32,6 +32,56 @@ pub enum NextAction {
     Skip(SkipAction),
 }
 
+impl CliSkipNextAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Skip(subcommand) => {
+                // let mut args = ;  it is not implemented now!!!
+                // args.push_front("skip".to_owned());
+                // args
+                subcommand.to_cli_args()
+            }
+        }
+    }
+}
+
+impl From<NextAction> for CliSkipNextAction {
+    fn from(next_action: NextAction) -> Self {
+        match next_action {
+            NextAction::AddAction(_select_action) => {
+                Self::Skip(CliSkipAction { sign_option: None })
+            }
+            NextAction::Skip(skip_action) => Self::Skip(skip_action.into()),
+        }
+    }
+}
+
+impl CliNextAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::AddAction(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("add-action".to_owned());
+                args
+            }
+            Self::Skip(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("skip".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<NextAction> for CliNextAction {
+    fn from(next_action: NextAction) -> Self {
+        match next_action {
+            NextAction::AddAction(select_action) => Self::AddAction(select_action.into()),
+            NextAction::Skip(skip_action) => Self::Skip(skip_action.into()),
+        }
+    }
+}
+
 impl NextAction {
     pub fn from_cli_next_action(
         item: CliNextAction,
@@ -143,6 +193,23 @@ pub struct SelectAction {
     transaction_subcommand: ActionSubcommand,
 }
 
+impl CliSelectAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.transaction_subcommand
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<SelectAction> for CliSelectAction {
+    fn from(select_action: SelectAction) -> Self {
+        Self {
+            transaction_subcommand: Some(select_action.transaction_subcommand.into()),
+        }
+    }
+}
+
 impl SelectAction {
     fn from(
         item: CliSelectAction,
@@ -210,6 +277,76 @@ pub enum ActionSubcommand {
     AddAccessKey(self::add_access_key_mode::AddAccessKeyMode),
     #[strum_discriminants(strum(message = "Detete an Access Key"))]
     DeleteAccessKey(self::delete_access_key_type::DeleteAccessKeyAction),
+}
+
+impl CliActionSubcommand {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::TransferNEARTokens(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("transfer-near-tokens".to_owned());
+                args
+            }
+            Self::CallFunction(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("call-function".to_owned());
+                args
+            }
+            Self::StakeNEARTokens(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("stake-near-tokens".to_owned());
+                args
+            }
+            Self::CreateAccount(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("create-account".to_owned());
+                args
+            }
+            Self::DeleteAccount(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("delete-account".to_owned());
+                args
+            }
+            Self::AddAccessKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("add-access-key".to_owned());
+                args
+            }
+            Self::DeleteAccessKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("delete-access-key".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<ActionSubcommand> for CliActionSubcommand {
+    fn from(action_subcommand: ActionSubcommand) -> Self {
+        match action_subcommand {
+            ActionSubcommand::TransferNEARTokens(transfer_near_tokens_action) => {
+                Self::TransferNEARTokens(transfer_near_tokens_action.into())
+            }
+            ActionSubcommand::CallFunction(call_function_action) => {
+                Self::CallFunction(call_function_action.into())
+            }
+            ActionSubcommand::StakeNEARTokens(stake_near_tokens_action) => {
+                Self::StakeNEARTokens(stake_near_tokens_action.into())
+            }
+            ActionSubcommand::CreateAccount(create_account_action) => {
+                Self::CreateAccount(create_account_action.into())
+            }
+            ActionSubcommand::DeleteAccount(delete_account_action) => {
+                Self::DeleteAccount(delete_account_action.into())
+            }
+            ActionSubcommand::AddAccessKey(add_access_key_action) => {
+                Self::AddAccessKey(add_access_key_action.into())
+            }
+            ActionSubcommand::DeleteAccessKey(delete_access_key_action) => {
+                Self::DeleteAccessKey(delete_access_key_action.into())
+            }
+        }
+    }
 }
 
 impl ActionSubcommand {
@@ -385,6 +522,31 @@ pub struct CliSkipAction {
 pub struct SkipAction {
     pub sign_option: super::sign_transaction::SignTransaction,
 }
+
+impl CliSkipAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<SkipAction> for CliSkipAction {
+    fn from(skip_action: SkipAction) -> Self {
+        Self {
+            sign_option: Some(skip_action.sign_option.into()),
+        }
+    }
+}
+
+// impl From<SelectAction> for CliSkipAction {
+//     fn from(select_action: SelectAction) -> Self {
+//         Self{
+//             sign_option:
+//         }
+//     }
+// }
 
 impl SkipAction {
     fn from(

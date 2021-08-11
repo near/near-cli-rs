@@ -21,6 +21,23 @@ pub struct AddAccessKeyMode {
     pub public_key_mode: PublicKeyMode,
 }
 
+impl CliAddAccessKeyMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.public_key_mode
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<AddAccessKeyMode> for CliAddAccessKeyMode {
+    fn from(add_access_key_mode: AddAccessKeyMode) -> Self {
+        Self {
+            public_key_mode: Some(add_access_key_mode.public_key_mode.into()),
+        }
+    }
+}
+
 impl AddAccessKeyMode {
     pub fn from(
         item: CliAddAccessKeyMode,
@@ -87,6 +104,36 @@ impl PublicKeyMode {
                     sender_account_id,
                 )?),
             ),
+        }
+    }
+}
+
+impl CliPublicKeyMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::PublicKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("public-key".to_owned());
+                args
+            }
+            Self::GenerateKeypair(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("generate-keypair".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<PublicKeyMode> for CliPublicKeyMode {
+    fn from(public_key_mode: PublicKeyMode) -> Self {
+        match public_key_mode {
+            PublicKeyMode::PublicKey(add_access_key_action) => {
+                Self::PublicKey(add_access_key_action.into())
+            }
+            PublicKeyMode::GenerateKeypair(generate_keypair) => {
+                Self::GenerateKeypair(generate_keypair.into())
+            }
         }
     }
 }

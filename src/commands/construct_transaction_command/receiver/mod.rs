@@ -11,6 +11,26 @@ pub enum SendTo {
     Receiver(Receiver),
 }
 
+impl CliSendTo {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Receiver(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("receiver".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendTo> for CliSendTo {
+    fn from(send_to: SendTo) -> Self {
+        match send_to {
+            SendTo::Receiver(receiver) => Self::Receiver(CliReceiver::from(receiver)),
+        }
+    }
+}
+
 impl SendTo {
     pub fn from(
         item: CliSendTo,
@@ -70,6 +90,31 @@ pub struct CliReceiver {
 pub struct Receiver {
     pub receiver_account_id: near_primitives::types::AccountId,
     pub action: super::transaction_actions::NextAction,
+}
+
+impl CliReceiver {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(receiver_account_id) = &self.receiver_account_id {
+            args.push_front(receiver_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Receiver> for CliReceiver {
+    fn from(receiver: Receiver) -> Self {
+        Self {
+            receiver_account_id: Some(receiver.receiver_account_id),
+            action: Some(super::transaction_actions::CliNextAction::from(
+                receiver.action,
+            )),
+        }
+    }
 }
 
 impl Receiver {

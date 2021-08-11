@@ -17,6 +17,25 @@ pub struct FullAccessType {
     pub next_action: Box<super::super::super::NextAction>,
 }
 
+impl CliFullAccessType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<FullAccessType> for CliFullAccessType {
+    fn from(_full_access_type: FullAccessType) -> Self {
+        Self {
+            next_action: Some(super::super::super::CliSkipNextAction::Skip(
+                super::super::super::CliSkipAction { sign_option: None },
+            )),
+        }
+    }
+}
+
 impl FullAccessType {
     pub fn from(
         item: CliFullAccessType,

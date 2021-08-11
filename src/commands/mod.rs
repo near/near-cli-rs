@@ -91,12 +91,17 @@ impl CliTopLevelCommand {
                 args.push_front("view".to_owned());
                 args
             }
+            Self::ConstructTransaction(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("construct-transaction".to_owned());
+                args
+            }
             Self::Utils(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("utils".to_owned());
                 args
             }
-            _ => todo!(),
+            Self::GenerateShellCompletions(_) => std::collections::VecDeque::new(),
         }
     }
 }
@@ -104,14 +109,16 @@ impl CliTopLevelCommand {
 impl From<TopLevelCommand> for CliTopLevelCommand {
     fn from(top_level_command: TopLevelCommand) -> Self {
         match top_level_command {
-            TopLevelCommand::Login(option_method) => Self::Login(option_method.into()),
+            TopLevelCommand::Login(operation_mode) => Self::Login(operation_mode.into()),
             TopLevelCommand::Execute(option_method) => Self::Execute(option_method.into()),
             TopLevelCommand::Add(add_action) => Self::Add(add_action.into()),
             TopLevelCommand::Delete(delete_action) => Self::Delete(delete_action.into()),
             TopLevelCommand::Transfer(currency) => Self::Transfer(currency.into()),
             TopLevelCommand::View(view_query_request) => Self::View(view_query_request.into()),
+            TopLevelCommand::ConstructTransaction(operation_mode) => {
+                Self::ConstructTransaction(operation_mode.into())
+            }
             TopLevelCommand::Utils(utils) => Self::Utils(utils.into()),
-            _ => todo!(),
         }
     }
 }

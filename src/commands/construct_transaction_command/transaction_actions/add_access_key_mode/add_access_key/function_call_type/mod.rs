@@ -28,6 +28,44 @@ pub struct FunctionCallType {
     pub next_action: Box<super::super::super::NextAction>,
 }
 
+impl CliFunctionCallType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(method_names) = &self.method_names {
+            args.push_front(method_names.to_string());
+            args.push_front("--method-names".to_owned())
+        };
+        if let Some(allowance) = &self.allowance {
+            args.push_front(allowance.to_string());
+            args.push_front("--allowance".to_owned())
+        };
+        if let Some(receiver_id) = &self.receiver_id {
+            args.push_front(receiver_id.to_string());
+            args.push_front("--receiver-id".to_owned())
+        };
+        args
+    }
+}
+
+impl From<FunctionCallType> for CliFunctionCallType {
+    fn from(function_call_type: FunctionCallType) -> Self {
+        Self {
+            allowance: Some(crate::common::NearBalance::from_yoctonear(
+                function_call_type.allowance.unwrap_or_default(),
+            )),
+            receiver_id: Some(function_call_type.receiver_id),
+            method_names: Some(function_call_type.method_names.join(", ")),
+            next_action: Some(super::super::super::CliSkipNextAction::Skip(
+                super::super::super::CliSkipAction { sign_option: None },
+            )),
+        }
+    }
+}
+
 impl FunctionCallType {
     pub fn from(
         item: CliFunctionCallType,
