@@ -1,10 +1,11 @@
+use async_recursion::async_recursion;
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod call_function_type;
 
 #[derive(Debug, Clone, clap::Clap)]
-pub enum CliNextAction {
+pub enum CliContractMode {
     /// Add an initialize
     Initialize(self::call_function_type::CliCallFunctionAction),
     /// Don't add an initialize
@@ -13,14 +14,14 @@ pub enum CliNextAction {
 
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-pub enum NextAction {
+pub enum ContractMode {
     #[strum_discriminants(strum(message = "Add an initialize"))]
     Initialize(self::call_function_type::CallFunctionAction),
     #[strum_discriminants(strum(message = "Don't add an initialize"))]
     NoInitialize(NoInitialize),
 }
 
-impl CliNextAction {
+impl CliContractMode {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         match self {
             Self::Initialize(subcommand) => {
@@ -37,59 +38,61 @@ impl CliNextAction {
     }
 }
 
-impl From<NextAction> for CliNextAction {
-    fn from(next_action: NextAction) -> Self {
-        match next_action {
-            NextAction::Initialize(call_function_action) => {
+impl From<ContractMode> for CliContractMode {
+    fn from(contract_mode: ContractMode) -> Self {
+        match contract_mode {
+            ContractMode::Initialize(call_function_action) => {
                 Self::Initialize(call_function_action.into())
             }
-            NextAction::NoInitialize(no_initialize) => Self::NoInitialize(no_initialize.into()),
+            ContractMode::NoInitialize(no_initialize) => Self::NoInitialize(no_initialize.into()),
         }
     }
 }
 
-impl NextAction {
+impl ContractMode {
     pub fn from(
-        item: CliNextAction,
+        item: CliContractMode,
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
-            CliNextAction::Initialize(cli_call_function_action) => Ok(NextAction::Initialize(
+            CliContractMode::Initialize(cli_call_function_action) => Ok(ContractMode::Initialize(
                 self::call_function_type::CallFunctionAction::from(
                     cli_call_function_action,
                     connection_config,
                     sender_account_id,
                 )?,
             )),
-            CliNextAction::NoInitialize(cli_no_initialize) => Ok(NextAction::NoInitialize(
+            CliContractMode::NoInitialize(cli_no_initialize) => Ok(ContractMode::NoInitialize(
                 NoInitialize::from(cli_no_initialize, connection_config, sender_account_id)?,
             )),
         }
     }
 }
 
-impl NextAction {
-    pub fn choose_next_action(
+impl ContractMode {
+    pub fn choose_contract_mode(
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         println!();
-        let variants = NextActionDiscriminants::iter().collect::<Vec<_>>();
+        let variants = ContractModeDiscriminants::iter().collect::<Vec<_>>();
         let actions = variants
             .iter()
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
         let selected_action = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Do you want to choose next action")
+            .with_prompt("Which contract mode do you want to choose?")
             .items(&actions)
             .default(0)
             .interact()
             .unwrap();
         let cli_action = match variants[selected_action] {
-            NextActionDiscriminants::Initialize => CliNextAction::Initialize(Default::default()),
-            NextActionDiscriminants::NoInitialize => {
-                CliNextAction::NoInitialize(Default::default())
+            ContractModeDiscriminants::Initialize => {
+                CliContractMode::Initialize(Default::default())
+            }
+            ContractModeDiscriminants::NoInitialize => {
+                CliContractMode::NoInitialize(Default::default())
             }
         };
         Ok(Self::from(
@@ -105,12 +108,12 @@ impl NextAction {
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         match self {
-            NextAction::Initialize(call_function_action) => {
+            ContractMode::Initialize(call_function_action) => {
                 call_function_action
                     .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
-            NextAction::NoInitialize(no_initialize) => {
+            ContractMode::NoInitialize(no_initialize) => {
                 no_initialize
                     .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
@@ -128,20 +131,17 @@ impl NextAction {
 )]
 pub struct CliNoInitialize {
     #[clap(subcommand)]
-    pub sign_option: Option<
-        crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
-    >,
+    next_action: Option<super::super::CliSkipNextAction>,
 }
 
 #[derive(Debug, Clone)]
 pub struct NoInitialize {
-    pub sign_option:
-        crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+    pub next_action: Box<super::super::NextAction>,
 }
 
 impl CliNoInitialize {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        self.sign_option
+        self.next_action
             .as_ref()
             .map(|subcommand| subcommand.to_cli_args())
             .unwrap_or_default()
@@ -149,9 +149,11 @@ impl CliNoInitialize {
 }
 
 impl From<NoInitialize> for CliNoInitialize {
-    fn from(no_initialize: NoInitialize) -> Self {
+    fn from(_no_initialize: NoInitialize) -> Self {
         Self {
-            sign_option: Some(no_initialize.sign_option.into()),
+            next_action: Some(super::super::CliSkipNextAction::Skip(
+                super::super::CliSkipAction { sign_option: None },
+            )),
         }
     }
 }
@@ -162,37 +164,40 @@ impl NoInitialize {
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
-        let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id)?,
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config, sender_account_id)?,
+        let skip_next_action: super::super::NextAction = match item.next_action {
+            Some(cli_skip_action) => super::super::NextAction::from_cli_skip_next_action(
+                cli_skip_action,
+                connection_config,
+                sender_account_id,
+            )?,
+            None => {
+                super::super::NextAction::input_next_action(connection_config, sender_account_id)?
+            }
         };
-        Ok(Self { sign_option })
+        Ok(Self {
+            next_action: Box::new(skip_next_action),
+        })
     }
 }
 
 impl NoInitialize {
+    #[async_recursion(?Send)]
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
-        match self
-            .sign_option
-            .process(
-                prepopulated_unsigned_transaction,
-                network_connection_config.clone(),
-            )
-            .await?
-        {
-            Some(transaction_info) => {
-                crate::common::print_transaction_status(
-                    transaction_info,
-                    network_connection_config,
-                )
-                .await;
+        match *self.next_action {
+            super::super::NextAction::AddAction(select_action) => {
+                select_action
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .await
             }
-            None => {}
-        };
-        Ok(())
+            super::super::NextAction::Skip(skip_action) => {
+                skip_action
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .await
+            }
+        }
     }
 }

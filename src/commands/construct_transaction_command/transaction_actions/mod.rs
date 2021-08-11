@@ -2,6 +2,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod add_access_key_mode;
+mod add_contract_code_type;
 mod call_function_type;
 mod create_account_type;
 mod delete_access_key_type;
@@ -258,6 +259,8 @@ pub enum CliActionSubcommand {
     AddAccessKey(self::add_access_key_mode::CliAddAccessKeyMode),
     /// Предоставьте данные для удаления ключа доступа у пользователя
     DeleteAccessKey(self::delete_access_key_type::CliDeleteAccessKeyAction),
+    /// Предоставьте данные для добавления контракта
+    AddContractCode(self::add_contract_code_type::CliContractFile),
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]
@@ -277,6 +280,8 @@ pub enum ActionSubcommand {
     AddAccessKey(self::add_access_key_mode::AddAccessKeyMode),
     #[strum_discriminants(strum(message = "Detete an Access Key"))]
     DeleteAccessKey(self::delete_access_key_type::DeleteAccessKeyAction),
+    #[strum_discriminants(strum(message = "Add a contract code"))]
+    AddContractCode(self::add_contract_code_type::ContractFile),
 }
 
 impl CliActionSubcommand {
@@ -317,6 +322,11 @@ impl CliActionSubcommand {
                 args.push_front("delete-access-key".to_owned());
                 args
             }
+            Self::AddContractCode(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("add-contract-code".to_owned());
+                args
+            }
         }
     }
 }
@@ -344,6 +354,9 @@ impl From<ActionSubcommand> for CliActionSubcommand {
             }
             ActionSubcommand::DeleteAccessKey(delete_access_key_action) => {
                 Self::DeleteAccessKey(delete_access_key_action.into())
+            }
+            ActionSubcommand::AddContractCode(add_contract_code_action) => {
+                Self::AddContractCode(add_contract_code_action.into())
             }
         }
     }
@@ -414,6 +427,14 @@ impl ActionSubcommand {
                 )
                 .unwrap(),
             ),
+            CliActionSubcommand::AddContractCode(cli_contract_file) => Self::AddContractCode(
+                self::add_contract_code_type::ContractFile::from(
+                    cli_contract_file,
+                    connection_config,
+                    sender_account_id,
+                )
+                .unwrap(),
+            ),
         }
     }
 }
@@ -457,6 +478,9 @@ impl ActionSubcommand {
             ActionSubcommandDiscriminants::DeleteAccessKey => {
                 CliActionSubcommand::DeleteAccessKey(Default::default())
             }
+            ActionSubcommandDiscriminants::AddContractCode => {
+                CliActionSubcommand::AddContractCode(Default::default())
+            }
         };
         Self::from(cli_action_subcomand, connection_config, sender_account_id)
     }
@@ -499,6 +523,11 @@ impl ActionSubcommand {
             }
             ActionSubcommand::DeleteAccessKey(args_delete_access_key) => {
                 args_delete_access_key
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .await
+            }
+            ActionSubcommand::AddContractCode(args_contract_file) => {
+                args_contract_file
                     .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
