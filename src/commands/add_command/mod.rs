@@ -8,7 +8,7 @@ mod stake_proposal;
 mod sub_account;
 
 /// инструмент выбора to add action
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -19,9 +19,26 @@ pub struct CliAddAction {
     action: Option<CliAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AddAction {
     pub action: Action,
+}
+
+impl CliAddAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<AddAction> for CliAddAction {
+    fn from(item: AddAction) -> Self {
+        Self {
+            action: Some(item.action.into()),
+        }
+    }
 }
 
 impl AddAction {
@@ -43,7 +60,7 @@ impl AddAction {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliAction {
     /// Add a new contract code
     ContractCode(self::contract_code::operation_mode::CliOperationMode),
@@ -57,7 +74,7 @@ pub enum CliAction {
     AccessKey(self::access_key::operation_mode::CliOperationMode),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Action {
     #[strum_discriminants(strum(message = "Add a new access key for an account"))]
@@ -70,6 +87,52 @@ pub enum Action {
     StakeProposal(self::stake_proposal::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Add a new sub-account"))]
     SubAccount(self::sub_account::operation_mode::OperationMode),
+}
+
+impl CliAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::ContractCode(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("contract-code".to_owned());
+                command
+            }
+            Self::AccessKey(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("access-key".to_owned());
+                command
+            }
+            Self::ImplicitAccount(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("implicit-account".to_owned());
+                command
+            }
+            Self::StakeProposal(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("stake-proposal".to_owned());
+                command
+            }
+            Self::SubAccount(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("sub-account".to_owned());
+                command
+            }
+        }
+    }
+}
+
+impl From<Action> for CliAction {
+    fn from(item: Action) -> Self {
+        match item {
+            Action::ContractCode(operation_mode) => Self::ContractCode(operation_mode.into()),
+            Action::AccessKey(operation_mode) => Self::AccessKey(operation_mode.into()),
+            Action::ImplicitAccount(implicit_account) => {
+                Self::ImplicitAccount(implicit_account.into())
+            }
+            Action::StakeProposal(operation_mode) => Self::StakeProposal(operation_mode.into()),
+            Action::SubAccount(operation_mode) => Self::SubAccount(operation_mode.into()),
+        }
+    }
 }
 
 impl Action {

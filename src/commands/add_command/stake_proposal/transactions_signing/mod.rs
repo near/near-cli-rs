@@ -1,21 +1,43 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliTransactionsSigning {
     /// Enter an public key
     TransactionsSigningPublicKey(CliTransactionsSigningAction),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TransactionsSigning {
     TransactionsSigningPublicKey(TransactionsSigningAction),
+}
+
+impl CliTransactionsSigning {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::TransactionsSigningPublicKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("transactions-signing-public-key".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<TransactionsSigning> for CliTransactionsSigning {
+    fn from(transactions_signing: TransactionsSigning) -> Self {
+        match transactions_signing {
+            TransactionsSigning::TransactionsSigningPublicKey(transactions_signing_action) => {
+                Self::TransactionsSigningPublicKey(transactions_signing_action.into())
+            }
+        }
+    }
 }
 
 impl TransactionsSigning {
     pub fn from(
         item: CliTransactionsSigning,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliTransactionsSigning::TransactionsSigningPublicKey(
@@ -34,7 +56,7 @@ impl TransactionsSigning {
 impl TransactionsSigning {
     pub fn choose_sign_transactions(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliTransactionsSigning::TransactionsSigningPublicKey(Default::default()),
@@ -64,7 +86,7 @@ impl TransactionsSigning {
 }
 
 /// данные о получателе транзакции
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -78,18 +100,43 @@ pub struct CliTransactionsSigningAction {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransactionsSigningAction {
     pub transactions_signing_public_key: near_crypto::PublicKey,
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
+impl CliTransactionsSigningAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(transactions_signing_public_key) = &self.transactions_signing_public_key {
+            args.push_front(transactions_signing_public_key.to_string());
+        }
+        args
+    }
+}
+
+impl From<TransactionsSigningAction> for CliTransactionsSigningAction {
+    fn from(transactions_signing_action: TransactionsSigningAction) -> Self {
+        Self {
+            transactions_signing_public_key: Some(
+                transactions_signing_action.transactions_signing_public_key,
+            ),
+            sign_option: Some(transactions_signing_action.sign_option.into()),
+        }
+    }
+}
+
 impl TransactionsSigningAction {
     fn from(
         item: CliTransactionsSigningAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let transactions_signing_public_key: near_crypto::PublicKey =
             match item.transactions_signing_public_key {

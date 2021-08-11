@@ -1,16 +1,35 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendFrom {
     /// Specify a signer
     Signer(CliSender),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendFrom {
     Signer(Sender),
 }
 
+impl CliSendFrom {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Signer(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("signer".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendFrom> for CliSendFrom {
+    fn from(send_from: SendFrom) -> Self {
+        match send_from {
+            SendFrom::Signer(sender) => Self::Signer(sender.into()),
+        }
+    }
+}
 impl SendFrom {
     pub fn from(
         item: CliSendFrom,
@@ -47,25 +66,48 @@ impl SendFrom {
 }
 
 /// Specify a signer
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliSender {
-    pub sender_account_id: Option<String>,
+    pub sender_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     pub sign_option: Option<
         crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sender {
-    pub sender_account_id: String,
+    pub sender_account_id: near_primitives::types::AccountId,
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+}
+
+impl CliSender {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(sender_account_id) = &self.sender_account_id {
+            args.push_front(sender_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Sender> for CliSender {
+    fn from(sender: Sender) -> Self {
+        Self {
+            sender_account_id: Some(sender.sender_account_id),
+            sign_option: Some(sender.sign_option.into()),
+        }
+    }
 }
 
 impl Sender {
@@ -73,7 +115,7 @@ impl Sender {
         item: CliSender,
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Self> {
-        let sender_account_id: String = match item.sender_account_id {
+        let sender_account_id: near_primitives::types::AccountId = match item.sender_account_id {
             Some(cli_sender_account_id) => match &connection_config {
                 Some(network_connection_config) => match crate::common::check_account_id(
                     network_connection_config.clone(),
@@ -103,9 +145,9 @@ impl Sender {
 impl Sender {
     fn input_sender_account_id(
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         loop {
-            let account_id: String = Input::new()
+            let account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("What is the account ID of the signer?")
                 .interact_text()
                 .unwrap();
@@ -115,7 +157,7 @@ impl Sender {
                 {
                     break Ok(account_id);
                 } else {
-                    println!("Account <{}> doesn't exist", account_id);
+                    println!("Account <{}> doesn't exist", account_id.to_string());
                 }
             } else {
                 break Ok(account_id);

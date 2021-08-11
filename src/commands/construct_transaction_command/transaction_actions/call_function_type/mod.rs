@@ -2,26 +2,24 @@ use async_recursion::async_recursion;
 use dialoguer::Input;
 
 /// вызов CallFunction
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliCallFunctionAction {
-    #[clap(long)]
     method_name: Option<String>,
-    #[clap(long)]
     args: Option<String>,
-    #[clap(long)]
+    #[clap(long = "prepaid-gas")]
     gas: Option<crate::common::NearGas>,
-    #[clap(long)]
+    #[clap(long = "attached-deposit")]
     deposit: Option<crate::common::NearBalance>,
     #[clap(subcommand)]
     next_action: Option<super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CallFunctionAction {
     method_name: String,
     args: Vec<u8>,
@@ -30,11 +28,52 @@ pub struct CallFunctionAction {
     next_action: Box<super::NextAction>,
 }
 
+impl CliCallFunctionAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(gas) = &self.gas {
+            args.push_front(gas.to_string());
+            args.push_front("--prepaid-gas".to_owned())
+        };
+        if let Some(deposit) = &self.deposit {
+            args.push_front(deposit.to_string());
+            args.push_front("--attached-deposit".to_owned())
+        };
+        if let Some(function_args) = &self.args {
+            args.push_front(function_args.to_owned());
+        };
+        if let Some(method_name) = &self.method_name {
+            args.push_front(method_name.to_string());
+        };
+        args
+    }
+}
+
+impl From<CallFunctionAction> for CliCallFunctionAction {
+    fn from(call_function_action: CallFunctionAction) -> Self {
+        Self {
+            method_name: Some(call_function_action.method_name),
+            args: Some(String::from_utf8(call_function_action.args).unwrap_or_default()),
+            gas: Some(call_function_action.gas.into()),
+            deposit: Some(crate::common::NearBalance::from_yoctonear(
+                call_function_action.deposit,
+            )),
+            next_action: Some(super::CliSkipNextAction::Skip(super::CliSkipAction {
+                sign_option: None,
+            })),
+        }
+    }
+}
+
 impl CallFunctionAction {
     pub fn from(
         item: CliCallFunctionAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let method_name: String = match item.method_name {
             Some(cli_method_name) => cli_method_name,

@@ -1,14 +1,32 @@
 use dialoguer::Input;
 
 /// Specify the block_id hash for this account to view
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliBlockIdHash {
     block_id_hash: Option<near_primitives::hash::CryptoHash>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockIdHash {
     block_id_hash: near_primitives::hash::CryptoHash,
+}
+
+impl CliBlockIdHash {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(block_id_hash) = &self.block_id_hash {
+            args.push_front(block_id_hash.to_string());
+        }
+        args
+    }
+}
+
+impl From<BlockIdHash> for CliBlockIdHash {
+    fn from(block_id_hash: BlockIdHash) -> Self {
+        Self {
+            block_id_hash: Some(block_id_hash.block_id_hash),
+        }
+    }
 }
 
 impl From<CliBlockIdHash> for BlockIdHash {
@@ -35,7 +53,7 @@ impl BlockIdHash {
 
     pub async fn process(
         self,
-        account_id: String,
+        account_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         self.display_account_info(account_id.clone(), &network_connection_config)
@@ -47,7 +65,7 @@ impl BlockIdHash {
 
     async fn display_account_info(
         &self,
-        account_id: String,
+        account_id: near_primitives::types::AccountId,
         network_connection_config: &crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self
@@ -101,7 +119,7 @@ impl BlockIdHash {
 
     async fn display_access_key_list(
         &self,
-        account_id: String,
+        account_id: near_primitives::types::AccountId,
         network_connection_config: &crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response = self

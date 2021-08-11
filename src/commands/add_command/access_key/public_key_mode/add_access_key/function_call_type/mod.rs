@@ -1,8 +1,7 @@
 use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
-use std::vec;
 
 /// данные для определения ключа с function call
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -21,7 +20,7 @@ pub struct CliFunctionCallType {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunctionCallType {
     pub allowance: Option<near_primitives::types::Balance>,
     pub receiver_id: near_primitives::types::AccountId,
@@ -30,11 +29,47 @@ pub struct FunctionCallType {
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
+impl CliFunctionCallType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(method_names) = &self.method_names {
+            args.push_front(method_names.to_string());
+            args.push_front("--method-names".to_owned())
+        };
+        if let Some(allowance) = &self.allowance {
+            args.push_front(allowance.to_string());
+            args.push_front("--allowance".to_owned())
+        };
+        if let Some(receiver_id) = &self.receiver_id {
+            args.push_front(receiver_id.to_string());
+            args.push_front("--receiver-id".to_owned())
+        };
+        args
+    }
+}
+
+impl From<FunctionCallType> for CliFunctionCallType {
+    fn from(function_call_type: FunctionCallType) -> Self {
+        Self {
+            allowance: Some(crate::common::NearBalance::from_yoctonear(
+                function_call_type.allowance.unwrap_or_default(),
+            )),
+            receiver_id: Some(function_call_type.receiver_id),
+            method_names: Some(function_call_type.method_names.join(", ")),
+            sign_option: Some(function_call_type.sign_option.into()),
+        }
+    }
+}
+
 impl FunctionCallType {
     pub fn from(
         item: CliFunctionCallType,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let allowance: Option<near_primitives::types::Balance> = match item.allowance {
             Some(cli_allowance) => Some(cli_allowance.to_yoctonear()),
@@ -51,7 +86,7 @@ impl FunctionCallType {
                 } else {
                     cli_method_names
                         .split(',')
-                        .map(String::from)
+                        .map(|s| s.trim().to_string())
                         .collect::<Vec<String>>()
                 }
             }
@@ -86,7 +121,7 @@ impl FunctionCallType {
         match select_choose_input {
             Some(0) => {
                 let mut input_method_names: String = Input::new()
-                    .with_prompt("Enter a list of method names that can be used. The access key only allows transactions with the function call of one of the given method names. Empty list means any method name can be used.")
+                    .with_prompt("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
                     .interact_text()
                     .unwrap();
                 if input_method_names.contains("\"") {
@@ -97,7 +132,7 @@ impl FunctionCallType {
                 } else {
                     input_method_names
                         .split(',')
-                        .map(String::from)
+                        .map(|s| s.trim().to_string())
                         .collect::<Vec<String>>()
                 }
             }
@@ -151,7 +186,7 @@ impl FunctionCallType {
             permission: near_primitives::account::AccessKeyPermission::FunctionCall(
                 near_primitives::account::FunctionCallPermission {
                     allowance: self.allowance.clone(),
-                    receiver_id: self.receiver_id.clone(),
+                    receiver_id: self.receiver_id.to_string().clone(),
                     method_names: self.method_names.clone(),
                 },
             ),

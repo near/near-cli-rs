@@ -3,22 +3,44 @@ use dialoguer::Input;
 pub mod operation_mode;
 mod sender;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliDeleteAccessKeyAction {
     /// Specify public key
     PublicKey(CliDeleteAccessKeyType),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum DeleteAccessKeyAction {
     PublicKey(DeleteAccessKeyType),
+}
+
+impl CliDeleteAccessKeyAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::PublicKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("public-key".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<DeleteAccessKeyAction> for CliDeleteAccessKeyAction {
+    fn from(delete_access_key_action: DeleteAccessKeyAction) -> Self {
+        match delete_access_key_action {
+            DeleteAccessKeyAction::PublicKey(delete_access_key_type) => {
+                Self::PublicKey(delete_access_key_type.into())
+            }
+        }
+    }
 }
 
 impl DeleteAccessKeyAction {
     pub fn from(
         item: CliDeleteAccessKeyAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliDeleteAccessKeyAction::PublicKey(cli_delete_access_key_type) => {
@@ -35,7 +57,7 @@ impl DeleteAccessKeyAction {
 impl DeleteAccessKeyAction {
     pub fn choose_delete_access_key_action(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliDeleteAccessKeyAction::PublicKey(Default::default()),
@@ -60,7 +82,7 @@ impl DeleteAccessKeyAction {
 }
 
 /// Specify the access key to be deleted
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -74,18 +96,41 @@ pub struct CliDeleteAccessKeyType {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeleteAccessKeyType {
     pub public_key: near_crypto::PublicKey,
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
+impl CliDeleteAccessKeyType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(public_key) = &self.public_key {
+            args.push_front(public_key.to_string());
+        }
+        args
+    }
+}
+
+impl From<DeleteAccessKeyType> for CliDeleteAccessKeyType {
+    fn from(delete_access_key_type: DeleteAccessKeyType) -> Self {
+        Self {
+            public_key: Some(delete_access_key_type.public_key),
+            sign_option: Some(delete_access_key_type.sign_option.into()),
+        }
+    }
+}
+
 impl DeleteAccessKeyType {
     fn from(
         item: CliDeleteAccessKeyType,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,

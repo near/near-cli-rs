@@ -1,7 +1,8 @@
 use dialoguer::Input;
+use std::str::FromStr;
 
 /// предустановленный RPC-сервер
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -10,7 +11,7 @@ use dialoguer::Input;
 pub struct CliServer {}
 
 /// данные для custom server
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -21,9 +22,45 @@ pub struct CliCustomServer {
     pub url: Option<crate::common::AvailableRpcServerUrl>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Server {
     pub connection_config: crate::common::ConnectionConfig,
+}
+
+impl CliCustomServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(url) = &self.url {
+            args.push_front(url.to_string());
+            args.push_front("--url".to_string());
+        }
+        args
+    }
+}
+
+impl From<Server> for CliCustomServer {
+    fn from(server: Server) -> Self {
+        Self {
+            url: Some(
+                crate::common::AvailableRpcServerUrl::from_str(
+                    server.connection_config.rpc_url().as_str(),
+                )
+                .unwrap(),
+            ),
+        }
+    }
+}
+
+impl CliServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        std::collections::VecDeque::new()
+    }
+}
+
+impl From<Server> for CliServer {
+    fn from(_: Server) -> Self {
+        Self {}
+    }
 }
 
 impl CliServer {

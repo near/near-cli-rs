@@ -2,30 +2,54 @@ use async_recursion::async_recursion;
 use dialoguer::Input;
 
 /// удаление ключа доступа у пользователя
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliDeleteAccessKeyAction {
-    #[clap(long)]
     public_key: Option<near_crypto::PublicKey>,
     #[clap(subcommand)]
     next_action: Option<super::CliSkipNextAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeleteAccessKeyAction {
     pub public_key: near_crypto::PublicKey,
     pub next_action: Box<super::NextAction>,
+}
+
+impl CliDeleteAccessKeyAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .next_action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(public_key) = &self.public_key {
+            args.push_front(public_key.to_string());
+        }
+        args
+    }
+}
+
+impl From<DeleteAccessKeyAction> for CliDeleteAccessKeyAction {
+    fn from(delete_access_key_action: DeleteAccessKeyAction) -> Self {
+        Self {
+            public_key: Some(delete_access_key_action.public_key),
+            next_action: Some(super::CliSkipNextAction::Skip(super::CliSkipAction {
+                sign_option: None,
+            })),
+        }
+    }
 }
 
 impl DeleteAccessKeyAction {
     pub fn from(
         item: CliDeleteAccessKeyAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,

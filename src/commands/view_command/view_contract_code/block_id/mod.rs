@@ -5,7 +5,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod block_id_hash;
 mod block_id_height;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliBlockId {
     /// Specify a block ID final to view this contract
     AtFinalBlock,
@@ -15,7 +15,7 @@ pub enum CliBlockId {
     AtBlockHash(self::block_id_hash::CliBlockIdHash),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum BlockId {
     #[strum_discriminants(strum(message = "View this contract at final block"))]
@@ -24,6 +24,38 @@ pub enum BlockId {
     AtBlockHeight(self::block_id_height::BlockIdHeight),
     #[strum_discriminants(strum(message = "View this contract at block hash"))]
     AtBlockHash(self::block_id_hash::BlockIdHash),
+}
+
+impl CliBlockId {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::AtFinalBlock => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("at-final-block".to_owned());
+                args
+            }
+            Self::AtBlockHeight(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("at-block-height".to_owned());
+                args
+            }
+            Self::AtBlockHash(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("at-block-hash".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<BlockId> for CliBlockId {
+    fn from(block_id: BlockId) -> Self {
+        match block_id {
+            BlockId::AtFinalBlock => Self::AtFinalBlock,
+            BlockId::AtBlockHeight(block_id_height) => Self::AtBlockHeight(block_id_height.into()),
+            BlockId::AtBlockHash(block_id_hash) => Self::AtBlockHash(block_id_hash.into()),
+        }
+    }
 }
 
 impl From<CliBlockId> for BlockId {
@@ -64,7 +96,7 @@ impl BlockId {
 
     pub async fn process(
         self,
-        contract_id: String,
+        contract_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
         file_path: Option<std::path::PathBuf>,
     ) -> crate::CliResult {
@@ -93,7 +125,7 @@ impl BlockId {
 
     async fn at_final_block(
         self,
-        contract_id: String,
+        contract_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
         file_path: Option<std::path::PathBuf>,
     ) -> crate::CliResult {

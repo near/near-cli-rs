@@ -1,8 +1,8 @@
 use std::str::FromStr;
 
-/// Generate a key pair of secret and public keys (use it anywhere you need
+/// Generate a key pair of private and public keys (use it anywhere you need
 /// Ed25519 keys)
-#[derive(Debug, clap::Clap, Clone)]
+#[derive(Debug, Clone, clap::Clap)]
 pub struct CliLedgerPublicKey {
     #[clap(long, default_value = "44'/397'/0'/0'/1'")]
     pub seed_phrase_hd_path: slip10::BIP32Path,
@@ -14,12 +14,21 @@ impl Default for CliLedgerPublicKey {
     fn default() -> Self {
         Self {
             seed_phrase_hd_path: slip10::BIP32Path::from_str("44'/397'/0'/0'/1'").unwrap(),
-            format: crate::common::OutputFormat::Json,
+            format: crate::common::OutputFormat::Plaintext,
         }
     }
 }
 
 impl CliLedgerPublicKey {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        args.push_front(self.format.to_string().clone());
+        args.push_front("--format".to_string());
+        args.push_front(self.seed_phrase_hd_path.to_string());
+        args.push_front("--seed-phrase-hd-path".to_string());
+        args
+    }
+
     pub async fn process(self) -> crate::CliResult {
         println!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",

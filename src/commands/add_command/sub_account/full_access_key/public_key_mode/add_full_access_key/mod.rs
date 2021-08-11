@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 /// Add full access key to the sub-account
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -14,18 +14,45 @@ pub struct CliAddAccessKeyAction {
     deposit: Option<super::super::super::deposit::CliDeposit>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AddAccessKeyAction {
     pub public_key: near_crypto::PublicKey,
     pub nonce: near_primitives::types::Nonce,
     pub deposit: super::super::super::deposit::Deposit,
 }
 
+impl CliAddAccessKeyAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .deposit
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(nonce) = &self.nonce {
+            args.push_front(nonce.to_string());
+        }
+        if let Some(public_key) = &self.public_key {
+            args.push_front(public_key.to_string());
+        }
+        args
+    }
+}
+
+impl From<AddAccessKeyAction> for CliAddAccessKeyAction {
+    fn from(add_access_key_action: AddAccessKeyAction) -> Self {
+        Self {
+            public_key: Some(add_access_key_action.public_key),
+            nonce: Some(add_access_key_action.nonce),
+            deposit: Some(add_access_key_action.deposit.into()),
+        }
+    }
+}
+
 impl AddAccessKeyAction {
     pub fn from(
         item: CliAddAccessKeyAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,

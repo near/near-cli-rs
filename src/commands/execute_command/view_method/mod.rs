@@ -6,17 +6,37 @@ mod call_function_type;
 pub mod operation_mode;
 mod receiver;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliCallFunction {
     /// Call view function
     Call(self::call_function_type::CliCallFunctionView),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum CallFunction {
     #[strum_discriminants(strum(message = "Call function"))]
     Call(self::call_function_type::CallFunctionView),
+}
+
+impl CliCallFunction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Call(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("call".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<CallFunction> for CliCallFunction {
+    fn from(call_function: CallFunction) -> Self {
+        match call_function {
+            CallFunction::Call(call_function_action) => Self::Call(call_function_action.into()),
+        }
+    }
 }
 
 impl From<CliCallFunction> for CallFunction {
@@ -52,7 +72,7 @@ impl CallFunction {
     pub async fn process(
         self,
         network_connection_config: crate::common::ConnectionConfig,
-        contract_account_id: String,
+        contract_account_id: near_primitives::types::AccountId,
     ) -> crate::CliResult {
         match self {
             Self::Call(call_function_action) => {

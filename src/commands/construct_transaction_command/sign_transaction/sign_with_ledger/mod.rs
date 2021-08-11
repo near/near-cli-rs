@@ -1,9 +1,8 @@
-use dialoguer::{theme::ColorfulTheme, Input, Select};
+use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 /// Sign constructed transaction with Ledger
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -17,16 +16,46 @@ pub struct CliSignLedger {
     #[clap(long)]
     block_hash: Option<near_primitives::hash::CryptoHash>,
     #[clap(subcommand)]
-    submit: Option<Submit>,
+    submit: Option<super::Submit>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SignLedger {
     pub seed_phrase_hd_path: slip10::BIP32Path,
     pub signer_public_key: near_crypto::PublicKey,
-    nonce: u64,
-    block_hash: near_primitives::hash::CryptoHash,
-    pub submit: Option<Submit>,
+    nonce: Option<u64>,
+    block_hash: Option<near_primitives::hash::CryptoHash>,
+    pub submit: Option<super::Submit>,
+}
+
+impl CliSignLedger {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .submit
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(nonce) = &self.nonce {
+            args.push_front(nonce.to_string());
+            args.push_front("--nonce".to_owned())
+        }
+        if let Some(block_hash) = &self.block_hash {
+            args.push_front(block_hash.to_string());
+            args.push_front("--block-hash".to_owned())
+        }
+        args
+    }
+}
+
+impl From<SignLedger> for CliSignLedger {
+    fn from(sign_ledger: SignLedger) -> Self {
+        Self {
+            seed_phrase_hd_path: Some(sign_ledger.seed_phrase_hd_path),
+            nonce: sign_ledger.nonce,
+            block_hash: sign_ledger.block_hash,
+            submit: sign_ledger.submit.into(),
+        }
+    }
 }
 
 impl SignLedger {
@@ -53,13 +82,13 @@ impl SignLedger {
         let signer_public_key = near_crypto::PublicKey::ED25519(
             near_crypto::ED25519PublicKey::from(public_key.to_bytes()),
         );
-        let submit: Option<Submit> = item.submit;
+        let submit: Option<super::Submit> = item.submit;
         match connection_config {
             Some(_) => Ok(Self {
                 seed_phrase_hd_path,
                 signer_public_key,
-                nonce: 0,
-                block_hash: Default::default(),
+                nonce: None,
+                block_hash: None,
                 submit,
             }),
             None => {
@@ -74,8 +103,8 @@ impl SignLedger {
                 Ok(Self {
                     seed_phrase_hd_path,
                     signer_public_key,
-                    nonce,
-                    block_hash,
+                    nonce: Some(nonce),
+                    block_hash: Some(block_hash),
                     submit,
                 })
             }
@@ -99,14 +128,14 @@ impl SignLedger {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_connection_config: Option<crate::common::ConnectionConfig>,
+        connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let seed_phrase_hd_path = self.seed_phrase_hd_path.clone();
         let public_key = self.signer_public_key.clone();
-        let nonce = self.nonce.clone();
-        let block_hash = self.block_hash.clone();
-        let submit: Option<Submit> = self.submit.clone();
-        match network_connection_config {
+        let nonce = self.nonce.unwrap_or_default().clone();
+        let block_hash = self.block_hash.unwrap_or_default().clone();
+        let submit: Option<super::Submit> = self.submit.clone();
+        match connection_config.clone() {
             None => {
                 let unsigned_transaction = near_primitives::transaction::Transaction {
                     public_key,
@@ -154,7 +183,7 @@ impl SignLedger {
                 match submit {
                     Some(submit) => submit.process_offline(serialize_to_base64),
                     None => {
-                        let submit = Submit::choose_submit();
+                        let submit = super::Submit::choose_submit(connection_config.clone());
                         submit.process_offline(serialize_to_base64)
                     }
                 }
@@ -230,7 +259,7 @@ impl SignLedger {
                 println!("Your transaction was signed successfully.");
                 match submit {
                     None => {
-                        let submit = Submit::choose_submit();
+                        let submit = super::Submit::choose_submit(connection_config);
                         submit
                             .process_online(
                                 network_connection_config,
@@ -249,91 +278,6 @@ impl SignLedger {
                             .await
                     }
                 }
-            }
-        }
-    }
-}
-
-#[derive(Debug, EnumDiscriminants, Clone, clap::Clap)]
-#[strum_discriminants(derive(EnumMessage, EnumIter))]
-pub enum Submit {
-    #[strum_discriminants(strum(
-        message = "Do you want send the transaction to the server (it's works only for online mode)"
-    ))]
-    Send,
-    #[strum_discriminants(strum(message = "Do you want show the transaction on display?"))]
-    Display,
-}
-
-impl Submit {
-    pub fn choose_submit() -> Self {
-        println!();
-        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
-        let submits = variants
-            .iter()
-            .map(|p| p.get_message().unwrap().to_owned())
-            .collect::<Vec<_>>();
-        let select_submit = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select an action that you want to add to the action:")
-            .items(&submits)
-            .default(0)
-            .interact()
-            .unwrap();
-        match variants[select_submit] {
-            SubmitDiscriminants::Send => Submit::Send,
-            SubmitDiscriminants::Display => Submit::Display,
-        }
-    }
-
-    pub fn process_offline(
-        self,
-        serialize_to_base64: String,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
-        Ok(None)
-    }
-
-    pub async fn process_online(
-        self,
-        network_connection_config: crate::common::ConnectionConfig,
-        signed_transaction: near_primitives::transaction::SignedTransaction,
-        serialize_to_base64: String,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        match self {
-            Submit::Send => {
-                println!("Transaction sent ...");
-                let json_rcp_client =
-                    near_jsonrpc_client::new_client(network_connection_config.rpc_url().as_str());
-                let transaction_info = loop {
-                    let transaction_info_result = json_rcp_client
-                        .broadcast_tx_commit(near_primitives::serialize::to_base64(
-                            signed_transaction
-                                .try_to_vec()
-                                .expect("Transaction is not expected to fail on serialization"),
-                        ))
-                        .await;
-                    match transaction_info_result {
-                        Ok(response) => {
-                            break response;
-                        }
-                        Err(err) => {
-                            if let Some(serde_json::Value::String(data)) = &err.data {
-                                if data.contains("Timeout") {
-                                    println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
-                                    continue;
-                                } else {
-                                    println!("Error transaction: {:#?}", err)
-                                }
-                            };
-                            return Ok(None);
-                        }
-                    };
-                };
-                Ok(Some(transaction_info))
-            }
-            Submit::Display => {
-                println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
-                Ok(None)
             }
         }
     }

@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod generate_keypair;
 
 /// Generate key pair
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -15,9 +15,28 @@ pub struct CliImplicitAccount {
     public_key_mode: Option<CliPublicKeyMode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ImplicitAccount {
     pub public_key_mode: PublicKeyMode,
+}
+
+impl CliImplicitAccount {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .public_key_mode
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<ImplicitAccount> for CliImplicitAccount {
+    fn from(implicit_account: ImplicitAccount) -> Self {
+        Self {
+            public_key_mode: Some(implicit_account.public_key_mode.into()),
+        }
+    }
 }
 
 impl From<CliImplicitAccount> for ImplicitAccount {
@@ -36,17 +55,39 @@ impl ImplicitAccount {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliPublicKeyMode {
     /// Generate key pair
     GenerateKeypair(self::generate_keypair::CliGenerateKeypair),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum PublicKeyMode {
     #[strum_discriminants(strum(message = "Generate key pair"))]
     GenerateKeypair(self::generate_keypair::CliGenerateKeypair),
+}
+
+impl CliPublicKeyMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::GenerateKeypair(_) => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("generate-keypair".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<PublicKeyMode> for CliPublicKeyMode {
+    fn from(public_key_mode: PublicKeyMode) -> Self {
+        match public_key_mode {
+            PublicKeyMode::GenerateKeypair(generate_keypair) => {
+                Self::GenerateKeypair(generate_keypair)
+            }
+        }
+    }
 }
 
 impl From<CliPublicKeyMode> for PublicKeyMode {

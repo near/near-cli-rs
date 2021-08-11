@@ -1,14 +1,34 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendFrom {
     /// Specify a signer
     Signer(CliSender),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendFrom {
     Signer(Sender),
+}
+
+impl CliSendFrom {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Signer(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("signer".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendFrom> for CliSendFrom {
+    fn from(send_from: SendFrom) -> Self {
+        match send_from {
+            SendFrom::Signer(sender) => Self::Signer(sender.into()),
+        }
+    }
 }
 
 impl From<CliSendFrom> for SendFrom {
@@ -43,19 +63,37 @@ impl SendFrom {
 }
 
 /// Specify the account that signed the transaction
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliSender {
-    pub account_id: Option<String>,
+    pub account_id: Option<near_primitives::types::AccountId>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Sender {
-    pub account_id: String,
+    pub account_id: near_primitives::types::AccountId,
+}
+
+impl CliSender {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(account_id) = &self.account_id {
+            args.push_front(account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Sender> for CliSender {
+    fn from(sender: Sender) -> Self {
+        Self {
+            account_id: Some(sender.account_id),
+        }
+    }
 }
 
 impl From<CliSender> for Sender {
     fn from(item: CliSender) -> Self {
-        let account_id: String = match item.account_id {
+        let account_id: near_primitives::types::AccountId = match item.account_id {
             Some(cli_account_id) => cli_account_id,
             None => Sender::input_sender_account_id(),
         };
@@ -64,7 +102,7 @@ impl From<CliSender> for Sender {
 }
 
 impl Sender {
-    pub fn input_sender_account_id() -> String {
+    pub fn input_sender_account_id() -> near_primitives::types::AccountId {
         println!();
         Input::new()
             .with_prompt("Specify the account that signed the transaction")

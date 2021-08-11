@@ -1,14 +1,34 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendTo {
     /// Specify a receiver
     Contract(CliReceiver),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendTo {
     Contract(Receiver),
+}
+
+impl CliSendTo {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Contract(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("contract".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendTo> for CliSendTo {
+    fn from(send_to: SendTo) -> Self {
+        match send_to {
+            SendTo::Contract(contract) => Self::Contract(contract.into()),
+        }
+    }
 }
 
 impl SendTo {
@@ -43,22 +63,45 @@ impl SendTo {
 }
 
 /// данные о контракте
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliReceiver {
-    contract_account_id: Option<String>,
+    contract_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     call: Option<super::CliCallFunction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Receiver {
-    pub contract_account_id: String,
+    pub contract_account_id: near_primitives::types::AccountId,
     pub call: super::CallFunction,
+}
+
+impl CliReceiver {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .call
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(contract_account_id) = &self.contract_account_id {
+            args.push_front(contract_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Receiver> for CliReceiver {
+    fn from(receiver: Receiver) -> Self {
+        Self {
+            contract_account_id: Some(receiver.contract_account_id),
+            call: Some(receiver.call.into()),
+        }
+    }
 }
 
 impl Receiver {
@@ -66,7 +109,8 @@ impl Receiver {
         item: CliReceiver,
         connection_config: crate::common::ConnectionConfig,
     ) -> color_eyre::eyre::Result<Self> {
-        let contract_account_id: String = match item.contract_account_id {
+        let contract_account_id: near_primitives::types::AccountId = match item.contract_account_id
+        {
             Some(cli_contract_account_id) => {
                 let contract_code_hash: near_primitives::hash::CryptoHash =
                     match crate::common::check_account_id(
@@ -102,9 +146,9 @@ impl Receiver {
 impl Receiver {
     fn input_contract_account_id(
         connection_config: crate::common::ConnectionConfig,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         loop {
-            let contract_account_id: String = Input::new()
+            let contract_account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("What is the account ID of the contract?")
                 .interact_text()
                 .unwrap();
@@ -119,7 +163,7 @@ impl Receiver {
             if contract_code_hash == near_primitives::hash::CryptoHash::default() {
                 println!(
                     "Contract code is not deployed to this account <{}>.",
-                    contract_account_id
+                    contract_account_id.to_string()
                 )
             } else {
                 break Ok(contract_account_id);

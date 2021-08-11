@@ -9,7 +9,7 @@ mod view_recent_block_hash;
 mod view_transaction_status;
 
 /// инструмент выбора to view
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -20,9 +20,28 @@ pub struct CliViewQueryRequest {
     query: Option<CliQueryRequest>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ViewQueryRequest {
     pub query: QueryRequest,
+}
+
+impl CliViewQueryRequest {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let args = self
+            .query
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args
+    }
+}
+
+impl From<ViewQueryRequest> for CliViewQueryRequest {
+    fn from(view_query_request: ViewQueryRequest) -> Self {
+        Self {
+            query: Some(view_query_request.query.into()),
+        }
+    }
 }
 
 impl From<CliViewQueryRequest> for ViewQueryRequest {
@@ -41,7 +60,7 @@ impl ViewQueryRequest {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliQueryRequest {
     /// View properties for an account
     AccountSummary(self::view_account::operation_mode::CliOperationMode),
@@ -57,7 +76,7 @@ pub enum CliQueryRequest {
     RecentBlockHash(self::view_recent_block_hash::operation_mode::CliOperationMode),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum QueryRequest {
     #[strum_discriminants(strum(message = "View properties for an account"))]
@@ -72,6 +91,62 @@ pub enum QueryRequest {
     Nonce(self::view_nonce::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View recent block hash for this network"))]
     RecentBlockHash(self::view_recent_block_hash::operation_mode::OperationMode),
+}
+
+impl CliQueryRequest {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::AccountSummary(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("account-summary".to_owned());
+                args
+            }
+            Self::ContractCode(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("contract-code".to_owned());
+                args
+            }
+            Self::ContractState(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("contract-state".to_owned());
+                args
+            }
+            Self::Transaction(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("transaction".to_owned());
+                args
+            }
+            Self::Nonce(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("nonce".to_owned());
+                args
+            }
+            Self::RecentBlockHash(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("recent-block-hash".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<QueryRequest> for CliQueryRequest {
+    fn from(query_request: QueryRequest) -> Self {
+        match query_request {
+            QueryRequest::AccountSummary(operation_mode) => {
+                Self::AccountSummary(operation_mode.into())
+            }
+            QueryRequest::ContractCode(operation_mode) => Self::ContractCode(operation_mode.into()),
+            QueryRequest::ContractState(operation_mode) => {
+                Self::ContractState(operation_mode.into())
+            }
+            QueryRequest::Transaction(operation_mode) => Self::Transaction(operation_mode.into()),
+            QueryRequest::Nonce(operation_mode) => Self::Nonce(operation_mode.into()),
+            QueryRequest::RecentBlockHash(operation_mode) => {
+                Self::RecentBlockHash(operation_mode.into())
+            }
+        }
+    }
 }
 
 impl From<CliQueryRequest> for QueryRequest {

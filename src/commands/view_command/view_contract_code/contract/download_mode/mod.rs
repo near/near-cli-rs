@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 mod download_contract;
 mod hash_contract;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliDownloadMode {
     /// Download a contract file
     Download(self::download_contract::CliContractFile),
@@ -12,13 +12,39 @@ pub enum CliDownloadMode {
     Hash(self::hash_contract::CliContractHash),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum DownloadMode {
     #[strum_discriminants(strum(message = "Download a contract file"))]
     Download(self::download_contract::ContractFile),
     #[strum_discriminants(strum(message = "View a contract hash"))]
     Hash(self::hash_contract::ContractHash),
+}
+
+impl CliDownloadMode {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Download(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("download".to_owned());
+                args
+            }
+            Self::Hash(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("hash".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<DownloadMode> for CliDownloadMode {
+    fn from(download_mode: DownloadMode) -> Self {
+        match download_mode {
+            DownloadMode::Download(contract_file) => Self::Download(contract_file.into()),
+            DownloadMode::Hash(contract_hash) => Self::Hash(contract_hash.into()),
+        }
+    }
 }
 
 impl DownloadMode {
@@ -57,7 +83,7 @@ impl DownloadMode {
 
     pub async fn process(
         self,
-        contract_id: String,
+        contract_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         match self {

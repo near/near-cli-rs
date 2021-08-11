@@ -5,7 +5,7 @@ mod access_key;
 mod account;
 
 /// инструмент выбора to delete action
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -16,9 +16,26 @@ pub struct CliDeleteAction {
     action: Option<CliAction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeleteAction {
     pub action: Action,
+}
+
+impl CliDeleteAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.action
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<DeleteAction> for CliDeleteAction {
+    fn from(delete_action: DeleteAction) -> Self {
+        Self {
+            action: Some(delete_action.action.into()),
+        }
+    }
 }
 
 impl DeleteAction {
@@ -40,7 +57,7 @@ impl DeleteAction {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliAction {
     /// Delete an access key for an account
     AccessKey(self::access_key::operation_mode::CliOperationMode),
@@ -48,13 +65,39 @@ pub enum CliAction {
     Account(self::account::operation_mode::CliOperationMode),
 }
 
-#[derive(Debug, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Action {
     #[strum_discriminants(strum(message = "Delete an access key for this account"))]
     AccessKey(self::access_key::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Delete this account"))]
     Account(self::account::operation_mode::OperationMode),
+}
+
+impl CliAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::AccessKey(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("access-key".to_owned());
+                command
+            }
+            Self::Account(subcommand) => {
+                let mut command = subcommand.to_cli_args();
+                command.push_front("account".to_owned());
+                command
+            }
+        }
+    }
+}
+
+impl From<Action> for CliAction {
+    fn from(action: Action) -> Self {
+        match action {
+            Action::AccessKey(operation_mode) => Self::AccessKey(operation_mode.into()),
+            Action::Account(operation_mode) => Self::Account(operation_mode.into()),
+        }
+    }
 }
 
 impl Action {

@@ -1,21 +1,41 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendTo {
     /// Specify a sub-account
     SubAccount(CliSubAccount),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendTo {
     SubAccount(SubAccount),
+}
+
+impl CliSendTo {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::SubAccount(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("sub-account".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendTo> for CliSendTo {
+    fn from(send_to: SendTo) -> Self {
+        match send_to {
+            SendTo::SubAccount(sub_account) => Self::SubAccount(sub_account.into()),
+        }
+    }
 }
 
 impl SendTo {
     pub fn from(
         item: CliSendTo,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSendTo::SubAccount(cli_receiver) => {
@@ -30,7 +50,7 @@ impl SendTo {
 impl SendTo {
     pub fn send_to(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliSendTo::SubAccount(Default::default()),
@@ -55,31 +75,54 @@ impl SendTo {
 }
 
 /// Specify a sub-account
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliSubAccount {
-    sub_account_id: Option<String>,
+    sub_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     full_access_key: Option<super::full_access_key::CliFullAccessKey>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SubAccount {
-    pub sub_account_id: String,
+    pub sub_account_id: near_primitives::types::AccountId,
     pub full_access_key: super::full_access_key::FullAccessKey,
+}
+
+impl CliSubAccount {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .full_access_key
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(sub_account_id) = &self.sub_account_id {
+            args.push_front(sub_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<SubAccount> for CliSubAccount {
+    fn from(sub_account: SubAccount) -> Self {
+        Self {
+            sub_account_id: Some(sub_account.sub_account_id),
+            full_access_key: Some(sub_account.full_access_key.into()),
+        }
+    }
 }
 
 impl SubAccount {
     fn from(
         item: CliSubAccount,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
-        let sub_account_id: String = match item.sub_account_id {
+        let sub_account_id: near_primitives::types::AccountId = match item.sub_account_id {
             Some(cli_sub_account_id) => cli_sub_account_id,
             None => SubAccount::input_sub_account_id(),
         };
@@ -102,7 +145,7 @@ impl SubAccount {
 }
 
 impl SubAccount {
-    fn input_sub_account_id() -> String {
+    fn input_sub_account_id() -> near_primitives::types::AccountId {
         Input::new()
             .with_prompt("What is the sub-account ID?")
             .interact_text()

@@ -1,14 +1,36 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliTransaction {
     /// Specify a transaction
     TransactionHash(CliTransactionType),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Transaction {
     TransactionHash(TransactionType),
+}
+
+impl CliTransaction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::TransactionHash(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("transaction-hash".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<Transaction> for CliTransaction {
+    fn from(transaction: Transaction) -> Self {
+        match transaction {
+            Transaction::TransactionHash(transaction_type) => {
+                Self::TransactionHash(transaction_type.into())
+            }
+        }
+    }
 }
 
 impl From<CliTransaction> for Transaction {
@@ -39,7 +61,7 @@ impl Transaction {
 }
 
 /// Specify the transaction to be view
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -51,10 +73,33 @@ pub struct CliTransactionType {
     send_from: Option<super::signer::CliSendFrom>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransactionType {
     pub transaction_hash: String,
     send_from: super::signer::SendFrom,
+}
+
+impl CliTransactionType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .send_from
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(transaction_hash) = &self.transaction_hash {
+            args.push_front(transaction_hash.to_string());
+        };
+        args
+    }
+}
+
+impl From<TransactionType> for CliTransactionType {
+    fn from(transaction_type: TransactionType) -> Self {
+        Self {
+            transaction_hash: Some(transaction_type.transaction_hash),
+            send_from: Some(transaction_type.send_from.into()),
+        }
+    }
 }
 
 impl From<CliTransactionType> for TransactionType {

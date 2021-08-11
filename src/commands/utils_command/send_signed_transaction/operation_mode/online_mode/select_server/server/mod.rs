@@ -1,14 +1,15 @@
 use dialoguer::Input;
+use std::str::FromStr;
 
 /// предустановленный RPC-сервер
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliServer {
     #[clap(subcommand)]
     send: Option<CliSend>,
 }
 
 /// данные для custom server
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliCustomServer {
     #[clap(long)]
     pub url: Option<crate::common::AvailableRpcServerUrl>,
@@ -16,10 +17,56 @@ pub struct CliCustomServer {
     send: Option<CliSend>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Server {
     pub connection_config: crate::common::ConnectionConfig,
     send: Send,
+}
+
+impl CliCustomServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .send
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(url) = &self.url {
+            args.push_front(url.to_string());
+            args.push_front("--url".to_string());
+        }
+        args
+    }
+}
+
+impl From<Server> for CliCustomServer {
+    fn from(server: Server) -> Self {
+        Self {
+            url: Some(
+                crate::common::AvailableRpcServerUrl::from_str(
+                    server.connection_config.rpc_url().as_str(),
+                )
+                .unwrap(),
+            ),
+            send: Some(server.send.into()),
+        }
+    }
+}
+
+impl CliServer {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.send
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<Server> for CliServer {
+    fn from(server: Server) -> Self {
+        Self {
+            send: Some(server.send.into()),
+        }
+    }
 }
 
 impl CliServer {
@@ -61,15 +108,35 @@ impl Server {
     }
 }
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSend {
     /// Specify a transaction
     Transaction(super::super::super::super::CliTransaction),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Send {
     Transaction(super::super::super::super::Transaction),
+}
+
+impl CliSend {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Transaction(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("transaction".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<Send> for CliSend {
+    fn from(send: Send) -> Self {
+        match send {
+            Send::Transaction(transaction) => Self::Transaction(transaction.into()),
+        }
+    }
 }
 
 impl From<CliSend> for Send {

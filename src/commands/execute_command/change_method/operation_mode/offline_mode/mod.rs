@@ -1,5 +1,5 @@
 /// аргументы, необходимые для offline mode
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -10,9 +10,26 @@ pub struct CliOfflineArgs {
     pub send_to: Option<super::super::contract::CliSendTo>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OfflineArgs {
     send_to: super::super::contract::SendTo,
+}
+
+impl CliOfflineArgs {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.send_to
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<OfflineArgs> for CliOfflineArgs {
+    fn from(offline_args: OfflineArgs) -> Self {
+        Self {
+            send_to: Some(offline_args.send_to.into()),
+        }
+    }
 }
 
 impl OfflineArgs {

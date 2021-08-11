@@ -1,14 +1,32 @@
 use dialoguer::Input;
 
 /// Specify the block_id height for this contract to view
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliBlockIdHeight {
     block_id_height: Option<near_primitives::types::BlockHeight>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockIdHeight {
     block_id_height: near_primitives::types::BlockHeight,
+}
+
+impl CliBlockIdHeight {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(block_id_height) = &self.block_id_height {
+            args.push_front(block_id_height.to_string());
+        }
+        args
+    }
+}
+
+impl From<BlockIdHeight> for CliBlockIdHeight {
+    fn from(block_id_height: BlockIdHeight) -> Self {
+        Self {
+            block_id_height: Some(block_id_height.block_id_height),
+        }
+    }
 }
 
 impl From<CliBlockIdHeight> for BlockIdHeight {
@@ -36,7 +54,7 @@ impl BlockIdHeight {
     pub async fn process(
         self,
         network_connection_config: crate::common::ConnectionConfig,
-        contract_account_id: String,
+        contract_account_id: near_primitives::types::AccountId,
         method_name: String,
         args: Vec<u8>,
     ) -> crate::CliResult {

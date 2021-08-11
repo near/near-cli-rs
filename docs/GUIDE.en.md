@@ -572,7 +572,7 @@ In order to execute this command, in the terminal command line type:
             --method-names 'set_a, set_b' \
         sign-private-key \
             --signer-public-key ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF \
-            --signer-secret-key  ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB \
+            --signer-private-key  ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB \
         send
 
 ```
@@ -809,7 +809,7 @@ This utility generates access keys at random.
 </a>
 </details>
 
-#### Sign a transaction with secret key
+#### Sign a transaction with private key
 
 This utility allows you to sign a previously formed and unsigned transaction with your keys.
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>

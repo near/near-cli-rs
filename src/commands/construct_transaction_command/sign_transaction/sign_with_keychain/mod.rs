@@ -3,7 +3,7 @@ extern crate dirs;
 use serde::Deserialize;
 
 /// подписание сформированной транзакции с помощью файла с ключами
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -15,27 +15,56 @@ pub struct CliSignKeychain {
     #[clap(long)]
     block_hash: Option<near_primitives::hash::CryptoHash>,
     #[clap(subcommand)]
-    submit: Option<super::sign_with_private_key::Submit>,
+    submit: Option<super::Submit>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SignKeychain {
-    nonce: u64,
-    block_hash: near_primitives::hash::CryptoHash,
-    pub submit: Option<super::sign_with_private_key::Submit>,
+    nonce: Option<u64>,
+    block_hash: Option<near_primitives::hash::CryptoHash>,
+    pub submit: Option<super::Submit>,
+}
+
+impl CliSignKeychain {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .submit
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(nonce) = &self.nonce {
+            args.push_front(nonce.to_string());
+            args.push_front("--nonce".to_owned())
+        }
+        if let Some(block_hash) = &self.block_hash {
+            args.push_front(block_hash.to_string());
+            args.push_front("--block-hash".to_owned())
+        }
+        args
+    }
+}
+
+impl From<SignKeychain> for CliSignKeychain {
+    fn from(sign_keychain: SignKeychain) -> Self {
+        Self {
+            nonce: sign_keychain.nonce,
+            block_hash: sign_keychain.block_hash,
+            submit: sign_keychain.submit,
+        }
+    }
 }
 
 impl SignKeychain {
     pub fn from(
         item: CliSignKeychain,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
-        let submit: Option<super::sign_with_private_key::Submit> = item.submit;
+        let submit: Option<super::Submit> = item.submit;
         match connection_config {
             Some(_) => Ok(Self {
-                nonce: 0,
-                block_hash: Default::default(),
+                nonce: None,
+                block_hash: None,
                 submit,
             }),
             None => {
@@ -64,8 +93,8 @@ impl SignKeychain {
                     None => super::input_block_hash(),
                 };
                 Ok(SignKeychain {
-                    nonce,
-                    block_hash,
+                    nonce: Some(nonce),
+                    block_hash: Some(block_hash),
                     submit,
                 })
             }
@@ -75,7 +104,7 @@ impl SignKeychain {
 
 #[derive(Debug, Deserialize)]
 struct User {
-    account_id: String,
+    account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
     private_key: near_crypto::SecretKey,
 }
@@ -88,21 +117,21 @@ impl SignKeychain {
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_connection_config: Option<crate::common::ConnectionConfig>,
+        connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
         let file_name = format!("{}.json", prepopulated_unsigned_transaction.signer_id);
         let mut path = std::path::PathBuf::from(&home_dir);
 
-        let data_path: std::path::PathBuf = match &network_connection_config {
+        let data_path: std::path::PathBuf = match &connection_config {
             None => {
                 let dir_name = crate::consts::DIR_NAME_KEY_CHAIN;
                 path.push(dir_name);
                 path.push(file_name);
                 path
             }
-            Some(connection_config) => {
-                let dir_name = connection_config.dir_name();
+            Some(network_connection_config) => {
+                let dir_name = network_connection_config.dir_name();
                 path.push(dir_name);
                 path.push(file_name);
 
@@ -110,7 +139,7 @@ impl SignKeychain {
                     path
                 } else {
                     let query_view_method_response = self
-                        .rpc_client(connection_config.rpc_url().as_str())
+                        .rpc_client(network_connection_config.rpc_url().as_str())
                         .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
                             block_reference: near_primitives::types::Finality::Final.into(),
                             request: near_primitives::views::QueryRequest::ViewAccessKeyList {
@@ -135,7 +164,7 @@ impl SignKeychain {
                         };
                     let mut path = std::path::PathBuf::from(&home_dir);
                     path.push(dir_name);
-                    path.push(&prepopulated_unsigned_transaction.signer_id);
+                    path.push(&prepopulated_unsigned_transaction.signer_id.to_string());
                     let mut data_path = std::path::PathBuf::new();
                     'outer: for access_key in access_key_view.keys {
                         let account_public_key = access_key.public_key.to_string();
@@ -184,13 +213,13 @@ impl SignKeychain {
             .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
             signer_public_key: account_json.public_key,
-            signer_secret_key: account_json.private_key,
+            signer_private_key: account_json.private_key,
             nonce: self.nonce.clone(),
             block_hash: self.block_hash.clone(),
             submit: self.submit.clone(),
         };
         sign_with_private_key
-            .process(prepopulated_unsigned_transaction, network_connection_config)
+            .process(prepopulated_unsigned_transaction, connection_config)
             .await
     }
 }

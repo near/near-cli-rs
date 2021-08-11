@@ -4,7 +4,7 @@ pub mod operation_mode;
 mod sender;
 
 /// удаление аккаунта
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -18,18 +18,41 @@ pub struct CliDeleteAccountAction {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeleteAccountAction {
     pub beneficiary_id: near_primitives::types::AccountId,
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
+impl CliDeleteAccountAction {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(beneficiary_id) = &self.beneficiary_id {
+            args.push_front(beneficiary_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<DeleteAccountAction> for CliDeleteAccountAction {
+    fn from(delete_account_action: DeleteAccountAction) -> Self {
+        Self {
+            beneficiary_id: Some(delete_account_action.beneficiary_id),
+            sign_option: Some(delete_account_action.sign_option.into()),
+        }
+    }
+}
+
 impl DeleteAccountAction {
     pub fn from(
         item: CliDeleteAccountAction,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let beneficiary_id: near_primitives::types::AccountId = match item.beneficiary_id {
             Some(cli_account_id) => match &connection_config {
@@ -61,9 +84,9 @@ impl DeleteAccountAction {
 impl DeleteAccountAction {
     pub fn input_beneficiary_id(
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         loop {
-            let account_id: String = Input::new()
+            let account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("Enter the beneficiary ID to delete this account ID")
                 .interact_text()
                 .unwrap();

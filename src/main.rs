@@ -1,4 +1,5 @@
 use clap::Clap;
+extern crate shell_words;
 
 mod commands;
 mod common;
@@ -22,9 +23,29 @@ struct CliArgs {
     top_level_command: Option<self::commands::CliTopLevelCommand>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Args {
     top_level_command: self::commands::TopLevelCommand,
+}
+
+impl CliArgs {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .top_level_command
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        args.push_front("./near-cli".to_owned());
+        args
+    }
+}
+
+impl From<Args> for CliArgs {
+    fn from(cli_args: Args) -> Self {
+        Self {
+            top_level_command: Some(cli_args.top_level_command.into()),
+        }
+    }
 }
 
 impl From<CliArgs> for Args {
@@ -55,7 +76,16 @@ fn main() -> CliResult {
 
     let args = Args::from(cli);
 
+    let completed_cli = CliArgs::from(args.clone());
+
     color_eyre::install()?;
 
-    actix::System::new().block_on(args.process())
+    actix::System::new().block_on(args.process());
+
+    println!(
+        "Your console command:\n{}",
+        shell_words::join(&completed_cli.to_cli_args())
+    );
+
+    Ok(())
 }

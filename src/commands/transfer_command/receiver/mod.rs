@@ -1,21 +1,41 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendTo {
     /// Specify a receiver
     Receiver(CliReceiver),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SendTo {
     Receiver(Receiver),
+}
+
+impl CliSendTo {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Receiver(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("receiver".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<SendTo> for CliSendTo {
+    fn from(send_to: SendTo) -> Self {
+        match send_to {
+            SendTo::Receiver(receiver) => Self::Receiver(CliReceiver::from(receiver)),
+        }
+    }
 }
 
 impl SendTo {
     pub fn from(
         item: CliSendTo,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSendTo::Receiver(cli_receiver) => {
@@ -29,7 +49,7 @@ impl SendTo {
 impl SendTo {
     pub fn send_to(
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self::from(
             CliSendTo::Receiver(Default::default()),
@@ -54,31 +74,57 @@ impl SendTo {
 }
 
 /// данные о получателе транзакции
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::VersionlessSubcommands)
 )]
 pub struct CliReceiver {
-    receiver_account_id: Option<String>,
+    receiver_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     transfer: Option<super::transfer_near_tokens_type::CliTransfer>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Receiver {
-    pub receiver_account_id: String,
+    pub receiver_account_id: near_primitives::types::AccountId,
     pub transfer: super::transfer_near_tokens_type::Transfer,
+}
+
+impl CliReceiver {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = self
+            .transfer
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default();
+        if let Some(receiver_account_id) = &self.receiver_account_id {
+            args.push_front(receiver_account_id.to_string());
+        }
+        args
+    }
+}
+
+impl From<Receiver> for CliReceiver {
+    fn from(receiver: Receiver) -> Self {
+        Self {
+            receiver_account_id: Some(receiver.receiver_account_id),
+            transfer: Some(super::transfer_near_tokens_type::CliTransfer::from(
+                receiver.transfer,
+            )),
+        }
+    }
 }
 
 impl Receiver {
     fn from(
         item: CliReceiver,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
-        let receiver_account_id: String = match item.receiver_account_id {
+        let receiver_account_id: near_primitives::types::AccountId = match item.receiver_account_id
+        {
             Some(cli_receiver_account_id) => match &connection_config {
                 Some(network_connection_config) => match crate::common::check_account_id(
                     network_connection_config.clone(),
@@ -119,9 +165,9 @@ impl Receiver {
 impl Receiver {
     fn input_receiver_account_id(
         connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         loop {
-            let account_id: String = Input::new()
+            let account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("What is the account ID of the receiver?")
                 .interact_text()
                 .unwrap();
@@ -132,7 +178,7 @@ impl Receiver {
                     break Ok(account_id);
                 } else {
                     if !crate::common::is_64_len_hex(&account_id) {
-                        println!("Account <{}> doesn't exist", account_id);
+                        println!("Account <{}> doesn't exist", account_id.to_string());
                     } else {
                         break Ok(account_id);
                     }

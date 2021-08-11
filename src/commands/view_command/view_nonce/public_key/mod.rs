@@ -1,14 +1,34 @@
 use dialoguer::Input;
 
-#[derive(Debug, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap)]
 pub enum CliAccessKey {
     /// Specify public key
     PublicKey(CliAccessKeyType),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AccessKey {
     PublicKey(AccessKeyType),
+}
+
+impl CliAccessKey {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::PublicKey(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("public-key".to_owned());
+                args
+            }
+        }
+    }
+}
+
+impl From<AccessKey> for CliAccessKey {
+    fn from(access_key: AccessKey) -> Self {
+        match access_key {
+            AccessKey::PublicKey(access_key_type) => Self::PublicKey(access_key_type.into()),
+        }
+    }
 }
 
 impl From<CliAccessKey> for AccessKey {
@@ -28,7 +48,7 @@ impl AccessKey {
 
     pub async fn process(
         self,
-        account_id: String,
+        account_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         match self {
@@ -42,14 +62,32 @@ impl AccessKey {
 }
 
 /// Specify the access key to be deleted
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliAccessKeyType {
     public_key: Option<near_crypto::PublicKey>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AccessKeyType {
     pub public_key: near_crypto::PublicKey,
+}
+
+impl CliAccessKeyType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(public_key) = &self.public_key {
+            args.push_front(public_key.to_string());
+        }
+        args
+    }
+}
+
+impl From<AccessKeyType> for CliAccessKeyType {
+    fn from(access_key_type: AccessKeyType) -> Self {
+        Self {
+            public_key: access_key_type.public_key.into(),
+        }
+    }
 }
 
 impl From<CliAccessKeyType> for AccessKeyType {
@@ -76,7 +114,7 @@ impl AccessKeyType {
 
     pub async fn process(
         self,
-        account_id: String,
+        account_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let public_key = self.public_key.clone();

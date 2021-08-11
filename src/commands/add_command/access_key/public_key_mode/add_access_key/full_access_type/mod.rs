@@ -1,5 +1,5 @@
 /// данные для определения ключа с полным доступом
-#[derive(Debug, Default, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -12,17 +12,34 @@ pub struct CliFullAccessType {
     >,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FullAccessType {
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
+}
+
+impl CliFullAccessType {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        self.sign_option
+            .as_ref()
+            .map(|subcommand| subcommand.to_cli_args())
+            .unwrap_or_default()
+    }
+}
+
+impl From<FullAccessType> for CliFullAccessType {
+    fn from(full_access_type: FullAccessType) -> Self {
+        Self {
+            sign_option: Some(full_access_type.sign_option.into()),
+        }
+    }
 }
 
 impl FullAccessType {
     pub fn from(
         item: CliFullAccessType,
         connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: String,
+        sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
         let sign_option = match item.sign_option {
             Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config,sender_account_id)?,
