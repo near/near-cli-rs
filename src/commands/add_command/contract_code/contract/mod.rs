@@ -1,5 +1,4 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use std::io::Read;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod initialize_mode;
@@ -170,10 +169,7 @@ impl ContractFile {
             .with_prompt("What is a file location of the contract?")
             .interact_text()
             .unwrap();
-        let mut path = std::path::PathBuf::new();
-        path.push(input_file_path);
-        println!("path: {:?}", &path);
-        path
+        input_file_path.into()
     }
 
     pub async fn process(
@@ -181,11 +177,8 @@ impl ContractFile {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
-        let mut code = Vec::new();
-        std::fs::File::open(&self.file_path.clone())
-            .map_err(|err| color_eyre::Report::msg(format!("Failed to open file: {:?}", err)))?
-            .read_to_end(&mut code)
-            .map_err(|err| color_eyre::Report::msg(format!("Failed to read file: {:?}", err)))?;
+        let code = std::fs::read(&self.file_path.clone())
+            .map_err(|err| color_eyre::Report::msg(format!("Failed to open file: {:?}", err)))?;
         let action = near_primitives::transaction::Action::DeployContract(
             near_primitives::transaction::DeployContractAction { code },
         );
