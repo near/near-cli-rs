@@ -77,10 +77,7 @@ impl ContractFile {
             .with_prompt("What is a file location of the contract?")
             .interact_text()
             .unwrap();
-        let mut path = std::path::PathBuf::new();
-        path.push(input_file_path);
-        println!("path: {:?}", &path);
-        path
+        input_file_path.into()
     }
 
     #[async_recursion(?Send)]
