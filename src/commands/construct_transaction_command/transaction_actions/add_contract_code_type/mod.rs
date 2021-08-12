@@ -1,7 +1,6 @@
+use async_recursion::async_recursion;
 use dialoguer::Input;
 use std::io::Read;
-
-mod initialize_mode;
 
 /// add contract file
 #[derive(Debug, Default, Clone, clap::Clap)]
@@ -13,19 +12,19 @@ mod initialize_mode;
 pub struct CliContractFile {
     file_path: Option<std::path::PathBuf>,
     #[clap(subcommand)]
-    contract_mode: Option<self::initialize_mode::CliContractMode>,
+    next_action: Option<super::CliSkipNextAction>,
 }
 
 #[derive(Debug, Clone)]
 pub struct ContractFile {
     pub file_path: std::path::PathBuf,
-    contract_mode: self::initialize_mode::ContractMode,
+    pub next_action: Box<super::NextAction>,
 }
 
 impl CliContractFile {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         let mut args = self
-            .contract_mode
+            .next_action
             .as_ref()
             .map(|subcommand| subcommand.to_cli_args())
             .unwrap_or_default();
@@ -40,7 +39,9 @@ impl From<ContractFile> for CliContractFile {
     fn from(contract_file: ContractFile) -> Self {
         Self {
             file_path: Some(contract_file.file_path),
-            contract_mode: Some(contract_file.contract_mode.into()),
+            next_action: Some(super::CliSkipNextAction::Skip(super::CliSkipAction {
+                sign_option: None,
+            })),
         }
     }
 }
@@ -55,20 +56,17 @@ impl ContractFile {
             Some(cli_file_path) => cli_file_path,
             None => ContractFile::input_file_path(),
         };
-        let contract_mode = match item.contract_mode {
-            Some(cli_contract_mode) => self::initialize_mode::ContractMode::from(
-                cli_contract_mode,
+        let skip_next_action: super::NextAction = match item.next_action {
+            Some(cli_skip_action) => super::NextAction::from_cli_skip_next_action(
+                cli_skip_action,
                 connection_config,
                 sender_account_id,
             )?,
-            None => self::initialize_mode::ContractMode::choose_contract_mode(
-                connection_config,
-                sender_account_id,
-            )?,
+            None => super::NextAction::input_next_action(connection_config, sender_account_id)?,
         };
         Ok(ContractFile {
             file_path,
-            contract_mode,
+            next_action: Box::new(skip_next_action),
         })
     }
 }
@@ -86,6 +84,7 @@ impl ContractFile {
         path
     }
 
+    #[async_recursion(?Send)]
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
@@ -105,8 +104,17 @@ impl ContractFile {
             actions,
             ..prepopulated_unsigned_transaction
         };
-        self.contract_mode
-            .process(unsigned_transaction, network_connection_config)
-            .await
+        match *self.next_action {
+            super::NextAction::AddAction(select_action) => {
+                select_action
+                    .process(unsigned_transaction, network_connection_config)
+                    .await
+            }
+            super::NextAction::Skip(skip_action) => {
+                skip_action
+                    .process(unsigned_transaction, network_connection_config)
+                    .await
+            }
+        }
     }
 }
