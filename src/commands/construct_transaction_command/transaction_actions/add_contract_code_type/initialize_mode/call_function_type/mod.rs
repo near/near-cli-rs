@@ -170,15 +170,29 @@ impl CallFunctionAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
+        let action = near_primitives::transaction::Action::FunctionCall(
+            near_primitives::transaction::FunctionCallAction {
+                method_name: self.method_name.clone(),
+                args: self.args.clone(),
+                gas: self.gas.clone(),
+                deposit: self.deposit.clone(),
+            },
+        );
+        let mut actions = prepopulated_unsigned_transaction.actions.clone();
+        actions.push(action);
+        let unsigned_transaction = near_primitives::transaction::Transaction {
+            actions,
+            ..prepopulated_unsigned_transaction
+        };
         match *self.next_action {
             super::super::super::NextAction::AddAction(select_action) => {
                 select_action
-                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .process(unsigned_transaction, network_connection_config)
                     .await
             }
             super::super::super::NextAction::Skip(skip_action) => {
                 skip_action
-                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .process(unsigned_transaction, network_connection_config)
                     .await
             }
         }
