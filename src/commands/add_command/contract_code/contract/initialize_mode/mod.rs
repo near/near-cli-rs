@@ -141,12 +141,10 @@ pub struct NoInitialize {
 
 impl CliNoInitialize {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let args = self
-            .sign_option
+        self.sign_option
             .as_ref()
             .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        args
+            .unwrap_or_default()
     }
 }
 
