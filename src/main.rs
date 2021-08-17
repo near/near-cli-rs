@@ -80,12 +80,12 @@ fn main() -> CliResult {
 
     color_eyre::install()?;
 
-    actix::System::new().block_on(args.process());
+    let process_result = actix::System::new().block_on(args.process());
 
     println!(
         "Your console command:\n{}",
         shell_words::join(&completed_cli.to_cli_args())
     );
 
-    Ok(())
+    process_result
 }
