@@ -117,32 +117,12 @@ impl NearBalance {
     pub fn to_yoctonear(&self) -> u128 {
         self.yoctonear_amount
     }
-
-    pub fn to_cli_arg(&self) -> String {
-        if self.yoctonear_amount == 0 {
-            format!("0 NEAR")
-        } else if self.yoctonear_amount % ONE_NEAR == 0 {
-            format!("{} NEAR", self.yoctonear_amount / ONE_NEAR,)
-        } else {
-            format!(
-                "{}.{} NEAR",
-                self.yoctonear_amount / ONE_NEAR,
-                format!("{:0>24}", (self.yoctonear_amount % ONE_NEAR)).trim_end_matches('0')
-            )
-        }
-    }
 }
 
 impl std::fmt::Display for NearBalance {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.yoctonear_amount == 0 {
             write!(f, "0 NEAR")
-        } else if self.yoctonear_amount < ONE_NEAR / 1_000 {
-            write!(
-                f,
-                "less than 0.001 NEAR ({} yoctoNEAR)",
-                self.yoctonear_amount
-            )
         } else if self.yoctonear_amount % ONE_NEAR == 0 {
             write!(f, "{} NEAR", self.yoctonear_amount / ONE_NEAR,)
         } else {
@@ -903,90 +883,90 @@ mod tests {
     use std::str::FromStr;
 
     #[test]
-    fn near_balance_to_cli_arg_0_near() {
+    fn near_balance_to_string_0_near() {
         assert_eq!(
             NearBalance {
                 yoctonear_amount: 0
             }
-            .to_cli_arg(),
+            .to_string(),
             "0 NEAR".to_string()
         )
     }
     #[test]
-    fn near_balance_to_cli_arg_0dot02_near() {
+    fn near_balance_to_string_0dot02_near() {
         assert_eq!(
             NearBalance {
                 yoctonear_amount: 20000000000000000000000 // 23 number
             }
-            .to_cli_arg(),
+            .to_string(),
             "0.02 NEAR".to_string()
         )
     }
     #[test]
-    fn near_balance_to_cli_arg_0dot1_near() {
+    fn near_balance_to_string_0dot1_near() {
         assert_eq!(
             NearBalance {
                 yoctonear_amount: 100000000000000000000000 // 24 number
             }
-            .to_cli_arg(),
+            .to_string(),
             "0.1 NEAR".to_string()
         )
     }
     #[test]
-    fn near_balance_to_cli_arg_0dot00001230045600789_near() {
+    fn near_balance_to_string_0dot00001230045600789_near() {
         assert_eq!(
             NearBalance {
                 yoctonear_amount: 12300456007890000000 // 20 number
             }
-            .to_cli_arg(),
+            .to_string(),
             "0.00001230045600789 NEAR".to_string()
         )
     }
     #[test]
-    fn near_balance_to_cli_arg_10_near() {
+    fn near_balance_to_string_10_near() {
         assert_eq!(
             NearBalance {
                 yoctonear_amount: 10000000000000000000000000 // 26 number
             }
-            .to_cli_arg(),
+            .to_string(),
             "10 NEAR".to_string()
         )
     }
     #[test]
-    fn near_balance_to_cli_arg_10dot02_near() {
+    fn near_balance_to_string_10dot02_near() {
         assert_eq!(
             NearBalance {
                 yoctonear_amount: 10020000000000000000000000 // 26 number
             }
-            .to_cli_arg(),
+            .to_string(),
             "10.02 NEAR".to_string()
         )
     }
     #[test]
-    fn near_balance_to_cli_arg_1yocto_near() {
+    fn near_balance_to_string_1yocto_near() {
         let yocto_near = NearBalance::from_yoctonear(1);
         assert_eq!(
-            yocto_near.to_cli_arg(),
+            yocto_near.to_string(),
             "0.000000000000000000000001 NEAR".to_string()
         )
     }
     #[test]
-    fn near_balance_to_cli_arg_1_yocto_near() {
+    fn near_balance_to_string_1_yocto_near() {
         assert_eq!(
             NearBalance {
                 yoctonear_amount: 1
             }
-            .to_cli_arg(),
+            .to_string(),
             "0.000000000000000000000001 NEAR".to_string()
         )
     }
     #[test]
-    fn near_balance_to_cli_arg_100_yocto_near() {
+    fn near_balance_to_string_100_yocto_near() {
         assert_eq!(
             NearBalance {
                 yoctonear_amount: 100
             }
-            .to_cli_arg(),
+            .to_string(),
             "0.0000000000000000000001 NEAR".to_string()
         )
     }
