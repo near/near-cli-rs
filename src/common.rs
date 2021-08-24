@@ -896,7 +896,7 @@ mod tests {
     fn near_balance_to_string_0dot02_near() {
         assert_eq!(
             NearBalance {
-                yoctonear_amount: 20000000000000000000000 // 23 number
+                yoctonear_amount: 20000000000000000000000 // 23 digits
             }
             .to_string(),
             "0.02 NEAR".to_string()
@@ -906,7 +906,7 @@ mod tests {
     fn near_balance_to_string_0dot1_near() {
         assert_eq!(
             NearBalance {
-                yoctonear_amount: 100000000000000000000000 // 24 number
+                yoctonear_amount: 100000000000000000000000 // 24 digits
             }
             .to_string(),
             "0.1 NEAR".to_string()
@@ -916,7 +916,7 @@ mod tests {
     fn near_balance_to_string_0dot00001230045600789_near() {
         assert_eq!(
             NearBalance {
-                yoctonear_amount: 12300456007890000000 // 20 number
+                yoctonear_amount: 12300456007890000000 // 20 digits
             }
             .to_string(),
             "0.00001230045600789 NEAR".to_string()
@@ -926,7 +926,7 @@ mod tests {
     fn near_balance_to_string_10_near() {
         assert_eq!(
             NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 number
+                yoctonear_amount: 10000000000000000000000000 // 26 digits
             }
             .to_string(),
             "10 NEAR".to_string()
@@ -936,7 +936,7 @@ mod tests {
     fn near_balance_to_string_10dot02_near() {
         assert_eq!(
             NearBalance {
-                yoctonear_amount: 10020000000000000000000000 // 26 number
+                yoctonear_amount: 10020000000000000000000000 // 26 digits
             }
             .to_string(),
             "10.02 NEAR".to_string()
@@ -976,13 +976,13 @@ mod tests {
         assert_eq!(
             NearBalance::from_str("10 near").unwrap(),
             NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 number
+                yoctonear_amount: 10000000000000000000000000 // 26 digits
             }
         );
         assert_eq!(
             NearBalance::from_str("10.055NEAR").unwrap(),
             NearBalance {
-                yoctonear_amount: 10055000000000000000000000 // 26 number
+                yoctonear_amount: 10055000000000000000000000 // 26 digits
             }
         );
     }
@@ -991,13 +991,13 @@ mod tests {
         assert_eq!(
             NearBalance::from_str("10 n").unwrap(),
             NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 number
+                yoctonear_amount: 10000000000000000000000000 // 26 digits
             }
         );
         assert_eq!(
             NearBalance::from_str("10N ").unwrap(),
             NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 number
+                yoctonear_amount: 10000000000000000000000000 // 26 digits
             }
         );
     }
@@ -1006,7 +1006,7 @@ mod tests {
         assert_eq!(
             NearBalance::from_str("0.000001 near").unwrap(),
             NearBalance {
-                yoctonear_amount: 1000000000000000000 // 18 number
+                yoctonear_amount: 1000000000000000000 // 18 digits
             }
         );
     }
@@ -1112,7 +1112,7 @@ mod tests {
     }
     #[test]
     fn near_balance_from_str_large_fractional_part() {
-        let near_balance = NearBalance::from_str("100.1111122222333334444455555 n"); // 25 symbols after "."
+        let near_balance = NearBalance::from_str("100.1111122222333334444455555 n"); // 25 digits after "."
         assert_eq!(
             near_balance,
             Err("Near Balance: too large fractional part of a number".to_string())
@@ -1148,33 +1148,33 @@ mod tests {
         assert_eq!(
             NearGas::from_str("10 tgas").unwrap(),
             NearGas {
-                inner: 10000000000000
+                inner: 10000000000000 // 14 digits
             }
-        ); // 14 number
+        );
         assert_eq!(
             NearGas::from_str("10.055TERAGAS").unwrap(),
             NearGas {
-                inner: 10055000000000
+                inner: 10055000000000 // 14 digits
             }
-        ); // 14 number
+        );
     }
     #[test]
     fn near_gas_from_str_currency_gigagas() {
         assert_eq!(
             NearGas::from_str("10 gigagas").unwrap(),
-            NearGas { inner: 10000000000 }
-        ); // 11 number
+            NearGas { inner: 10000000000 } // 11 digits
+        );
         assert_eq!(
             NearGas::from_str("10GGAS ").unwrap(),
-            NearGas { inner: 10000000000 }
-        ); // 11 number
+            NearGas { inner: 10000000000 } // 11 digits
+        );
     }
     #[test]
     fn near_gas_from_str_f64_tgas() {
         assert_eq!(
             NearGas::from_str("0.000001 tgas").unwrap(),
-            NearGas { inner: 1000000 }
-        ); // 7 number
+            NearGas { inner: 1000000 } // 7 digits
+        );
     }
     #[test]
     fn near_gas_from_str_f64_gas_without_int() {
@@ -1210,7 +1210,7 @@ mod tests {
     }
     #[test]
     fn near_gas_from_str_large_fractional_part() {
-        let near_gas = NearGas::from_str("100.1111122222333 ggas"); // 13 symbols after "."
+        let near_gas = NearGas::from_str("100.1111122222333 ggas"); // 13 digits after "."
         assert_eq!(
             near_gas,
             Err("Near Gas: too large fractional part of a number".to_string())
