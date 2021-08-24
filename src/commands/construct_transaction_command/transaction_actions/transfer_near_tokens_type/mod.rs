@@ -28,7 +28,7 @@ impl CliTransferNEARTokensAction {
             .map(|subcommand| subcommand.to_cli_args())
             .unwrap_or_default();
         if let Some(amount) = &self.amount {
-            args.push_front(amount.to_string());
+            args.push_front(amount.to_cli_arg());
         }
         args
     }
