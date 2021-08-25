@@ -1,0 +1,38 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Default debug",
+            "args": [
+                "${input:promptFroCommand}"
+            ],
+            "program": "${workspaceFolder}/target/debug/near-cli",
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false,
+            "sourceLanguages": [
+                "rust"
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "promptFroCommand",
+            "description": "Ask for commands in Terminal",
+            "type": "promptString"
+        },
+        {
+            "id": "pickCommand",
+            "description": "Choose commands from the options list",
+            "type": "pickString",
+            "options": [
+                "transfer",
+                "add"
+            ]
+        },
+    ]
+}
