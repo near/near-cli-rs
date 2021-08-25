@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Default debug",
             "args": [
-                "${input:promptFroCommand}"
+                "${input:promptForCommand}"
             ],
             "program": "${workspaceFolder}/target/debug/near-cli",
             "cwd": "${workspaceFolder}",
@@ -21,7 +21,7 @@
     ],
     "inputs": [
         {
-            "id": "promptFroCommand",
+            "id": "promptForCommand",
             "description": "Ask for commands in Terminal",
             "type": "promptString"
         },
