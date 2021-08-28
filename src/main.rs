@@ -1,4 +1,8 @@
+use cargo_util::{ProcessBuilder, ProcessError};
 use clap::Clap;
+use std::env;
+use std::fs;
+use std::path::{Path, PathBuf};
 extern crate shell_words;
 
 mod commands;
@@ -65,7 +69,13 @@ impl Args {
 }
 
 fn main() -> CliResult {
-    let cli = CliArgs::parse();
+    let cli = match CliArgs::try_parse() {
+        Ok(cli) => cli,
+        Err(err) => {
+            let args = std::env::args();
+            return try_external_subcommand_execution();
+        }
+    };
 
     if let Some(self::commands::CliTopLevelCommand::GenerateShellCompletions(subcommand)) =
         cli.top_level_command
@@ -88,4 +98,61 @@ fn main() -> CliResult {
     );
 
     process_result
+}
+
+fn try_external_subcommand_execution() -> CliResult {
+    let subcommand_from_args = "TODO";
+    let mut ext_args: Vec<&str> = vec![subcommand_from_args];
+    //TODO: extend ext_args with all the other args
+    let subcommand_exe = format!("near-{}{}", subcommand_from_args, env::consts::EXE_SUFFIX);
+    let path = get_path_directories()
+        .iter()
+        .map(|dir| dir.join(&subcommand_exe))
+        .find(|file| is_executable(file));
+    let command = match path {
+        Some(command) => command,
+        None => {
+            return Err(color_eyre::eyre::eyre!(
+                "command {} does not exist",
+                subcommand_exe
+            ));
+        }
+    };
+
+    // let cargo_exe = config.cargo_exe()?;
+    let err = match ProcessBuilder::new(&command)
+        // .env(cargo::CARGO_ENV, cargo_exe)
+        .args(&ext_args)
+        .exec_replace()
+    {
+        Ok(()) => return Ok(()),
+        Err(e) => e,
+    };
+
+    if let Some(perr) = err.downcast_ref::<ProcessError>() {
+        if let Some(code) = perr.code {
+            return Err(color_eyre::eyre::eyre!("perror occured, code: {}", code));
+        }
+    }
+    return Err(color_eyre::eyre::eyre!(err));
+}
+
+#[cfg(unix)]
+fn is_executable<P: AsRef<Path>>(path: P) -> bool {
+    use std::os::unix::prelude::*;
+    fs::metadata(path)
+        .map(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
+        .unwrap_or(false)
+}
+#[cfg(windows)]
+fn is_executable<P: AsRef<Path>>(path: P) -> bool {
+    path.as_ref().is_file()
+}
+
+fn get_path_directories() -> Vec<PathBuf> {
+    let mut dirs = vec![];
+    if let Some(val) = env::var_os("PATH") {
+        dirs.extend(env::split_paths(&val));
+    }
+    dirs
 }
