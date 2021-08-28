@@ -71,9 +71,14 @@ impl Args {
 fn main() -> CliResult {
     let cli = match CliArgs::try_parse() {
         Ok(cli) => cli,
-        Err(err) => {
-            let args = std::env::args();
-            return try_external_subcommand_execution();
+        Err(error) => {
+            if matches!(
+                error.kind,
+                clap::ErrorKind::UnknownArgument | clap::ErrorKind::InvalidSubcommand
+            ) {
+                return try_external_subcommand_execution();
+            }
+            return Err(color_eyre::eyre::eyre!(error));
         }
     };
 
@@ -101,19 +106,27 @@ fn main() -> CliResult {
 }
 
 fn try_external_subcommand_execution() -> CliResult {
-    let subcommand_from_args = "TODO";
-    let mut ext_args: Vec<&str> = vec![subcommand_from_args];
-    //TODO: extend ext_args with all the other args
-    let subcommand_exe = format!("near-{}{}", subcommand_from_args, env::consts::EXE_SUFFIX);
+    let args: Vec<String> = env::args().collect();
+    let subcommand = match args.get(1) {
+        Some(subcommand) => subcommand,
+        None => {
+            return Err(color_eyre::eyre::eyre!("subcommand is not provided"));
+        }
+    };
+
+    let subcommand_exe = format!("near-{}{}", subcommand, env::consts::EXE_SUFFIX);
+
     let path = get_path_directories()
         .iter()
         .map(|dir| dir.join(&subcommand_exe))
         .find(|file| is_executable(file));
+
     let command = match path {
         Some(command) => command,
         None => {
             return Err(color_eyre::eyre::eyre!(
-                "command {} does not exist",
+                "{} command or {} extension does not exist",
+                subcommand,
                 subcommand_exe
             ));
         }
@@ -122,7 +135,7 @@ fn try_external_subcommand_execution() -> CliResult {
     // let cargo_exe = config.cargo_exe()?;
     let err = match ProcessBuilder::new(&command)
         // .env(cargo::CARGO_ENV, cargo_exe)
-        .args(&ext_args)
+        .args(&args)
         .exec_replace()
     {
         Ok(()) => return Ok(()),
