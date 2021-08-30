@@ -107,16 +107,9 @@ fn main() -> CliResult {
 
 fn try_external_subcommand_execution() -> CliResult {
     let mut args: Vec<String> = env::args().skip(1).collect();
-    match args.first() {
-        Some(subcommand) => {
-            if subcommand.is_empty() {
-                return Err(color_eyre::eyre::eyre!("subcommand is empty"));
-            }
-        }
-        None => {
-            return Err(color_eyre::eyre::eyre!("subcommand is not provided"));
-        }
-    };
+    if args.is_empty() || args[0].is_empty() {
+        return Err(color_eyre::eyre::eyre!("subcommand is not provided"));
+    }
 
     let subcommand = args.remove(0);
     let subcommand_exe = format!("near-cli-{}{}", subcommand, env::consts::EXE_SUFFIX);
@@ -137,10 +130,7 @@ fn try_external_subcommand_execution() -> CliResult {
         }
     };
 
-    let err = match ProcessBuilder::new(&command)
-        .args(&args)
-        .exec_replace()
-    {
+    let err = match ProcessBuilder::new(&command).args(&args).exec_replace() {
         Ok(()) => return Ok(()),
         Err(e) => e,
     };
