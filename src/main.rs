@@ -1,15 +1,10 @@
-use cargo_util::{ProcessBuilder, ProcessError};
 use clap::Clap;
-use std::env;
-use std::fs;
-use std::path::{Path, PathBuf};
 extern crate shell_words;
+use common::{try_external_subcommand_execution, CliResult};
 
 mod commands;
 mod common;
 mod consts;
-
-type CliResult = color_eyre::eyre::Result<()>;
 
 /// near-cli is a toolbox for interacting with NEAR protocol
 #[derive(Debug, Clap)]
@@ -103,62 +98,4 @@ fn main() -> CliResult {
     );
 
     process_result
-}
-
-fn try_external_subcommand_execution() -> CliResult {
-    let mut args: Vec<String> = env::args().skip(1).collect();
-    if args.is_empty() || args[0].is_empty() {
-        return Err(color_eyre::eyre::eyre!("subcommand is not provided"));
-    }
-
-    let subcommand = args.remove(0);
-    let subcommand_exe = format!("near-cli-{}{}", subcommand, env::consts::EXE_SUFFIX);
-
-    let path = get_path_directories()
-        .iter()
-        .map(|dir| dir.join(&subcommand_exe))
-        .find(|file| is_executable(file));
-
-    let command = match path {
-        Some(command) => command,
-        None => {
-            return Err(color_eyre::eyre::eyre!(
-                "{} command or {} extension does not exist",
-                subcommand,
-                subcommand_exe
-            ));
-        }
-    };
-
-    let err = match ProcessBuilder::new(&command).args(&args).exec_replace() {
-        Ok(()) => return Ok(()),
-        Err(e) => e,
-    };
-
-    if let Some(perr) = err.downcast_ref::<ProcessError>() {
-        if let Some(code) = perr.code {
-            return Err(color_eyre::eyre::eyre!("perror occured, code: {}", code));
-        }
-    }
-    return Err(color_eyre::eyre::eyre!(err));
-}
-
-#[cfg(unix)]
-fn is_executable<P: AsRef<Path>>(path: P) -> bool {
-    use std::os::unix::prelude::*;
-    fs::metadata(path)
-        .map(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
-        .unwrap_or(false)
-}
-#[cfg(windows)]
-fn is_executable<P: AsRef<Path>>(path: P) -> bool {
-    path.as_ref().is_file()
-}
-
-fn get_path_directories() -> Vec<PathBuf> {
-    let mut dirs = vec![];
-    if let Some(val) = env::var_os("PATH") {
-        dirs.extend(env::split_paths(&val));
-    }
-    dirs
 }
