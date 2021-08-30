@@ -137,9 +137,7 @@ fn try_external_subcommand_execution() -> CliResult {
         }
     };
 
-    // let cargo_exe = config.cargo_exe()?;
     let err = match ProcessBuilder::new(&command)
-        // .env(cargo::CARGO_ENV, cargo_exe)
         .args(&args)
         .exec_replace()
     {
