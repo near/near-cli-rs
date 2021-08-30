@@ -76,7 +76,6 @@ fn main() -> CliResult {
                 error.kind,
                 clap::ErrorKind::UnknownArgument | clap::ErrorKind::InvalidSubcommand
             ) {
-                //TODO: does not work good when arguments are not provided
                 return try_external_subcommand_execution();
             }
             return Err(color_eyre::eyre::eyre!(error));
@@ -108,9 +107,17 @@ fn main() -> CliResult {
 
 fn try_external_subcommand_execution() -> CliResult {
     let mut args: Vec<String> = env::args().skip(1).collect();
-    if args.len() < 1 {
-        return Err(color_eyre::eyre::eyre!("subcommand is not provided"));
-    }
+    match args.first() {
+        Some(subcommand) => {
+            if subcommand.is_empty() {
+                return Err(color_eyre::eyre::eyre!("subcommand is empty"));
+            }
+        }
+        None => {
+            return Err(color_eyre::eyre::eyre!("subcommand is not provided"));
+        }
+    };
+
     let subcommand = args.remove(0);
     let subcommand_exe = format!("near-cli-{}{}", subcommand, env::consts::EXE_SUFFIX);
 
