@@ -808,7 +808,7 @@ pub async fn print_transaction_status(
         Some(connection_config) => connection_config.transaction_explorer(),
         None => unreachable!("Error"),
     };
-    println!("Transaction ID: {id}.\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+    println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
         id=transaction_info.transaction_outcome.id,
         path=transaction_explorer
     );
