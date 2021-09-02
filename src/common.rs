@@ -329,6 +329,45 @@ impl ConnectionConfig {
     }
 }
 
+pub fn get_max_allowable_transfer_amount(
+    connection_config: ConnectionConfig,
+    account_id: near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<NearBalance> {
+    let storage_amount_per_byte = actix::System::new()
+        .block_on(async {
+            near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
+                .EXPERIMENTAL_protocol_config(
+                    near_jsonrpc_primitives::types::config::RpcProtocolConfigRequest {
+                        block_reference:
+                            near_jsonrpc_primitives::types::blocks::BlockReference::Finality(
+                                near_primitives::types::Finality::Final,
+                            ),
+                    },
+                )
+                .await
+        })
+        .map_err(|err| color_eyre::Report::msg(format!("RpcError: {:?}", err)))?
+        .config_view
+        .runtime_config
+        .storage_amount_per_byte;
+    let account_items = match check_account_id(connection_config, account_id)? {
+        Some(account_view) => (
+            account_view.amount,
+            account_view.locked,
+            account_view.storage_usage,
+        ),
+        None => (0, 0, 0),
+    };
+    let (amount, locked, storage_usage) = account_items;
+    Ok(NearBalance::from_yoctonear(
+        amount
+            - (std::cmp::max(
+                0,
+                u128::from(storage_usage) * storage_amount_per_byte - locked,
+            )),
+    ))
+}
+
 pub fn check_account_id(
     connection_config: ConnectionConfig,
     account_id: near_primitives::types::AccountId,
