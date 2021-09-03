@@ -1254,16 +1254,11 @@ pub fn try_external_subcommand_execution() -> CliResult {
         .map(|dir| dir.join(&subcommand_exe))
         .find(|file| is_executable(file));
 
-    let command = match path {
-        Some(command) => command,
-        None => {
-            return Err(color_eyre::eyre::eyre!(
-                "{} command or {} extension does not exist",
-                subcommand,
-                subcommand_exe
-            ));
-        }
-    };
+    let command = path.ok_or_else(|| color_eyre::eyre::eyre!(
+        "{} command or {} extension does not exist",
+        subcommand,
+        subcommand_exe
+    ))?;
 
     let err = match ProcessBuilder::new(&command).args(&args).exec_replace() {
         Ok(()) => return Ok(()),
@@ -1278,19 +1273,20 @@ pub fn try_external_subcommand_execution() -> CliResult {
     return Err(color_eyre::eyre::eyre!(err));
 }
 
-#[cfg(unix)]
 fn is_executable<P: AsRef<Path>>(path: P) -> bool {
-    use std::os::unix::prelude::*;
-    fs::metadata(path)
-        .map(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
-        .unwrap_or(false)
-}
-#[cfg(windows)]
-fn is_executable<P: AsRef<Path>>(path: P) -> bool {
-    path.as_ref().is_file()
-}
+    if cfg!(target_family = "unix") {
+         use std::os::unix::prelude::*;
+         fs::metadata(path)
+             .map(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
+             .unwrap_or(false)
+    } else if cfg!(target_family = "windows") {
+         path.as_ref().is_file()
+    } else {
+        panic!("Unsupported for wasm");
+    }
+ }
 
-fn get_path_directories() -> Vec<PathBuf> {
+fn path_directories() -> Vec<PathBuf> {
     let mut dirs = vec![];
     if let Some(val) = env::var_os("PATH") {
         dirs.extend(env::split_paths(&val));
