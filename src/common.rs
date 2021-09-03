@@ -359,8 +359,13 @@ pub fn get_max_allowable_transfer_amount(
         None => (0, 0, 0),
     };
     let (amount, locked, storage_usage) = account_items;
+    // transaction_costs: u128 = 1_000_000_000_000_000_000_000 - this value is set temporarily
+    // In the future, its value will be calculated by the function: fn tx_cost(...)
+    // https://github.com/near/nearcore/blob/8a377fda0b4ce319385c463f1ae46e4b0b29dcd9/runtime/runtime/src/config.rs#L178-L232
+    let transaction_costs: u128 = 10u128.pow(21);
     Ok(NearBalance::from_yoctonear(
         amount
+            - transaction_costs
             - (std::cmp::max(
                 0,
                 u128::from(storage_usage) * storage_amount_per_byte - locked,
