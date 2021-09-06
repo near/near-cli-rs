@@ -1,13 +1,14 @@
-use cargo_util::{ProcessBuilder, ProcessError};
 use std::convert::{TryFrom, TryInto};
 use std::env;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-pub type CliResult = color_eyre::eyre::Result<()>;
+use cargo_util::{ProcessBuilder, ProcessError};
 
 use near_primitives::borsh::BorshDeserialize;
+
+pub type CliResult = color_eyre::eyre::Result<()>;
 
 #[derive(
     Debug,

@@ -1,5 +1,6 @@
 use clap::Clap;
-extern crate shell_words;
+use shell_words;
+
 use common::{try_external_subcommand_execution, CliResult};
 
 mod commands;
