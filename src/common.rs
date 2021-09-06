@@ -1,10 +1,5 @@
 use std::convert::{TryFrom, TryInto};
-use std::env;
-use std::fs;
 use std::io::Write;
-use std::path::{Path, PathBuf};
-
-use cargo_util::{ProcessBuilder, ProcessError};
 
 use near_primitives::borsh::BorshDeserialize;
 
@@ -886,13 +881,13 @@ pub async fn save_access_key_to_keychain(
 
 pub fn try_external_subcommand_execution() -> CliResult {
     let (subcommand, args) = {
-        let mut args = env::args().skip(1);
+        let mut args = std::env::args().skip(1);
         let subcommand = args
             .next()
             .ok_or_else(|| color_eyre::eyre::eyre!("subcommand is not provided"))?;
         (subcommand, args.collect::<Vec<String>>())
     };
-    let subcommand_exe = format!("near-cli-{}{}", subcommand, env::consts::EXE_SUFFIX);
+    let subcommand_exe = format!("near-cli-{}{}", subcommand, std::env::consts::EXE_SUFFIX);
 
     let path = path_directories()
         .iter()
@@ -907,12 +902,12 @@ pub fn try_external_subcommand_execution() -> CliResult {
         )
     })?;
 
-    let err = match ProcessBuilder::new(&command).args(&args).exec_replace() {
+    let err = match cargo_util::ProcessBuilder::new(&command).args(&args).exec_replace() {
         Ok(()) => return Ok(()),
         Err(e) => e,
     };
 
-    if let Some(perr) = err.downcast_ref::<ProcessError>() {
+    if let Some(perr) = err.downcast_ref::<cargo_util::ProcessError>() {
         if let Some(code) = perr.code {
             return Err(color_eyre::eyre::eyre!("perror occured, code: {}", code));
         }
@@ -920,10 +915,10 @@ pub fn try_external_subcommand_execution() -> CliResult {
     return Err(color_eyre::eyre::eyre!(err));
 }
 
-fn is_executable<P: AsRef<Path>>(path: P) -> bool {
+fn is_executable<P: AsRef<std::path::Path>>(path: P) -> bool {
     if cfg!(target_family = "unix") {
         use std::os::unix::prelude::*;
-        fs::metadata(path)
+        std::fs::metadata(path)
             .map(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
             .unwrap_or(false)
     } else if cfg!(target_family = "windows") {
@@ -933,10 +928,10 @@ fn is_executable<P: AsRef<Path>>(path: P) -> bool {
     }
 }
 
-fn path_directories() -> Vec<PathBuf> {
+fn path_directories() -> Vec<std::path::PathBuf> {
     let mut dirs = vec![];
-    if let Some(val) = env::var_os("PATH") {
-        dirs.extend(env::split_paths(&val));
+    if let Some(val) = std::env::var_os("PATH") {
+        dirs.extend(std::env::split_paths(&val));
     }
     dirs
 }
