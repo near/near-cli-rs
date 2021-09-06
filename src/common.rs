@@ -884,12 +884,13 @@ pub async fn save_access_key_to_keychain(
 }
 
 pub fn try_external_subcommand_execution() -> CliResult {
-    let mut args: Vec<String> = env::args().skip(1).collect();
-    if args.is_empty() || args[0].is_empty() {
-        return Err(color_eyre::eyre::eyre!("subcommand is not provided"));
-    }
-
-    let subcommand = args.remove(0);
+    let (subcommand, args) = {
+        let mut args = env::args().skip(1);
+        let subcommand = args
+            .next()
+            .ok_or_else(|| color_eyre::eyre::eyre!("subcommand is not provided"))?;
+        (subcommand, args.collect::<Vec<String>>())
+    };
     let subcommand_exe = format!("near-cli-{}{}", subcommand, env::consts::EXE_SUFFIX);
 
     let path = path_directories()
