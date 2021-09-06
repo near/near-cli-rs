@@ -3,6 +3,8 @@ use std::io::Write;
 
 use near_primitives::borsh::BorshDeserialize;
 
+pub type CliResult = color_eyre::eyre::Result<()>;
+
 #[derive(
     Debug,
     Clone,
@@ -875,6 +877,63 @@ pub async fn save_access_key_to_keychain(
         );
     };
     Ok(())
+}
+
+pub fn try_external_subcommand_execution() -> CliResult {
+    let (subcommand, args) = {
+        let mut args = std::env::args().skip(1);
+        let subcommand = args
+            .next()
+            .ok_or_else(|| color_eyre::eyre::eyre!("subcommand is not provided"))?;
+        (subcommand, args.collect::<Vec<String>>())
+    };
+    let subcommand_exe = format!("near-cli-{}{}", subcommand, std::env::consts::EXE_SUFFIX);
+
+    let path = path_directories()
+        .iter()
+        .map(|dir| dir.join(&subcommand_exe))
+        .find(|file| is_executable(file));
+
+    let command = path.ok_or_else(|| {
+        color_eyre::eyre::eyre!(
+            "{} command or {} extension does not exist",
+            subcommand,
+            subcommand_exe
+        )
+    })?;
+
+    let err = match cargo_util::ProcessBuilder::new(&command).args(&args).exec_replace() {
+        Ok(()) => return Ok(()),
+        Err(e) => e,
+    };
+
+    if let Some(perr) = err.downcast_ref::<cargo_util::ProcessError>() {
+        if let Some(code) = perr.code {
+            return Err(color_eyre::eyre::eyre!("perror occured, code: {}", code));
+        }
+    }
+    return Err(color_eyre::eyre::eyre!(err));
+}
+
+fn is_executable<P: AsRef<std::path::Path>>(path: P) -> bool {
+    if cfg!(target_family = "unix") {
+        use std::os::unix::prelude::*;
+        std::fs::metadata(path)
+            .map(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
+            .unwrap_or(false)
+    } else if cfg!(target_family = "windows") {
+        path.as_ref().is_file()
+    } else {
+        panic!("Unsupported for wasm");
+    }
+}
+
+fn path_directories() -> Vec<std::path::PathBuf> {
+    let mut dirs = vec![];
+    if let Some(val) = std::env::var_os("PATH") {
+        dirs.extend(std::env::split_paths(&val));
+    }
+    dirs
 }
 
 #[cfg(test)]

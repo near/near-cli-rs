@@ -1,11 +1,11 @@
 use clap::Clap;
-extern crate shell_words;
+use shell_words;
+
+use common::{try_external_subcommand_execution, CliResult};
 
 mod commands;
 mod common;
 mod consts;
-
-type CliResult = color_eyre::eyre::Result<()>;
 
 /// near-cli is a toolbox for interacting with NEAR protocol
 #[derive(Debug, Clap)]
@@ -65,7 +65,18 @@ impl Args {
 }
 
 fn main() -> CliResult {
-    let cli = CliArgs::parse();
+    let cli = match CliArgs::try_parse() {
+        Ok(cli) => cli,
+        Err(error) => {
+            if matches!(
+                error.kind,
+                clap::ErrorKind::UnknownArgument | clap::ErrorKind::InvalidSubcommand
+            ) {
+                return try_external_subcommand_execution();
+            }
+            return Err(color_eyre::eyre::eyre!(error));
+        }
+    };
 
     if let Some(self::commands::CliTopLevelCommand::GenerateShellCompletions(subcommand)) =
         cli.top_level_command
