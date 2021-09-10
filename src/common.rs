@@ -1028,7 +1028,10 @@ pub fn try_external_subcommand_execution() -> CliResult {
         )
     })?;
 
-    let err = match cargo_util::ProcessBuilder::new(&command).args(&args).exec_replace() {
+    let err = match cargo_util::ProcessBuilder::new(&command)
+        .args(&args)
+        .exec_replace()
+    {
         Ok(()) => return Ok(()),
         Err(e) => e,
     };
