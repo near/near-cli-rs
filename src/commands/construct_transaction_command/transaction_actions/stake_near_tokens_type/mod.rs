@@ -1,5 +1,5 @@
 use async_recursion::async_recursion;
-use dialoguer::Input;
+use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 
 /// создание ставки
 #[derive(Debug, Default, Clone, clap::Clap)]
@@ -17,7 +17,7 @@ pub struct CliStakeNEARTokensAction {
 
 #[derive(Debug, Clone)]
 pub struct StakeNEARTokensAction {
-    pub stake: crate::common::NearBalance,
+    pub stake: crate::common::TransferAmount,
     pub public_key: near_crypto::PublicKey,
     pub next_action: Box<super::NextAction>,
 }
@@ -42,7 +42,7 @@ impl CliStakeNEARTokensAction {
 impl From<StakeNEARTokensAction> for CliStakeNEARTokensAction {
     fn from(stake_near_tokens_action: StakeNEARTokensAction) -> Self {
         Self {
-            stake: Some(stake_near_tokens_action.stake),
+            stake: Some(stake_near_tokens_action.stake.into()),
             public_key: Some(stake_near_tokens_action.public_key),
             next_action: Some(super::CliSkipNextAction::Skip(super::CliSkipAction {
                 sign_option: None,
@@ -57,37 +57,12 @@ impl StakeNEARTokensAction {
         connection_config: Option<crate::common::ConnectionConfig>,
         sender_account_id: near_primitives::types::AccountId,
     ) -> color_eyre::eyre::Result<Self> {
-        let stake: crate::common::NearBalance = match &connection_config {
-            Some(network_connection_config) => {
-                let account_balance: crate::common::NearBalance =
-                    match crate::common::check_account_id(
-                        network_connection_config.clone(),
-                        sender_account_id.clone(),
-                    )? {
-                        Some(account_view) => {
-                            crate::common::NearBalance::from_yoctonear(account_view.amount)
-                        }
-                        None => crate::common::NearBalance::from_yoctonear(0),
-                    };
-                match item.stake {
-                    Some(cli_stake) => {
-                        if cli_stake <= account_balance {
-                            cli_stake
-                        } else {
-                            println!(
-                                "You need to enter a value of no more than {}",
-                                account_balance
-                            );
-                            StakeNEARTokensAction::input_stake(Some(account_balance))
-                        }
-                    }
-                    None => StakeNEARTokensAction::input_stake(Some(account_balance)),
-                }
-            }
-            None => match item.stake {
-                Some(cli_amount) => cli_amount,
-                None => StakeNEARTokensAction::input_stake(None),
-            },
+        let stake: crate::common::TransferAmount = match item.stake {
+            Some(cli_stake) => crate::common::TransferAmount::from_unchecked(cli_stake),
+            None => StakeNEARTokensAction::input_stake(
+                connection_config.clone(),
+                sender_account_id.clone(),
+            )?,
         };
         let public_key: near_crypto::PublicKey = match item.public_key {
             Some(cli_public_key) => cli_public_key,
@@ -118,28 +93,60 @@ impl StakeNEARTokensAction {
     }
 
     fn input_stake(
-        account_balance: Option<crate::common::NearBalance>,
-    ) -> crate::common::NearBalance {
-        match account_balance {
-            Some(account_balance) => loop {
-                let input_stake: crate::common::NearBalance = Input::new()
-                            .with_prompt("How many NEAR Tokens do you want to stake? (example: 10NEAR or 0.5near or 10000yoctonear)")
-                            .with_initial_text(format!("{}", account_balance))
-                            .interact_text()
-                            .unwrap();
-                if input_stake <= account_balance {
-                    break input_stake;
-                } else {
-                    println!(
-                        "You need to enter a value of no more than {}",
-                        account_balance
-                    )
-                }
-            }
-            None => Input::new()
+        connection_config: Option<crate::common::ConnectionConfig>,
+        sender_account_id: near_primitives::types::AccountId,
+    ) -> color_eyre::eyre::Result<crate::common::TransferAmount> {
+        match connection_config {
+            Some(connection_config) => {
+                let account_transfer_allowance = crate::common::get_account_transfer_allowance(
+                    &connection_config,
+                    sender_account_id,
+                )?;
+                println! {"{}", &account_transfer_allowance};
+                loop {
+                    let input_amount: crate::common::NearBalance = Input::new()
                         .with_prompt("How many NEAR Tokens do you want to stake? (example: 10NEAR or 0.5near or 10000yoctonear)")
                         .interact_text()
-                        .unwrap()
+                        .unwrap();
+                    if let Ok(transfer_amount) = crate::common::TransferAmount::from(
+                        input_amount.clone(),
+                        &account_transfer_allowance,
+                    ) {
+                        break Ok(transfer_amount);
+                    } else {
+                        println!(
+                            "\nWARNING! There is only {} available for stake.",
+                            account_transfer_allowance.transfer_allowance()
+                        );
+                        let choose_input = vec![
+                            format!("Yes, I'd like to stake {}.", input_amount),
+                            "No, I'd like to change change the stake amount.".to_string(),
+                        ];
+                        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+                            .with_prompt("Do you want to keep this amount for the stake?")
+                            .items(&choose_input)
+                            .default(0)
+                            .interact_on_opt(&Term::stderr())
+                            .unwrap();
+                        match select_choose_input {
+                            Some(0) => {
+                                break Ok(crate::common::TransferAmount::from_unchecked(
+                                    input_amount,
+                                ));
+                            }
+                            Some(1) => continue,
+                            _ => unreachable!("Error"),
+                        }
+                    }
+                }
+            }
+            None => {
+                let input_amount: crate::common::NearBalance = Input::new()
+                        .with_prompt("How many NEAR Tokens do you want to stake? (example: 10NEAR or 0.5near or 10000yoctonear)")
+                        .interact_text()
+                        .unwrap();
+                Ok(crate::common::TransferAmount::from_unchecked(input_amount))
+            }
         }
     }
 

@@ -268,6 +268,46 @@ impl NearGas {
     }
 }
 
+#[derive(Debug, Clone, Default, PartialEq, PartialOrd)]
+pub struct TransferAmount {
+    amount: NearBalance,
+}
+
+impl std::fmt::Display for TransferAmount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.amount)
+    }
+}
+
+impl TransferAmount {
+    pub fn from(
+        amount: NearBalance,
+        account_transfer_allowance: &AccountTransferAllowance,
+    ) -> color_eyre::eyre::Result<Self> {
+        if amount <= account_transfer_allowance.transfer_allowance() {
+            Ok(Self { amount })
+        } else {
+            Err(color_eyre::Report::msg(
+                "the amount exceeds the transfer allowance",
+            ))
+        }
+    }
+
+    pub fn from_unchecked(amount: NearBalance) -> Self {
+        Self { amount }
+    }
+
+    pub fn to_yoctonear(&self) -> u128 {
+        self.amount.to_yoctonear()
+    }
+}
+
+impl From<TransferAmount> for NearBalance {
+    fn from(item: TransferAmount) -> Self {
+        item.amount
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum ConnectionConfig {
     Testnet,
@@ -329,10 +369,62 @@ impl ConnectionConfig {
     }
 }
 
-pub fn get_max_allowable_transfer_amount(
-    connection_config: ConnectionConfig,
+#[derive(Debug)]
+pub struct AccountTransferAllowance {
     account_id: near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<NearBalance> {
+    account_liquid_balance: NearBalance,
+    account_locked_balance: NearBalance,
+    storage_stake: NearBalance,
+    pessimistic_transaction_fee: NearBalance,
+}
+
+impl std::fmt::Display for AccountTransferAllowance {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(fmt,
+            "\n{} account has {} available for transfer (the total balance is {}, but {} is locked for storage and the transfer transaction fee is ~{})",
+            self.account_id,
+            self.transfer_allowance(),
+            self.account_liquid_balance,
+            self.liquid_storage_stake(),
+            self.pessimistic_transaction_fee
+        )
+    }
+}
+
+impl AccountTransferAllowance {
+    pub fn liquid_storage_stake(&self) -> NearBalance {
+        NearBalance::from_yoctonear(
+            self.storage_stake
+                .to_yoctonear()
+                .saturating_sub(self.account_locked_balance.to_yoctonear()),
+        )
+    }
+
+    pub fn transfer_allowance(&self) -> NearBalance {
+        NearBalance::from_yoctonear(
+            self.account_liquid_balance.to_yoctonear()
+                - self.liquid_storage_stake().to_yoctonear()
+                - self.pessimistic_transaction_fee.to_yoctonear(),
+        )
+    }
+}
+
+pub fn get_account_transfer_allowance(
+    connection_config: &ConnectionConfig,
+    account_id: near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<AccountTransferAllowance> {
+    let account_view =
+        if let Some(account_view) = get_account_state(connection_config, account_id.clone())? {
+            account_view
+        } else {
+            return Ok(AccountTransferAllowance {
+                account_id,
+                account_liquid_balance: NearBalance::from_yoctonear(0),
+                account_locked_balance: NearBalance::from_yoctonear(0),
+                storage_stake: NearBalance::from_yoctonear(0),
+                pessimistic_transaction_fee: NearBalance::from_yoctonear(0),
+            });
+        };
     let storage_amount_per_byte = actix::System::new()
         .block_on(async {
             near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
@@ -350,31 +442,23 @@ pub fn get_max_allowable_transfer_amount(
         .config_view
         .runtime_config
         .storage_amount_per_byte;
-    let account_items = match check_account_id(connection_config, account_id)? {
-        Some(account_view) => (
-            account_view.amount,
-            account_view.locked,
-            account_view.storage_usage,
+
+    Ok(AccountTransferAllowance {
+        account_id,
+        account_liquid_balance: NearBalance::from_yoctonear(account_view.amount),
+        account_locked_balance: NearBalance::from_yoctonear(account_view.locked),
+        storage_stake: NearBalance::from_yoctonear(
+            u128::from(account_view.storage_usage) * storage_amount_per_byte,
         ),
-        None => (0, 0, 0),
-    };
-    let (amount, locked, storage_usage) = account_items;
-    // transaction_costs: u128 = 1_000_000_000_000_000_000_000 - this value is set temporarily
-    // In the future, its value will be calculated by the function: fn tx_cost(...)
-    // https://github.com/near/nearcore/blob/8a377fda0b4ce319385c463f1ae46e4b0b29dcd9/runtime/runtime/src/config.rs#L178-L232
-    let transaction_costs: u128 = 10u128.pow(21);
-    Ok(NearBalance::from_yoctonear(
-        amount
-            - transaction_costs
-            - (std::cmp::max(
-                0,
-                u128::from(storage_usage) * storage_amount_per_byte - locked,
-            )),
-    ))
+        // pessimistic_transaction_fee = 10^21 - this value is set temporarily
+        // In the future, its value will be calculated by the function: fn tx_cost(...)
+        // https://github.com/near/nearcore/blob/8a377fda0b4ce319385c463f1ae46e4b0b29dcd9/runtime/runtime/src/config.rs#L178-L232
+        pessimistic_transaction_fee: NearBalance::from_yoctonear(10u128.pow(21)),
+    })
 }
 
-pub fn check_account_id(
-    connection_config: ConnectionConfig,
+pub fn get_account_state(
+    connection_config: &ConnectionConfig,
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
     let query_view_method_response = actix::System::new().block_on(async {
@@ -396,7 +480,7 @@ pub fn check_account_id(
                 } else {
                     return Err(color_eyre::Report::msg(format!("Error call result")));
                 };
-            Ok(Some(account_view))
+            Ok(Some(account_view.into()))
         }
         Err(_) => return Ok(None),
     }
@@ -576,7 +660,7 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
     }
 }
 
-async fn print_value_successful_transaction(
+fn print_value_successful_transaction(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
 ) {
     println!("Successful transaction");
@@ -647,9 +731,7 @@ async fn print_value_successful_transaction(
     }
 }
 
-pub async fn print_transaction_error(
-    tx_execution_error: near_primitives::errors::TxExecutionError,
-) {
+pub fn print_transaction_error(tx_execution_error: near_primitives::errors::TxExecutionError) {
     println!("Failed transaction");
     match tx_execution_error {
         near_primitives::errors::TxExecutionError::ActionError(action_error) => {
@@ -834,7 +916,7 @@ pub async fn print_transaction_error(
     }
 }
 
-pub async fn print_transaction_status(
+pub fn print_transaction_status(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
     network_connection_config: Option<crate::common::ConnectionConfig>,
 ) {
@@ -842,10 +924,10 @@ pub async fn print_transaction_status(
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-            print_transaction_error(tx_execution_error).await
+            print_transaction_error(tx_execution_error)
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
-            print_value_successful_transaction(transaction_info.clone()).await
+            print_value_successful_transaction(transaction_info.clone())
         }
     };
     let transaction_explorer: url::Url = match network_connection_config {

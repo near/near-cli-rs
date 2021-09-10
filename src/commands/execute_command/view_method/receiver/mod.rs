@@ -113,8 +113,8 @@ impl Receiver {
         {
             Some(cli_contract_account_id) => {
                 let contract_code_hash: near_primitives::hash::CryptoHash =
-                    match crate::common::check_account_id(
-                        connection_config.clone(),
+                    match crate::common::get_account_state(
+                        &connection_config,
                         cli_contract_account_id.clone(),
                     )? {
                         Some(account_view) => account_view.code_hash,
@@ -153,8 +153,8 @@ impl Receiver {
                 .interact_text()
                 .unwrap();
             let contract_code_hash: near_primitives::hash::CryptoHash =
-                match crate::common::check_account_id(
-                    connection_config.clone(),
+                match crate::common::get_account_state(
+                    &connection_config,
                     contract_account_id.clone(),
                 )? {
                     Some(account_view) => account_view.code_hash,
