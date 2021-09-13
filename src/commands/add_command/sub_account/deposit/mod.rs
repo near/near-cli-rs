@@ -175,7 +175,7 @@ impl TransferNEARTokensAction {
                         );
                         let choose_input = vec![
                             format!("Yes, I'd like to transfer {}.", input_amount),
-                            "No, I'd like to change change the transfer amount.".to_string(),
+                            "No, I'd like to change the transfer amount.".to_string(),
                         ];
                         let select_choose_input = Select::with_theme(&ColorfulTheme::default())
                             .with_prompt("Do you want to keep this amount for the transfer?")
