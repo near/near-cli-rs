@@ -84,7 +84,7 @@ where
     let variants = T::iter().collect::<Vec<_>>();
     let actions = variants
         .iter()
-        .map(|p| p.get_message().unwrap().to_owned())
+        .map(|p| p.get_message().unwrap_or_else(|| "error[This entry does not have an option message!!]").to_owned())
         .collect::<Vec<_>>();
 
     let selected = Select::with_theme(&ColorfulTheme::default())
