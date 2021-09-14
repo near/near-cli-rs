@@ -1,5 +1,4 @@
 use dialoguer::Input;
-use near_cli_visual::Interactive;
 
 #[derive(Debug, Clone, clap::Clap, near_cli_derive::Interactive)]
 pub enum CliSendTo {
