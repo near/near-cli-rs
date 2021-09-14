@@ -50,8 +50,7 @@ pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2
     );
 
     let mut variant_arms = TokenStream2::new();
-    for (variant_idx, variant) in input.variants.iter().enumerate() {
-        let variant_idx = u8::try_from(variant_idx).expect("up to 256 enum variants are supported");
+    for variant in input.variants.iter() {
         let variant_ident = &variant.ident;
 
         let mut variant_header = TokenStream2::new();
@@ -63,7 +62,7 @@ pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2
                     let field_name = field.ident.as_ref().unwrap();
                     variant_header.extend(quote! { #field_name, });
                     variant_body.extend(quote! {
-                        near_cli_visual::Interactive::interactive(self.#field_name)
+                        #name::#variant_ident ( near_cli_visual::Interactive::interactive(self.#field_name) )
                     })
                 }
                 variant_header = quote! { { #variant_header }};
@@ -73,12 +72,14 @@ pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2
                     let field_ident = Ident::new(format!("id{}", field_idx).as_str(), Span::call_site());
                     variant_header.extend(quote! { #field_ident, });
                     variant_body.extend(quote! {
-                        near_cli_visual::Interactive::interactive(#field_ident);
+                        #name::#variant_ident ( near_cli_visual::Interactive::interactive(#field_ident) )
                     })
                 }
                 variant_header = quote! { ( #variant_header )};
             }
-            Fields::Unit => {}
+            Fields::Unit => {
+                variant_body.extend(quote! { #name::#variant_ident })
+            }
         }
         variant_arms.extend(quote! {
             #name::#variant_ident #variant_header => {
@@ -96,7 +97,7 @@ pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2
                         panic!("Unexpected variant");
                     }
                 };
-                Ok(return_value)
+                return_value
             }
         }
     })
