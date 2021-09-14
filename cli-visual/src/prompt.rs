@@ -5,7 +5,7 @@ use std::str::FromStr;
 use std::fmt::{Debug, Display};
 
 pub trait PromptMessage {
-    fn prompt_msg() -> String;
+    const MSG: &'static str;
 }
 
 pub trait PromptInput {
@@ -60,7 +60,7 @@ where
     T: PromptMessage + Clone + FromStr + Display,
     T::Err: Display + Debug,
 {
-    prompt_input_with_msg(T::prompt_msg())
+    prompt_input_with_msg(T::MSG)
 }
 
 pub fn prompt_input_with_msg<T>(prompt_msg: impl Into<String>) -> T

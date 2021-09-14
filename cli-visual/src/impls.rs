@@ -2,9 +2,7 @@ use near_primitives::{hash::CryptoHash, types::BlockHeight};
 use crate::prompt::{PromptMessage, Interactive};
 
 impl PromptMessage for CryptoHash {
-    fn prompt_msg() -> String {
-        "Type the block ID hash".to_string()
-    }
+    const MSG: &'static str = "Type the block ID hash";
 }
 
 impl Interactive<Self> for CryptoHash {
@@ -14,9 +12,7 @@ impl Interactive<Self> for CryptoHash {
 }
 
 impl PromptMessage for BlockHeight {
-    fn prompt_msg() -> String {
-        "Type the block ID height for this account".to_string()
-    }
+    const MSG: &'static str = "Type the block ID height for this account";
 }
 
 impl Interactive<Self> for BlockHeight {
