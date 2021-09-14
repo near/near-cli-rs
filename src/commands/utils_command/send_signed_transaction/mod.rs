@@ -64,21 +64,34 @@ impl Transaction {
                     break response;
                 }
                 Err(err) => {
-                    if let Some(serde_json::Value::String(data)) = &err.data {
-                        if data.contains("Timeout") {
-                            println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
-                            continue;
+                    match &err.data {
+                        Some(serde_json::Value::String(data)) => {
+                            if data.contains("Timeout") {
+                                println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+                                continue;
+                            } else {
+                                println!("Error transaction: {}", data);
+                            }
                         }
+                        Some(serde_json::Value::Object(err_data)) => {
+                            if let Some(tx_execution_error) = err_data
+                                .get("TxExecutionError")
+                                .and_then(|tx_execution_error_json| {
+                                    serde_json::from_value(tx_execution_error_json.clone()).ok()
+                                })
+                            {
+                                crate::common::print_transaction_error(tx_execution_error);
+                            } else {
+                                println!("Unexpected response: {:#?}", err);
+                            }
+                        }
+                        _ => println!("Unexpected response: {:#?}", err),
                     }
-                    return Err(color_eyre::Report::msg(format!(
-                        "Error transaction: {:?}",
-                        err
-                    )));
+                    return Ok(());
                 }
             };
         };
-        crate::common::print_transaction_status(transaction_info, Some(network_connection_config))
-            .await;
+        crate::common::print_transaction_status(transaction_info, Some(network_connection_config));
         Ok(())
     }
 }

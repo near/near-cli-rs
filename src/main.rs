@@ -65,6 +65,8 @@ impl Args {
 }
 
 fn main() -> CliResult {
+    color_eyre::install()?;
+
     let cli = match CliArgs::try_parse() {
         Ok(cli) => cli,
         Err(error) => {
@@ -88,8 +90,6 @@ fn main() -> CliResult {
     let args = Args::from(cli);
 
     let completed_cli = CliArgs::from(args.clone());
-
-    color_eyre::install()?;
 
     let process_result = actix::System::new().block_on(args.process());
 

@@ -189,8 +189,7 @@ impl TransactionsSigningAction {
                 crate::common::print_transaction_status(
                     transaction_info,
                     network_connection_config,
-                )
-                .await;
+                );
             }
             None => {}
         };
