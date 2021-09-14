@@ -1,5 +1,6 @@
 use near_primitives::hash::CryptoHash;
 use near_primitives::types::{BlockHeight, AccountId,};
+use url::Url;
 
 use crate::prompt::{PromptMessage, Interactive};
 
@@ -28,6 +29,16 @@ impl PromptMessage for AccountId {
 }
 
 impl Interactive<Self> for AccountId {
+    fn interactive(self) -> Self {
+        self
+    }
+}
+
+impl PromptMessage for Url {
+    const MSG: &'static str = "What is the RPC endpoint?";
+}
+
+impl Interactive<Self> for Url {
     fn interactive(self) -> Self {
         self
     }

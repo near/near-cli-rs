@@ -31,12 +31,7 @@ where
     T: PromptInput + Interactive<T>,
 {
     fn interactive(self) -> Self {
-        Some(
-            match self {
-                Some(val) => val,
-                None => T::prompt_input(),
-            }.interactive()
-        )
+        Some(self.unwrap_or_else(T::prompt_input).interactive())
     }
 }
 
