@@ -8,7 +8,6 @@ pub trait PromptMessage {
     fn prompt_msg() -> String;
 }
 
-// #[derive(PromptInput)]s
 pub trait PromptInput {
     fn prompt_input() -> Self;
 }
@@ -23,53 +22,13 @@ where
         prompt_input()
     }
 }
-
-// pub trait InteractiveChild {
-//     type Child;
-// }
-
-// Recursive interactive:
 pub trait Interactive<T> {
     fn interactive(self) -> T;
 }
 
-// impl<T> Interactive<Self> for T {
-//     fn interactive(self) -> T {
-//         self
-//     }
-// }
-
-// For some Option<Item> parse it:
-// impl<T> Interactive<T> for Option<T>
-// where
-//     T: PromptInput
-// {
-//     fn interactive(self) -> T {
-//         match self {
-//             Some(val) => val,
-//             None => T::prompt_input(),
-//         }
-//     }
-// }
-// pub enum Mid<T> {
-//     Interactive(impl Interactive<T>),
-//     Value(T),
-// }
-
-// impl<T> Mid<T> {
-//     pub fn eval(self) -> T {
-//         match self {
-//             Mid::Interactive(val) => val.interactive(),
-//             Mid::Value(val) => val,
-//         }
-//     }
-// }
-
-
-// impl<T> Interactive<T> for Option<T>
 impl<T> Interactive<Self> for Option<T>
 where
-    T: PromptMessage + Interactive<T>,
+    T: PromptInput + Interactive<T>,
     T: Clone + FromStr + Display,
     T::Err: Display + Debug,
 {
@@ -77,7 +36,7 @@ where
         Some(
             match self {
                 Some(val) => val,
-                None => prompt_input()
+                None => T::prompt_input(),
             }.interactive()
         )
     }
