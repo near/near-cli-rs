@@ -76,9 +76,9 @@ where
     fn interactive(self) -> Self {
         Some(
             match self {
-                Some(val) => val.interactive(),
+                Some(val) => val,
                 None => prompt_input()
-            }
+            }.interactive()
         )
     }
 }
