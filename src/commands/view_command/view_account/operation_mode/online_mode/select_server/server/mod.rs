@@ -2,7 +2,7 @@ use dialoguer::Input;
 use std::str::FromStr;
 
 /// предустановленный RPC-сервер
-#[derive(Debug, Default, Clone, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap, near_cli_derive::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -14,7 +14,7 @@ pub struct CliServer {
 }
 
 /// данные для custom server
-#[derive(Debug, Default, Clone, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap, near_cli_derive::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),

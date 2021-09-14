@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 pub mod online_mode;
 
 /// инструмент выбора режима online/offline
-#[derive(Debug, Default, Clone, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap, near_cli_derive::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -52,10 +52,18 @@ impl OperationMode {
     }
 }
 
-#[derive(Debug, Clone, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap, near_cli_derive::Interactive)]
 pub enum CliMode {
     /// Execute a change method with online mode
     Network(self::online_mode::CliNetworkArgs),
+}
+
+impl near_cli_visual::PromptInput for CliMode {
+    fn prompt_input() -> Self {
+        // Only one option, no need to prompt.
+        // Default will propagate prompting to the next layer:
+        CliMode::Network(Default::default())
+    }
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]

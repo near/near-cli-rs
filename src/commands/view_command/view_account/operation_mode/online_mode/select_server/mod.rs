@@ -1,18 +1,35 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
+use near_cli_visual::{PromptInput, prompt_variant};
 
 pub mod server;
 
-#[derive(Debug, Clone, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap, near_cli_derive::Interactive, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum CliSelectServer {
     /// предоставление данных для сервера https://rpc.testnet.near.org
+    #[strum_discriminants(strum(message = "Testnet"))]
     Testnet(self::server::CliServer),
     /// предоставление данных для сервера https://rpc.mainnet.near.org
+    #[strum_discriminants(strum(message = "Mainnet"))]
     Mainnet(self::server::CliServer),
     /// предоставление данных для сервера https://rpc.betanet.near.org
+    #[strum_discriminants(strum(message = "Betanet"))]
     Betanet(self::server::CliServer),
     /// предоставление данных для сервера, указанного вручную
+    #[strum_discriminants(strum(message = "Custom"))]
     Custom(self::server::CliCustomServer),
+}
+
+impl PromptInput for CliSelectServer {
+    fn prompt_input() -> Self {
+        match prompt_variant("Select NEAR protocol RPC server:") {
+            CliSelectServerDiscriminants::Testnet => CliSelectServer::Testnet(Default::default()),
+            CliSelectServerDiscriminants::Mainnet => CliSelectServer::Mainnet(Default::default()),
+            CliSelectServerDiscriminants::Betanet => CliSelectServer::Betanet(Default::default()),
+            CliSelectServerDiscriminants::Custom => CliSelectServer::Custom(Default::default()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]

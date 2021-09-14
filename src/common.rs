@@ -75,9 +75,16 @@ impl std::fmt::Display for BlockHashAsBase58 {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, near_cli_derive::Interactive)]
 pub struct AvailableRpcServerUrl {
     pub inner: url::Url,
+}
+
+// TODO: derive PromptInput?
+impl near_cli_visual::PromptInput for AvailableRpcServerUrl {
+    fn prompt_input() -> Self {
+        Self { inner: near_cli_visual::prompt_input() }
+    }
 }
 
 impl std::str::FromStr for AvailableRpcServerUrl {

@@ -8,7 +8,7 @@ mod consts;
 type CliResult = color_eyre::eyre::Result<()>;
 
 /// near-cli is a toolbox for interacting with NEAR protocol
-#[derive(Debug, Clap)]
+#[derive(Debug, Clap, near_cli_derive::Interactive)]
 #[clap(
     version,
     author,

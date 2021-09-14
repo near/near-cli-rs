@@ -9,7 +9,7 @@ mod view_recent_block_hash;
 mod view_transaction_status;
 
 /// инструмент выбора to view
-#[derive(Debug, Default, Clone, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap, near_cli_derive::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -60,20 +60,41 @@ impl ViewQueryRequest {
     }
 }
 
-#[derive(Debug, Clone, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap, near_cli_derive::Interactive, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum CliQueryRequest {
     /// View properties for an account
+    #[strum_discriminants(strum(message = "View properties for an account"))]
     AccountSummary(self::view_account::operation_mode::CliOperationMode),
     /// View a contract code
+    #[strum_discriminants(strum(message = "View a contract code"))]
+    #[interactive_skip]
     ContractCode(self::view_contract_code::operation_mode::CliOperationMode),
     /// View a contract state
+    #[strum_discriminants(strum(message = "View a contract state"))]
+    #[interactive_skip]
     ContractState(self::view_contract_state::operation_mode::CliOperationMode),
     /// View a transaction status
+    #[strum_discriminants(strum(message = "View a transaction status"))]
+    #[interactive_skip]
     Transaction(self::view_transaction_status::operation_mode::CliOperationMode),
     /// View a nonce for a public key
+    #[strum_discriminants(strum(message = "View a nonce for a public key"))]
+    #[interactive_skip]
     Nonce(self::view_nonce::operation_mode::CliOperationMode),
     /// View recent block hash for this network
+    #[strum_discriminants(strum(message = "View recent block hash for this network"))]
+    #[interactive_skip]
     RecentBlockHash(self::view_recent_block_hash::operation_mode::CliOperationMode),
+}
+
+impl near_cli_visual::PromptInput for CliQueryRequest {
+    fn prompt_input() -> Self {
+        match near_cli_visual::prompt_variant("Сhoose what you want to view") {
+            CliQueryRequestDiscriminants::AccountSummary => CliQueryRequest::AccountSummary(Default::default()),
+            _ => panic!("Cannot go into interactive for this type")
+        }
+    }
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]

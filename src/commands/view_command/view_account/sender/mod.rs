@@ -1,9 +1,16 @@
 use dialoguer::Input;
+use near_cli_visual::Interactive;
 
-#[derive(Debug, Clone, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap, near_cli_derive::Interactive)]
 pub enum CliSendTo {
     /// Specify an account
     Account(CliSender),
+}
+
+impl near_cli_visual::PromptInput for CliSendTo {
+    fn prompt_input() -> Self {
+        CliSendTo::Account(Default::default())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -58,7 +65,7 @@ impl SendTo {
 }
 
 /// Specify the account to be view
-#[derive(Debug, Default, Clone, clap::Clap)]
+#[derive(Debug, Default, Clone, clap::Clap, near_cli_derive::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -68,6 +75,10 @@ pub struct CliSender {
     pub sender_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
     selected_block_id: Option<super::block_id::CliBlockId>,
+}
+
+impl near_cli_visual::PromptMessage for CliSender {
+    const MSG: &'static str = "What Account ID do you need to view?";
 }
 
 #[derive(Debug, Clone)]

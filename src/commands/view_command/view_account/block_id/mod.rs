@@ -1,17 +1,32 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
+use near_cli_visual::{PromptInput, prompt_variant};
 
 mod block_id_hash;
 mod block_id_height;
 
-#[derive(Debug, Clone, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap, EnumDiscriminants, near_cli_derive::Interactive)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum CliBlockId {
     /// Specify a block ID final to view this account
+    #[strum_discriminants(strum(message = "View this account at final block"))]
     AtFinalBlock,
     /// Specify a block ID height to view this account
+    #[strum_discriminants(strum(message = "View this account at block height"))]
     AtBlockHeight(self::block_id_height::CliBlockIdHeight),
     /// Specify a block ID hash to view this account
+    #[strum_discriminants(strum(message = "View this account at block hash"))]
     AtBlockHash(self::block_id_hash::CliBlockIdHash),
+}
+
+impl PromptInput for CliBlockId {
+    fn prompt_input() -> Self {
+        match prompt_variant::<CliBlockIdDiscriminants>("Choose your action") {
+            CliBlockIdDiscriminants::AtFinalBlock => CliBlockId::AtFinalBlock,
+            CliBlockIdDiscriminants::AtBlockHeight => CliBlockId::AtBlockHeight(Default::default()),
+            CliBlockIdDiscriminants::AtBlockHash => CliBlockId::AtBlockHash(Default::default()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]

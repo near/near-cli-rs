@@ -11,26 +11,52 @@ pub mod transfer_command;
 pub mod utils_command;
 pub mod view_command;
 
-#[derive(Debug, Clone, clap::Clap)]
+#[derive(Debug, Clone, clap::Clap, near_cli_derive::Interactive, EnumDiscriminants)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum CliTopLevelCommand {
     /// Use these to add access key, contract code, stake proposal, sub-account, implicit-account
+    #[interactive_skip]
     Add(self::add_command::CliAddAction),
     /// Prepare and, optionally, submit a new transaction
+    #[strum_discriminants(strum(message = "Construct a new transaction"))]
+    #[interactive_skip]
     ConstructTransaction(self::construct_transaction_command::operation_mode::CliOperationMode),
     /// Use these to delete access key, sub-account
+    #[interactive_skip]
     Delete(self::delete_command::CliDeleteAction),
     /// Execute function (contract method)
+    #[strum_discriminants(strum(message = "Execute function (contract method)"))]
+    #[interactive_skip]
     Execute(self::execute_command::CliOptionMethod),
     /// Use these to generate static shell completions
+    #[interactive_skip]
     GenerateShellCompletions(self::generate_shell_completions_command::CliGenerateShellCompletions),
     /// Use these to login with wallet authorization
+    #[strum_discriminants(strum(message = "Login with wallet authorization"))]
+    #[interactive_skip]
     Login(self::login::operation_mode::CliOperationMode),
     /// Use these to transfer tokens
+    #[strum_discriminants(strum(message = "Transfer tokens"))]
+    #[interactive_skip]
     Transfer(self::transfer_command::CliCurrency),
     /// Helpers
+    #[strum_discriminants(strum(message = "Helpers"))]
+    #[interactive_skip]
     Utils(self::utils_command::CliUtils),
+    #[strum_discriminants(strum(
+        message = "View account, contract code, contract state, transaction, nonce, recent block hash"
+    ))]
     /// View account, contract code, contract state, transaction, nonce, recent block hash
     View(self::view_command::CliViewQueryRequest),
+}
+
+impl near_cli_visual::PromptInput for CliTopLevelCommand {
+    fn prompt_input() -> Self {
+        match near_cli_visual::prompt_variant("Сhoose your action") {
+            CliTopLevelCommandDiscriminants::View => CliTopLevelCommand::View(Default::default()),
+            _ => panic!("Cannot go into interactive for this type yet")
+        }
+    }
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]
