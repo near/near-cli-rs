@@ -29,8 +29,6 @@ pub trait Interactive<T> {
 impl<T> Interactive<Self> for Option<T>
 where
     T: PromptInput + Interactive<T>,
-    T: Clone + FromStr + Display,
-    T::Err: Display + Debug,
 {
     fn interactive(self) -> Self {
         Some(
