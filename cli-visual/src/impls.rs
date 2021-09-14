@@ -1,4 +1,6 @@
-use near_primitives::{hash::CryptoHash, types::BlockHeight};
+use near_primitives::hash::CryptoHash;
+use near_primitives::types::{BlockHeight, AccountId,};
+
 use crate::prompt::{PromptMessage, Interactive};
 
 impl PromptMessage for CryptoHash {
@@ -16,6 +18,16 @@ impl PromptMessage for BlockHeight {
 }
 
 impl Interactive<Self> for BlockHeight {
+    fn interactive(self) -> Self {
+        self
+    }
+}
+
+impl PromptMessage for AccountId {
+    const MSG: &'static str = "Type account id";
+}
+
+impl Interactive<Self> for AccountId {
     fn interactive(self) -> Self {
         self
     }
