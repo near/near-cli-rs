@@ -45,8 +45,10 @@ near-jsonrpc-client = { git = "https://github.com/near/nearcore", rev="e242f7140
 near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="e242f71400111fe99a825fd8f5e53a82802c98b7" }
 
 near-cli-visual = { path = "cli-visual" }
+near-cli-derive = { path = "cli-derive" }
 
 [workspace]
 members = [
-    "cli-visual"
+    "cli-visual",
+    "cli-derive",
 ]
