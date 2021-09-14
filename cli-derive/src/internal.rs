@@ -1,8 +1,20 @@
 use core::convert::TryFrom;
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::quote;
-use syn::{Fields, Ident, ItemEnum, ItemStruct, WhereClause};
+use quote::{quote, ToTokens};
+use syn::{Attribute, Fields, Ident, ItemEnum, ItemStruct, Meta, WhereClause};
+
+
+pub fn contains_skip(attrs: &[Attribute]) -> bool {
+    for attr in attrs.iter() {
+        if let Ok(Meta::Path(path)) = attr.parse_meta() {
+            if path.to_token_stream().to_string().as_str() == "interactive_skip" {
+                return true;
+            }
+        }
+    }
+    false
+}
 
 
 pub fn struct_impl(input: &ItemStruct, cratename: Ident) -> syn::Result<TokenStream2> {
@@ -20,9 +32,16 @@ pub fn struct_impl(input: &ItemStruct, cratename: Ident) -> syn::Result<TokenStr
         Fields::Named(fields) => {
             for field in &fields.named {
                 let field_name = field.ident.as_ref().unwrap();
-                let delta = quote! {
-                    #field_name: near_cli_visual::Interactive::interactive(self.#field_name),
+                let delta = if contains_skip(&field.attrs) {
+                    quote! {
+                        #field_name: Default::default(),
+                    }
+                } else {
+                    quote! {
+                        #field_name: near_cli_visual::Interactive::interactive(self.#field_name),
+                    }
                 };
+
                 body.extend(delta);
             }
         }
@@ -55,6 +74,10 @@ pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2
 
         let mut variant_header = TokenStream2::new();
         let mut variant_body = TokenStream2::new();
+
+        if contains_skip(&variant.attrs) {
+            continue
+        }
 
         match &variant.fields {
             Fields::Named(fields) => {

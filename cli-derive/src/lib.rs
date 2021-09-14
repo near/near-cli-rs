@@ -9,7 +9,7 @@ use syn::{self, Ident, ItemEnum, ItemStruct, ItemUnion};
 mod internal;
 
 
-#[proc_macro_derive(Interactive)]
+#[proc_macro_derive(Interactive, attributes(interactive_skip))]
 pub fn derive_interactive(input: TokenStream) -> TokenStream {
     let cratename = Ident::new("near_cli_visual",Span::call_site());
 
