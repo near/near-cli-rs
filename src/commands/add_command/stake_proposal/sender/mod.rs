@@ -10,19 +10,19 @@ use dialoguer::Input;
 pub struct CliSender {
     pub sender_account_id: Option<near_primitives::types::AccountId>,
     #[clap(subcommand)]
-    transfer: Option<super::transfer_near_tokens_type::CliTransfer>,
+    stake: Option<super::stake_near_tokens_type::CliStake>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Sender {
     pub sender_account_id: near_primitives::types::AccountId,
-    pub transfer: super::transfer_near_tokens_type::Transfer,
+    pub stake: super::stake_near_tokens_type::Stake,
 }
 
 impl CliSender {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         let mut args = self
-            .transfer
+            .stake
             .as_ref()
             .map(|subcommand| subcommand.to_cli_args())
             .unwrap_or_default();
@@ -37,7 +37,7 @@ impl From<Sender> for CliSender {
     fn from(sender: Sender) -> Self {
         Self {
             sender_account_id: Some(sender.sender_account_id),
-            transfer: Some(sender.transfer.into()),
+            stake: Some(sender.stake.into()),
         }
     }
 }
@@ -49,8 +49,8 @@ impl Sender {
     ) -> color_eyre::eyre::Result<Self> {
         let sender_account_id: near_primitives::types::AccountId = match item.sender_account_id {
             Some(cli_sender_account_id) => match &connection_config {
-                Some(network_connection_config) => match crate::common::check_account_id(
-                    network_connection_config.clone(),
+                Some(network_connection_config) => match crate::common::get_account_state(
+                    network_connection_config,
                     cli_sender_account_id.clone(),
                 )? {
                     Some(_) => cli_sender_account_id,
@@ -63,20 +63,20 @@ impl Sender {
             },
             None => Sender::input_sender_account_id(connection_config.clone())?,
         };
-        let transfer: super::transfer_near_tokens_type::Transfer = match item.transfer {
-            Some(cli_transfer) => super::transfer_near_tokens_type::Transfer::from(
-                cli_transfer,
+        let stake: super::stake_near_tokens_type::Stake = match item.stake {
+            Some(cli_stake) => super::stake_near_tokens_type::Stake::from(
+                cli_stake,
                 connection_config,
                 sender_account_id.clone(),
             )?,
-            None => super::transfer_near_tokens_type::Transfer::choose_transfer_near(
+            None => super::stake_near_tokens_type::Stake::choose_stake_near(
                 connection_config,
                 sender_account_id.clone(),
             )?,
         };
         Ok(Self {
             sender_account_id,
-            transfer,
+            stake,
         })
     }
 }
@@ -92,7 +92,7 @@ impl Sender {
                 .unwrap();
             if let Some(connection_config) = &connection_config {
                 if let Some(_) =
-                    crate::common::check_account_id(connection_config.clone(), account_id.clone())?
+                    crate::common::get_account_state(connection_config, account_id.clone())?
                 {
                     break Ok(account_id);
                 } else {
@@ -114,7 +114,7 @@ impl Sender {
             receiver_id: self.sender_account_id.clone(),
             ..prepopulated_unsigned_transaction
         };
-        self.transfer
+        self.stake
             .process(unsigned_transaction, network_connection_config)
             .await
     }

@@ -56,8 +56,8 @@ impl DeleteAccountAction {
     ) -> color_eyre::eyre::Result<Self> {
         let beneficiary_id: near_primitives::types::AccountId = match item.beneficiary_id {
             Some(cli_account_id) => match &connection_config {
-                Some(network_connection_config) => match crate::common::check_account_id(
-                    network_connection_config.clone(),
+                Some(network_connection_config) => match crate::common::get_account_state(
+                    network_connection_config,
                     cli_account_id.clone(),
                 )? {
                     Some(_) => cli_account_id,
@@ -92,7 +92,7 @@ impl DeleteAccountAction {
                 .unwrap();
             if let Some(connection_config) = &connection_config {
                 if let Some(_) =
-                    crate::common::check_account_id(connection_config.clone(), account_id.clone())?
+                    crate::common::get_account_state(connection_config, account_id.clone())?
                 {
                     break Ok(account_id);
                 } else {
@@ -128,8 +128,7 @@ impl DeleteAccountAction {
                 crate::common::print_transaction_status(
                     transaction_info,
                     network_connection_config,
-                )
-                .await;
+                );
             }
             None => {}
         };

@@ -49,8 +49,8 @@ impl Sender {
     ) -> color_eyre::eyre::Result<Self> {
         let owner_account_id: near_primitives::types::AccountId = match item.owner_account_id {
             Some(cli_owner_account_id) => match &connection_config {
-                Some(network_connection_config) => match crate::common::check_account_id(
-                    network_connection_config.clone(),
+                Some(network_connection_config) => match crate::common::get_account_state(
+                    network_connection_config,
                     cli_owner_account_id.clone(),
                 )? {
                     Some(_) => cli_owner_account_id,
@@ -89,7 +89,7 @@ impl Sender {
                 .unwrap();
             if let Some(connection_config) = &connection_config {
                 if let Some(_) =
-                    crate::common::check_account_id(connection_config.clone(), account_id.clone())?
+                    crate::common::get_account_state(connection_config, account_id.clone())?
                 {
                     break Ok(account_id);
                 } else {
