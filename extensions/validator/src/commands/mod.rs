@@ -1,74 +1,57 @@
-// use dialoguer::{theme::ColorfulTheme, Select};
+use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-pub mod list_command;
-pub mod proposals_command;
+pub mod view_command;
 
 #[derive(Debug, Clone, clap::Clap)]
-pub enum CliValidatorCommand {
-    /// TODO: add description
-    List(self::list_command::CliListAction),
-    /// Prepare and, optionally, submit a new transaction
-    Proposals(self::proposals_command::CliProposalsAction),
+pub enum CliTopLevelCommand {
+    /// View account, contract code, contract state, transaction, nonce, recent block hash
+    View(self::view_command::CliViewQueryRequest),
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-pub enum ValidatorCommand {
-    #[strum_discriminants(strum(message = "TODO: add list command description"))]
-    List(self::list_command::ListAction),
-    #[strum_discriminants(strum(message = "TODO: add proposals command description"))]
-    Proposals(self::proposals_command::ProposalsAction),
+pub enum TopLevelCommand {
+    #[strum_discriminants(strum(
+        message = "View account, contract code, contract state, transaction, nonce, recent block hash"
+    ))]
+    View(self::view_command::ViewQueryRequest),
 }
 
-impl CliValidatorCommand {
+impl CliTopLevelCommand {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         match self {
-            Self::List(subcommand) => {
+            Self::View(subcommand) => {
                 let mut args = subcommand.to_cli_args();
-                args.push_front("list".to_owned());
-                args
-            }
-            Self::Proposals(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("proposals".to_owned());
+                args.push_front("view".to_owned());
                 args
             }
         }
     }
 }
 
-impl From<ValidatorCommand> for CliValidatorCommand {
-    fn from(validator_command: ValidatorCommand) -> Self {
-        match validator_command {
-            ValidatorCommand::List(epoch) => Self::List(epoch.into()),
-            ValidatorCommand::Proposals() => Self::Proposals()
+impl From<TopLevelCommand> for CliTopLevelCommand {
+    fn from(top_level_command: TopLevelCommand) -> Self {
+        match top_level_command {
+            TopLevelCommand::View(view_query_request) => Self::View(view_query_request.into()),
         }
     }
 }
 
-impl From<CliValidatorCommand> for ValidatorCommand {
-    fn from(cli_validator_command: CliValidatorCommand) -> Self {
-        match cli_validator_command {
-            CliValidatorCommand::List(cli_list_action) => {
-                ValidatorCommand::List(self::list_command::List::from(cli_list_action).unwrap())
-            }
-            CliValidatorCommand::Proposals(cli_proposals_action) => {
-                ValidatorCommand::ProposalsAction(
-                    self::proposals_command::ProposalsAction::from(
-                        cli_proposals_action,
-                    )
-                    .unwrap(),
-                )
+impl From<CliTopLevelCommand> for TopLevelCommand {
+    fn from(cli_top_level_command: CliTopLevelCommand) -> Self {
+        match cli_top_level_command {
+            CliTopLevelCommand::View(cli_view_query_request) => {
+                TopLevelCommand::View(cli_view_query_request.into())
             }
         }
     }
 }
 
-impl ValidatorCommand {
+impl TopLevelCommand {
     pub fn choose_command() -> Self {
         println!();
-        let variants = TopLevelCommandDiscriminants::iter().collect::<Vec<_>>(); //TODO: what is TopLevelCommandDiscriminants?
+        let variants = TopLevelCommandDiscriminants::iter().collect::<Vec<_>>();
         let commands = variants
             .iter()
             .map(|p| p.get_message().unwrap().to_owned())
@@ -79,27 +62,15 @@ impl ValidatorCommand {
             .default(0)
             .interact()
             .unwrap();
-        let cli_validator_command = match variants[selection] {
-            TopLevelCommandDiscriminants::List => CliValidatorCommand::List(Default::default()),
-            TopLevelCommandDiscriminants::Proposals => {
-                CliValidatorCommand::Proposals(Default::default())
-            }
+        let cli_top_level_command = match variants[selection] {
+            TopLevelCommandDiscriminants::View => CliTopLevelCommand::View(Default::default()),
         };
-        Self::from(cli_validator_command)
+        Self::from(cli_top_level_command)
     }
 
     pub async fn process(self) -> crate::CliResult {
-        let unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: near_primitives::types::AccountId::test_account(),
-            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-            nonce: 0,
-            receiver_id: near_primitives::types::AccountId::test_account(),
-            block_hash: Default::default(),
-            actions: vec![],
-        };
         match self {
-            Self::List(list_action) => list_action.process(unsigned_transaction).await,
-            Self::Proposals(proposals_action) => proposals_action.process(unsigned_transaction).await,
+            Self::View(view_query_request) => view_query_request.process().await,
         }
     }
 }
