@@ -10,7 +10,7 @@ use std::str::FromStr;
 )]
 pub struct CliServer {
     #[clap(subcommand)]
-    pub send_to: Option<super::super::super::super::sender::CliSendTo>,
+    pub send_to: Option<super::super::super::super::epoch::CliSendTo>,
 }
 
 /// данные для custom server
@@ -24,13 +24,13 @@ pub struct CliCustomServer {
     #[clap(long)]
     pub url: Option<crate::common::AvailableRpcServerUrl>,
     #[clap(subcommand)]
-    send_to: Option<super::super::super::super::sender::CliSendTo>,
+    send_to: Option<super::super::super::super::epoch::CliSendTo>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Server {
     pub connection_config: crate::common::ConnectionConfig,
-    pub send_to: super::super::super::super::sender::SendTo,
+    pub send_to: super::super::super::super::epoch::SendTo,
 }
 
 impl CliCustomServer {
@@ -83,7 +83,7 @@ impl CliServer {
     pub fn into_server(self, connection_config: crate::common::ConnectionConfig) -> Server {
         let send_to = match self.send_to {
             Some(cli_send_to) => cli_send_to.into(),
-            None => super::super::super::super::sender::SendTo::send_to(),
+            None => super::super::super::super::epoch::SendTo::send_to(),
         };
         Server {
             connection_config,
@@ -103,7 +103,7 @@ impl CliCustomServer {
         };
         let send_to = match self.send_to {
             Some(cli_send_to) => cli_send_to.into(),
-            None => super::super::super::super::sender::SendTo::send_to(),
+            None => super::super::super::super::epoch::SendTo::send_to(),
         };
         Server {
             connection_config: crate::common::ConnectionConfig::Custom { url: url.inner },

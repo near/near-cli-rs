@@ -2,7 +2,6 @@ use dialoguer::Input;
 
 #[derive(Debug, Clone, clap::Clap)]
 pub enum CliSendTo {
-    /// Specify an account
     Account(CliSender),
 }
 

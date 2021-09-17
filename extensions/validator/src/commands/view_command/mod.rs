@@ -1,8 +1,8 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-mod view_account;
-mod view_contract_code;
+mod view_validators;
+mod view_proposals;
 
 /// инструмент выбора to view
 #[derive(Debug, Default, Clone, clap::Clap)]
@@ -59,18 +59,18 @@ impl ViewQueryRequest {
 #[derive(Debug, Clone, clap::Clap)]
 pub enum CliQueryRequest {
     /// View properties for an account
-    AccountSummary(self::view_account::operation_mode::CliOperationMode),
+    AccountSummary(self::view_validators::operation_mode::CliOperationMode),
     /// View a contract code
-    ContractCode(self::view_contract_code::operation_mode::CliOperationMode),
+    ContractCode(self::view_proposals::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum QueryRequest {
     #[strum_discriminants(strum(message = "View properties for an account"))]
-    AccountSummary(self::view_account::operation_mode::OperationMode),
+    AccountSummary(self::view_validators::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a contract code"))]
-    ContractCode(self::view_contract_code::operation_mode::OperationMode),
+    ContractCode(self::view_proposals::operation_mode::OperationMode),
 }
 
 impl CliQueryRequest {
