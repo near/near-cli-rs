@@ -118,14 +118,14 @@ impl BlockId {
         }
     }
 
-    fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
-        near_jsonrpc_client::new_client(&selected_server_url)
-    }
+    // fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
+    //     near_jsonrpc_client::new_client(&selected_server_url)
+    // }
 
     async fn display_validators_info(
         &self,
-        account_id: near_primitives::types::AccountId,
-        network_connection_config: &crate::common::ConnectionConfig,
+        _account_id: near_primitives::types::AccountId,
+        _network_connection_config: &crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         // let query_view_method_response = self
         //     .rpc_client(network_connection_config.rpc_url().as_str())
