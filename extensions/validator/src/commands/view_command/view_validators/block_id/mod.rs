@@ -119,7 +119,7 @@ impl BlockId {
     }
 
     // fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
-    //     near_jsonrpc_client::new_client(&selected_server_url)
+    //     near_jsonrpc_client::JsonRpcClient::new().connect(&selected_server_url)
     // }
 
     async fn display_validators_info(
