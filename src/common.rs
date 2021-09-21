@@ -1,7 +1,14 @@
 use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 
-use near_primitives::borsh::BorshDeserialize;
+use near_jsonrpc_client::new_client;
+use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryRequest};
+use near_primitives::{
+    borsh::BorshDeserialize,
+    hash::CryptoHash,
+    types::{AccountId, BlockReference},
+    views::{AccessKeyPermissionView, QueryRequest},
+};
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
@@ -1063,6 +1070,109 @@ fn path_directories() -> Vec<std::path::PathBuf> {
         dirs.extend(std::env::split_paths(&val));
     }
     dirs
+}
+
+pub async fn display_account_info(
+    account_id: AccountId,
+    conf: &ConnectionConfig,
+    block_ref: BlockReference,
+) -> crate::CliResult {
+    let resp = new_client(&conf.archival_rpc_url().as_str())
+        .query(RpcQueryRequest {
+            block_reference: block_ref,
+            request: QueryRequest::ViewAccount {
+                account_id: account_id.clone(),
+            },
+        })
+        .await
+        .map_err(|err| {
+            color_eyre::Report::msg(format!("Failed to fetch query for view account: {:?}", err))
+        })?;
+
+    let account_view = match resp.kind {
+        QueryResponseKind::ViewAccount(view) => view,
+        _ => return Err(color_eyre::Report::msg("Error call result")),
+    };
+
+    println!(
+        "Account details for '{}' at block #{} ({})\n\
+        Native account balance: {}\n\
+        Validator stake: {}\n\
+        Storage used by the account: {} bytes",
+        account_id,
+        resp.block_height,
+        resp.block_hash,
+        NearBalance::from_yoctonear(account_view.amount),
+        NearBalance::from_yoctonear(account_view.locked),
+        account_view.storage_usage
+    );
+
+    if account_view.code_hash == CryptoHash::default() {
+        println!("Contract code is not deployed to this account.");
+    } else {
+        println!(
+            "Contract code SHA-256 checksum (hex): {}",
+            hex::encode(account_view.code_hash.as_ref())
+        );
+    }
+    Ok(())
+}
+
+pub async fn display_access_key_list(
+    account_id: AccountId,
+    conf: &ConnectionConfig,
+    block_ref: BlockReference,
+) -> crate::CliResult {
+    let resp = new_client(&conf.archival_rpc_url().as_str())
+        .query(RpcQueryRequest {
+            block_reference: block_ref,
+            request: QueryRequest::ViewAccessKeyList { account_id },
+        })
+        .await
+        .map_err(|err| {
+            color_eyre::Report::msg(format!(
+                "Failed to fetch query for view key list: {:?}",
+                err
+            ))
+        })?;
+
+    let view = match resp.kind {
+        QueryResponseKind::AccessKeyList(result) => result,
+        _ => return Err(color_eyre::Report::msg(format!("Error call result"))),
+    };
+
+    println!("Number of access keys: {}", view.keys.len());
+    for (index, access_key) in view.keys.iter().enumerate() {
+        let permissions_message = match &access_key.access_key.permission {
+            AccessKeyPermissionView::FullAccess => "full access".to_owned(),
+            AccessKeyPermissionView::FunctionCall {
+                allowance,
+                receiver_id,
+                method_names,
+            } => {
+                let allowance_message = match allowance {
+                    Some(amount) => format!(
+                        "with an allowance of {}",
+                        NearBalance::from_yoctonear(*amount)
+                    ),
+                    None => format!("with no limit"),
+                };
+                format!(
+                    "only do {:?} function calls on {} {}",
+                    method_names, receiver_id, allowance_message
+                )
+            }
+        };
+
+        println!(
+            "{: >4}. {} (nonce: {}) is granted to {}",
+            index + 1,
+            access_key.public_key,
+            access_key.access_key.nonce,
+            permissions_message
+        );
+    }
+    Ok(())
 }
 
 #[cfg(test)]
