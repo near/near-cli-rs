@@ -7,6 +7,10 @@ pub mod view_command;
 pub enum CliTopLevelCommand {
     /// View account, contract code, contract state, transaction, nonce, recent block hash
     View(self::view_command::CliViewQueryRequest),
+    /// Lookup validators for given epoch
+    Validators(self::view_command::CliViewQueryRequest), //TODO: change
+    /// Show both new proposals in the current epoch as well as current validators who are implicitly proposing
+    Proposals(self::view_command::CliViewQueryRequest), //TODO: change
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]
@@ -16,6 +20,12 @@ pub enum TopLevelCommand {
         message = "View account, contract code, contract state, transaction, nonce, recent block hash"
     ))]
     View(self::view_command::ViewQueryRequest),
+    #[strum_discriminants(strum(message = "Lookup validators for given epoch"))]
+    Validators(self::view_command::ViewQueryRequest), //TODO: change
+    #[strum_discriminants(strum(
+        message = "Show both new proposals in the current epoch as well as current validators who are implicitly proposing"
+    ))]
+    Proposals(self::view_command::ViewQueryRequest), //TODO: change
 }
 
 impl CliTopLevelCommand {
@@ -26,6 +36,16 @@ impl CliTopLevelCommand {
                 args.push_front("view".to_owned());
                 args
             }
+            Self::Validators(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("validators".to_owned());
+                args
+            }
+            Self::Proposals(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("proposals".to_owned());
+                args
+            }
         }
     }
 }
@@ -34,6 +54,10 @@ impl From<TopLevelCommand> for CliTopLevelCommand {
     fn from(top_level_command: TopLevelCommand) -> Self {
         match top_level_command {
             TopLevelCommand::View(view_query_request) => Self::View(view_query_request.into()),
+            TopLevelCommand::Validators(validators_request) => {
+                Self::View(validators_request.into())
+            }
+            TopLevelCommand::Proposals(proposals_request) => Self::View(proposals_request.into()),
         }
     }
 }
@@ -43,6 +67,12 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
         match cli_top_level_command {
             CliTopLevelCommand::View(cli_view_query_request) => {
                 TopLevelCommand::View(cli_view_query_request.into())
+            }
+            CliTopLevelCommand::Validators(cli_validators_request) => {
+                TopLevelCommand::Validators(cli_validators_request.into())
+            }
+            CliTopLevelCommand::Proposals(cli_proposals_request) => {
+                TopLevelCommand::Proposals(cli_proposals_request.into())
             }
         }
     }
@@ -64,6 +94,12 @@ impl TopLevelCommand {
             .unwrap();
         let cli_top_level_command = match variants[selection] {
             TopLevelCommandDiscriminants::View => CliTopLevelCommand::View(Default::default()),
+            TopLevelCommandDiscriminants::Validators => {
+                CliTopLevelCommand::Validators(Default::default())
+            }
+            TopLevelCommandDiscriminants::Proposals => {
+                CliTopLevelCommand::Proposals(Default::default())
+            }
         };
         Self::from(cli_top_level_command)
     }
@@ -71,6 +107,8 @@ impl TopLevelCommand {
     pub async fn process(self) -> crate::CliResult {
         match self {
             Self::View(view_query_request) => view_query_request.process().await,
+            Self::Validators(validators_request) => validators_request.process().await,
+            Self::Proposals(proposals_request) => proposals_request.process().await,
         }
     }
 }
