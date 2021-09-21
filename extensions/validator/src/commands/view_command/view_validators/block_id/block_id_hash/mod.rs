@@ -1,12 +1,6 @@
-use std::str::FromStr;
-
 use dialoguer::Input;
 
-use near_jsonrpc_client::{
-    methods::{self, EXPERIMENTAL_genesis_config},
-    JsonRpcClient,
-};
-use near_jsonrpc_primitives::types::transactions::TransactionInfo;
+use crate::common::display_validators_info;
 
 /// Specify the block_id hash for this account to view
 #[derive(Debug, Default, Clone, clap::Clap)]
@@ -55,47 +49,16 @@ impl BlockIdHash {
             .unwrap()
     }
 
-    fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
-        near_jsonrpc_client::JsonRpcClient::new().connect(&selected_server_url)
-    }
-
     pub async fn process(
         self,
         account_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
-        self.display_validators_info(
+        display_validators_info(
             near_primitives::types::EpochReference::Latest,
             &network_connection_config,
         )
         .await?;
-        Ok(())
-    }
-
-    async fn display_validators_info(
-        &self,
-        epoch: near_primitives::types::EpochReference,
-        network_connection_config: &crate::common::ConnectionConfig,
-    ) -> crate::CliResult {
-        let client = JsonRpcClient::new().connect(network_connection_config.rpc_url().as_str());
-
-        let genesis_config_request = methods::EXPERIMENTAL_genesis_config::RpcGenesisConfigRequest;
-
-        let genesis_config = client.clone().call(&genesis_config_request).await.unwrap();
-
-        // //TODO: make it pretty
-        println!("{:?}", genesis_config);
-        println!("------------------------------------");
-
-        let validators_request = methods::validators::RpcValidatorRequest {
-            epoch_reference: epoch,
-        };
-
-        let validator_info = client.call(&validators_request).await.unwrap();
-
-        //TODO: make it pretty
-        println!("{:?}", validator_info);
-
         Ok(())
     }
 }

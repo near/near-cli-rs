@@ -1,4 +1,4 @@
-use std::convert::{TryInto};
+use std::convert::TryInto;
 
 use near_primitives::borsh::BorshDeserialize;
 
@@ -370,6 +370,33 @@ pub struct KeyPairProperties {
     pub secret_keypair_str: String,
 }
 
+pub async fn display_validators_info(
+    epoch: near_primitives::types::EpochReference,
+    network_connection_config: &crate::common::ConnectionConfig,
+) -> crate::CliResult {
+    let client = near_jsonrpc_client::JsonRpcClient::new()
+        .connect(network_connection_config.rpc_url().as_str());
+
+    let genesis_config_request =
+        near_jsonrpc_client::methods::EXPERIMENTAL_genesis_config::RpcGenesisConfigRequest;
+
+    let genesis_config = client.clone().call(&genesis_config_request).await.unwrap();
+
+    // //TODO: make it pretty
+    println!("{:?}", genesis_config);
+    println!("------------------------------------");
+
+    let validators_request = near_jsonrpc_client::methods::validators::RpcValidatorRequest {
+        epoch_reference: epoch,
+    };
+
+    let validator_info = client.call(&validators_request).await.unwrap();
+
+    //TODO: make it pretty
+    println!("{:?}", validator_info);
+
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {
