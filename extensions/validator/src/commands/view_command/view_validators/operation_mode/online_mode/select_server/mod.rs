@@ -18,7 +18,7 @@ pub enum CliSelectServer {
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum SelectServer {
-    #[strum_discriminants(strum(message = "Testnet"))]
+    #[strum_discriminants(strum(message = "+ Testnet"))]
     Testnet(self::server::Server),
     #[strum_discriminants(strum(message = "Mainnet"))]
     Mainnet(self::server::Server),

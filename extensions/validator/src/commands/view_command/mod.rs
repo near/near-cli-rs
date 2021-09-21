@@ -67,7 +67,7 @@ pub enum CliQueryRequest {
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum QueryRequest {
-    #[strum_discriminants(strum(message = "View properties for an account"))]
+    #[strum_discriminants(strum(message = "+View properties for an account"))]
     AccountSummary(self::view_validators::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "View a contract code"))]
     ContractCode(self::view_proposals::operation_mode::OperationMode),

@@ -119,7 +119,7 @@ impl Sender {
     pub fn input_sender_account_id() -> near_primitives::types::AccountId {
         println!();
         Input::new()
-            .with_prompt("What Account ID do you need to view?")
+            .with_prompt("+ What Account ID do you need to view?")
             .interact_text()
             .unwrap()
     }

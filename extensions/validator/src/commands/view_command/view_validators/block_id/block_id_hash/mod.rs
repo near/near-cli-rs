@@ -1,4 +1,12 @@
+use std::str::FromStr;
+
 use dialoguer::Input;
+
+use near_jsonrpc_client::{
+    methods::{self, EXPERIMENTAL_genesis_config},
+    JsonRpcClient,
+};
+use near_jsonrpc_primitives::types::transactions::TransactionInfo;
 
 /// Specify the block_id hash for this account to view
 #[derive(Debug, Default, Clone, clap::Clap)]
@@ -42,7 +50,7 @@ impl From<CliBlockIdHash> for BlockIdHash {
 impl BlockIdHash {
     pub fn input_block_id_hash() -> near_primitives::hash::CryptoHash {
         Input::new()
-            .with_prompt("Type the block ID hash for this account")
+            .with_prompt("Type the block ID hash")
             .interact_text()
             .unwrap()
     }
@@ -56,62 +64,38 @@ impl BlockIdHash {
         account_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
-        self.display_account_info(account_id.clone(), &network_connection_config)
-            .await?;
+        self.display_validators_info(
+            near_primitives::types::EpochReference::Latest,
+            &network_connection_config,
+        )
+        .await?;
         Ok(())
     }
 
-    async fn display_account_info(
+    async fn display_validators_info(
         &self,
-        _account_id: near_primitives::types::AccountId,
-        _network_connection_config: &crate::common::ConnectionConfig,
+        epoch: near_primitives::types::EpochReference,
+        network_connection_config: &crate::common::ConnectionConfig,
     ) -> crate::CliResult {
-        // let query_view_method_response = self
-        //     .rpc_client(network_connection_config.archival_rpc_url().as_str())
-        //     .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
-        //         block_reference: near_primitives::types::BlockReference::BlockId(
-        //             near_primitives::types::BlockId::Hash(self.block_id_hash.clone()),
-        //         ),
-        //         request: near_primitives::views::QueryRequest::ViewAccount {
-        //             account_id: account_id.clone(),
-        //         },
-        //     })
-        //     .await
-        //     .map_err(|err| {
-        //         color_eyre::Report::msg(format!(
-        //             "Failed to fetch query for view account: {:?}",
-        //             err
-        //         ))
-        //     })?;
-        // let account_view =
-        //     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(result) =
-        //         query_view_method_response.kind
-        //     {
-        //         result
-        //     } else {
-        //         return Err(color_eyre::Report::msg(format!("Error call result")));
-        //     };
+        let client = JsonRpcClient::new().connect(network_connection_config.rpc_url().as_str());
 
-        // println!(
-        //     "Account details for '{}' at block #{} ({})\n\
-        //     Native account balance: {}\n\
-        //     Validator stake: {}\n\
-        //     Storage used by the account: {} bytes",
-        //     account_id,
-        //     query_view_method_response.block_height,
-        //     query_view_method_response.block_hash,
-        //     crate::common::NearBalance::from_yoctonear(account_view.amount),
-        //     crate::common::NearBalance::from_yoctonear(account_view.locked),
-        //     account_view.storage_usage
-        // );
-        // if account_view.code_hash == near_primitives::hash::CryptoHash::default() {
-        //     println!("Contract code is not deployed to this account.");
-        // } else {
-        //     println!(
-        //         "Contract code SHA-256 checksum (hex): {}",
-        //         hex::encode(account_view.code_hash.as_ref())
-        //     );
-        // }
+        let genesis_config_request = methods::EXPERIMENTAL_genesis_config::RpcGenesisConfigRequest;
+
+        let genesis_config = client.clone().call(&genesis_config_request).await.unwrap();
+
+        // //TODO: make it pretty
+        println!("{:?}", genesis_config);
+        println!("------------------------------------");
+
+        let validators_request = methods::validators::RpcValidatorRequest {
+            epoch_reference: epoch,
+        };
+
+        let validator_info = client.call(&validators_request).await.unwrap();
+
+        //TODO: make it pretty
+        println!("{:?}", validator_info);
+
         Ok(())
     }
 }

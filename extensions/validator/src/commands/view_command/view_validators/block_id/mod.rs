@@ -21,7 +21,7 @@ pub enum BlockId {
     AtFinalBlock,
     #[strum_discriminants(strum(message = "View this account at block heigt"))]
     AtBlockHeight(self::block_id_height::BlockIdHeight),
-    #[strum_discriminants(strum(message = "View this account at block hash"))]
+    #[strum_discriminants(strum(message = "+ View this account at block hash"))]
     AtBlockHash(self::block_id_hash::BlockIdHash),
 }
 

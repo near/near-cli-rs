@@ -61,7 +61,7 @@ pub enum CliMode {
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Mode {
-    #[strum_discriminants(strum(message = "Yes, I keep it simple"))]
+    #[strum_discriminants(strum(message = "+Yes, I keep it simple"))]
     Network(self::online_mode::NetworkArgs),
 }
 
