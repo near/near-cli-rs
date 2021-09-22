@@ -16,6 +16,18 @@ pub enum CliBlockId {
     AtBlockHash(self::block_id_hash::CliBlockIdHash),
 }
 
+#[derive(clap::Clap, Default, Debug, Clone)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::VersionlessSubcommands)
+)]
+pub struct CliBlockIdWrapper {
+    #[clap(subcommand)]
+    cli_block_id: Option<CliBlockId>,
+}
+
+
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum BlockId {

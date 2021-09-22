@@ -6,7 +6,7 @@ pub enum CliEpochCommand {
     /// View validators by EpochId
     // EpochId(self::view_command::CliViewQueryRequest), //TODO
     /// View validators by BlockId
-    BlockId(super::block_id::CliBlockId),
+    BlockId(super::block_id::CliBlockIdWrapper),
     // / View latest validators //TODO: it should be a doc comment (///)
     // Latest(self::proposals::operation_mode::CliOperationMode), //TODO
 }
@@ -93,7 +93,7 @@ impl EpochCommand {
         let cli_top_level_command = match variants[selection] {
             // EpochCommandDiscriminants::EpochId => EpochCommand::EpochId(Default::default()),
             EpochCommandDiscriminants::BlockId => {
-                EpochCommand::BlockId(Default::default())
+                CliEpochCommand::BlockId(Default::default())
             }
             // EpochCommandDiscriminants::Latest => {
             //     EpochCommand::Latest(Default::default())
