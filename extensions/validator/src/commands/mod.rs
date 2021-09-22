@@ -2,15 +2,17 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod view_command;
+pub mod validators;
+// pub mod proposals; //TODO
 
 #[derive(Debug, Clone, clap::Clap)]
 pub enum CliTopLevelCommand {
     /// View account, contract code, contract state, transaction, nonce, recent block hash
     View(self::view_command::CliViewQueryRequest),
     /// Lookup validators for given epoch
-    Validators(self::view_command::CliViewQueryRequest), //TODO: change
-    /// Show both new proposals in the current epoch as well as current validators who are implicitly proposing
-    Proposals(self::view_command::CliViewQueryRequest), //TODO: change
+    Validators(self::validators::operation_mode::CliOperationMode),
+    // /// Show both new proposals in the current epoch as well as current validators who are implicitly proposing
+    // Proposals(self::proposals::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]
@@ -21,11 +23,11 @@ pub enum TopLevelCommand {
     ))]
     View(self::view_command::ViewQueryRequest),
     #[strum_discriminants(strum(message = "Lookup validators for given epoch"))]
-    Validators(self::view_command::ViewQueryRequest), //TODO: change
-    #[strum_discriminants(strum(
-        message = "Show both new proposals in the current epoch as well as current validators who are implicitly proposing"
-    ))]
-    Proposals(self::view_command::ViewQueryRequest), //TODO: change
+    Validators(self::validators::operation_mode::OperationMode),
+    // #[strum_discriminants(strum(
+    //     message = "Show both new proposals in the current epoch as well as current validators who are implicitly proposing"
+    // ))]
+    // Proposals(self::proposals::operation_mode::CliOperationMode),
 }
 
 impl CliTopLevelCommand {
@@ -41,11 +43,11 @@ impl CliTopLevelCommand {
                 args.push_front("validators".to_owned());
                 args
             }
-            Self::Proposals(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("proposals".to_owned());
-                args
-            }
+            // Self::Proposals(subcommand) => {
+            //     let mut args = subcommand.to_cli_args();
+            //     args.push_front("proposals".to_owned());
+            //     args
+            // }
         }
     }
 }
@@ -55,9 +57,9 @@ impl From<TopLevelCommand> for CliTopLevelCommand {
         match top_level_command {
             TopLevelCommand::View(view_query_request) => Self::View(view_query_request.into()),
             TopLevelCommand::Validators(validators_request) => {
-                Self::View(validators_request.into())
+                Self::Validators(validators_request.into())
             }
-            TopLevelCommand::Proposals(proposals_request) => Self::View(proposals_request.into()),
+            // TopLevelCommand::Proposals(proposals_request) => Self::Proposals(proposals_request.into()),
         }
     }
 }
@@ -71,9 +73,9 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             CliTopLevelCommand::Validators(cli_validators_request) => {
                 TopLevelCommand::Validators(cli_validators_request.into())
             }
-            CliTopLevelCommand::Proposals(cli_proposals_request) => {
-                TopLevelCommand::Proposals(cli_proposals_request.into())
-            }
+            // CliTopLevelCommand::Proposals(cli_proposals_request) => {
+            //     TopLevelCommand::Proposals(cli_proposals_request.into())
+            // }
         }
     }
 }
@@ -97,9 +99,9 @@ impl TopLevelCommand {
             TopLevelCommandDiscriminants::Validators => {
                 CliTopLevelCommand::Validators(Default::default())
             }
-            TopLevelCommandDiscriminants::Proposals => {
-                CliTopLevelCommand::Proposals(Default::default())
-            }
+            // TopLevelCommandDiscriminants::Proposals => {
+            //     CliTopLevelCommand::Proposals(Default::default())
+            // }
         };
         Self::from(cli_top_level_command)
     }
@@ -108,7 +110,7 @@ impl TopLevelCommand {
         match self {
             Self::View(view_query_request) => view_query_request.process().await,
             Self::Validators(validators_request) => validators_request.process().await,
-            Self::Proposals(proposals_request) => proposals_request.process().await,
+            // Self::Proposals(proposals_request) => proposals_request.process().await,
         }
     }
 }
