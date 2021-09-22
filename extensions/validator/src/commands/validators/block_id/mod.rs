@@ -27,6 +27,27 @@ pub struct CliBlockIdWrapper {
     cli_block_id: Option<CliBlockId>,
 }
 
+impl CliBlockIdWrapper {
+    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self.cli_block_id.as_ref().unwrap() {
+            CliBlockId::AtFinalBlock => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("at-final-block".to_owned());
+                args
+            }
+            CliBlockId::AtBlockHeight(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("at-block-height".to_owned());
+                args
+            }
+            CliBlockId::AtBlockHash(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("at-block-hash".to_owned());
+                args
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -85,6 +106,36 @@ impl From<CliBlockId> for BlockId {
     }
 }
 
+impl From<BlockId> for CliBlockIdWrapper {
+    fn from(block_id: BlockId) -> Self {
+        match block_id {
+            BlockId::AtFinalBlock => Self {
+                cli_block_id: Some(CliBlockId::AtFinalBlock),
+            },
+            BlockId::AtBlockHeight(block_id_height) => Self {
+                cli_block_id: Some(CliBlockId::AtBlockHeight(block_id_height.into())),
+            },
+            BlockId::AtBlockHash(block_id_hash) => Self {
+                cli_block_id: Some(CliBlockId::AtBlockHash(block_id_hash.into())),
+            },
+        }
+    }
+}
+
+impl From<CliBlockIdWrapper> for BlockId {
+    fn from(item: CliBlockIdWrapper) -> Self {
+        match item.cli_block_id.unwrap() {
+            CliBlockId::AtFinalBlock => Self::AtFinalBlock,
+            CliBlockId::AtBlockHeight(cli_block_id_height) => {
+                Self::AtBlockHeight(cli_block_id_height.into())
+            }
+            CliBlockId::AtBlockHash(cli_block_id_hash) => {
+                Self::AtBlockHash(cli_block_id_hash.into())
+            }
+        }
+    }
+}
+
 impl BlockId {
     pub fn choose_block_id() -> Self {
         println!();
@@ -120,7 +171,11 @@ impl BlockId {
                 block_id_hash.process(network_connection_config).await
             }
             Self::AtFinalBlock => {
-                display_validators_info(near_primitives::types::EpochReference::Latest, &network_connection_config).await?;
+                display_validators_info(
+                    near_primitives::types::EpochReference::Latest,
+                    &network_connection_config,
+                )
+                .await?;
                 Ok(())
             }
         }

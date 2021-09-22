@@ -36,7 +36,7 @@ impl CliEpochCommand {
             // }
             Self::BlockId(subcommand) => {
                 let mut args = subcommand.to_cli_args();
-                args.push_front("blick-id".to_owned());
+                args.push_front("block-id".to_owned());
                 args
             }
             // Self::Latest(subcommand) => {
