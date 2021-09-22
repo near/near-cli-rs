@@ -1,14 +1,11 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-pub mod view_command;
 pub mod validators;
 // pub mod proposals; //TODO
 
 #[derive(Debug, Clone, clap::Clap)]
 pub enum CliTopLevelCommand {
-    /// View account, contract code, contract state, transaction, nonce, recent block hash
-    View(self::view_command::CliViewQueryRequest),
     /// Lookup validators for given epoch
     Validators(self::validators::operation_mode::CliOperationMode),
     // /// Show both new proposals in the current epoch as well as current validators who are implicitly proposing
@@ -18,10 +15,6 @@ pub enum CliTopLevelCommand {
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum TopLevelCommand {
-    #[strum_discriminants(strum(
-        message = "View account, contract code, contract state, transaction, nonce, recent block hash"
-    ))]
-    View(self::view_command::ViewQueryRequest),
     #[strum_discriminants(strum(message = "Lookup validators for given epoch"))]
     Validators(self::validators::operation_mode::OperationMode),
     // #[strum_discriminants(strum(
@@ -33,11 +26,6 @@ pub enum TopLevelCommand {
 impl CliTopLevelCommand {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         match self {
-            Self::View(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("view".to_owned());
-                args
-            }
             Self::Validators(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("validators".to_owned());
@@ -55,7 +43,6 @@ impl CliTopLevelCommand {
 impl From<TopLevelCommand> for CliTopLevelCommand {
     fn from(top_level_command: TopLevelCommand) -> Self {
         match top_level_command {
-            TopLevelCommand::View(view_query_request) => Self::View(view_query_request.into()),
             TopLevelCommand::Validators(validators_request) => {
                 Self::Validators(validators_request.into())
             }
@@ -67,9 +54,6 @@ impl From<TopLevelCommand> for CliTopLevelCommand {
 impl From<CliTopLevelCommand> for TopLevelCommand {
     fn from(cli_top_level_command: CliTopLevelCommand) -> Self {
         match cli_top_level_command {
-            CliTopLevelCommand::View(cli_view_query_request) => {
-                TopLevelCommand::View(cli_view_query_request.into())
-            }
             CliTopLevelCommand::Validators(cli_validators_request) => {
                 TopLevelCommand::Validators(cli_validators_request.into())
             }
@@ -95,7 +79,6 @@ impl TopLevelCommand {
             .interact()
             .unwrap();
         let cli_top_level_command = match variants[selection] {
-            TopLevelCommandDiscriminants::View => CliTopLevelCommand::View(Default::default()),
             TopLevelCommandDiscriminants::Validators => {
                 CliTopLevelCommand::Validators(Default::default())
             }
@@ -108,7 +91,6 @@ impl TopLevelCommand {
 
     pub async fn process(self) -> crate::CliResult {
         match self {
-            Self::View(view_query_request) => view_query_request.process().await,
             Self::Validators(validators_request) => validators_request.process().await,
             // Self::Proposals(proposals_request) => proposals_request.process().await,
         }
