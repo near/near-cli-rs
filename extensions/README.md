@@ -1,5 +1,5 @@
 # NEAR CLI extensions system
-`NEAR CLI` is built to scale. The number of possible features is endless. Instead of choosing only some of them we are are creating an `Extensions System` that will empower our users to choose, build and share `NEAR CLI` functionality.
+`NEAR CLI` is built to scale. The number of possible features is endless. Instead of choosing only some of them, we are creating an `Extensions System` that will empower our users to choose, build and share `NEAR CLI` functionality.
 
 ## How it works
 Extensibility is achieved by translating a `NEAR CLI` invocation of the form `near (?<command>[^ ]+)` into an invocation of an external tool `near-${command}` that then needs to be present in one of the user's `$PATH` directories.
