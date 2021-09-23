@@ -2,14 +2,14 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod validators;
-// pub mod proposals; //TODO
+pub mod proposals;
 
 #[derive(Debug, Clone, clap::Clap)]
 pub enum CliTopLevelCommand {
     /// Lookup validators for given epoch
     Validators(self::validators::operation_mode::CliOperationMode),
-    // /// Show both new proposals in the current epoch as well as current validators who are implicitly proposing
-    // Proposals(self::proposals::operation_mode::CliOperationMode),
+    /// Show both new proposals in the current epoch as well as current validators who are implicitly proposing
+    Proposals(self::proposals::operation_mode::CliOperationMode),
 }
 
 #[derive(Debug, Clone, EnumDiscriminants)]
@@ -17,10 +17,10 @@ pub enum CliTopLevelCommand {
 pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "Lookup validators for given epoch"))]
     Validators(self::validators::operation_mode::OperationMode),
-    // #[strum_discriminants(strum(
-    //     message = "Show both new proposals in the current epoch as well as current validators who are implicitly proposing"
-    // ))]
-    // Proposals(self::proposals::operation_mode::CliOperationMode),
+    #[strum_discriminants(strum(
+        message = "Show both new proposals in the current epoch as well as current validators who are implicitly proposing"
+    ))]
+    Proposals(self::proposals::operation_mode::CliOperationMode),
 }
 
 impl CliTopLevelCommand {
@@ -31,11 +31,11 @@ impl CliTopLevelCommand {
                 args.push_front("validators".to_owned());
                 args
             }
-            // Self::Proposals(subcommand) => {
-            //     let mut args = subcommand.to_cli_args();
-            //     args.push_front("proposals".to_owned());
-            //     args
-            // }
+            Self::Proposals(subcommand) => {
+                let mut args = subcommand.to_cli_args();
+                args.push_front("proposals".to_owned());
+                args
+            }
         }
     }
 }
@@ -46,7 +46,7 @@ impl From<TopLevelCommand> for CliTopLevelCommand {
             TopLevelCommand::Validators(validators_request) => {
                 Self::Validators(validators_request.into())
             }
-            // TopLevelCommand::Proposals(proposals_request) => Self::Proposals(proposals_request.into()),
+            TopLevelCommand::Proposals(proposals_request) => Self::Proposals(proposals_request.into()),
         }
     }
 }
@@ -57,9 +57,9 @@ impl From<CliTopLevelCommand> for TopLevelCommand {
             CliTopLevelCommand::Validators(cli_validators_request) => {
                 TopLevelCommand::Validators(cli_validators_request.into())
             }
-            // CliTopLevelCommand::Proposals(cli_proposals_request) => {
-            //     TopLevelCommand::Proposals(cli_proposals_request.into())
-            // }
+            CliTopLevelCommand::Proposals(cli_proposals_request) => {
+                TopLevelCommand::Proposals(cli_proposals_request.into())
+            }
         }
     }
 }
@@ -82,9 +82,9 @@ impl TopLevelCommand {
             TopLevelCommandDiscriminants::Validators => {
                 CliTopLevelCommand::Validators(Default::default())
             }
-            // TopLevelCommandDiscriminants::Proposals => {
-            //     CliTopLevelCommand::Proposals(Default::default())
-            // }
+            TopLevelCommandDiscriminants::Proposals => {
+                CliTopLevelCommand::Proposals(Default::default())
+            }
         };
         Self::from(cli_top_level_command)
     }
@@ -92,7 +92,7 @@ impl TopLevelCommand {
     pub async fn process(self) -> crate::CliResult {
         match self {
             Self::Validators(validators_request) => validators_request.process().await,
-            // Self::Proposals(proposals_request) => proposals_request.process().await,
+            Self::Proposals(proposals_request) => proposals_request.process().await,
         }
     }
 }
