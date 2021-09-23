@@ -87,14 +87,13 @@ impl std::str::FromStr for AvailableRpcServerUrl {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let url: url::Url =
             url::Url::parse(s).map_err(|err| format!("URL is not parsed: {}", err))?;
-        //TODO: do we need this code?
-        // actix::System::new()
-        //     .block_on(async {
-        //         near_jsonrpc_client::JsonRpcClient::new().connect(&url.as_str())
-        //             .status()
-        //             .await
-        //     })
-        //     .map_err(|err| format!("AvailableRpcServerUrl: {:?}", err))?;
+        actix::System::new()
+            .block_on(async {
+                let client = near_jsonrpc_client::JsonRpcClient::connect(&url.as_str());
+                let status_method = near_jsonrpc_client::methods::status::RpcStatusRequest;
+                client.call(&status_method).await
+            })
+            .map_err(|err| format!("AvailableRpcServerUrl: {:?}", err))?;
         Ok(Self { inner: url })
     }
 }
