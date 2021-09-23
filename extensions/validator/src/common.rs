@@ -398,6 +398,23 @@ pub async fn display_validators_info(
     Ok(())
 }
 
+pub async fn display_proposals_info(
+    //TODO: change to proposal call
+    network_connection_config: &crate::common::ConnectionConfig,
+) -> crate::CliResult {
+    let client = near_jsonrpc_client::JsonRpcClient::new()
+        .connect(network_connection_config.rpc_url().as_str());
+
+    let genesis_config_request =
+        near_jsonrpc_client::methods::EXPERIMENTAL_genesis_config::RpcGenesisConfigRequest;
+
+    let genesis_config = client.clone().call(&genesis_config_request).await.unwrap();
+
+    // //TODO: make it pretty
+    println!("{:?}", genesis_config);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -20,7 +20,7 @@ pub enum TopLevelCommand {
     #[strum_discriminants(strum(
         message = "Show both new proposals in the current epoch as well as current validators who are implicitly proposing"
     ))]
-    Proposals(self::proposals::operation_mode::CliOperationMode),
+    Proposals(self::proposals::operation_mode::OperationMode),
 }
 
 impl CliTopLevelCommand {

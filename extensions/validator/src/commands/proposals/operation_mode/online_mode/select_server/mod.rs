@@ -1,16 +1,18 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
+use crate::common::display_proposals_info;
+
 pub mod server;
 
 #[derive(Debug, Clone, clap::Clap)]
 pub enum CliSelectServer {
     /// предоставление данных для сервера https://rpc.testnet.near.org
-    Testnet(self::server::CliServer),
+    Testnet,
     /// предоставление данных для сервера https://rpc.mainnet.near.org
-    Mainnet(self::server::CliServer),
+    Mainnet,
     /// предоставление данных для сервера https://rpc.betanet.near.org
-    Betanet(self::server::CliServer),
+    Betanet,
     /// предоставление данных для сервера, указанного вручную
     Custom(self::server::CliCustomServer),
 }
@@ -19,11 +21,11 @@ pub enum CliSelectServer {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum SelectServer {
     #[strum_discriminants(strum(message = "Testnet"))]
-    Testnet(self::server::Server),
+    Testnet,
     #[strum_discriminants(strum(message = "Mainnet"))]
-    Mainnet(self::server::Server),
+    Mainnet,
     #[strum_discriminants(strum(message = "Betanet"))]
-    Betanet(self::server::Server),
+    Betanet,
     #[strum_discriminants(strum(message = "Custom"))]
     Custom(self::server::Server),
 }
@@ -31,20 +33,14 @@ pub enum SelectServer {
 impl CliSelectServer {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         match self {
-            Self::Testnet(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("testnet".to_owned());
-                args
+            Self::Testnet => {
+                return std::collections::VecDeque::new();
             }
-            Self::Mainnet(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("mainnet".to_owned());
-                args
+            Self::Mainnet => {
+                return std::collections::VecDeque::new();
             }
-            Self::Betanet(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("betanet".to_owned());
-                args
+            Self::Betanet => {
+                return std::collections::VecDeque::new();
             }
             Self::Custom(subcommand) => {
                 let mut args = subcommand.to_cli_args();
@@ -58,9 +54,9 @@ impl CliSelectServer {
 impl From<SelectServer> for CliSelectServer {
     fn from(select_server: SelectServer) -> Self {
         match select_server {
-            SelectServer::Testnet(server) => Self::Testnet(server.into()),
-            SelectServer::Mainnet(server) => Self::Mainnet(server.into()),
-            SelectServer::Betanet(server) => Self::Betanet(server.into()),
+            SelectServer::Testnet => Self::Testnet,
+            SelectServer::Mainnet => Self::Mainnet,
+            SelectServer::Betanet => Self::Betanet,
             SelectServer::Custom(server) => Self::Custom(server.into()),
         }
     }
@@ -69,15 +65,9 @@ impl From<SelectServer> for CliSelectServer {
 impl From<CliSelectServer> for SelectServer {
     fn from(item: CliSelectServer) -> Self {
         match item {
-            CliSelectServer::Testnet(cli_server) => {
-                Self::Testnet(cli_server.into_server(crate::common::ConnectionConfig::Testnet))
-            }
-            CliSelectServer::Mainnet(cli_server) => {
-                Self::Mainnet(cli_server.into_server(crate::common::ConnectionConfig::Mainnet))
-            }
-            CliSelectServer::Betanet(cli_server) => {
-                Self::Betanet(cli_server.into_server(crate::common::ConnectionConfig::Betanet))
-            }
+            CliSelectServer::Testnet => Self::Testnet,
+            CliSelectServer::Mainnet => Self::Mainnet,
+            CliSelectServer::Betanet => Self::Betanet,
             CliSelectServer::Custom(cli_custom_server) => {
                 Self::Custom(cli_custom_server.into_server())
             }
@@ -100,9 +90,9 @@ impl SelectServer {
             .interact()
             .unwrap();
         let cli_select_server = match variants[selected_server] {
-            SelectServerDiscriminants::Testnet => CliSelectServer::Testnet(Default::default()),
-            SelectServerDiscriminants::Mainnet => CliSelectServer::Mainnet(Default::default()),
-            SelectServerDiscriminants::Betanet => CliSelectServer::Betanet(Default::default()),
+            SelectServerDiscriminants::Testnet => CliSelectServer::Testnet,
+            SelectServerDiscriminants::Mainnet => CliSelectServer::Mainnet,
+            SelectServerDiscriminants::Betanet => CliSelectServer::Betanet,
             SelectServerDiscriminants::Custom => CliSelectServer::Custom(Default::default()),
         };
         Self::from(cli_select_server)
@@ -110,14 +100,14 @@ impl SelectServer {
 
     pub async fn process(self) -> crate::CliResult {
         Ok(match self {
-            SelectServer::Testnet(server) => {
-                server.process().await?;
+            SelectServer::Testnet => {
+                display_proposals_info(&crate::common::ConnectionConfig::Testnet).await?
             }
-            SelectServer::Mainnet(server) => {
-                server.process().await?;
+            SelectServer::Mainnet => {
+                display_proposals_info(&crate::common::ConnectionConfig::Mainnet).await?
             }
-            SelectServer::Betanet(server) => {
-                server.process().await?;
+            SelectServer::Betanet => {
+                display_proposals_info(&crate::common::ConnectionConfig::Betanet).await?
             }
             SelectServer::Custom(server) => {
                 server.process().await?;
