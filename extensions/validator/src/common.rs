@@ -1,6 +1,7 @@
 use std::convert::TryInto;
 
-use near_primitives::borsh::BorshDeserialize;
+use near_jsonrpc_client::methods::EXPERIMENTAL_genesis_config::GenesisConfig;
+use near_primitives::{borsh::BorshDeserialize, views::EpochValidatorInfo};
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
@@ -355,10 +356,10 @@ pub struct KeyPairProperties {
     pub secret_keypair_str: String,
 }
 
-pub async fn display_validators_info(
+pub async fn validators_info(
     epoch: near_primitives::types::EpochReference,
     network_connection_config: &crate::common::ConnectionConfig,
-) -> crate::CliResult {
+) -> (GenesisConfig, EpochValidatorInfo) {
     let client =
         near_jsonrpc_client::JsonRpcClient::connect(network_connection_config.rpc_url().as_str());
 
@@ -366,10 +367,6 @@ pub async fn display_validators_info(
         near_jsonrpc_client::methods::EXPERIMENTAL_genesis_config::RpcGenesisConfigRequest;
 
     let genesis_config = client.clone().call(&genesis_config_request).await.unwrap();
-
-    // //TODO: make it pretty
-    println!("{:?}", genesis_config);
-    println!("------------------------------------");
 
     let validators_request = near_jsonrpc_client::methods::validators::RpcValidatorRequest {
         epoch_reference: epoch,
@@ -377,26 +374,39 @@ pub async fn display_validators_info(
 
     let validator_info = client.call(&validators_request).await.unwrap();
 
+    (genesis_config, validator_info)
+}
+
+pub async fn display_validators_info(
+    epoch: near_primitives::types::EpochReference,
+    network_connection_config: &crate::common::ConnectionConfig,
+) -> crate::CliResult {
+    let (genesis_config, validator_info) = validators_info(epoch, network_connection_config).await;
+
     //TODO: make it pretty
-    println!("{:?}", validator_info);
+    println!("-------------- Validators info (should be in table) ----------------------");
+    println!("Genesis config: {:?}", genesis_config);
+    println!("------------------------------------");
+    println!("Validator info: {:?}", validator_info);
 
     Ok(())
 }
 
 pub async fn display_proposals_info(
-    //TODO: change to proposal call
     network_connection_config: &crate::common::ConnectionConfig,
 ) -> crate::CliResult {
-    let client =
-        near_jsonrpc_client::JsonRpcClient::connect(network_connection_config.rpc_url().as_str());
+    let (genesis_config, validator_info) = validators_info(
+        near_primitives::types::EpochReference::Latest,
+        network_connection_config,
+    )
+    .await;
 
-    let genesis_config_request =
-        near_jsonrpc_client::methods::EXPERIMENTAL_genesis_config::RpcGenesisConfigRequest;
+    //TODO: make it pretty
+    println!("-------------- Proposals info (should be in table) ----------------------");
+    println!("Genesis config: {:?}", genesis_config);
+    println!("------------------------------------");
+    println!("Validator info: {:?}", validator_info);
 
-    let genesis_config = client.clone().call(&genesis_config_request).await.unwrap();
-
-    // //TODO: make it pretty
-    println!("{:?}", genesis_config);
     Ok(())
 }
 
