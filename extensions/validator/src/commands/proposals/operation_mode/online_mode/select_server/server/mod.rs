@@ -1,7 +1,7 @@
 use dialoguer::Input;
 use std::str::FromStr;
 
-use crate::common::display_validators_info;
+use crate::common::display_proposals_info;
 /// данные для custom server
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
@@ -88,9 +88,7 @@ impl CliCustomServer {
 
 impl Server {
     pub async fn process(self) -> crate::CliResult {
-        display_validators_info(
-            //TODO: replace it with proposals call
-            near_primitives::types::EpochReference::Latest,
+        display_proposals_info(
             &self.connection_config,
         )
         .await?;
