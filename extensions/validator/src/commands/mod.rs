@@ -28,7 +28,7 @@ impl CliTopLevelCommand {
         match self {
             Self::Validators(subcommand) => {
                 let mut args = subcommand.to_cli_args();
-                args.push_front("validators".to_owned());
+                args.push_front("list".to_owned());
                 args
             }
             Self::Proposals(subcommand) => {
