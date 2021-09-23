@@ -304,21 +304,6 @@ impl ConnectionConfig {
             Self::Custom { url } => url.clone(),
         }
     }
-
-    pub fn archival_rpc_url(&self) -> url::Url {
-        match self {
-            Self::Testnet => crate::consts::TESTNET_ARCHIVAL_API_SERVER_URL
-                .parse()
-                .unwrap(),
-            Self::Mainnet => crate::consts::MAINNET_ARCHIVAL_API_SERVER_URL
-                .parse()
-                .unwrap(),
-            Self::Betanet => crate::consts::BETANET_ARCHIVAL_API_SERVER_URL
-                .parse()
-                .unwrap(),
-            Self::Custom { url } => url.clone(),
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -374,8 +359,8 @@ pub async fn display_validators_info(
     epoch: near_primitives::types::EpochReference,
     network_connection_config: &crate::common::ConnectionConfig,
 ) -> crate::CliResult {
-    let client = near_jsonrpc_client::JsonRpcClient::new()
-        .connect(network_connection_config.rpc_url().as_str());
+    let client =
+        near_jsonrpc_client::JsonRpcClient::connect(network_connection_config.rpc_url().as_str());
 
     let genesis_config_request =
         near_jsonrpc_client::methods::EXPERIMENTAL_genesis_config::RpcGenesisConfigRequest;
@@ -402,8 +387,8 @@ pub async fn display_proposals_info(
     //TODO: change to proposal call
     network_connection_config: &crate::common::ConnectionConfig,
 ) -> crate::CliResult {
-    let client = near_jsonrpc_client::JsonRpcClient::new()
-        .connect(network_connection_config.rpc_url().as_str());
+    let client =
+        near_jsonrpc_client::JsonRpcClient::connect(network_connection_config.rpc_url().as_str());
 
     let genesis_config_request =
         near_jsonrpc_client::methods::EXPERIMENTAL_genesis_config::RpcGenesisConfigRequest;

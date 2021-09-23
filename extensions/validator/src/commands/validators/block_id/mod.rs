@@ -61,7 +61,7 @@ pub enum BlockId {
 }
 
 impl CliBlockId {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+    pub fn _to_cli_args(&self) -> std::collections::VecDeque<String> { //TODO: why is this unused?
         match self {
             Self::AtFinalBlock => {
                 let mut args = std::collections::VecDeque::new();
@@ -137,7 +137,7 @@ impl From<CliBlockIdWrapper> for BlockId {
 }
 
 impl BlockId {
-    pub fn choose_block_id() -> Self {
+    pub fn _choose_block_id() -> Self { //TODO: why is this unsused?
         println!();
         let variants = BlockIdDiscriminants::iter().collect::<Vec<_>>();
         let blocks = variants
