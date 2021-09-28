@@ -2,8 +2,10 @@ use core::convert::TryFrom;
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{quote, ToTokens};
-use syn::{Attribute, Fields, Ident, ItemEnum, ItemStruct, Meta, WhereClause};
-
+use syn::{
+    parse_quote, Attribute, Fields, GenericParam, Generics, Ident, ItemEnum, ItemStruct, Meta,
+    TypeParamBound, WhereClause,
+};
 
 pub fn contains_skip(attrs: &[Attribute]) -> bool {
     for attr in attrs.iter() {
@@ -16,10 +18,21 @@ pub fn contains_skip(attrs: &[Attribute]) -> bool {
     false
 }
 
+pub fn add_trait_bounds(generics: &Generics, ty: TypeParamBound) -> Generics {
+    let mut generics = generics.clone();
+    for param in &mut generics.params {
+        if let GenericParam::Type(ref mut type_param) = *param {
+            type_param.bounds.push(ty.clone());
+        }
+    }
+    generics
+}
 
 pub fn struct_impl(input: &ItemStruct, cratename: Ident) -> syn::Result<TokenStream2> {
     let name = &input.ident;
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let generics = add_trait_bounds(&input.generics, parse_quote!(near_cli_visual::Interactive));
+    let generics = add_trait_bounds(&generics, parse_quote!(near_cli_visual::PromptInput));
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let mut where_clause = where_clause.map_or_else(
         || WhereClause {
             where_token: Default::default(),
@@ -48,7 +61,7 @@ pub fn struct_impl(input: &ItemStruct, cratename: Ident) -> syn::Result<TokenStr
         _ => {}
     }
     Ok(quote! {
-        impl #impl_generics near_cli_visual::Interactive<Self> for #name #ty_generics #where_clause {
+        impl #impl_generics near_cli_visual::Interactive for #name #ty_generics #where_clause {
             fn interactive(self) -> Self {
                 Self { #body }
             }
@@ -56,10 +69,10 @@ pub fn struct_impl(input: &ItemStruct, cratename: Ident) -> syn::Result<TokenStr
     })
 }
 
-
 pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2> {
     let name = &input.ident;
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let generics = add_trait_bounds(&input.generics, parse_quote!(near_cli_visual::Interactive));
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let mut where_clause = where_clause.map_or_else(
         || WhereClause {
             where_token: Default::default(),
@@ -76,7 +89,7 @@ pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2
         let mut variant_body = TokenStream2::new();
 
         if contains_skip(&variant.attrs) {
-            continue
+            continue;
         }
 
         match &variant.fields {
@@ -92,7 +105,8 @@ pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2
             }
             Fields::Unnamed(fields) => {
                 for (field_idx, field) in fields.unnamed.iter().enumerate() {
-                    let field_ident = Ident::new(format!("id{}", field_idx).as_str(), Span::call_site());
+                    let field_ident =
+                        Ident::new(format!("id{}", field_idx).as_str(), Span::call_site());
                     variant_header.extend(quote! { #field_ident, });
                     variant_body.extend(quote! {
                         #name::#variant_ident ( near_cli_visual::Interactive::interactive(#field_ident) )
@@ -100,9 +114,7 @@ pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2
                 }
                 variant_header = quote! { ( #variant_header )};
             }
-            Fields::Unit => {
-                variant_body.extend(quote! { #name::#variant_ident })
-            }
+            Fields::Unit => variant_body.extend(quote! { #name::#variant_ident }),
         }
         variant_arms.extend(quote! {
             #name::#variant_ident #variant_header => {
@@ -112,7 +124,7 @@ pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2
     }
 
     Ok(quote! {
-        impl #impl_generics near_cli_visual::Interactive<Self> for #name #ty_generics #where_clause {
+        impl #impl_generics near_cli_visual::Interactive for #name #ty_generics #where_clause {
             fn interactive(self) -> Self {
                 let return_value = match self {
                     #variant_arms

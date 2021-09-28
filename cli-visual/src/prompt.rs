@@ -22,13 +22,14 @@ where
         prompt_input()
     }
 }
-pub trait Interactive<T> {
-    fn interactive(self) -> T;
+
+pub trait Interactive {
+    fn interactive(self) -> Self;
 }
 
-impl<T> Interactive<Self> for Option<T>
+impl<T> Interactive for Option<T>
 where
-    T: PromptInput + Interactive<T>,
+    T: PromptInput + Interactive,
 {
     fn interactive(self) -> Self {
         Some(self.unwrap_or_else(T::prompt_input).interactive())

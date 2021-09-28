@@ -8,7 +8,7 @@ impl PromptMessage for CryptoHash {
     const MSG: &'static str = "Type the block ID hash";
 }
 
-impl Interactive<Self> for CryptoHash {
+impl Interactive for CryptoHash {
     fn interactive(self) -> Self {
         self
     }
@@ -18,7 +18,7 @@ impl PromptMessage for BlockHeight {
     const MSG: &'static str = "Type the block ID height for this account";
 }
 
-impl Interactive<Self> for BlockHeight {
+impl Interactive for BlockHeight {
     fn interactive(self) -> Self {
         self
     }
@@ -28,7 +28,7 @@ impl PromptMessage for AccountId {
     const MSG: &'static str = "Type account id";
 }
 
-impl Interactive<Self> for AccountId {
+impl Interactive for AccountId {
     fn interactive(self) -> Self {
         self
     }
@@ -38,7 +38,7 @@ impl PromptMessage for Url {
     const MSG: &'static str = "What is the RPC endpoint?";
 }
 
-impl Interactive<Self> for Url {
+impl Interactive for Url {
     fn interactive(self) -> Self {
         self
     }

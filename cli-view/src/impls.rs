@@ -98,7 +98,7 @@ pub struct CliContract {
     download_mode: Option<CliDownloadMode>,
 }
 
-#[derive(Debug, Clone, Clap, /*cli::Interactive*/)]
+#[derive(Debug, Clone, Clap, cli::Interactive)]
 pub enum CliSendTo<T> {
     /// Specify a contract
     SendTo(T),
