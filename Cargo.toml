@@ -51,4 +51,5 @@ near-cli-derive = { path = "cli-derive" }
 members = [
     "cli-visual",
     "cli-derive",
+    "cli-view",
 ]
