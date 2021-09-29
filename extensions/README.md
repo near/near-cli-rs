@@ -13,6 +13,8 @@ As mentioned above, any binary can become an extension, but we are encouraging d
 
 ## Example
 Core `NEAR CLI` does not have validator specific functionality, but we can add it as a simple bash script:
+
+`near-cli-staking-pool-info.sh`
 ```bash
 #!/bin/sh
 POOL_ID=$1
