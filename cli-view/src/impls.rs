@@ -86,7 +86,7 @@ impl PromptInput for CliDownloadMode {
     }
 }
 
-#[derive(Debug, Default, Clone, clap::Clap, cli::Interactive)]
+#[derive(Debug, Default, Clone, Clap, cli::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -99,12 +99,18 @@ pub struct CliContract {
 }
 
 #[derive(Debug, Clone, Clap, cli::Interactive)]
-pub enum CliSendTo<T> {
+pub enum CliSendTo<T> where T: Default {
     /// Specify a contract
     SendTo(T),
 }
 
-#[derive(Debug, Default, Clone, clap::Clap, /*cli::Interactive*/)]
+impl<T> PromptInput for CliSendTo<T> where T: Default {
+    fn prompt_input() -> Self {
+        Self::SendTo(Default::default())
+    }
+}
+
+#[derive(Debug, Clone, Clap, cli::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -115,7 +121,13 @@ pub struct CliServer<T> {
     pub send_to: Option<T>,
 }
 
-#[derive(Debug, Default, Clone, clap::Clap)]
+// Needed to ignore <T: Default> trait bound requirement
+impl<T> Default for CliServer<T> {
+    fn default() -> Self {
+        Self { send_to: Default::default() }
+    }
+}
+#[derive(Debug, Clone, Clap, cli::Interactive)]
 #[clap(
     version,
     author,
@@ -131,9 +143,16 @@ pub struct CliCustomServer<T> {
     send_to: Option<T>,
 }
 
-#[derive(Debug, Clone, Clap, EnumDiscriminants)]
+// Needed to ignore <T: Default> trait bound requirement
+impl<T> Default for CliCustomServer<T> {
+    fn default() -> Self {
+        Self { send_to: Default::default() }
+    }
+}
+
+#[derive(Debug, Clone, Clap, EnumDiscriminants, cli::Interactive)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-pub enum CliSelectServer<T> where T: clap::Args {
+pub enum CliSelectServer<T> where T: clap::Args + Clone + Default {
     /// предоставление данных для сервера https://rpc.testnet.near.org
     #[strum_discriminants(strum(message = "Testnet"))]
     Testnet(CliServer<CliSendTo<T>>),
@@ -148,7 +167,18 @@ pub enum CliSelectServer<T> where T: clap::Args {
     Custom(CliCustomServer<CliSendTo<T>>),
 }
 
-#[derive(Debug, Default, Clone, Clap)]
+impl<T> PromptInput for CliSelectServer<T> where T: clap::Args + Clone + Default {
+    fn prompt_input() -> Self {
+        match prompt_variant("") {
+            CliSelectServerDiscriminants::Testnet => Self::Testnet(Default::default()),
+            CliSelectServerDiscriminants::Mainnet => Self::Mainnet(Default::default()),
+            CliSelectServerDiscriminants::Betanet => Self::Betanet(Default::default()),
+            CliSelectServerDiscriminants::Custom => Self::Custom(Default::default()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Clap, cli::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -159,14 +189,25 @@ pub struct CliNetworkArgs<T> {
     selected_server: Option<T>,
 }
 
+impl<T> Default for CliNetworkArgs<T> {
+    fn default() -> Self {
+        Self { selected_server: Default::default() }
+    }
+}
 
-#[derive(Debug, Clone, Clap)]
+#[derive(Debug, Clone, Clap, cli::Interactive)]
 pub enum CliMode<T> {
     /// Execute a change method with online mode
     Network(T),
 }
 
-#[derive(Debug, Default, Clone, Clap)]
+impl<T> PromptInput for CliMode<T> where T: Default {
+    fn prompt_input() -> Self {
+        Self::Network(T::default())
+    }
+}
+
+#[derive(Debug, Default, Clone, Clap, cli::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -177,8 +218,7 @@ pub struct CliOperationMode<T> {
     mode: Option<T>,
 }
 
-
-#[derive(Debug, Clone, EnumDiscriminants, Clap)]
+#[derive(Debug, Clone, EnumDiscriminants, Clap, cli::Interactive)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum CliQueryRequest {
     /// View properties for an account
