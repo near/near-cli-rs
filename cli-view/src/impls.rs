@@ -207,7 +207,7 @@ impl<T> PromptInput for CliMode<T> where T: Default {
     }
 }
 
-#[derive(Debug, Default, Clone, Clap, cli::Interactive)]
+#[derive(Debug, Clone, Clap, cli::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -218,6 +218,12 @@ pub struct CliOperationMode<T> {
     mode: Option<T>,
 }
 
+impl<T> Default for CliOperationMode<T> {
+    fn default() -> Self {
+        Self { mode: Default::default() }
+    }
+}
+
 #[derive(Debug, Clone, EnumDiscriminants, Clap, cli::Interactive)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum CliQueryRequest {
@@ -226,4 +232,10 @@ pub enum CliQueryRequest {
     AccountSummary(
         CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliContract>>>>
     )
+}
+
+impl PromptInput for CliQueryRequest {
+    fn prompt_input() -> Self {
+        Self::AccountSummary(Default::default())
+    }
 }
