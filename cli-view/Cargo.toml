@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-clap = { path = "../../clap" }
 dialoguer = "0.8.0"
 strum = { git = "https://github.com/frol/strum", branch = "feat/discriminants-pass-through-attributes", features = ["derive"] }
 strum_macros = "0.20"
@@ -14,3 +13,7 @@ near-primitives = { git = "https://github.com/near/nearcore", rev="e242f71400111
 
 near-cli-visual = { path = "../cli-visual" }
 near-cli-derive = { path = "../cli-derive" }
+
+[dependencies.clap]
+git = "https://github.com/ChaoticTempest/clap"
+branch = "feat/derive-generic"
