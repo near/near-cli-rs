@@ -20,7 +20,9 @@ Core `NEAR CLI` does not have validator specific functionality, but we can add i
 POOL_ID=$1
 near execute view-method network mainnet contract "name.near" call "get_fields_by_pool" '{"pool_id": "'"$POOL_ID"'"}' at-final-block
 ```
-Make sure that this script is in your `$PATH`, then call it like this:
+
+Make sure that this script is in your `$PATH` and has proper permissions to be executed. Then call it like this:
+
 ```bash
 $ near staking-pool-info aurora.near
 {
