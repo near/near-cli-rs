@@ -8,5 +8,5 @@ It means that you can write it in any language and with the use of any framework
 ## How to build an extension
 As mentioned above, any binary can become an extension, but we are encouraging developers to use [Rust](https://www.rust-lang.org/), [Clap](https://docs.rs/clap/2.33.0/clap/), and a set of libraries developed by NEAR. Here is some of them:
 - `near-cli-builder` - CLI specific helpers to make your life easier and follow the standards of `NEAR CLI` at the same time (NOTE: Under development)
-- `near-api-rs` - Rust library to interact with accounts and smart contracts on NEAR. (`NOTE: Under development)
+- `near-api-rs` - Rust library to interact with accounts and smart contracts on NEAR. (NOTE: Under development)
 - [near-jsonrpc-client-rs](https://github.com/near/near-jsonrpc-client-rs) - Lower-level JSON RPC API for interfacing with the NEAR Protocol.
