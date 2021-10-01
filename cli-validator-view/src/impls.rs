@@ -107,6 +107,8 @@ pub struct CliContractFile {
 )]
 pub struct CliContract {
     pub contract_id: Option<AccountId>,
+    // TODO: if we can add new promts just by adding new fields to the struct, why we are not using it more widely?
+    // pub test: Option<AccountId>,
     #[clap(subcommand)]
     download_mode: Option<CliDownloadMode>,
 }
@@ -286,7 +288,9 @@ pub enum CliQueryRequest {
     #[strum_discriminants(strum(message = "View properties for an account (TODO: delete)"))]
     AccountSummary(CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliContract>>>>),
     #[strum_discriminants(strum(message = "View proposals"))]
-    Proposals(CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliContract>>>>),
+    Proposals(CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliContract>>>>), //TODO: refactor
+    #[strum_discriminants(strum(message = "View validators"))]
+    Validators(CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliContract>>>>), //TODO: refactor
 }
 
 impl PromptInput for CliQueryRequest {
@@ -294,6 +298,7 @@ impl PromptInput for CliQueryRequest {
         match prompt_variant::<CliQueryRequestDiscriminants>("Choose your action") {
             CliQueryRequestDiscriminants::AccountSummary => Self::AccountSummary(Default::default()),
             CliQueryRequestDiscriminants::Proposals => Self::Proposals(Default::default()),
+            CliQueryRequestDiscriminants::Validators => Self::Proposals(Default::default()),
         }
     }
 }
