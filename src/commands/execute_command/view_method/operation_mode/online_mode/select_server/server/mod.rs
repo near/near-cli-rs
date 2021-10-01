@@ -113,10 +113,9 @@ impl CliCustomServer {
             url: url.inner.clone(),
         };
         let send_to = match self.send_to {
-            Some(cli_send_to) => super::super::super::super::receiver::SendTo::from(
-                cli_send_to,
-                connection_config.clone(),
-            )?,
+            Some(cli_send_to) => {
+                super::super::super::super::receiver::SendTo::from(cli_send_to, connection_config)?
+            }
             None => super::super::super::super::receiver::SendTo::send_to(connection_config)?,
         };
         Ok(Server {

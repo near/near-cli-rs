@@ -3,6 +3,8 @@ use std::io::Write;
 
 use near_primitives::borsh::BorshDeserialize;
 
+pub type CliResult = color_eyre::eyre::Result<()>;
+
 #[derive(
     Debug,
     Clone,
@@ -275,6 +277,46 @@ impl NearGas {
     }
 }
 
+#[derive(Debug, Clone, Default, PartialEq, PartialOrd)]
+pub struct TransferAmount {
+    amount: NearBalance,
+}
+
+impl std::fmt::Display for TransferAmount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.amount)
+    }
+}
+
+impl TransferAmount {
+    pub fn from(
+        amount: NearBalance,
+        account_transfer_allowance: &AccountTransferAllowance,
+    ) -> color_eyre::eyre::Result<Self> {
+        if amount <= account_transfer_allowance.transfer_allowance() {
+            Ok(Self { amount })
+        } else {
+            Err(color_eyre::Report::msg(
+                "the amount exceeds the transfer allowance",
+            ))
+        }
+    }
+
+    pub fn from_unchecked(amount: NearBalance) -> Self {
+        Self { amount }
+    }
+
+    pub fn to_yoctonear(&self) -> u128 {
+        self.amount.to_yoctonear()
+    }
+}
+
+impl From<TransferAmount> for NearBalance {
+    fn from(item: TransferAmount) -> Self {
+        item.amount
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum ConnectionConfig {
     Testnet,
@@ -336,8 +378,96 @@ impl ConnectionConfig {
     }
 }
 
-pub fn check_account_id(
-    connection_config: ConnectionConfig,
+#[derive(Debug)]
+pub struct AccountTransferAllowance {
+    account_id: near_primitives::types::AccountId,
+    account_liquid_balance: NearBalance,
+    account_locked_balance: NearBalance,
+    storage_stake: NearBalance,
+    pessimistic_transaction_fee: NearBalance,
+}
+
+impl std::fmt::Display for AccountTransferAllowance {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(fmt,
+            "\n{} account has {} available for transfer (the total balance is {}, but {} is locked for storage and the transfer transaction fee is ~{})",
+            self.account_id,
+            self.transfer_allowance(),
+            self.account_liquid_balance,
+            self.liquid_storage_stake(),
+            self.pessimistic_transaction_fee
+        )
+    }
+}
+
+impl AccountTransferAllowance {
+    pub fn liquid_storage_stake(&self) -> NearBalance {
+        NearBalance::from_yoctonear(
+            self.storage_stake
+                .to_yoctonear()
+                .saturating_sub(self.account_locked_balance.to_yoctonear()),
+        )
+    }
+
+    pub fn transfer_allowance(&self) -> NearBalance {
+        NearBalance::from_yoctonear(
+            self.account_liquid_balance.to_yoctonear()
+                - self.liquid_storage_stake().to_yoctonear()
+                - self.pessimistic_transaction_fee.to_yoctonear(),
+        )
+    }
+}
+
+pub fn get_account_transfer_allowance(
+    connection_config: &ConnectionConfig,
+    account_id: near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<AccountTransferAllowance> {
+    let account_view =
+        if let Some(account_view) = get_account_state(connection_config, account_id.clone())? {
+            account_view
+        } else {
+            return Ok(AccountTransferAllowance {
+                account_id,
+                account_liquid_balance: NearBalance::from_yoctonear(0),
+                account_locked_balance: NearBalance::from_yoctonear(0),
+                storage_stake: NearBalance::from_yoctonear(0),
+                pessimistic_transaction_fee: NearBalance::from_yoctonear(0),
+            });
+        };
+    let storage_amount_per_byte = actix::System::new()
+        .block_on(async {
+            near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
+                .EXPERIMENTAL_protocol_config(
+                    near_jsonrpc_primitives::types::config::RpcProtocolConfigRequest {
+                        block_reference:
+                            near_jsonrpc_primitives::types::blocks::BlockReference::Finality(
+                                near_primitives::types::Finality::Final,
+                            ),
+                    },
+                )
+                .await
+        })
+        .map_err(|err| color_eyre::Report::msg(format!("RpcError: {:?}", err)))?
+        .config_view
+        .runtime_config
+        .storage_amount_per_byte;
+
+    Ok(AccountTransferAllowance {
+        account_id,
+        account_liquid_balance: NearBalance::from_yoctonear(account_view.amount),
+        account_locked_balance: NearBalance::from_yoctonear(account_view.locked),
+        storage_stake: NearBalance::from_yoctonear(
+            u128::from(account_view.storage_usage) * storage_amount_per_byte,
+        ),
+        // pessimistic_transaction_fee = 10^21 - this value is set temporarily
+        // In the future, its value will be calculated by the function: fn tx_cost(...)
+        // https://github.com/near/nearcore/blob/8a377fda0b4ce319385c463f1ae46e4b0b29dcd9/runtime/runtime/src/config.rs#L178-L232
+        pessimistic_transaction_fee: NearBalance::from_yoctonear(10u128.pow(21)),
+    })
+}
+
+pub fn get_account_state(
+    connection_config: &ConnectionConfig,
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
     let query_view_method_response = actix::System::new().block_on(async {
@@ -359,7 +489,7 @@ pub fn check_account_id(
                 } else {
                     return Err(color_eyre::Report::msg(format!("Error call result")));
                 };
-            Ok(Some(account_view))
+            Ok(Some(account_view.into()))
         }
         Err(_) => return Ok(None),
     }
@@ -539,7 +669,7 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
     }
 }
 
-async fn print_value_successful_transaction(
+fn print_value_successful_transaction(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
 ) {
     println!("Successful transaction");
@@ -610,9 +740,7 @@ async fn print_value_successful_transaction(
     }
 }
 
-pub async fn print_transaction_error(
-    tx_execution_error: near_primitives::errors::TxExecutionError,
-) {
+pub fn print_transaction_error(tx_execution_error: near_primitives::errors::TxExecutionError) {
     println!("Failed transaction");
     match tx_execution_error {
         near_primitives::errors::TxExecutionError::ActionError(action_error) => {
@@ -797,7 +925,7 @@ pub async fn print_transaction_error(
     }
 }
 
-pub async fn print_transaction_status(
+pub fn print_transaction_status(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
     network_connection_config: Option<crate::common::ConnectionConfig>,
 ) {
@@ -805,17 +933,17 @@ pub async fn print_transaction_status(
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-            print_transaction_error(tx_execution_error).await
+            print_transaction_error(tx_execution_error)
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
-            print_value_successful_transaction(transaction_info.clone()).await
+            print_value_successful_transaction(transaction_info.clone())
         }
     };
     let transaction_explorer: url::Url = match network_connection_config {
         Some(connection_config) => connection_config.transaction_explorer(),
         None => unreachable!("Error"),
     };
-    println!("Transaction ID: {id}.\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+    println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
         id=transaction_info.transaction_outcome.id,
         path=transaction_explorer
     );
@@ -882,6 +1010,66 @@ pub async fn save_access_key_to_keychain(
         );
     };
     Ok(())
+}
+
+pub fn try_external_subcommand_execution() -> CliResult {
+    let (subcommand, args) = {
+        let mut args = std::env::args().skip(1);
+        let subcommand = args
+            .next()
+            .ok_or_else(|| color_eyre::eyre::eyre!("subcommand is not provided"))?;
+        (subcommand, args.collect::<Vec<String>>())
+    };
+    let subcommand_exe = format!("near-cli-{}{}", subcommand, std::env::consts::EXE_SUFFIX);
+
+    let path = path_directories()
+        .iter()
+        .map(|dir| dir.join(&subcommand_exe))
+        .find(|file| is_executable(file));
+
+    let command = path.ok_or_else(|| {
+        color_eyre::eyre::eyre!(
+            "{} command or {} extension does not exist",
+            subcommand,
+            subcommand_exe
+        )
+    })?;
+
+    let err = match cargo_util::ProcessBuilder::new(&command)
+        .args(&args)
+        .exec_replace()
+    {
+        Ok(()) => return Ok(()),
+        Err(e) => e,
+    };
+
+    if let Some(perr) = err.downcast_ref::<cargo_util::ProcessError>() {
+        if let Some(code) = perr.code {
+            return Err(color_eyre::eyre::eyre!("perror occured, code: {}", code));
+        }
+    }
+    return Err(color_eyre::eyre::eyre!(err));
+}
+
+fn is_executable<P: AsRef<std::path::Path>>(path: P) -> bool {
+    if cfg!(target_family = "unix") {
+        use std::os::unix::prelude::*;
+        std::fs::metadata(path)
+            .map(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
+            .unwrap_or(false)
+    } else if cfg!(target_family = "windows") {
+        path.as_ref().is_file()
+    } else {
+        panic!("Unsupported for wasm");
+    }
+}
+
+fn path_directories() -> Vec<std::path::PathBuf> {
+    let mut dirs = vec![];
+    if let Some(val) = std::env::var_os("PATH") {
+        dirs.extend(std::env::split_paths(&val));
+    }
+    dirs
 }
 
 #[cfg(test)]
