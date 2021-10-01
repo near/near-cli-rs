@@ -1963,6 +1963,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "near-cli-validator-view"
+version = "0.1.0"
+dependencies = [
+ "clap 3.0.0-beta.4",
+ "dialoguer 0.8.0",
+ "near-cli-derive",
+ "near-cli-visual",
+ "near-primitives 0.1.0 (git+https://github.com/near/nearcore?rev=e242f71400111fe99a825fd8f5e53a82802c98b7)",
+ "strum 0.20.1",
+ "strum_macros 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url",
+]
+
+[[package]]
 name = "near-cli-view"
 version = "0.1.0"
 dependencies = [
