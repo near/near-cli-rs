@@ -2,7 +2,7 @@
 `NEAR CLI` is built to scale. The number of possible features is endless. Instead of choosing only some of them, we are creating an `Extensions System` that will empower our users to choose, build and share `NEAR CLI` functionality.
 
 ## How it works
-Extensibility is achieved by translating a `NEAR CLI` invocation of the form `near (?<command>[^ ]+)` into an invocation of an external tool `near-${command}` that then needs to be present in one of the user's `$PATH` directories.
+Extensibility is achieved by translating a `NEAR CLI` invocation of the form `near (?<command>[^ ]+)` into an invocation of an external tool `near-cli-${command}` that then needs to be present in one of the user's `$PATH` directories.
 It means that you can write it in any language and with the use of any framework, it just needs to be called `near-cli-{extension-name}` and be installed on your system. This approach is inspired by [Cargo](https://github.com/rust-lang/cargo).
 
 ## How to build an extension
@@ -14,7 +14,7 @@ As mentioned above, any binary can become an extension, but we are encouraging d
 ## Example
 Core `NEAR CLI` does not have validator specific functionality, but we can add it as a simple bash script:
 
-`near-cli-staking-pool-info.sh`
+`near-cli-staking-pool-info`
 ```bash
 #!/bin/sh
 POOL_ID=$1
