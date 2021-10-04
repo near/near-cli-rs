@@ -4,7 +4,7 @@ use clap::Clap;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use near_primitives::hash::CryptoHash;
-use near_primitives::types::{AccountId, BlockHeight};
+use near_primitives::types::{AccountId, BlockHeight, EpochId};
 
 use near_cli_derive;
 use near_cli_visual::{prompt_variant, PromptInput};
@@ -144,9 +144,8 @@ pub struct CliValidators {
 pub enum CliEpochCommand {
     #[strum_discriminants(strum(message = "View latest proposals"))]
     Latest,
-    /// View validators by EpochId
-    // EpochId(self::view_command::CliViewQueryRequest), //TODO
-    /// View validators by BlockId
+    // #[strum_discriminants(strum(message = "View by Epoch Id"))]
+    // EpochId(CliEpochId),
     #[strum_discriminants(strum(message = "View by Block Id"))]
     BlockId(CliBlockIdWrapper),
 }
@@ -155,6 +154,7 @@ impl PromptInput for CliEpochCommand {
     fn prompt_input() -> Self {
         match prompt_variant("Choose the Epoch") {
             CliEpochCommandDiscriminants::Latest => CliEpochCommand::Latest,
+            // CliEpochCommandDiscriminants::EpochId => CliEpochCommand::EpochId(Default::default()),
             CliEpochCommandDiscriminants::BlockId => CliEpochCommand::BlockId(Default::default()),
         }
     }
@@ -170,6 +170,17 @@ pub struct CliBlockIdWrapper {
     #[clap(subcommand)]
     cli_block_id: Option<CliBlockId>,
 }
+
+// #[derive(clap::Clap, Default, Debug, Clone, near_cli_derive::Interactive)]
+// #[clap(
+//     setting(clap::AppSettings::ColoredHelp),
+//     setting(clap::AppSettings::DisableHelpSubcommand),
+//     // setting(clap::AppSettings::VersionlessSubcommands)
+// )]
+// pub struct CliEpochId {
+//     #[clap(subcommand)]
+//     epoch_id: Option<EpochId>,
+// }
 
 //////////////////////////////////////// CliSendTo ///////////////////////////////////////////
 
