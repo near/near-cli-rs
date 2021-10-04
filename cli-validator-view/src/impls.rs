@@ -121,7 +121,10 @@ pub struct CliContract {
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::DisableVersionForSubcommands)
 )]
-pub struct CliProposals {}
+pub struct CliProposals {
+    // TODO: this structure is redundant.
+// But it can have a worker/process function if all the data will be available.
+}
 
 //////////////////////////// Validators ///////////////////////////////////////
 
@@ -131,7 +134,42 @@ pub struct CliProposals {}
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::DisableVersionForSubcommands)
 )]
-pub struct CliValidators {}
+pub struct CliValidators {
+    #[clap(subcommand)]
+    epoch: Option<CliEpochCommand>,
+}
+
+#[derive(Debug, Clone, Clap, EnumDiscriminants, near_cli_derive::Interactive)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+pub enum CliEpochCommand {
+    #[strum_discriminants(strum(message = "View latest proposals"))]
+    Latest,
+    /// View validators by EpochId
+    // EpochId(self::view_command::CliViewQueryRequest), //TODO
+    /// View validators by BlockId
+    #[strum_discriminants(strum(message = "View by Block Id"))]
+    BlockId(CliBlockIdWrapper),
+}
+
+impl PromptInput for CliEpochCommand {
+    fn prompt_input() -> Self {
+        match prompt_variant("Choose the Epoch") {
+            CliEpochCommandDiscriminants::Latest => CliEpochCommand::Latest,
+            CliEpochCommandDiscriminants::BlockId => CliEpochCommand::BlockId(Default::default()),
+        }
+    }
+}
+
+#[derive(clap::Clap, Default, Debug, Clone, near_cli_derive::Interactive)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    // setting(clap::AppSettings::VersionlessSubcommands)
+)]
+pub struct CliBlockIdWrapper {
+    #[clap(subcommand)]
+    cli_block_id: Option<CliBlockId>,
+}
 
 //////////////////////////////////////// CliSendTo ///////////////////////////////////////////
 
