@@ -4,7 +4,7 @@ use impls::*;
 use clap::Clap;
 use near_cli_visual::Interactive;
 
-#[derive(Debug, Clap, near_cli_derive::Interactive)]
+#[derive(Debug, Clap, Clone, near_cli_derive::Interactive)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -12,10 +12,20 @@ use near_cli_visual::Interactive;
 )]
 struct TopLevel {
     #[clap(subcommand)]
-    cli: Option<CliQueryRequest>
+    cli: Option<CliQueryRequest>,
 }
 
 fn main() {
     let x = TopLevel::parse().interactive();
-    println!("{:?}", x);
+    match x.clone().cli.unwrap() {
+        CliQueryRequest::AccountSummary(_) => println!("Entered data: {:?}", x),
+        CliQueryRequest::Proposals(_) => {
+            println!("Entered data: {:?}", x);
+            //TODO: how to get data here? (in a nice way)
+        }
+        CliQueryRequest::Validators(_) => {
+            println!("Entered data: {:?}", x);
+            //TODO: how to get data here? (in a nice way)
+        }
+    }
 }

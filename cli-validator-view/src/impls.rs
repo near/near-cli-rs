@@ -113,6 +113,26 @@ pub struct CliContract {
     download_mode: Option<CliDownloadMode>,
 }
 
+//////////////////////////// Proposals ///////////////////////////////////////
+
+#[derive(Debug, Default, Clone, Clap, near_cli_derive::Interactive)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::DisableVersionForSubcommands)
+)]
+pub struct CliProposals {}
+
+//////////////////////////// Validators ///////////////////////////////////////
+
+#[derive(Debug, Default, Clone, Clap, near_cli_derive::Interactive)]
+#[clap(
+    setting(clap::AppSettings::ColoredHelp),
+    setting(clap::AppSettings::DisableHelpSubcommand),
+    setting(clap::AppSettings::DisableVersionForSubcommands)
+)]
+pub struct CliValidators {}
+
 //////////////////////////////////////// CliSendTo ///////////////////////////////////////////
 
 #[derive(Debug, Clone, Clap, near_cli_derive::Interactive)]
@@ -278,7 +298,7 @@ impl<T> Default for CliOperationMode<T> {
     }
 }
 
-//////////////////////////// CliQueryRequest ////////////////////////////// 
+//////////////////////////// CliQueryRequest //////////////////////////////
 
 #[derive(Debug, Clone, EnumDiscriminants, Clap, near_cli_derive::Interactive)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -288,17 +308,19 @@ pub enum CliQueryRequest {
     #[strum_discriminants(strum(message = "View properties for an account (TODO: delete)"))]
     AccountSummary(CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliContract>>>>),
     #[strum_discriminants(strum(message = "View proposals"))]
-    Proposals(CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliContract>>>>), //TODO: refactor
+    Proposals(CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliProposals>>>>),
     #[strum_discriminants(strum(message = "View validators"))]
-    Validators(CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliContract>>>>), //TODO: refactor
+    Validators(CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliValidators>>>>),
 }
 
 impl PromptInput for CliQueryRequest {
     fn prompt_input() -> Self {
         match prompt_variant::<CliQueryRequestDiscriminants>("Choose your action") {
-            CliQueryRequestDiscriminants::AccountSummary => Self::AccountSummary(Default::default()),
+            CliQueryRequestDiscriminants::AccountSummary => {
+                Self::AccountSummary(Default::default())
+            }
             CliQueryRequestDiscriminants::Proposals => Self::Proposals(Default::default()),
-            CliQueryRequestDiscriminants::Validators => Self::Proposals(Default::default()),
+            CliQueryRequestDiscriminants::Validators => Self::Validators(Default::default()),
         }
     }
 }
