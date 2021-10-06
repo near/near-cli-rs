@@ -4,7 +4,7 @@ use clap::Clap;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use near_primitives::hash::CryptoHash;
-use near_primitives::types::{AccountId, BlockHeight, EpochId};
+use near_primitives::types::{AccountId, BlockHeight};
 
 use near_cli_derive;
 use near_cli_visual::{prompt_variant, PromptInput};
@@ -21,7 +21,6 @@ pub struct CliBlockIdHeight {
 pub struct CliBlockIdHash {
     block_id_hash: Option<CryptoHash>,
 }
-
 /////////////////////// CliBlockId ////////////////////////
 
 #[derive(Debug, Clone, EnumDiscriminants, Clap, near_cli_derive::Interactive)]
@@ -121,10 +120,7 @@ pub struct CliContract {
     setting(clap::AppSettings::DisableHelpSubcommand),
     setting(clap::AppSettings::DisableVersionForSubcommands)
 )]
-pub struct CliProposals {
-    // TODO: this structure is redundant.
-// But it can have a worker/process function if all the data will be available.
-}
+pub struct CliProposals {}
 
 //////////////////////////// Validators ///////////////////////////////////////
 
@@ -171,17 +167,10 @@ pub struct CliBlockIdWrapper {
     cli_block_id: Option<CliBlockId>,
 }
 
-// #[derive(clap::Clap, Default, Debug, Clone, near_cli_derive::Interactive)]
-// #[clap(
-//     setting(clap::AppSettings::ColoredHelp),
-//     setting(clap::AppSettings::DisableHelpSubcommand),
-//     // setting(clap::AppSettings::VersionlessSubcommands)
-// )]
+// #[derive(Debug, Default, Clone, Clap, near_cli_derive::Interactive)]
 // pub struct CliEpochId {
-//     #[clap(subcommand)]
-//     epoch_id: Option<EpochId>,
+//     epoch_id: Option<EpochId>, //TODO: change to EpochID
 // }
-
 //////////////////////////////////////// CliSendTo ///////////////////////////////////////////
 
 #[derive(Debug, Clone, Clap, near_cli_derive::Interactive)]
@@ -352,7 +341,7 @@ impl<T> Default for CliOperationMode<T> {
 #[derive(Debug, Clone, EnumDiscriminants, Clap, near_cli_derive::Interactive)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum CliQueryRequest {
-    // TODO: why are we describing this nested structure here? Why not in main?
+    // TODO: move to main
     /// View properties for an account
     #[strum_discriminants(strum(message = "View properties for an account (TODO: delete)"))]
     AccountSummary(CliOperationMode<CliMode<CliNetworkArgs<CliSelectServer<CliContract>>>>),
