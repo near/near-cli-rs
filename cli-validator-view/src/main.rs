@@ -1,8 +1,17 @@
-mod impls;
 use impls::*;
+use common:: {
+    display_validators_info,
+    display_proposals_info
+};
+
+use common::{CliResult};
 
 use clap::Clap;
 use near_cli_visual::Interactive;
+
+mod impls;
+mod common;
+mod consts;
 
 #[derive(Debug, Clap, Clone, near_cli_derive::Interactive)]
 #[clap(
@@ -21,11 +30,11 @@ fn main() {
         CliQueryRequest::AccountSummary(_) => println!("Entered data: {:?}", x),
         CliQueryRequest::Proposals(_) => {
             println!("Entered data: {:?}", x);
-            //TODO: how to get data here? (in a nice way)
+            // display_proposals_info();
         }
         CliQueryRequest::Validators(_) => {
             println!("Entered data: {:?}", x);
-            //TODO: how to get data here? (in a nice way)
+            // display_validators_info();
         }
     }
 }

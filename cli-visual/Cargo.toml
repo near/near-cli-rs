@@ -10,4 +10,4 @@ strum = { git = "https://github.com/frol/strum", branch = "feat/discriminants-pa
 strum_macros = "0.20"
 url = { version = "2", features = ["serde"] }
 
-near-primitives = { git = "https://github.com/near/nearcore", rev="e242f71400111fe99a825fd8f5e53a82802c98b7" }
+near-primitives = { git = "https://github.com/near/nearcore", rev="4306275e57edf6a918e73b2b442ffb110761a264" }

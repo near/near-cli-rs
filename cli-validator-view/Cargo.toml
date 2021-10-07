@@ -9,8 +9,11 @@ dialoguer = "0.8.0"
 strum = { git = "https://github.com/frol/strum", branch = "feat/discriminants-pass-through-attributes", features = ["derive"] }
 strum_macros = "0.20"
 url = { version = "2", features = ["serde"] }
+color-eyre = "0.5"
 
-near-primitives = { git = "https://github.com/near/nearcore", rev="e242f71400111fe99a825fd8f5e53a82802c98b7" }
+near-primitives = { git = "https://github.com/near/nearcore", rev="4306275e57edf6a918e73b2b442ffb110761a264" }
+near-jsonrpc-client = { git = "https://github.com/near/near-jsonrpc-client-rs/", rev="693a639b32ad5806a3dfd6063de6d6eecfe64501" }
+near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="4306275e57edf6a918e73b2b442ffb110761a264" }
 
 near-cli-visual = { path = "../cli-visual" }
 near-cli-derive = { path = "../cli-derive" }
