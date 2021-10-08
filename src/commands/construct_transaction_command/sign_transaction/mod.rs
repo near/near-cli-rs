@@ -23,13 +23,13 @@ pub enum CliSignTransaction {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum SignTransaction {
     #[strum_discriminants(strum(
-        message = "Yes, I want to sign the transaction with my private key"
+        message = "Yes, I want to sign the transaction with a plain-text private key"
     ))]
     SignPrivateKey(self::sign_with_private_key::SignPrivateKey),
-    #[strum_discriminants(strum(message = "Yes, I want to sign the transaction with keychain"))]
+    #[strum_discriminants(strum(message = "Yes, I want to sign the transaction with keychain (located in ~/.near-credentials)"))]
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
     #[strum_discriminants(strum(
-        message = "Yes, I want to sign the transaction with Ledger device"
+        message = "Yes, I want to sign the transaction with Ledger Nano S/X device"
     ))]
     SignWithLedger(self::sign_with_ledger::SignLedger),
     #[strum_discriminants(strum(
@@ -185,14 +185,14 @@ impl SignTransaction {
 
 fn input_signer_public_key() -> near_crypto::PublicKey {
     Input::new()
-        .with_prompt("To create an unsigned transaction enter sender's public key")
+        .with_prompt("Enter sender (signer) public key")
         .interact_text()
         .unwrap()
 }
 
 fn input_signer_private_key() -> near_crypto::SecretKey {
     Input::new()
-        .with_prompt("Enter sender's private key")
+        .with_prompt("Enter sender (signer) private (secret) key")
         .interact_text()
         .unwrap()
 }
@@ -226,10 +226,10 @@ fn input_block_hash() -> near_primitives::hash::CryptoHash {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Submit {
     #[strum_discriminants(strum(
-        message = "Do you want send the transaction to the server (it's works only for online mode)"
+        message = "I want to send the transaction to the network"
     ))]
     Send,
-    #[strum_discriminants(strum(message = "Do you want show the transaction on display?"))]
+    #[strum_discriminants(strum(message = "I only want to print base64-encoded transaction for JSON RPC input and exit"))]
     Display,
 }
 
@@ -250,19 +250,18 @@ impl Submit {
     }
 
     pub fn choose_submit(connection_config: Option<crate::common::ConnectionConfig>) -> Self {
+        if connection_config.is_none() {
+            return Submit::Display;
+        }
         println!();
-        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
 
-        let submits = if let Some(_) = connection_config {
-            variants
-                .iter()
-                .map(|p| p.get_message().unwrap().to_owned())
-                .collect::<Vec<_>>()
-        } else {
-            vec!["Do you want show the transaction on display?".to_string()]
-        };
+        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
+        let submits = variants
+            .iter()
+            .map(|p| p.get_message().unwrap().to_owned())
+            .collect::<Vec<_>>();
         let select_submit = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select an action that you want to add to the action:")
+            .with_prompt("How would you like to proceed")
             .items(&submits)
             .default(0)
             .interact()
