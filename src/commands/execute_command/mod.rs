@@ -68,9 +68,9 @@ enum CliMethod {
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 enum Method {
-    #[strum_discriminants(strum(message = "Change a method"))]
+    #[strum_discriminants(strum(message = "Execute a changing method (construct a transaction with a function call)"))]
     ChangeMethod(self::change_method::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "View a method"))]
+    #[strum_discriminants(strum(message = "Execute a viewing method (read-only call, which does not require a transaction)"))]
     ViewMethod(self::view_method::operation_mode::OperationMode),
 }
 
