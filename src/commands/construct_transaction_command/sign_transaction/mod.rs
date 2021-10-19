@@ -26,7 +26,9 @@ pub enum SignTransaction {
         message = "Yes, I want to sign the transaction with a plain-text private key"
     ))]
     SignPrivateKey(self::sign_with_private_key::SignPrivateKey),
-    #[strum_discriminants(strum(message = "Yes, I want to sign the transaction with keychain (located in ~/.near-credentials)"))]
+    #[strum_discriminants(strum(
+        message = "Yes, I want to sign the transaction with keychain (located in ~/.near-credentials)"
+    ))]
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
     #[strum_discriminants(strum(
         message = "Yes, I want to sign the transaction with Ledger Nano S/X device"
@@ -225,11 +227,11 @@ fn input_block_hash() -> near_primitives::hash::CryptoHash {
 #[derive(Debug, EnumDiscriminants, Clone, clap::Clap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Submit {
-    #[strum_discriminants(strum(
-        message = "I want to send the transaction to the network"
-    ))]
+    #[strum_discriminants(strum(message = "I want to send the transaction to the network"))]
     Send,
-    #[strum_discriminants(strum(message = "I only want to print base64-encoded transaction for JSON RPC input and exit"))]
+    #[strum_discriminants(strum(
+        message = "I only want to print base64-encoded transaction for JSON RPC input and exit"
+    ))]
     Display,
 }
 
