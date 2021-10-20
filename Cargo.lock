@@ -1928,41 +1928,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "near-cli-validator"
-version = "0.1.14"
-dependencies = [
- "actix",
- "actix-web",
- "async-recursion",
- "base64 0.12.3",
- "bip39",
- "bs58 0.3.1",
- "cargo-util",
- "clap 3.0.0-beta.2",
- "clap_generate",
- "color-eyre",
- "derive_more",
- "dialoguer 0.8.0",
- "dirs",
- "ed25519-dalek",
- "hex 0.4.2",
- "near-crypto 0.1.0 (git+https://github.com/near/nearcore?rev=4306275e57edf6a918e73b2b442ffb110761a264)",
- "near-jsonrpc-client 0.1.0 (git+https://github.com/near/near-jsonrpc-client-rs/?rev=693a639b32ad5806a3dfd6063de6d6eecfe64501)",
- "near-jsonrpc-primitives 0.2.0 (git+https://github.com/near/nearcore?rev=4306275e57edf6a918e73b2b442ffb110761a264)",
- "near-primitives 0.1.0 (git+https://github.com/near/nearcore?rev=4306275e57edf6a918e73b2b442ffb110761a264)",
- "openssl-probe",
- "serde",
- "serde_json",
- "shell-words",
- "slip10",
- "smart-default",
- "strum 0.20.1",
- "strum_macros 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "url",
- "url_open",
-]
-
-[[package]]
 name = "near-cli-validator-view"
 version = "0.1.0"
 dependencies = [

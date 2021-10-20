@@ -54,5 +54,4 @@ members = [
     "cli-derive",
     "cli-view",
     "extensions/validator",
-    "cli-validator-view"
 ]

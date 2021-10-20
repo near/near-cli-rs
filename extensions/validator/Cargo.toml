@@ -1,43 +1,24 @@
 [package]
-name = "near-cli-validator"
-version = "0.1.14"
-authors = ["volovyk-s <sergeyvolovyk@gmail.com>"]
+# TODO: rename
+name = "near-cli-validator-view"
+version = "0.1.0"
 edition = "2018"
 
-# TODO: get rid of unused dependencies
 [dependencies]
-clap = "3.0.0-beta.2"
-clap_generate = "3.0.0-beta.2"
-dialoguer = "0.8"
-# strum = "0.20"
+actix = "0.11.0-beta.2"
+dialoguer = "0.8.0"
 strum = { git = "https://github.com/frol/strum", branch = "feat/discriminants-pass-through-attributes", features = ["derive"] }
 strum_macros = "0.20"
-smart-default = "0.6.0"
-derive_more = "0.99.9"
-
-async-recursion = "0.3.2"
-
-actix = "0.11.0-beta.2"
-actix-web = { version = "4.0.0-beta.6", features = [ "openssl" ] }
-openssl-probe = { version = "0.1.2" }
-
-base64 = "0.12.3"
-bip39 = { version = "1.0.0", features = [ "rand" ] }
-bs58 = "0.3"
-ed25519-dalek = { version = "1" }
-hex = "0.4.2"
-serde = { version = "1.0.127", features = ["derive"] }
-serde_json = "1.0.66"
-dirs = "3.0"
-slip10 = "0.4.3"
 url = { version = "2", features = ["serde"] }
-url_open = "0.0.1"
-shell-words = "1.0.0"
-cargo-util = "0.1.1"
-
 color-eyre = "0.5"
 
-near-crypto = { git = "https://github.com/near/nearcore", rev="4306275e57edf6a918e73b2b442ffb110761a264" }
 near-primitives = { git = "https://github.com/near/nearcore", rev="4306275e57edf6a918e73b2b442ffb110761a264" }
 near-jsonrpc-client = { git = "https://github.com/near/near-jsonrpc-client-rs/", rev="693a639b32ad5806a3dfd6063de6d6eecfe64501" }
 near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="4306275e57edf6a918e73b2b442ffb110761a264" }
+
+near-cli-visual = { path = "../../cli-visual" }
+near-cli-derive = { path = "../../cli-derive" }
+
+[dependencies.clap]
+git = "https://github.com/ChaoticTempest/clap"
+branch = "feat/derive-generic"

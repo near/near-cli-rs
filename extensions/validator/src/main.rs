@@ -1,84 +1,107 @@
+use common::{display_proposals_info, display_validators_info};
+use impls::*;
+
+use common::CliResult;
+
 use clap::Clap;
-use shell_words;
+use near_cli_visual::Interactive;
 
-use common::{CliResult};
-
-mod commands;
 mod common;
 mod consts;
+mod impls;
 
-/// near-cli-validator is a toolbox for validators of the NEAR blockchain
-#[derive(Debug, Clap)]
+#[derive(Debug, Clap, Clone, near_cli_derive::Interactive)]
 #[clap(
-    version,
-    author,
-    about,
     setting(clap::AppSettings::ColoredHelp),
     setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands),
-    // setting(clap::AppSettings::NextLineHelp)
+    setting(clap::AppSettings::DisableVersionForSubcommands)
 )]
-struct CliArgs {
+struct TopLevel {
     #[clap(subcommand)]
-    top_level_command: Option<self::commands::CliTopLevelCommand>,
+    cli: Option<CliQueryRequest>,
 }
 
-#[derive(Debug, Clone)]
-struct Args {
-    top_level_command: self::commands::TopLevelCommand,
-}
-
-impl CliArgs {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = self
-            .top_level_command
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        args.push_front("./near-cli-validator".to_owned());
-        args
-    }
-}
-
-impl From<Args> for CliArgs {
-    fn from(cli_args: Args) -> Self {
-        Self {
-            top_level_command: Some(cli_args.top_level_command.into()),
+fn main() {
+    let x = TopLevel::parse().interactive();
+    match x.clone().cli.unwrap() {
+        CliQueryRequest::AccountSummary(_) => println!("Entered data: {:?}", x),
+        CliQueryRequest::Proposals(data) => {
+            match data.mode.unwrap() {
+                CliMode::Network(data) => {
+                    let mut connection_config = crate::common::ConnectionConfig::Testnet;
+                    match data.selected_server.unwrap() {
+                        CliSelectServer::Testnet(_) => {
+                            connection_config = crate::common::ConnectionConfig::Testnet;
+                        }
+                        CliSelectServer::Mainnet(_) => {
+                            connection_config = crate::common::ConnectionConfig::Mainnet;
+                        }
+                        CliSelectServer::Betanet(_) => {
+                            connection_config = crate::common::ConnectionConfig::Betanet;
+                        }
+                        CliSelectServer::Custom(_) => {
+                            println!("Custom network is currentlu unsuported"); //TODO
+                        }
+                    }
+                    actix::System::new().block_on(display_proposals_info(&connection_config));
+                }
+            };
+        }
+        CliQueryRequest::Validators(data) => {
+            match data.mode.unwrap() {
+                CliMode::Network(data) => {
+                    let mut connection_config = crate::common::ConnectionConfig::Testnet;
+                    let mut epoch = near_primitives::types::EpochReference::Latest;
+                    match data.selected_server.unwrap() {
+                        CliSelectServer::Testnet(data) => {
+                            connection_config = crate::common::ConnectionConfig::Testnet;
+                            match data.send_to.unwrap() {
+                                CliSendTo::SendTo(data) => {
+                                    match data.epoch.unwrap() {
+                                        CliEpochCommand::Latest => {
+                                            epoch = near_primitives::types::EpochReference::Latest;
+                                        }
+                                        CliEpochCommand::BlockId(data) => {
+                                            match data.cli_block_id.unwrap() {
+                                                CliBlockId::AtFinalBlock => {
+                                                    epoch = near_primitives::types::EpochReference::Latest;
+                                                }
+                                                CliBlockId::AtBlockHeight(data) => {
+                                                    let height =
+                                                        near_primitives::types::BlockId::Height(
+                                                            data.block_id_height.unwrap(),
+                                                        );
+                                                    epoch = near_primitives::types::EpochReference::BlockId(height);
+                                                }
+                                                CliBlockId::AtBlockHash(data) => {
+                                                    let hash =
+                                                        near_primitives::types::BlockId::Hash(
+                                                            data.block_id_hash.unwrap(),
+                                                        );
+                                                    epoch = near_primitives::types::EpochReference::BlockId(hash);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        CliSelectServer::Mainnet(_) => {
+                            connection_config = crate::common::ConnectionConfig::Mainnet;
+                            //TODO: get epoch
+                        }
+                        CliSelectServer::Betanet(_) => {
+                            connection_config = crate::common::ConnectionConfig::Betanet;
+                            //TODO: get epoch
+                        }
+                        CliSelectServer::Custom(_) => {
+                            println!("Custom network is currently unsuported"); //TODO
+                        }
+                    }
+                    actix::System::new()
+                        .block_on(display_validators_info(epoch, &connection_config));
+                }
+            };
         }
     }
-}
-
-impl From<CliArgs> for Args {
-    fn from(cli_args: CliArgs) -> Self {
-        let top_level_command = match cli_args.top_level_command {
-            Some(cli_subcommand) => self::commands::TopLevelCommand::from(cli_subcommand),
-            None => self::commands::TopLevelCommand::choose_command(),
-        };
-        Self { top_level_command }
-    }
-}
-
-impl Args {
-    async fn process(self) -> CliResult {
-        self.top_level_command.process().await
-    }
-}
-
-fn main() -> CliResult {
-    color_eyre::install()?;
-
-    let cli = CliArgs::parse();
-
-    let args = Args::from(cli);
-
-    let completed_cli = CliArgs::from(args.clone());
-
-    let process_result = actix::System::new().block_on(args.process());
-
-    println!(
-        "Your console command:\n{}",
-        shell_words::join(&completed_cli.to_cli_args())
-    );
-
-    process_result
 }
