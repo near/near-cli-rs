@@ -287,7 +287,7 @@ where
 
 pub struct CliNetworkArgs<T> {
     #[clap(subcommand)]
-    selected_server: Option<T>,
+    pub selected_server: Option<T>,
 }
 
 impl<T> Default for CliNetworkArgs<T> {
@@ -325,7 +325,7 @@ where
 )]
 pub struct CliOperationMode<T> {
     #[clap(subcommand)]
-    mode: Option<T>,
+    pub mode: Option<T>,
 }
 
 impl<T> Default for CliOperationMode<T> {

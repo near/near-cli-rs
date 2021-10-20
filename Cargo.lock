@@ -1966,6 +1966,7 @@ dependencies = [
 name = "near-cli-validator-view"
 version = "0.1.0"
 dependencies = [
+ "actix",
  "clap 3.0.0-beta.4",
  "color-eyre",
  "dialoguer 0.8.0",
