@@ -44,3 +44,13 @@ near-crypto = { git = "https://github.com/near/nearcore", rev="e242f71400111fe99
 near-primitives = { git = "https://github.com/near/nearcore", rev="e242f71400111fe99a825fd8f5e53a82802c98b7" }
 near-jsonrpc-client = { git = "https://github.com/near/nearcore", rev="e242f71400111fe99a825fd8f5e53a82802c98b7" }
 near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="e242f71400111fe99a825fd8f5e53a82802c98b7" }
+
+near-cli-visual = { path = "cli-visual" }
+near-cli-derive = { path = "cli-derive" }
+
+[workspace]
+members = [
+    "cli-visual",
+    "cli-derive",
+    "extensions/validator",
+]
