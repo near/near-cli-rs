@@ -12,14 +12,14 @@ use near_cli_visual::{prompt_variant, PromptInput};
 
 ////////////////////////// CliBlockIdHeight ///////////////////////////////
 pub struct CliBlockIdHeight {
-    block_id_height: Option<BlockHeight>,
+    pub block_id_height: Option<BlockHeight>,
 }
 
 ////////////////////////// CliBlockIdHash //////////////////////////
 
 #[derive(Debug, Default, Clone, Clap, near_cli_derive::Interactive)]
 pub struct CliBlockIdHash {
-    block_id_hash: Option<CryptoHash>,
+    pub block_id_hash: Option<CryptoHash>,
 }
 /////////////////////// CliBlockId ////////////////////////
 
@@ -132,7 +132,7 @@ pub struct CliProposals {}
 )]
 pub struct CliValidators {
     #[clap(subcommand)]
-    epoch: Option<CliEpochCommand>,
+    pub epoch: Option<CliEpochCommand>,
 }
 
 #[derive(Debug, Clone, Clap, EnumDiscriminants, near_cli_derive::Interactive)]
@@ -164,7 +164,7 @@ impl PromptInput for CliEpochCommand {
 )]
 pub struct CliBlockIdWrapper {
     #[clap(subcommand)]
-    cli_block_id: Option<CliBlockId>,
+    pub cli_block_id: Option<CliBlockId>,
 }
 
 // #[derive(Debug, Default, Clone, Clap, near_cli_derive::Interactive)]

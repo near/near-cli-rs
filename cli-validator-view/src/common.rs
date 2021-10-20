@@ -3,6 +3,7 @@ use near_primitives::{borsh::BorshDeserialize, views::EpochValidatorInfo};
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
+#[derive(Debug)]
 pub enum ConnectionConfig {
     Testnet,
     Mainnet,
@@ -46,6 +47,9 @@ pub async fn display_validators_info(
     epoch: near_primitives::types::EpochReference,
     network_connection_config: &crate::common::ConnectionConfig,
 ) -> crate::CliResult {
+    println!("Requested epoch: {:?}", epoch);
+    println!("Selected network: {:?}", network_connection_config);
+
     let (genesis_config, validator_info) = validators_info(epoch, network_connection_config).await;
 
     //TODO: make it pretty
@@ -60,6 +64,7 @@ pub async fn display_validators_info(
 pub async fn display_proposals_info(
     network_connection_config: &crate::common::ConnectionConfig,
 ) -> crate::CliResult {
+    println!("Selected network network: {:?}", network_connection_config);
     let (genesis_config, validator_info) = validators_info(
         near_primitives::types::EpochReference::Latest,
         network_connection_config,
