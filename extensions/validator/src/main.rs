@@ -51,18 +51,24 @@ fn main() {
             match data.mode.unwrap() {
                 CliMode::Network(data) => {
                     let (connection_config, epoch) = match data.selected_server.unwrap() {
-                        CliSelectServer::Testnet(data) => {
-                            (crate::common::ConnectionConfig::Testnet, epoch_from_validators_structure(data))
-                        }
-                        CliSelectServer::Mainnet(data) => {
-                            (crate::common::ConnectionConfig::Mainnet, epoch_from_validators_structure(data))
-                        }
-                        CliSelectServer::Betanet(data) => {
-                            (crate::common::ConnectionConfig::Betanet, epoch_from_validators_structure(data))
-                        }
+                        CliSelectServer::Testnet(data) => (
+                            crate::common::ConnectionConfig::Testnet,
+                            epoch_from_validators_structure(data),
+                        ),
+                        CliSelectServer::Mainnet(data) => (
+                            crate::common::ConnectionConfig::Mainnet,
+                            epoch_from_validators_structure(data),
+                        ),
+                        CliSelectServer::Betanet(data) => (
+                            crate::common::ConnectionConfig::Betanet,
+                            epoch_from_validators_structure(data),
+                        ),
                         CliSelectServer::Custom(_) => {
                             println!("Custom network is currently unsuported");
-                            (crate::common::ConnectionConfig::Testnet, near_primitives::types::EpochReference::Latest)
+                            (
+                                crate::common::ConnectionConfig::Testnet,
+                                near_primitives::types::EpochReference::Latest,
+                            )
                         }
                     };
                     actix::System::new()
