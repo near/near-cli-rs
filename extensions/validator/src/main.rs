@@ -55,44 +55,15 @@ fn main() {
                     match data.selected_server.unwrap() {
                         CliSelectServer::Testnet(data) => {
                             connection_config = crate::common::ConnectionConfig::Testnet;
-                            match data.send_to.unwrap() {
-                                CliSendTo::SendTo(data) => {
-                                    match data.epoch.unwrap() {
-                                        CliEpochCommand::Latest => {
-                                            epoch = near_primitives::types::EpochReference::Latest;
-                                        }
-                                        CliEpochCommand::BlockId(data) => {
-                                            match data.cli_block_id.unwrap() {
-                                                CliBlockId::AtFinalBlock => {
-                                                    epoch = near_primitives::types::EpochReference::Latest;
-                                                }
-                                                CliBlockId::AtBlockHeight(data) => {
-                                                    let height =
-                                                        near_primitives::types::BlockId::Height(
-                                                            data.block_id_height.unwrap(),
-                                                        );
-                                                    epoch = near_primitives::types::EpochReference::BlockId(height);
-                                                }
-                                                CliBlockId::AtBlockHash(data) => {
-                                                    let hash =
-                                                        near_primitives::types::BlockId::Hash(
-                                                            data.block_id_hash.unwrap(),
-                                                        );
-                                                    epoch = near_primitives::types::EpochReference::BlockId(hash);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            epoch = epoch_from_validators_structure(data);
                         }
-                        CliSelectServer::Mainnet(_) => {
+                        CliSelectServer::Mainnet(data) => {
                             connection_config = crate::common::ConnectionConfig::Mainnet;
-                            //TODO: get epoch
+                            epoch = epoch_from_validators_structure(data);
                         }
-                        CliSelectServer::Betanet(_) => {
+                        CliSelectServer::Betanet(data) => {
                             connection_config = crate::common::ConnectionConfig::Betanet;
-                            //TODO: get epoch
+                            epoch = epoch_from_validators_structure(data);
                         }
                         CliSelectServer::Custom(_) => {
                             println!("Custom network is currently unsuported"); //TODO
@@ -104,4 +75,25 @@ fn main() {
             };
         }
     }
+}
+
+fn epoch_from_validators_structure(
+    data: CliServer<CliSendTo<CliValidators>>,
+) -> near_primitives::types::EpochReference {
+    return match data.send_to.unwrap() {
+        CliSendTo::SendTo(data) => match data.epoch.unwrap() {
+            CliEpochCommand::Latest => near_primitives::types::EpochReference::Latest,
+            CliEpochCommand::BlockId(data) => match data.cli_block_id.unwrap() {
+                CliBlockId::AtFinalBlock => near_primitives::types::EpochReference::Latest,
+                CliBlockId::AtBlockHeight(data) => near_primitives::types::EpochReference::BlockId(
+                    near_primitives::types::BlockId::Height(data.block_id_height.unwrap()),
+                ),
+                CliBlockId::AtBlockHash(data) => {
+                    let hash: near_primitives::types::BlockId =
+                        near_primitives::types::BlockId::Hash(data.block_id_hash.unwrap());
+                    near_primitives::types::EpochReference::BlockId(hash)
+                }
+            },
+        },
+    };
 }
