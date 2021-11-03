@@ -47,7 +47,7 @@ helpers
     - unstake
 
 NEAR CLI is built for:
-- NEAR smart-contract developers
+- NEAR dApp developers, who build smart-contracts, UIs, and tooling on NEAR
 - validators
 - tech-savvy people automating their routines
 
