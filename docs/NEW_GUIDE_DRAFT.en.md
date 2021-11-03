@@ -1,56 +1,67 @@
+`NEAR CLI Core commands`
 login
 create-account
     - implicit
     - subaccount
+<!-- account Id is entered in this step -->
 manage-account
-    <!-- Should we add local key management? -->
     - keys
         - view
         - add
         - delete
         - nonce
+    - local-keys
+        <!-- Needs to be designed (with multikey management) -->
     - contract
         - deploy
         - dev-deploy
         - state
-        - code
-        <!-- TODO: what is the best name for it? -->
-        - change-function-call
-        <!-- TODO: what is the best name for it? -->
-        - view-function-call
+        - wasm-hash
+        - view-call
+        - change-call
     - state
     - delete
 transfer
-<!-- TODO: should it be manage-account? Should it be here at all? If yes, where is `unstake`? Maybe it should be an extension, like "near-cli-extension-staking".  -->
-stake
-<!-- TODO: feels a bit out of place, but definitely important. Maybe we need to add other view functions and have 1 subcommand for them. -->
+<!-- TODO: feels a bit out of place, but definitely important. Maybe we need to add other view functions and have 1 subcommand for them. Or it can be one of the helpers-->
 transaction-status
 helpers
-    <!-- TODO: some or all of these helpers can live in extensions, let's discuss it -->
-    - constract-transaction
+    <!-- please, suggest other helpers -->
+    - generate key
+	- get the public key from ledger device
     - recent-block-hash
-    - new-stake-proposal
+
+<!-- Currently it's a part of NEAR CLI Rust. Seems like a functionality for advanced users -->
+`transaction-constructor` extension
+    - constract-transaction
     - sign a transaction with the private key
 	- combine unsigned transaction with a signature
 	- sign a transaction with ledger
 	- send signed transaction
 	- deserializing the bytes from base64
-	- get the public key from ledger device
-    - generate key
 
+<!-- Most of the people will not use staking functionality from CLI, lets move it to extension. -->
+`staking` extension
+    <!-- TODO: what is this command? -->
+    - new-stake-proposal
+    - stake
+    <!-- NOTE: new command, should it be here? -->
+    - unstake
 
 NEAR CLI is built for:
 - NEAR smart-contract developers
 - validators
 - ..?
+
 Mental model to distinguish extension from the core commands:
-- core commands are used by all groups of users
-- extensions are used by a particular group or several groups of users
-- extensions are not composable (or are they?)
+- `NEAR CLI core` is a single binary and contains all of the `core` commands
+- Each extension is a separate binary that can be executed from `NEAR CLI`
+- There is no extensions that are installed `by default`
+- `NEAR CLI` Core commands should be usefull for all groups of users
+- Extensions are used by a particular group or several groups of users
+- Extensions are not composable
 
 Open questions:
 - where to add flags like --verbose, --structured, etc.
-- multiple keys management (or postpone)
 - What about prompts like: `Are you sure that you want to delete the last existing key?`. Probably they should be asked after the command is entered.
 
 Other:
