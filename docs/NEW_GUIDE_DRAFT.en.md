@@ -9,16 +9,15 @@ manage-account
         - view
         - add
         - delete
-        - nonce
     - local-keys
         <!-- Needs to be designed (with multikey management) -->
     - contract
-        - deploy
-        - dev-deploy
-        - state
-        - wasm-hash
-        - view-call
-        - change-call
+        - deploy-code
+        - dev-deploy-code
+        - get-code-checksum
+        - get-state
+        - call-view-function
+        - call-change-function
     - state
     - delete
 transfer
