@@ -49,7 +49,7 @@ helpers
 NEAR CLI is built for:
 - NEAR smart-contract developers
 - validators
-- ..?
+- tech-savvy people automating their routines
 
 Mental model to distinguish extension from the core commands:
 - `NEAR CLI core` is a single binary and contains all of the `core` commands
