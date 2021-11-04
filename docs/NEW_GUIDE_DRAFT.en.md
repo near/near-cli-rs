@@ -9,8 +9,6 @@ manage-account
         - view
         - add
         - delete
-    - local-keys
-        <!-- Needs to be designed (with multikey management) -->
     - contract
         - deploy-code
         - dev-deploy-code
@@ -38,13 +36,17 @@ helpers
 	- send signed transaction
 	- deserializing the bytes from base64
 
-<!-- Most of the people will not use staking functionality from CLI, lets move it to extension. -->
-`staking` extension
-    <!-- TODO: what is this command? -->
+
+`staking-for-delegators` extension
     - new-stake-proposal
     - stake
-    <!-- NOTE: new command, should it be here? -->
     - unstake
+
+`validators` extension
+    - validators
+    - proposals
+
+<!-- TODO: read about native staking and delegation -->
 
 NEAR CLI is built for:
 - NEAR dApp developers, who build smart-contracts, UIs, and tooling on NEAR
@@ -57,11 +59,11 @@ Mental model to distinguish extension from the core commands:
 - There is no extensions that are installed `by default`
 - `NEAR CLI` Core commands should be usefull for all groups of users
 - Extensions are used by a particular group or several groups of users
-- Extensions are not composable
+- Extensions are not composable (you should not create extensions for extensions).
 
 Open questions:
-- where to add flags like --verbose, --structured, etc.
-- What about prompts like: `Are you sure that you want to delete the last existing key?`. Probably they should be asked after the command is entered.
+- Where to add flags like --verbose, --structured/json/csv, etc.
+- We should add `local-keys` management option. Needs to be designed. Can live in `manage-account` -> `local-keys` or at the top level of the `NEAR CLI core`.
 
 Other:
-- interactive mode should look like: "command - description". It will help people to learn the commands. 
+- Interactive mode should look like: "command - description". It will help people to learn the commands. 
