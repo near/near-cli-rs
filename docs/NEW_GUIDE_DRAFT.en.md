@@ -35,6 +35,16 @@ manage-account `<- accountId is entered in this step`
         - call-change-method
     - delete
 transfer
+config
+    - connections
+        <!-- Should it be here? Or `list` is enough? -->
+        - show-current
+        - list
+        - add
+        - delete
+    - cli
+        - set
+        - get
 helpers
     - generate-key
 	- get-public-key-from-ledger
@@ -76,6 +86,7 @@ Open questions:
 - Where to add flags like `--verbose`, `--structured/json/csv`, etc.
 - We should add `local-keys` management option. Needs to be designed. Can live in `manage-account` -> `local-keys` or at the top level of the `Core NEAR CLI`.
 - Should we have helpers in `Core NEAR CLI`? Is't that contradicts extensions concept?
+- How config should work? Is current design good enough?
 
 Other:
 - Interactive mode should look like: "command - description". It will help people to learn the commands.
