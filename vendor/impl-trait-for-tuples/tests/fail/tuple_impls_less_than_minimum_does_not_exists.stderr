@@ -1,0 +1,8 @@
+error[E0277]: the trait bound `(Impl, Impl): Test` is not satisfied
+  --> $DIR/tuple_impls_less_than_minimum_does_not_exists.rs:10:12
+   |
+8  | fn test<T: Test>() {}
+   |            ---- required by this bound in `test`
+9  | fn main() {
+10 |     test::<(Impl, Impl)>();
+   |            ^^^^^^^^^^^^ the trait `Test` is not implemented for `(Impl, Impl)`

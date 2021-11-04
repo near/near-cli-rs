@@ -1,0 +1,17 @@
+error: all associated items must have a visibility of `pub`
+ --> $DIR/visibility-1.rs:6:11
+  |
+6 |     const ASSOC2: u8 = 2; //~ ERROR all associated items must have a visibility of `pub`
+  |           ^^^^^^
+
+error: all associated items must have inherited visibility
+  --> $DIR/visibility-1.rs:15:5
+   |
+15 |     pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+   |     ^^^
+
+error: all associated items must have inherited visibility
+  --> $DIR/visibility-1.rs:22:5
+   |
+22 |     pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+   |     ^^^

@@ -1,0 +1,23 @@
+error: Invalid trait bound: unexpected token
+  --> $DIR/custom_trait_bound_invalid.rs:14:40
+   |
+14 | #[tuple_types_custom_trait_bound(Custom, Clone)]
+   |                                        ^
+
+error[E0277]: the trait bound `(Impl, Impl): Test` is not satisfied
+  --> $DIR/custom_trait_bound_invalid.rs:32:12
+   |
+30 | fn test<T: Test>() {}
+   |            ---- required by this bound in `test`
+31 | fn main() {
+32 |     test::<(Impl, Impl)>();
+   |            ^^^^^^^^^^^^ the trait `Test` is not implemented for `(Impl, Impl)`
+
+error[E0277]: the trait bound `(Impl, Impl, Impl): Test` is not satisfied
+  --> $DIR/custom_trait_bound_invalid.rs:33:12
+   |
+30 | fn test<T: Test>() {}
+   |            ---- required by this bound in `test`
+...
+33 |     test::<(Impl, Impl, Impl)>();
+   |            ^^^^^^^^^^^^^^^^^^ the trait `Test` is not implemented for `(Impl, Impl, Impl)`
