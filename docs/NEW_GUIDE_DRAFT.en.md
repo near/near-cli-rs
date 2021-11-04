@@ -12,7 +12,11 @@
     - ...
 
 `Core NEAR CLI` commands:
-login
+import-account
+    - from-near-wallet
+    - from-seed-phrase
+    - from-ledger
+    - from-private-key
 create-account
     - implicit
     - subaccount
