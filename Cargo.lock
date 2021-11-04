@@ -887,7 +887,7 @@ dependencies = [
  "digest",
  "rand_core 0.5.1",
  "subtle",
- "zeroize 1.2.0",
+ "zeroize 1.4.2",
 ]
 
 [[package]]
@@ -978,7 +978,7 @@ dependencies = [
  "rand 0.7.3",
  "serde",
  "sha2",
- "zeroize 1.2.0",
+ "zeroize 1.4.2",
 ]
 
 [[package]]
@@ -1681,6 +1681,7 @@ dependencies = [
  "strum_macros 0.22.0",
  "url",
  "url_open",
+ "zeroize 1.4.2",
 ]
 
 [[package]]
@@ -3430,9 +3431,9 @@ checksum = "45af6a010d13e4cf5b54c94ba5a2b2eba5596b9e46bf5875612d332a1f2b3f86"
 
 [[package]]
 name = "zeroize"
-version = "1.2.0"
+version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81a974bcdd357f0dca4d41677db03436324d45a4c9ed2d0b873a5a360ce41c36"
+checksum = "bf68b08513768deaa790264a7fac27a58cbf2705cfcdc9448362229217d7e970"
 dependencies = [
  "zeroize_derive",
 ]

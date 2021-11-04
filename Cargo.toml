@@ -34,6 +34,7 @@ url = { version = "2", features = ["serde"] }
 url_open = "0.0.1"
 shell-words = "1.0.0"
 cargo-util = "0.1.1"
+zeroize = "1.4.2"
 
 color-eyre = "0.5"
 
