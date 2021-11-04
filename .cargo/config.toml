@@ -1,0 +1,10 @@
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source."https://github.com/near/nearcore"]
+git = "https://github.com/near/nearcore"
+rev = "e242f71400111fe99a825fd8f5e53a82802c98b7"
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
