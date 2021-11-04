@@ -14,8 +14,8 @@ manage-account
         - dev-deploy-code
         - get-code-checksum
         - get-state
-        - call-view-function
-        - call-change-function
+        - call-view-method
+        - call-change-method
     - state
     - delete
 transfer
