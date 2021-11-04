@@ -1677,8 +1677,8 @@ dependencies = [
  "shell-words",
  "slip10",
  "smart-default",
- "strum 0.20.1",
- "strum_macros 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum 0.22.0",
+ "strum_macros 0.22.0",
  "url",
  "url_open",
 ]
@@ -2834,15 +2834,16 @@ version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7318c509b5ba57f18533982607f24070a55d353e90d4cae30c467cdb2ad5ac5c"
 dependencies = [
- "strum_macros 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum_macros 0.20.1",
 ]
 
 [[package]]
 name = "strum"
-version = "0.20.1"
-source = "git+https://github.com/frol/strum?branch=feat/discriminants-pass-through-attributes#83c18208c9f0f0f4c412694ec0ba89f3eab026f9"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7ac893c7d471c8a21f31cfe213ec4f6d9afeed25537c772e08ef3f005f8729e"
 dependencies = [
- "strum_macros 0.20.1 (git+https://github.com/frol/strum?branch=feat/discriminants-pass-through-attributes)",
+ "strum_macros 0.22.0",
 ]
 
 [[package]]
@@ -2859,8 +2860,9 @@ dependencies = [
 
 [[package]]
 name = "strum_macros"
-version = "0.20.1"
-source = "git+https://github.com/frol/strum?branch=feat/discriminants-pass-through-attributes#83c18208c9f0f0f4c412694ec0ba89f3eab026f9"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "339f799d8b549e3744c7ac7feb216383e4005d94bdb22561b3ab8f3b808ae9fb"
 dependencies = [
  "heck",
  "proc-macro2",
