@@ -10,3 +10,5 @@ apt-get install -y libclang-7-dev
 
 ln -s /usr/bin/clang-10 /usr/bin/clang
 ln -s /usr/bin/clang++-10 /usr/bin/clang++
+
+apt-get install -y libudev-dev
