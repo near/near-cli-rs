@@ -46,7 +46,7 @@ manage-connections
         - show-current
         - set-current <connection-name>
         - list-all
-        - add
+        - add <connection-name> <network-name> <url1> <url1> ...
         - delete <connection-name>
 manage-cli-config
         - set <parameter> <value>
