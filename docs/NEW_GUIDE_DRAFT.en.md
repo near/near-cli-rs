@@ -12,7 +12,10 @@
     - ...
 
 `UX principles`
+- All altering actions should have a confirmation step with an option to skip confirmation with an explicit command line parameter (e.g. send at the end of the command)
+- All direct children commands of a single parent command should be aligned (either represent an action or a resource, but never a mix of those on the same hierarchy level): contract -> state (resource) and contract -> deploy (action) are not aligned, so it should be either contract -> get-state + contract -> deploy or contract -> state -> view + contract -> code -> deploy
 - Interactive mode should look like: "command - description". It will help people to learn the commands.
+
 
 `Core NEAR CLI` commands:
 import-account
@@ -25,12 +28,12 @@ create-account
     - subaccount
 manage-account <accoundId>
     - get-state
-    - keys
+    - manage-keys
         - view
         - add
         - delete
-    - transfer
-    - contract
+    - make-transfer
+    - manage-contract
         - deploy-code
         - get-code-checksum
         - get-state
@@ -61,8 +64,8 @@ Extensions design is a work in progress. They are here mostly to show that we ha
 
 `explorer` extension
     - get-recent-block-hash
-    - transaction-status
-    - epoch-status
+    - get-transaction-status
+    - get-epoch-status
     - ...
 
 `transaction-constructor` extension
@@ -75,7 +78,7 @@ Extensions design is a work in progress. They are here mostly to show that we ha
     - ...
 
 `staking-for-delegators` extension
-    - new-stake-proposal
+    - make-new-stake-proposal
     - stake
     - unstake
     - ...
@@ -86,4 +89,9 @@ Extensions design is a work in progress. They are here mostly to show that we ha
     - ...
 
 Open questions:
-- Where to add flags like `--verbose`, `--structured/json/csv`, etc.
+- Where to add flags like `--verbose`, `--structured/json/csv`, `--scripting-mode`, etc.
+- How to manage multiple keys? Should we have `default` key? Should they ave a name like `super-game-1-key`?
+- Should we have `extensions` -> `list`/`add`/`delete` commands? I gues that it's a bit early to talk about it.
+
+Other:
+- Let's get inspiration for keys and storage data from this project: https://github.com/near-examples/near-account-utils
