@@ -22,23 +22,23 @@
 ```txt
 import-account
     - from-near-wallet
-    - from-seed-phrase
+    - from-seed-phrase <seed-phrase>
     - from-ledger
-    - from-private-key
+    - from-private-key <private-key>
 
 create-account
     - implicit
-    - subaccount
+    - subaccount <master-account> <new-subaccount-id>
 
 manage-account <accoundId>
     - get-state
     - manage-keys
         - view
         - add
-        - delete
-    - make-transfer
+        - delete <public-key>
+    - make-transfer <sender> <reciever> <amount>
     - manage-contract
-        - deploy-code
+        - deploy-code <wasm-path>
         - get-code-checksum
         - get-state
         - call-view-method
@@ -62,21 +62,20 @@ manage-cli-config
     - get <parameter>
 ```
 
-
 ## Extensions
 Extensions design is a work in progress. They are here mostly to show that we haven't forgotten about particular functionality and that this functionality will not be a part of `Core NEAR CLI`.
 
 ### `developer` extension
 ```txt
-- dev-deploy-code
+- dev-deploy-code <wasm-file>
 - ...
 ```
 
 ### `explorer` extension
 ```txt
 - get-recent-block-hash
-- get-transaction-status
-- get-epoch-status
+- get-transaction-status <transaction-hash>
+- get-epoch-status <epoch>
 - ...
 ```
 
