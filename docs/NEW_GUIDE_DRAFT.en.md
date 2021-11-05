@@ -11,6 +11,9 @@
     - `Validators`
     - ...
 
+`UX principles`
+- Interactive mode should look like: "command - description". It will help people to learn the commands.
+
 `Core NEAR CLI` commands:
 import-account
     - from-near-wallet
@@ -20,40 +23,40 @@ import-account
 create-account
     - implicit
     - subaccount
-manage-account `<- accountId is entered in this step`
+manage-account <accoundId>
     - get-state
     - keys
         - view
         - add
         - delete
+    - transfer
     - contract
         - deploy-code
-        - dev-deploy-code
         - get-code-checksum
         - get-state
         - call-view-method
         - call-change-method
     - delete
-transfer
-config
-    - connections
-        <!-- Should it be here? Or `list` is enough? -->
-        - show-current
-        - list
-        - add
-        - delete
-    - cli
-        - set
-        - get
-helpers
+manage-off-chain-keys
     - generate-key
-	- get-public-key-from-ledger
-
+    - get-public-key-from-ledger
+    <!-- needs futher design -->
+    - ...
+manage-connections
+        - show-current
+        - set-current <connection-name>
+        - list-all
+        - add
+        - delete <connection-name>
+manage-cli-config
+        - set <parameter> <value>
+        - get <parameter>
 --------------------------------------------------
 
 Extensions design is a work in progress. They are here mostly to show that we haven't forgotten about particular functionality and that this functionality will not be a part of `Core NEAR CLI`.
 
 `developer` extension
+    - dev-deploy-code
     - ...
 
 `explorer` extension
@@ -84,9 +87,3 @@ Extensions design is a work in progress. They are here mostly to show that we ha
 
 Open questions:
 - Where to add flags like `--verbose`, `--structured/json/csv`, etc.
-- We should add `local-keys` management option. Needs to be designed. Can live in `manage-account` -> `local-keys` or at the top level of the `Core NEAR CLI`.
-- Should we have helpers in `Core NEAR CLI`? Is't that contradicts extensions concept?
-- How config should work? Is current design good enough?
-
-Other:
-- Interactive mode should look like: "command - description". It will help people to learn the commands.
