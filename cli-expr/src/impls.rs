@@ -13,7 +13,7 @@ mod __eclap_gen {
         pub network: Option<Network>,
 
         #[clap(subcommand)]
-        pub b: Option<BMiddleLayer>,
+        pub subcommand: Option<BMiddleLayer>,
     }
 
     #[derive(Default)]
@@ -166,7 +166,7 @@ impl types::Build for A {
 
             // This can probably be the subcommand checker:
             if let Some(clap) = clap {
-                if let Some(mid) = clap.b {
+                if let Some(mid) = clap.subcommand {
                     sub_clap = Some(mid.unwrap());
                 }
             }
@@ -206,7 +206,8 @@ impl types::Build for B {
 ////////////////////////////////////////////////////////////////////////////////
 
 
-struct A {
+#[derive(Debug)]
+pub struct A {
     network: Network,
     b: B,
 }
@@ -227,6 +228,7 @@ impl types::BuilderFrom<A> for B {
     }
 }
 
-struct B {
+#[derive(Debug)]
+pub struct B {
     account_id: AccountId,
 }

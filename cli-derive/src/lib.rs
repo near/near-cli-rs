@@ -2,11 +2,21 @@
 #![allow(unused)]
 
 
-use proc_macro::TokenStream;
+use proc_macro::{self, TokenStream};
 use proc_macro2::Span;
 use syn::{self, Ident, ItemEnum, ItemStruct, ItemUnion};
+use types::StructArgs;
+
+use darling::FromDeriveInput;
+use quote::{quote, ToTokens};
+use syn::{parse_macro_input, DeriveInput};
+
 
 mod internal;
+mod types;
+mod builder;
+mod scope;
+mod clap_variant;
 
 
 #[proc_macro_derive(Interactive, attributes(interactive_skip))]
@@ -29,4 +39,54 @@ pub fn derive_interactive(input: TokenStream) -> TokenStream {
         // Ok(res) => panic!(res.to_string()),
         Err(err) => err.to_compile_error(),
     })
+}
+
+#[proc_macro_derive(Eclap, attributes(eclap))]
+pub fn derive_eclap(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let args = StructArgs::from_derive_input(&input).unwrap();
+
+    let clap_variant = clap_variant::gen(&args);
+    let builder = builder::gen(&args);
+    let scope = scope::gen(&args);
+
+    // TODO: potentially add a module
+    // let modname = format!("__eclap_gen_{}", args.ident);
+    // let modname = proc_macro2::Ident::new(&modname, Span::call_site());
+    let stream = quote! {
+        // use clap::Parser;
+        #clap_variant
+        // #builder
+        // #scope
+    };
+
+    // panic!("{}", stream);
+
+    stream.into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() {
+        let input = r#"
+            #[derive(Eclap)]
+            struct Foo {
+                #[eclap(subcommand)]
+                bar: bool,
+                #[eclap(skip)]
+                baz: bool,
+            }
+        "#;
+
+        let input: syn::DeriveInput = syn::parse_str(input).unwrap();
+        let args = StructArgs::from_derive_input(&input).unwrap();
+        println!("{:?}", args);
+
+        // assert_eq!(args.ident, syn::Ident::new("Foo", Span::call_site()));
+        // assert_eq!(args.subcommand, Some(true));
+        // assert_eq!(args.skip, Some(true));
+    }
 }

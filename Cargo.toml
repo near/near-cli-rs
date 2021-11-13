@@ -53,5 +53,6 @@ members = [
     "cli-visual",
     "cli-derive",
     "cli-expr",
-    "extensions/validator",
+    "cli-transfer",
+    # "extensions/validator",
 ]
