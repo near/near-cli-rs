@@ -5,12 +5,41 @@ use syn::{Ident, Type};
 
 
 pub fn gen(args: &StructArgs) -> TokenStream {
+    let struct_ident = &args.ident;
+    let name = format!("{}ClapVariant", struct_ident);
+    let name = syn::Ident::new(&name, struct_ident.span());
+    let (passthru, fields) = gen_clap_internals(args);
+
+    quote! {
+        // #[derive(Parser)]
+        struct #name {
+            #(#fields)*
+        }
+
+        #passthru
+
+        impl near_cli_visual::types::ClapVariant for #struct_ident {
+            type Clap = #name;
+        }
+    }
+}
+
+fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
     let StructArgs {
         ident: struct_ident,
         generics: _,
         data: _,
     } = args;
-    let mut passthru = None;
+
+    // let mut passthru = None;
+    let mut sub_args = SubcommandArgs {
+        ident: struct_ident.clone(),
+
+        // by default, if no one specifies `single`, then there's no passthru
+        // code to generate for this clap variant.
+        passthru: quote!(),
+    };
+
     let fields = args.fields().into_iter().map(|f| {
         let FieldArgs {
             ident,
@@ -35,10 +64,10 @@ pub fn gen(args: &StructArgs) -> TokenStream {
             // qualifiers = quote! { #[clap(subcommand)] };
             qualifiers = quote! {};
             if *single {
-                let name = format!("{}ClapVariantPassThru", struct_ident);
-                let name = syn::Ident::new(&name, struct_ident.span());
-                passthru = Some(gen_clap_enum_pass(struct_ident, &ty));
-                ty = quote!(#name);
+                let (ident, code) = gen_clap_enum_pass(struct_ident, &ty);
+                ty = quote!(#ident);
+                sub_args.ident = ident;
+                sub_args.passthru = code;
             }
         }
 
@@ -54,29 +83,25 @@ pub fn gen(args: &StructArgs) -> TokenStream {
             #field
         }
     })
-    .collect::<Vec<_>>();
+    .collect();
 
-    let name = format!("{}ClapVariant", struct_ident);
-    let name = syn::Ident::new(&name, struct_ident.span());
-    let passthru = passthru.unwrap_or_else(|| quote! {});
-
-    quote! {
-        // #[derive(Parser)]
-        struct #name {
-            #(#fields)*
-        }
-
-        #passthru
-    }
+    (sub_args.passthru, fields)
 }
 
-fn gen_clap_enum_pass(ident: &Ident, ty: &TokenStream) -> TokenStream {
-    let name = format!("{}ClapVariantPassThru", ident);
-    let name = syn::Ident::new(&name, ident.span());
-    quote! {
+struct SubcommandArgs {
+    ident: Ident,
+    passthru: TokenStream,
+}
+
+fn gen_clap_enum_pass(struct_ident: &Ident, ty: &TokenStream) -> (Ident, TokenStream) {
+    let passthru_ident = format!("{}ClapVariantPassThru", struct_ident);
+    let passthru_ident = syn::Ident::new(&passthru_ident, struct_ident.span());
+    let code = quote! {
         // #[derive(Parser)]
-        enum #name {
+        enum #passthru_ident {
             PassThru(#ty)
         }
-    }
+    };
+
+    (passthru_ident, code)
 }
