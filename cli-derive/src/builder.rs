@@ -5,18 +5,22 @@ use quote::{quote};
 
 pub fn gen(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
-    let builder_name = format!("{}Builder", struct_ident);
-    let builder_name = syn::Ident::new(&builder_name, struct_ident.span());
+    let builder_ident = format!("{}Builder", struct_ident);
+    let builder_ident = syn::Ident::new(&builder_ident, struct_ident.span());
     let (funcs, fields) = gen_builder_internals(args);
 
     quote! {
         #[derive(Default)]
-        struct #builder_name {
+        struct #builder_ident {
             #(#fields)*
         }
 
-        impl #builder_name {
+        impl #builder_ident {
             #(#funcs)*
+        }
+
+        impl near_cli_visual::types::Builder for #struct_ident {
+            type Builder = #builder_ident;
         }
     }
 }
