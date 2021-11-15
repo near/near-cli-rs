@@ -4,13 +4,31 @@ use quote::{quote};
 
 
 pub fn gen(args: &StructArgs) -> TokenStream {
+    let struct_ident = &args.ident;
+    let builder_name = format!("{}Builder", struct_ident);
+    let builder_name = syn::Ident::new(&builder_name, struct_ident.span());
+    let (funcs, fields) = gen_builder_internals(args);
+
+    quote! {
+        #[derive(Default)]
+        struct #builder_name {
+            #(#fields)*
+        }
+
+        impl #builder_name {
+            #(#funcs)*
+        }
+    }
+}
+
+fn gen_builder_internals(args: &StructArgs) -> (Vec<TokenStream>, Vec<TokenStream>) {
     let StructArgs {
-        ident,
+        ident: struct_ident,
         generics: _,
         data: _,
     } = args;
 
-    let fields = args.fields().into_iter().map(|f| {
+    args.fields().into_iter().map(|f| {
         let FieldArgs {
             ident,
             ty,
@@ -18,24 +36,28 @@ pub fn gen(args: &StructArgs) -> TokenStream {
             ..
         } = f;
 
-        // will fail if enum, newtype or tuple
-        let ident = ident.as_ref().expect("only supported for regular structs");
         if *subcommand {
             // Subcommand are not apart of the Builder. So exclude it with empty field.
-            quote! {}
-        } else {
-            quote! {
-                #ident: Option<#ty>,
-            }
+            return (quote! {}, quote! {});
         }
-    });
 
-    let name = format!("{}Builder", ident);
-    let name = syn::Ident::new(&name, ident.span());
-    quote! {
-        #[derive(Default)]
-        struct #name {
-            #(#fields)*
-        }
-    }
+        // will fail if enum, newtype or tuple
+        let ident = ident.as_ref().expect("only supported for regular structs");
+
+        // Builder functions. This allows us to write `set_#field` into the builder.
+        let builder_fn = syn::Ident::new(&format!("set_{}", ident), struct_ident.span());
+        let builder_fn = quote! {
+            fn #builder_fn (self, val: #ty) -> Self {
+                self.#ident = Some(val);
+                self
+            }
+        };
+
+        let builder_field = quote! {
+            #ident: Option<#ty>,
+        };
+
+        (builder_fn, builder_field)
+    })
+    .unzip()
 }
