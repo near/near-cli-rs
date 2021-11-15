@@ -10,7 +10,7 @@ pub trait IntoScope {
     type Err;
     type Scope;
 
-    fn into_scope(&self) -> Result<Self::Scope, Self::Err>;
+    fn into_scope(self) -> Result<Self::Scope, Self::Err>;
 }
 
 pub trait ClapVariant {

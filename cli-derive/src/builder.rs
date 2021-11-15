@@ -27,7 +27,7 @@ pub fn gen(args: &StructArgs) -> TokenStream {
             type Err = ();
             type Scope = #struct_ident :: Scope;
 
-            fn into_scope(&self) -> Result<Self::Scope, Self::Err> {
+            fn into_scope(self) -> Result<Self::Scope, Self::Err> {
                 Ok(Self::Scope {
                     #(#scope_fields)*
                 })
