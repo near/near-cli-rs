@@ -7,7 +7,7 @@ pub fn gen(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
     let builder_ident = format!("{}Builder", struct_ident);
     let builder_ident = syn::Ident::new(&builder_ident, struct_ident.span());
-    let (funcs, fields) = gen_builder_internals(args);
+    let ((funcs, fields), scope_fields) = gen_builder_internals(args);
 
     quote! {
         #[derive(Default)]
@@ -22,10 +22,21 @@ pub fn gen(args: &StructArgs) -> TokenStream {
         impl near_cli_visual::types::Builder for #struct_ident {
             type Builder = #builder_ident;
         }
+
+        impl near_cli_visual::types::IntoScope for #struct_ident :: Builder {
+            type Err = ();
+            type Scope = #struct_ident :: Scope;
+
+            fn into_scope(&self) -> Result<Self::Scope, Self::Err> {
+                Ok(Self::Scope {
+                    #(#scope_fields)*
+                })
+            }
+        }
     }
 }
 
-fn gen_builder_internals(args: &StructArgs) -> (Vec<TokenStream>, Vec<TokenStream>) {
+fn gen_builder_internals(args: &StructArgs) -> ((Vec<TokenStream>, Vec<TokenStream>), Vec<TokenStream>) {
     let StructArgs {
         ident: struct_ident,
         generics: _,
@@ -42,7 +53,7 @@ fn gen_builder_internals(args: &StructArgs) -> (Vec<TokenStream>, Vec<TokenStrea
 
         if *subcommand {
             // Subcommand are not apart of the Builder. So exclude it with empty field.
-            return (quote! {}, quote! {});
+            return ((quote!(), quote!()), quote!());
         }
 
         // will fail if enum, newtype or tuple
@@ -61,7 +72,11 @@ fn gen_builder_internals(args: &StructArgs) -> (Vec<TokenStream>, Vec<TokenStrea
             #ident: Option<#ty>,
         };
 
-        (builder_fn, builder_field)
+        let scope_field = quote! {
+            #ident: self.#ident.ok_or_else(|| ())?,
+        };
+
+        ((builder_fn, builder_field), scope_field)
     })
     .unzip()
 }

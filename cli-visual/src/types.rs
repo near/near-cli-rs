@@ -6,8 +6,11 @@ pub trait Scoped {
     type Scope: Clone;
 }
 
-pub trait IntoScope<T> {
-    fn into_scope(&self) -> T;
+pub trait IntoScope {
+    type Err;
+    type Scope;
+
+    fn into_scope(&self) -> Result<Self::Scope, Self::Err>;
 }
 
 pub trait ClapVariant {
