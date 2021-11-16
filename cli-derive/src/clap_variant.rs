@@ -93,15 +93,16 @@ struct SubcommandArgs {
 }
 
 fn gen_clap_enum_pass(struct_ident: &Ident, ty: &TokenStream) -> (Ident, TokenStream) {
+    let clap_ty = ident_postfix(struct_ident, "ClapVariant");
     let passthru_ident = ident_postfix(struct_ident, "ClapVariantPassThru");
     let code = quote! {
         #[derive(clap::Parser)]
         enum #passthru_ident {
-            PassThru(#ty)
+            PassThru(#clap_ty)
         }
 
         impl #passthru_ident {
-            fn unwrap_single_subcommand(self) -> #ty {
+            fn unwrap_single_subcommand(self) -> #clap_ty {
                 match self {
                     #passthru_ident::PassThru(x) => x,
                     _ => panic!("Expected single subcommand"),
