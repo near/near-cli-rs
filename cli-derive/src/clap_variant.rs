@@ -61,7 +61,7 @@ fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
 
         let ident = ident.as_ref().expect("Enums/tuples/newtypes not supported");
         let mut ident = quote!(#ident);
-        let mut ty = quote!(#ty);
+        let mut field_ty = quote!(#ty);
         let mut qualifiers = quote! {};
         if *subcommand {
             // this is a subcommand. ClapVariant will call it `subcommand` instead
@@ -71,7 +71,7 @@ fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
             // Single enum wrapper. Generate it and replace the type with it.
             if *single {
                 let (ident, code) = gen_clap_enum_pass(struct_ident, &ty);
-                ty = quote!(#ident);
+                field_ty = quote!(#ident);
                 sub_args.ident = ident;
                 sub_args.passthru = code;
             }
@@ -92,8 +92,8 @@ struct SubcommandArgs {
     passthru: TokenStream,
 }
 
-fn gen_clap_enum_pass(struct_ident: &Ident, ty: &TokenStream) -> (Ident, TokenStream) {
-    let clap_ty = ident_postfix(struct_ident, "ClapVariant");
+fn gen_clap_enum_pass(struct_ident: &Ident, ty: &Type) -> (Ident, TokenStream) {
+    let clap_ty = Ident::new(&format!("{}ClapVariant", quote!(#ty)), struct_ident.span());
     let passthru_ident = ident_postfix(struct_ident, "ClapVariantPassThru");
     let code = quote! {
         #[derive(clap::Parser)]
