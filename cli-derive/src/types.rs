@@ -38,6 +38,12 @@ pub struct FieldArgs {
 
     #[darling(default)]
     pub skip: bool,
+
+    #[darling(default)]
+    pub prompt_msg: Option<String>,
+
+    #[darling(default)]
+    pub prompt_fn: Option<String>,
 }
 
 pub enum Flavor {

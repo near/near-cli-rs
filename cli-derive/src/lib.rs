@@ -17,6 +17,7 @@ mod types;
 mod builder;
 mod scope;
 mod clap_variant;
+mod parse;
 
 
 #[proc_macro_derive(Interactive, attributes(interactive_skip))]
@@ -50,14 +51,18 @@ pub fn derive_eclap(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let builder = builder::gen(&args);
     let scope = scope::gen(&args);
 
+    let interactive = parse::gen_interactive(&args);
+
     // TODO: potentially add a module
     // let modname = format!("__eclap_gen_{}", args.ident);
     // let modname = proc_macro2::Ident::new(&modname, Span::call_site());
     let stream = quote! {
         // use clap::Parser;
-        #clap_variant
-        // #builder
-        // #scope
+        // #clap_variant
+        #builder
+        #scope
+
+        #interactive
     };
 
     // panic!("{}", stream);
