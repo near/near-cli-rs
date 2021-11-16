@@ -23,9 +23,9 @@ pub fn gen(args: &StructArgs) -> TokenStream {
             type Builder = #builder_ident;
         }
 
-        impl near_cli_visual::types::IntoScope for #struct_ident :: Builder {
+        impl near_cli_visual::types::IntoScope for #builder_ident {
             type Err = ();
-            type Scope = #struct_ident :: Scope;
+            type Scope = <#struct_ident as near_cli_visual::types::Scoped>:: Scope;
 
             fn into_scope(self) -> Result<Self::Scope, Self::Err> {
                 Ok(Self::Scope {
@@ -62,7 +62,7 @@ fn gen_builder_internals(args: &StructArgs) -> ((Vec<TokenStream>, Vec<TokenStre
         // Builder functions. This allows us to write `set_#field` into the builder.
         let builder_fn = syn::Ident::new(&format!("set_{}", ident), struct_ident.span());
         let builder_fn = quote! {
-            fn #builder_fn (self, val: #ty) -> Self {
+            fn #builder_fn (mut self, val: #ty) -> Self {
                 self.#ident = Some(val);
                 self
             }
