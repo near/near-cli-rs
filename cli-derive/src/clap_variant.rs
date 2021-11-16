@@ -79,7 +79,7 @@ fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
 
         quote! {
             #qualifiers
-            #ident: Option<#ty>,
+            #ident: Option<#field_ty>,
         }
     })
     .collect();

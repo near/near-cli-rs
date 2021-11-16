@@ -100,6 +100,8 @@ pub fn gen_build(args: &StructArgs) -> TokenStream {
 // The loop where we call into Interactive/Validate
 pub fn gen_build_retry_loop() -> TokenStream {
     quote! {{
+        use near_cli_visual::types::IntoScope;
+
         let mut count = near_cli_visual::consts::max_build_retry();
         let scope = loop {
             builder = <Self as near_cli_visual::types::Interactive>::interactive(clap.as_ref(), builder);
@@ -115,7 +117,7 @@ pub fn gen_build_retry_loop() -> TokenStream {
                 break Err(());
             }
         }?
-        .into_scope();
+        .into_scope()?;
 
         scope
     }}
