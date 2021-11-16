@@ -58,8 +58,7 @@ pub fn derive_eclap(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     // let modname = format!("__eclap_gen_{}", args.ident);
     // let modname = proc_macro2::Ident::new(&modname, Span::call_site());
     let stream = quote! {
-        // use clap::Parser;
-        // #clap_variant
+        #clap_variant
         #builder
         #scope
 

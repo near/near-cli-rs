@@ -11,7 +11,7 @@ pub fn gen(args: &StructArgs) -> TokenStream {
     let (passthru, fields) = gen_clap_internals(args);
 
     quote! {
-        // #[derive(Parser)]
+        #[derive(clap::Parser)]
         struct #name {
             #(#fields)*
         }
@@ -58,15 +58,16 @@ fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
         //     }
         // };
 
-        let mut ident = quote!(ident.as_ref().expect("Enums/tuples/newtypes not supported"));
+        let ident = ident.as_ref().expect("Enums/tuples/newtypes not supported");
+        let mut ident = quote!(#ident);
         let mut ty = quote!(#ty);
         let mut qualifiers = quote! {};
         if *subcommand {
             // this is a subcommand. ClapVariant will call it `subcommand` instead
             ident = quote!(subcommand);
+            qualifiers = quote! { #[clap(subcommand)] };
 
-            // qualifiers = quote! { #[clap(subcommand)] };
-            qualifiers = quote! {};
+            // Single enum wrapper. Generate it and replace the type with it.
             if *single {
                 let (ident, code) = gen_clap_enum_pass(struct_ident, &ty);
                 ty = quote!(#ident);
@@ -75,12 +76,9 @@ fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
             }
         }
 
-        let ty = quote! { Option<#ty> };
-        let field = quote! { #ident : #ty, };
-
         quote! {
             #qualifiers
-            #field
+            #ident: Option<#ty>,
         }
     })
     .collect();
@@ -97,7 +95,7 @@ fn gen_clap_enum_pass(struct_ident: &Ident, ty: &TokenStream) -> (Ident, TokenSt
     let passthru_ident = format!("{}ClapVariantPassThru", struct_ident);
     let passthru_ident = syn::Ident::new(&passthru_ident, struct_ident.span());
     let code = quote! {
-        // #[derive(Parser)]
+        #[derive(clap::Parser)]
         enum #passthru_ident {
             PassThru(#ty)
         }
@@ -110,6 +108,16 @@ fn gen_clap_enum_pass(struct_ident: &Ident, ty: &TokenStream) -> (Ident, TokenSt
                 }
             }
         }
+
+        // fn build<T: near_cli_visual::types::Scoped>(
+        //     clap: &Option<<#ty as near_cli_visual::types::ClapVariant>::Clap>,
+        //     scope: &T::Scope,
+        // ) -> Result<#ty, ()> {
+        //     let sub_builder = <#ty as near_cli_visual::types::BuilderFrom<T>>::builder_from(&scope);
+        //     let subcommand = <#ty as near_cli_visual::types::Build>::build(clap, sub_builder);
+
+        //     subcommand
+        // }
     };
 
     (passthru_ident, code)
