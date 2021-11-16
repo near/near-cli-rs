@@ -18,6 +18,7 @@ mod builder;
 mod scope;
 mod clap_variant;
 mod parse;
+mod utils;
 
 
 #[proc_macro_derive(Interactive, attributes(interactive_skip))]
