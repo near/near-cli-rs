@@ -58,9 +58,13 @@ fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
         //     }
         // };
 
+        let mut ident = quote!(ident.as_ref().expect("Enums/tuples/newtypes not supported"));
         let mut ty = quote!(#ty);
         let mut qualifiers = quote! {};
         if *subcommand {
+            // this is a subcommand. ClapVariant will call it `subcommand` instead
+            ident = quote!(subcommand);
+
             // qualifiers = quote! { #[clap(subcommand)] };
             qualifiers = quote! {};
             if *single {
@@ -72,11 +76,7 @@ fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
         }
 
         let ty = quote! { Option<#ty> };
-        let field = if let Some(ident) = ident {
-            quote! { #ident: #ty, }
-        } else {
-            ty
-        };
+        let field = quote! { #ident : #ty, };
 
         quote! {
             #qualifiers
@@ -100,6 +100,15 @@ fn gen_clap_enum_pass(struct_ident: &Ident, ty: &TokenStream) -> (Ident, TokenSt
         // #[derive(Parser)]
         enum #passthru_ident {
             PassThru(#ty)
+        }
+
+        impl #passthru_ident {
+            fn unwrap_single_subcommand(self) -> #ty {
+                match self {
+                    #passthru_ident::PassThru(x) => x,
+                    _ => panic!("Expected single subcommand"),
+                }
+            }
         }
     };
 
