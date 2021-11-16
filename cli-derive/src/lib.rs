@@ -52,6 +52,7 @@ pub fn derive_eclap(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let scope = scope::gen(&args);
 
     let interactive = parse::gen_interactive(&args);
+    let build = parse::gen_build(&args);
 
     // TODO: potentially add a module
     // let modname = format!("__eclap_gen_{}", args.ident);
@@ -63,6 +64,7 @@ pub fn derive_eclap(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         #scope
 
         #interactive
+        #build
     };
 
     // panic!("{}", stream);

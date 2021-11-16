@@ -2,12 +2,18 @@ use near_cli_derive::Eclap;
 
 
 #[derive(Eclap)]
-struct Welp {
+struct A {
     #[eclap(single, subcommand)]
-    bar: bool,
+    bar: B,
 
-    #[eclap(prompt_msg = "What is the msg of time?")]
+    #[eclap(prompt_msg = "For what baz?")]
     baz: bool,
+}
+
+#[derive(Eclap)]
+struct B {
+    #[eclap(prompt_msg = "For what bar?")]
+    bar: bool,
 }
 
 
