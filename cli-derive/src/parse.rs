@@ -115,7 +115,9 @@ pub fn gen_build_retry_loop() -> TokenStream {
                 break Err(());
             }
         }?
-        .into_scope()
+        .into_scope();
+
+        scope
     }}
 }
 
@@ -142,9 +144,9 @@ pub fn gen_build_subcommand(args: &StructArgs) -> TokenStream {
                 }
 
                 // let subcommand = #sub_ty :: build :: <Self> (sub_clap, scope)?;
-
-                let sub_builder = <#sub_ty as types::BuilderFrom<Self>>::builder_from(&scope);
-                let subcommand = <#sub_ty as types::Build>::build(sub_clap, sub_builder)?;
+                // TODO: what err msg if they don't impl BuilderFrom
+                let sub_builder = <#sub_ty as near_cli_visual::types::BuilderFrom<Self>>::builder_from(&scope);
+                let subcommand = <#sub_ty as near_cli_visual::types::Build>::build(sub_clap, sub_builder)?;
 
                 subcommand
             },
