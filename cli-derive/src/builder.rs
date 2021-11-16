@@ -1,12 +1,13 @@
 use crate::types::{StructArgs, FieldArgs};
+use crate::utils::ident_postfix;
+
 use proc_macro2::TokenStream;
 use quote::{quote};
 
 
 pub fn gen(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
-    let builder_ident = format!("{}Builder", struct_ident);
-    let builder_ident = syn::Ident::new(&builder_ident, struct_ident.span());
+    let builder_ident = ident_postfix(struct_ident, "Builder");
     let ((funcs, fields), scope_fields) = gen_builder_internals(args);
 
     quote! {

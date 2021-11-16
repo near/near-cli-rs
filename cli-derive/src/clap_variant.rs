@@ -1,4 +1,6 @@
+use crate::utils::ident_postfix;
 use crate::types::{StructArgs, FieldArgs};
+
 use proc_macro2::TokenStream;
 use quote::{quote};
 use syn::{Ident, Type};
@@ -6,8 +8,7 @@ use syn::{Ident, Type};
 
 pub fn gen(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
-    let name = format!("{}ClapVariant", struct_ident);
-    let name = syn::Ident::new(&name, struct_ident.span());
+    let name = ident_postfix(struct_ident, "ClapVariant");
     let (passthru, fields) = gen_clap_internals(args);
 
     quote! {
@@ -92,8 +93,7 @@ struct SubcommandArgs {
 }
 
 fn gen_clap_enum_pass(struct_ident: &Ident, ty: &TokenStream) -> (Ident, TokenStream) {
-    let passthru_ident = format!("{}ClapVariantPassThru", struct_ident);
-    let passthru_ident = syn::Ident::new(&passthru_ident, struct_ident.span());
+    let passthru_ident = ident_postfix(struct_ident, "ClapVariantPassThru");
     let code = quote! {
         #[derive(clap::Parser)]
         enum #passthru_ident {
