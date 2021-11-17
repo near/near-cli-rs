@@ -1,5 +1,5 @@
 use near_cli_derive::Eclap;
-use near_cli_visual::types::{BuilderFrom, Validate, Scoped};
+use near_cli_visual::types::{Validate};
 
 #[derive(Debug, Eclap)]
 struct A {
@@ -20,7 +20,7 @@ struct B {
 impl Validate for B {
     type Err = ();
 
-    fn validate(clap: Option<&Self::Clap>, builder: &Self::Builder) -> Result<(), Self::Err> {
+    fn validate(_clap: Option<&Self::Clap>, _builder: &Self::Builder) -> Result<(), Self::Err> {
         Ok(())
     }
 }
