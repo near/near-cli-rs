@@ -30,6 +30,7 @@ fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
         ident: struct_ident,
         generics: _,
         data: _,
+        ..
     } = args;
 
     // let mut passthru = None;

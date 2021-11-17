@@ -42,6 +42,7 @@ fn gen_builder_internals(args: &StructArgs) -> ((Vec<TokenStream>, Vec<TokenStre
         ident: struct_ident,
         generics: _,
         data: _,
+        ..
     } = args;
 
     args.fields().into_iter().map(|f| {

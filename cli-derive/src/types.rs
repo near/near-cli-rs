@@ -17,6 +17,10 @@ pub struct StructArgs {
     pub data: ast::Data<(), FieldArgs>,
 
     // After the above, we can put any other fields we want to receive in the following:
+
+    /// Set of enable flags for the struct to be used in the `#[eclap]` attribute.
+    #[darling(default)]
+    pub enable: Option<EnableArgs>,
 }
 
 #[derive(Debug, FromField)]
@@ -44,6 +48,14 @@ pub struct FieldArgs {
 
     #[darling(default)]
     pub prompt_fn: Option<String>,
+}
+
+#[derive(Debug, FromMeta)]
+pub struct EnableArgs {
+    #[darling(default)]
+    pub builder_from: bool,
+    #[darling(default)]
+    pub validator: bool,
 }
 
 pub enum Flavor {
