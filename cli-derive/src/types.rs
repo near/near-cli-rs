@@ -20,9 +20,6 @@ pub struct StructArgs {
     /// Set of enable flags for the struct to be used in the `#[eclap]` attribute.
     #[darling(default)]
     pub enable: Option<EnableArgs>,
-
-    #[darling(default)]
-    pub disable: Option<DisableArgs>,
 }
 
 #[derive(Debug, FromField)]
@@ -55,13 +52,10 @@ pub struct FieldArgs {
 #[derive(Debug, FromMeta)]
 pub struct EnableArgs {
     #[darling(default)]
-    pub validator: bool,
-}
-
-#[derive(Debug, FromMeta)]
-pub struct DisableArgs {
-    #[darling(default)]
     pub builder_from: bool,
+
+    #[darling(default)]
+    pub validator: bool,
 }
 
 pub enum Flavor {

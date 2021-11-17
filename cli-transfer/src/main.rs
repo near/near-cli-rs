@@ -11,7 +11,7 @@ struct A {
 }
 
 #[derive(Debug, Eclap)]
-#[eclap(disable(builder_from), enable(validator))]
+#[eclap(enable(validator))]
 struct B {
     #[eclap(prompt_msg = "To bar or not to?")]
     bar: bool,

@@ -92,37 +92,13 @@ fn gen_builder_internals(
 fn gen_default_builder_from(args: &StructArgs) -> TokenStream {
     let StructArgs {
         ident: struct_ident,
-        disable,
+        enable,
         ..
     } = args;
 
-    if let Some(disable) = disable {
-        if disable.builder_from {
-            return quote! {
-                impl<T> near_cli_visual::types::BuilderFrom<T> for #struct_ident
-                where
-                    T: near_cli_visual::types::Scoped,
-                {
-                    fn builder_from(_: &T::Scope) -> Self::Builder {
-                        Self::Builder::default()
-                    }
-                }
-            };
-        }
-    }
-
-    quote! {}
-}
-
-fn gen_enable_validate(args: &StructArgs) -> TokenStream {
-    let StructArgs {
-        ident: struct_ident,
-        disable,
-        ..
-    } = args;
-
-    if let Some(disable) = disable {
-        if disable.builder_from {
+    // If builder is not enabled, generate the default BuilderFrom instead.
+    if let Some(enable) = enable {
+        if !enable.builder_from {
             return quote! {
                 impl<T> near_cli_visual::types::BuilderFrom<T> for #struct_ident
                 where
