@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused)]
 
-
 use proc_macro::{self, TokenStream};
 use proc_macro2::Span;
 use syn::{self, Ident, ItemEnum, ItemStruct, ItemUnion};
@@ -11,19 +10,17 @@ use darling::FromDeriveInput;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, DeriveInput};
 
-
-mod internal;
-mod types;
 mod builder;
-mod scope;
 mod clap_variant;
+mod internal;
 mod parse;
+mod scope;
+mod types;
 mod utils;
-
 
 #[proc_macro_derive(Interactive, attributes(interactive_skip))]
 pub fn derive_interactive(input: TokenStream) -> TokenStream {
-    let cratename = Ident::new("near_cli_visual",Span::call_site());
+    let cratename = Ident::new("near_cli_visual", Span::call_site());
 
     let outcome = if let Ok(input) = syn::parse::<ItemStruct>(input.clone()) {
         crate::internal::struct_impl(&input, cratename)

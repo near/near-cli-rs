@@ -1,8 +1,8 @@
 use near_primitives::hash::CryptoHash;
-use near_primitives::types::{BlockHeight, AccountId,};
+use near_primitives::types::{AccountId, BlockHeight};
 use url::Url;
 
-use crate::prompt::{PromptMessage, Interactive};
+use crate::prompt::{Interactive, PromptMessage};
 
 impl PromptMessage for CryptoHash {
     const MSG: &'static str = "Type the block ID hash";

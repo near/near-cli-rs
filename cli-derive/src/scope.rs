@@ -1,9 +1,8 @@
-use crate::types::{StructArgs, FieldArgs};
+use crate::types::{FieldArgs, StructArgs};
 use crate::utils::ident_postfix;
 
 use proc_macro2::TokenStream;
-use quote::{quote};
-
+use quote::quote;
 
 pub fn gen(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
@@ -30,25 +29,27 @@ fn gen_scope_internals(args: &StructArgs) -> Vec<TokenStream> {
         ..
     } = args;
 
-    args.fields().into_iter().map(|f| {
-        let FieldArgs {
-            ident,
-            ty,
-            subcommand,
-            ..
-        } = f;
+    args.fields()
+        .into_iter()
+        .map(|f| {
+            let FieldArgs {
+                ident,
+                ty,
+                subcommand,
+                ..
+            } = f;
 
-        if *subcommand {
-            // Subcommand are not apart of the Scope. So exclude it with empty field.
-            return quote!();
-        }
+            if *subcommand {
+                // Subcommand are not apart of the Scope. So exclude it with empty field.
+                return quote!();
+            }
 
-        // will fail if enum, newtype or tuple
-        let ident = ident.as_ref().expect("only supported for regular structs");
+            // will fail if enum, newtype or tuple
+            let ident = ident.as_ref().expect("only supported for regular structs");
 
-        quote! {
-            pub #ident: #ty,
-        }
-    })
-    .collect()
+            quote! {
+                pub #ident: #ty,
+            }
+        })
+        .collect()
 }

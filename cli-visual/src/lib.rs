@@ -1,6 +1,7 @@
-mod prompt;
 mod impls;
-pub mod types;
+mod prompt;
+
 pub mod consts;
+pub mod types;
 
 pub use prompt::*;

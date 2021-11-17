@@ -1,8 +1,8 @@
 use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
-use strum::{IntoEnumIterator, EnumMessage};
+use strum::{EnumMessage, IntoEnumIterator};
 
-use std::str::FromStr;
 use std::fmt::{Debug, Display};
+use std::str::FromStr;
 
 pub trait PromptMessage {
     const MSG: &'static str;
@@ -85,7 +85,11 @@ where
     let variants = T::iter().collect::<Vec<_>>();
     let actions = variants
         .iter()
-        .map(|p| p.get_message().unwrap_or_else(|| "error[This entry does not have an option message!!]").to_owned())
+        .map(|p| {
+            p.get_message()
+                .unwrap_or_else(|| "error[This entry does not have an option message!!]")
+                .to_owned()
+        })
         .collect::<Vec<_>>();
 
     let selected = Select::with_theme(&ColorfulTheme::default())

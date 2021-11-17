@@ -1,9 +1,8 @@
-use crate::types::{StructArgs, FieldArgs};
+use crate::types::{FieldArgs, StructArgs};
 use crate::utils::ident_postfix;
 
 use proc_macro2::TokenStream;
-use quote::{quote};
-
+use quote::quote;
 
 pub fn gen(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
@@ -40,7 +39,9 @@ pub fn gen(args: &StructArgs) -> TokenStream {
     }
 }
 
-fn gen_builder_internals(args: &StructArgs) -> ((Vec<TokenStream>, Vec<TokenStream>), Vec<TokenStream>) {
+fn gen_builder_internals(
+    args: &StructArgs,
+) -> ((Vec<TokenStream>, Vec<TokenStream>), Vec<TokenStream>) {
     let StructArgs {
         ident: struct_ident,
         generics: _,
@@ -48,42 +49,44 @@ fn gen_builder_internals(args: &StructArgs) -> ((Vec<TokenStream>, Vec<TokenStre
         ..
     } = args;
 
-    args.fields().into_iter().map(|f| {
-        let FieldArgs {
-            ident,
-            ty,
-            subcommand,
-            ..
-        } = f;
+    args.fields()
+        .into_iter()
+        .map(|f| {
+            let FieldArgs {
+                ident,
+                ty,
+                subcommand,
+                ..
+            } = f;
 
-        if *subcommand {
-            // Subcommand are not apart of the Builder. So exclude it with empty field.
-            return ((quote!(), quote!()), quote!());
-        }
-
-        // will fail if enum, newtype or tuple
-        let ident = ident.as_ref().expect("only supported for regular structs");
-
-        // Builder functions. This allows us to write `set_#field` into the builder.
-        let builder_fn = syn::Ident::new(&format!("set_{}", ident), struct_ident.span());
-        let builder_fn = quote! {
-            fn #builder_fn (mut self, val: #ty) -> Self {
-                self.#ident = Some(val);
-                self
+            if *subcommand {
+                // Subcommand are not apart of the Builder. So exclude it with empty field.
+                return ((quote!(), quote!()), quote!());
             }
-        };
 
-        let builder_field = quote! {
-            #ident: Option<#ty>,
-        };
+            // will fail if enum, newtype or tuple
+            let ident = ident.as_ref().expect("only supported for regular structs");
 
-        let scope_field = quote! {
-            #ident: self.#ident.ok_or_else(|| ())?,
-        };
+            // Builder functions. This allows us to write `set_#field` into the builder.
+            let builder_fn = syn::Ident::new(&format!("set_{}", ident), struct_ident.span());
+            let builder_fn = quote! {
+                fn #builder_fn (mut self, val: #ty) -> Self {
+                    self.#ident = Some(val);
+                    self
+                }
+            };
 
-        ((builder_fn, builder_field), scope_field)
-    })
-    .unzip()
+            let builder_field = quote! {
+                #ident: Option<#ty>,
+            };
+
+            let scope_field = quote! {
+                #ident: self.#ident.ok_or_else(|| ())?,
+            };
+
+            ((builder_fn, builder_field), scope_field)
+        })
+        .unzip()
 }
 
 fn gen_default_builder_from(args: &StructArgs) -> TokenStream {

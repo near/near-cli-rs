@@ -1,9 +1,8 @@
 use proc_macro2::TokenStream;
-use syn::{Ident, Type};
 use quote::quote;
+use syn::{Ident, Type};
 
-use crate::types::{StructArgs, FieldArgs};
-
+use crate::types::{FieldArgs, StructArgs};
 
 pub fn gen_interactive(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
@@ -27,59 +26,63 @@ pub fn gen_interactive(args: &StructArgs) -> TokenStream {
 
 fn gen_interactive_fields(args: &StructArgs) -> (Vec<TokenStream>, Vec<TokenStream>) {
     let struct_ident = &args.ident;
-    args.fields().into_iter().map(|field| {
-        let FieldArgs {
-            ident: field_ident,
-            ty,
-            prompt_msg,
-            prompt_fn,
-            ..
-        } = field;
+    args.fields()
+        .into_iter()
+        .map(|field| {
+            let FieldArgs {
+                ident: field_ident,
+                ty,
+                prompt_msg,
+                prompt_fn,
+                ..
+            } = field;
 
-        if prompt_msg.is_none() && prompt_fn.is_none() {
-            // Skip if not present
-            return (quote!(), quote!());
-        }
+            if prompt_msg.is_none() && prompt_fn.is_none() {
+                // Skip if not present
+                return (quote!(), quote!());
+            }
 
-        let field_ident = field_ident.as_ref().expect("Enum/tuples/newtypes are unsupported");
-        let mut prompter = None;
-        if let Some(prompt_msg) = prompt_msg {
-            prompter = Some(quote! { near_cli_visual::prompt_input_with_msg(#prompt_msg) });
-        }
-        else if let Some(prompt_fn) = prompt_fn {
-            let prompt_fn = syn::Ident::new(&prompt_fn, struct_ident.span());
-            prompter = Some(quote! { #prompt_fn () });
-        }
-        let interactive = prompter.expect(
-            &format!("Did not specify how to prompt {}::{} with either prompt_msg or prompt_fn",
-                struct_ident, field_ident));
+            let field_ident = field_ident
+                .as_ref()
+                .expect("Enum/tuples/newtypes are unsupported");
+            let mut prompter = None;
+            if let Some(prompt_msg) = prompt_msg {
+                prompter = Some(quote! { near_cli_visual::prompt_input_with_msg(#prompt_msg) });
+            } else if let Some(prompt_fn) = prompt_fn {
+                let prompt_fn = syn::Ident::new(&prompt_fn, struct_ident.span());
+                prompter = Some(quote! { #prompt_fn () });
+            }
+            let interactive = prompter.expect(&format!(
+                "Did not specify how to prompt {}::{} with either prompt_msg or prompt_fn",
+                struct_ident, field_ident
+            ));
 
-        let builder_fn = syn::Ident::new(&format!("set_{}", field_ident), struct_ident.span());
+            let builder_fn = syn::Ident::new(&format!("set_{}", field_ident), struct_ident.span());
 
-        // quote! {
-        //     let value = clap . #field_ident . as_ref().unwrap_or_else(|| {
-        //         #interactive
-        //     });
-        //     let builder = builder . #builder_fn (value)
+            // quote! {
+            //     let value = clap . #field_ident . as_ref().unwrap_or_else(|| {
+            //         #interactive
+            //     });
+            //     let builder = builder . #builder_fn (value)
 
-        // }
+            // }
 
-        let clap_fields = quote! {
-            builder = builder . #builder_fn (
-                match clap . #field_ident . as_ref() {
-                    Some(value) => value.clone(),
-                    None => #interactive,
-                }
-            );
-        };
+            let clap_fields = quote! {
+                builder = builder . #builder_fn (
+                    match clap . #field_ident . as_ref() {
+                        Some(value) => value.clone(),
+                        None => #interactive,
+                    }
+                );
+            };
 
-        let nonclap = quote! {
-            builder = builder . #builder_fn ( #interactive );
-        };
+            let nonclap = quote! {
+                builder = builder . #builder_fn ( #interactive );
+            };
 
-        (clap_fields, nonclap)
-    })
-    .unzip()
+            (clap_fields, nonclap)
+        })
+        .unzip()
 }
 
 pub fn gen_build(args: &StructArgs) -> TokenStream {
@@ -179,32 +182,48 @@ pub fn gen_build_subcommand(args: &StructArgs) -> TokenStream {
 }
 
 fn gen_build_fields(args: &StructArgs) -> Vec<TokenStream> {
-    args.fields().into_iter().map(|field| {
-        let FieldArgs {
-            ident: field_ident,
-            ty,
-            subcommand,
-            ..
-        } = field;
+    args.fields()
+        .into_iter()
+        .map(|field| {
+            let FieldArgs {
+                ident: field_ident,
+                ty,
+                subcommand,
+                ..
+            } = field;
 
-        if *subcommand {
-            return quote!();
-        }
+            if *subcommand {
+                return quote!();
+            }
 
-        let field_ident = field_ident.as_ref().expect("Enum/tuples/newtypes are unsupported");
-        // let builder_fn = syn::Ident::new(&format!("set_{}", field_ident), struct_ident.span());
+            let field_ident = field_ident
+                .as_ref()
+                .expect("Enum/tuples/newtypes are unsupported");
+            // let builder_fn = syn::Ident::new(&format!("set_{}", field_ident), struct_ident.span());
 
-        quote! {
-            #field_ident : scope . #field_ident,
-        }
-    })
-    .collect()
+            quote! {
+                #field_ident : scope . #field_ident,
+            }
+        })
+        .collect()
 }
 
 fn subcommand_details(args: &StructArgs) -> Option<(Ident, bool, Type, TokenStream)> {
-    for FieldArgs { ident, ty, single, subcommand, prompt_msg, prompt_fn, ..} in args.fields() {
+    for FieldArgs {
+        ident,
+        ty,
+        single,
+        subcommand,
+        prompt_msg,
+        prompt_fn,
+        ..
+    } in args.fields()
+    {
         if *subcommand {
-            let ident = ident.as_ref().expect("Enum/tuple/newtypes not supported").clone();
+            let ident = ident
+                .as_ref()
+                .expect("Enum/tuple/newtypes not supported")
+                .clone();
             return Some((ident, *single, ty.clone(), quote!()));
         }
     }

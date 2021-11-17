@@ -1,10 +1,9 @@
+use crate::types::{FieldArgs, StructArgs};
 use crate::utils::ident_postfix;
-use crate::types::{StructArgs, FieldArgs};
 
 use proc_macro2::TokenStream;
-use quote::{quote};
+use quote::quote;
 use syn::{Ident, Type};
-
 
 pub fn gen(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
@@ -25,7 +24,7 @@ pub fn gen(args: &StructArgs) -> TokenStream {
     }
 }
 
-fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
+fn gen_clap_internals(args: &StructArgs) -> (TokenStream, Vec<TokenStream>) {
     let StructArgs {
         ident: struct_ident,
         generics: _,
@@ -42,48 +41,51 @@ fn gen_clap_internals(args : &StructArgs) -> (TokenStream, Vec<TokenStream>) {
         passthru: quote!(),
     };
 
-    let fields = args.fields().into_iter().map(|f| {
-        let FieldArgs {
-            ident,
-            ty,
-            single,
-            subcommand,
-            ..
-        } = f;
+    let fields = args
+        .fields()
+        .into_iter()
+        .map(|f| {
+            let FieldArgs {
+                ident,
+                ty,
+                single,
+                subcommand,
+                ..
+            } = f;
 
-        // TODO: potential do not generate clap variant option if we skip it.
-        // let field_ty = if f.skip {
-        //     quote!(#field_ty)
-        // } else {
-        //     quote! {
-        //         Option<#field_ty>
-        //     }
-        // };
+            // TODO: potential do not generate clap variant option if we skip it.
+            // let field_ty = if f.skip {
+            //     quote!(#field_ty)
+            // } else {
+            //     quote! {
+            //         Option<#field_ty>
+            //     }
+            // };
 
-        let ident = ident.as_ref().expect("Enums/tuples/newtypes not supported");
-        let mut ident = quote!(#ident);
-        let mut field_ty = quote!(#ty);
-        let mut qualifiers = quote! {};
-        if *subcommand {
-            // this is a subcommand. ClapVariant will call it `subcommand` instead
-            ident = quote!(subcommand);
-            qualifiers = quote! { #[clap(subcommand)] };
+            let ident = ident.as_ref().expect("Enums/tuples/newtypes not supported");
+            let mut ident = quote!(#ident);
+            let mut field_ty = quote!(#ty);
+            let mut qualifiers = quote! {};
+            if *subcommand {
+                // this is a subcommand. ClapVariant will call it `subcommand` instead
+                ident = quote!(subcommand);
+                qualifiers = quote! { #[clap(subcommand)] };
 
-            // Single enum wrapper. Generate it and replace the type with it.
-            if *single {
-                let (ident, code) = gen_clap_enum_pass(struct_ident, &ty);
-                field_ty = quote!(#ident);
-                sub_args.ident = ident;
-                sub_args.passthru = code;
+                // Single enum wrapper. Generate it and replace the type with it.
+                if *single {
+                    let (ident, code) = gen_clap_enum_pass(struct_ident, &ty);
+                    field_ty = quote!(#ident);
+                    sub_args.ident = ident;
+                    sub_args.passthru = code;
+                }
             }
-        }
 
-        quote! {
-            #qualifiers
-            #ident: Option<#field_ty>,
-        }
-    })
-    .collect();
+            quote! {
+                #qualifiers
+                #ident: Option<#field_ty>,
+            }
+        })
+        .collect();
 
     (sub_args.passthru, fields)
 }
@@ -110,16 +112,6 @@ fn gen_clap_enum_pass(struct_ident: &Ident, ty: &Type) -> (Ident, TokenStream) {
                 }
             }
         }
-
-        // fn build<T: near_cli_visual::types::Scoped>(
-        //     clap: &Option<<#ty as near_cli_visual::types::ClapVariant>::Clap>,
-        //     scope: &T::Scope,
-        // ) -> Result<#ty, ()> {
-        //     let sub_builder = <#ty as near_cli_visual::types::BuilderFrom<T>>::builder_from(&scope);
-        //     let subcommand = <#ty as near_cli_visual::types::Build>::build(clap, sub_builder);
-
-        //     subcommand
-        // }
     };
 
     (passthru_ident, code)

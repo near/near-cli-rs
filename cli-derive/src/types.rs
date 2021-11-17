@@ -17,7 +17,6 @@ pub struct StructArgs {
     pub data: ast::Data<(), FieldArgs>,
 
     // After the above, we can put any other fields we want to receive in the following:
-
     /// Set of enable flags for the struct to be used in the `#[eclap]` attribute.
     #[darling(default)]
     pub enable: Option<EnableArgs>,
@@ -75,7 +74,8 @@ use std::iter::IntoIterator;
 
 impl StructArgs {
     pub fn fields(&self) -> Vec<&FieldArgs> {
-        let fields = self.data
+        let fields = self
+            .data
             .as_ref()
             .take_struct()
             .expect("Should never be enum")

@@ -1,5 +1,5 @@
 use near_cli_derive::Eclap;
-use near_cli_visual::types::{Validate};
+use near_cli_visual::types::Validate;
 
 #[derive(Debug, Eclap)]
 struct A {
@@ -24,7 +24,6 @@ impl Validate for B {
         Ok(())
     }
 }
-
 
 fn main() {
     use near_cli_visual::types::InteractiveParse;

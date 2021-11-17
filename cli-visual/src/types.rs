@@ -44,7 +44,10 @@ where
     fn build(clap: Option<Self::Clap>, builder: Self::Builder) -> Result<Self, Self::Err>;
 }
 
-pub trait InteractiveParse: Build where Self: Sized {
+pub trait InteractiveParse: Build
+where
+    Self: Sized,
+{
     fn iparse() -> Result<Self, Self::Err>;
 }
 
@@ -55,7 +58,7 @@ fn default_iparse<T: Build>() -> Result<T, T::Err> {
 
 impl<T> InteractiveParse for T
 where
-    T: Build
+    T: Build,
 {
     fn iparse() -> Result<Self, Self::Err> {
         default_iparse()
