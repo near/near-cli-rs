@@ -706,25 +706,6 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.0.0-beta.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bd1061998a501ee7d4b6d449020df3266ca3124b941ec56cf2005c3779ca142"
-dependencies = [
- "atty",
- "bitflags",
- "clap_derive 3.0.0-beta.2",
- "indexmap",
- "lazy_static",
- "os_str_bytes 2.4.0",
- "strsim",
- "termcolor",
- "textwrap 0.12.1",
- "unicode-width",
- "vec_map",
-]
-
-[[package]]
-name = "clap"
 version = "3.0.0-beta.4"
 source = "git+https://github.com/ChaoticTempest/clap?branch=feat/derive-generic#4c1f39ce6bc1d409d6bb38912e31d650ff06b6a8"
 dependencies = [
@@ -733,17 +714,34 @@ dependencies = [
  "clap_derive 3.0.0-beta.4",
  "indexmap",
  "lazy_static",
- "os_str_bytes 4.2.0",
+ "os_str_bytes",
  "strsim",
  "termcolor",
- "textwrap 0.14.2",
+ "textwrap",
+]
+
+[[package]]
+name = "clap"
+version = "3.0.0-beta.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "feff3878564edb93745d58cf63e17b63f24142506e7a20c87a5521ed7bfb1d63"
+dependencies = [
+ "atty",
+ "bitflags",
+ "clap_derive 3.0.0-beta.5",
+ "indexmap",
+ "lazy_static",
+ "os_str_bytes",
+ "strsim",
+ "termcolor",
+ "textwrap",
+ "unicase",
 ]
 
 [[package]]
 name = "clap_derive"
-version = "3.0.0-beta.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "370f715b81112975b1b69db93e0b56ea4cd4e5002ac43b2da8474106a54096a1"
+version = "3.0.0-beta.4"
+source = "git+https://github.com/ChaoticTempest/clap?branch=feat/derive-generic#4c1f39ce6bc1d409d6bb38912e31d650ff06b6a8"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -754,8 +752,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "3.0.0-beta.4"
-source = "git+https://github.com/ChaoticTempest/clap?branch=feat/derive-generic#4c1f39ce6bc1d409d6bb38912e31d650ff06b6a8"
+version = "3.0.0-beta.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b15c6b4f786ffb6192ffe65a36855bc1fc2444bcd0945ae16748dcd6ed7d0d3"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -770,7 +769,16 @@ version = "3.0.0-beta.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adf420f8b687b628d2915ccfd43a660c437a170432e3fbcb66944e8717a0d68f"
 dependencies = [
- "clap 3.0.0-beta.2",
+ "clap 3.0.0-beta.5",
+]
+
+[[package]]
+name = "cli-transfer"
+version = "0.1.0"
+dependencies = [
+ "clap 3.0.0-beta.5",
+ "near-cli-derive",
+ "near-cli-visual",
 ]
 
 [[package]]
@@ -982,6 +990,41 @@ dependencies = [
  "rand_core 0.5.1",
  "subtle",
  "zeroize 1.2.0",
+]
+
+[[package]]
+name = "darling"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "757c0ded2af11d8e739c4daea1ac623dd1624b06c844cf3f5a39f1bdbd99bb12"
+dependencies = [
+ "darling_core",
+ "darling_macro",
+]
+
+[[package]]
+name = "darling_core"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c34d8efb62d0c2d7f60ece80f75e5c63c1588ba68032740494b0b9a996466e3"
+dependencies = [
+ "fnv",
+ "ident_case",
+ "proc-macro2",
+ "quote",
+ "strsim",
+ "syn",
+]
+
+[[package]]
+name = "darling_macro"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ade7bff147130fe5e6d39f089c6bd49ec0250f35d70b2eebf72afdfc919f15cc"
+dependencies = [
+ "darling_core",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1447,9 +1490,9 @@ dependencies = [
 
 [[package]]
 name = "http-body"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "399c583b2979440c60be0821a6199eca73bc3c8dcd9d070d75ac726e2c6186e5"
+checksum = "1ff4f84919677303da5f147645dbea6b1881f368d03ac84e1dc09031ebd7b2c6"
 dependencies = [
  "bytes",
  "http",
@@ -1504,6 +1547,12 @@ dependencies = [
  "tokio",
  "tokio-native-tls",
 ]
+
+[[package]]
+name = "ident_case"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "idna"
@@ -1889,7 +1938,7 @@ dependencies = [
  "bip39",
  "bs58 0.3.1",
  "cargo-util",
- "clap 3.0.0-beta.2",
+ "clap 3.0.0-beta.5",
  "clap_generate",
  "color-eyre",
  "derive_more",
@@ -1920,6 +1969,7 @@ dependencies = [
 name = "near-cli-derive"
 version = "0.1.0"
 dependencies = [
+ "darling",
  "near-cli-visual",
  "proc-macro-crate 1.0.0",
  "proc-macro2",
@@ -1949,7 +1999,7 @@ dependencies = [
 name = "near-cli-visual"
 version = "0.1.0"
 dependencies = [
- "clap 3.0.0-beta.2",
+ "clap 3.0.0-beta.5",
  "dialoguer 0.8.0",
  "near-primitives 0.1.0 (git+https://github.com/near/nearcore?rev=4306275e57edf6a918e73b2b442ffb110761a264)",
  "strum 0.20.1",
@@ -2480,12 +2530,6 @@ dependencies = [
  "pkg-config",
  "vcpkg",
 ]
-
-[[package]]
-name = "os_str_bytes"
-version = "2.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afb2e1c3ee07430c2cf76151675e583e0f19985fa6efae47d6848a3e2c824f85"
 
 [[package]]
 name = "os_str_bytes"
@@ -3483,15 +3527,6 @@ dependencies = [
 
 [[package]]
 name = "textwrap"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "203008d98caf094106cfaba70acfed15e18ed3ddb7d94e49baec153a2b462789"
-dependencies = [
- "unicode-width",
-]
-
-[[package]]
-name = "textwrap"
 version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0066c8d12af8b5acd21e00547c3797fde4e8677254a7ee429176ccebbe93dd80"
@@ -3747,6 +3782,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "unicase"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50f37be617794602aabbeee0be4f259dc1778fabe05e2d67ee8f79326d5cb4f6"
+dependencies = [
+ "version_check",
+]
+
+[[package]]
 name = "unicode-bidi"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3841,12 +3885,6 @@ name = "vcpkg"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b00bca6106a5e23f3eee943593759b7fcddb00554332e856d990c893966879fb"
-
-[[package]]
-name = "vec_map"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 
 [[package]]
 name = "version_check"
