@@ -9,6 +9,7 @@ pub fn gen(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
     let builder_ident = ident_postfix(struct_ident, "Builder");
     let ((funcs, fields), scope_fields) = gen_builder_internals(args);
+    let default_builder_from = gen_default_builder_from(args);
 
     quote! {
         #[derive(Default)]
@@ -34,6 +35,8 @@ pub fn gen(args: &StructArgs) -> TokenStream {
                 })
             }
         }
+
+        #default_builder_from
     }
 }
 
@@ -81,4 +84,54 @@ fn gen_builder_internals(args: &StructArgs) -> ((Vec<TokenStream>, Vec<TokenStre
         ((builder_fn, builder_field), scope_field)
     })
     .unzip()
+}
+
+fn gen_default_builder_from(args: &StructArgs) -> TokenStream {
+    let StructArgs {
+        ident: struct_ident,
+        disable,
+        ..
+    } = args;
+
+    if let Some(disable) = disable {
+        if disable.builder_from {
+            return quote! {
+                impl<T> near_cli_visual::types::BuilderFrom<T> for #struct_ident
+                where
+                    T: near_cli_visual::types::Scoped,
+                {
+                    fn builder_from(_: &T::Scope) -> Self::Builder {
+                        Self::Builder::default()
+                    }
+                }
+            };
+        }
+    }
+
+    quote! {}
+}
+
+fn gen_enable_validate(args: &StructArgs) -> TokenStream {
+    let StructArgs {
+        ident: struct_ident,
+        disable,
+        ..
+    } = args;
+
+    if let Some(disable) = disable {
+        if disable.builder_from {
+            return quote! {
+                impl<T> near_cli_visual::types::BuilderFrom<T> for #struct_ident
+                where
+                    T: near_cli_visual::types::Scoped,
+                {
+                    fn builder_from(_: &T::Scope) -> Self::Builder {
+                        Self::Builder::default()
+                    }
+                }
+            };
+        }
+    }
+
+    quote! {}
 }

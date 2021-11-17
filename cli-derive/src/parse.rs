@@ -84,7 +84,7 @@ fn gen_interactive_fields(args: &StructArgs) -> (Vec<TokenStream>, Vec<TokenStre
 
 pub fn gen_build(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
-    let build_retry_loop = gen_build_retry_loop();
+    let build_retry_loop = gen_build_retry_loop(args);
     let subcommand = gen_build_subcommand(args);
     let fields = gen_build_fields(args);
 
@@ -107,26 +107,37 @@ pub fn gen_build(args: &StructArgs) -> TokenStream {
 }
 
 // The loop where we call into Interactive/Validate
-pub fn gen_build_retry_loop() -> TokenStream {
+pub fn gen_build_retry_loop(args: &StructArgs) -> TokenStream {
+    let StructArgs { enable, .. } = args;
+
+    let mut validate = quote!( break Ok(builder); );
+    if let Some(enable) = enable {
+        if enable.validator {
+            validate = quote! {
+                count -= 1;
+                let valid = <Self as near_cli_visual::types::Validate>::validate(clap.as_ref(), &builder);
+                if valid.is_ok() {
+                    break Ok(builder);
+                }
+                else if count == 0 {
+                    // break Err(Self::Err::None);
+                    // break Err(valid.unwrap_err());
+                    break Err(());
+                }
+            };
+        }
+    }
+
     quote! {{
         use near_cli_visual::types::IntoScope;
 
         let mut count = near_cli_visual::consts::max_build_retry();
-        let scope = loop {
+        let builder: Result<Self::Builder, ()> = loop {
             builder = <Self as near_cli_visual::types::Interactive>::interactive(clap.as_ref(), builder);
-            let valid = <Self as near_cli_visual::types::Validate>::validate(clap.as_ref(), &builder);
+            #validate
+        };
 
-            count -= 1;
-            if valid.is_ok() {
-                break Ok(builder);
-            }
-            else if count == 0 {
-                // break Err(Self::Err::None);
-                // break Err(valid.unwrap_err());
-                break Err(());
-            }
-        }?
-        .into_scope()?;
+        let scope = builder?.into_scope()?;
 
         scope
     }}
