@@ -7,13 +7,16 @@ use crate::types::{StructArgs, FieldArgs};
 
 pub fn gen_interactive(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
-    let fields = gen_interactive_fields(args);
+    let (clap_fields, nonclap) = gen_interactive_fields(args);
 
     quote! {
         impl near_cli_visual::types::Interactive for #struct_ident {
             fn interactive(clap: Option<&Self::Clap>, mut builder: Self::Builder) -> Self::Builder {
                 if let Some(clap) = clap {
-                    #(#fields)*
+                    #(#clap_fields)*
+                }
+                else {
+                    #(#nonclap)*
                 }
 
                 builder
@@ -22,7 +25,7 @@ pub fn gen_interactive(args: &StructArgs) -> TokenStream {
     }
 }
 
-fn gen_interactive_fields(args: &StructArgs) -> Vec<TokenStream> {
+fn gen_interactive_fields(args: &StructArgs) -> (Vec<TokenStream>, Vec<TokenStream>) {
     let struct_ident = &args.ident;
     args.fields().into_iter().map(|field| {
         let FieldArgs {
@@ -35,7 +38,7 @@ fn gen_interactive_fields(args: &StructArgs) -> Vec<TokenStream> {
 
         if prompt_msg.is_none() && prompt_fn.is_none() {
             // Skip if not present
-            return quote!();
+            return (quote!(), quote!());
         }
 
         let field_ident = field_ident.as_ref().expect("Enum/tuples/newtypes are unsupported");
@@ -61,16 +64,22 @@ fn gen_interactive_fields(args: &StructArgs) -> Vec<TokenStream> {
 
         // }
 
-        quote! {
+        let clap_fields = quote! {
             builder = builder . #builder_fn (
                 match clap . #field_ident . as_ref() {
                     Some(value) => value.clone(),
                     None => #interactive,
                 }
             );
-        }
+        };
+
+        let nonclap = quote! {
+            builder = builder . #builder_fn ( #interactive );
+        };
+
+        (clap_fields, nonclap)
     })
-    .collect()
+    .unzip()
 }
 
 pub fn gen_build(args: &StructArgs) -> TokenStream {
