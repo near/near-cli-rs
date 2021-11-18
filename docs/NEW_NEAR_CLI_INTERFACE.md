@@ -49,16 +49,16 @@ manage-off-chain-keys
     - generate-key
     - get-public-key-from-ledger
 
-manage-connections
-    - show-current
-    - set-current <connection-name>
-    - list-all
-    - add <connection-name> <network-name> <url1> <url1>
-    - delete <connection-name>
-
-manage-cli-config
-    - set <parameter> <value>
-    - get <parameter>
+mange-config
+    - connections
+        - show-selected
+        - select <connection-name>
+        - list
+        - add <connection-name> <> <network-name>  <url1> <url1> <...>
+        - delete <connection-name>
+    - cli
+        - set <parameter> <value>
+        - get <parameter>
 
 extensions
     - explore
