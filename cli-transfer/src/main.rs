@@ -1,5 +1,5 @@
 use near_cli_derive::Eclap;
-use near_cli_visual::types::Validate;
+use near_cli_visual::types::{BuilderFrom, Validate, Scoped};
 
 #[derive(Debug, Eclap)]
 struct A {
@@ -10,8 +10,16 @@ struct A {
     baz: bool,
 }
 
+impl BuilderFrom<A> for B {
+    fn builder_from(prev: &<A as Scoped>::Scope) -> Self::Builder {
+        Self::Builder {
+            bar: Some(prev.baz),
+        }
+    }
+}
+
 #[derive(Debug, Eclap)]
-#[eclap(enable(validator))]
+#[eclap(enable(validator, builder_from))]
 struct B {
     #[eclap(prompt_msg = "To bar or not to?")]
     bar: bool,
