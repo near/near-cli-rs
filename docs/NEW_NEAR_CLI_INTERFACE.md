@@ -2,10 +2,10 @@
 
 `NEAR CLI` is using `extensions` to saticfy all groups of users.
 - `Core NEAR CLI` commands should be usefull for all groups of users.
+- `Extensions` are used by a particular group or several groups of users.
 - `Core NEAR CLI` is a single binary, there is no extensions that are installed `by default`.
-- Each extension is a separate binary that can be executed from `NEAR CLI`.
-- Extensions are used by a particular group or several groups of users.
-- Extensions are not composable (you should not create extensions for extensions).
+- Each extension is a separate binary that can be installed and executed from `NEAR CLI`.
+- `Core NEAR CLI` extensions system only allows to introduce top-level commands through its design.
 
 `NEAR CLI` is built for:
 - NEAR `dApp developers`, who build smart-contracts, UIs, and tooling on NEAR.
@@ -16,7 +16,6 @@
 - All altering actions should have a confirmation step with an option to skip confirmation with an explicit command line parameter (e.g. `send` at the end of the command)
 - All direct children commands of a single parent command should be aligned (either represent an action or a resource, but never a mix of those on the same hierarchy level): `contract` -> `state` (resource) and `contract` -> `deploy` (action) are not aligned, so it should be either `contract` -> `get-state` + `contract` -> `deploy` or `contract` -> `state` -> `view` + `contract` -> `code` -> `deploy`
 - Interactive mode should look like: `command - description`. It will help people to learn the commands.
-
 
 ## `Core NEAR CLI` commands
 ```txt
@@ -36,7 +35,7 @@ manage-account <accoundId>
         - view
         - add
         - delete <public-key>
-    - make-transfer <sender> <reciever> <amount>
+    - transfer-tokens <sender> <reciever> <amount>
     - manage-contract
         - deploy-code <wasm-path>
         - get-code-checksum
@@ -60,6 +59,12 @@ manage-connections
 manage-cli-config
     - set <parameter> <value>
     - get <parameter>
+
+extensions
+    - explore
+    - install
+    - list-installed
+    - uninstall
 ```
 
 ## Extensions
@@ -104,11 +109,10 @@ Extensions design is a work in progress. They are here mostly to show that we ha
 - proposals
 - ...
 ```
+### `NFT` extension
+
+### `FT` extension
 
 ## Open questions
 - Where to add flags like `--verbose`, `--structured/json/csv`, `--scripting-mode`, etc.
 - How to manage multiple keys? Should we have `default` key? Should they have a name like `mario-game-key-1`?
-- Should we have `extensions` -> `list`/`add`/`delete` commands? We can do it in Phase 2.
-
-## Other
-- Let's get inspiration for keys and storage data from this project: https://github.com/near-examples/near-account-utils
