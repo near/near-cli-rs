@@ -67,6 +67,13 @@ extensions
     - uninstall
 ```
 
+### To level `Core NEAR CLI` flags
+```txt
+--verbose (print all available error info)
+--json (show answer in json format)
+--scripting (turn off interactive mode)
+```
+
 ## Extensions
 Extensions design is a work in progress. They are here mostly to show that we haven't forgotten about particular functionality and that this functionality will not be a part of `Core NEAR CLI`.
 
@@ -109,10 +116,7 @@ Extensions design is a work in progress. They are here mostly to show that we ha
 - proposals
 - ...
 ```
-### `NFT` extension
 
-### `FT` extension
-
-## Open questions
-- Where to add flags like `--verbose`, `--structured/json/csv`, `--scripting-mode`, etc.
-- How to manage multiple keys? Should we have `default` key? Should they have a name like `mario-game-key-1`?
+### `Other` extensions
+- `NFT`
+- `FT`
