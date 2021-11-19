@@ -22,13 +22,6 @@ pub fn gen(args: &StructArgs) -> TokenStream {
 }
 
 fn gen_scope_internals(args: &StructArgs) -> Vec<TokenStream> {
-    let StructArgs {
-        ident: struct_ident,
-        generics: _,
-        data: _,
-        ..
-    } = args;
-
     args.fields()
         .into_iter()
         .map(|f| {

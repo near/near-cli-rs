@@ -1,5 +1,5 @@
 use near_cli_derive::Eclap;
-use near_cli_visual::types::{BuilderFrom, Validate, Scoped};
+use near_cli_visual::types::{BuilderFrom, Scoped, Validate};
 
 #[derive(Debug, Eclap)]
 struct A {

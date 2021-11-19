@@ -1,13 +1,10 @@
-#![allow(dead_code)]
-#![allow(unused)]
-
 use proc_macro::{self, TokenStream};
 use proc_macro2::Span;
-use syn::{self, Ident, ItemEnum, ItemStruct, ItemUnion};
+use syn::{self, Ident, ItemEnum, ItemStruct};
 use types::StructArgs;
 
 use darling::FromDeriveInput;
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
 mod derive;

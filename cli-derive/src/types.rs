@@ -58,14 +58,6 @@ pub struct EnableArgs {
     pub validator: bool,
 }
 
-pub enum Flavor {
-    None,
-    Skip,
-    Subcommand,
-}
-
-use std::iter::IntoIterator;
-
 impl StructArgs {
     pub fn fields(&self) -> Vec<&FieldArgs> {
         let fields = self

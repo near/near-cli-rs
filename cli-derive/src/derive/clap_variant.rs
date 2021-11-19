@@ -1,5 +1,5 @@
 use crate::types::{FieldArgs, StructArgs};
-use crate::utils::ident_postfix;
+use crate::utils::{unwrap_ident, ident_postfix};
 
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -62,7 +62,7 @@ fn gen_clap_internals(args: &StructArgs) -> (TokenStream, Vec<TokenStream>) {
             //     }
             // };
 
-            let ident = ident.as_ref().expect("Enums/tuples/newtypes not supported");
+            let ident = unwrap_ident(ident);
             let mut ident = quote!(#ident);
             let mut field_ty = quote!(#ty);
             let mut qualifiers = quote! {};

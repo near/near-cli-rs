@@ -1,5 +1,3 @@
-use core::convert::TryFrom;
-
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{quote, ToTokens};
 use syn::{
@@ -28,12 +26,12 @@ pub fn add_trait_bounds(generics: &Generics, ty: TypeParamBound) -> Generics {
     generics
 }
 
-pub fn struct_impl(input: &ItemStruct, cratename: Ident) -> syn::Result<TokenStream2> {
+pub fn struct_impl(input: &ItemStruct, _cratename: Ident) -> syn::Result<TokenStream2> {
     let name = &input.ident;
     let generics = add_trait_bounds(&input.generics, parse_quote!(near_cli_visual::Interactive));
     let generics = add_trait_bounds(&generics, parse_quote!(near_cli_visual::PromptInput));
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    let mut where_clause = where_clause.map_or_else(
+    let where_clause = where_clause.map_or_else(
         || WhereClause {
             where_token: Default::default(),
             predicates: Default::default(),
@@ -69,11 +67,11 @@ pub fn struct_impl(input: &ItemStruct, cratename: Ident) -> syn::Result<TokenStr
     })
 }
 
-pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2> {
+pub fn enum_impl(input: &ItemEnum, _cratename: Ident) -> syn::Result<TokenStream2> {
     let name = &input.ident;
     let generics = add_trait_bounds(&input.generics, parse_quote!(near_cli_visual::Interactive));
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    let mut where_clause = where_clause.map_or_else(
+    let where_clause = where_clause.map_or_else(
         || WhereClause {
             where_token: Default::default(),
             predicates: Default::default(),
@@ -104,7 +102,7 @@ pub fn enum_impl(input: &ItemEnum, cratename: Ident) -> syn::Result<TokenStream2
                 variant_header = quote! { { #variant_header }};
             }
             Fields::Unnamed(fields) => {
-                for (field_idx, field) in fields.unnamed.iter().enumerate() {
+                for (field_idx, _field) in fields.unnamed.iter().enumerate() {
                     let field_ident =
                         Ident::new(format!("id{}", field_idx).as_str(), Span::call_site());
                     variant_header.extend(quote! { #field_ident, });

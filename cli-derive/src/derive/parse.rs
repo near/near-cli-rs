@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Ident, Type};
 
 use crate::types::{FieldArgs, StructArgs};
+use crate::utils::{fetch_subcommand, unwrap_ident};
 
 pub fn gen_interactive(args: &StructArgs) -> TokenStream {
     let struct_ident = &args.ident;
@@ -31,7 +31,6 @@ fn gen_interactive_fields(args: &StructArgs) -> (Vec<TokenStream>, Vec<TokenStre
         .map(|field| {
             let FieldArgs {
                 ident: field_ident,
-                ty,
                 prompt_msg,
                 prompt_fn,
                 ..
@@ -42,9 +41,7 @@ fn gen_interactive_fields(args: &StructArgs) -> (Vec<TokenStream>, Vec<TokenStre
                 return (quote!(), quote!());
             }
 
-            let field_ident = field_ident
-                .as_ref()
-                .expect("Enum/tuples/newtypes are unsupported");
+            let field_ident = unwrap_ident(field_ident);
             let mut prompter = None;
             if let Some(prompt_msg) = prompt_msg {
                 prompter = Some(quote! { near_cli_visual::prompt_input_with_msg(#prompt_msg) });
@@ -58,14 +55,6 @@ fn gen_interactive_fields(args: &StructArgs) -> (Vec<TokenStream>, Vec<TokenStre
             ));
 
             let builder_fn = syn::Ident::new(&format!("set_{}", field_ident), struct_ident.span());
-
-            // quote! {
-            //     let value = clap . #field_ident . as_ref().unwrap_or_else(|| {
-            //         #interactive
-            //     });
-            //     let builder = builder . #builder_fn (value)
-
-            // }
 
             let clap_fields = quote! {
                 builder = builder . #builder_fn (
@@ -123,8 +112,6 @@ pub fn gen_build_retry_loop(args: &StructArgs) -> TokenStream {
                     break Ok(builder);
                 }
                 else if count == 0 {
-                    // break Err(Self::Err::None);
-                    // break Err(valid.unwrap_err());
                     break Err(());
                 }
             };
@@ -147,9 +134,8 @@ pub fn gen_build_retry_loop(args: &StructArgs) -> TokenStream {
 }
 
 pub fn gen_build_subcommand(args: &StructArgs) -> TokenStream {
-    let struct_ident = &args.ident;
-    if let Some((sub_ident, single, sub_ty, prompt_msg)) = subcommand_details(args) {
-        let enum_sub_interactive = if single {
+    if let Some(FieldArgs { ident, ty, single, .. }) = fetch_subcommand(args) {
+        let enum_sub_interactive = if *single {
             quote! {{ clap.unwrap_single_subcommand() }}
         } else {
             // let prompt_msg = prompt_msg.expect("prompt_msg required for choosing subcommand");
@@ -158,8 +144,9 @@ pub fn gen_build_subcommand(args: &StructArgs) -> TokenStream {
             quote!()
         };
 
+        let ident = unwrap_ident(ident);
         return quote! {
-            #sub_ident : {
+            #ident : {
                 // Here, we're trying to get inner value of the enum
                 let mut sub_clap = None;
                 if let Some(clap) = clap {
@@ -168,10 +155,8 @@ pub fn gen_build_subcommand(args: &StructArgs) -> TokenStream {
                     }
                 }
 
-                // let subcommand = #sub_ty :: build :: <Self> (sub_clap, scope)?;
-                // TODO: what err msg if they don't impl BuilderFrom
-                let sub_builder = <#sub_ty as near_cli_visual::types::BuilderFrom<Self>>::builder_from(&scope);
-                let subcommand = <#sub_ty as near_cli_visual::types::Build>::build(sub_clap, sub_builder)?;
+                let sub_builder = <#ty as near_cli_visual::types::BuilderFrom<Self>>::builder_from(&scope);
+                let subcommand = <#ty as near_cli_visual::types::Build>::build(sub_clap, sub_builder)?;
 
                 subcommand
             },
@@ -187,7 +172,6 @@ fn gen_build_fields(args: &StructArgs) -> Vec<TokenStream> {
         .map(|field| {
             let FieldArgs {
                 ident: field_ident,
-                ty,
                 subcommand,
                 ..
             } = field;
@@ -196,37 +180,10 @@ fn gen_build_fields(args: &StructArgs) -> Vec<TokenStream> {
                 return quote!();
             }
 
-            let field_ident = field_ident
-                .as_ref()
-                .expect("Enum/tuples/newtypes are unsupported");
-            // let builder_fn = syn::Ident::new(&format!("set_{}", field_ident), struct_ident.span());
-
+            let field_ident = unwrap_ident(field_ident);
             quote! {
                 #field_ident : scope . #field_ident,
             }
         })
         .collect()
-}
-
-fn subcommand_details(args: &StructArgs) -> Option<(Ident, bool, Type, TokenStream)> {
-    for FieldArgs {
-        ident,
-        ty,
-        single,
-        subcommand,
-        prompt_msg,
-        prompt_fn,
-        ..
-    } in args.fields()
-    {
-        if *subcommand {
-            let ident = ident
-                .as_ref()
-                .expect("Enum/tuple/newtypes not supported")
-                .clone();
-            return Some((ident, *single, ty.clone(), quote!()));
-        }
-    }
-
-    None
 }
