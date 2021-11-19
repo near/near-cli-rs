@@ -19,23 +19,27 @@
 
 ## `Core NEAR CLI` commands
 ```txt
-create-account
-    - implicit
-    - subaccount <master-account> <new-subaccount-id>
-
-manage-account <accoundId>
-    - get-state
-    - manage-keys
-        - view
-        - add
-        - delete <public-key>
-    - transfer-tokens <sender> <reciever> <amount>
-    - manage-contract
-        - deploy-code <wasm-path>
-        - get-code-checksum
-        - get-state
-        - call-view-method
-        - call-change-method
+account
+    - create
+        - implicit
+        - subaccount <master-account> <new-subaccount-id>
+    - manage <account-id>
+        - state
+            - view
+            - transfer-tokens <sender> <reciever> <amount>
+        - keys
+            - view
+            - add
+            - delete <public-key>
+        - contract
+            - code
+                - deploy <wasm-path>
+                - view-code-checksum
+            - state
+                - view
+            - call
+                - view-function
+                - change-function
     - delete
 
 local-keys
