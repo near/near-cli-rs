@@ -19,12 +19,6 @@
 
 ## `Core NEAR CLI` commands
 ```txt
-import-account
-    - from-near-wallet
-    - from-seed-phrase <seed-phrase>
-    - from-ledger
-    - from-private-key <private-key>
-
 create-account
     - implicit
     - subaccount <master-account> <new-subaccount-id>
@@ -44,10 +38,13 @@ manage-account <accoundId>
         - call-change-method
     - delete
 
-manage-off-chain-keys
-    - ...
-    - generate-key
-    - get-public-key-from-ledger
+local-keys
+    - add-using
+        - near-wallet
+        - seed-phrase <seed-phrase>
+        - ledger
+        - private-key <private-key>
+    - generate
 
 mange-config
     - connections
