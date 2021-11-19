@@ -101,13 +101,13 @@ fn gen_clap_enum_pass(struct_ident: &Ident, ty: &Type) -> (Ident, TokenStream) {
     let code = quote! {
         #[derive(clap::Parser)]
         enum #passthru_ident {
-            PassThru(#clap_ty)
+            #ty ( #clap_ty )
         }
 
         impl #passthru_ident {
             fn unwrap_single_subcommand(self) -> #clap_ty {
                 match self {
-                    #passthru_ident::PassThru(x) => x,
+                    #passthru_ident :: #ty (x) => x,
                     _ => panic!("Expected single subcommand"),
                 }
             }
