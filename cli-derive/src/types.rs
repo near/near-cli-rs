@@ -77,25 +77,4 @@ impl StructArgs {
 
         fields
     }
-
-    // pub fn _fields(&self) -> impl IntoIterator<Item=Flavor> {
-    //     let fields = self.data
-    //         .as_ref()
-    //         .take_struct()
-    //         .expect("Should never be enum")
-    //         .fields;
-
-    //     fields
-    //         .into_iter()
-    //         .map(|f| {
-    //             if f.subcommand {
-    //                 Flavor::Subcommand
-    //             } else if f.skip {
-    //                 Flavor::Skip
-    //             } else {
-    //                 Flavor::None
-    //             }
-    //         })
-    //         .collect::<Vec<_>>()
-    // }
 }

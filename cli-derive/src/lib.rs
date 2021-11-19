@@ -10,13 +10,12 @@ use darling::FromDeriveInput;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, DeriveInput};
 
-mod builder;
-mod clap_variant;
+mod derive;
 mod internal;
-mod parse;
-mod scope;
 mod types;
 mod utils;
+
+use crate::derive::{clap_variant, builder, scope, parse};
 
 #[proc_macro_derive(Interactive, attributes(interactive_skip))]
 pub fn derive_interactive(input: TokenStream) -> TokenStream {
@@ -63,34 +62,5 @@ pub fn derive_eclap(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         #interactive
         #build
     };
-
-    // panic!("{}", stream);
-
     stream.into()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test() {
-        let input = r#"
-            #[derive(Eclap)]
-            struct Foo {
-                #[eclap(subcommand)]
-                bar: bool,
-                #[eclap(skip)]
-                baz: bool,
-            }
-        "#;
-
-        let input: syn::DeriveInput = syn::parse_str(input).unwrap();
-        let args = StructArgs::from_derive_input(&input).unwrap();
-        println!("{:?}", args);
-
-        // assert_eq!(args.ident, syn::Ident::new("Foo", Span::call_site()));
-        // assert_eq!(args.subcommand, Some(true));
-        // assert_eq!(args.skip, Some(true));
-    }
 }
