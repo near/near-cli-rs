@@ -1,13 +1,12 @@
 name: release
 on:
   push:
-  # Enable when testing release infrastructure on a branch.
+    # Enable when testing release infrastructure on a branch.
     # branches:
     # - ci/release-check
-    branches:
-    - ci/add-windows
     tags:
-    - "[0-9]+.[0-9]+.[0-9]+(-.*)?"
+    - "[0-9]+.[0-9]+.[0-9]+"
+    - "[0-9]+.[0-9]+.[0-9]+-*"
 jobs:
   create-release:
     name: create-release
@@ -15,8 +14,6 @@ jobs:
     # env:
       # Set to force version number, e.g., when no tag exists.
       # NEAR_CLI_VERSION: TEST-0.0.0
-    env:
-      NEAR_CLI_VERSION: 0.14.0-pre.1
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
       near_cli_version: ${{ env.NEAR_CLI_VERSION }}
