@@ -1,28 +1,35 @@
 name: release
 on:
-  workflow_dispatch:
-  pull_request:
-    branches: [master]
-  # push:    
-    #Enable when testing release infrastructure on a branch.
-    # branches: [master]
+  push:
+  # Enable when testing release infrastructure on a branch.
+    # branches:
+    # - ci/release-check
+    branches:
+    - ci/add-windows
+    tags:
+    - "[0-9]+.[0-9]+.[0-9]+(-.*)?"
 jobs:
   create-release:
     name: create-release
     runs-on: ubuntu-latest
-    #env:
+    # env:
       # Set to force version number, e.g., when no tag exists.
-      #NEAR_CLI_VERSION: TEST-0.0.0
+      # NEAR_CLI_VERSION: TEST-0.0.0
+    env:
+      NEAR_CLI_VERSION: 0.14.0-pre.1
+    outputs:
+      upload_url: ${{ steps.release.outputs.upload_url }}
+      near_cli_version: ${{ env.NEAR_CLI_VERSION }}
     steps:
-      - name: Create artifacts directory
-        run: mkdir artifacts
-
       - name: Get the release version from the tag
-        # if: env.NEAR_CLI_VERSION == ''
+        shell: bash
+        if: env.NEAR_CLI_VERSION == ''
         run: |
-          echo "NEAR_CLI_VERSION=0.1.14" >> $GITHUB_ENV
+          # Apparently, this is the right way to get a tag name. Really?
+          #
+          # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
+          echo "NEAR_CLI_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "version is: ${{ env.NEAR_CLI_VERSION }}"
-
       - name: Create GitHub release
         id: release
         uses: actions/create-release@v1
@@ -31,18 +38,6 @@ jobs:
         with:
           tag_name: ${{ env.NEAR_CLI_VERSION }}
           release_name: ${{ env.NEAR_CLI_VERSION }}
-
-      - name: Save release upload URL to artifact
-        run: echo "${{ steps.release.outputs.upload_url }}" > artifacts/release-upload-url
-
-      - name: Save version number to artifact
-        run: echo "${{ env.NEAR_CLI_VERSION }}" > artifacts/release-version
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v1
-        with:
-          name: artifacts
-          path: artifacts
 
   build-release:
     name: build-release
@@ -53,69 +48,49 @@ jobs:
       # systems.
       CARGO: cargo
       # When CARGO is set to CROSS, this is set to `--target matrix.target`.
-      TARGET_FLAGS: --target matrix.target
+      TARGET_FLAGS: ""
       # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
       TARGET_DIR: ./target
+      # For some builds, we disable ledger support
+      FEATURES_FLAGS:
       # Emit backtraces on panics.
       RUST_BACKTRACE: 1
-        Build static releases with PCRE2.
+      # Build static releases with PCRE2.
       PCRE2_SYS_STATIC: 1
     strategy:
+      fail-fast: false
       matrix:
-        build: [linux, macos] #[linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
         include:
         - build: linux
           os: ubuntu-18.04
           rust: stable
           target: x86_64-unknown-linux-gnu
-        # - build: linux-arm
-        #   os: ubuntu-18.04
-        #   rust: nightly
-        #   target: arm-unknown-linux-gnueabihf
+        - build: linux-musl
+          os: ubuntu-18.04
+          rust: stable
+          target: x86_64-unknown-linux-musl
+        - build: linux-arm
+          os: ubuntu-18.04
+          rust: stable
+          target: arm-unknown-linux-gnueabihf
         - build: macos
           os: macos-latest
           rust: stable
           target: x86_64-apple-darwin
-        # - build: win-msvc
-        #   os: windows-2019
-        #   rust: nightly
-        #   target: x86_64-pc-windows-msvc
-        # - build: win-gnu
-        #   os: windows-2019
-        #   rust: nightly-x86_64-gnu
-        #   target: x86_64-pc-windows-gnu
-        # - build: win32-msvc
-        #   os: windows-2019
-        #   rust: nightly
-        #   target: i686-pc-windows-msvc
+        - build: win-msvc
+          os: windows-2019
+          rust: stable
+          target: x86_64-pc-windows-msvc
+        - build: win32-msvc
+          os: windows-2019
+          rust: stable
+          target: i686-pc-windows-msvc
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
       with:
         fetch-depth: 1
-
-    - name: Install packages (Ubuntu)
-      if: matrix.os == 'ubuntu-18.04'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          asciidoctor \
-          zsh xz-utils liblz4-tool musl-tools \
-          git \
-          cmake \
-          g++ \
-          pkg-config \
-          libssl-dev \
-          curl \
-          llvm \
-          clang \
-          libudev-dev
-
-    - name: Install packages (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        .github/ci/macos-install-packages
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
@@ -125,13 +100,24 @@ jobs:
         override: true
         target: ${{ matrix.target }}
 
-    - name: Don't Use Cross
-      # if: matrix.os != 'windows-2019'
+    - name: Use Cross
       run: |
-        #  cargo install cross
-        #  echo "CARGO=cross" >> $GITHUB_ENV
-        #  echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+        cargo install cross
+        echo "CARGO=cross" >> $GITHUB_ENV
+        echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
         echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+
+    - name: Build cross environment
+      shell: bash
+      run: |
+        if [ -d "./cross/${{ matrix.target }}" ]; then
+          docker build --tag "cross:${{ matrix.target }}" "./cross/${{ matrix.target }}"
+        fi
+
+    - name: Disable Ledger support for platforms that don't have udev
+      if: matrix.target == 'x86_64-unknown-linux-musl' || matrix.target == 'arm-unknown-linux-gnueabihf'
+      run: |
+        echo "FEATURES_FLAGS=--no-default-features" >> $GITHUB_ENV
 
     - name: Show command used for Cargo
       run: |
@@ -139,28 +125,12 @@ jobs:
         echo "target flag is: ${{ env.TARGET_FLAGS }}"
         echo "target dir is: ${{ env.TARGET_DIR }}"
 
-    - name: Get release download URL
-      uses: actions/download-artifact@v1
-      with:
-        name: artifacts
-        path: artifacts
-
-    - name: Set release upload URL and release version
-      shell: bash
-      run: |
-        release_upload_url="$(cat artifacts/release-upload-url)"
-        echo "RELEASE_UPLOAD_URL=$release_upload_url" >> $GITHUB_ENV
-        echo "release upload url: $RELEASE_UPLOAD_URL"
-        release_version="$(cat artifacts/release-version)"
-        echo "RELEASE_VERSION=$release_version" >> $GITHUB_ENV
-        echo "release version: $RELEASE_VERSION"
-
     - name: Build release binary
-      run: ${{ env.CARGO }} build --verbose --release --target-dir ${{ env.TARGET_DIR }}
+      run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
 
     - name: Strip release binary (linux and macos)
       if: matrix.build == 'linux' || matrix.build == 'macos'
-      run: strip "target/${{ matrix.target }}/release/near-cli"
+      run: strip "${{ env.TARGET_DIR }}/release/near-cli"
 
     - name: Strip release binary (arm)
       if: matrix.build == 'linux-arm'
@@ -174,18 +144,18 @@ jobs:
     - name: Build archive
       shell: bash
       run: |
-        staging="near-cli-${{ env.RELEASE_VERSION }}-${{ matrix.target }}"
+        staging="near-cli-${{ needs.create-release.outputs.near_cli_version }}-${{ matrix.target }}"
         mkdir -p "$staging"/"docs"
 
         cp README.md "$staging/"
         cp -a "docs"/* "$staging/docs/"
 
         if [ "${{ matrix.os }}" = "windows-2019" ]; then
-          cp "target/${{ matrix.target }}/release/near-cli.exe" "$staging/"
+          cp "${{ env.TARGET_DIR }}/release/near-cli.exe" "$staging/"
           7z a "$staging.zip" "$staging"
           echo "ASSET=$staging.zip" >> $GITHUB_ENV
         else
-          cp "target/${{ matrix.target }}/release/near-cli" "$staging/"
+          cp "${{ env.TARGET_DIR }}/release/near-cli" "$staging/"
           tar czf "$staging.tar.gz" "$staging"
           echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
         fi
@@ -195,7 +165,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
         asset_path: ${{ env.ASSET }}
         asset_name: ${{ env.ASSET }}
         asset_content_type: application/octet-stream
