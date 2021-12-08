@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use dialoguer::Input;
-use url_open::UrlOpen;
 
 /// предустановленный RPC-сервер
 #[derive(Debug, Default, Clone, clap::Clap)]
@@ -91,7 +90,7 @@ impl Server {
             "If your browser doesn't automatically open, please visit this URL:\n {}\n",
             &url.as_str()
         );
-        url.open();
+        open::that(url.as_ref()).ok();
 
         let public_key: near_crypto::PublicKey =
             near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;

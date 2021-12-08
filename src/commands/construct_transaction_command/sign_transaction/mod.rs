@@ -4,6 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod sign_manually;
 pub mod sign_with_keychain;
+#[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
 pub mod sign_with_private_key;
 
@@ -13,6 +14,7 @@ pub enum CliSignTransaction {
     SignPrivateKey(self::sign_with_private_key::CliSignPrivateKey),
     /// Provide arguments to sign a keychain transaction
     SignWithKeychain(self::sign_with_keychain::CliSignKeychain),
+    #[cfg(feature = "ledger")]
     /// Connect your Ledger device and sign transaction with it
     SignWithLedger(self::sign_with_ledger::CliSignLedger),
     /// Provide arguments to sign a manually transaction
@@ -30,6 +32,7 @@ pub enum SignTransaction {
         message = "Yes, I want to sign the transaction with keychain (located in ~/.near-credentials)"
     ))]
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
+    #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(
         message = "Yes, I want to sign the transaction with Ledger Nano S/X device"
     ))]
@@ -53,6 +56,7 @@ impl CliSignTransaction {
                 args.push_front("sign-with-keychain".to_owned());
                 args
             }
+            #[cfg(feature = "ledger")]
             CliSignTransaction::SignWithLedger(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("sign-with-ledger".to_owned());
@@ -76,6 +80,7 @@ impl From<SignTransaction> for CliSignTransaction {
             SignTransaction::SignWithKeychain(sign_with_keychain) => Self::SignWithKeychain(
                 self::sign_with_keychain::CliSignKeychain::from(sign_with_keychain),
             ),
+            #[cfg(feature = "ledger")]
             SignTransaction::SignWithLedger(sign_with_ledger) => Self::SignWithLedger(
                 self::sign_with_ledger::CliSignLedger::from(sign_with_ledger),
             ),
@@ -108,6 +113,7 @@ impl SignTransaction {
                 )?;
                 Ok(SignTransaction::SignWithKeychain(key_chain))
             }
+            #[cfg(feature = "ledger")]
             CliSignTransaction::SignWithLedger(cli_ledger) => {
                 let ledger =
                     self::sign_with_ledger::SignLedger::from(cli_ledger, connection_config)?;
@@ -146,6 +152,7 @@ impl SignTransaction {
             SignTransactionDiscriminants::SignWithKeychain => {
                 CliSignTransaction::SignWithKeychain(Default::default())
             }
+            #[cfg(feature = "ledger")]
             SignTransactionDiscriminants::SignWithLedger => {
                 CliSignTransaction::SignWithLedger(Default::default())
             }
@@ -171,6 +178,7 @@ impl SignTransaction {
                     .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
+            #[cfg(feature = "ledger")]
             SignTransaction::SignWithLedger(ledger) => {
                 ledger
                     .process(prepopulated_unsigned_transaction, network_connection_config)

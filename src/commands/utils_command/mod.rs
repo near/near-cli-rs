@@ -3,9 +3,11 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod combine_transaction_subcommand_with_signature;
 pub mod generate_keypair_subcommand;
+#[cfg(feature = "ledger")]
 mod ledger_publickey_subcommand;
 mod send_signed_transaction;
 mod sign_transaction_subcommand_with_secret_key;
+#[cfg(feature = "ledger")]
 mod sign_transaction_with_ledger_subcommand;
 mod view_serialized_transaction;
 
@@ -67,6 +69,7 @@ enum CliUtil {
     SignTransactionPrivateKey(
         self::sign_transaction_subcommand_with_secret_key::CliSignTransactionPrivateKey,
     ),
+    #[cfg(feature = "ledger")]
     // Provide an unsigned transaction to be signed with Ledger
     SignTransactionWithLedger(
         self::sign_transaction_with_ledger_subcommand::CliSignTransactionWithLedger,
@@ -77,6 +80,7 @@ enum CliUtil {
     ),
     /// Using this module, you can view the contents of a serialized transaction (whether signed or not).
     ViewSerializedTransaction(self::view_serialized_transaction::CliViewSerializedTransaction),
+    #[cfg(feature = "ledger")]
     /// Get Public Key from Ledger
     LedgerPublicKey(self::ledger_publickey_subcommand::CliLedgerPublicKey),
     /// Send signed transaction
@@ -92,6 +96,7 @@ pub enum Util {
     SignTransactionPrivateKey(
         self::sign_transaction_subcommand_with_secret_key::SignTransactionPrivateKey,
     ),
+    #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(message = "Sign a transaction with Ledger"))]
     SignTransactionWithLedger(
         self::sign_transaction_with_ledger_subcommand::SignTransactionWithLedger,
@@ -102,6 +107,7 @@ pub enum Util {
     ),
     #[strum_discriminants(strum(message = "Deserializing the bytes from base64"))]
     ViewSerializedTransaction(self::view_serialized_transaction::ViewSerializedTransaction),
+    #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(message = "Get public key from Ledger device"))]
     LedgerPublicKey(self::ledger_publickey_subcommand::CliLedgerPublicKey),
     #[strum_discriminants(strum(message = "Send signed transaction"))]
@@ -121,6 +127,7 @@ impl CliUtil {
                 args.push_front("sign-transaction-private-key".to_owned());
                 args
             }
+            #[cfg(feature = "ledger")]
             Self::SignTransactionWithLedger(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("sign-transaction-with-ledger".to_owned());
@@ -136,6 +143,7 @@ impl CliUtil {
                 args.push_front("view-serialized-transaction".to_owned());
                 args
             }
+            #[cfg(feature = "ledger")]
             Self::LedgerPublicKey(subcommand) => {
                 let mut args = subcommand.to_cli_args();
                 args.push_front("ledger-public-key".to_owned());
@@ -157,6 +165,7 @@ impl From<Util> for CliUtil {
             Util::SignTransactionPrivateKey(sign_transaction_secret_key) => {
                 Self::SignTransactionPrivateKey(sign_transaction_secret_key.into())
             }
+            #[cfg(feature = "ledger")]
             Util::SignTransactionWithLedger(sign_transaction_with_ledger) => {
                 Self::SignTransactionWithLedger(sign_transaction_with_ledger.into())
             }
@@ -166,6 +175,7 @@ impl From<Util> for CliUtil {
             Util::ViewSerializedTransaction(view_serialized_transaction) => {
                 Self::ViewSerializedTransaction(view_serialized_transaction.into())
             }
+            #[cfg(feature = "ledger")]
             Util::LedgerPublicKey(ledger_publickey) => Self::LedgerPublicKey(ledger_publickey),
             Util::SendSignedTransaction(operation_mode) => {
                 Self::SendSignedTransaction(operation_mode.into())
@@ -183,6 +193,7 @@ impl From<CliUtil> for Util {
                     self::sign_transaction_subcommand_with_secret_key::SignTransactionPrivateKey::from(cli_sign_transaction);
                 Util::SignTransactionPrivateKey(sign_transaction)
             }
+            #[cfg(feature = "ledger")]
             CliUtil::SignTransactionWithLedger(cli_sign_transaction_with_ledger) => {
                 let sign_transaction =
                     self::sign_transaction_with_ledger_subcommand::SignTransactionWithLedger::from(
@@ -202,6 +213,7 @@ impl From<CliUtil> for Util {
                     );
                 Util::ViewSerializedTransaction(view_serialized_transaction)
             }
+            #[cfg(feature = "ledger")]
             CliUtil::LedgerPublicKey(ledger_publickey) => Util::LedgerPublicKey(ledger_publickey),
             CliUtil::SendSignedTransaction(cli_operation_mode) => {
                 Util::SendSignedTransaction(cli_operation_mode.into())
@@ -231,6 +243,7 @@ impl Util {
             UtilDiscriminants::SignTransactionPrivateKey => {
                 CliUtil::SignTransactionPrivateKey(Default::default())
             }
+            #[cfg(feature = "ledger")]
             UtilDiscriminants::SignTransactionWithLedger => {
                 CliUtil::SignTransactionWithLedger(Default::default())
             }
@@ -240,6 +253,7 @@ impl Util {
             UtilDiscriminants::ViewSerializedTransaction => {
                 CliUtil::ViewSerializedTransaction(Default::default())
             }
+            #[cfg(feature = "ledger")]
             UtilDiscriminants::LedgerPublicKey => CliUtil::LedgerPublicKey(
                 self::ledger_publickey_subcommand::CliLedgerPublicKey::default(),
             ),
@@ -254,6 +268,7 @@ impl Util {
         match self {
             Self::GenerateKeypair(generate_keypair) => generate_keypair.process().await,
             Self::SignTransactionPrivateKey(sign_transaction) => sign_transaction.process().await,
+            #[cfg(feature = "ledger")]
             Self::SignTransactionWithLedger(sign_transaction) => sign_transaction.process().await,
             Self::CombineTransactionSignature(combine_transaction) => {
                 combine_transaction.process().await
@@ -261,6 +276,7 @@ impl Util {
             Self::ViewSerializedTransaction(view_serialized_transaction) => {
                 view_serialized_transaction.process().await
             }
+            #[cfg(feature = "ledger")]
             Self::LedgerPublicKey(ledger_publickey) => ledger_publickey.process().await,
             Self::SendSignedTransaction(operation_mode) => operation_mode.process().await,
         }

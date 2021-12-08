@@ -439,10 +439,9 @@ pub fn get_account_transfer_allowance(
             near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
                 .EXPERIMENTAL_protocol_config(
                     near_jsonrpc_primitives::types::config::RpcProtocolConfigRequest {
-                        block_reference:
-                            near_jsonrpc_primitives::types::blocks::BlockReference::Finality(
-                                near_primitives::types::Finality::Final,
-                            ),
+                        block_reference: near_primitives::types::BlockReference::Finality(
+                            near_primitives::types::Finality::Final,
+                        ),
                     },
                 )
                 .await
@@ -1052,16 +1051,15 @@ pub fn try_external_subcommand_execution() -> CliResult {
 }
 
 fn is_executable<P: AsRef<std::path::Path>>(path: P) -> bool {
-    if cfg!(target_family = "unix") {
+    #[cfg(target_family = "unix")]
+    {
         use std::os::unix::prelude::*;
         std::fs::metadata(path)
             .map(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
             .unwrap_or(false)
-    } else if cfg!(target_family = "windows") {
-        path.as_ref().is_file()
-    } else {
-        panic!("Unsupported for wasm");
     }
+    #[cfg(target_family = "windows")]
+    path.as_ref().is_file()
 }
 
 fn path_directories() -> Vec<std::path::PathBuf> {
