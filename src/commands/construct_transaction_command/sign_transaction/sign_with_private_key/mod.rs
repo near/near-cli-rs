@@ -1,129 +1,101 @@
 use near_primitives::borsh::BorshSerialize;
 
-/// подписание сформированной транзакции с помощью личных ключей
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliSignPrivateKey {
-    #[clap(long)]
-    signer_public_key: Option<near_crypto::PublicKey>,
-    #[clap(long)]
-    signer_private_key: Option<near_crypto::SecretKey>,
-    #[clap(long)]
-    nonce: Option<u64>,
-    #[clap(long)]
-    block_hash: Option<near_primitives::hash::CryptoHash>,
-    #[clap(subcommand)]
-    submit: Option<super::Submit>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct SignPrivateKey {
-    pub signer_public_key: near_crypto::PublicKey,
-    pub signer_private_key: near_crypto::SecretKey,
+    #[interactive_clap(long)]
+    pub signer_public_key: crate::types::public_key::PublicKey,
+    #[interactive_clap(long)]
+    pub signer_private_key: crate::types::secret_key::SecretKey,
+    #[interactive_clap(long)]
     pub nonce: Option<u64>,
-    pub block_hash: Option<near_primitives::hash::CryptoHash>,
+    #[interactive_clap(long)]
+    pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    #[interactive_clap(subcommand)]
     pub submit: Option<super::Submit>,
 }
 
-impl CliSignPrivateKey {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = self
-            .submit
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        if let Some(block_hash) = &self.block_hash {
-            args.push_front(block_hash.to_string());
-            args.push_front("--block-hash".to_owned())
-        }
-        if let Some(nonce) = &self.nonce {
-            args.push_front(nonce.to_string());
-            args.push_front("--nonce".to_owned())
-        }
-        if let Some(signer_secret_key) = &self.signer_private_key {
-            args.push_front(signer_secret_key.to_string());
-            args.push_front("--signer-private-key".to_owned())
-        }
-        if let Some(signer_public_key) = &self.signer_public_key {
-            args.push_front(signer_public_key.to_string());
-            args.push_front("--signer-public-key".to_owned())
-        }
-        args
-    }
-}
-
-impl From<SignPrivateKey> for CliSignPrivateKey {
-    fn from(sign_private_key: SignPrivateKey) -> Self {
-        Self {
-            signer_public_key: Some(sign_private_key.signer_public_key),
-            signer_private_key: Some(sign_private_key.signer_private_key),
-            nonce: sign_private_key.nonce,
-            block_hash: sign_private_key.block_hash,
-            submit: sign_private_key.submit,
-        }
-    }
+impl interactive_clap::ToCli for crate::types::secret_key::SecretKey {
+    type CliVariant = crate::types::secret_key::SecretKey;
 }
 
 impl SignPrivateKey {
-    pub fn from(
-        item: CliSignPrivateKey,
-        connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> Self {
-        let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
+    pub fn from_cli(
+        optional_clap_variant: Option<CliSignPrivateKey>,
+        context: crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<Self> {
+        let connection_config = context.connection_config.clone();
+        let signer_public_key: crate::types::public_key::PublicKey = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.signer_public_key)
+        {
             Some(cli_public_key) => cli_public_key,
-            None => super::input_signer_public_key(),
+            None => super::input_signer_public_key()?,
         };
-        let signer_private_key: near_crypto::SecretKey = match item.signer_private_key {
+        let signer_private_key: crate::types::secret_key::SecretKey = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.signer_private_key)
+        {
             Some(signer_private_key) => signer_private_key,
-            None => super::input_signer_private_key(),
+            None => super::input_signer_private_key()?,
         };
-        let submit: Option<super::Submit> = item.submit;
+        let submit: Option<super::Submit> = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.submit)
+        {
+            Some(submit) => Some(submit),
+            None => None,
+        };
+
         match connection_config {
-            Some(_) => Self {
+            Some(_) => Ok(Self {
                 signer_public_key,
                 signer_private_key,
                 nonce: None,
                 block_hash: None,
                 submit,
-            },
+            }),
             None => {
-                let nonce: u64 = match item.nonce {
+                let nonce: u64 = match optional_clap_variant
+                    .clone()
+                    .and_then(|clap_variant| clap_variant.nonce)
+                {
                     Some(cli_nonce) => cli_nonce,
-                    None => super::input_access_key_nonce(&signer_public_key.to_string()),
+                    None => super::input_access_key_nonce(&signer_public_key.to_string())?,
                 };
-                let block_hash = match item.block_hash {
+                let block_hash = match optional_clap_variant
+                    .clone()
+                    .and_then(|clap_variant| clap_variant.block_hash)
+                {
                     Some(cli_block_hash) => cli_block_hash,
-                    None => super::input_block_hash(),
+                    None => super::input_block_hash()?,
                 };
                 let public_key_origin: near_crypto::PublicKey =
-                    near_crypto::SecretKey::public_key(&signer_private_key);
-                if &signer_public_key == &public_key_origin {
-                    Self {
+                    near_crypto::SecretKey::public_key(&signer_private_key.clone().into());
+                if &signer_public_key.0 == &public_key_origin {
+                    Ok(Self {
                         signer_public_key,
                         signer_private_key,
                         nonce: Some(nonce),
                         block_hash: Some(block_hash),
                         submit,
-                    }
+                    })
                 } else {
                     println!("\nError: The key pair does not match. Re-enter the keys.\n");
-                    let signer_public_key: near_crypto::PublicKey =
-                        super::input_signer_public_key();
-                    let signer_secret_key: near_crypto::SecretKey =
-                        super::input_signer_private_key();
-                    Self::from(
-                        CliSignPrivateKey {
+                    let signer_public_key: crate::types::public_key::PublicKey =
+                        super::input_signer_public_key()?;
+                    let signer_secret_key: crate::types::secret_key::SecretKey =
+                        super::input_signer_private_key()?;
+                    Self::from_cli(
+                        Some(CliSignPrivateKey {
                             signer_public_key: Some(signer_public_key),
                             signer_private_key: Some(signer_secret_key),
                             nonce: Some(nonce),
                             block_hash: Some(block_hash),
                             submit: None,
-                        },
-                        connection_config,
+                        }),
+                        context,
                     )
                 }
             }
@@ -141,11 +113,11 @@ impl SignPrivateKey {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
-        let signer_secret_key: near_crypto::SecretKey = self.signer_private_key.clone();
+        let public_key: near_crypto::PublicKey = self.signer_public_key.0.clone();
+        let signer_secret_key: near_crypto::SecretKey = self.signer_private_key.clone().into();
         let nonce: u64 = self.nonce.unwrap_or_default().clone();
         let block_hash: near_primitives::hash::CryptoHash =
-            self.block_hash.unwrap_or_default().clone();
+            self.clone().block_hash.unwrap_or_default().0;
         let submit: Option<super::Submit> = self.submit.clone();
         match connection_config.clone() {
             None => {

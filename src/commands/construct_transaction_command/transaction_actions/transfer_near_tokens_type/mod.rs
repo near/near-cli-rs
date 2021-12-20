@@ -20,6 +20,10 @@ pub struct TransferNEARTokensAction {
     pub next_action: Box<super::NextAction>,
 }
 
+impl interactive_clap::ToCli for TransferNEARTokensAction {
+    type CliVariant = CliTransferNEARTokensAction;
+}
+
 impl CliTransferNEARTokensAction {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         let mut args = self
@@ -46,25 +50,25 @@ impl From<TransferNEARTokensAction> for CliTransferNEARTokensAction {
 }
 
 impl TransferNEARTokensAction {
-    pub fn from(
-        item: CliTransferNEARTokensAction,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+    pub fn from_cli(
+        optional_clap_variant: Option<CliTransferNEARTokensAction>,
+        context: crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let amount: crate::common::TransferAmount = match item.amount {
+        let amount: crate::common::TransferAmount = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.amount)
+        {
             Some(cli_amount) => crate::common::TransferAmount::from_unchecked(cli_amount),
-            None => TransferNEARTokensAction::input_amount(
-                connection_config.clone(),
-                sender_account_id.clone(),
-            )?,
+            None => TransferNEARTokensAction::input_amount(&context)?,
         };
-        let skip_next_action: super::NextAction = match item.next_action {
-            Some(cli_skip_action) => super::NextAction::from_cli_skip_next_action(
-                cli_skip_action,
-                connection_config,
-                sender_account_id,
-            )?,
-            None => super::NextAction::input_next_action(connection_config, sender_account_id)?,
+        let skip_next_action: super::NextAction = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.next_action)
+        {
+            Some(cli_skip_action) => {
+                super::NextAction::from_cli_skip_next_action(cli_skip_action, context)?
+            }
+            None => super::NextAction::choose_variant(context)?,
         };
         Ok(Self {
             amount,
@@ -75,14 +79,15 @@ impl TransferNEARTokensAction {
 
 impl TransferNEARTokensAction {
     fn input_amount(
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+        context: &crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<crate::common::TransferAmount> {
+        let connection_config = context.connection_config.clone();
+        let sender_account_id = context.sender_account_id.clone();
         match connection_config {
             Some(connection_config) => {
                 let account_transfer_allowance = crate::common::get_account_transfer_allowance(
                     &connection_config,
-                    sender_account_id,
+                    sender_account_id.into(),
                 )?;
                 loop {
                     let input_amount: crate::common::NearBalance = Input::new()

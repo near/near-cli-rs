@@ -13,7 +13,7 @@ pub struct CliFunctionCallType {
     #[clap(long)]
     allowance: Option<crate::common::NearBalance>,
     #[clap(long)]
-    receiver_id: Option<near_primitives::types::AccountId>,
+    pub receiver_account_id: Option<crate::types::account_id::AccountId>,
     #[clap(long)]
     method_names: Option<String>,
     #[clap(subcommand)]
@@ -22,10 +22,14 @@ pub struct CliFunctionCallType {
 
 #[derive(Debug, Clone)]
 pub struct FunctionCallType {
-    pub allowance: Option<near_primitives::types::Balance>,
-    pub receiver_id: near_primitives::types::AccountId,
+    pub allowance: Option<crate::common::NearBalance>,
+    pub receiver_account_id: crate::types::account_id::AccountId,
     pub method_names: Vec<String>,
     pub next_action: Box<super::super::super::NextAction>,
+}
+
+impl interactive_clap::ToCli for FunctionCallType {
+    type CliVariant = CliFunctionCallType;
 }
 
 impl CliFunctionCallType {
@@ -43,9 +47,9 @@ impl CliFunctionCallType {
             args.push_front(allowance.to_string());
             args.push_front("--allowance".to_owned())
         };
-        if let Some(receiver_id) = &self.receiver_id {
+        if let Some(receiver_id) = &self.receiver_account_id {
             args.push_front(receiver_id.to_string());
-            args.push_front("--receiver-id".to_owned())
+            args.push_front("--receiver-account-id".to_owned())
         };
         args
     }
@@ -54,10 +58,8 @@ impl CliFunctionCallType {
 impl From<FunctionCallType> for CliFunctionCallType {
     fn from(function_call_type: FunctionCallType) -> Self {
         Self {
-            allowance: Some(crate::common::NearBalance::from_yoctonear(
-                function_call_type.allowance.unwrap_or_default(),
-            )),
-            receiver_id: Some(function_call_type.receiver_id),
+            allowance: function_call_type.allowance,
+            receiver_account_id: Some(function_call_type.receiver_account_id),
             method_names: Some(function_call_type.method_names.join(", ")),
             next_action: Some(super::super::super::CliSkipNextAction::Skip(
                 super::super::super::CliSkipAction { sign_option: None },
@@ -67,20 +69,41 @@ impl From<FunctionCallType> for CliFunctionCallType {
 }
 
 impl FunctionCallType {
-    pub fn from(
-        item: CliFunctionCallType,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+    pub fn from_cli(
+        optional_clap_variant: Option<CliFunctionCallType>,
+        context: crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let allowance: Option<near_primitives::types::Balance> = match item.allowance {
-            Some(cli_allowance) => Some(cli_allowance.to_yoctonear()),
-            None => FunctionCallType::input_allowance(),
+        let connection_config = context.connection_config.clone();
+        let allowance: Option<crate::common::NearBalance> = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.allowance)
+        {
+            Some(cli_allowance) => Some(cli_allowance),
+            None => FunctionCallType::input_allowance(&context)?,
         };
-        let receiver_id: near_primitives::types::AccountId = match item.receiver_id {
-            Some(cli_receiver_id) => near_primitives::types::AccountId::from(cli_receiver_id),
-            None => FunctionCallType::input_receiver_id(),
+        let receiver_account_id = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.receiver_account_id)
+        {
+            Some(receiver_account_id) => match &connection_config {
+                Some(network_connection_config) => match crate::common::get_account_state(
+                    &network_connection_config,
+                    receiver_account_id.clone().into(),
+                )? {
+                    Some(_) => receiver_account_id,
+                    None => {
+                        println!("Account <{}> doesn't exist", receiver_account_id);
+                        Self::input_receiver_account_id(&context)?
+                    }
+                },
+                None => receiver_account_id,
+            },
+            None => Self::input_receiver_account_id(&context)?,
         };
-        let method_names: Vec<String> = match item.method_names {
+        let method_names: Vec<String> = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.method_names)
+        {
             Some(cli_method_names) => {
                 if cli_method_names.is_empty() {
                     vec![]
@@ -91,22 +114,20 @@ impl FunctionCallType {
                         .collect::<Vec<String>>()
                 }
             }
-            None => FunctionCallType::input_method_names(),
+            None => FunctionCallType::input_method_names(&context)?,
         };
-        let skip_next_action: super::super::super::NextAction = match item.next_action {
+        let skip_next_action: super::super::super::NextAction = match optional_clap_variant
+            .and_then(|clap_variant| clap_variant.next_action)
+        {
             Some(cli_skip_action) => super::super::super::NextAction::from_cli_skip_next_action(
                 cli_skip_action,
-                connection_config,
-                sender_account_id,
+                context,
             )?,
-            None => super::super::super::NextAction::input_next_action(
-                connection_config,
-                sender_account_id,
-            )?,
+            None => super::super::super::NextAction::choose_variant(context)?,
         };
         Ok(Self {
             allowance,
-            receiver_id,
+            receiver_account_id,
             method_names,
             next_action: Box::new(skip_next_action),
         })
@@ -114,7 +135,9 @@ impl FunctionCallType {
 }
 
 impl FunctionCallType {
-    pub fn input_method_names() -> Vec<String> {
+    pub fn input_method_names(
+        _context: &crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<Vec<String>> {
         println!();
         let choose_input = vec![
             "Yes, I want to input a list of method names that can be used",
@@ -129,27 +152,29 @@ impl FunctionCallType {
         match select_choose_input {
             Some(0) => {
                 let mut input_method_names: String = Input::new()
-                    .with_prompt("Enter a list of method names that can be used. The access key only allows transactions with the function call of one of the given method names. Empty list means any method name can be used.")
+                    .with_prompt("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
                     .interact_text()
                     .unwrap();
                 if input_method_names.contains("\"") {
                     input_method_names.clear()
                 };
                 if input_method_names.is_empty() {
-                    vec![]
+                    Ok(vec![])
                 } else {
-                    input_method_names
+                    Ok(input_method_names
                         .split(',')
                         .map(String::from)
-                        .collect::<Vec<String>>()
+                        .collect::<Vec<String>>())
                 }
             }
-            Some(1) => vec![],
+            Some(1) => Ok(vec![]),
             _ => unreachable!("Error"),
         }
     }
 
-    pub fn input_allowance() -> Option<near_primitives::types::Balance> {
+    pub fn input_allowance(
+        _context: &crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         println!();
         let choose_input = vec![
             "Yes, I want to input allowance for receiver ID",
@@ -167,19 +192,38 @@ impl FunctionCallType {
                     .with_prompt("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees.")
                     .interact_text()
                     .unwrap();
-                Some(allowance_near_balance.to_yoctonear())
+                Ok(Some(allowance_near_balance))
             }
-            Some(1) => None,
+            Some(1) => Ok(None),
             _ => unreachable!("Error"),
         }
     }
 
-    pub fn input_receiver_id() -> near_primitives::types::AccountId {
-        println!();
-        Input::new()
-            .with_prompt("Enter a receiver to use by this access key to pay for function call gas and transaction fees.")
-            .interact_text()
-            .unwrap()
+    pub fn input_receiver_account_id(
+        context: &crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        let connection_config = context.connection_config.clone();
+        loop {
+            let account_id: crate::types::account_id::AccountId = Input::new()
+                .with_prompt("Enter a receiver to use by this access key to pay for function call gas and transaction fees.")
+                .interact_text()
+                .unwrap();
+            if let Some(connection_config) = &connection_config {
+                if let Some(_) =
+                    crate::common::get_account_state(&connection_config, account_id.clone().into())?
+                {
+                    break Ok(account_id);
+                } else {
+                    if !crate::common::is_64_len_hex(&account_id) {
+                        println!("Account <{}> doesn't exist", account_id.to_string());
+                    } else {
+                        break Ok(account_id);
+                    }
+                }
+            } else {
+                break Ok(account_id);
+            }
+        }
     }
 
     #[async_recursion(?Send)]
@@ -194,8 +238,13 @@ impl FunctionCallType {
             nonce,
             permission: near_primitives::account::AccessKeyPermission::FunctionCall(
                 near_primitives::account::FunctionCallPermission {
-                    allowance: self.allowance.clone(),
-                    receiver_id: self.receiver_id.to_string().clone(),
+                    allowance: {
+                        match self.allowance.clone() {
+                            Some(allowance) => Some(allowance.to_yoctonear()),
+                            None => None,
+                        }
+                    },
+                    receiver_id: self.receiver_account_id.to_string().clone(),
                     method_names: self.method_names.clone(),
                 },
             ),

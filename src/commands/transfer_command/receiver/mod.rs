@@ -1,160 +1,48 @@
 use dialoguer::Input;
 
-#[derive(Debug, Clone, clap::Clap)]
-pub enum CliSendTo {
-    /// Specify a receiver
-    Receiver(CliReceiver),
-}
-
-#[derive(Debug, Clone)]
-pub enum SendTo {
-    Receiver(Receiver),
-}
-
-impl CliSendTo {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        match self {
-            Self::Receiver(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("receiver".to_owned());
-                args
-            }
-        }
-    }
-}
-
-impl From<SendTo> for CliSendTo {
-    fn from(send_to: SendTo) -> Self {
-        match send_to {
-            SendTo::Receiver(receiver) => Self::Receiver(CliReceiver::from(receiver)),
-        }
-    }
-}
-
-impl SendTo {
-    pub fn from(
-        item: CliSendTo,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
-    ) -> color_eyre::eyre::Result<Self> {
-        match item {
-            CliSendTo::Receiver(cli_receiver) => {
-                let receiver = Receiver::from(cli_receiver, connection_config, sender_account_id)?;
-                Ok(Self::Receiver(receiver))
-            }
-        }
-    }
-}
-
-impl SendTo {
-    pub fn send_to(
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
-    ) -> color_eyre::eyre::Result<Self> {
-        Ok(Self::from(
-            CliSendTo::Receiver(Default::default()),
-            connection_config,
-            sender_account_id,
-        )?)
-    }
-
-    pub async fn process(
-        self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> crate::CliResult {
-        match self {
-            SendTo::Receiver(receiver) => {
-                receiver
-                    .process(prepopulated_unsigned_transaction, network_connection_config)
-                    .await
-            }
-        }
-    }
-}
-
-/// данные о получателе транзакции
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliReceiver {
-    receiver_account_id: Option<near_primitives::types::AccountId>,
-    #[clap(subcommand)]
-    transfer: Option<super::transfer_near_tokens_type::CliTransfer>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct Receiver {
-    pub receiver_account_id: near_primitives::types::AccountId,
+    pub receiver_account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(subcommand)]
     pub transfer: super::transfer_near_tokens_type::Transfer,
 }
 
-impl CliReceiver {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = self
-            .transfer
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        if let Some(receiver_account_id) = &self.receiver_account_id {
-            args.push_front(receiver_account_id.to_string());
-        }
-        args
-    }
-}
-
-impl From<Receiver> for CliReceiver {
-    fn from(receiver: Receiver) -> Self {
-        Self {
-            receiver_account_id: Some(receiver.receiver_account_id),
-            transfer: Some(super::transfer_near_tokens_type::CliTransfer::from(
-                receiver.transfer,
-            )),
-        }
-    }
+impl interactive_clap::ToCli for crate::types::account_id::AccountId {
+    type CliVariant = crate::types::account_id::AccountId;
 }
 
 impl Receiver {
-    fn from(
-        item: CliReceiver,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+    pub fn from_cli(
+        optional_clap_variant: Option<CliReceiver>,
+        context: crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let receiver_account_id: near_primitives::types::AccountId = match item.receiver_account_id
+        let connection_config = context.connection_config.clone();
+        let receiver_account_id = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.receiver_account_id)
         {
-            Some(cli_receiver_account_id) => match &connection_config {
+            Some(receiver_account_id) => match &connection_config {
                 Some(network_connection_config) => match crate::common::get_account_state(
-                    network_connection_config,
-                    cli_receiver_account_id.clone(),
+                    &network_connection_config,
+                    receiver_account_id.clone().into(),
                 )? {
-                    Some(_) => cli_receiver_account_id,
+                    Some(_) => receiver_account_id,
                     None => {
-                        if !crate::common::is_64_len_hex(&cli_receiver_account_id) {
-                            println!("Account <{}> doesn't exist", cli_receiver_account_id);
-                            Receiver::input_receiver_account_id(connection_config.clone())?
-                        } else {
-                            cli_receiver_account_id
-                        }
+                        println!("Account <{}> doesn't exist", receiver_account_id);
+                        Self::input_receiver_account_id(&context)?
                     }
                 },
-                None => cli_receiver_account_id,
+                None => receiver_account_id,
             },
-            None => Receiver::input_receiver_account_id(connection_config.clone())?,
+            None => Self::input_receiver_account_id(&context)?,
         };
-        let transfer: super::transfer_near_tokens_type::Transfer = match item.transfer {
-            Some(cli_transfer) => super::transfer_near_tokens_type::Transfer::from(
-                cli_transfer,
-                connection_config,
-                sender_account_id,
-            )?,
-            None => super::transfer_near_tokens_type::Transfer::choose_transfer_near(
-                connection_config,
-                sender_account_id,
-            )?,
-        };
+        let transfer = super::transfer_near_tokens_type::Transfer::from_cli(
+            optional_clap_variant.and_then(|clap_variant| clap_variant.transfer),
+            context,
+        )?;
+
         Ok(Self {
             receiver_account_id,
             transfer,
@@ -163,17 +51,18 @@ impl Receiver {
 }
 
 impl Receiver {
-    fn input_receiver_account_id(
-        connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+    pub fn input_receiver_account_id(
+        context: &crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        let connection_config = context.connection_config.clone();
         loop {
-            let account_id: near_primitives::types::AccountId = Input::new()
+            let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("What is the account ID of the receiver?")
                 .interact_text()
                 .unwrap();
             if let Some(connection_config) = &connection_config {
                 if let Some(_) =
-                    crate::common::get_account_state(connection_config, account_id.clone())?
+                    crate::common::get_account_state(&connection_config, account_id.clone().into())?
                 {
                     break Ok(account_id);
                 } else {
@@ -195,7 +84,7 @@ impl Receiver {
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let unsigned_transaction = near_primitives::transaction::Transaction {
-            receiver_id: self.receiver_account_id.clone(),
+            receiver_id: self.receiver_account_id.clone().into(),
             ..prepopulated_unsigned_transaction
         };
         self.transfer

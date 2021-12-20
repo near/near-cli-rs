@@ -20,6 +20,10 @@ pub struct ContractFile {
     pub next_action: Box<super::NextAction>,
 }
 
+impl interactive_clap::ToCli for ContractFile {
+    type CliVariant = CliContractFile;
+}
+
 impl CliContractFile {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         let mut args = self
@@ -46,24 +50,25 @@ impl From<ContractFile> for CliContractFile {
 }
 
 impl ContractFile {
-    pub fn from(
-        item: CliContractFile,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+    pub fn from_cli(
+        optional_clap_variant: Option<CliContractFile>,
+        context: crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let file_path = match item.file_path {
+        let file_path = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.file_path)
+        {
             Some(cli_file_path) => cli_file_path,
-            None => ContractFile::input_file_path(),
+            None => Self::input_file_path(&context)?,
         };
-        let skip_next_action: super::NextAction = match item.next_action {
-            Some(cli_skip_action) => super::NextAction::from_cli_skip_next_action(
-                cli_skip_action,
-                connection_config,
-                sender_account_id,
-            )?,
-            None => super::NextAction::input_next_action(connection_config, sender_account_id)?,
-        };
-        Ok(ContractFile {
+        let skip_next_action: super::NextAction =
+            match optional_clap_variant.and_then(|clap_variant| clap_variant.next_action) {
+                Some(cli_skip_action) => {
+                    super::NextAction::from_cli_skip_next_action(cli_skip_action, context)?
+                }
+                None => super::NextAction::choose_variant(context)?,
+            };
+        Ok(Self {
             file_path,
             next_action: Box::new(skip_next_action),
         })
@@ -71,13 +76,15 @@ impl ContractFile {
 }
 
 impl ContractFile {
-    fn input_file_path() -> std::path::PathBuf {
+    fn input_file_path(
+        _context: &crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<std::path::PathBuf> {
         println!();
         let input_file_path: String = Input::new()
             .with_prompt("What is a file location of the contract?")
             .interact_text()
             .unwrap();
-        input_file_path.into()
+        Ok(std::path::PathBuf::from(input_file_path).into())
     }
 
     #[async_recursion(?Send)]

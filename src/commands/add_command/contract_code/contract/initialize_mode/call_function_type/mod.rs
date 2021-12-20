@@ -1,122 +1,33 @@
 use dialoguer::Input;
 
-/// вызов CallFunction
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliCallFunctionAction {
-    method_name: Option<String>,
-    args: Option<String>,
-    #[clap(long = "attached-deposit")]
-    deposit: Option<crate::common::NearBalance>,
-    #[clap(long = "prepaid-gas")]
-    gas: Option<crate::common::NearGas>,
-    #[clap(subcommand)]
-    pub sign_option: Option<
-        crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
-    >,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = crate::common::SenderContext)]
 pub struct CallFunctionAction {
     method_name: String,
-    args: Vec<u8>,
-    gas: near_primitives::types::Gas,
-    deposit: near_primitives::types::Balance,
+    args: String,
+    #[interactive_clap(long = "prepaid-gas")]
+    gas: crate::common::NearGas,
+    #[interactive_clap(long = "attached-deposit")]
+    deposit: crate::common::NearBalance,
+    #[interactive_clap(subcommand)]
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
-impl CliCallFunctionAction {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = self
-            .sign_option
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        if let Some(gas) = &self.gas {
-            args.push_front(gas.to_string());
-            args.push_front("--prepaid-gas".to_owned())
-        };
-        if let Some(deposit) = &self.deposit {
-            args.push_front(deposit.to_string());
-            args.push_front("--attached-deposit".to_owned())
-        };
-        if let Some(function_args) = &self.args {
-            args.push_front(function_args.to_owned());
-        };
-        if let Some(method_name) = &self.method_name {
-            args.push_front(method_name.to_string());
-        };
-        args
-    }
-}
-
-impl From<CallFunctionAction> for CliCallFunctionAction {
-    fn from(call_function_action: CallFunctionAction) -> Self {
-        Self {
-            method_name: Some(call_function_action.method_name),
-            args: Some(String::from_utf8(call_function_action.args).unwrap_or_default()),
-            gas: Some(call_function_action.gas.into()),
-            deposit: Some(crate::common::NearBalance::from_yoctonear(
-                call_function_action.deposit,
-            )),
-            sign_option: Some(call_function_action.sign_option.into()),
-        }
-    }
-}
-
 impl CallFunctionAction {
-    pub fn from(
-        item: CliCallFunctionAction,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
-    ) -> color_eyre::eyre::Result<Self> {
-        let method_name: String = match item.method_name {
-            Some(cli_method_name) => cli_method_name,
-            None => CallFunctionAction::input_method_name(),
-        };
-        let args: Vec<u8> = match item.args {
-            Some(cli_args) => cli_args.into_bytes(),
-            None => CallFunctionAction::input_args(),
-        };
-        let gas: near_primitives::types::Gas = match item.gas {
-            Some(cli_gas) => match cli_gas {
-                crate::common::NearGas { inner: num } => num,
-            },
-            None => CallFunctionAction::input_gas(),
-        };
-        let deposit: near_primitives::types::Balance = match item.deposit {
-            Some(cli_deposit) => cli_deposit.to_yoctonear(),
-            None => CallFunctionAction::input_deposit(),
-        };
-        let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id)?,
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config, sender_account_id)?,
-        };
-        Ok(Self {
-            method_name,
-            args,
-            gas,
-            deposit,
-            sign_option,
-        })
-    }
-}
-
-impl CallFunctionAction {
-    fn input_method_name() -> String {
+    fn input_method_name(
+        _context: &crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<String> {
         println!();
-        Input::new()
+        Ok(Input::new()
             .with_prompt("Enter a method name")
             .interact_text()
-            .unwrap()
+            .unwrap())
     }
 
-    fn input_gas() -> near_primitives::types::Gas {
+    fn input_gas(
+        _context: &crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<crate::common::NearGas> {
         println!();
         let gas: u64 = loop {
             let input_gas: crate::common::NearGas = Input::new()
@@ -127,25 +38,26 @@ impl CallFunctionAction {
             let gas: u64 = match input_gas {
                 crate::common::NearGas { inner: num } => num,
             };
-            if gas <= 200000000000000 {
+            if gas <= 300000000000000 {
                 break gas;
             } else {
                 println!("You need to enter a value of no more than 200 TERAGAS")
             }
         };
-        gas
+        Ok(gas.into())
     }
 
-    fn input_args() -> Vec<u8> {
+    fn input_args(_context: &crate::common::SenderContext) -> color_eyre::eyre::Result<String> {
         println!();
-        let input: String = Input::new()
+        Ok(Input::new()
             .with_prompt("Enter args for function")
             .interact_text()
-            .unwrap();
-        input.into_bytes()
+            .unwrap())
     }
 
-    fn input_deposit() -> near_primitives::types::Balance {
+    fn input_deposit(
+        _context: &crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
         println!();
         let deposit: crate::common::NearBalance = Input::new()
             .with_prompt(
@@ -154,7 +66,7 @@ impl CallFunctionAction {
             .with_initial_text("0 NEAR")
             .interact_text()
             .unwrap();
-        deposit.to_yoctonear()
+        Ok(deposit)
     }
 
     pub async fn process(
@@ -165,9 +77,9 @@ impl CallFunctionAction {
         let action = near_primitives::transaction::Action::FunctionCall(
             near_primitives::transaction::FunctionCallAction {
                 method_name: self.method_name.clone(),
-                args: self.args.clone(),
-                gas: self.gas.clone(),
-                deposit: self.deposit.clone(),
+                args: self.args.clone().into_bytes(),
+                gas: self.gas.clone().inner,
+                deposit: self.deposit.clone().to_yoctonear(),
             },
         );
         let mut actions = prepopulated_unsigned_transaction.actions.clone();

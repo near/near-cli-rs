@@ -11,48 +11,11 @@ mod sign_transaction_subcommand_with_secret_key;
 mod sign_transaction_with_ledger_subcommand;
 mod view_serialized_transaction;
 
-/// набор утилит-помощников
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliUtils {
-    #[clap(subcommand)]
-    util: Option<CliUtil>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = ())]
 pub struct Utils {
+    #[interactive_clap(subcommand)]
     pub util: Util,
-}
-
-impl CliUtils {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        self.util
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default()
-    }
-}
-
-impl From<Utils> for CliUtils {
-    fn from(utils: Utils) -> Self {
-        Self {
-            util: Some(utils.util.into()),
-        }
-    }
-}
-
-impl From<CliUtils> for Utils {
-    fn from(item: CliUtils) -> Self {
-        let util = match item.util {
-            Some(cli_util) => Util::from(cli_util),
-            None => Util::choose_util(),
-        };
-        Self { util }
-    }
 }
 
 impl Utils {
@@ -62,7 +25,7 @@ impl Utils {
 }
 
 #[derive(Debug, Clone, clap::Clap)]
-enum CliUtil {
+pub enum CliUtil {
     /// It generates a random key pair
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
     /// Предоставьте данные для подписания данных с помощью private key
@@ -112,6 +75,10 @@ pub enum Util {
     LedgerPublicKey(self::ledger_publickey_subcommand::CliLedgerPublicKey),
     #[strum_discriminants(strum(message = "Send signed transaction"))]
     SendSignedTransaction(self::send_signed_transaction::operation_mode::OperationMode),
+}
+
+impl interactive_clap::ToCli for Util {
+    type CliVariant = CliUtil;
 }
 
 impl CliUtil {
@@ -184,46 +151,54 @@ impl From<Util> for CliUtil {
     }
 }
 
-impl From<CliUtil> for Util {
-    fn from(item: CliUtil) -> Self {
-        match item {
-            CliUtil::GenerateKeypair(generate_keypair) => Util::GenerateKeypair(generate_keypair),
-            CliUtil::SignTransactionPrivateKey(cli_sign_transaction) => {
+impl Util {
+    pub fn from_cli(
+        optional_clap_variant: Option<CliUtil>,
+        context: (),
+    ) -> color_eyre::eyre::Result<Self> {
+        match optional_clap_variant {
+            Some(CliUtil::GenerateKeypair(generate_keypair)) => {
+                Ok(Util::GenerateKeypair(generate_keypair))
+            }
+            Some(CliUtil::SignTransactionPrivateKey(cli_sign_transaction)) => {
                 let sign_transaction =
                     self::sign_transaction_subcommand_with_secret_key::SignTransactionPrivateKey::from(cli_sign_transaction);
-                Util::SignTransactionPrivateKey(sign_transaction)
+                Ok(Util::SignTransactionPrivateKey(sign_transaction))
             }
             #[cfg(feature = "ledger")]
-            CliUtil::SignTransactionWithLedger(cli_sign_transaction_with_ledger) => {
+            Some(CliUtil::SignTransactionWithLedger(cli_sign_transaction_with_ledger)) => {
                 let sign_transaction =
                     self::sign_transaction_with_ledger_subcommand::SignTransactionWithLedger::from(
                         cli_sign_transaction_with_ledger,
                     );
-                Util::SignTransactionWithLedger(sign_transaction)
+                Ok(Util::SignTransactionWithLedger(sign_transaction))
             }
-            CliUtil::CombineTransactionSignature(cli_combine_transaction) => {
+            Some(CliUtil::CombineTransactionSignature(cli_combine_transaction)) => {
                 let combine_transaction =
                     self::combine_transaction_subcommand_with_signature::CombineTransactionSignature::from(cli_combine_transaction);
-                Util::CombineTransactionSignature(combine_transaction)
+                Ok(Util::CombineTransactionSignature(combine_transaction))
             }
-            CliUtil::ViewSerializedTransaction(cli_view_serialized_transaction) => {
+            Some(CliUtil::ViewSerializedTransaction(cli_view_serialized_transaction)) => {
                 let view_serialized_transaction =
                     self::view_serialized_transaction::ViewSerializedTransaction::from(
                         cli_view_serialized_transaction,
                     );
-                Util::ViewSerializedTransaction(view_serialized_transaction)
+                Ok(Util::ViewSerializedTransaction(view_serialized_transaction))
             }
             #[cfg(feature = "ledger")]
-            CliUtil::LedgerPublicKey(ledger_publickey) => Util::LedgerPublicKey(ledger_publickey),
-            CliUtil::SendSignedTransaction(cli_operation_mode) => {
-                Util::SendSignedTransaction(cli_operation_mode.into())
+            Some(CliUtil::LedgerPublicKey(ledger_publickey)) => {
+                Ok(Util::LedgerPublicKey(ledger_publickey))
             }
+            Some(CliUtil::SendSignedTransaction(cli_operation_mode)) => {
+                Ok(Util::SendSignedTransaction(cli_operation_mode.into()))
+            }
+            None => Self::choose_variant(context),
         }
     }
 }
 
 impl Util {
-    fn choose_util() -> Self {
+    fn choose_variant(context: ()) -> color_eyre::eyre::Result<Self> {
         println!();
         let variants = UtilDiscriminants::iter().collect::<Vec<_>>();
         let utils = variants
@@ -261,7 +236,7 @@ impl Util {
                 CliUtil::SendSignedTransaction(Default::default())
             }
         };
-        Self::from(cli_util)
+        Ok(Self::from_cli(Some(cli_util), context)?)
     }
 
     pub async fn process(self) -> crate::CliResult {

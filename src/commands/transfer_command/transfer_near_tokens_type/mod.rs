@@ -1,68 +1,15 @@
 use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
+use strum::EnumDiscriminants;
 
-#[derive(Debug, Clone, clap::Clap)]
-pub enum CliTransfer {
-    /// Enter an amount
-    Amount(CliTransferNEARTokensAction),
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(disable_strum_discriminants)]
 pub enum Transfer {
+    /// Enter an amount to transfer
     Amount(TransferNEARTokensAction),
 }
 
-impl CliTransfer {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        match self {
-            Self::Amount(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("amount".to_owned());
-                args
-            }
-        }
-    }
-}
-
-impl From<Transfer> for CliTransfer {
-    fn from(transfer: Transfer) -> Self {
-        match transfer {
-            Transfer::Amount(transfer_near_token_action) => {
-                Self::Amount(transfer_near_token_action.into())
-            }
-        }
-    }
-}
-
 impl Transfer {
-    pub fn from(
-        item: CliTransfer,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
-    ) -> color_eyre::eyre::Result<Self> {
-        match item {
-            CliTransfer::Amount(cli_transfer_near_action) => {
-                Ok(Self::Amount(TransferNEARTokensAction::from(
-                    cli_transfer_near_action,
-                    connection_config,
-                    sender_account_id,
-                )?))
-            }
-        }
-    }
-}
-
-impl Transfer {
-    pub fn choose_transfer_near(
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
-    ) -> color_eyre::eyre::Result<Self> {
-        Self::from(
-            CliTransfer::Amount(Default::default()),
-            connection_config,
-            sender_account_id,
-        )
-    }
-
     pub async fn process(
         self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
@@ -100,6 +47,10 @@ pub struct TransferNEARTokensAction {
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
+impl interactive_clap::ToCli for TransferNEARTokensAction {
+    type CliVariant = CliTransferNEARTokensAction;
+}
+
 impl CliTransferNEARTokensAction {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         let mut args = self
@@ -124,22 +75,26 @@ impl From<TransferNEARTokensAction> for CliTransferNEARTokensAction {
 }
 
 impl TransferNEARTokensAction {
-    fn from(
-        item: CliTransferNEARTokensAction,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+    pub fn from_cli(
+        optional_clap_variant: Option<CliTransferNEARTokensAction>,
+        context: crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let amount: crate::common::TransferAmount = match item.amount {
+        let amount: crate::common::TransferAmount = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.amount)
+        {
             Some(cli_amount) => crate::common::TransferAmount::from_unchecked(cli_amount),
-            None => TransferNEARTokensAction::input_amount(
-                connection_config.clone(),
-                sender_account_id.clone(),
-            )?,
+            None => TransferNEARTokensAction::input_amount(&context)?,
         };
-        let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config.clone(), sender_account_id.clone())?,
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config, sender_account_id)?,
-        };
+
+        let sign_option = match optional_clap_variant
+        .clone()
+        .and_then(|clap_variant| clap_variant.sign_option)
+    {
+        Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from_cli(Some(cli_sign_transaction), context)?,
+        None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_variant(context)?,
+    };
+
         Ok(Self {
             amount,
             sign_option,
@@ -149,14 +104,15 @@ impl TransferNEARTokensAction {
 
 impl TransferNEARTokensAction {
     fn input_amount(
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+        context: &crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<crate::common::TransferAmount> {
+        let connection_config = context.connection_config.clone();
+        let sender_account_id = context.sender_account_id.clone();
         match connection_config {
             Some(connection_config) => {
                 let account_transfer_allowance = crate::common::get_account_transfer_allowance(
                     &connection_config,
-                    sender_account_id,
+                    sender_account_id.into(),
                 )?;
                 println! {"{}", &account_transfer_allowance};
                 loop {

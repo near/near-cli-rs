@@ -2,66 +2,30 @@ extern crate dirs;
 
 use serde::Deserialize;
 
-/// подписание сформированной транзакции с помощью файла с ключами
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliSignKeychain {
-    #[clap(long)]
-    nonce: Option<u64>,
-    #[clap(long)]
-    block_hash: Option<near_primitives::hash::CryptoHash>,
-    #[clap(subcommand)]
-    submit: Option<super::Submit>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct SignKeychain {
+    #[interactive_clap(long)]
     nonce: Option<u64>,
-    block_hash: Option<near_primitives::hash::CryptoHash>,
+    #[interactive_clap(long)]
+    block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    #[interactive_clap(subcommand)]
     pub submit: Option<super::Submit>,
 }
 
-impl CliSignKeychain {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = self
-            .submit
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        if let Some(nonce) = &self.nonce {
-            args.push_front(nonce.to_string());
-            args.push_front("--nonce".to_owned())
-        }
-        if let Some(block_hash) = &self.block_hash {
-            args.push_front(block_hash.to_string());
-            args.push_front("--block-hash".to_owned())
-        }
-        args
-    }
-}
-
-impl From<SignKeychain> for CliSignKeychain {
-    fn from(sign_keychain: SignKeychain) -> Self {
-        Self {
-            nonce: sign_keychain.nonce,
-            block_hash: sign_keychain.block_hash,
-            submit: sign_keychain.submit,
-        }
-    }
+impl interactive_clap::ToCli for super::Submit {
+    type CliVariant = super::Submit;
 }
 
 impl SignKeychain {
-    pub fn from(
-        item: CliSignKeychain,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+    pub fn from_cli(
+        optional_clap_variant: Option<CliSignKeychain>,
+        context: crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let submit: Option<super::Submit> = item.submit;
-        match connection_config {
+        let submit: Option<super::Submit> = optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.submit);
+        match context.connection_config {
             Some(_) => Ok(Self {
                 nonce: None,
                 block_hash: None,
@@ -69,7 +33,11 @@ impl SignKeychain {
             }),
             None => {
                 let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
-                let file_name = format!("{}.json", sender_account_id);
+                let file_name = format!(
+                    "{}.json",
+                    context.sender_account_id // .clone()
+                                              // .expect("wrong sender_account_id")
+                );
                 let mut path = std::path::PathBuf::from(&home_dir);
                 let dir_name = crate::consts::DIR_NAME_KEY_CHAIN;
                 path.push(dir_name);
@@ -84,14 +52,18 @@ impl SignKeychain {
                     ))
                 })?;
 
-                let nonce: u64 = match item.nonce {
+                let nonce: u64 = match optional_clap_variant
+                    .clone()
+                    .and_then(|clap_variant| clap_variant.nonce)
+                {
                     Some(cli_nonce) => cli_nonce,
-                    None => super::input_access_key_nonce(&account_json.public_key.to_string()),
+                    None => super::input_access_key_nonce(&account_json.public_key.to_string())?,
                 };
-                let block_hash = match item.block_hash {
-                    Some(cli_block_hash) => cli_block_hash,
-                    None => super::input_block_hash(),
-                };
+                let block_hash =
+                    match optional_clap_variant.and_then(|clap_variant| clap_variant.block_hash) {
+                        Some(cli_block_hash) => cli_block_hash,
+                        None => super::input_block_hash()?,
+                    };
                 Ok(SignKeychain {
                     nonce: Some(nonce),
                     block_hash: Some(block_hash),
@@ -212,8 +184,8 @@ impl SignKeychain {
         let account_json: User = serde_json::from_str(&data)
             .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
-            signer_public_key: account_json.public_key,
-            signer_private_key: account_json.private_key,
+            signer_public_key: crate::types::public_key::PublicKey(account_json.public_key),
+            signer_private_key: crate::types::secret_key::SecretKey(account_json.private_key),
             nonce: self.nonce.clone(),
             block_hash: self.block_hash.clone(),
             submit: self.submit.clone(),

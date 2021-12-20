@@ -21,6 +21,10 @@ pub struct DeleteAccountAction {
     pub next_action: Box<super::NextAction>,
 }
 
+impl interactive_clap::ToCli for DeleteAccountAction {
+    type CliVariant = CliDeleteAccountAction;
+}
+
 impl CliDeleteAccountAction {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         let mut args = self
@@ -48,23 +52,24 @@ impl From<DeleteAccountAction> for CliDeleteAccountAction {
 }
 
 impl DeleteAccountAction {
-    pub fn from(
-        item: CliDeleteAccountAction,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+    pub fn from_cli(
+        optional_clap_variant: Option<CliDeleteAccountAction>,
+        context: crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let beneficiary_id: near_primitives::types::AccountId = match item.beneficiary_id {
+        let beneficiary_id: near_primitives::types::AccountId = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.beneficiary_id)
+        {
             Some(cli_account_id) => cli_account_id,
-            None => DeleteAccountAction::input_beneficiary_id(),
+            None => DeleteAccountAction::input_beneficiary_id(&context)?,
         };
-        let skip_next_action: super::NextAction = match item.next_action {
-            Some(cli_skip_action) => super::NextAction::from_cli_skip_next_action(
-                cli_skip_action,
-                connection_config,
-                sender_account_id,
-            )?,
-            None => super::NextAction::input_next_action(connection_config, sender_account_id)?,
-        };
+        let skip_next_action: super::NextAction =
+            match optional_clap_variant.and_then(|clap_variant| clap_variant.next_action) {
+                Some(cli_skip_action) => {
+                    super::NextAction::from_cli_skip_next_action(cli_skip_action, context)?
+                }
+                None => super::NextAction::choose_variant(context)?,
+            };
         Ok(Self {
             beneficiary_id,
             next_action: Box::new(skip_next_action),
@@ -73,12 +78,14 @@ impl DeleteAccountAction {
 }
 
 impl DeleteAccountAction {
-    pub fn input_beneficiary_id() -> near_primitives::types::AccountId {
+    pub fn input_beneficiary_id(
+        _context: &crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         println!();
-        Input::new()
+        Ok(Input::new()
             .with_prompt("Enter the beneficiary ID to delete this account ID")
             .interact_text()
-            .unwrap()
+            .unwrap())
     }
 
     #[async_recursion(?Send)]

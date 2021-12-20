@@ -1,126 +1,79 @@
-use dialoguer::{theme::ColorfulTheme, Select};
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod server;
 
-#[derive(Debug, Clone, clap::Clap)]
-pub enum CliSelectServer {
-    /// предоставление данных для сервера https://rpc.testnet.near.org
-    Testnet(self::server::CliServer),
-    /// предоставление данных для сервера https://rpc.mainnet.near.org
-    Mainnet(self::server::CliServer),
-    /// предоставление данных для сервера https://rpc.betanet.near.org
-    Betanet(self::server::CliServer),
-    /// предоставление данных для сервера, указанного вручную
-    Custom(self::server::CliCustomServer),
-}
-
-#[derive(Debug, Clone, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[interactive_clap(input_context = ())]
+#[interactive_clap(output_context = SelectServerContext)]
+///Select NEAR protocol RPC server
 pub enum SelectServer {
+    /// Provide data for the server https://rpc.testnet.near.org
     #[strum_discriminants(strum(message = "Testnet"))]
     Testnet(self::server::Server),
+    /// Provide data for the server https://rpc.mainnet.near.org
     #[strum_discriminants(strum(message = "Mainnet"))]
     Mainnet(self::server::Server),
+    /// Provide data for the server https://rpc.betanet.near.org
     #[strum_discriminants(strum(message = "Betanet"))]
     Betanet(self::server::Server),
+    /// Provide data for a manually specified server
     #[strum_discriminants(strum(message = "Custom"))]
-    Custom(self::server::Server),
+    Custom(self::server::CustomServer),
 }
 
-impl CliSelectServer {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        match self {
-            Self::Testnet(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("testnet".to_owned());
-                args
-            }
-            Self::Mainnet(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("mainnet".to_owned());
-                args
-            }
-            Self::Betanet(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("betanet".to_owned());
-                args
-            }
-            Self::Custom(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("custom".to_owned());
-                args
-            }
+#[derive(Clone)]
+pub struct SelectServerContext {
+    selected_server: SelectServerDiscriminants,
+}
+
+impl SelectServerContext {
+    fn from_previous_context(
+        _previous_context: (),
+        scope: &<SelectServer as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> Self {
+        Self {
+            selected_server: scope.clone(),
         }
     }
 }
 
-impl From<SelectServer> for CliSelectServer {
-    fn from(select_server: SelectServer) -> Self {
-        match select_server {
-            SelectServer::Testnet(server) => Self::Testnet(server.into()),
-            SelectServer::Mainnet(server) => Self::Mainnet(server.into()),
-            SelectServer::Betanet(server) => Self::Betanet(server.into()),
-            SelectServer::Custom(server) => Self::Custom(server.into()),
-        }
-    }
+#[derive(Clone)]
+pub struct LoginCommandNetworkContext {
+    pub connection_config: crate::common::ConnectionConfig,
 }
 
-impl From<CliSelectServer> for SelectServer {
-    fn from(item: CliSelectServer) -> Self {
-        match item {
-            CliSelectServer::Testnet(cli_server) => {
-                Self::Testnet(cli_server.into_server(crate::common::ConnectionConfig::Testnet))
+impl From<SelectServerContext> for LoginCommandNetworkContext {
+    fn from(item: SelectServerContext) -> Self {
+        let connection_config = match item.selected_server {
+            SelectServerDiscriminants::Testnet => crate::common::ConnectionConfig::Testnet,
+            SelectServerDiscriminants::Mainnet => crate::common::ConnectionConfig::Mainnet,
+            SelectServerDiscriminants::Betanet => crate::common::ConnectionConfig::Betanet,
+            SelectServerDiscriminants::Custom => {
+                unreachable!("Network context should not be constructed from Custom variant")
             }
-            CliSelectServer::Mainnet(cli_server) => {
-                Self::Mainnet(cli_server.into_server(crate::common::ConnectionConfig::Mainnet))
-            }
-            CliSelectServer::Betanet(cli_server) => {
-                Self::Betanet(cli_server.into_server(crate::common::ConnectionConfig::Betanet))
-            }
-            CliSelectServer::Custom(cli_custom_server) => {
-                Self::Custom(cli_custom_server.into_server())
-            }
-        }
+        };
+        Self { connection_config }
     }
 }
 
 impl SelectServer {
-    pub fn choose_server() -> Self {
-        println!();
-        let variants = SelectServerDiscriminants::iter().collect::<Vec<_>>();
-        let servers = variants
-            .iter()
-            .map(|p| p.get_message().unwrap().to_owned())
-            .collect::<Vec<_>>();
-        let selected_server = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select NEAR protocol wallet url")
-            .items(&servers)
-            .default(0)
-            .interact()
-            .unwrap();
-        let cli_select_server = match variants[selected_server] {
-            SelectServerDiscriminants::Testnet => CliSelectServer::Testnet(Default::default()),
-            SelectServerDiscriminants::Mainnet => CliSelectServer::Mainnet(Default::default()),
-            SelectServerDiscriminants::Betanet => CliSelectServer::Betanet(Default::default()),
-            SelectServerDiscriminants::Custom => CliSelectServer::Custom(Default::default()),
-        };
-        Self::from(cli_select_server)
-    }
-
     pub async fn process(self) -> crate::CliResult {
         Ok(match self {
             SelectServer::Testnet(server) => {
-                server.process().await?;
+                let connection_config = crate::common::ConnectionConfig::Testnet;
+                server.process(connection_config).await?;
             }
             SelectServer::Mainnet(server) => {
-                server.process().await?;
+                let connection_config = crate::common::ConnectionConfig::Mainnet;
+                server.process(connection_config).await?;
             }
             SelectServer::Betanet(server) => {
-                server.process().await?;
+                let connection_config = crate::common::ConnectionConfig::Betanet;
+                server.process(connection_config).await?;
             }
-            SelectServer::Custom(server) => {
-                server.process().await?;
+            SelectServer::Custom(custom_server) => {
+                custom_server.process().await?;
             }
         })
     }

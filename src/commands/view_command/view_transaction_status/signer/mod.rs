@@ -1,113 +1,56 @@
 use dialoguer::Input;
 
-#[derive(Debug, Clone, clap::Clap)]
-pub enum CliSendFrom {
-    /// Specify a signer
-    Signer(CliSender),
-}
-
-#[derive(Debug, Clone)]
-pub enum SendFrom {
-    Signer(Sender),
-}
-
-impl CliSendFrom {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        match self {
-            Self::Signer(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("signer".to_owned());
-                args
-            }
-        }
-    }
-}
-
-impl From<SendFrom> for CliSendFrom {
-    fn from(send_from: SendFrom) -> Self {
-        match send_from {
-            SendFrom::Signer(sender) => Self::Signer(sender.into()),
-        }
-    }
-}
-
-impl From<CliSendFrom> for SendFrom {
-    fn from(item: CliSendFrom) -> Self {
-        match item {
-            CliSendFrom::Signer(cli_sender) => {
-                let sender = Sender::from(cli_sender);
-                Self::Signer(sender)
-            }
-        }
-    }
-}
-
-impl SendFrom {
-    pub fn send_from() -> Self {
-        Self::from(CliSendFrom::Signer(Default::default()))
-    }
-
-    pub async fn process(
-        self,
-        network_connection_config: crate::common::ConnectionConfig,
-        transaction_hash: String,
-    ) -> crate::CliResult {
-        match self {
-            SendFrom::Signer(sender) => {
-                sender
-                    .process(network_connection_config, transaction_hash)
-                    .await
-            }
-        }
-    }
-}
-
-/// Specify the account that signed the transaction
-#[derive(Debug, Default, Clone, clap::Clap)]
-pub struct CliSender {
-    pub account_id: Option<near_primitives::types::AccountId>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = super::operation_mode::online_mode::select_server::ViewTransactionCommandNetworkContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct Sender {
-    pub account_id: near_primitives::types::AccountId,
+    pub sender_account_id: crate::types::account_id::AccountId,
 }
 
-impl CliSender {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = std::collections::VecDeque::new();
-        if let Some(account_id) = &self.account_id {
-            args.push_front(account_id.to_string());
-        }
-        args
-    }
-}
-
-impl From<Sender> for CliSender {
-    fn from(sender: Sender) -> Self {
-        Self {
-            account_id: Some(sender.account_id),
-        }
-    }
-}
-
-impl From<CliSender> for Sender {
-    fn from(item: CliSender) -> Self {
-        let account_id: near_primitives::types::AccountId = match item.account_id {
-            Some(cli_account_id) => cli_account_id,
-            None => Sender::input_sender_account_id(),
+impl Sender {
+    pub fn from_cli(
+        optional_clap_variant: Option<CliSender>,
+        context: super::operation_mode::online_mode::select_server::ViewTransactionCommandNetworkContext,
+    ) -> color_eyre::eyre::Result<Self> {
+        let connection_config = context.connection_config.clone();
+        let sender_account_id = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.sender_account_id)
+        {
+            Some(sender_account_id) => match crate::common::get_account_state(
+                &connection_config,
+                sender_account_id.clone().into(),
+            )? {
+                Some(_) => sender_account_id,
+                None => {
+                    println!("Contract <{}> doesn't exist", sender_account_id);
+                    Self::input_sender_account_id(&context)?
+                }
+            },
+            None => Self::input_sender_account_id(&context)?,
         };
-        Self { account_id }
+        Ok(Self { sender_account_id })
     }
 }
 
 impl Sender {
-    pub fn input_sender_account_id() -> near_primitives::types::AccountId {
-        println!();
-        Input::new()
-            .with_prompt("Specify the account that signed the transaction")
-            .interact_text()
-            .unwrap()
+    pub fn input_sender_account_id(
+        context: &super::operation_mode::online_mode::select_server::ViewTransactionCommandNetworkContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        let connection_config = context.connection_config.clone();
+        loop {
+            let account_id: crate::types::account_id::AccountId = Input::new()
+                .with_prompt("Specify the account that signed the transaction")
+                .interact_text()
+                .unwrap();
+            if let Some(_) =
+                crate::common::get_account_state(&connection_config, account_id.clone().into())?
+            {
+                break Ok(account_id);
+            } else {
+                println!("Account <{}> doesn't exist", account_id.to_string());
+            };
+        }
     }
 
     fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
@@ -119,10 +62,10 @@ impl Sender {
         network_connection_config: crate::common::ConnectionConfig,
         transaction_hash: String,
     ) -> crate::CliResult {
-        let account_id = self.account_id.clone();
+        let account_id = self.sender_account_id.clone();
         let query_view_transaction_status = self
             .rpc_client(network_connection_config.archival_rpc_url().as_str())
-            .tx(transaction_hash, account_id)
+            .tx(transaction_hash, account_id.into())
             .await
             .map_err(|err| {
                 color_eyre::Report::msg(format!(

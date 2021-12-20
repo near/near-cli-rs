@@ -20,6 +20,10 @@ pub struct DeleteAccessKeyAction {
     pub next_action: Box<super::NextAction>,
 }
 
+impl interactive_clap::ToCli for DeleteAccessKeyAction {
+    type CliVariant = CliDeleteAccessKeyAction;
+}
+
 impl CliDeleteAccessKeyAction {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         let mut args = self
@@ -46,23 +50,24 @@ impl From<DeleteAccessKeyAction> for CliDeleteAccessKeyAction {
 }
 
 impl DeleteAccessKeyAction {
-    pub fn from(
-        item: CliDeleteAccessKeyAction,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+    pub fn from_cli(
+        optional_clap_variant: Option<CliDeleteAccessKeyAction>,
+        context: crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let public_key: near_crypto::PublicKey = match item.public_key {
+        let public_key: near_crypto::PublicKey = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.public_key)
+        {
             Some(cli_public_key) => cli_public_key,
-            None => DeleteAccessKeyAction::input_public_key(),
+            None => DeleteAccessKeyAction::input_public_key(&context)?,
         };
-        let skip_next_action: super::NextAction = match item.next_action {
-            Some(cli_skip_action) => super::NextAction::from_cli_skip_next_action(
-                cli_skip_action,
-                connection_config,
-                sender_account_id,
-            )?,
-            None => super::NextAction::input_next_action(connection_config, sender_account_id)?,
-        };
+        let skip_next_action: super::NextAction =
+            match optional_clap_variant.and_then(|clap_variant| clap_variant.next_action) {
+                Some(cli_skip_action) => {
+                    super::NextAction::from_cli_skip_next_action(cli_skip_action, context)?
+                }
+                None => super::NextAction::choose_variant(context)?,
+            };
         Ok(Self {
             public_key,
             next_action: Box::new(skip_next_action),
@@ -71,11 +76,13 @@ impl DeleteAccessKeyAction {
 }
 
 impl DeleteAccessKeyAction {
-    pub fn input_public_key() -> near_crypto::PublicKey {
-        Input::new()
+    pub fn input_public_key(
+        _context: &crate::common::SenderContext,
+    ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
+        Ok(Input::new()
             .with_prompt("Enter the access key to remove it")
             .interact_text()
-            .unwrap()
+            .unwrap())
     }
 
     #[async_recursion(?Send)]

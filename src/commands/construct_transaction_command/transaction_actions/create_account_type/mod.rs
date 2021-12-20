@@ -17,6 +17,10 @@ pub struct CreateAccountAction {
     pub next_action: Box<super::NextAction>,
 }
 
+impl interactive_clap::ToCli for CreateAccountAction {
+    type CliVariant = CliCreateAccountAction;
+}
+
 impl CliCreateAccountAction {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         self.next_action
@@ -37,19 +41,17 @@ impl From<CreateAccountAction> for CliCreateAccountAction {
 }
 
 impl CreateAccountAction {
-    pub fn from(
-        item: CliCreateAccountAction,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+    pub fn from_cli(
+        optional_clap_variant: Option<CliCreateAccountAction>,
+        context: crate::common::SenderContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let skip_next_action: super::NextAction = match item.next_action {
-            Some(cli_skip_action) => super::NextAction::from_cli_skip_next_action(
-                cli_skip_action,
-                connection_config,
-                sender_account_id,
-            )?,
-            None => super::NextAction::input_next_action(connection_config, sender_account_id)?,
-        };
+        let skip_next_action: super::NextAction =
+            match optional_clap_variant.and_then(|clap_variant| clap_variant.next_action) {
+                Some(cli_skip_action) => {
+                    super::NextAction::from_cli_skip_next_action(cli_skip_action, context)?
+                }
+                None => super::NextAction::choose_variant(context)?,
+            };
         Ok(Self {
             next_action: Box::new(skip_next_action),
         })
