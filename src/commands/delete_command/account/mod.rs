@@ -4,9 +4,9 @@ pub mod operation_mode;
 mod sender;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct DeleteAccountAction {
+    #[interactive_clap(skip_default_from_cli)]
     pub beneficiary_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     pub sign_option:
@@ -14,52 +14,37 @@ pub struct DeleteAccountAction {
 }
 
 impl DeleteAccountAction {
-    pub fn from_cli(
-        optional_clap_variant: Option<CliDeleteAccountAction>,
-        context: crate::common::SenderContext,
-    ) -> color_eyre::eyre::Result<Self> {
-        let connection_config = context.connection_config.clone();
-        let beneficiary_id = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.beneficiary_id)
-        {
-            Some(beneficiary_id) => match &connection_config {
+    fn from_cli_beneficiary_id(
+        optional_cli_sender_account_id: Option<crate::types::account_id::AccountId>,
+        context: &crate::common::SignerContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        match optional_cli_sender_account_id {
+            Some(cli_beneficiary_id) => match &context.connection_config {
                 Some(network_connection_config) => match crate::common::get_account_state(
                     &network_connection_config,
-                    beneficiary_id.clone().into(),
+                    cli_beneficiary_id.clone().into(),
                 )? {
-                    Some(_) => beneficiary_id,
+                    Some(_) => Ok(cli_beneficiary_id),
                     None => {
-                        println!("Account <{}> doesn't exist", beneficiary_id);
-                        Self::input_beneficiary_id(&context)?
+                        println!("Account <{}> doesn't exist", cli_beneficiary_id);
+                        Self::input_beneficiary_id(&context)
                     }
                 },
-                None => beneficiary_id,
+                None => Ok(cli_beneficiary_id),
             },
-            None => Self::input_beneficiary_id(&context)?,
-        };
-        let sign_option = match optional_clap_variant.and_then(|clap_variant| clap_variant.sign_option) {
-            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from_cli(Some(cli_sign_transaction), context)?,
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_variant(context)?,
-        };
-        Ok(Self {
-            beneficiary_id,
-            sign_option,
-        })
+            None => Self::input_beneficiary_id(&context),
+        }
     }
-}
 
-impl DeleteAccountAction {
     pub fn input_beneficiary_id(
-        context: &crate::common::SenderContext,
+        context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
-        let connection_config = context.connection_config.clone();
         loop {
             let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("Enter the beneficiary ID to delete this account ID")
                 .interact_text()
                 .unwrap();
-            if let Some(connection_config) = &connection_config {
+            if let Some(connection_config) = &context.connection_config {
                 if let Some(_) =
                     crate::common::get_account_state(&connection_config, account_id.clone().into())?
                 {

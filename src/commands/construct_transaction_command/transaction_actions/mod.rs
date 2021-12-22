@@ -17,7 +17,7 @@ pub enum CliSkipNextAction {
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 ///Select an action that you want to add to the action:
 pub enum NextAction {
     #[strum_discriminants(strum(message = "Select a new action"))]
@@ -55,7 +55,7 @@ impl From<NextAction> for CliSkipNextAction {
 impl NextAction {
     pub fn from_cli_skip_next_action(
         item: CliSkipNextAction,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         match item {
             CliSkipNextAction::Skip(cli_skip_action) => {
@@ -97,7 +97,7 @@ impl NextAction {
 }
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct SelectAction {
     #[interactive_clap(subcommand)]
     transaction_subcommand: ActionSubcommand,
@@ -117,7 +117,7 @@ impl SelectAction {
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 ///Select an action that you want to add to the action:
 pub enum ActionSubcommand {
     #[strum_discriminants(strum(message = "Transfer NEAR Tokens"))]
@@ -198,7 +198,7 @@ impl ActionSubcommand {
 }
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct SkipAction {
     #[interactive_clap(subcommand)]
     pub sign_option: super::sign_transaction::SignTransaction,

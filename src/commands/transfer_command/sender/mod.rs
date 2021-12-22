@@ -2,16 +2,21 @@ use dialoguer::Input;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::operation_mode::TransferCommandNetworkContext)]
-#[interactive_clap(output_context = crate::common::SenderContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(output_context = crate::common::SignerContext)]
 pub struct Sender {
+    #[interactive_clap(skip_default_from_cli)]
     pub sender_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     ///Specify a receiver
     pub receiver: super::receiver::Receiver,
 }
 
-impl crate::common::SenderContext {
+struct SenderContext {
+    connection_config: Option<crate::common::ConnectionConfig>,
+    sender_account_id: crate::types::account_id::AccountId,
+}
+
+impl SenderContext {
     pub fn from_previous_context(
         previous_context: super::operation_mode::TransferCommandNetworkContext,
         scope: &<Sender as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -23,50 +28,38 @@ impl crate::common::SenderContext {
     }
 }
 
-impl Sender {
-    pub fn from_cli(
-        optional_clap_variant: Option<CliSender>,
-        context: super::operation_mode::TransferCommandNetworkContext,
-    ) -> color_eyre::eyre::Result<Self> {
-        let connection_config = context.connection_config.clone();
-        let sender_account_id = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.sender_account_id)
-        {
-            Some(sender_account_id) => match &connection_config {
-                Some(network_connection_config) => match crate::common::get_account_state(
-                    &network_connection_config,
-                    sender_account_id.clone().into(),
-                )? {
-                    Some(_) => sender_account_id,
-                    None => {
-                        println!("Account <{}> doesn't exist", sender_account_id);
-                        Sender::input_sender_account_id(&context)?
-                    }
-                },
-                None => sender_account_id,
-            },
-            None => Self::input_sender_account_id(&context)?,
-        };
-        type Alias = <Sender as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
-        let new_context_scope = Alias { sender_account_id };
-        let new_context =
-            crate::common::SenderContext::from_previous_context(context, &new_context_scope);
-        let receiver = super::receiver::Receiver::from_cli(
-            optional_clap_variant.and_then(|clap_variant| match clap_variant.receiver {
-                Some(ClapNamedArgReceiverForSender::Receiver(cli_receiver)) => Some(cli_receiver),
-                None => None,
-            }),
-            new_context,
-        )?;
-        Ok(Self {
-            sender_account_id: new_context_scope.sender_account_id,
-            receiver,
-        })
+impl From<SenderContext> for crate::common::SignerContext {
+    fn from(item: SenderContext) -> Self {
+        Self {
+            connection_config: item.connection_config,
+            signer_account_id: item.sender_account_id,
+        }
     }
 }
 
 impl Sender {
+    fn from_cli_sender_account_id(
+        optional_cli_sender_account_id: Option<crate::types::account_id::AccountId>,
+        context: &super::operation_mode::TransferCommandNetworkContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        match optional_cli_sender_account_id {
+            Some(cli_sender_account_id) => match &context.connection_config {
+                Some(network_connection_config) => match crate::common::get_account_state(
+                    &network_connection_config,
+                    cli_sender_account_id.clone().into(),
+                )? {
+                    Some(_) => Ok(cli_sender_account_id),
+                    None => {
+                        println!("Account <{}> doesn't exist", cli_sender_account_id);
+                        Sender::input_sender_account_id(&context)
+                    }
+                },
+                None => Ok(cli_sender_account_id),
+            },
+            None => Self::input_sender_account_id(&context),
+        }
+    }
+
     fn input_sender_account_id(
         context: &super::operation_mode::TransferCommandNetworkContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {

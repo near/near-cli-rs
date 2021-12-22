@@ -49,7 +49,7 @@ near-jsonrpc-client = { git = "https://github.com/near/nearcore", rev="6f2a29022
 near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="6f2a290227f4f3b41c543b615231e769e438e28c" }
 
 interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="89b5bee74035b0ba6d8603fbd9fc3da0ad31eaeb" }
-interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap-derive", rev="63aa8d84172232ba736e582c07c23f3f042a1b05" }
+interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap-derive", rev="231b718351170493c3df6f39ef2acdb1a6b915da" }
 # interactive_clap = { path = "/Users/frovolod/Documents2/Rust/hello-macro/macro-proba/interactive_clap" }
 # interactive_clap_derive = { path = "/Users/frovolod/Documents2/Rust/hello-macro/macro-proba/interactive_clap/interactive_clap_derive" }
 

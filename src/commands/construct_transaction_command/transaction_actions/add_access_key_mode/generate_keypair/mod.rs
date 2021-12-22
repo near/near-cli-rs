@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct GenerateKeypair {
     #[interactive_clap(subcommand)]
     pub permission: super::add_access_key::AccessKeyPermission,

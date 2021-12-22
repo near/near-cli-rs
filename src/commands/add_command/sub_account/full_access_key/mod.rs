@@ -1,7 +1,7 @@
 mod public_key_mode;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct SubAccountFullAccess {
     #[interactive_clap(subcommand)]
     pub public_key_mode: self::public_key_mode::PublicKeyMode,

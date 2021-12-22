@@ -71,7 +71,7 @@ impl From<FunctionCallType> for CliFunctionCallType {
 impl FunctionCallType {
     pub fn from_cli(
         optional_clap_variant: Option<CliFunctionCallType>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let connection_config = context.connection_config.clone();
         let allowance: Option<crate::common::NearBalance> = match optional_clap_variant
@@ -136,7 +136,7 @@ impl FunctionCallType {
 
 impl FunctionCallType {
     pub fn input_method_names(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Vec<String>> {
         println!();
         let choose_input = vec![
@@ -173,7 +173,7 @@ impl FunctionCallType {
     }
 
     pub fn input_allowance(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         println!();
         let choose_input = vec![
@@ -200,7 +200,7 @@ impl FunctionCallType {
     }
 
     pub fn input_receiver_account_id(
-        context: &crate::common::SenderContext,
+        context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         let connection_config = context.connection_config.clone();
         loop {

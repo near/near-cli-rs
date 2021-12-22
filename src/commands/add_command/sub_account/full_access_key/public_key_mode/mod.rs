@@ -5,7 +5,7 @@ mod generate_keypair;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 ///Add a full access key for the sub-account
 pub enum PublicKeyMode {
     #[strum_discriminants(strum(message = "Enter public key"))]

@@ -30,3 +30,7 @@ where
         self.0.as_ref()
     }
 }
+
+impl interactive_clap::ToCli for AccountId {
+    type CliVariant = AccountId;
+}

@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct CallFunctionAction {
     method_name: String,
     args: String,
@@ -16,7 +16,7 @@ pub struct CallFunctionAction {
 
 impl CallFunctionAction {
     fn input_method_name(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<String> {
         println!();
         Ok(Input::new()
@@ -26,7 +26,7 @@ impl CallFunctionAction {
     }
 
     fn input_gas(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::common::NearGas> {
         println!();
         let gas: u64 = loop {
@@ -47,7 +47,7 @@ impl CallFunctionAction {
         Ok(gas.into())
     }
 
-    fn input_args(_context: &crate::common::SenderContext) -> color_eyre::eyre::Result<String> {
+    fn input_args(_context: &crate::common::SignerContext) -> color_eyre::eyre::Result<String> {
         println!();
         Ok(Input::new()
             .with_prompt("Enter args for function")
@@ -56,7 +56,7 @@ impl CallFunctionAction {
     }
 
     fn input_deposit(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
         println!();
         let deposit: crate::common::NearBalance = Input::new()

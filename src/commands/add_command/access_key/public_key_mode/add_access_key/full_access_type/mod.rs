@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct FullAccessType {
     #[interactive_clap(subcommand)]
     pub sign_option:

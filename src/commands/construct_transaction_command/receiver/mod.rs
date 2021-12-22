@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct Receiver {
     pub receiver_account_id: crate::types::account_id::AccountId,
@@ -12,7 +12,7 @@ pub struct Receiver {
 impl Receiver {
     pub fn from_cli(
         optional_clap_variant: Option<CliReceiver>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let connection_config = context.connection_config.clone();
         let receiver_account_id = match optional_clap_variant
@@ -48,7 +48,7 @@ impl Receiver {
 
 impl Receiver {
     pub fn input_receiver_account_id(
-        context: &crate::common::SenderContext,
+        context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         let connection_config = context.connection_config.clone();
         loop {

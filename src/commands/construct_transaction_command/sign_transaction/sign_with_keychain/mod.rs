@@ -3,6 +3,7 @@ extern crate dirs;
 use serde::Deserialize;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = crate::common::SignerContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignKeychain {
     #[interactive_clap(long)]
@@ -20,7 +21,7 @@ impl interactive_clap::ToCli for super::Submit {
 impl SignKeychain {
     pub fn from_cli(
         optional_clap_variant: Option<CliSignKeychain>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let submit: Option<super::Submit> = optional_clap_variant
             .clone()
@@ -35,7 +36,7 @@ impl SignKeychain {
                 let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
                 let file_name = format!(
                     "{}.json",
-                    context.sender_account_id // .clone()
+                    context.signer_account_id // .clone()
                                               // .expect("wrong sender_account_id")
                 );
                 let mut path = std::path::PathBuf::from(&home_dir);

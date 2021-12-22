@@ -3,7 +3,7 @@ use interactive_clap::ToCli;
 use near_primitives::borsh::BorshSerialize;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignLedger {
     #[interactive_clap(long)]
@@ -25,7 +25,7 @@ impl ToCli for crate::types::slip10::BIP32Path {
 impl SignLedger {
     pub fn from_cli(
         optional_clap_variant: Option<CliSignLedger>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let connection_config = context.connection_config.clone();
         let seed_phrase_hd_path = match optional_clap_variant

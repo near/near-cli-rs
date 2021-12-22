@@ -52,7 +52,7 @@ impl From<DeleteAccessKeyAction> for CliDeleteAccessKeyAction {
 impl DeleteAccessKeyAction {
     pub fn from_cli(
         optional_clap_variant: Option<CliDeleteAccessKeyAction>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match optional_clap_variant
             .clone()
@@ -77,7 +77,7 @@ impl DeleteAccessKeyAction {
 
 impl DeleteAccessKeyAction {
     pub fn input_public_key(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
         Ok(Input::new()
             .with_prompt("Enter the access key to remove it")

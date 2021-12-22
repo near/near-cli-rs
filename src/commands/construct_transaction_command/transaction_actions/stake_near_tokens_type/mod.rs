@@ -58,7 +58,7 @@ impl From<StakeNEARTokensAction> for CliStakeNEARTokensAction {
 impl StakeNEARTokensAction {
     pub fn from_cli(
         optional_clap_variant: Option<CliStakeNEARTokensAction>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let stake_amount: crate::common::NearBalance = match optional_clap_variant
             .clone()
@@ -91,7 +91,7 @@ impl StakeNEARTokensAction {
 
 impl StakeNEARTokensAction {
     fn input_public_key(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
         Ok(Input::new()
             .with_prompt("Enter a public key for this stake")
@@ -100,7 +100,7 @@ impl StakeNEARTokensAction {
     }
 
     fn input_stake_amount(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
         Ok(Input::new()
             .with_prompt("How many NEAR Tokens do you want to stake? (example: 10NEAR or 0.5near or 10000yoctonear)")

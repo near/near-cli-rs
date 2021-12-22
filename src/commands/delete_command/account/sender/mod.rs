@@ -2,9 +2,9 @@ use dialoguer::Input;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::operation_mode::DeleteAccountCommandNetworkContext)]
-#[interactive_clap(output_context = crate::common::SenderContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(output_context = crate::common::SignerContext)]
 pub struct Sender {
+    #[interactive_clap(skip_default_from_cli)]
     // #[interactive_clap(skip_default_getter)]
     pub sender_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -12,8 +12,13 @@ pub struct Sender {
     pub beneficiary: super::DeleteAccountAction,
 }
 
-impl crate::common::SenderContext {
-    pub fn from_previous_context_for_delete_account(
+struct SenderContext {
+    connection_config: Option<crate::common::ConnectionConfig>,
+    sender_account_id: crate::types::account_id::AccountId,
+}
+
+impl SenderContext {
+    pub fn from_previous_context(
         previous_context: super::operation_mode::DeleteAccountCommandNetworkContext,
         scope: &<Sender as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> Self {
@@ -24,42 +29,17 @@ impl crate::common::SenderContext {
     }
 }
 
-impl Sender {
-    pub fn from_cli(
-        optional_clap_variant: Option<CliSender>,
-        context: super::operation_mode::DeleteAccountCommandNetworkContext,
-    ) -> color_eyre::eyre::Result<Self> {
-        let connection_config = context.connection_config.clone();
-        let sender_account_id = Self::get_sender_account_id(
-            optional_clap_variant
-                .clone()
-                .and_then(|clap_variant| clap_variant.sender_account_id),
-            &context,
-        )?;
-        type Alias = <Sender as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
-        let new_context_scope = Alias { sender_account_id };
-        let new_context = crate::common::SenderContext::from_previous_context_for_delete_account(
-            context,
-            &new_context_scope,
-        );
-        let beneficiary = super::DeleteAccountAction::from_cli(
-            optional_clap_variant.and_then(|clap_variant| match clap_variant.beneficiary {
-                Some(ClapNamedArgDeleteAccountActionForSender::Beneficiary(cli_arg)) => {
-                    Some(cli_arg)
-                }
-                None => None,
-            }),
-            new_context,
-        )?;
-        Ok(Self {
-            sender_account_id: new_context_scope.sender_account_id,
-            beneficiary,
-        })
+impl From<SenderContext> for crate::common::SignerContext {
+    fn from(item: SenderContext) -> Self {
+        Self {
+            connection_config: item.connection_config,
+            signer_account_id: item.sender_account_id,
+        }
     }
 }
 
 impl Sender {
-    fn get_sender_account_id(
+    fn from_cli_sender_account_id(
         optional_cli_sender_account_id: Option<crate::types::account_id::AccountId>,
         context: &super::operation_mode::DeleteAccountCommandNetworkContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
@@ -84,13 +64,12 @@ impl Sender {
     fn input_sender_account_id(
         context: &super::operation_mode::DeleteAccountCommandNetworkContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
-        let connection_config = context.connection_config.clone();
         loop {
             let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("Which account ID do you need to remove?")
                 .interact_text()
                 .unwrap();
-            if let Some(connection_config) = &connection_config {
+            if let Some(connection_config) = &context.connection_config {
                 if let Some(_) =
                     crate::common::get_account_state(&connection_config, account_id.clone().into())?
                 {

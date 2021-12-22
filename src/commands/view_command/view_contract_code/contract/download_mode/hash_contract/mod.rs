@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct ContractHash {
     #[interactive_clap(subcommand)]
     pub selected_block_id: super::super::super::block_id::BlockId,

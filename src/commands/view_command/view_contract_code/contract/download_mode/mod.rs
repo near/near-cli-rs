@@ -5,7 +5,7 @@ mod hash_contract;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 ///To view contract code you will need to choose next action
 pub enum DownloadMode {
     #[strum_discriminants(strum(message = "Download a contract file"))]

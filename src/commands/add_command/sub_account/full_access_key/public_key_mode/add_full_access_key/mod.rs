@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct AddAccessKeyAction {
     pub public_key: crate::types::public_key::PublicKey,
     pub nonce: near_primitives::types::Nonce,
@@ -12,7 +12,7 @@ pub struct AddAccessKeyAction {
 
 impl AddAccessKeyAction {
     fn input_public_key(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
         Ok(Input::new()
             .with_prompt("Enter a public key for this access key")
@@ -21,7 +21,7 @@ impl AddAccessKeyAction {
     }
 
     fn input_nonce(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<near_primitives::types::Nonce> {
         Ok(0)
     }

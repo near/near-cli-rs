@@ -2,7 +2,7 @@ use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 use strum::EnumDiscriminants;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 #[interactive_clap(disable_strum_discriminants)]
 pub enum Transfer {
     /// Enter an amount to transfer
@@ -77,7 +77,7 @@ impl From<TransferNEARTokensAction> for CliTransferNEARTokensAction {
 impl TransferNEARTokensAction {
     pub fn from_cli(
         optional_clap_variant: Option<CliTransferNEARTokensAction>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let amount: crate::common::TransferAmount = match optional_clap_variant
             .clone()
@@ -104,10 +104,10 @@ impl TransferNEARTokensAction {
 
 impl TransferNEARTokensAction {
     fn input_amount(
-        context: &crate::common::SenderContext,
+        context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::common::TransferAmount> {
         let connection_config = context.connection_config.clone();
-        let sender_account_id = context.sender_account_id.clone();
+        let sender_account_id = context.signer_account_id.clone();
         match connection_config {
             Some(connection_config) => {
                 let account_transfer_allowance = crate::common::get_account_transfer_allowance(

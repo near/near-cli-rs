@@ -1,7 +1,7 @@
 use dialoguer::Input;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct SubAccount {
     pub sub_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -11,7 +11,7 @@ pub struct SubAccount {
 
 impl SubAccount {
     fn input_sub_account_id(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         Ok(Input::new()
             .with_prompt("What is the sub-account ID?")

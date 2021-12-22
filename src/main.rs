@@ -8,8 +8,6 @@ mod common;
 mod consts;
 mod types;
 
-// mod deposit_mod;
-
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = ())]
 struct Args {

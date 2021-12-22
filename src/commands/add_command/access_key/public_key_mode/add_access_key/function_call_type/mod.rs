@@ -3,7 +3,7 @@ use std::str::FromStr;
 use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct FunctionCallType {
     #[interactive_clap(long)]
@@ -24,7 +24,7 @@ impl interactive_clap::ToCli for crate::types::vec_string::VecString {
 impl FunctionCallType {
     pub fn from_cli(
         optional_clap_variant: Option<CliFunctionCallType>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let connection_config = context.connection_config.clone();
         let allowance: Option<crate::common::NearBalance> = match optional_clap_variant
@@ -81,7 +81,7 @@ impl FunctionCallType {
 
 impl FunctionCallType {
     pub fn input_method_names(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::types::vec_string::VecString> {
         println!();
         let choose_input = vec![
@@ -115,7 +115,7 @@ impl FunctionCallType {
     }
 
     pub fn input_allowance(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         println!();
         let choose_input = vec![
@@ -142,7 +142,7 @@ impl FunctionCallType {
     }
 
     pub fn input_receiver_account_id(
-        context: &crate::common::SenderContext,
+        context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         let connection_config = context.connection_config.clone();
         loop {

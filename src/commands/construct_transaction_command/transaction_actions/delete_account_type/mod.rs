@@ -54,7 +54,7 @@ impl From<DeleteAccountAction> for CliDeleteAccountAction {
 impl DeleteAccountAction {
     pub fn from_cli(
         optional_clap_variant: Option<CliDeleteAccountAction>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let beneficiary_id: near_primitives::types::AccountId = match optional_clap_variant
             .clone()
@@ -79,7 +79,7 @@ impl DeleteAccountAction {
 
 impl DeleteAccountAction {
     pub fn input_beneficiary_id(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
         println!();
         Ok(Input::new()

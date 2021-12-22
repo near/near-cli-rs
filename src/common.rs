@@ -39,10 +39,10 @@ where
     variants[selected]
 }
 
-#[derive(Clone)]
-pub struct SenderContext {
+#[derive(Debug, Clone)]
+pub struct SignerContext {
     pub connection_config: Option<ConnectionConfig>,
-    pub sender_account_id: crate::types::account_id::AccountId,
+    pub signer_account_id: crate::types::account_id::AccountId,
 }
 
 #[derive(

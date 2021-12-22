@@ -1,58 +1,39 @@
 use dialoguer::Input;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct Receiver {
+    #[interactive_clap(skip_default_from_cli)]
     pub receiver_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     pub transfer: super::transfer_near_tokens_type::Transfer,
 }
 
-impl interactive_clap::ToCli for crate::types::account_id::AccountId {
-    type CliVariant = crate::types::account_id::AccountId;
-}
-
 impl Receiver {
-    pub fn from_cli(
-        optional_clap_variant: Option<CliReceiver>,
-        context: crate::common::SenderContext,
-    ) -> color_eyre::eyre::Result<Self> {
-        let connection_config = context.connection_config.clone();
-        let receiver_account_id = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.receiver_account_id)
-        {
-            Some(receiver_account_id) => match &connection_config {
+    fn from_cli_receiver_account_id(
+        optional_cli_sender_account_id: Option<crate::types::account_id::AccountId>,
+        context: &crate::common::SignerContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        match optional_cli_sender_account_id {
+            Some(cli_receiver_account_id) => match &context.connection_config {
                 Some(network_connection_config) => match crate::common::get_account_state(
                     &network_connection_config,
-                    receiver_account_id.clone().into(),
+                    cli_receiver_account_id.clone().into(),
                 )? {
-                    Some(_) => receiver_account_id,
+                    Some(_) => Ok(cli_receiver_account_id),
                     None => {
-                        println!("Account <{}> doesn't exist", receiver_account_id);
-                        Self::input_receiver_account_id(&context)?
+                        println!("Account <{}> doesn't exist", cli_receiver_account_id);
+                        Self::input_receiver_account_id(&context)
                     }
                 },
-                None => receiver_account_id,
+                None => Ok(cli_receiver_account_id),
             },
-            None => Self::input_receiver_account_id(&context)?,
-        };
-        let transfer = super::transfer_near_tokens_type::Transfer::from_cli(
-            optional_clap_variant.and_then(|clap_variant| clap_variant.transfer),
-            context,
-        )?;
-
-        Ok(Self {
-            receiver_account_id,
-            transfer,
-        })
+            None => Self::input_receiver_account_id(&context),
+        }
     }
-}
 
-impl Receiver {
     pub fn input_receiver_account_id(
-        context: &crate::common::SenderContext,
+        context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         let connection_config = context.connection_config.clone();
         loop {

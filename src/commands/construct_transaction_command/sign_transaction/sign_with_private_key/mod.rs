@@ -1,7 +1,7 @@
 use near_primitives::borsh::BorshSerialize;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignPrivateKey {
     #[interactive_clap(long)]
@@ -23,7 +23,7 @@ impl interactive_clap::ToCli for crate::types::secret_key::SecretKey {
 impl SignPrivateKey {
     pub fn from_cli(
         optional_clap_variant: Option<CliSignPrivateKey>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let connection_config = context.connection_config.clone();
         let signer_public_key: crate::types::public_key::PublicKey = match optional_clap_variant

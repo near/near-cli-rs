@@ -6,7 +6,7 @@ mod block_id_height;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 ///Choose Block ID
 pub enum BlockId {
     #[strum_discriminants(strum(message = "View this contract at final block"))]

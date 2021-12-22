@@ -4,7 +4,7 @@ mod call_function_type;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub enum NextAction {
     /// Add an initialize
     #[strum_discriminants(strum(message = "Add an initialize"))]
@@ -36,7 +36,7 @@ impl NextAction {
 }
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct NoInitialize {
     #[interactive_clap(subcommand)]
     pub sign_option:

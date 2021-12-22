@@ -43,7 +43,7 @@ impl From<CreateAccountAction> for CliCreateAccountAction {
 impl CreateAccountAction {
     pub fn from_cli(
         optional_clap_variant: Option<CliCreateAccountAction>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let skip_next_action: super::NextAction =
             match optional_clap_variant.and_then(|clap_variant| clap_variant.next_action) {

@@ -52,7 +52,7 @@ impl From<ContractFile> for CliContractFile {
 impl ContractFile {
     pub fn from_cli(
         optional_clap_variant: Option<CliContractFile>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let file_path = match optional_clap_variant
             .clone()
@@ -77,7 +77,7 @@ impl ContractFile {
 
 impl ContractFile {
     fn input_file_path(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<std::path::PathBuf> {
         println!();
         let input_file_path: String = Input::new()

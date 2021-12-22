@@ -76,7 +76,7 @@ impl From<CallFunctionAction> for CliCallFunctionAction {
 impl CallFunctionAction {
     pub fn from_cli(
         optional_clap_variant: Option<CliCallFunctionAction>,
-        context: crate::common::SenderContext,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let method_name: String = match optional_clap_variant
             .clone()
@@ -127,7 +127,7 @@ impl CallFunctionAction {
 
 impl CallFunctionAction {
     fn input_method_name(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<String> {
         println!();
         Ok(Input::new()
@@ -137,7 +137,7 @@ impl CallFunctionAction {
     }
 
     fn input_gas(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<near_primitives::types::Gas> {
         println!();
         let gas: u64 = loop {
@@ -158,7 +158,7 @@ impl CallFunctionAction {
         Ok(gas)
     }
 
-    fn input_args(_context: &crate::common::SenderContext) -> color_eyre::eyre::Result<Vec<u8>> {
+    fn input_args(_context: &crate::common::SignerContext) -> color_eyre::eyre::Result<Vec<u8>> {
         println!();
         let input: String = Input::new()
             .with_prompt("Enter args for function")
@@ -168,7 +168,7 @@ impl CallFunctionAction {
     }
 
     fn input_deposit(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<near_primitives::types::Balance> {
         println!();
         let deposit: crate::common::NearBalance = Input::new()

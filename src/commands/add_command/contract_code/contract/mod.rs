@@ -3,7 +3,7 @@ use dialoguer::Input;
 mod initialize_mode;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::SenderContext)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct ContractFile {
     pub file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(subcommand)]
@@ -16,7 +16,7 @@ impl interactive_clap::ToCli for crate::types::path_buf::PathBuf {
 
 impl ContractFile {
     fn input_file_path(
-        _context: &crate::common::SenderContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::types::path_buf::PathBuf> {
         println!();
         let input_file_path: String = Input::new()
