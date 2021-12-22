@@ -14,7 +14,7 @@ impl interactive_clap::ToCli for crate::common::NearBalance {
 
 impl StakeNEARTokensAction {
     fn input_stake_amount(
-        context: &crate::common::SignerContext,
+        _context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
         Ok(Input::new()
             .with_prompt("How many NEAR Tokens do you want to stake? (example: 10NEAR or 0.5near or 10000yoctonear)")
