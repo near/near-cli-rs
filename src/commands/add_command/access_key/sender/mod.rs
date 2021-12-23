@@ -64,7 +64,7 @@ impl Sender {
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         loop {
             let account_id: crate::types::account_id::AccountId = Input::new()
-                .with_prompt("What is the account ID of the sender?")
+                .with_prompt("What account ID do you need to add a key?")
                 .interact_text()
                 .unwrap();
             if let Some(connection_config) = &context.connection_config {
