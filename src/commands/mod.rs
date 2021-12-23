@@ -38,7 +38,7 @@ pub enum TopLevelCommand {
     ///Use these to delete access key, sub-account
     Delete(self::delete_command::DeleteAction),
     #[strum_discriminants(strum(message = "Construct a new transaction"))]
-    ///Use these to construct transaction
+    ///Prepare and, optionally, submit a new transaction
     ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Helpers"))]
     ///Helpers

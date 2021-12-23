@@ -5,7 +5,8 @@ use dialoguer::Input;
 pub struct StakeNEARTokensAction {
     pub stake_amount: crate::common::NearBalance,
     #[interactive_clap(named_arg)]
-    pub sign_transactions: super::transactions_signing::TransactionsSigningAction,
+    ///Enter an public key
+    pub transactions_signing_public_key: super::transactions_signing::TransactionsSigningAction,
 }
 
 impl interactive_clap::ToCli for crate::common::NearBalance {
@@ -27,7 +28,7 @@ impl StakeNEARTokensAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
-        self.sign_transactions
+        self.transactions_signing_public_key
             .process(
                 prepopulated_unsigned_transaction,
                 network_connection_config,

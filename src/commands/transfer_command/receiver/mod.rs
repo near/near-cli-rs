@@ -11,10 +11,10 @@ pub struct Receiver {
 
 impl Receiver {
     fn from_cli_receiver_account_id(
-        optional_cli_sender_account_id: Option<crate::types::account_id::AccountId>,
+        optional_cli_receiver_account_id: Option<crate::types::account_id::AccountId>,
         context: &crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
-        match optional_cli_sender_account_id {
+        match optional_cli_receiver_account_id {
             Some(cli_receiver_account_id) => match &context.connection_config {
                 Some(network_connection_config) => match crate::common::get_account_state(
                     &network_connection_config,

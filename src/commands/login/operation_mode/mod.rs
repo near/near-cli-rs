@@ -4,7 +4,7 @@ pub mod online_mode;
 #[interactive_clap(context = ())]
 pub struct OperationMode {
     #[interactive_clap(named_arg)]
-    /// Prepare and, optionally, submit a new transaction with online mode
+    ///Execute a change method with online mode
     pub network: self::online_mode::NetworkArgs,
 }
 

@@ -37,7 +37,7 @@ pub enum Action {
     ///Add implicit account
     ImplicitAccount(self::implicit_account::ImplicitAccount),
     #[strum_discriminants(strum(message = "Add a new stake proposal"))]
-    ///Add a stake proposal
+    ///Add a new stake proposal
     StakeProposal(self::stake_proposal::operation_mode::OperationMode),
     #[strum_discriminants(strum(message = "Add a new sub-account"))]
     ///Add a new sub-account

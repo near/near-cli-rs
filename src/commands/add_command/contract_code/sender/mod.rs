@@ -8,7 +8,7 @@ pub struct Sender {
     pub sender_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     ///Specify a contract
-    pub contract: super::contract::ContractFile,
+    pub contract_file: super::contract::ContractFile,
 }
 
 struct SenderContext {
@@ -92,7 +92,7 @@ impl Sender {
             receiver_id: self.sender_account_id.clone().into(),
             ..prepopulated_unsigned_transaction
         };
-        self.contract
+        self.contract_file
             .process(unsigned_transaction, network_connection_config)
             .await
     }
