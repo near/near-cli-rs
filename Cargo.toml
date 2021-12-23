@@ -50,8 +50,6 @@ near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="6f2a2
 
 interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="89b5bee74035b0ba6d8603fbd9fc3da0ad31eaeb" }
 interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap-derive", rev="3531e842bdf53ccb82ac261f0eb7535bbd7126ed" }
-# interactive_clap = { path = "/Users/frovolod/Documents2/Rust/hello-macro/macro-proba/interactive_clap" }
-# interactive_clap_derive = { path = "/Users/frovolod/Documents2/Rust/hello-macro/macro-proba/interactive_clap/interactive_clap_derive" }
 
 [features]
 default = ["ledger"]
