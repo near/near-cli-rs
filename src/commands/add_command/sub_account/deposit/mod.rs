@@ -93,7 +93,7 @@ impl TransferNEARTokensAction {
                     let input_amount: crate::common::NearBalance = Input::new()
                         .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
                         .interact_text()
-                        .unwrap();
+                        ?;
                     if let Ok(transfer_amount) = crate::common::TransferAmount::from(
                         input_amount.clone(),
                         &account_transfer_allowance,
@@ -112,8 +112,7 @@ impl TransferNEARTokensAction {
                             .with_prompt("Do you want to keep this amount for the transfer?")
                             .items(&choose_input)
                             .default(0)
-                            .interact_on_opt(&Term::stderr())
-                            .unwrap();
+                            .interact_on_opt(&Term::stderr())?;
                         match select_choose_input {
                             Some(0) => {
                                 break Ok(crate::common::TransferAmount::from_unchecked(
@@ -130,7 +129,7 @@ impl TransferNEARTokensAction {
                 let input_amount: crate::common::NearBalance = Input::new()
                         .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
                         .interact_text()
-                        .unwrap();
+                        ?;
                 Ok(crate::common::TransferAmount::from_unchecked(input_amount))
             }
         }

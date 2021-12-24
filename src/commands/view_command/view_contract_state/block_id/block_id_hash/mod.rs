@@ -12,8 +12,7 @@ impl BlockIdHash {
     ) -> color_eyre::eyre::Result<crate::types::crypto_hash::CryptoHash> {
         Ok(Input::new()
             .with_prompt("Type the block ID hash for this account")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {

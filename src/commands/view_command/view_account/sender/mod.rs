@@ -15,8 +15,7 @@ impl Sender {
         println!();
         Ok(Input::new()
             .with_prompt("What Account ID do you need to view?")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     pub async fn process(

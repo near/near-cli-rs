@@ -41,8 +41,7 @@ impl Sender {
         loop {
             let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("Specify the account that signed the transaction")
-                .interact_text()
-                .unwrap();
+                .interact_text()?;
             if let Some(_) =
                 crate::common::get_account_state(&connection_config, account_id.clone().into())?
             {

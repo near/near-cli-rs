@@ -132,8 +132,7 @@ impl CallFunctionAction {
         println!();
         Ok(Input::new()
             .with_prompt("Enter a method name")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     fn input_gas(
@@ -144,8 +143,7 @@ impl CallFunctionAction {
             let input_gas: crate::common::NearGas = Input::new()
                 .with_prompt("Enter a gas for function")
                 .with_initial_text("100 TeraGas")
-                .interact_text()
-                .unwrap();
+                .interact_text()?;
             let gas: u64 = match input_gas {
                 crate::common::NearGas { inner: num } => num,
             };
@@ -162,8 +160,7 @@ impl CallFunctionAction {
         println!();
         let input: String = Input::new()
             .with_prompt("Enter args for function")
-            .interact_text()
-            .unwrap();
+            .interact_text()?;
         Ok(input.into_bytes())
     }
 
@@ -176,8 +173,7 @@ impl CallFunctionAction {
                 "Enter a deposit for function (example: 10NEAR or 0.5near or 10000yoctonear).",
             )
             .with_initial_text("0 NEAR")
-            .interact_text()
-            .unwrap();
+            .interact_text()?;
         Ok(deposit.to_yoctonear())
     }
 

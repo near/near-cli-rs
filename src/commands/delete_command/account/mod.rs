@@ -42,8 +42,7 @@ impl DeleteAccountAction {
         loop {
             let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("Enter the beneficiary ID to delete this account ID")
-                .interact_text()
-                .unwrap();
+                .interact_text()?;
             if let Some(connection_config) = &context.connection_config {
                 if let Some(_) =
                     crate::common::get_account_state(&connection_config, account_id.clone().into())?

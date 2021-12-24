@@ -57,8 +57,7 @@ impl Contract {
         loop {
             let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("What is the account ID of the contract?")
-                .interact_text()
-                .unwrap();
+                .interact_text()?;
             if let Some(connection_config) = &connection_config {
                 if let Some(_) =
                     crate::common::get_account_state(&connection_config, account_id.clone().into())?

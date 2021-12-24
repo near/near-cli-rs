@@ -66,8 +66,7 @@ impl Sender {
         loop {
             let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("What is the owner account ID?")
-                .interact_text()
-                .unwrap();
+                .interact_text()?;
             if let Some(connection_config) = &context.connection_config {
                 if let Some(_) =
                     crate::common::get_account_state(&connection_config, account_id.clone().into())?

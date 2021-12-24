@@ -43,8 +43,7 @@ impl CustomServer {
     ) -> color_eyre::eyre::Result<crate::common::AvailableRpcServerUrl> {
         Ok(Input::new()
             .with_prompt("What is the RPC endpoint?")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     pub async fn process(self) -> crate::CliResult {
@@ -99,18 +98,17 @@ async fn get_account_from_cli(
     public_key: near_crypto::PublicKey,
     network_connection_config: crate::common::ConnectionConfig,
 ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-    let account_id = input_account_id();
+    let account_id = input_account_id()?;
     verify_account_id(account_id.clone(), public_key, network_connection_config)
         .await
         .map_err(|err| color_eyre::Report::msg(format!("Failed account ID: {:?}", err)))?;
     Ok(account_id)
 }
 
-fn input_account_id() -> near_primitives::types::AccountId {
-    Input::new()
+fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+    Ok(Input::new()
         .with_prompt("Enter account ID")
-        .interact_text()
-        .unwrap()
+        .interact_text()?)
 }
 
 fn rpc_client(selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {

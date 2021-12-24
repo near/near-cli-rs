@@ -12,8 +12,7 @@ impl BlockIdHeight {
     ) -> color_eyre::eyre::Result<near_primitives::types::BlockHeight> {
         Ok(Input::new()
             .with_prompt("Type the block ID height for this account")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {

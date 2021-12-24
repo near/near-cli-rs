@@ -15,8 +15,7 @@ impl TransactionType {
         println!();
         Ok(Input::new()
             .with_prompt("Enter the hash of the transaction you need to view")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     pub async fn process(

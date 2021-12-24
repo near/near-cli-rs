@@ -147,14 +147,13 @@ impl FunctionCallType {
             .with_prompt("Do You want to input a list of method names that can be used")
             .items(&choose_input)
             .default(0)
-            .interact_on_opt(&Term::stderr())
-            .unwrap();
+            .interact_on_opt(&Term::stderr())?;
         match select_choose_input {
             Some(0) => {
                 let mut input_method_names: String = Input::new()
                     .with_prompt("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
                     .interact_text()
-                    .unwrap();
+                    ?;
                 if input_method_names.contains("\"") {
                     input_method_names.clear()
                 };
@@ -184,14 +183,13 @@ impl FunctionCallType {
             .with_prompt("Do You want to input an allowance for receiver ID")
             .items(&choose_input)
             .default(0)
-            .interact_on_opt(&Term::stderr())
-            .unwrap();
+            .interact_on_opt(&Term::stderr())?;
         match select_choose_input {
             Some(0) => {
                 let allowance_near_balance: crate::common::NearBalance = Input::new()
                     .with_prompt("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees.")
                     .interact_text()
-                    .unwrap();
+                    ?;
                 Ok(Some(allowance_near_balance))
             }
             Some(1) => Ok(None),
@@ -207,7 +205,7 @@ impl FunctionCallType {
             let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("Enter a receiver to use by this access key to pay for function call gas and transaction fees.")
                 .interact_text()
-                .unwrap();
+                ?;
             if let Some(connection_config) = &connection_config {
                 if let Some(_) =
                     crate::common::get_account_state(&connection_config, account_id.clone().into())?

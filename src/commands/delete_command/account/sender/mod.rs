@@ -67,8 +67,7 @@ impl Sender {
         loop {
             let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("Which account ID do you need to remove?")
-                .interact_text()
-                .unwrap();
+                .interact_text()?;
             if let Some(connection_config) = &context.connection_config {
                 if let Some(_) =
                     crate::common::get_account_state(&connection_config, account_id.clone().into())?

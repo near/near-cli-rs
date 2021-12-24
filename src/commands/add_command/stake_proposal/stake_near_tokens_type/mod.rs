@@ -20,7 +20,7 @@ impl StakeNEARTokensAction {
         Ok(Input::new()
             .with_prompt("How many NEAR Tokens do you want to stake? (example: 10NEAR or 0.5near or 10000yoctonear)")
             .interact_text()
-            .unwrap())
+            ?)
     }
 
     pub async fn process(

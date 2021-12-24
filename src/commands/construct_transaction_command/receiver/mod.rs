@@ -14,8 +14,7 @@ impl Receiver {
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         Ok(Input::new()
             .with_prompt("What is the account ID of the receiver?")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     pub async fn process(

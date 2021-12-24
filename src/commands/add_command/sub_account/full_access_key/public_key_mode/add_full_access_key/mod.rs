@@ -16,8 +16,7 @@ impl AddAccessKeyAction {
     ) -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
         Ok(Input::new()
             .with_prompt("Enter a public key for this access key")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     fn input_nonce(

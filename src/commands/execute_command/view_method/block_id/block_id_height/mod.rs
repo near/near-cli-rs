@@ -12,8 +12,7 @@ impl BlockIdHeight {
     ) -> color_eyre::eyre::Result<near_primitives::types::BlockHeight> {
         Ok(Input::new()
             .with_prompt("Type the block ID height for this contract")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
@@ -53,15 +52,12 @@ impl BlockIdHeight {
             } else {
                 return Err(color_eyre::Report::msg(format!("Error call result")));
             };
-        let call_result_str = String::from_utf8(call_result).unwrap();
+        let call_result_str = String::from_utf8(call_result)?;
         let serde_call_result: serde_json::Value = serde_json::from_str(&call_result_str)
             .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?;
         println!("--------------");
         println!();
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&serde_call_result).unwrap()
-        );
+        println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
         Ok(())
     }
 }

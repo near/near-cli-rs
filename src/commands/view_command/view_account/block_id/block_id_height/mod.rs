@@ -15,8 +15,7 @@ impl BlockIdHeight {
     ) -> color_eyre::eyre::Result<near_primitives::types::BlockHeight> {
         Ok(Input::new()
             .with_prompt("Type the block ID height for this account")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     pub async fn process(self, account_id: AccountId, conf: ConnectionConfig) -> crate::CliResult {

@@ -47,8 +47,7 @@ impl CustomServer {
     ) -> color_eyre::eyre::Result<crate::common::AvailableRpcServerUrl> {
         Ok(Input::new()
             .with_prompt("What is the RPC endpoint?")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 }
 

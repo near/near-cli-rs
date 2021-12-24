@@ -84,8 +84,7 @@ impl DeleteAccountAction {
         println!();
         Ok(Input::new()
             .with_prompt("Enter the beneficiary ID to delete this account ID")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     #[async_recursion(?Send)]

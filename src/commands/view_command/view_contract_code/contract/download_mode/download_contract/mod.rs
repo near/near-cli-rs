@@ -17,8 +17,7 @@ impl ContractFile {
         let input_file_path: String = Input::new()
             .with_prompt("Where to download the contract file?")
             .with_initial_text(format!("{}.wasm", contract_account_id))
-            .interact_text()
-            .unwrap();
+            .interact_text()?;
         Ok(std::path::PathBuf::from(input_file_path).into())
     }
 

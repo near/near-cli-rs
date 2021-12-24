@@ -22,8 +22,7 @@ impl BlockIdHash {
     ) -> color_eyre::eyre::Result<crate::types::crypto_hash::CryptoHash> {
         Ok(Input::new()
             .with_prompt("Type the block ID hash for this account")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     pub async fn process(self, account_id: AccountId, conf: ConnectionConfig) -> crate::CliResult {

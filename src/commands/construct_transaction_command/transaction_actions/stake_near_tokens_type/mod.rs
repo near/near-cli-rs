@@ -95,8 +95,7 @@ impl StakeNEARTokensAction {
     ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
         Ok(Input::new()
             .with_prompt("Enter a public key for this stake")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     fn input_stake_amount(
@@ -105,7 +104,7 @@ impl StakeNEARTokensAction {
         Ok(Input::new()
             .with_prompt("How many NEAR Tokens do you want to stake? (example: 10NEAR or 0.5near or 10000yoctonear)")
             .interact_text()
-            .unwrap())
+            ?)
     }
 
     #[async_recursion(?Send)]

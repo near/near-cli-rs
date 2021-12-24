@@ -53,8 +53,7 @@ impl Account {
         loop {
             let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("Enter your account ID")
-                .interact_text()
-                .unwrap();
+                .interact_text()?;
             if let Some(_) =
                 crate::common::get_account_state(&connection_config, account_id.clone().into())?
             {

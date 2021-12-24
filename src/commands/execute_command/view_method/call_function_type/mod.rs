@@ -16,8 +16,7 @@ impl CallFunctionView {
         println!();
         Ok(Input::new()
             .with_prompt("Enter a method name")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     fn input_function_args(
@@ -26,8 +25,7 @@ impl CallFunctionView {
         println!();
         Ok(Input::new()
             .with_prompt("Enter args for function")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     pub async fn process(

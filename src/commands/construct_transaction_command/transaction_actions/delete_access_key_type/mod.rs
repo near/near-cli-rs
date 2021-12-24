@@ -81,8 +81,7 @@ impl DeleteAccessKeyAction {
     ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
         Ok(Input::new()
             .with_prompt("Enter the access key to remove it")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     #[async_recursion(?Send)]

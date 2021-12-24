@@ -15,8 +15,7 @@ impl TransactionsSigningAction {
     ) -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
         Ok(Input::new()
             .with_prompt("Enter a public key for this server")
-            .interact_text()
-            .unwrap())
+            .interact_text()?)
     }
 
     pub async fn process(
