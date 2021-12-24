@@ -14,10 +14,6 @@ pub struct CallFunctionAction {
     signer: super::signer::Sender,
 }
 
-impl interactive_clap::ToCli for crate::common::NearGas {
-    type CliVariant = crate::common::NearGas;
-}
-
 impl CallFunctionAction {
     fn input_method_name(
         _context: &super::operation_mode::ExecuteChangeMethodCommandNetworkContext,

@@ -27,3 +27,7 @@ impl From<near_crypto::PublicKey> for PublicKey {
         Self(item)
     }
 }
+
+impl interactive_clap::ToCli for PublicKey {
+    type CliVariant = PublicKey;
+}

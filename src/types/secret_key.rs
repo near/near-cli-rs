@@ -21,3 +21,7 @@ impl From<SecretKey> for near_crypto::SecretKey {
         item.0
     }
 }
+
+impl interactive_clap::ToCli for SecretKey {
+    type CliVariant = SecretKey;
+}

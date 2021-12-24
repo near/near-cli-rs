@@ -10,10 +10,6 @@ pub struct ContractFile {
     next_action: self::initialize_mode::NextAction,
 }
 
-impl interactive_clap::ToCli for crate::types::path_buf::PathBuf {
-    type CliVariant = crate::types::path_buf::PathBuf;
-}
-
 impl ContractFile {
     fn input_file_path(
         _context: &crate::common::SignerContext,

@@ -21,3 +21,7 @@ impl std::str::FromStr for CryptoHash {
         Ok(Self(crypto_hash))
     }
 }
+
+impl interactive_clap::ToCli for CryptoHash {
+    type CliVariant = CryptoHash;
+}

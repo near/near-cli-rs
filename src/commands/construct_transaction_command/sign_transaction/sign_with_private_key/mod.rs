@@ -16,10 +16,6 @@ pub struct SignPrivateKey {
     pub submit: Option<super::Submit>,
 }
 
-impl interactive_clap::ToCli for crate::types::secret_key::SecretKey {
-    type CliVariant = crate::types::secret_key::SecretKey;
-}
-
 impl SignPrivateKey {
     pub fn from_cli(
         optional_clap_variant: Option<CliSignPrivateKey>,

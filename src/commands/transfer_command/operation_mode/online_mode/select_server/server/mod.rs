@@ -19,10 +19,6 @@ pub struct CustomServer {
     pub sender: super::super::super::super::sender::Sender,
 }
 
-impl interactive_clap::ToCli for crate::common::AvailableRpcServerUrl {
-    type CliVariant = crate::common::AvailableRpcServerUrl;
-}
-
 struct CustomServerContext {
     pub url: crate::common::AvailableRpcServerUrl,
 }

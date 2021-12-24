@@ -25,3 +25,7 @@ impl From<VecString> for Vec<String> {
         item.0
     }
 }
+
+impl interactive_clap::ToCli for VecString {
+    type CliVariant = VecString;
+}

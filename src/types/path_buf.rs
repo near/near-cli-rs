@@ -27,3 +27,7 @@ impl std::str::FromStr for PathBuf {
         Ok(Self(path_buf))
     }
 }
+
+impl interactive_clap::ToCli for PathBuf {
+    type CliVariant = PathBuf;
+}

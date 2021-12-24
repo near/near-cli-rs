@@ -144,6 +144,10 @@ impl std::fmt::Display for AvailableRpcServerUrl {
     }
 }
 
+impl interactive_clap::ToCli for AvailableRpcServerUrl {
+    type CliVariant = AvailableRpcServerUrl;
+}
+
 const ONE_NEAR: u128 = 10u128.pow(24);
 
 #[derive(Debug, Clone, Default, PartialEq, PartialOrd)]
@@ -224,6 +228,10 @@ impl std::str::FromStr for NearBalance {
         };
         Ok(NearBalance { yoctonear_amount })
     }
+}
+
+impl interactive_clap::ToCli for NearBalance {
+    type CliVariant = NearBalance;
 }
 
 const ONE_TERA_GAS: u64 = 10u64.pow(12);
@@ -308,6 +316,10 @@ impl NearGas {
             _ => return Err("Near Gas: incorrect number entered".to_string()),
         }
     }
+}
+
+impl interactive_clap::ToCli for NearGas {
+    type CliVariant = NearGas;
 }
 
 #[derive(Debug, Clone, Default, PartialEq, PartialOrd)]

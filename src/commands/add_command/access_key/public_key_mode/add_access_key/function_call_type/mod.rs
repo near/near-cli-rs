@@ -17,10 +17,6 @@ pub struct FunctionCallType {
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
-impl interactive_clap::ToCli for crate::types::vec_string::VecString {
-    type CliVariant = crate::types::vec_string::VecString;
-}
-
 impl FunctionCallType {
     pub fn from_cli(
         optional_clap_variant: Option<CliFunctionCallType>,

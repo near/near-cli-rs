@@ -9,10 +9,6 @@ pub struct StakeNEARTokensAction {
     pub transactions_signing_public_key: super::transactions_signing::TransactionsSigningAction,
 }
 
-impl interactive_clap::ToCli for crate::common::NearBalance {
-    type CliVariant = crate::common::NearBalance;
-}
-
 impl StakeNEARTokensAction {
     fn input_stake_amount(
         _context: &crate::common::SignerContext,

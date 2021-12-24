@@ -12,14 +12,6 @@ pub struct SignManually {
     block_hash: Option<crate::types::crypto_hash::CryptoHash>,
 }
 
-impl interactive_clap::ToCli for crate::types::public_key::PublicKey {
-    type CliVariant = crate::types::public_key::PublicKey;
-}
-
-impl interactive_clap::ToCli for crate::types::crypto_hash::CryptoHash {
-    type CliVariant = crate::types::crypto_hash::CryptoHash;
-}
-
 impl SignManually {
     pub fn from_cli(
         optional_clap_variant: Option<CliSignManually>,
