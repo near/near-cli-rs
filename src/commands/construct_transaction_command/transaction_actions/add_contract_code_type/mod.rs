@@ -51,7 +51,7 @@ impl From<ContractFile> for CliContractFile {
 
 impl ContractFile {
     pub fn from_cli(
-        optional_clap_variant: Option<CliContractFile>,
+        optional_clap_variant: Option<<ContractFile as interactive_clap::ToCli>::CliVariant>,
         context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let file_path = match optional_clap_variant

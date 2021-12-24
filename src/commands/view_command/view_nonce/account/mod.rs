@@ -11,7 +11,7 @@ pub struct Account {
 
 impl Account {
     pub fn from_cli(
-        optional_clap_variant: Option<CliAccount>,
+        optional_clap_variant: Option<<Account as interactive_clap::ToCli>::CliVariant>,
         context: super::operation_mode::online_mode::select_server::ViewNonceCommandNetworkContext,
     ) -> color_eyre::eyre::Result<Self> {
         let connection_config = context.connection_config.clone();

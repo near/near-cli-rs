@@ -18,7 +18,7 @@ pub struct SignPrivateKey {
 
 impl SignPrivateKey {
     pub fn from_cli(
-        optional_clap_variant: Option<CliSignPrivateKey>,
+        optional_clap_variant: Option<<SignPrivateKey as interactive_clap::ToCli>::CliVariant>,
         context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let connection_config = context.connection_config.clone();

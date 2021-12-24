@@ -11,7 +11,7 @@ pub struct Sender {
 
 impl Sender {
     pub fn from_cli(
-        optional_clap_variant: Option<CliSender>,
+        optional_clap_variant: Option<<Sender as interactive_clap::ToCli>::CliVariant>,
         context: super::operation_mode::online_mode::select_server::ViewContractStateCommandNetworkContext,
     ) -> color_eyre::eyre::Result<Self> {
         let connection_config = context.connection_config.clone();

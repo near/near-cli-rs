@@ -70,7 +70,7 @@ impl From<FunctionCallType> for CliFunctionCallType {
 
 impl FunctionCallType {
     pub fn from_cli(
-        optional_clap_variant: Option<CliFunctionCallType>,
+        optional_clap_variant: Option<<FunctionCallType as interactive_clap::ToCli>::CliVariant>,
         context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let connection_config = context.connection_config.clone();

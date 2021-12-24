@@ -20,7 +20,7 @@ impl interactive_clap::ToCli for super::Submit {
 
 impl SignKeychain {
     pub fn from_cli(
-        optional_clap_variant: Option<CliSignKeychain>,
+        optional_clap_variant: Option<<SignKeychain as interactive_clap::ToCli>::CliVariant>,
         context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let submit: Option<super::Submit> = optional_clap_variant

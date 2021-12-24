@@ -75,7 +75,7 @@ impl From<CallFunctionAction> for CliCallFunctionAction {
 
 impl CallFunctionAction {
     pub fn from_cli(
-        optional_clap_variant: Option<CliCallFunctionAction>,
+        optional_clap_variant: Option<<CallFunctionAction as interactive_clap::ToCli>::CliVariant>,
         context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let method_name: String = match optional_clap_variant

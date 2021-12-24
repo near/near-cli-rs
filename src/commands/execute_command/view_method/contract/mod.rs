@@ -12,7 +12,7 @@ pub struct Contract {
 
 impl Contract {
     pub fn from_cli(
-        optional_clap_variant: Option<CliContract>,
+        optional_clap_variant: Option<<Contract as interactive_clap::ToCli>::CliVariant>,
         context: super::operation_mode::online_mode::select_server::ExecuteViewMethodCommandNetworkContext,
     ) -> color_eyre::eyre::Result<Self> {
         let connection_config = context.connection_config.clone();

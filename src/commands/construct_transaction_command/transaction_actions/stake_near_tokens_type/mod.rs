@@ -57,7 +57,7 @@ impl From<StakeNEARTokensAction> for CliStakeNEARTokensAction {
 
 impl StakeNEARTokensAction {
     pub fn from_cli(
-        optional_clap_variant: Option<CliStakeNEARTokensAction>,
+        optional_clap_variant: Option<<StakeNEARTokensAction as interactive_clap::ToCli>::CliVariant>,
         context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let stake_amount: crate::common::NearBalance = match optional_clap_variant

@@ -153,7 +153,7 @@ impl From<Util> for CliUtil {
 
 impl Util {
     pub fn from_cli(
-        optional_clap_variant: Option<CliUtil>,
+        optional_clap_variant: Option<<Util as interactive_clap::ToCli>::CliVariant>,
         context: (),
     ) -> color_eyre::eyre::Result<Self> {
         match optional_clap_variant {

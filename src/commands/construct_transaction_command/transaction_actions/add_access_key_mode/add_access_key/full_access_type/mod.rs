@@ -42,7 +42,7 @@ impl From<FullAccessType> for CliFullAccessType {
 
 impl FullAccessType {
     pub fn from_cli(
-        optional_clap_variant: Option<CliFullAccessType>,
+        optional_clap_variant: Option<<FullAccessType as interactive_clap::ToCli>::CliVariant>,
         context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let skip_next_action: super::super::super::NextAction = match optional_clap_variant
