@@ -76,7 +76,9 @@ impl From<TransferNEARTokensAction> for CliTransferNEARTokensAction {
 
 impl TransferNEARTokensAction {
     pub fn from_cli(
-        optional_clap_variant: Option<<TransferNEARTokensAction as interactive_clap::ToCli>::CliVariant>,
+        optional_clap_variant: Option<
+            <TransferNEARTokensAction as interactive_clap::ToCli>::CliVariant,
+        >,
         context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let amount: crate::common::TransferAmount = match optional_clap_variant

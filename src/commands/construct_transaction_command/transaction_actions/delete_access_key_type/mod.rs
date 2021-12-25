@@ -51,7 +51,9 @@ impl From<DeleteAccessKeyAction> for CliDeleteAccessKeyAction {
 
 impl DeleteAccessKeyAction {
     pub fn from_cli(
-        optional_clap_variant: Option<<DeleteAccessKeyAction as interactive_clap::ToCli>::CliVariant>,
+        optional_clap_variant: Option<
+            <DeleteAccessKeyAction as interactive_clap::ToCli>::CliVariant,
+        >,
         context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key: near_crypto::PublicKey = match optional_clap_variant
