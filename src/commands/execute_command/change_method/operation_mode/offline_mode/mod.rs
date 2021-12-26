@@ -1,44 +1,28 @@
-/// аргументы, необходимые для offline mode
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliOfflineArgs {
-    #[clap(subcommand)]
-    pub send_to: Option<super::super::contract::CliSendTo>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(input_context = ())]
+#[interactive_clap(output_context = OfflineArgsContext)]
 pub struct OfflineArgs {
-    send_to: super::super::contract::SendTo,
+    #[interactive_clap(named_arg)]
+    ///Specify a contract
+    contract: super::super::contract::Contract,
 }
 
-impl CliOfflineArgs {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        self.send_to
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default()
+struct OfflineArgsContext {}
+
+impl OfflineArgsContext {
+    fn from_previous_context(
+        _previous_context: (),
+        _scope: &<OfflineArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> Self {
+        Self {}
     }
 }
 
-impl From<OfflineArgs> for CliOfflineArgs {
-    fn from(offline_args: OfflineArgs) -> Self {
+impl From<OfflineArgsContext> for super::ExecuteChangeMethodCommandNetworkContext {
+    fn from(_: OfflineArgsContext) -> Self {
         Self {
-            send_to: Some(offline_args.send_to.into()),
+            connection_config: None,
         }
-    }
-}
-
-impl OfflineArgs {
-    pub fn from(item: CliOfflineArgs) -> color_eyre::eyre::Result<Self> {
-        let send_to = match item.send_to {
-            Some(cli_send_to) => super::super::contract::SendTo::from(cli_send_to, None)?,
-            None => super::super::contract::SendTo::send_to(None)?,
-        };
-        Ok(Self { send_to })
     }
 }
 
@@ -48,7 +32,7 @@ impl OfflineArgs {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
         let selected_server_url = None;
-        self.send_to
+        self.contract
             .process(prepopulated_unsigned_transaction, selected_server_url)
             .await
     }

@@ -17,6 +17,10 @@ pub struct FullAccessType {
     pub next_action: Box<super::super::super::NextAction>,
 }
 
+impl interactive_clap::ToCli for FullAccessType {
+    type CliVariant = CliFullAccessType;
+}
+
 impl CliFullAccessType {
     pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         self.next_action
@@ -37,21 +41,18 @@ impl From<FullAccessType> for CliFullAccessType {
 }
 
 impl FullAccessType {
-    pub fn from(
-        item: CliFullAccessType,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
+    pub fn from_cli(
+        optional_clap_variant: Option<<FullAccessType as interactive_clap::ToCli>::CliVariant>,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let skip_next_action: super::super::super::NextAction = match item.next_action {
+        let skip_next_action: super::super::super::NextAction = match optional_clap_variant
+            .and_then(|clap_variant| clap_variant.next_action)
+        {
             Some(cli_skip_action) => super::super::super::NextAction::from_cli_skip_next_action(
                 cli_skip_action,
-                connection_config,
-                sender_account_id,
+                context,
             )?,
-            None => super::super::super::NextAction::input_next_action(
-                connection_config,
-                sender_account_id,
-            )?,
+            None => super::super::super::NextAction::choose_variant(context)?,
         };
         Ok(Self {
             next_action: Box::new(skip_next_action),

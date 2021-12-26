@@ -1443,6 +1443,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "interactive_clap"
+version = "0.1.0"
+source = "git+https://github.com/FroVolod/interactive-clap?rev=89b5bee74035b0ba6d8603fbd9fc3da0ad31eaeb#89b5bee74035b0ba6d8603fbd9fc3da0ad31eaeb"
+
+[[package]]
+name = "interactive_clap"
+version = "0.1.0"
+source = "git+https://github.com/FroVolod/interactive-clap#89b5bee74035b0ba6d8603fbd9fc3da0ad31eaeb"
+
+[[package]]
+name = "interactive_clap_derive"
+version = "0.1.0"
+source = "git+https://github.com/FroVolod/interactive-clap-derive?rev=3531e842bdf53ccb82ac261f0eb7535bbd7126ed#3531e842bdf53ccb82ac261f0eb7535bbd7126ed"
+dependencies = [
+ "clap",
+ "clap_generate",
+ "interactive_clap 0.1.0 (git+https://github.com/FroVolod/interactive-clap)",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "itoa"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1688,6 +1712,8 @@ dependencies = [
  "dirs",
  "ed25519-dalek",
  "hex 0.4.3",
+ "interactive_clap 0.1.0 (git+https://github.com/FroVolod/interactive-clap?rev=89b5bee74035b0ba6d8603fbd9fc3da0ad31eaeb)",
+ "interactive_clap_derive",
  "near-crypto",
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",

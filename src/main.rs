@@ -6,56 +6,13 @@ use common::{try_external_subcommand_execution, CliResult};
 mod commands;
 mod common;
 mod consts;
+mod types;
 
-/// near-cli is a toolbox for interacting with NEAR protocol
-#[derive(Debug, Clap)]
-#[clap(
-    version,
-    author,
-    about,
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands),
-    // setting(clap::AppSettings::NextLineHelp)
-)]
-struct CliArgs {
-    #[clap(subcommand)]
-    top_level_command: Option<self::commands::CliTopLevelCommand>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = ())]
 struct Args {
+    #[interactive_clap(subcommand)]
     top_level_command: self::commands::TopLevelCommand,
-}
-
-impl CliArgs {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = self
-            .top_level_command
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        args.push_front("./near-cli".to_owned());
-        args
-    }
-}
-
-impl From<Args> for CliArgs {
-    fn from(cli_args: Args) -> Self {
-        Self {
-            top_level_command: Some(cli_args.top_level_command.into()),
-        }
-    }
-}
-
-impl From<CliArgs> for Args {
-    fn from(cli_args: CliArgs) -> Self {
-        let top_level_command = match cli_args.top_level_command {
-            Some(cli_subcommand) => self::commands::TopLevelCommand::from(cli_subcommand),
-            None => self::commands::TopLevelCommand::choose_command(),
-        };
-        Self { top_level_command }
-    }
 }
 
 impl Args {
@@ -67,34 +24,23 @@ impl Args {
 fn main() -> CliResult {
     color_eyre::install()?;
 
-    let cli = match CliArgs::try_parse() {
-        Ok(cli) => cli,
-        Err(error) => {
-            if matches!(
-                error.kind,
-                clap::ErrorKind::UnknownArgument | clap::ErrorKind::InvalidSubcommand
-            ) {
-                return try_external_subcommand_execution();
-            }
-            return Err(color_eyre::eyre::eyre!(error));
-        }
-    };
+    let cli = CliArgs::parse();
 
-    if let Some(self::commands::CliTopLevelCommand::GenerateShellCompletions(subcommand)) =
-        cli.top_level_command
-    {
-        subcommand.process();
-        return Ok(());
-    }
+    // if let Some(self::commands::CliTopLevelCommand::GenerateShellCompletions(subcommand)) =
+    //     cli.top_level_command
+    // {
+    //     subcommand.process();
+    //     return Ok(());
+    // }
 
-    let args = Args::from(cli);
+    let args = Args::from_cli(Some(cli), ())?;
 
     let completed_cli = CliArgs::from(args.clone());
 
     let process_result = actix::System::new().block_on(args.process());
 
     println!(
-        "Your console command:\n{}",
+        "Your console command:\n./near-cli {}",
         shell_words::join(&completed_cli.to_cli_args())
     );
 

@@ -1,50 +1,18 @@
 use dialoguer::Input;
 
-/// Specify the block_id height for this contract to view
-#[derive(Debug, Default, Clone, clap::Clap)]
-pub struct CliBlockIdHeight {
-    block_id_height: Option<near_primitives::types::BlockHeight>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = super::super::operation_mode::online_mode::select_server::ExecuteViewMethodCommandNetworkContext)]
 pub struct BlockIdHeight {
     block_id_height: near_primitives::types::BlockHeight,
 }
 
-impl CliBlockIdHeight {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = std::collections::VecDeque::new();
-        if let Some(block_id_height) = &self.block_id_height {
-            args.push_front(block_id_height.to_string());
-        }
-        args
-    }
-}
-
-impl From<BlockIdHeight> for CliBlockIdHeight {
-    fn from(block_id_height: BlockIdHeight) -> Self {
-        Self {
-            block_id_height: Some(block_id_height.block_id_height),
-        }
-    }
-}
-
-impl From<CliBlockIdHeight> for BlockIdHeight {
-    fn from(item: CliBlockIdHeight) -> Self {
-        let block_id_height: near_primitives::types::BlockHeight = match item.block_id_height {
-            Some(cli_block_id_hash) => cli_block_id_hash,
-            None => BlockIdHeight::input_block_id_height(),
-        };
-        Self { block_id_height }
-    }
-}
-
 impl BlockIdHeight {
-    pub fn input_block_id_height() -> near_primitives::types::BlockHeight {
-        Input::new()
+    pub fn input_block_id_height(
+        _context: &super::super::operation_mode::online_mode::select_server::ExecuteViewMethodCommandNetworkContext,
+    ) -> color_eyre::eyre::Result<near_primitives::types::BlockHeight> {
+        Ok(Input::new()
             .with_prompt("Type the block ID height for this contract")
-            .interact_text()
-            .unwrap()
+            .interact_text()?)
     }
 
     fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
@@ -84,15 +52,12 @@ impl BlockIdHeight {
             } else {
                 return Err(color_eyre::Report::msg(format!("Error call result")));
             };
-        let call_result_str = String::from_utf8(call_result).unwrap();
+        let call_result_str = String::from_utf8(call_result)?;
         let serde_call_result: serde_json::Value = serde_json::from_str(&call_result_str)
             .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?;
         println!("--------------");
         println!();
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&serde_call_result).unwrap()
-        );
+        println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
         Ok(())
     }
 }

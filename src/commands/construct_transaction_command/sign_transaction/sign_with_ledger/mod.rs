@@ -1,69 +1,37 @@
 use dialoguer::Input;
+use interactive_clap::ToCli;
 use near_primitives::borsh::BorshSerialize;
 
-/// Sign constructed transaction with Ledger
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliSignLedger {
-    #[clap(long)]
-    seed_phrase_hd_path: Option<slip10::BIP32Path>,
-    #[clap(long)]
-    nonce: Option<u64>,
-    #[clap(long)]
-    block_hash: Option<near_primitives::hash::CryptoHash>,
-    #[clap(subcommand)]
-    submit: Option<super::Submit>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = crate::common::SignerContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct SignLedger {
-    pub seed_phrase_hd_path: slip10::BIP32Path,
-    pub signer_public_key: near_crypto::PublicKey,
+    #[interactive_clap(long)]
+    pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
+    #[interactive_clap(skip)]
+    pub signer_public_key: crate::types::public_key::PublicKey,
+    #[interactive_clap(long)]
     nonce: Option<u64>,
-    block_hash: Option<near_primitives::hash::CryptoHash>,
+    #[interactive_clap(long)]
+    block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    #[interactive_clap(subcommand)]
     pub submit: Option<super::Submit>,
 }
 
-impl CliSignLedger {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = self
-            .submit
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        if let Some(nonce) = &self.nonce {
-            args.push_front(nonce.to_string());
-            args.push_front("--nonce".to_owned())
-        }
-        if let Some(block_hash) = &self.block_hash {
-            args.push_front(block_hash.to_string());
-            args.push_front("--block-hash".to_owned())
-        }
-        args
-    }
-}
-
-impl From<SignLedger> for CliSignLedger {
-    fn from(sign_ledger: SignLedger) -> Self {
-        Self {
-            seed_phrase_hd_path: Some(sign_ledger.seed_phrase_hd_path),
-            nonce: sign_ledger.nonce,
-            block_hash: sign_ledger.block_hash,
-            submit: sign_ledger.submit.into(),
-        }
-    }
+impl ToCli for crate::types::slip10::BIP32Path {
+    type CliVariant = crate::types::slip10::BIP32Path;
 }
 
 impl SignLedger {
-    pub fn from(
-        item: CliSignLedger,
-        connection_config: Option<crate::common::ConnectionConfig>,
+    pub fn from_cli(
+        optional_clap_variant: Option<<SignLedger as interactive_clap::ToCli>::CliVariant>,
+        context: crate::common::SignerContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let seed_phrase_hd_path = match item.seed_phrase_hd_path {
+        let connection_config = context.connection_config.clone();
+        let seed_phrase_hd_path = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.seed_phrase_hd_path)
+        {
             Some(hd_path) => hd_path,
             None => SignLedger::input_seed_phrase_hd_path(),
         };
@@ -72,17 +40,27 @@ impl SignLedger {
             seed_phrase_hd_path
         );
         let public_key = actix::System::new()
-            .block_on(async { near_ledger::get_public_key(seed_phrase_hd_path.clone()).await })
+            .block_on(async {
+                near_ledger::get_public_key(seed_phrase_hd_path.clone().into()).await
+            })
             .map_err(|near_ledger_error| {
                 color_eyre::Report::msg(format!(
                     "An error occurred while trying to get PublicKey from Ledger device: {:?}",
                     near_ledger_error
                 ))
             })?;
-        let signer_public_key = near_crypto::PublicKey::ED25519(
-            near_crypto::ED25519PublicKey::from(public_key.to_bytes()),
-        );
-        let submit: Option<super::Submit> = item.submit;
+        let signer_public_key: crate::types::public_key::PublicKey =
+            near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+                public_key.to_bytes(),
+            ))
+            .into();
+        let submit: Option<super::Submit> = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.submit)
+        {
+            Some(submit) => Some(submit),
+            None => None,
+        };
         match connection_config {
             Some(_) => Ok(Self {
                 seed_phrase_hd_path,
@@ -92,13 +70,19 @@ impl SignLedger {
                 submit,
             }),
             None => {
-                let nonce: u64 = match item.nonce {
+                let nonce: u64 = match optional_clap_variant
+                    .clone()
+                    .and_then(|clap_variant| clap_variant.nonce)
+                {
                     Some(cli_nonce) => cli_nonce,
-                    None => super::input_access_key_nonce(&signer_public_key.to_string().clone()),
+                    None => super::input_access_key_nonce(&signer_public_key.to_string())?,
                 };
-                let block_hash = match item.block_hash {
+                let block_hash = match optional_clap_variant
+                    .clone()
+                    .and_then(|clap_variant| clap_variant.block_hash)
+                {
                     Some(cli_block_hash) => cli_block_hash,
-                    None => super::input_block_hash(),
+                    None => super::input_block_hash()?,
                 };
                 Ok(Self {
                     seed_phrase_hd_path,
@@ -117,7 +101,7 @@ impl SignLedger {
         near_jsonrpc_client::new_client(&selected_server_url)
     }
 
-    pub fn input_seed_phrase_hd_path() -> slip10::BIP32Path {
+    pub fn input_seed_phrase_hd_path() -> crate::types::slip10::BIP32Path {
         Input::new()
             .with_prompt("Enter seed phrase HD Path (if you not sure leave blank for default)")
             .with_initial_text("44'/397'/0'/0'/1'")
@@ -130,10 +114,11 @@ impl SignLedger {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        let seed_phrase_hd_path = self.seed_phrase_hd_path.clone();
-        let public_key = self.signer_public_key.clone();
+        let seed_phrase_hd_path: slip10::BIP32Path = self.seed_phrase_hd_path.clone().into();
+        let public_key: near_crypto::PublicKey = self.signer_public_key.clone().into();
         let nonce = self.nonce.unwrap_or_default().clone();
-        let block_hash = self.block_hash.unwrap_or_default().clone();
+        let block_hash: near_primitives::hash::CryptoHash =
+            self.clone().block_hash.unwrap_or_default().into();
         let submit: Option<super::Submit> = self.submit.clone();
         match connection_config.clone() {
             None => {

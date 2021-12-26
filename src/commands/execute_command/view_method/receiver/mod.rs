@@ -151,7 +151,7 @@ impl Receiver {
             let contract_account_id: near_primitives::types::AccountId = Input::new()
                 .with_prompt("What is the account ID of the contract?")
                 .interact_text()
-                .unwrap();
+                ?;
             let contract_code_hash: near_primitives::hash::CryptoHash =
                 match crate::common::get_account_state(
                     &connection_config,

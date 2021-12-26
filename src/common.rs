@@ -12,6 +12,39 @@ use near_primitives::{
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
+use dialoguer::{theme::ColorfulTheme, Select};
+use strum::{EnumMessage, IntoEnumIterator};
+pub fn prompt_variant<T>(prompt: &str) -> T
+where
+    T: IntoEnumIterator + EnumMessage,
+    T: Copy + Clone,
+{
+    let variants = T::iter().collect::<Vec<_>>();
+    let actions = variants
+        .iter()
+        .map(|p| {
+            p.get_message()
+                .unwrap_or_else(|| "error[This entry does not have an option message!!]")
+                .to_owned()
+        })
+        .collect::<Vec<_>>();
+
+    let selected = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt(prompt)
+        .items(&actions)
+        .default(0)
+        .interact()
+        .unwrap();
+
+    variants[selected]
+}
+
+#[derive(Debug, Clone)]
+pub struct SignerContext {
+    pub connection_config: Option<ConnectionConfig>,
+    pub signer_account_id: crate::types::account_id::AccountId,
+}
+
 #[derive(
     Debug,
     Clone,
@@ -111,6 +144,10 @@ impl std::fmt::Display for AvailableRpcServerUrl {
     }
 }
 
+impl interactive_clap::ToCli for AvailableRpcServerUrl {
+    type CliVariant = AvailableRpcServerUrl;
+}
+
 const ONE_NEAR: u128 = 10u128.pow(24);
 
 #[derive(Debug, Clone, Default, PartialEq, PartialOrd)]
@@ -191,6 +228,10 @@ impl std::str::FromStr for NearBalance {
         };
         Ok(NearBalance { yoctonear_amount })
     }
+}
+
+impl interactive_clap::ToCli for NearBalance {
+    type CliVariant = NearBalance;
 }
 
 const ONE_TERA_GAS: u64 = 10u64.pow(12);
@@ -277,9 +318,17 @@ impl NearGas {
     }
 }
 
+impl interactive_clap::ToCli for NearGas {
+    type CliVariant = NearGas;
+}
+
 #[derive(Debug, Clone, Default, PartialEq, PartialOrd)]
 pub struct TransferAmount {
     amount: NearBalance,
+}
+
+impl interactive_clap::ToCli for TransferAmount {
+    type CliVariant = NearBalance;
 }
 
 impl std::fmt::Display for TransferAmount {
@@ -326,6 +375,12 @@ pub enum ConnectionConfig {
 }
 
 impl ConnectionConfig {
+    pub fn from_custom_url(custom_url: &AvailableRpcServerUrl) -> Self {
+        Self::Custom {
+            url: custom_url.inner.clone(),
+        }
+    }
+
     pub fn rpc_url(&self) -> url::Url {
         match self {
             Self::Testnet => crate::consts::TESTNET_API_SERVER_URL.parse().unwrap(),

@@ -1,86 +1,56 @@
 use near_primitives::borsh::BorshSerialize;
 
-/// подписание сформированной транзакции в режиме manually
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliSignManually {
-    #[clap(long)]
-    signer_public_key: Option<near_crypto::PublicKey>,
-    #[clap(long)]
-    nonce: Option<u64>,
-    #[clap(long)]
-    block_hash: Option<near_primitives::hash::CryptoHash>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = crate::common::SignerContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct SignManually {
-    pub signer_public_key: near_crypto::PublicKey,
+    #[interactive_clap(long)]
+    pub signer_public_key: crate::types::public_key::PublicKey,
+    #[interactive_clap(long)]
     nonce: Option<u64>,
-    block_hash: Option<near_primitives::hash::CryptoHash>,
-}
-
-impl CliSignManually {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = std::collections::VecDeque::new();
-        if let Some(signer_public_key) = &self.signer_public_key {
-            args.push_front(signer_public_key.to_string());
-            args.push_front("--signer-public-key".to_owned())
-        }
-        if let Some(nonce) = &self.nonce {
-            args.push_front(nonce.to_string());
-            args.push_front("--nonce".to_owned())
-        }
-        if let Some(block_hash) = &self.block_hash {
-            args.push_front(block_hash.to_string());
-            args.push_front("--block-hash".to_owned())
-        }
-        args
-    }
-}
-
-impl From<SignManually> for CliSignManually {
-    fn from(sign_manually: SignManually) -> Self {
-        Self {
-            signer_public_key: Some(sign_manually.signer_public_key),
-            nonce: sign_manually.nonce,
-            block_hash: sign_manually.block_hash,
-        }
-    }
+    #[interactive_clap(long)]
+    block_hash: Option<crate::types::crypto_hash::CryptoHash>,
 }
 
 impl SignManually {
-    pub fn from(
-        item: CliSignManually,
-        connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> Self {
-        let signer_public_key: near_crypto::PublicKey = match item.signer_public_key {
+    pub fn from_cli(
+        optional_clap_variant: Option<<SignManually as interactive_clap::ToCli>::CliVariant>,
+        context: crate::common::SignerContext,
+    ) -> color_eyre::eyre::Result<Self> {
+        let connection_config = context.connection_config.clone();
+        let signer_public_key: crate::types::public_key::PublicKey = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.signer_public_key)
+        {
             Some(cli_public_key) => cli_public_key,
-            None => super::input_signer_public_key(),
+            None => super::input_signer_public_key()?,
         };
         match connection_config {
-            Some(_) => Self {
+            Some(_) => Ok(Self {
                 signer_public_key,
                 nonce: None,
                 block_hash: None,
-            },
+            }),
             None => {
-                let nonce: u64 = match item.nonce {
+                let nonce: u64 = match optional_clap_variant
+                    .clone()
+                    .and_then(|clap_variant| clap_variant.nonce)
+                {
                     Some(cli_nonce) => cli_nonce,
-                    None => super::input_access_key_nonce(&signer_public_key.to_string()),
+                    None => super::input_access_key_nonce(&signer_public_key.to_string())?,
                 };
-                let block_hash = match item.block_hash {
+                let block_hash = match optional_clap_variant
+                    .clone()
+                    .and_then(|clap_variant| clap_variant.block_hash)
+                {
                     Some(cli_block_hash) => cli_block_hash,
-                    None => super::input_block_hash(),
+                    None => super::input_block_hash()?,
                 };
-                Self {
+                Ok(Self {
                     signer_public_key,
                     nonce: Some(nonce),
                     block_hash: Some(block_hash),
-                }
+                })
             }
         }
     }
@@ -96,13 +66,13 @@ impl SignManually {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        let public_key: near_crypto::PublicKey = self.signer_public_key.clone();
+        let public_key: near_crypto::PublicKey = self.signer_public_key.0.clone();
 
         let unsigned_transaction = match network_connection_config {
             None => near_primitives::transaction::Transaction {
                 public_key,
                 nonce: self.nonce.unwrap_or_default().clone(),
-                block_hash: self.block_hash.unwrap_or_default().clone(),
+                block_hash: self.block_hash.unwrap_or_default().0.clone(),
                 ..prepopulated_unsigned_transaction
             },
             Some(network_connection_config) => {

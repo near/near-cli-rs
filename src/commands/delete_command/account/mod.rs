@@ -3,100 +3,53 @@ use dialoguer::Input;
 pub mod operation_mode;
 mod sender;
 
-/// удаление аккаунта
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliDeleteAccountAction {
-    beneficiary_id: Option<near_primitives::types::AccountId>,
-    #[clap(subcommand)]
-    sign_option: Option<
-        crate::commands::construct_transaction_command::sign_transaction::CliSignTransaction,
-    >,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct DeleteAccountAction {
-    pub beneficiary_id: near_primitives::types::AccountId,
+    #[interactive_clap(skip_default_from_cli)]
+    pub beneficiary_id: crate::types::account_id::AccountId,
+    #[interactive_clap(subcommand)]
     pub sign_option:
         crate::commands::construct_transaction_command::sign_transaction::SignTransaction,
 }
 
-impl CliDeleteAccountAction {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = self
-            .sign_option
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        if let Some(beneficiary_id) = &self.beneficiary_id {
-            args.push_front(beneficiary_id.to_string());
-        }
-        args
-    }
-}
-
-impl From<DeleteAccountAction> for CliDeleteAccountAction {
-    fn from(delete_account_action: DeleteAccountAction) -> Self {
-        Self {
-            beneficiary_id: Some(delete_account_action.beneficiary_id),
-            sign_option: Some(delete_account_action.sign_option.into()),
-        }
-    }
-}
-
 impl DeleteAccountAction {
-    pub fn from(
-        item: CliDeleteAccountAction,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
-    ) -> color_eyre::eyre::Result<Self> {
-        let beneficiary_id: near_primitives::types::AccountId = match item.beneficiary_id {
-            Some(cli_account_id) => match &connection_config {
+    fn from_cli_beneficiary_id(
+        optional_cli_sender_account_id: Option<crate::types::account_id::AccountId>,
+        context: &crate::common::SignerContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        match optional_cli_sender_account_id {
+            Some(cli_beneficiary_id) => match &context.connection_config {
                 Some(network_connection_config) => match crate::common::get_account_state(
-                    network_connection_config,
-                    cli_account_id.clone(),
+                    &network_connection_config,
+                    cli_beneficiary_id.clone().into(),
                 )? {
-                    Some(_) => cli_account_id,
+                    Some(_) => Ok(cli_beneficiary_id),
                     None => {
-                        println!("Account <{}> doesn't exist", cli_account_id);
-                        DeleteAccountAction::input_beneficiary_id(connection_config.clone())?
+                        println!("Account <{}> doesn't exist", cli_beneficiary_id);
+                        Self::input_beneficiary_id(&context)
                     }
                 },
-                None => cli_account_id,
+                None => Ok(cli_beneficiary_id),
             },
-            None => DeleteAccountAction::input_beneficiary_id(connection_config.clone())?,
-        };
-        let sign_option = match item.sign_option {
-            Some(cli_sign_transaction) => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::from(cli_sign_transaction, connection_config, sender_account_id)?,
-            None => crate::commands::construct_transaction_command::sign_transaction::SignTransaction::choose_sign_option(connection_config, sender_account_id)?,
-        };
-        Ok(Self {
-            beneficiary_id,
-            sign_option,
-        })
+            None => Self::input_beneficiary_id(&context),
+        }
     }
-}
 
-impl DeleteAccountAction {
     pub fn input_beneficiary_id(
-        connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+        context: &crate::common::SignerContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         loop {
-            let account_id: near_primitives::types::AccountId = Input::new()
+            let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("Enter the beneficiary ID to delete this account ID")
-                .interact_text()
-                .unwrap();
-            if let Some(connection_config) = &connection_config {
+                .interact_text()?;
+            if let Some(connection_config) = &context.connection_config {
                 if let Some(_) =
-                    crate::common::get_account_state(connection_config, account_id.clone())?
+                    crate::common::get_account_state(&connection_config, account_id.clone().into())?
                 {
                     break Ok(account_id);
                 } else {
-                    println!("Account <{}> doesn't exist", account_id);
+                    println!("Account <{}> doesn't exist", account_id.to_string());
                 }
             } else {
                 break Ok(account_id);
@@ -109,7 +62,7 @@ impl DeleteAccountAction {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
-        let beneficiary_id: near_primitives::types::AccountId = self.beneficiary_id.clone();
+        let beneficiary_id: near_primitives::types::AccountId = self.beneficiary_id.clone().into();
         let action = near_primitives::transaction::Action::DeleteAccount(
             near_primitives::transaction::DeleteAccountAction { beneficiary_id },
         );

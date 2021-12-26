@@ -1,140 +1,47 @@
 use dialoguer::Input;
 
-#[derive(Debug, Clone, clap::Clap)]
-pub enum CliSendTo {
-    /// Specify a contract ID
-    Contract(CliContract),
-}
-
-#[derive(Debug, Clone)]
-pub enum SendTo {
-    Contract(Contract),
-}
-
-impl CliSendTo {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        match self {
-            Self::Contract(subcommand) => {
-                let mut args = subcommand.to_cli_args();
-                args.push_front("contract".to_owned());
-                args
-            }
-        }
-    }
-}
-
-impl From<SendTo> for CliSendTo {
-    fn from(send_to: SendTo) -> Self {
-        match send_to {
-            SendTo::Contract(contract) => Self::Contract(contract.into()),
-        }
-    }
-}
-
-impl SendTo {
-    pub fn from(
-        item: CliSendTo,
-        connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<Self> {
-        match item {
-            CliSendTo::Contract(cli_contract) => {
-                let contract = Contract::from(cli_contract, connection_config)?;
-                Ok(Self::Contract(contract))
-            }
-        }
-    }
-}
-
-impl SendTo {
-    pub fn send_to(
-        connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<Self> {
-        Self::from(CliSendTo::Contract(Default::default()), connection_config)
-    }
-
-    pub async fn process(
-        self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> crate::CliResult {
-        match self {
-            SendTo::Contract(receiver) => {
-                receiver
-                    .process(prepopulated_unsigned_transaction, network_connection_config)
-                    .await
-            }
-        }
-    }
-}
-
-/// данные о контракте
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliContract {
-    contract_account_id: Option<near_primitives::types::AccountId>,
-    #[clap(subcommand)]
-    call: Option<super::CliCallFunction>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = super::operation_mode::ExecuteCommandNetworkContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct Contract {
-    pub contract_account_id: near_primitives::types::AccountId,
-    pub call: super::CallFunction,
-}
-
-impl CliContract {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = self
-            .call
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        if let Some(contract_account_id) = &self.contract_account_id {
-            args.push_front(contract_account_id.to_string());
-        }
-        args
-    }
-}
-
-impl From<Contract> for CliContract {
-    fn from(contract: Contract) -> Self {
-        Self {
-            contract_account_id: Some(contract.contract_account_id),
-            call: Some(contract.call.into()),
-        }
-    }
+    pub contract_account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(named_arg)]
+    /// вызов метода изменения
+    pub call: super::call_function_type::CallFunctionAction,
 }
 
 impl Contract {
-    fn from(
-        item: CliContract,
-        connection_config: Option<crate::common::ConnectionConfig>,
+    pub fn from_cli(
+        optional_clap_variant: Option<<Contract as interactive_clap::ToCli>::CliVariant>,
+        context: super::operation_mode::ExecuteChangeMethodCommandNetworkContext,
     ) -> color_eyre::eyre::Result<Self> {
-        let contract_account_id: near_primitives::types::AccountId = match item.contract_account_id
+        let connection_config = context.connection_config.clone();
+        let contract_account_id = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.contract_account_id)
         {
-            Some(cli_contract_account_id) => match &connection_config {
+            Some(contract_account_id) => match &connection_config {
                 Some(network_connection_config) => match crate::common::get_account_state(
-                    network_connection_config,
-                    cli_contract_account_id.clone(),
+                    &network_connection_config,
+                    contract_account_id.clone().into(),
                 )? {
-                    Some(_) => cli_contract_account_id,
+                    Some(_) => contract_account_id,
                     None => {
-                        println!("Account <{}> doesn't exist", cli_contract_account_id);
-                        Contract::input_receiver_account_id(connection_config.clone())?
+                        println!("Account <{}> doesn't exist", contract_account_id);
+                        Self::input_contract_account_id(&context)?
                     }
                 },
-                None => cli_contract_account_id,
+                None => contract_account_id,
             },
-            None => Contract::input_receiver_account_id(connection_config.clone())?,
+            None => Self::input_contract_account_id(&context)?,
         };
-        let call = match item.call {
-            Some(cli_call) => super::CallFunction::from(cli_call, connection_config)?,
-            None => super::CallFunction::choose_call_function(connection_config)?,
-        };
+        let call = super::call_function_type::CallFunctionAction::from_cli(
+            optional_clap_variant.and_then(|clap_variant| match clap_variant.call {
+                Some(ClapNamedArgCallFunctionActionForContract::Call(cli_args)) => Some(cli_args),
+                None => None,
+            }),
+            context,
+        )?;
         Ok(Self {
             contract_account_id,
             call,
@@ -143,17 +50,17 @@ impl Contract {
 }
 
 impl Contract {
-    fn input_receiver_account_id(
-        connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+    fn input_contract_account_id(
+        context: &super::operation_mode::ExecuteChangeMethodCommandNetworkContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        let connection_config = context.connection_config.clone();
         loop {
-            let account_id: near_primitives::types::AccountId = Input::new()
+            let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("What is the account ID of the contract?")
-                .interact_text()
-                .unwrap();
+                .interact_text()?;
             if let Some(connection_config) = &connection_config {
                 if let Some(_) =
-                    crate::common::get_account_state(connection_config, account_id.clone())?
+                    crate::common::get_account_state(&connection_config, account_id.clone().into())?
                 {
                     break Ok(account_id);
                 } else {
@@ -171,7 +78,7 @@ impl Contract {
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let unsigned_transaction = near_primitives::transaction::Transaction {
-            receiver_id: self.contract_account_id.clone(),
+            receiver_id: self.contract_account_id.clone().into(),
             ..prepopulated_unsigned_transaction
         };
         self.call

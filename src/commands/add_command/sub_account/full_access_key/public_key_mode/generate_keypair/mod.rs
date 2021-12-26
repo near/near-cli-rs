@@ -1,61 +1,11 @@
 use std::str::FromStr;
 
-/// Generate a key pair of private and public keys (use it anywhere you need
-/// Ed25519 keys)
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliGenerateKeypair {
-    #[clap(subcommand)]
-    pub deposit: Option<super::super::super::deposit::CliDeposit>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(context = crate::common::SignerContext)]
 pub struct GenerateKeypair {
-    pub deposit: super::super::super::deposit::Deposit,
-}
-
-impl CliGenerateKeypair {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let args = self
-            .deposit
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        args
-    }
-}
-
-impl From<GenerateKeypair> for CliGenerateKeypair {
-    fn from(generate_keypair: GenerateKeypair) -> Self {
-        Self {
-            deposit: Some(generate_keypair.deposit.into()),
-        }
-    }
-}
-
-impl GenerateKeypair {
-    pub fn from(
-        item: CliGenerateKeypair,
-        connection_config: Option<crate::common::ConnectionConfig>,
-        sender_account_id: near_primitives::types::AccountId,
-    ) -> color_eyre::eyre::Result<Self> {
-        let deposit = match item.deposit {
-            Some(cli_deposit) => super::super::super::deposit::Deposit::from(
-                cli_deposit,
-                connection_config,
-                sender_account_id,
-            )?,
-            None => super::super::super::deposit::Deposit::choose_deposit(
-                connection_config,
-                sender_account_id,
-            )?,
-        };
-        Ok(Self { deposit })
-    }
+    #[interactive_clap(named_arg)]
+    ///Enter an amount
+    pub deposit: super::super::super::deposit::TransferNEARTokensAction,
 }
 
 impl GenerateKeypair {

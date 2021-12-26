@@ -1,95 +1,75 @@
 use dialoguer::Input;
 
-/// данные об отправителе транзакции
-#[derive(Debug, Default, Clone, clap::Clap)]
-#[clap(
-    setting(clap::AppSettings::ColoredHelp),
-    setting(clap::AppSettings::DisableHelpSubcommand),
-    setting(clap::AppSettings::VersionlessSubcommands)
-)]
-pub struct CliSender {
-    pub owner_account_id: Option<near_primitives::types::AccountId>,
-    #[clap(subcommand)]
-    send_to: Option<super::receiver::CliSendTo>,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(input_context = super::operation_mode::AddSubAccountCommandNetworkContext)]
+#[interactive_clap(output_context = crate::common::SignerContext)]
 pub struct Sender {
-    pub owner_account_id: near_primitives::types::AccountId,
-    pub send_to: super::receiver::SendTo,
+    #[interactive_clap(skip_default_from_cli)]
+    pub owner_account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(named_arg)]
+    ///Specify a sub-account
+    pub sub_account: super::receiver::SubAccount,
 }
 
-impl CliSender {
-    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
-        let mut args = self
-            .send_to
-            .as_ref()
-            .map(|subcommand| subcommand.to_cli_args())
-            .unwrap_or_default();
-        if let Some(owner_account_id) = &self.owner_account_id {
-            args.push_front(owner_account_id.to_string());
+struct SenderContext {
+    connection_config: Option<crate::common::ConnectionConfig>,
+    sender_account_id: crate::types::account_id::AccountId,
+}
+
+impl SenderContext {
+    pub fn from_previous_context(
+        previous_context: super::operation_mode::AddSubAccountCommandNetworkContext,
+        scope: &<Sender as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> Self {
+        Self {
+            connection_config: previous_context.connection_config.clone(),
+            sender_account_id: scope.owner_account_id.clone(),
         }
-        args
     }
 }
 
-impl From<Sender> for CliSender {
-    fn from(sender: Sender) -> Self {
+impl From<SenderContext> for crate::common::SignerContext {
+    fn from(item: SenderContext) -> Self {
         Self {
-            owner_account_id: Some(sender.owner_account_id),
-            send_to: Some(sender.send_to.into()),
+            connection_config: item.connection_config,
+            signer_account_id: item.sender_account_id,
         }
     }
 }
 
 impl Sender {
-    pub fn from(
-        item: CliSender,
-        connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<Self> {
-        let owner_account_id: near_primitives::types::AccountId = match item.owner_account_id {
-            Some(cli_owner_account_id) => match &connection_config {
+    fn from_cli_owner_account_id(
+        optional_cli_owner_account_id: Option<crate::types::account_id::AccountId>,
+        context: &super::operation_mode::AddSubAccountCommandNetworkContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        match optional_cli_owner_account_id {
+            Some(cli_owner_account_id) => match &context.connection_config {
                 Some(network_connection_config) => match crate::common::get_account_state(
-                    network_connection_config,
-                    cli_owner_account_id.clone(),
+                    &network_connection_config,
+                    cli_owner_account_id.clone().into(),
                 )? {
-                    Some(_) => cli_owner_account_id,
+                    Some(_) => Ok(cli_owner_account_id),
                     None => {
                         println!("Account <{}> doesn't exist", cli_owner_account_id);
-                        Sender::input_owner_account_id(connection_config.clone())?
+                        Sender::input_owner_account_id(&context)
                     }
                 },
-                None => cli_owner_account_id,
+                None => Ok(cli_owner_account_id),
             },
-            None => Sender::input_owner_account_id(connection_config.clone())?,
-        };
-        let send_to: super::receiver::SendTo = match item.send_to {
-            Some(cli_send_to) => super::receiver::SendTo::from(
-                cli_send_to,
-                connection_config,
-                owner_account_id.clone(),
-            )?,
-            None => super::receiver::SendTo::send_to(connection_config, owner_account_id.clone())?,
-        };
-        Ok(Self {
-            owner_account_id,
-            send_to,
-        })
+            None => Self::input_owner_account_id(&context),
+        }
     }
-}
 
-impl Sender {
     fn input_owner_account_id(
-        connection_config: Option<crate::common::ConnectionConfig>,
-    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+        context: &super::operation_mode::AddSubAccountCommandNetworkContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         loop {
-            let account_id: near_primitives::types::AccountId = Input::new()
+            let account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("What is the owner account ID?")
-                .interact_text()
-                .unwrap();
-            if let Some(connection_config) = &connection_config {
+                .interact_text()?;
+            if let Some(connection_config) = &context.connection_config {
                 if let Some(_) =
-                    crate::common::get_account_state(connection_config, account_id.clone())?
+                    crate::common::get_account_state(&connection_config, account_id.clone().into())?
                 {
                     break Ok(account_id);
                 } else {
@@ -107,10 +87,11 @@ impl Sender {
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: self.owner_account_id.clone(),
+            signer_id: self.owner_account_id.clone().into(),
+            receiver_id: self.owner_account_id.clone().into(),
             ..prepopulated_unsigned_transaction
         };
-        self.send_to
+        self.sub_account
             .process(unsigned_transaction, network_connection_config)
             .await
     }
