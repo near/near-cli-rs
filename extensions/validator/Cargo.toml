@@ -37,7 +37,7 @@ cargo-util = "0.1.1"
 
 color-eyre = "0.5"
 
-near-crypto = { git = "https://github.com/near/nearcore", rev="4306275e57edf6a918e73b2b442ffb110761a264" }
-near-primitives = { git = "https://github.com/near/nearcore", rev="4306275e57edf6a918e73b2b442ffb110761a264" }
-near-jsonrpc-client = { git = "https://github.com/near/near-jsonrpc-client-rs/", rev="693a639b32ad5806a3dfd6063de6d6eecfe64501" }
-near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev="4306275e57edf6a918e73b2b442ffb110761a264" }
+near-crypto = "0.11"
+near-primitives = "0.11"
+near-jsonrpc-client = "0.2"
+near-jsonrpc-primitives = "0.11"

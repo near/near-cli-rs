@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use near_jsonrpc_client::methods::EXPERIMENTAL_genesis_config::GenesisConfig;
+use near_jsonrpc_client::methods::EXPERIMENTAL_genesis_config::RpcGenesisConfigResponse;
 use near_primitives::{borsh::BorshDeserialize, views::EpochValidatorInfo};
 
 pub type CliResult = color_eyre::eyre::Result<()>;
@@ -358,7 +358,7 @@ pub struct KeyPairProperties {
 pub async fn validators_info(
     epoch: near_primitives::types::EpochReference,
     network_connection_config: &crate::common::ConnectionConfig,
-) -> (GenesisConfig, EpochValidatorInfo) {
+) -> (RpcGenesisConfigResponse, EpochValidatorInfo) {
     let client =
         near_jsonrpc_client::JsonRpcClient::connect(network_connection_config.rpc_url().as_str());
 
