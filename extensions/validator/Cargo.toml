@@ -41,3 +41,6 @@ near-crypto = "0.11"
 near-primitives = "0.11"
 near-jsonrpc-client = "0.2"
 near-jsonrpc-primitives = "0.11"
+
+interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="89b5bee74035b0ba6d8603fbd9fc3da0ad31eaeb" }
+interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap-derive", rev="3531e842bdf53ccb82ac261f0eb7535bbd7126ed" }
