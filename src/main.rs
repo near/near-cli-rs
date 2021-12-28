@@ -24,7 +24,18 @@ impl Args {
 fn main() -> CliResult {
     color_eyre::install()?;
 
-    let cli = CliArgs::parse();
+    let cli = match CliArgs::try_parse() {
+        Ok(cli) => cli,
+        Err(error) => {
+            if matches!(
+                error.kind,
+                clap::ErrorKind::UnknownArgument | clap::ErrorKind::InvalidSubcommand
+            ) {
+                return try_external_subcommand_execution();
+            }
+            error.exit();
+        }
+    };
 
     // if let Some(self::commands::CliTopLevelCommand::GenerateShellCompletions(subcommand)) =
     //     cli.top_level_command
