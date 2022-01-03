@@ -16,7 +16,7 @@ pub enum EpochCommand {
     // EpochId(self::view_command::ViewQueryRequest),
     #[strum_discriminants(strum(message = "View validators by BlockId"))]
     /// Specify validators by BlockId
-    BlockId(super::block_id::BlockIdWrapper),
+    BlockId(super::block_id::BlockId),
 }
 
 impl EpochCommand {
@@ -32,11 +32,11 @@ impl EpochCommand {
                 )
                 .await?;
                 Ok(())
-            }
+            },
             // Self::EpochId(validators_request) => validators_request.process().await,
             Self::BlockId(validators_request) => {
                 validators_request.process(network_connection_config).await
-            }
+            },
         }
     }
 }

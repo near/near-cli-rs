@@ -5,6 +5,33 @@ use near_primitives::{borsh::BorshDeserialize, views::EpochValidatorInfo};
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
+use dialoguer::{theme::ColorfulTheme, Select};
+use strum::{EnumMessage, IntoEnumIterator};
+pub fn prompt_variant<T>(prompt: &str) -> T
+where
+    T: IntoEnumIterator + EnumMessage,
+    T: Copy + Clone,
+{
+    let variants = T::iter().collect::<Vec<_>>();
+    let actions = variants
+        .iter()
+        .map(|p| {
+            p.get_message()
+                .unwrap_or_else(|| "error[This entry does not have an option message!!]")
+                .to_owned()
+        })
+        .collect::<Vec<_>>();
+
+    let selected = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt(prompt)
+        .items(&actions)
+        .default(0)
+        .interact()
+        .unwrap();
+
+    variants[selected]
+}
+
 #[derive(
     Debug,
     Clone,
@@ -102,6 +129,10 @@ impl std::fmt::Display for AvailableRpcServerUrl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.inner.fmt(f)
     }
+}
+
+impl interactive_clap::ToCli for AvailableRpcServerUrl {
+    type CliVariant = AvailableRpcServerUrl;
 }
 
 const ONE_NEAR: u128 = 10u128.pow(24);
@@ -302,6 +333,12 @@ impl ConnectionConfig {
             Self::Mainnet => crate::consts::MAINNET_API_SERVER_URL.parse().unwrap(),
             Self::Betanet => crate::consts::BETANET_API_SERVER_URL.parse().unwrap(),
             Self::Custom { url } => url.clone(),
+        }
+    }
+
+    pub fn from_custom_url(custom_url: &AvailableRpcServerUrl) -> Self {
+        Self::Custom {
+            url: custom_url.inner.clone(),
         }
     }
 }
