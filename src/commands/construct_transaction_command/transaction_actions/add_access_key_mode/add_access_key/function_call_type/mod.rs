@@ -227,13 +227,12 @@ impl FunctionCallType {
     #[async_recursion(?Send)]
     pub async fn process(
         self,
-        nonce: near_primitives::types::Nonce,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
         public_key: near_crypto::PublicKey,
     ) -> crate::CliResult {
         let access_key: near_primitives::account::AccessKey = near_primitives::account::AccessKey {
-            nonce,
+            nonce: 0,
             permission: near_primitives::account::AccessKeyPermission::FunctionCall(
                 near_primitives::account::FunctionCallPermission {
                     allowance: {
