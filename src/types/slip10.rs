@@ -21,3 +21,7 @@ impl From<BIP32Path> for slip10::BIP32Path {
         item.0
     }
 }
+
+impl interactive_clap::ToCli for crate::types::slip10::BIP32Path {
+    type CliVariant = crate::types::slip10::BIP32Path;
+}

@@ -29,7 +29,6 @@ impl GenerateKeypair {
             super::add_access_key::AccessKeyPermission::GrantFullAccess(full_access_type) => {
                 full_access_type
                     .process(
-                        0,
                         prepopulated_unsigned_transaction,
                         network_connection_config,
                         near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?,
@@ -41,7 +40,6 @@ impl GenerateKeypair {
             ) => {
                 function_call_type
                     .process(
-                        0,
                         prepopulated_unsigned_transaction,
                         network_connection_config,
                         near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?,

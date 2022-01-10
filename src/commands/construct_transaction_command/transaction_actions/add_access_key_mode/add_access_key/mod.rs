@@ -9,7 +9,6 @@ mod function_call_type;
 #[interactive_clap(context = crate::common::SignerContext)]
 pub struct AddAccessKeyAction {
     pub public_key: crate::types::public_key::PublicKey,
-    pub nonce: near_primitives::types::Nonce,
     #[interactive_clap(subcommand)]
     pub permission: AccessKeyPermission,
 }
@@ -23,12 +22,6 @@ impl AddAccessKeyAction {
             .interact_text()?)
     }
 
-    fn input_nonce(
-        _context: &crate::common::SignerContext,
-    ) -> color_eyre::eyre::Result<near_primitives::types::Nonce> {
-        Ok(0)
-    }
-
     #[async_recursion(?Send)]
     pub async fn process(
         self,
@@ -39,7 +32,6 @@ impl AddAccessKeyAction {
             AccessKeyPermission::GrantFullAccess(full_access_type) => {
                 full_access_type
                     .process(
-                        self.nonce,
                         prepopulated_unsigned_transaction,
                         network_connection_config,
                         self.public_key.into(),
@@ -49,7 +41,6 @@ impl AddAccessKeyAction {
             AccessKeyPermission::GrantFunctionCallAccess(function_call_type) => {
                 function_call_type
                     .process(
-                        self.nonce,
                         prepopulated_unsigned_transaction,
                         network_connection_config,
                         self.public_key.into(),
