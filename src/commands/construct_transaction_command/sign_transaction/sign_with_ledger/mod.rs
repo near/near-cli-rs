@@ -1,5 +1,4 @@
 use dialoguer::Input;
-use interactive_clap::ToCli;
 use near_primitives::borsh::BorshSerialize;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
@@ -16,10 +15,6 @@ pub struct SignLedger {
     block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(subcommand)]
     pub submit: Option<super::Submit>,
-}
-
-impl ToCli for crate::types::slip10::BIP32Path {
-    type CliVariant = crate::types::slip10::BIP32Path;
 }
 
 impl SignLedger {
