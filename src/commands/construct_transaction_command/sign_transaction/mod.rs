@@ -156,45 +156,45 @@ impl Submit {
         match self {
             Submit::Send => {
                 println!("Transaction sent ...");
-                let json_rcp_client =
-                    near_jsonrpc_client::new_client(network_connection_config.rpc_url().as_str());
+                let json_rcp_client = near_jsonrpc_client::JsonRpcClient::connect(
+                    network_connection_config.rpc_url().as_str(),
+                );
                 let transaction_info = loop {
                     let transaction_info_result = json_rcp_client
-                        .broadcast_tx_commit(near_primitives::serialize::to_base64(
-                            signed_transaction
-                                .try_to_vec()
-                                .expect("Transaction is not expected to fail on serialization"),
-                        ))
+                        .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction})
                         .await;
                     match transaction_info_result {
                         Ok(response) => {
                             break response;
                         }
                         Err(err) => {
-                            match &err.data {
-                                Some(serde_json::Value::String(data)) => {
-                                    if data.contains("Timeout") {
-                                        println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
-                                        continue;
-                                    } else {
-                                        println!("Error transaction: {}", data);
-                                    }
-                                }
-                                Some(serde_json::Value::Object(err_data)) => {
-                                    if let Some(tx_execution_error) = err_data
-                                        .get("TxExecutionError")
-                                        .and_then(|tx_execution_error_json| {
-                                            serde_json::from_value(tx_execution_error_json.clone())
-                                                .ok()
-                                        })
-                                    {
-                                        crate::common::print_transaction_error(tx_execution_error);
-                                    } else {
-                                        println!("Unexpected response: {:#?}", err);
-                                    }
-                                }
-                                _ => println!("Unexpected response: {:#?}", err),
-                            }
+                            // match err {
+                            //     // Some(serde_json::Value::String(data)) => {
+                            //     //     if data.contains("Timeout") {
+                            //     //         println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+                            //     //         continue;
+                            //     //     } else {
+                            //     //         println!("Error transaction: {}", data);
+                            //     //     }
+                            //     // }
+                            //     near_jsonrpc_client::errors::JsonRpcError::ServerError() => {
+                            //         println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...")
+                            //     }
+                            //     // Some(serde_json::Value::Object(err_data)) => {
+                            //     //     if let Some(tx_execution_error) = err_data
+                            //     //         .get("TxExecutionError")
+                            //     //         .and_then(|tx_execution_error_json| {
+                            //     //             serde_json::from_value(tx_execution_error_json.clone())
+                            //     //                 .ok()
+                            //     //         })
+                            //     //     {
+                            //     //         crate::common::print_transaction_error(tx_execution_error);
+                            //     //     } else {
+                            //     //         println!("Unexpected response: {:#?}", err);
+                            //     //     }
+                            //     // }
+                            //     _ => println!("Unexpected response: {:#?}", err),
+                            // }
                             return Ok(None);
                         }
                     };

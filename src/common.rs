@@ -1,8 +1,6 @@
 use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 
-use near_jsonrpc_client::new_client;
-use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryRequest};
 use near_primitives::{
     borsh::BorshDeserialize,
     hash::CryptoHash,
@@ -70,6 +68,30 @@ impl std::fmt::Display for OutputFormat {
 }
 
 #[derive(Debug, Clone)]
+pub struct SignedTransactionAsBase64 {
+    pub inner: near_primitives::transaction::SignedTransaction,
+}
+
+impl std::str::FromStr for SignedTransactionAsBase64 {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            inner: near_primitives::transaction::SignedTransaction::try_from_slice(
+                &near_primitives::serialize::from_base64(s)
+                    .map_err(|err| format!("base64 transaction sequence is invalid: {}", err))?,
+            )
+            .map_err(|err| format!("transaction could not be parsed: {}", err))?,
+        })
+    }
+}
+
+impl std::fmt::Display for SignedTransactionAsBase64 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.inner.get_hash())
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct TransactionAsBase64 {
     pub inner: near_primitives::transaction::Transaction,
 }
@@ -129,8 +151,8 @@ impl std::str::FromStr for AvailableRpcServerUrl {
             url::Url::parse(s).map_err(|err| format!("URL is not parsed: {}", err))?;
         actix::System::new()
             .block_on(async {
-                near_jsonrpc_client::new_client(&url.as_str())
-                    .status()
+                near_jsonrpc_client::JsonRpcClient::connect(&url.as_str())
+                    .call(near_jsonrpc_client::methods::status::RpcStatusRequest)
                     .await
             })
             .map_err(|err| format!("AvailableRpcServerUrl: {:?}", err))?;
@@ -491,9 +513,9 @@ pub fn get_account_transfer_allowance(
         };
     let storage_amount_per_byte = actix::System::new()
         .block_on(async {
-            near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
-                .EXPERIMENTAL_protocol_config(
-                    near_jsonrpc_primitives::types::config::RpcProtocolConfigRequest {
+            near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url().as_str())
+                .call(
+                    near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
                         block_reference: near_primitives::types::BlockReference::Finality(
                             near_primitives::types::Finality::Final,
                         ),
@@ -502,7 +524,6 @@ pub fn get_account_transfer_allowance(
                 .await
         })
         .map_err(|err| color_eyre::Report::msg(format!("RpcError: {:?}", err)))?
-        .config_view
         .runtime_config
         .storage_amount_per_byte;
 
@@ -525,8 +546,8 @@ pub fn get_account_state(
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
     let query_view_method_response = actix::System::new().block_on(async {
-        near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
-            .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
+        near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url().as_str())
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewAccount { account_id },
             })
@@ -1130,8 +1151,8 @@ pub async fn display_account_info(
     conf: &ConnectionConfig,
     block_ref: BlockReference,
 ) -> crate::CliResult {
-    let resp = new_client(&conf.archival_rpc_url().as_str())
-        .query(RpcQueryRequest {
+    let resp = near_jsonrpc_client::JsonRpcClient::connect(&conf.archival_rpc_url().as_str())
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_ref,
             request: QueryRequest::ViewAccount {
                 account_id: account_id.clone(),
@@ -1143,7 +1164,7 @@ pub async fn display_account_info(
         })?;
 
     let account_view = match resp.kind {
-        QueryResponseKind::ViewAccount(view) => view,
+        near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(view) => view,
         _ => return Err(color_eyre::Report::msg("Error call result")),
     };
 
@@ -1176,8 +1197,8 @@ pub async fn display_access_key_list(
     conf: &ConnectionConfig,
     block_ref: BlockReference,
 ) -> crate::CliResult {
-    let resp = new_client(&conf.archival_rpc_url().as_str())
-        .query(RpcQueryRequest {
+    let resp = near_jsonrpc_client::JsonRpcClient::connect(&conf.archival_rpc_url().as_str())
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_ref,
             request: QueryRequest::ViewAccessKeyList { account_id },
         })
@@ -1190,7 +1211,7 @@ pub async fn display_access_key_list(
         })?;
 
     let view = match resp.kind {
-        QueryResponseKind::AccessKeyList(result) => result,
+        near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(result) => result,
         _ => return Err(color_eyre::Report::msg(format!("Error call result"))),
     };
 

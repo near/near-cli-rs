@@ -48,10 +48,10 @@ pub enum TopLevelCommand {
 impl TopLevelCommand {
     pub async fn process(self) -> crate::CliResult {
         let unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: near_primitives::types::AccountId::test_account(),
+            signer_id: "test".parse().unwrap(),
             public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
             nonce: 0,
-            receiver_id: near_primitives::types::AccountId::test_account(),
+            receiver_id: "test".parse().unwrap(),
             block_hash: Default::default(),
             actions: vec![],
         };

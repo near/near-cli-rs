@@ -1,4 +1,5 @@
 use dialoguer::Input;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = super::operation_mode::online_mode::select_server::ViewTransactionCommandNetworkContext)]
@@ -52,19 +53,19 @@ impl Sender {
         }
     }
 
-    fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
-        near_jsonrpc_client::new_client(&selected_server_url)
-    }
-
     pub async fn process(
         self,
         network_connection_config: crate::common::ConnectionConfig,
         transaction_hash: String,
     ) -> crate::CliResult {
         let account_id = self.sender_account_id.clone();
-        let query_view_transaction_status = self
-            .rpc_client(network_connection_config.archival_rpc_url().as_str())
-            .tx(transaction_hash, account_id.into())
+        let query_view_transaction_status = near_jsonrpc_client::JsonRpcClient::connect(&network_connection_config.rpc_url().as_str())
+            .call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
+                transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
+                    hash: near_primitives::hash::CryptoHash::from_str(&transaction_hash).unwrap(),
+                    account_id: account_id.into()
+                }
+            })
             .await
             .map_err(|err| {
                 color_eyre::Report::msg(format!(

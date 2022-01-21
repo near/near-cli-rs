@@ -15,32 +15,29 @@ impl AccessKeyType {
             .interact_text()?)
     }
 
-    fn rpc_client(self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
-        near_jsonrpc_client::new_client(&selected_server_url)
-    }
-
     pub async fn process(
         self,
         account_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let public_key = self.public_key.clone();
-        let online_signer_access_key_response = self
-            .rpc_client(network_connection_config.rpc_url().as_str())
-            .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewAccessKey {
-                    account_id,
-                    public_key: public_key.clone().into(),
-                },
-            })
-            .await
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to fetch public key information for nonce: {:?}",
-                    err
-                ))
-            })?;
+        let online_signer_access_key_response = near_jsonrpc_client::JsonRpcClient::connect(
+            &network_connection_config.rpc_url().as_str(),
+        )
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::ViewAccessKey {
+                account_id,
+                public_key: public_key.clone().into(),
+            },
+        })
+        .await
+        .map_err(|err| {
+            color_eyre::Report::msg(format!(
+                "Failed to fetch public key information for nonce: {:?}",
+                err
+            ))
+        })?;
         let current_nonce =
             if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
                 online_signer_access_key,

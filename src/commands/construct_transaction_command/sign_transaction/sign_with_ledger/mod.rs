@@ -92,10 +92,6 @@ impl SignLedger {
 }
 
 impl SignLedger {
-    fn rpc_client(self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
-        near_jsonrpc_client::new_client(&selected_server_url)
-    }
-
     pub fn input_seed_phrase_hd_path() -> crate::types::slip10::BIP32Path {
         Input::new()
             .with_prompt("Enter seed phrase HD Path (if you not sure leave blank for default)")
@@ -169,9 +165,11 @@ impl SignLedger {
                 }
             }
             Some(network_connection_config) => {
-                let online_signer_access_key_response = self
-                    .rpc_client(network_connection_config.rpc_url().as_str())
-                    .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
+                let online_signer_access_key_response =
+                    near_jsonrpc_client::JsonRpcClient::connect(
+                        &network_connection_config.rpc_url().as_str(),
+                    )
+                    .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                         block_reference: near_primitives::types::Finality::Final.into(),
                         request: near_primitives::views::QueryRequest::ViewAccessKey {
                             account_id: prepopulated_unsigned_transaction.signer_id.clone(),

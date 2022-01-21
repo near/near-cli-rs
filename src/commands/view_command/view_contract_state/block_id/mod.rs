@@ -44,31 +44,25 @@ impl BlockId {
         }
     }
 
-    fn rpc_client(&self, selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
-        near_jsonrpc_client::new_client(&selected_server_url)
-    }
-
     async fn at_final_block(
         self,
         sender_account_id: near_primitives::types::AccountId,
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
-        let query_view_method_response = self
-            .rpc_client(network_connection_config.rpc_url().as_str())
-            .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewState {
-                    account_id: sender_account_id,
-                    prefix: near_primitives::types::StoreKey::from(vec![]),
-                },
-            })
-            .await
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to fetch query for view account: {:?}",
-                    err
-                ))
-            })?;
+        let query_view_method_response = near_jsonrpc_client::JsonRpcClient::connect(
+            &network_connection_config.rpc_url().as_str(),
+        )
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::ViewState {
+                account_id: sender_account_id,
+                prefix: near_primitives::types::StoreKey::from(vec![]),
+            },
+        })
+        .await
+        .map_err(|err| {
+            color_eyre::Report::msg(format!("Failed to fetch query for view account: {:?}", err))
+        })?;
         let call_access_view =
             if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
                 query_view_method_response.kind
