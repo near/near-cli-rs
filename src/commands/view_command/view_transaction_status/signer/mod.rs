@@ -1,5 +1,4 @@
 use dialoguer::Input;
-use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = super::operation_mode::online_mode::select_server::ViewTransactionCommandNetworkContext)]
@@ -56,13 +55,13 @@ impl Sender {
     pub async fn process(
         self,
         network_connection_config: crate::common::ConnectionConfig,
-        transaction_hash: String,
+        transaction_hash: crate::types::crypto_hash::CryptoHash,
     ) -> crate::CliResult {
         let account_id = self.sender_account_id.clone();
         let query_view_transaction_status = near_jsonrpc_client::JsonRpcClient::connect(&network_connection_config.rpc_url().as_str())
             .call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
                 transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
-                    hash: near_primitives::hash::CryptoHash::from_str(&transaction_hash).unwrap(),
+                    hash: transaction_hash.into(),
                     account_id: account_id.into()
                 }
             })
