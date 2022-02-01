@@ -69,7 +69,7 @@ impl Transaction {
         let transaction_info = loop {
             let transaction_info_result = json_rcp_client
                 .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
-                    signed_transaction: self.signed_transaction
+                    signed_transaction: self.signed_transaction.clone()
                 })
                 .await;
             match transaction_info_result {
@@ -77,29 +77,26 @@ impl Transaction {
                     break response;
                 }
                 Err(err) => {
-                    // match &err.data {
-                    //     Some(serde_json::Value::String(data)) => {
-                    //         if data.contains("Timeout") {
-                    //             println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
-                    //             continue;
-                    //         } else {
-                    //             println!("Error transaction: {}", data);
-                    //         }
-                    //     }
-                    //     Some(serde_json::Value::Object(err_data)) => {
-                    //         if let Some(tx_execution_error) = err_data
-                    //             .get("TxExecutionError")
-                    //             .and_then(|tx_execution_error_json| {
-                    //                 serde_json::from_value(tx_execution_error_json.clone()).ok()
-                    //             })
-                    //         {
-                    //             crate::common::print_transaction_error(tx_execution_error);
-                    //         } else {
-                    //             println!("Unexpected response: {:#?}", err);
-                    //         }
-                    //     }
-                    //     _ => println!("Unexpected response: {:#?}", err),
-                    // }
+                    match err {
+                        near_jsonrpc_client::errors::JsonRpcError::TransportError(_rpc_transport_error) => {
+                            println!("Transport error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+                            continue;
+                        }
+                        near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
+                            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
+                                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::TimeoutError => {
+                                    println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+                                    continue;
+                                }
+                                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
+                                    let tx_execution_error = near_primitives::errors::TxExecutionError::InvalidTxError(context);
+                                    crate::common::print_transaction_error(tx_execution_error);
+                                }
+                                _ => println!("RPC Server Error: {:#?}", rpc_transaction_error)
+                            }
+                            _ => println!("Unexpected response: {:#?}", rpc_server_error)
+                        }
+                    }
                     return Ok(());
                 }
             };
