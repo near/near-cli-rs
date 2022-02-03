@@ -14,7 +14,7 @@ impl std::fmt::Display for AccountId {
 }
 
 impl std::str::FromStr for AccountId {
-    type Err = near_primitives::account::id::ParseAccountError;
+    type Err = <near_primitives::types::AccountId as std::str::FromStr>::Err;
 
     fn from_str(account_id: &str) -> Result<Self, Self::Err> {
         let account_id = near_primitives::types::AccountId::from_str(account_id)?;
@@ -22,11 +22,8 @@ impl std::str::FromStr for AccountId {
     }
 }
 
-impl<T: ?Sized> AsRef<T> for AccountId
-where
-    Box<str>: AsRef<T>,
-{
-    fn as_ref(&self) -> &T {
+impl AsRef<str> for AccountId {
+    fn as_ref(&self) -> &str {
         self.0.as_ref()
     }
 }

@@ -111,17 +111,13 @@ fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::Accoun
         .interact_text()?)
 }
 
-fn rpc_client(selected_server_url: &str) -> near_jsonrpc_client::JsonRpcClient {
-    near_jsonrpc_client::new_client(&selected_server_url)
-}
-
 async fn verify_account_id(
     account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
     network_connection_config: crate::common::ConnectionConfig,
 ) -> crate::CliResult {
-    rpc_client(network_connection_config.rpc_url().as_str())
-        .query(near_jsonrpc_primitives::types::query::RpcQueryRequest {
+    near_jsonrpc_client::JsonRpcClient::connect(&network_connection_config.rpc_url().as_str())
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),
             request: near_primitives::views::QueryRequest::ViewAccessKey {
                 account_id,

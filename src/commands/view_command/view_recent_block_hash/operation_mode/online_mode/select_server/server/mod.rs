@@ -62,8 +62,8 @@ impl CustomServer {
 async fn recent_block_hash_status(
     connection_config: crate::common::ConnectionConfig,
 ) -> crate::CliResult {
-    let status = near_jsonrpc_client::new_client(connection_config.rpc_url().as_str())
-        .status()
+    let status = near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url().as_str())
+        .call(near_jsonrpc_client::methods::status::RpcStatusRequest)
         .await
         .map_err(|err| {
             color_eyre::Report::msg(format!(

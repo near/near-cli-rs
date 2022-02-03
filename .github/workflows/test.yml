@@ -26,23 +26,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - build: linux
+        - build: linux-x86_64
           os: ubuntu-18.04
           rust: stable
           target: x86_64-unknown-linux-gnu
-        - build: linux-musl
+        - build: linux-x86_64-musl
           os: ubuntu-18.04
           rust: stable
           target: x86_64-unknown-linux-musl
-        - build: linux-arm
+        - build: linux-aarch64-musl
           os: ubuntu-18.04
           rust: stable
-          target: arm-unknown-linux-gnueabihf
-        - build: macos
+          target: aarch64-unknown-linux-musl
+        - build: macos-x86_64
           os: macos-latest
           rust: stable
           target: x86_64-apple-darwin
-        - build: win-msvc
+        - build: win64-msvc
           os: windows-2019
           rust: stable
           target: x86_64-pc-windows-msvc
@@ -77,7 +77,7 @@ jobs:
         fi
  
     - name: Disable Ledger support for platforms that don't have udev
-      if: matrix.target == 'x86_64-unknown-linux-musl' || matrix.target == 'arm-unknown-linux-gnueabihf'
+      if: matrix.target == 'x86_64-unknown-linux-musl' || matrix.target == 'aarch64-unknown-linux-musl'
       run: |
         echo "FEATURES_FLAGS=--no-default-features" >> $GITHUB_ENV
 
@@ -93,12 +93,12 @@ jobs:
       run: ${{ env.CARGO }} test --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
     
     - name: View contract code for 'volodymyr.testnet'
-      if: matrix.build != 'linux-arm'
+      if: matrix.build != 'linux-aarch64-musl'
       run: |
         ${{ env.TARGET_DIR }}/debug/near-cli view contract-code network testnet contract 'volodymyr.testnet' hash at-final-block
     
     - name: Transfer NEAR Tokens
-      if: matrix.build != 'linux-arm'
+      if: matrix.build != 'linux-aarch64-musl'
       run: |
         ${{ env.TARGET_DIR }}/debug/near-cli transfer near network testnet sender volodymyr.testnet receiver 21.volodymyr.testnet amount 0.001NEAR sign-private-key --signer-public-key ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF --signer-private-key ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB send
 
