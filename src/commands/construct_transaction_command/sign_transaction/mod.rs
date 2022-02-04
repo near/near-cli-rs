@@ -166,65 +166,12 @@ impl Submit {
                         Ok(response) => {
                             break response;
                         }
-                        Err(err) => {
-                            match err {
-                                near_jsonrpc_client::errors::JsonRpcError::TransportError(_rpc_transport_error) => {
-                                    println!("Transport error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
-                                }
-                                near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
-                                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
-                                        near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::TimeoutError => {
-                                            println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
-                                        }
-                                        near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
-                                            crate::common::print_invalid_tx_error(context);
-                                            return Ok(None);
-                                        }
-                                        near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
-                                            println!("RPC Server Error");
-                                            return Ok(None)
-                                        }
-                                        near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::RequestRouted{transaction_hash} => {
-                                            println!("RPC Server Error: {}", transaction_hash);
-                                            return Ok(None)
-                                        }
-                                        near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::UnknownTransaction{requested_transaction_hash} => {
-                                            println!("RPC Server Error: {}", requested_transaction_hash);
-                                            return Ok(None)
-                                        }
-                                        near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InternalError{debug_info} => {
-                                            println!("RPC Server Error: {}", debug_info);
-                                            return Ok(None)
-                                        }
-                                    }
-                                    near_jsonrpc_client::errors::JsonRpcServerError::RequestValidationError(rpc_request_validation_error) => {
-                                        println!("Incompatible request with the server: {:#?}",  rpc_request_validation_error);
-                                        return Ok(None)
-                                    }
-                                    near_jsonrpc_client::errors::JsonRpcServerError::InternalError{ info } => {
-                                        println!("Internal server error: {}.\nPlease wait. The next try to send this transaction is happening right now ...", info.unwrap_or_default());
-                                    }
-                                    near_jsonrpc_client::errors::JsonRpcServerError::NonContextualError(rpc_error) => {
-                                        println!("Unexpected response: {}", rpc_error);
-                                        return Ok(None)
-                                    }
-                                    near_jsonrpc_client::errors::JsonRpcServerError::ResponseStatusError(json_rpc_server_response_status_error) => match json_rpc_server_response_status_error {
-                                        near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unauthorized => {
-                                            println!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use.");
-                                            return Ok(None)
-                                        }
-                                        near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TooManyRequests => {
-                                            println!("JSON RPC server is currently busy.\nPlease wait. The next try to send this transaction is happening right now ...");
-                                        }
-                                        near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
-                                            println!("JSON RPC server responded with an unexpected status code: {}", status);
-                                            return Ok(None);
-                                        }
-                                    }
-                                }
+                        Err(err) => match crate::common::rpc_transaction_error(err) {
+                            Ok(_) => {
+                                actix::clock::sleep(std::time::Duration::from_millis(100)).await
                             }
-                            actix::clock::sleep(std::time::Duration::from_millis(100)).await;
-                        }
+                            Err(report) => return color_eyre::eyre::Result::Err(report),
+                        },
                     };
                 };
                 Ok(Some(transaction_info))
