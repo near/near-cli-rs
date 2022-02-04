@@ -815,6 +815,62 @@ fn print_value_successful_transaction(
     }
 }
 
+pub fn rpc_transaction_error(
+    err: near_jsonrpc_client::errors::JsonRpcError<
+        near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError,
+    >,
+) -> CliResult {
+    match &err {
+        near_jsonrpc_client::errors::JsonRpcError::TransportError(_rpc_transport_error) => {
+            println!("Transport error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+        }
+        near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
+                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::TimeoutError => {
+                    println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+                }
+                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
+                    let err_invalid_transaction = crate::common::handler_invalid_tx_error(context.clone());
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("{}", err_invalid_transaction));
+                }
+                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err));
+                }
+                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::RequestRouted{transaction_hash} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", transaction_hash, err));
+                }
+                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::UnknownTransaction{requested_transaction_hash} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", requested_transaction_hash, err));
+                }
+                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InternalError{debug_info} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", debug_info));
+                }
+            }
+            near_jsonrpc_client::errors::JsonRpcServerError::RequestValidationError(rpc_request_validation_error) => {
+                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Incompatible request with the server: {:#?}",  rpc_request_validation_error));
+            }
+            near_jsonrpc_client::errors::JsonRpcServerError::InternalError{ info } => {
+                println!("Internal server error: {}.\nPlease wait. The next try to send this transaction is happening right now ...", info.clone().unwrap_or_default());
+            }
+            near_jsonrpc_client::errors::JsonRpcServerError::NonContextualError(rpc_error) => {
+                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Unexpected response: {}", rpc_error));
+            }
+            near_jsonrpc_client::errors::JsonRpcServerError::ResponseStatusError(json_rpc_server_response_status_error) => match json_rpc_server_response_status_error {
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unauthorized => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use."));
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TooManyRequests => {
+                    println!("JSON RPC server is currently busy.\nPlease wait. The next try to send this transaction is happening right now ...");
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
     match action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
@@ -927,24 +983,26 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
     }
 }
 
-pub fn print_invalid_tx_error(invalid_tx_error: near_primitives::errors::InvalidTxError) {
+pub fn handler_invalid_tx_error(
+    invalid_tx_error: near_primitives::errors::InvalidTxError,
+) -> String {
     match invalid_tx_error {
         near_primitives::errors::InvalidTxError::InvalidAccessKeyError(invalid_access_key_error) => {
             match invalid_access_key_error {
                 near_primitives::errors::InvalidAccessKeyError::AccessKeyNotFound{account_id, public_key} => {
-                    println!("Error: Public key {} doesn't exist for the account <{}>.", public_key, account_id)
+                    format!("Error: Public key {} doesn't exist for the account <{}>.", public_key, account_id)
                 },
                 near_primitives::errors::InvalidAccessKeyError::ReceiverMismatch{tx_receiver, ak_receiver} => {
-                    println!("Error: Transaction for <{}> doesn't match the access key for <{}>.", tx_receiver, ak_receiver)
+                    format!("Error: Transaction for <{}> doesn't match the access key for <{}>.", tx_receiver, ak_receiver)
                 },
                 near_primitives::errors::InvalidAccessKeyError::MethodNameMismatch{method_name} => {
-                    println!("Error: Transaction method name <{}> isn't allowed by the access key.", method_name)
+                    format!("Error: Transaction method name <{}> isn't allowed by the access key.", method_name)
                 },
                 near_primitives::errors::InvalidAccessKeyError::RequiresFullAccess => {
-                    println!("Error: Transaction requires a full permission access key.")
+                    format!("Error: Transaction requires a full permission access key.")
                 },
                 near_primitives::errors::InvalidAccessKeyError::NotEnoughAllowance{account_id, public_key, allowance, cost} => {
-                    println!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
+                    format!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
                         crate::common::NearBalance::from_yoctonear(allowance),
@@ -952,95 +1010,95 @@ pub fn print_invalid_tx_error(invalid_tx_error: near_primitives::errors::Invalid
                     )
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
-                    println!("Error: Having a deposit with a function call action is not allowed with a function call access key.")
+                    format!("Error: Having a deposit with a function call action is not allowed with a function call access key.")
                 }
             }
         },
         near_primitives::errors::InvalidTxError::InvalidSignerId { signer_id } => {
-            println!("Error: TX signer ID <{}> is not in a valid format or not satisfy requirements see \"near_runtime_utils::utils::is_valid_account_id\".", signer_id)
+            format!("Error: TX signer ID <{}> is not in a valid format or not satisfy requirements see \"near_runtime_utils::utils::is_valid_account_id\".", signer_id)
         },
         near_primitives::errors::InvalidTxError::SignerDoesNotExist { signer_id } => {
-            println!("Error: TX signer ID <{}> is not found in a storage.", signer_id)
+            format!("Error: TX signer ID <{}> is not found in a storage.", signer_id)
         },
         near_primitives::errors::InvalidTxError::InvalidNonce { tx_nonce, ak_nonce } => {
-            println!("Error: Transaction nonce ({}) must be account[access_key].nonce ({}) + 1.", tx_nonce, ak_nonce)
+            format!("Error: Transaction nonce ({}) must be account[access_key].nonce ({}) + 1.", tx_nonce, ak_nonce)
         },
         near_primitives::errors::InvalidTxError::NonceTooLarge { tx_nonce, upper_bound } => {
-            println!("Error: Transaction nonce ({}) is larger than the upper bound ({}) given by the block height.", tx_nonce, upper_bound)
+            format!("Error: Transaction nonce ({}) is larger than the upper bound ({}) given by the block height.", tx_nonce, upper_bound)
         },
         near_primitives::errors::InvalidTxError::InvalidReceiverId { receiver_id } => {
-            println!("Error: TX receiver ID ({}) is not in a valid format or not satisfy requirements see \"near_runtime_utils::is_valid_account_id\".", receiver_id)
+            format!("Error: TX receiver ID ({}) is not in a valid format or not satisfy requirements see \"near_runtime_utils::is_valid_account_id\".", receiver_id)
         },
         near_primitives::errors::InvalidTxError::InvalidSignature => {
-            println!("Error: TX signature is not valid")
+            format!("Error: TX signature is not valid")
         },
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
-            println!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
+            format!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
                 crate::common::NearBalance::from_yoctonear(balance),
                 crate::common::NearBalance::from_yoctonear(cost)
             )
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
-            println!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
+            format!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
                 crate::common::NearBalance::from_yoctonear(amount)
             )
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
-            println!("Error: An integer overflow occurred during transaction cost estimation.")
+            format!("Error: An integer overflow occurred during transaction cost estimation.")
         },
         near_primitives::errors::InvalidTxError::InvalidChain => {
-            println!("Error: Transaction parent block hash doesn't belong to the current chain.")
+            format!("Error: Transaction parent block hash doesn't belong to the current chain.")
         },
         near_primitives::errors::InvalidTxError::Expired => {
-            println!("Error: Transaction has expired.")
+            format!("Error: Transaction has expired.")
         },
         near_primitives::errors::InvalidTxError::ActionsValidation(actions_validation_error) => {
             match actions_validation_error {
                 near_primitives::errors::ActionsValidationError::DeleteActionMustBeFinal => {
-                    println!("Error: The delete action must be a final action in transaction.")
+                    format!("Error: The delete action must be a final action in transaction.")
                 },
                 near_primitives::errors::ActionsValidationError::TotalPrepaidGasExceeded {total_prepaid_gas, limit} => {
-                    println!("Error: The total prepaid gas ({}) for all given actions exceeded the limit ({}).",
+                    format!("Error: The total prepaid gas ({}) for all given actions exceeded the limit ({}).",
                     total_prepaid_gas,
                     limit
                     )
                 },
                 near_primitives::errors::ActionsValidationError::TotalNumberOfActionsExceeded {total_number_of_actions, limit} => {
-                    println!("Error: The number of actions ({}) exceeded the given limit ({}).", total_number_of_actions, limit)
+                    format!("Error: The number of actions ({}) exceeded the given limit ({}).", total_number_of_actions, limit)
                 },
                 near_primitives::errors::ActionsValidationError::AddKeyMethodNamesNumberOfBytesExceeded {total_number_of_bytes, limit} => {
-                    println!("Error: The total number of bytes ({}) of the method names exceeded the limit ({}) in a Add Key action.", total_number_of_bytes, limit)
+                    format!("Error: The total number of bytes ({}) of the method names exceeded the limit ({}) in a Add Key action.", total_number_of_bytes, limit)
                 },
                 near_primitives::errors::ActionsValidationError::AddKeyMethodNameLengthExceeded {length, limit} => {
-                    println!("Error: The length ({}) of some method name exceeded the limit ({}) in a Add Key action.", length, limit)
+                    format!("Error: The length ({}) of some method name exceeded the limit ({}) in a Add Key action.", length, limit)
                 },
                 near_primitives::errors::ActionsValidationError::IntegerOverflow => {
-                    println!("Error: Integer overflow during a compute.")
+                    format!("Error: Integer overflow during a compute.")
                 },
                 near_primitives::errors::ActionsValidationError::InvalidAccountId {account_id} => {
-                    println!("Error: Invalid account ID <{}>.", account_id)
+                    format!("Error: Invalid account ID <{}>.", account_id)
                 },
                 near_primitives::errors::ActionsValidationError::ContractSizeExceeded {size, limit} => {
-                    println!("Error: The size ({}) of the contract code exceeded the limit ({}) in a DeployContract action.", size, limit)
+                    format!("Error: The size ({}) of the contract code exceeded the limit ({}) in a DeployContract action.", size, limit)
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallMethodNameLengthExceeded {length, limit} => {
-                    println!("Error: The length ({}) of the method name exceeded the limit ({}) in a Function Call action.", length, limit)
+                    format!("Error: The length ({}) of the method name exceeded the limit ({}) in a Function Call action.", length, limit)
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallArgumentsLengthExceeded {length, limit} => {
-                    println!("Error: The length ({}) of the arguments exceeded the limit ({}) in a Function Call action.", length, limit)
+                    format!("Error: The length ({}) of the arguments exceeded the limit ({}) in a Function Call action.", length, limit)
                 },
                 near_primitives::errors::ActionsValidationError::UnsuitableStakingKey {public_key} => {
-                    println!("Error: An attempt to stake with a public key <{}> that is not convertible to ristretto.", public_key)
+                    format!("Error: An attempt to stake with a public key <{}> that is not convertible to ristretto.", public_key)
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallZeroAttachedGas => {
-                    println!("Error: The attached amount of gas in a FunctionCall action has to be a positive number.")
+                    format!("Error: The attached amount of gas in a FunctionCall action has to be a positive number.")
                 }
             }
         },
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
-            println!("Error: The size ({}) of serialized transaction exceeded the limit ({}).", size, limit)
+            format!("Error: The size ({}) of serialized transaction exceeded the limit ({}).", size, limit)
         }
     }
 }
@@ -1052,7 +1110,7 @@ pub fn print_transaction_error(tx_execution_error: near_primitives::errors::TxEx
             print_action_error(action_error)
         }
         near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
-            print_invalid_tx_error(invalid_tx_error)
+            println!("{}", handler_invalid_tx_error(invalid_tx_error))
         }
     }
 }
