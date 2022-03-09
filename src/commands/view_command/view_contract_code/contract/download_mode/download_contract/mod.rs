@@ -18,7 +18,7 @@ impl ContractFile {
             .with_prompt("Where to download the contract file?")
             .with_initial_text(format!("{}.wasm", contract_account_id))
             .interact_text()?;
-        Ok(std::path::PathBuf::from(input_file_path).into())
+        Ok(shellexpand::full(&input_file_path)?.as_ref().parse()?)
     }
 
     pub async fn process(

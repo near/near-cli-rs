@@ -18,7 +18,7 @@ impl ContractFile {
         let input_file_path: String = Input::new()
             .with_prompt("What is a file location of the contract?")
             .interact_text()?;
-        Ok(std::path::PathBuf::from(input_file_path).into())
+        Ok(shellexpand::full(&input_file_path)?.as_ref().parse()?)
     }
 
     pub async fn process(
