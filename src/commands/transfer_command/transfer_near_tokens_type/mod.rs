@@ -116,7 +116,6 @@ impl TransferNEARTokensAction {
                     &connection_config,
                     sender_account_id.into(),
                 )?;
-                println! {"{}", &account_transfer_allowance};
                 loop {
                     let input_amount: crate::common::NearBalance = Input::new()
                         .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
@@ -129,27 +128,9 @@ impl TransferNEARTokensAction {
                         break Ok(transfer_amount);
                     } else {
                         println!(
-                            "\nWARNING! There is only {} available for transfer.",
+                            "\nWARNING! There is only {} available for transfer. Enter the valid amount.",
                             account_transfer_allowance.transfer_allowance()
                         );
-                        let choose_input = vec![
-                            format!("Yes, I'd like to transfer {}.", input_amount),
-                            "No, I'd like to change the transfer amount.".to_string(),
-                        ];
-                        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                            .with_prompt("Do you want to keep this amount for the transfer?")
-                            .items(&choose_input)
-                            .default(0)
-                            .interact_on_opt(&Term::stderr())?;
-                        match select_choose_input {
-                            Some(0) => {
-                                break Ok(crate::common::TransferAmount::from_unchecked(
-                                    input_amount,
-                                ));
-                            }
-                            Some(1) => continue,
-                            _ => unreachable!("Error"),
-                        }
                     }
                 }
             }
