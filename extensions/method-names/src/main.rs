@@ -3,7 +3,6 @@ use clap::{Parser, Subcommand};
 mod commands;
 mod common;
 mod consts;
-mod types;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
