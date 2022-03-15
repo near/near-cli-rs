@@ -1,7 +1,7 @@
 use async_recursion::async_recursion;
 use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 
-/// creating a transfer of tokens 
+/// creating a transfer of tokens
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),

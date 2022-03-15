@@ -130,7 +130,7 @@ pub enum ActionSubcommand {
     /// Provide data for a stake
     StakeNearTokens(self::stake_near_tokens_type::StakeNEARTokensAction),
     #[strum_discriminants(strum(message = "Create an Account"))]
-    /// Provide information to create an account 
+    /// Provide information to create an account
     CreateAccount(self::create_account_type::CreateAccountAction),
     #[strum_discriminants(strum(message = "Delete an Account"))]
     /// Provide information for deleting an account

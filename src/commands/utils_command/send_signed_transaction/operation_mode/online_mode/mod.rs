@@ -1,6 +1,6 @@
 pub mod select_server;
 
-/// arguments necessary to create a transaction in online mode 
+/// arguments necessary to create a transaction in online mode
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
