@@ -5,13 +5,13 @@ pub mod server;
 
 #[derive(Debug, Clone, clap::Clap)]
 pub enum CliSelectServer {
-    /// предоставление данных для сервера https://rpc.testnet.near.org
+    /// providing data to server https://rpc.testnet.near.org
     Testnet(self::server::CliServer),
-    /// предоставление данных для сервера https://rpc.mainnet.near.org
+    /// providing data to server https://rpc.mainnet.near.org
     Mainnet(self::server::CliServer),
-    /// предоставление данных для сервера https://rpc.betanet.near.org
+    /// providing data to server https://rpc.betanet.near.org
     Betanet(self::server::CliServer),
-    /// предоставление данных для сервера, указанного вручную
+    /// providing data to the manually specified server
     Custom(self::server::CliCustomServer),
 }
 

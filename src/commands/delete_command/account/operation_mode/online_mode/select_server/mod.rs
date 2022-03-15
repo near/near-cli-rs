@@ -9,16 +9,16 @@ pub mod server;
 ///Select NEAR protocol RPC server
 pub enum SelectServer {
     #[strum_discriminants(strum(message = "Testnet"))]
-    /// предоставление данных для сервера https://rpc.testnet.near.org
+    /// providing data to server https://rpc.testnet.near.org
     Testnet(self::server::Server),
     #[strum_discriminants(strum(message = "Mainnet"))]
-    /// предоставление данных для сервера https://rpc.mainnet.near.org
+    /// providing data to server https://rpc.mainnet.near.org
     Mainnet(self::server::Server),
     #[strum_discriminants(strum(message = "Betanet"))]
-    /// предоставление данных для сервера https://rpc.betanet.near.org
+    /// providing data to server https://rpc.betanet.near.org
     Betanet(self::server::Server),
     #[strum_discriminants(strum(message = "Custom"))]
-    /// предоставление данных для сервера, указанного вручную
+    /// providing data for the manually specified server
     Custom(self::server::CustomServer),
 }
 

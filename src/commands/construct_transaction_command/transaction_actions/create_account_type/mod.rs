@@ -1,6 +1,6 @@
 use async_recursion::async_recursion;
 
-/// создание аккаунта
+/// create an account
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),

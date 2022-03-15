@@ -23,7 +23,7 @@ impl ViewQueryRequest {
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[interactive_clap(context = ())]
-///Сhoose what you want to view
+///Choose what you want to view
 pub enum QueryRequest {
     #[strum_discriminants(strum(message = "View properties for an account"))]
     /// View properties for an account

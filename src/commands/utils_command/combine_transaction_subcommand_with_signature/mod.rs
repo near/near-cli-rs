@@ -1,7 +1,7 @@
 use dialoguer::Input;
 use near_primitives::borsh::BorshSerialize;
 
-/// утилита, соединяющая подготовленную неподписанную транзакцию с синатурой
+/// a utility that connects a prepared unsigned transaction with a signature
 #[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliCombineTransactionSignature {
     #[clap(long)]

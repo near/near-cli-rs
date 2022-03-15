@@ -1,14 +1,14 @@
 use dialoguer::Input;
 use std::str::FromStr;
 
-/// предустановленный RPC-сервер
+/// previously set up RPC-server
 #[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliServer {
     #[clap(subcommand)]
     send: Option<CliSend>,
 }
 
-/// данные для custom server
+/// data for a custom server
 #[derive(Debug, Default, Clone, clap::Clap)]
 pub struct CliCustomServer {
     #[clap(long)]

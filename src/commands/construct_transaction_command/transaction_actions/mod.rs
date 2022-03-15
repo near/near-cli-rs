@@ -121,28 +121,28 @@ impl SelectAction {
 ///Select an action that you want to add to the action:
 pub enum ActionSubcommand {
     #[strum_discriminants(strum(message = "Transfer NEAR Tokens"))]
-    /// Предоставьте данные для перевода Near
+    /// Provide data for transfering Near
     TransferNearTokens(self::transfer_near_tokens_type::TransferNEARTokensAction),
     #[strum_discriminants(strum(message = "Call a Function"))]
-    /// Предоставьте данные для call function
+    /// Provide data for calling a function
     CallFunction(self::call_function_type::CallFunctionAction),
     #[strum_discriminants(strum(message = "Stake NEAR Tokens"))]
-    /// Предоставьте данные для ставки
+    /// Provide data for a stake
     StakeNearTokens(self::stake_near_tokens_type::StakeNEARTokensAction),
     #[strum_discriminants(strum(message = "Create an Account"))]
-    /// Предоставьте данные для создания аккаунта
+    /// Provide information to create an account
     CreateAccount(self::create_account_type::CreateAccountAction),
     #[strum_discriminants(strum(message = "Delete an Account"))]
-    /// Предоставьте данные для удаления аккаунта
+    /// Provide information for deleting an account
     DeleteAccount(self::delete_account_type::DeleteAccountAction),
     #[strum_discriminants(strum(message = "Add an Access Key"))]
-    /// Предоставьте данные для добавления ключа доступа пользователю
+    /// Provide data for adding an access key
     AddAccessKey(self::add_access_key_mode::AddAccessKeyMode),
     #[strum_discriminants(strum(message = "Detete an Access Key"))]
-    /// Предоставьте данные для удаления ключа доступа у пользователя
+    /// Provide data for deleting an access key
     DeleteAccessKey(self::delete_access_key_type::DeleteAccessKeyAction),
     #[strum_discriminants(strum(message = "Add a contract code"))]
-    /// Предоставьте данные для добавления контракта
+    /// Provide data to add a contract
     AddContractCode(self::add_contract_code_type::ContractFile),
 }
 

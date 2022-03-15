@@ -1,6 +1,6 @@
 use async_recursion::async_recursion;
 
-/// данные для определения ключа с полным доступом
+/// data for determining a full access key
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),

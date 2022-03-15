@@ -25,7 +25,7 @@ impl Transfer {
     }
 }
 
-/// создание перевода токенов
+/// creating a transfer of tokens
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
