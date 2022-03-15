@@ -17,10 +17,13 @@ pub enum BlockId {
 impl BlockId {
     pub async fn process(self, client: near_jsonrpc_client::JsonRpcClient) {
         match self {
-            BlockId::Final(acc) => acc.process(
-                client,
-                near_primitives::types::BlockReference::Finality(Default::default()),
-            ).await,
+            BlockId::Final(acc) => {
+                acc.process(
+                    client,
+                    near_primitives::types::BlockReference::Finality(Default::default()),
+                )
+                .await
+            }
             BlockId::Height(height) => height.process(client).await,
             BlockId::Hash(hash) => hash.process(client).await,
         }

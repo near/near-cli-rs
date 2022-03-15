@@ -8,9 +8,9 @@ impl BlockIdHash {
     pub async fn process(self, client: near_jsonrpc_client::JsonRpcClient) {
         crate::common::online_result(
             client,
-            near_primitives::types::BlockReference::BlockId(
-                near_primitives::types::BlockId::Hash(self.block_id_hash.parse().unwrap()),
-            ),
+            near_primitives::types::BlockReference::BlockId(near_primitives::types::BlockId::Hash(
+                self.block_id_hash.parse().unwrap(),
+            )),
             self.contract_id,
         )
         .await;

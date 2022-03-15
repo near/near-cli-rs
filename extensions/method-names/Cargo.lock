@@ -1186,12 +1186,9 @@ name = "method-names"
 version = "0.1.0"
 dependencies = [
  "clap",
- "near-crypto",
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
  "near-primitives",
- "strum 0.24.0",
- "strum_macros 0.24.0",
  "tokio",
  "url",
  "wasmer",
@@ -1327,7 +1324,7 @@ dependencies = [
  "near-crypto",
  "near-network-primitives",
  "near-primitives",
- "strum 0.20.0",
+ "strum",
  "thiserror",
 ]
 
@@ -1423,7 +1420,7 @@ dependencies = [
  "chrono",
  "near-crypto",
  "near-primitives",
- "strum 0.20.0",
+ "strum",
  "tokio",
  "tracing",
 ]
@@ -2336,16 +2333,7 @@ version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7318c509b5ba57f18533982607f24070a55d353e90d4cae30c467cdb2ad5ac5c"
 dependencies = [
- "strum_macros 0.20.1",
-]
-
-[[package]]
-name = "strum"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e96acfc1b70604b8b2f1ffa4c57e59176c7dbb05d556c71ecd2f5498a1dee7f8"
-dependencies = [
- "strum_macros 0.24.0",
+ "strum_macros",
 ]
 
 [[package]]
@@ -2357,19 +2345,6 @@ dependencies = [
  "heck 0.3.3",
  "proc-macro2",
  "quote",
- "syn",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6878079b17446e4d3eba6192bb0a2950d5b14f0ed8424b852310e5a94345d0ef"
-dependencies = [
- "heck 0.4.0",
- "proc-macro2",
- "quote",
- "rustversion",
  "syn",
 ]
 
