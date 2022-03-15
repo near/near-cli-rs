@@ -1,0 +1,18 @@
+[package]
+name = "method-names"
+version = "0.1.0"
+edition = "2021"
+
+# TODO: get rid of unused dependencies
+[dependencies]
+clap = { version = "3.1.6", features = ["derive"]}
+strum_macros = "0.24"
+strum = { version = "0.24", features = ["derive"] }
+wasmer = "2.2.0"
+url = "2.2.2"
+tokio = { version = "1.17.0", features = ["full"] }
+
+near-crypto = "0.12"
+near-primitives = "0.12"
+near-jsonrpc-client = "0.3.0"
+near-jsonrpc-primitives = "0.12"
