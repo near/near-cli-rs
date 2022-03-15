@@ -1186,6 +1186,7 @@ name = "method-names"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "near-crypto",
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
  "near-primitives",
