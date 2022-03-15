@@ -22,7 +22,7 @@ impl BlockId {
                 near_primitives::types::BlockReference::Finality(Default::default()),
             ).await,
             BlockId::Height(height) => height.process(client).await,
-            BlockId::Hash(_) => todo!(),
+            BlockId::Hash(hash) => hash.process(client).await,
         }
     }
 }
