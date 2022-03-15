@@ -55,9 +55,9 @@ impl AddAccessKeyAction {
 ///Select a permission that you want to add to the access key
 pub enum AccessKeyPermission {
     #[strum_discriminants(strum(message = "A permission with function call"))]
-    /// Предоставьте данные для ключа с function call
+    /// Provide data for a function-call access key
     GrantFunctionCallAccess(self::function_call_type::FunctionCallType),
     #[strum_discriminants(strum(message = "A permission with full access"))]
-    /// Предоставьте данные для ключа с полным доступом
+    /// Provide data for a full access key
     GrantFullAccess(self::full_access_type::FullAccessType),
 }

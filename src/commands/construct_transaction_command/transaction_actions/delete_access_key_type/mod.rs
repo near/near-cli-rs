@@ -1,7 +1,7 @@
 use async_recursion::async_recursion;
 use dialoguer::Input;
 
-/// удаление ключа доступа у пользователя
+/// deleting an access key from a user
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),

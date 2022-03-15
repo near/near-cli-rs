@@ -22,7 +22,7 @@ impl DeleteAction {
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[interactive_clap(context = ())]
-///Сhoose what you want to delete
+///Choose what you want to delete
 pub enum Action {
     #[strum_discriminants(strum(message = "Delete an access key for this account"))]
     /// Delete an access key for an account

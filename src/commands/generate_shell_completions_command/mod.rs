@@ -1,6 +1,6 @@
 use clap::IntoApp;
 
-/// инструмент для настройки терминала пользователя
+/// user terminal configuration tool
 #[derive(Debug, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),

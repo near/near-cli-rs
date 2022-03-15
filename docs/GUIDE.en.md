@@ -791,7 +791,7 @@ Let's consider an example when it is necessary to perform several actions within
 
 To do this, we will use the transaction constructor:
 
-<details><summary>Construct a new transaction (демонстрация работы команды)</summary>
+<details><summary>Construct a new transaction (demonstration of the command)</summary>
 <a href="https://asciinema.org/a/2HPsb14qsgkr05eesfzXAKTXb?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/2HPsb14qsgkr05eesfzXAKTXb.png" width="836"/>
 </a>

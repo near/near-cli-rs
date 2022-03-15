@@ -6,7 +6,7 @@ use dialoguer::Input;
 pub struct Contract {
     pub contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    /// вызов метода изменения
+    /// calling a view method
     pub call: super::call_function_type::CallFunctionView,
 }
 

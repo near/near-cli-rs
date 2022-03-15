@@ -2,7 +2,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod online_mode;
 
-/// инструмент выбора режима online/offline
+/// the tool for selecting online/offline mode
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),

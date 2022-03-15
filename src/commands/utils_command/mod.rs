@@ -28,7 +28,7 @@ impl Utils {
 pub enum CliUtil {
     /// It generates a random key pair
     GenerateKeypair(self::generate_keypair_subcommand::CliGenerateKeypair),
-    /// Предоставьте данные для подписания данных с помощью private key
+    /// Provide data which will be signed with a private key
     SignTransactionPrivateKey(
         self::sign_transaction_subcommand_with_secret_key::CliSignTransactionPrivateKey,
     ),
@@ -37,7 +37,7 @@ pub enum CliUtil {
     SignTransactionWithLedger(
         self::sign_transaction_with_ledger_subcommand::CliSignTransactionWithLedger,
     ),
-    /// Предоставьте данные для соединения подготовленной неподписаной транзакции с сигнатурой
+    /// Provide data for connecting the prepared unsigned transaction with a signature
     CombineTransactionSignature(
         self::combine_transaction_subcommand_with_signature::CliCombineTransactionSignature,
     ),

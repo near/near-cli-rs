@@ -2,7 +2,7 @@ use async_recursion::async_recursion;
 use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 use std::vec;
 
-/// данные для определения ключа с function call
+/// data for determining a function-call access key
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),

@@ -1,7 +1,7 @@
 use async_recursion::async_recursion;
 use dialoguer::Input;
 
-/// удаление аккаунта
+/// deleting an account
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),

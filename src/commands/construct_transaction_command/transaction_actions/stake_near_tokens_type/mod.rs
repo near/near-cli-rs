@@ -1,7 +1,7 @@
 use async_recursion::async_recursion;
 use dialoguer::Input;
 
-/// создание ставки
+/// creating a stake
 #[derive(Debug, Default, Clone, clap::Clap)]
 #[clap(
     setting(clap::AppSettings::ColoredHelp),
