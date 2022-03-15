@@ -51,7 +51,8 @@ fn main() -> CliResult {
     let process_result = actix::System::new().block_on(args.process());
 
     println!(
-        "Your console command:\n./near-cli {}",
+        "Your console command:\n{} {}",
+        std::env::args().next().as_deref().unwrap_or("./near_cli"),
         shell_words::join(&completed_cli.to_cli_args())
     );
 
