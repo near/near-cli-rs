@@ -26,10 +26,13 @@ impl ContractFile {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
-        let code = std::fs::read(&self.file_path.0.clone())
-            .map_err(|err| color_eyre::Report::msg(
-                format!("Failed to open or read the file: {:?}.\nError: {:?}", &self.file_path.0.clone(), err)
-            ))?;
+        let code = std::fs::read(&self.file_path.0.clone()).map_err(|err| {
+            color_eyre::Report::msg(format!(
+                "Failed to open or read the file: {:?}.\nError: {:?}",
+                &self.file_path.0.clone(),
+                err
+            ))
+        })?;
         let action = near_primitives::transaction::Action::DeployContract(
             near_primitives::transaction::DeployContractAction { code },
         );
