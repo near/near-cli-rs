@@ -86,47 +86,48 @@ impl TransferNEARTokensAction {
         let connection_config = context.connection_config.clone();
         let sender_account_id = context.signer_account_id.clone();
         match connection_config {
-            Some(connection_config) => {
+            Some(connection_config) => loop {
                 let account_transfer_allowance = crate::common::get_account_transfer_allowance(
                     &connection_config,
-                    sender_account_id.into(),
+                    sender_account_id.clone().into(),
                 )?;
-                loop {
-                    let input_amount: crate::common::NearBalance = Input::new()
+                println! {"{}", &account_transfer_allowance};
+                let input_amount: crate::common::NearBalance = Input::new()
                         .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
                         .interact_text()
                         ?;
-                    if let Ok(transfer_amount) = crate::common::TransferAmount::from(
-                        input_amount.clone(),
-                        &account_transfer_allowance,
-                    ) {
-                        break Ok(transfer_amount);
-                    } else {
-                        println!(
-                            "\nWARNING! There is only {} available for transfer.",
-                            account_transfer_allowance.transfer_allowance()
-                        );
-                        let choose_input = vec![
-                            format!("Yes, I'd like to transfer {}.", input_amount),
-                            "No, I'd like to change the transfer amount.".to_string(),
-                        ];
-                        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                            .with_prompt("Do you want to keep this amount for the transfer?")
-                            .items(&choose_input)
-                            .default(0)
-                            .interact_on_opt(&Term::stderr())?;
-                        match select_choose_input {
-                            Some(0) => {
-                                break Ok(crate::common::TransferAmount::from_unchecked(
-                                    input_amount,
-                                ))
-                            }
-                            Some(1) => {}
-                            _ => unreachable!("Error"),
+                if let Ok(transfer_amount) = crate::common::TransferAmount::from(
+                    input_amount.clone(),
+                    &account_transfer_allowance,
+                ) {
+                    break Ok(transfer_amount);
+                } else {
+                    let account_transfer_allowance = crate::common::get_account_transfer_allowance(
+                        &connection_config,
+                        sender_account_id.clone().into(),
+                    )?;
+                    println!(
+                        "\nWARNING! There is only {} available for transfer.",
+                        account_transfer_allowance.transfer_allowance()
+                    );
+                    let choose_input = vec![
+                        format!("Yes, I'd like to transfer {}.", input_amount),
+                        "No, I'd like to change the transfer amount.".to_string(),
+                    ];
+                    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+                        .with_prompt("Do you want to keep this amount for the transfer?")
+                        .items(&choose_input)
+                        .default(0)
+                        .interact_on_opt(&Term::stderr())?;
+                    match select_choose_input {
+                        Some(0) => {
+                            break Ok(crate::common::TransferAmount::from_unchecked(input_amount))
                         }
+                        Some(1) => {}
+                        _ => unreachable!("Error"),
                     }
                 }
-            }
+            },
             None => {
                 let input_amount: crate::common::NearBalance = Input::new()
                         .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
