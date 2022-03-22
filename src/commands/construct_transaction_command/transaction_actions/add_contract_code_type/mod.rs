@@ -83,9 +83,12 @@ impl ContractFile {
         let input_file_path: String = Input::new()
             .with_prompt("What is a file location of the contract?")
             .interact_text()?;
-        Ok(std::path::PathBuf::from(
-            shellexpand::full(&input_file_path)?.as_ref(),
-        ))
+        let file_path = if cfg!(unix) {
+            shellexpand::tilde(&input_file_path).as_ref().into()
+        } else {
+            input_file_path.into()
+        };
+        Ok(file_path)
     }
 
     #[async_recursion(?Send)]
