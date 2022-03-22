@@ -136,8 +136,8 @@ impl From<Util> for CliUtil {
             Util::SignTransactionWithLedger(sign_transaction_with_ledger) => {
                 Self::SignTransactionWithLedger(sign_transaction_with_ledger.into())
             }
-            Util::CombineTransactionSignature(combine_transaction_signaturte) => {
-                Self::CombineTransactionSignature(combine_transaction_signaturte.into())
+            Util::CombineTransactionSignature(combine_transaction_signature) => {
+                Self::CombineTransactionSignature(combine_transaction_signature.into())
             }
             Util::ViewSerializedTransaction(view_serialized_transaction) => {
                 Self::ViewSerializedTransaction(view_serialized_transaction.into())
