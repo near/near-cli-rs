@@ -25,12 +25,12 @@ impl OptionMethod {
 ///Choose your method
 pub enum Method {
     #[strum_discriminants(strum(
-        message = "Execute a changing method (construct a transaction with a function call)"
+        message = "Execute a change  method (construct a transaction with a function call)"
     ))]
     /// Specify a change method
     ChangeMethod(self::change_method::operation_mode::OperationMode),
     #[strum_discriminants(strum(
-        message = "Execute a viewing method (read-only call, which does not require a transaction)"
+        message = "Execute a view method (read-only call, which does not require signing)"
     ))]
     /// Specify a view method
     ViewMethod(self::view_method::operation_mode::OperationMode),

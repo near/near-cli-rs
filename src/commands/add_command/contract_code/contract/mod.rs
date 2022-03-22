@@ -16,7 +16,7 @@ impl ContractFile {
     ) -> color_eyre::eyre::Result<crate::types::path_buf::PathBuf> {
         println!();
         let input_file_path: String = Input::new()
-            .with_prompt("What is a file location of the contract?")
+            .with_prompt("What is the file location of the contract?")
             .interact_text()?;
         Ok(std::path::PathBuf::from(input_file_path).into())
     }

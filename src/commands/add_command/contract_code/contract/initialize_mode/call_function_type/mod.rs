@@ -30,7 +30,7 @@ impl CallFunctionAction {
         println!();
         let gas: u64 = loop {
             let input_gas: crate::common::NearGas = Input::new()
-                .with_prompt("Enter a gas for function")
+                .with_prompt("Enter gas for function call")
                 .with_initial_text("100 TeraGas")
                 .interact_text()?;
             let gas: u64 = match input_gas {
@@ -58,7 +58,7 @@ impl CallFunctionAction {
         println!();
         let deposit: crate::common::NearBalance = Input::new()
             .with_prompt(
-                "Enter a deposit for function (example: 10NEAR or 0.5near or 10000yoctonear).",
+                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear).",
             )
             .with_initial_text("0 NEAR")
             .interact_text()?;

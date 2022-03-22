@@ -26,12 +26,12 @@ impl OperationMode {
 ///Do you want to derive some information required for transaction construction automatically querying it online?
 pub enum Mode {
     #[strum_discriminants(strum(message = "Yes, I keep it simple"))]
-    /// Prepare and, optionally, submit a new transaction with online mode
+    /// Prepare and, optionally, submit a new transaction in online mode
     Network(self::online_mode::NetworkArgs),
     #[strum_discriminants(strum(
         message = "No, I want to work in no-network (air-gapped) environment"
     ))]
-    /// Prepare and, optionally, submit a new transaction with offline mode
+    /// Prepare and, optionally, submit a new transaction in offline mode
     Offline(self::offline_mode::OfflineArgs),
 }
 
