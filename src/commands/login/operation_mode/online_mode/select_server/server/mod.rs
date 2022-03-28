@@ -10,6 +10,7 @@ pub struct Server {}
 #[interactive_clap(input_context = super::SelectServerContext)]
 #[interactive_clap(output_context = super::LoginCommandNetworkContext)]
 pub struct CustomServer {
+    #[interactive_clap(skip_default_from_cli)]
     #[interactive_clap(long)]
     pub url: crate::common::AvailableRpcServerUrl,
 }
@@ -38,6 +39,25 @@ impl From<CustomServerContext> for super::LoginCommandNetworkContext {
 }
 
 impl CustomServer {
+    fn from_cli_url(
+        optional_cli_url: Option<
+            <crate::common::AvailableRpcServerUrl as interactive_clap::ToCli>::CliVariant,
+        >,
+        context: &super::SelectServerContext,
+    ) -> color_eyre::eyre::Result<crate::common::AvailableRpcServerUrl> {
+        match optional_cli_url {
+            Some(url) => Ok(url),
+            None => {
+                if let Ok(network) = std::env::var("CUSTOM_NETWORK") {
+                    if let Ok(url) = network.parse() {
+                        return Ok(url);
+                    }
+                }
+                Self::input_url(context)
+            }
+        }
+    }
+
     pub fn input_url(
         _context: &super::SelectServerContext,
     ) -> color_eyre::eyre::Result<crate::common::AvailableRpcServerUrl> {
