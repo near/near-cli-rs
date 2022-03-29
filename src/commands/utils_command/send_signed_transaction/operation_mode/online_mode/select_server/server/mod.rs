@@ -86,10 +86,28 @@ impl CliCustomServer {
     pub fn into_server(self) -> Server {
         let url: crate::common::AvailableRpcServerUrl = match self.url {
             Some(url) => url,
-            None => Input::new()
-                .with_prompt("What is the RPC endpoint?")
-                .interact_text()
-                .unwrap(),
+            None => {
+                if let Ok(network) = std::env::var("CUSTOM_NETWORK") {
+                    match network.parse() {
+                        Ok(url) => {
+                            println!("Using the URL address from CUSTOM_NETWORK: {}", network);
+                            url
+                        },
+                        Err(err) => {
+                            println!("Couldn't use the URL address from CUSTOM_NETWORK: {}. Error: {}", network, err);
+                            Input::new()
+                                .with_prompt("What is the RPC endpoint?")
+                                .interact_text()
+                                .unwrap()
+                        },
+                    }
+                } else {
+                    Input::new()
+                        .with_prompt("What is the RPC endpoint?")
+                        .interact_text()
+                        .unwrap()
+                }
+            },
         };
         let send = match self.send {
             Some(cli_send) => Send::from(cli_send),
