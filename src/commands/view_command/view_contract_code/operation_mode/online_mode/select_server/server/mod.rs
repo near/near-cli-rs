@@ -66,9 +66,12 @@ impl CustomServer {
                     match network.parse() {
                         Ok(url) => {
                             println!("Using the URL address from CUSTOM_NETWORK: {}", network);
-                            return Ok(url)
-                        },
-                        Err(err) => println!("Couldn't use the URL address from CUSTOM_NETWORK: {}. Error: {}", network, err),
+                            return Ok(url);
+                        }
+                        Err(err) => println!(
+                            "Couldn't use the URL address from CUSTOM_NETWORK: {}. Error: {}",
+                            network, err
+                        ),
                     }
                 }
                 Self::input_url(context)

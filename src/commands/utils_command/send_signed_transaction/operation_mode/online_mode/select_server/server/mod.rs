@@ -92,14 +92,17 @@ impl CliCustomServer {
                         Ok(url) => {
                             println!("Using the URL address from CUSTOM_NETWORK: {}", network);
                             url
-                        },
+                        }
                         Err(err) => {
-                            println!("Couldn't use the URL address from CUSTOM_NETWORK: {}. Error: {}", network, err);
+                            println!(
+                                "Couldn't use the URL address from CUSTOM_NETWORK: {}. Error: {}",
+                                network, err
+                            );
                             Input::new()
                                 .with_prompt("What is the RPC endpoint?")
                                 .interact_text()
                                 .unwrap()
-                        },
+                        }
                     }
                 } else {
                     Input::new()
@@ -107,7 +110,7 @@ impl CliCustomServer {
                         .interact_text()
                         .unwrap()
                 }
-            },
+            }
         };
         let send = match self.send {
             Some(cli_send) => Send::from(cli_send),
