@@ -63,8 +63,12 @@ impl CustomServer {
             Some(url) => Ok(url),
             None => {
                 if let Ok(network) = std::env::var("CUSTOM_NETWORK") {
-                    if let Ok(url) = network.parse() {
-                        return Ok(url);
+                    match network.parse() {
+                        Ok(url) => {
+                            println!("Using the URL address from CUSTOM_NETWORK: {}", network);
+                            return Ok(url)
+                        },
+                        Err(err) => println!("Couldn't use the URL address from CUSTOM_NETWORK: {}. Error: {}", network, err),
                     }
                 }
                 Self::input_url(context)
