@@ -1174,7 +1174,9 @@ pub async fn save_access_key_to_keychain(
                         ConnectionConfig::Testnet => std::borrow::Cow::Borrowed("near-testnet"),
                         ConnectionConfig::Mainnet => std::borrow::Cow::Borrowed("near-mainnet"),
                         ConnectionConfig::Betanet => std::borrow::Cow::Borrowed("near-betanet"),
-                        ConnectionConfig::Custom { url } => std::borrow::Cow::Owned(format!("near-custom-{}", url)),
+                        ConnectionConfig::Custom { url } => {
+                            std::borrow::Cow::Owned(format!("near-custom-{}", url))
+                        }
                     }
                 } else {
                     std::borrow::Cow::Borrowed("near")

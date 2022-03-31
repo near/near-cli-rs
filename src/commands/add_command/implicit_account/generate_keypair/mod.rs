@@ -79,29 +79,34 @@ impl CliGenerateKeypair {
             "private_key": secret_keypair_str,
             })
         );
-        self.store_keys(implicit_account_id, buf)
-    }
+        if cfg!(macos) {
+            let items = vec!["~/.near-credentials", "Keychain Access"];
+            let selection =
+                dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
+                    .items(&items)
+                    .default(0)
+                    .interact()?;
+            match selection {
+                0 => {}
+                1 => {
+                    use security_framework::os::macos::keychain::SecKeychain;
 
-    #[cfg(not(target_os = "macos"))]
-    fn store_keys(self, implicit_account_id: String, buf: String) -> crate::CliResult {
-        self.store_in_a_file(implicit_account_id, buf)
-    }
-
-    #[cfg(target_os = "macos")]
-    fn store_keys(self, implicit_account_id: String, buf: String) -> crate::CliResult {
-        let items = vec!["~/.near-credentials", "Keychain Access"];
-        let selection = dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
-            .items(&items)
-            .default(0)
-            .interact()?;
-        match selection {
-            0 => self.store_in_the_file(implicit_account_id, buf),
-            1 => self.store_in_keyaccess(implicit_account_id, buf),
-            _ => unreachable!("There's only two options"),
+                    let keychain = SecKeychain::default().map_err(|err| {
+                        color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
+                    })?;
+                    keychain
+                        .set_generic_password("near", &implicit_account_id, buf.as_bytes())
+                        .map_err(|err| {
+                            color_eyre::Report::msg(format!(
+                                "Failed to save password to keychain: {:?}",
+                                err
+                            ))
+                        })?;
+                    return Ok(());
+                }
+                _ => unreachable!("There's only two options"),
+            }
         }
-    }
-
-    fn store_in_the_file(self, implicit_account_id: String, buf: String) -> crate::CliResult {
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
         let file_name: std::path::PathBuf = format!("{}.json", &implicit_account_id).into();
         let mut path = std::path::PathBuf::from(&home_dir);
@@ -124,24 +129,6 @@ impl CliGenerateKeypair {
             "The data for the access key is saved in a file {}",
             &path.display()
         );
-        Ok(())
-    }
-
-    #[cfg(target_os = "macos")]
-    fn store_in_keyaccess(self, implicit_account_id: String, buf: String) -> crate::CliResult {
-        use security_framework::os::macos::keychain::SecKeychain;
-
-        let keychain = SecKeychain::default().map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
-        })?;
-        keychain
-            .set_generic_password("near", &implicit_account_id, buf.as_bytes())
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to save password to keychain: {:?}",
-                    err
-                ))
-            })?;
         Ok(())
     }
 }
