@@ -1154,6 +1154,45 @@ pub async fn save_access_key_to_keychain(
             "private_key": key_pair_properties.secret_keypair_str,
         })
     );
+    if cfg!(macos) {
+        let items = vec!["~/.near-credentials", "Keychain Access"];
+        let selection = dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
+            .items(&items)
+            .default(0)
+            .interact()?;
+        match selection {
+            0 => {}
+            1 => {
+                use security_framework::os::macos::keychain::SecKeychain;
+
+                let keychain = SecKeychain::default().map_err(|err| {
+                    color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
+                })?;
+                let service: std::borrow::Cow<str> = if let Some(config) = network_connection_config
+                {
+                    match config {
+                        ConnectionConfig::Testnet => std::borrow::Cow::Borrowed("near-testnet"),
+                        ConnectionConfig::Mainnet => std::borrow::Cow::Borrowed("near-mainnet"),
+                        ConnectionConfig::Betanet => std::borrow::Cow::Borrowed("near-betanet"),
+                        ConnectionConfig::Custom { url } => std::borrow::Cow::Owned(format!("near-custom-{}", url)),
+                    }
+                } else {
+                    std::borrow::Cow::Borrowed("near")
+                };
+                keychain
+                    .set_generic_password(&service, account_id, buf.as_bytes())
+                    .map_err(|err| {
+                        color_eyre::Report::msg(format!(
+                            "Failed to save password to keychain: {:?}",
+                            err
+                        ))
+                    })?;
+                println!("The data for the access key is saved in a Keychain");
+                return Ok(());
+            }
+            _ => unreachable!("There's only two options"),
+        }
+    }
     let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
     let dir_name = match &network_connection_config {
         Some(connection_config) => connection_config.dir_name(),
