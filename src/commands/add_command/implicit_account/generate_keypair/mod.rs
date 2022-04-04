@@ -79,7 +79,8 @@ impl CliGenerateKeypair {
             "private_key": secret_keypair_str,
             })
         );
-        if cfg!(macos) {
+        #[cfg(target_os = "macos")]
+        {
             let items = vec!["~/.near-credentials", "Keychain Access"];
             let selection =
                 dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
@@ -89,9 +90,10 @@ impl CliGenerateKeypair {
             match selection {
                 0 => {}
                 1 => {
-                    let keychain = security_framework::os::macos::keychain::SecKeychain::default().map_err(|err| {
-                        color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
-                    })?;
+                    let keychain = security_framework::os::macos::keychain::SecKeychain::default()
+                        .map_err(|err| {
+                            color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
+                        })?;
                     keychain
                         .set_generic_password("near", &implicit_account_id, buf.as_bytes())
                         .map_err(|err| {

@@ -1154,7 +1154,8 @@ pub async fn save_access_key_to_keychain(
             "private_key": key_pair_properties.secret_keypair_str,
         })
     );
-    if cfg!(macos) {
+    #[cfg(target_os = "macos")]
+    {
         let items = vec!["~/.near-credentials", "Keychain Access"];
         let selection = dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
             .items(&items)
@@ -1163,9 +1164,10 @@ pub async fn save_access_key_to_keychain(
         match selection {
             0 => {}
             1 => {
-                let keychain = security_framework::os::macos::keychain::SecKeychain::default().map_err(|err| {
-                    color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
-                })?;
+                let keychain = security_framework::os::macos::keychain::SecKeychain::default()
+                    .map_err(|err| {
+                        color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
+                    })?;
                 let service: std::borrow::Cow<str> = if let Some(config) = network_connection_config
                 {
                     match config {
