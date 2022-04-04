@@ -89,9 +89,7 @@ impl CliGenerateKeypair {
             match selection {
                 0 => {}
                 1 => {
-                    use security_framework::os::macos::keychain::SecKeychain;
-
-                    let keychain = SecKeychain::default().map_err(|err| {
+                    let keychain = security_framework::os::macos::keychain::SecKeychain::default().map_err(|err| {
                         color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
                     })?;
                     keychain

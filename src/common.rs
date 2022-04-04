@@ -1163,9 +1163,7 @@ pub async fn save_access_key_to_keychain(
         match selection {
             0 => {}
             1 => {
-                use security_framework::os::macos::keychain::SecKeychain;
-
-                let keychain = SecKeychain::default().map_err(|err| {
+                let keychain = security_framework::os::macos::keychain::SecKeychain::default().map_err(|err| {
                     color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
                 })?;
                 let service: std::borrow::Cow<str> = if let Some(config) = network_connection_config
