@@ -87,24 +87,20 @@ impl CliGenerateKeypair {
                     .items(&items)
                     .default(0)
                     .interact()?;
-            match selection {
-                0 => {}
-                1 => {
-                    let keychain = security_framework::os::macos::keychain::SecKeychain::default()
-                        .map_err(|err| {
-                            color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
-                        })?;
-                    keychain
-                        .set_generic_password("near", &implicit_account_id, buf.as_bytes())
-                        .map_err(|err| {
-                            color_eyre::Report::msg(format!(
-                                "Failed to save password to keychain: {:?}",
-                                err
-                            ))
-                        })?;
-                    return Ok(());
-                }
-                _ => unreachable!("There's only two options"),
+            if selection == 1 {
+                let keychain = security_framework::os::macos::keychain::SecKeychain::default()
+                    .map_err(|err| {
+                        color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
+                    })?;
+                keychain
+                    .set_generic_password("near", &format!("{}:{}", implicit_account_id, public_key_str), buf.as_bytes())
+                    .map_err(|err| {
+                        color_eyre::Report::msg(format!(
+                            "Failed to save password to keychain: {:?}",
+                            err
+                        ))
+                    })?;
+                return Ok(());
             }
         }
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
