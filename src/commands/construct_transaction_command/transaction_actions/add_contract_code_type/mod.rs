@@ -83,11 +83,7 @@ impl ContractFile {
         let input_file_path: String = Input::new()
             .with_prompt("What is a file location of the contract?")
             .interact_text()?;
-        let file_path = if cfg!(unix) {
-            shellexpand::tilde(&input_file_path).as_ref().into()
-        } else {
-            input_file_path.into()
-        };
+        let file_path = shellexpand::tilde(&input_file_path).as_ref().into();
         Ok(file_path)
     }
 
