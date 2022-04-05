@@ -72,7 +72,7 @@ impl Sender {
                     err
                 ))
             })?;
-        println!("Transactiion status: {:#?}", query_view_transaction_status);
+        println!("Transaction status: {:#?}", query_view_transaction_status);
         Ok(())
     }
 }

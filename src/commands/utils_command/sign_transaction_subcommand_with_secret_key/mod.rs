@@ -38,11 +38,11 @@ impl CliSignTransactionPrivateKey {
 }
 
 impl From<SignTransactionPrivateKey> for CliSignTransactionPrivateKey {
-    fn from(sign_transacrion_private_key: SignTransactionPrivateKey) -> Self {
+    fn from(sign_transaction_private_key: SignTransactionPrivateKey) -> Self {
         Self {
-            signer_private_key: Some(sign_transacrion_private_key.signer_private_key),
+            signer_private_key: Some(sign_transaction_private_key.signer_private_key),
             unsigned_transaction: Some(crate::common::TransactionAsBase64 {
-                inner: sign_transacrion_private_key.unsigned_transaction,
+                inner: sign_transaction_private_key.unsigned_transaction,
             }),
         }
     }

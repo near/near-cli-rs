@@ -12,7 +12,7 @@ pub enum BlockId {
     #[strum_discriminants(strum(message = "View this contract at final block"))]
     /// Specify a block ID final to view this contract
     AtFinalBlock,
-    #[strum_discriminants(strum(message = "View this contract at block heigt"))]
+    #[strum_discriminants(strum(message = "View this contract at block height"))]
     /// Specify a block ID height to view this contract
     AtBlockHeight(self::block_id_height::BlockIdHeight),
     #[strum_discriminants(strum(message = "View this contract at block hash"))]

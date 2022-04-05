@@ -801,13 +801,13 @@ fn print_value_successful_transaction(
             }
             near_primitives::views::ActionView::DeleteKey { public_key } => {
                 println!(
-                    "Access key <{}> for account <{}> has been successfully deletted.",
+                    "Access key <{}> for account <{}> has been successfully deleted.",
                     public_key, transaction_info.transaction.signer_id,
                 );
             }
             near_primitives::views::ActionView::DeleteAccount { beneficiary_id: _ } => {
                 println!(
-                    "Account <{}> has been successfully deletted.",
+                    "Account <{}> has been successfully deleted.",
                     transaction_info.transaction.signer_id,
                 );
             }
@@ -874,7 +874,7 @@ pub fn rpc_transaction_error(
 pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
     match action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
-            println!("Error: Create Account action tries to create an account with account ID <{}> which is already exists in the storage.", account_id)
+            println!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id)
         }
         near_primitives::errors::ActionErrorKind::AccountDoesNotExist { account_id } => {
             println!(
@@ -926,7 +926,7 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
             )
         }
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
-            println!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete an action: <{}>",
+            println!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
                 crate::common::NearBalance::from_yoctonear(amount)
             )
@@ -972,7 +972,7 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
         near_primitives::errors::ActionErrorKind::OnlyImplicitAccountCreationAllowed {
             account_id: _,
         } => {
-            println!("Error: Error occurs when a `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71")
+            println!("Error: `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71")
         }
         near_primitives::errors::ActionErrorKind::DeleteAccountWithLargeState { account_id } => {
             println!(
@@ -1015,10 +1015,10 @@ pub fn handler_invalid_tx_error(
             }
         },
         near_primitives::errors::InvalidTxError::InvalidSignerId { signer_id } => {
-            format!("Error: TX signer ID <{}> is not in a valid format or not satisfy requirements see \"near_runtime_utils::utils::is_valid_account_id\".", signer_id)
+            format!("Error: TX signer ID <{}> is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::utils::is_valid_account_id\".", signer_id)
         },
         near_primitives::errors::InvalidTxError::SignerDoesNotExist { signer_id } => {
-            format!("Error: TX signer ID <{}> is not found in a storage.", signer_id)
+            format!("Error: TX signer ID <{}> is not found in the storage.", signer_id)
         },
         near_primitives::errors::InvalidTxError::InvalidNonce { tx_nonce, ak_nonce } => {
             format!("Error: Transaction nonce ({}) must be account[access_key].nonce ({}) + 1.", tx_nonce, ak_nonce)
@@ -1027,7 +1027,7 @@ pub fn handler_invalid_tx_error(
             format!("Error: Transaction nonce ({}) is larger than the upper bound ({}) given by the block height.", tx_nonce, upper_bound)
         },
         near_primitives::errors::InvalidTxError::InvalidReceiverId { receiver_id } => {
-            format!("Error: TX receiver ID ({}) is not in a valid format or not satisfy requirements see \"near_runtime_utils::is_valid_account_id\".", receiver_id)
+            format!("Error: TX receiver ID ({}) is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::is_valid_account_id\".", receiver_id)
         },
         near_primitives::errors::InvalidTxError::InvalidSignature => {
             format!("Error: TX signature is not valid")
@@ -1057,7 +1057,7 @@ pub fn handler_invalid_tx_error(
         near_primitives::errors::InvalidTxError::ActionsValidation(actions_validation_error) => {
             match actions_validation_error {
                 near_primitives::errors::ActionsValidationError::DeleteActionMustBeFinal => {
-                    format!("Error: The delete action must be a final action in transaction.")
+                    format!("Error: The delete action must be the final action in transaction.")
                 },
                 near_primitives::errors::ActionsValidationError::TotalPrepaidGasExceeded {total_prepaid_gas, limit} => {
                     format!("Error: The total prepaid gas ({}) for all given actions exceeded the limit ({}).",
@@ -1075,7 +1075,7 @@ pub fn handler_invalid_tx_error(
                     format!("Error: The length ({}) of some method name exceeded the limit ({}) in a Add Key action.", length, limit)
                 },
                 near_primitives::errors::ActionsValidationError::IntegerOverflow => {
-                    format!("Error: Integer overflow during a compute.")
+                    format!("Error: Integer overflow.")
                 },
                 near_primitives::errors::ActionsValidationError::InvalidAccountId {account_id} => {
                     format!("Error: Invalid account ID <{}>.", account_id)
@@ -1271,7 +1271,7 @@ pub fn try_external_subcommand_execution() -> CliResult {
 
     if let Some(perr) = err.downcast_ref::<cargo_util::ProcessError>() {
         if let Some(code) = perr.code {
-            return Err(color_eyre::eyre::eyre!("perror occured, code: {}", code));
+            return Err(color_eyre::eyre::eyre!("perror occurred, code: {}", code));
         }
     }
     return Err(color_eyre::eyre::eyre!(err));
