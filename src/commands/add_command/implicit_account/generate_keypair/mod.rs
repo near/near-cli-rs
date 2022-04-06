@@ -84,6 +84,7 @@ impl CliGenerateKeypair {
             let items = vec!["~/.near-credentials", "Keychain Access"];
             let selection =
                 dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
+                    .with_prompt("Select a keychain to save the access key to:")
                     .items(&items)
                     .default(0)
                     .interact()?;
