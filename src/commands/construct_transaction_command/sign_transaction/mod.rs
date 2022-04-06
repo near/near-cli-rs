@@ -5,6 +5,8 @@ mod sign_manually;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
+#[cfg(target_os = "macos")]
+pub mod sign_with_osx_keychain;
 pub mod sign_with_private_key;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
@@ -28,6 +30,12 @@ pub enum SignTransaction {
         message = "Yes, I want to sign the transaction with Ledger Nano S/X device"
     ))]
     SignWithLedger(self::sign_with_ledger::SignLedger),
+    /// Provide arguments to sign a OS X keychain transaction
+    #[cfg(target_os = "macos")]
+    #[strum_discriminants(strum(
+        message = "Yes, I want to sign the transaction with OS X keychain"
+    ))]
+    SignWithOSXKeychain(self::sign_with_osx_keychain::SignOSXKeychain),
     /// Provide arguments to sign a manually transaction
     #[strum_discriminants(strum(
         message = "No, I want to construct the transaction and sign it somewhere else"
@@ -59,6 +67,11 @@ impl SignTransaction {
             }
             SignTransaction::SignManually(args_manually) => {
                 args_manually
+                    .process(prepopulated_unsigned_transaction, network_connection_config)
+                    .await
+            }
+            SignTransaction::SignWithOSXKeychain(keychain) => {
+                keychain
                     .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }

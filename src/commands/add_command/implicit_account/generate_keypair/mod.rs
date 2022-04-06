@@ -93,7 +93,11 @@ impl CliGenerateKeypair {
                         color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
                     })?;
                 keychain
-                    .set_generic_password("near", &format!("{}:{}", implicit_account_id, public_key_str), buf.as_bytes())
+                    .set_generic_password(
+                        "near",
+                        &format!("{}:{}", implicit_account_id, public_key_str),
+                        buf.as_bytes(),
+                    )
                     .map_err(|err| {
                         color_eyre::Report::msg(format!(
                             "Failed to save password to keychain: {:?}",

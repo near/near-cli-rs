@@ -1139,6 +1139,24 @@ pub fn print_transaction_status(
     );
 }
 
+#[cfg(target_os = "macos")]
+pub fn service_name(
+    network_connection_config: Option<&crate::common::ConnectionConfig>,
+) -> std::borrow::Cow<str> {
+    if let Some(config) = network_connection_config {
+        match config {
+            ConnectionConfig::Testnet => std::borrow::Cow::Borrowed("near-testnet"),
+            ConnectionConfig::Mainnet => std::borrow::Cow::Borrowed("near-mainnet"),
+            ConnectionConfig::Betanet => std::borrow::Cow::Borrowed("near-betanet"),
+            ConnectionConfig::Custom { url } => {
+                std::borrow::Cow::Owned(format!("near-custom-{}", url))
+            }
+        }
+    } else {
+        std::borrow::Cow::Borrowed("near")
+    }
+}
+
 pub async fn save_access_key_to_keychain(
     network_connection_config: Option<crate::common::ConnectionConfig>,
     key_pair_properties: crate::common::KeyPairProperties,
@@ -1166,20 +1184,13 @@ pub async fn save_access_key_to_keychain(
                 .map_err(|err| {
                     color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
                 })?;
-            let service: std::borrow::Cow<str> = if let Some(config) = network_connection_config {
-                match config {
-                    ConnectionConfig::Testnet => std::borrow::Cow::Borrowed("near-testnet"),
-                    ConnectionConfig::Mainnet => std::borrow::Cow::Borrowed("near-mainnet"),
-                    ConnectionConfig::Betanet => std::borrow::Cow::Borrowed("near-betanet"),
-                    ConnectionConfig::Custom { url } => {
-                        std::borrow::Cow::Owned(format!("near-custom-{}", url))
-                    }
-                }
-            } else {
-                std::borrow::Cow::Borrowed("near")
-            };
+            let service: std::borrow::Cow<str> = service_name(network_connection_config.as_ref());
             keychain
-                .set_generic_password(&service, &format!("{}:{}", account_id, key_pair_properties.public_key_str), buf.as_bytes())
+                .set_generic_password(
+                    &service,
+                    &format!("{}:{}", account_id, key_pair_properties.public_key_str),
+                    buf.as_bytes(),
+                )
                 .map_err(|err| {
                     color_eyre::Report::msg(format!(
                         "Failed to save password to keychain: {:?}",
