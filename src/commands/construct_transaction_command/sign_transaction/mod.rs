@@ -70,6 +70,7 @@ impl SignTransaction {
                     .process(prepopulated_unsigned_transaction, network_connection_config)
                     .await
             }
+            #[cfg(target_os = "macos")]
             SignTransaction::SignWithOSXKeychain(keychain) => {
                 keychain
                     .process(prepopulated_unsigned_transaction, network_connection_config)
