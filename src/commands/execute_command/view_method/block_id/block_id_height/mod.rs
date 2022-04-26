@@ -49,7 +49,7 @@ impl BlockIdHeight {
             } else {
                 return Err(color_eyre::Report::msg(format!("Error call result")));
             };
-        let serde_call_result: serde_json::Value = if call_result.is_empty() {
+        let serde_call_result = if call_result.is_empty() {
             serde_json::Value::Null
         } else {
             serde_json::from_slice(&call_result)
