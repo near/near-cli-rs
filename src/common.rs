@@ -1202,7 +1202,7 @@ pub async fn save_access_key_to_keychain(
     Ok(())
 }
 
-pub fn try_external_subcommand_execution() -> CliResult {
+pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
     let (subcommand, args) = {
         let mut args = std::env::args().skip(1);
         let subcommand = args
@@ -1210,6 +1210,12 @@ pub fn try_external_subcommand_execution() -> CliResult {
             .ok_or_else(|| color_eyre::eyre::eyre!("subcommand is not provided"))?;
         (subcommand, args.collect::<Vec<String>>())
     };
+    let top_level_commands = crate::commands::TopLevelCommandDiscriminants::iter()
+        .map(|x| format!("{:?}", &x).to_lowercase())
+        .collect::<Vec<_>>();
+    if top_level_commands.contains(&subcommand) {
+        error.exit()
+    }
     let subcommand_exe = format!("near-cli-{}{}", subcommand, std::env::consts::EXE_SUFFIX);
 
     let path = path_directories()
