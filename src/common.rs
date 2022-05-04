@@ -1210,10 +1210,11 @@ pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
             .ok_or_else(|| color_eyre::eyre::eyre!("subcommand is not provided"))?;
         (subcommand, args.collect::<Vec<String>>())
     };
-    let top_level_commands = crate::commands::TopLevelCommandDiscriminants::iter()
+    let is_top_level_command_known = crate::commands::TopLevelCommandDiscriminants::iter()
         .map(|x| format!("{:?}", &x).to_lowercase())
-        .collect::<Vec<_>>();
-    if top_level_commands.contains(&subcommand) {
+        .find(|x| x == &subcommand)
+        .is_some();
+    if is_top_level_command_known {
         error.exit()
     }
     let subcommand_exe = format!("near-cli-{}{}", subcommand, std::env::consts::EXE_SUFFIX);
