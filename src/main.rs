@@ -27,11 +27,8 @@ fn main() -> CliResult {
     let cli = match CliArgs::try_parse() {
         Ok(cli) => cli,
         Err(error) => {
-            if matches!(
-                error.kind,
-                clap::ErrorKind::UnknownArgument | clap::ErrorKind::InvalidSubcommand
-            ) {
-                return try_external_subcommand_execution();
+            if matches!(error.kind, clap::ErrorKind::UnknownArgument) {
+                return try_external_subcommand_execution(error);
             }
             error.exit();
         }
