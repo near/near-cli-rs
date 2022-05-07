@@ -18,57 +18,116 @@
 - Interactive mode should look like: `command - description`. It will help people to learn the commands.
 
 ## `Core NEAR CLI` commands
-```txt
+
+```
 account
-    - create
-        - implicit
-        - subaccount <master-account> <new-subaccount-id>
-    - manage <account-id>
-        - state
-            - view
-            - transfer-tokens <sender> <reciever> <amount>
-        - keys
-            - view
-            - add
-            - delete <public-key>
-        - contract
-            - code
-                - deploy <wasm-path>
-                - view-code-checksum
-            - state
-                - view
-            - call
-                - view-function
-                - change-function
-    - delete
+  - view-account <account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+ 
+  - create-sub-account <new-account-id>
+    (we will treat everything after the first dot as a parent account it (transaction signer))
+    - with-plaintext-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
+      - transaction signature options here (see below)
+    - with-generated-keypair network <"mainnet"|"testnet"|...>
+      - transaction signature options here (see below)
 
-local-keys
-    - add-using
-        - near-wallet
-        - seed-phrase <seed-phrase>
-        - ledger
-        - private-key <private-key>
-    - generate
+  - delete-account <account-id> network <"mainnet"|"testnet"|...>
+    - transaction signature options here (see below)
 
-mange-config
-    - connections
-        - show-selected
-        - select <connection-name>
-        - list
-        - add <connection-name> <> <network-name>  <url1> <url1> <...>
-        - delete <connection-name>
-    - cli
-        - set <parameter> <value>
-        - get <parameter>
+  - list-keys <account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 
-extensions
-    - explore
-    - install
-    - list-installed
-    - uninstall
+  - add-key <account-id>
+    - use-plaintext-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
+      - transaction signature options here (see below)
+    - generate-keypair network <"mainnet"|"testnet"|...>
+      - transaction signature options here (see below)
+
+  - delete-key <account-id> network <"mainnet"|"testnet"|...>
+    - transaction signature options here (see below)
+
+  - propose-stake <account-id> <stake-amount-in-NEAR> <validation-node-public-key>
+    (maybe we should extract it into the validators extension)
+    - transaction signature options here (see below)
+
+  - TODO: "import account" commands
 ```
 
-### To level `Core NEAR CLI` flags
+```
+contract
+  - call-view-function <account-id> <function-name> <function-args> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+
+  - call-change-function <account-id> <function-name> <function-args> --prepaid-gas <prepaid-gas> --attached-deposit <deposit-amount> network <"mainnet"|"testnet"|...>
+    - transaction signature options here (see below)
+  
+  - deploy <account-id> use-file <path-to-wasm-file>
+
+    - with-init-call <function-name> <function-args> --prepaid-gas <prepaid-gas> --attached-deposit <deposit-amount>
+      - transaction signature options here (see below)
+    - no-init-call
+      - transaction signature options here (see below)
+
+  - download <account-id> to-folder <path-to-download-folder> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+  - view-state <account-id> key-prefix <storage-key-prefix> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+```
+
+```
+tokens <owner-account-id>
+  - send-near <receiver-account-id> <amount-in-NEAR> network <"mainnet"|"testnet"|...>
+    - transaction signature options here (see below)
+  - send-ft <ft-contract-account-id> <receiver-account-id> <amount-in-fungible-tokens> network <"mainnet"|"testnet"|...>
+    - transaction signature options here (see below)
+  - send-nft <nft-contract-account-id> <receiver-account-id> <token-id> network <"mainnet"|"testnet"|...>
+    - transaction signature options here (see below)
+  - view-near-balance network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+  - view-ft-balance <ft-contract-account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+  - view-nft-list <nft-contract-account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+```
+
+```
+transaction
+  - view-status <transaction-hash> <signer-account-id> network <"mainnet"|"testnet"|...>
+  - construct-transaction (TODO: keep the current command structure for now)
+```
+
+```
+extensions
+(WIP)
+  - explore
+  - install
+  - list-installed
+  - uninstall
+```
+
+```
+config
+(WIP)
+  - connections
+    - show-selected
+    - select <connection-name>
+    - list
+    - add <connection-name> <> <network-name>  <url1> <url1> <...>
+    - delete <connection-name>
+  - cli
+    - set <parameter> <value>
+    - get <parameter>
+```
+
+```
+local-keys
+(WIP: maybe merge into the `account` command)
+  - add-using
+    - near-wallet
+    - seed-phrase <seed-phrase>
+    - ledger
+    - private-key <private-key>
+  - generate
+```
+
+Transaction signature options:
+  * `sign-with-keychain`
+  * `sign-with-ledger`
+  * `sign-with-plaintext-private-key "ed25519:..."`
+
+### Top-level `Core NEAR CLI` flags
 ```txt
 --verbose (print all available error info)
 --json (show answer in json format)
