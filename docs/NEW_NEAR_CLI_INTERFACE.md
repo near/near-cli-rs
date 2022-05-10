@@ -23,14 +23,14 @@
 account
   - view-account <account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
  
-  - create-sub-account <new-account-id>
-    (we will treat everything after the first dot as a parent account it (transaction signer))
+  - create-sub-account <new-account-id> <initial-balance> 
+    (we will treat everything after the first dot in account id as the parent account (transaction signer))
     - with-plaintext-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
       - transaction signature options here (see below)
     - with-generated-keypair network <"mainnet"|"testnet"|...>
       - transaction signature options here (see below)
 
-  - delete-account <account-id> network <"mainnet"|"testnet"|...>
+  - delete-account <account-id> beneficiary <beneficiary-account-id> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
 
   - list-keys <account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
@@ -41,14 +41,14 @@ account
     - generate-keypair network <"mainnet"|"testnet"|...>
       - transaction signature options here (see below)
 
-  - delete-key <account-id> network <"mainnet"|"testnet"|...>
+  - delete-key <account-id> <public-key> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
 
   - propose-stake <account-id> <stake-amount-in-NEAR> <validation-node-public-key>
     (maybe we should extract it into the validators extension)
     - transaction signature options here (see below)
 
-  - TODO: "import account" commands
+  - TODO: "import account" (aka "login") commands
 ```
 
 ```
@@ -66,6 +66,7 @@ contract
       - transaction signature options here (see below)
 
   - download <account-id> to-folder <path-to-download-folder> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+
   - view-state <account-id> key-prefix <storage-key-prefix> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 ```
 
@@ -73,18 +74,24 @@ contract
 tokens <owner-account-id>
   - send-near <receiver-account-id> <amount-in-NEAR> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
+
   - send-ft <ft-contract-account-id> <receiver-account-id> <amount-in-fungible-tokens> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
+  
   - send-nft <nft-contract-account-id> <receiver-account-id> <token-id> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
+  
   - view-near-balance network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+  
   - view-ft-balance <ft-contract-account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+  
   - view-nft-list <nft-contract-account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 ```
 
 ```
 transaction
   - view-status <transaction-hash> <signer-account-id> network <"mainnet"|"testnet"|...>
+  
   - construct-transaction (TODO: keep the current command structure for now)
 ```
 
