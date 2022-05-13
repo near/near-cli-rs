@@ -187,3 +187,5 @@ Extensions design is a work in progress. They are here mostly to show that we ha
 ### `Other` extensions
 - `NFT`
 - `FT`
+- `lockup`
+- `multisig`
