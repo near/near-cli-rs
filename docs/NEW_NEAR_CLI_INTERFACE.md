@@ -1,6 +1,6 @@
 # New NEAR CLI interface
 
-`NEAR CLI` is using `extensions` to saticfy all groups of users.
+`NEAR CLI` is using `extensions` to satisfy all groups of users.
 - `Core NEAR CLI` commands should be usefull for all groups of users.
 - `Extensions` are used by a particular group or several groups of users.
 - `Core NEAR CLI` is a single binary, there is no extensions that are installed `by default`.
