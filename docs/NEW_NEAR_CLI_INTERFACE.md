@@ -21,13 +21,15 @@
 
 ```
 account
-  - view-account <account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+  - view-account-summary <account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
  
-  - create-sub-account <new-account-id> <initial-balance> 
+  - create-subaccount <new-account-id> <initial-balance> 
     (we will treat everything after the first dot in account id as the parent account (transaction signer))
-    - with-plaintext-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
+    - autogenerate-keypair network <"mainnet"|"testnet"|...>
       - transaction signature options here (see below)
-    - with-generated-keypair network <"mainnet"|"testnet"|...>
+    - use-manually-provided-seed-prase "twelve words goes here" network <"mainnet"|"testnet"|...>
+      - transaction signature options here (see below)
+    - use-manually-provided-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
       - transaction signature options here (see below)
 
   - delete-account <account-id> beneficiary <beneficiary-account-id> network <"mainnet"|"testnet"|...>
@@ -36,16 +38,14 @@ account
   - list-keys <account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 
   - add-key <account-id>
-    - use-plaintext-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
+    - autogenerate-keypair network <"mainnet"|"testnet"|...>
       - transaction signature options here (see below)
-    - generate-keypair network <"mainnet"|"testnet"|...>
+    - use-manually-provided-seed-prase "twelve words goes here" network <"mainnet"|"testnet"|...>
+      - transaction signature options here (see below)
+    - use-manually-provided-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
       - transaction signature options here (see below)
 
   - delete-key <account-id> <public-key> network <"mainnet"|"testnet"|...>
-    - transaction signature options here (see below)
-
-  - propose-stake <account-id> <stake-amount-in-NEAR> <validation-node-public-key>
-    (maybe we should extract it into the validators extension)
     - transaction signature options here (see below)
 
   - TODO: "import account" (aka "login") commands
@@ -53,21 +53,21 @@ account
 
 ```
 contract
-  - call-view-function <account-id> <function-name> <function-args> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
-
-  - call-change-function <account-id> <function-name> <function-args> --prepaid-gas <prepaid-gas> --attached-deposit <deposit-amount> network <"mainnet"|"testnet"|...>
-    - transaction signature options here (see below)
+  - call-function
+    - as-read-only <account-id> <function-name> <function-args> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+    - as-transaction <account-id> <function-name> <function-args> --prepaid-gas <prepaid-gas> --attached-deposit <deposit-amount> network <"mainnet"|"testnet"|...>
+      - transaction signature options here (see below)
   
   - deploy <account-id> use-file <path-to-wasm-file>
 
     - with-init-call <function-name> <function-args> --prepaid-gas <prepaid-gas> --attached-deposit <deposit-amount>
       - transaction signature options here (see below)
-    - no-init-call
+    - without-init-call
       - transaction signature options here (see below)
 
-  - download <account-id> to-folder <path-to-download-folder> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+  - download-wasm <account-id> to-folder <path-to-download-folder> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 
-  - view-state <account-id> key-prefix <storage-key-prefix> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+  - inspect-storage <account-id> key-prefix <storage-key-prefix> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 ```
 
 ```
@@ -85,7 +85,7 @@ tokens <owner-account-id>
   
   - view-ft-balance <ft-contract-account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
   
-  - view-nft-list <nft-contract-account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
+  - view-nft-assets <nft-contract-account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 ```
 
 ```
@@ -179,6 +179,7 @@ Extensions design is a work in progress. They are here mostly to show that we ha
 
 ### `validators` extension
 ```txt
+- stake
 - validators
 - proposals
 - ...
