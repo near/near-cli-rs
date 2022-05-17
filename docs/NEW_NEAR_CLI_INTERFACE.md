@@ -25,8 +25,11 @@ account
  
   - create-subaccount <new-account-id> <initial-balance> 
     (we will treat everything after the first dot in account id as the parent account (transaction signer))
-    - autogenerate-keypair network <"mainnet"|"testnet"|...>
-      - transaction signature options here (see below)
+    - autogenerate-new-keypair
+      - save-to-keychain network <"mainnet"|"testnet"|...>
+        - transaction signature options here (see below)
+      - print-to-terminal network <"mainnet"|"testnet"|...>
+        - transaction signature options here (see below)
     - use-manually-provided-seed-prase "twelve words goes here" network <"mainnet"|"testnet"|...>
       - transaction signature options here (see below)
     - use-manually-provided-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
@@ -38,8 +41,11 @@ account
   - list-keys <account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 
   - add-key <account-id>
-    - autogenerate-keypair network <"mainnet"|"testnet"|...>
-      - transaction signature options here (see below)
+    - autogenerate-new-keypair network <"mainnet"|"testnet"|...>
+      - save-to-keychain network <"mainnet"|"testnet"|...>
+        - transaction signature options here (see below)
+      - print-to-terminal network <"mainnet"|"testnet"|...>
+        - transaction signature options here (see below)
     - use-manually-provided-seed-prase "twelve words goes here" network <"mainnet"|"testnet"|...>
       - transaction signature options here (see below)
     - use-manually-provided-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
