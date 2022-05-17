@@ -1,23 +1,24 @@
 # New NEAR CLI interface
 
-`NEAR CLI` is using `extensions` to satisfy all groups of users.
-- `Core NEAR CLI` commands should be usefull for all groups of users.
-- `Extensions` are used by a particular group or several groups of users.
-- `Core NEAR CLI` is a single binary, there is no extensions that are installed `by default`.
-- Each extension is a separate binary that can be installed and executed from `NEAR CLI`.
-- `Core NEAR CLI` extensions system only allows to introduce top-level commands through its design.
+NEAR CLI is built for:
+- **NEAR dApp developers**, who build smart-contracts, UIs, and tooling on NEAR.
+- **Tech-savvy people** automating their routines.
+- **Validators**
 
-`NEAR CLI` is built for:
-- NEAR `dApp developers`, who build smart-contracts, UIs, and tooling on NEAR.
-- `Tech-savvy` people automating their routines.
-- `Validators`
+NEAR CLI is using extensions to satisfy all groups of users.
+- **Core NEAR CLI** commands should be usefull for all groups of users.
+- **Extensions** are used by a particular group or several groups of users.
+- **Core NEAR CLI** is a single binary, there is no extensions that are installed *by default*.
+- Each extension is a separate binary that can be installed and executed from **NEAR CLI**.
+- **Core NEAR CLI** extensions system only allows to introduce top-level commands through its design.
 
-`NEAR CLI UX principles`
+
+NEAR CLI UX principles:
 - All altering actions should have a confirmation step with an option to skip confirmation with an explicit command line parameter (e.g. `send` at the end of the command)
 - All direct children commands of a single parent command should be aligned (either represent an action or a resource, but never a mix of those on the same hierarchy level): `contract` -> `state` (resource) and `contract` -> `deploy` (action) are not aligned, so it should be either `contract` -> `get-state` + `contract` -> `deploy` or `contract` -> `state` -> `view` + `contract` -> `code` -> `deploy`
 - Interactive mode should look like: `command - description`. It will help people to learn the commands.
 
-## `Core NEAR CLI` commands
+## Core NEAR CLI commands
 
 ```
 account
@@ -191,7 +192,7 @@ Extensions design is a work in progress. They are here mostly to show that we ha
 - ...
 ```
 
-### `Other` extensions
+### Other extensions
 - `NFT`
 - `FT`
 - `lockup`
