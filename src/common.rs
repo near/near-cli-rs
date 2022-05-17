@@ -149,7 +149,8 @@ impl std::str::FromStr for AvailableRpcServerUrl {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let url: url::Url =
             url::Url::parse(s).map_err(|err| format!("URL is not parsed: {}", err))?;
-        actix::System::new()
+        tokio::runtime::Runtime::new()
+            .unwrap()
             .block_on(async {
                 near_jsonrpc_client::JsonRpcClient::connect(&url.as_str())
                     .call(near_jsonrpc_client::methods::status::RpcStatusRequest)
@@ -511,7 +512,7 @@ pub fn get_account_transfer_allowance(
                 pessimistic_transaction_fee: NearBalance::from_yoctonear(0),
             });
         };
-    let storage_amount_per_byte = actix::System::new()
+    let storage_amount_per_byte = tokio::runtime::Runtime::new().unwrap()
         .block_on(async {
             near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url().as_str())
                 .call(
@@ -545,7 +546,7 @@ pub fn get_account_state(
     connection_config: &ConnectionConfig,
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
-    let query_view_method_response = actix::System::new().block_on(async {
+    let query_view_method_response = tokio::runtime::Runtime::new().unwrap().block_on(async {
         near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url().as_str())
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),

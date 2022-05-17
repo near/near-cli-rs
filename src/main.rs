@@ -45,7 +45,9 @@ fn main() -> CliResult {
 
     let completed_cli = CliArgs::from(args.clone());
 
-    let process_result = actix::System::new().block_on(args.process());
+    let process_result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(args.process());
 
     println!(
         "Your console command:\n{} {}",

@@ -77,7 +77,7 @@ impl Transaction {
                     break response;
                 }
                 Err(err) => match crate::common::rpc_transaction_error(err) {
-                    Ok(_) => actix::clock::sleep(std::time::Duration::from_millis(100)).await,
+                    Ok(_) => tokio::time::sleep(std::time::Duration::from_millis(100)).await,
                     Err(report) => return color_eyre::eyre::Result::Err(report),
                 },
             };
