@@ -58,7 +58,7 @@ impl Sender {
         transaction_hash: crate::types::crypto_hash::CryptoHash,
     ) -> crate::CliResult {
         let account_id = self.sender_account_id.clone();
-        let query_view_transaction_status = near_jsonrpc_client::JsonRpcClient::connect(&network_connection_config.rpc_url().as_str())
+        let query_view_transaction_status = near_jsonrpc_client::JsonRpcClient::connect(network_connection_config.rpc_url())
             .call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
                 transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
                     hash: transaction_hash.into(),

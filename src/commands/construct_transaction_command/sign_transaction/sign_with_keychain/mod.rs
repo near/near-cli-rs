@@ -108,7 +108,7 @@ impl SignKeychain {
                     path
                 } else {
                     let query_view_method_response = near_jsonrpc_client::JsonRpcClient::connect(
-                        &network_connection_config.rpc_url().as_str(),
+                        network_connection_config.rpc_url(),
                     )
                     .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                         block_reference: near_primitives::types::Finality::Final.into(),

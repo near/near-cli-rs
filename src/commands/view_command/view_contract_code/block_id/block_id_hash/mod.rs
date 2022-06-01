@@ -22,24 +22,23 @@ impl BlockIdHash {
         network_connection_config: crate::common::ConnectionConfig,
         file_path: Option<std::path::PathBuf>,
     ) -> crate::CliResult {
-        let query_view_method_response = near_jsonrpc_client::JsonRpcClient::connect(
-            &network_connection_config.rpc_url().as_str(),
-        )
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::BlockReference::BlockId(
-                near_primitives::types::BlockId::Hash(self.block_id_hash.clone().into()),
-            ),
-            request: near_primitives::views::QueryRequest::ViewCode {
-                account_id: contract_id,
-            },
-        })
-        .await
-        .map_err(|err| {
-            color_eyre::Report::msg(format!(
-                "Failed to fetch query for view contract: {:?}",
-                err
-            ))
-        })?;
+        let query_view_method_response =
+            near_jsonrpc_client::JsonRpcClient::connect(network_connection_config.rpc_url())
+                .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                    block_reference: near_primitives::types::BlockReference::BlockId(
+                        near_primitives::types::BlockId::Hash(self.block_id_hash.clone().into()),
+                    ),
+                    request: near_primitives::views::QueryRequest::ViewCode {
+                        account_id: contract_id,
+                    },
+                })
+                .await
+                .map_err(|err| {
+                    color_eyre::Report::msg(format!(
+                        "Failed to fetch query for view contract: {:?}",
+                        err
+                    ))
+                })?;
         let call_access_view =
             if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
                 query_view_method_response.kind

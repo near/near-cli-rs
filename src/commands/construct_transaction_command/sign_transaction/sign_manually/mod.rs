@@ -74,7 +74,7 @@ impl SignManually {
             Some(network_connection_config) => {
                 let online_signer_access_key_response =
                     near_jsonrpc_client::JsonRpcClient::connect(
-                        &network_connection_config.rpc_url().as_str(),
+                        network_connection_config.rpc_url(),
                     )
                     .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                         block_reference: near_primitives::types::Finality::Final.into(),
