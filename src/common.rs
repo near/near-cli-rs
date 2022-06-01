@@ -152,7 +152,7 @@ impl std::str::FromStr for AvailableRpcServerUrl {
         tokio::runtime::Runtime::new()
             .unwrap()
             .block_on(async {
-                near_jsonrpc_client::JsonRpcClient::connect(&url.as_str())
+                near_jsonrpc_client::JsonRpcClient::connect(url.clone())
                     .call(near_jsonrpc_client::methods::status::RpcStatusRequest)
                     .await
             })
@@ -514,7 +514,7 @@ pub fn get_account_transfer_allowance(
         };
     let storage_amount_per_byte = tokio::runtime::Runtime::new().unwrap()
         .block_on(async {
-            near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url().as_str())
+            near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url())
                 .call(
                     near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
                         block_reference: near_primitives::types::BlockReference::Finality(
@@ -547,7 +547,7 @@ pub fn get_account_state(
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
     let query_view_method_response = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url().as_str())
+        near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url())
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewAccount { account_id },
@@ -1274,7 +1274,7 @@ pub async fn display_account_info(
     conf: &ConnectionConfig,
     block_ref: BlockReference,
 ) -> crate::CliResult {
-    let resp = near_jsonrpc_client::JsonRpcClient::connect(&conf.archival_rpc_url().as_str())
+    let resp = near_jsonrpc_client::JsonRpcClient::connect(conf.archival_rpc_url())
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_ref,
             request: QueryRequest::ViewAccount {
@@ -1320,7 +1320,7 @@ pub async fn display_access_key_list(
     conf: &ConnectionConfig,
     block_ref: BlockReference,
 ) -> crate::CliResult {
-    let resp = near_jsonrpc_client::JsonRpcClient::connect(&conf.archival_rpc_url().as_str())
+    let resp = near_jsonrpc_client::JsonRpcClient::connect(conf.archival_rpc_url())
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_ref,
             request: QueryRequest::ViewAccessKeyList { account_id },
