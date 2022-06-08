@@ -1,8 +1,8 @@
 [package]
 name = "near-cli"
-version = "0.1.14"
+version = "0.1.16"
 authors = ["FroVolod <frol_off@meta.ua>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -19,9 +19,7 @@ derive_more = "0.99.9"
 
 async-recursion = "0.3.2"
 
-actix = "0.12"
-actix-web = { version = "=4.0.0-beta.6", features = [ "rustls" ] }
-actix-tls = { version = "=3.0.0-beta.5" }
+tokio = { version = "1.0", features = [ "rt", "time" ] }
 # Ad-hoc fix for compilation errors (rustls is used instead of openssl to ease the deployment avoiding the system dependency on openssl)
 openssl = { version = "0.10", features = [ "vendored" ] }
 
@@ -33,6 +31,7 @@ hex = "0.4.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
 dirs = "3.0"
+shellexpand = "2.1.0"
 slip10 = "0.4.3"
 url = { version = "2", features = ["serde"] }
 open = "2"
@@ -43,10 +42,10 @@ color-eyre = "0.5"
 
 near-ledger = { version = "0.1.1", optional = true }
 
-near-crypto = "0.11"
-near-primitives = "0.11"
-near-jsonrpc-client = "0.2"
-near-jsonrpc-primitives = "0.11"
+near-crypto = "0.14"
+near-primitives = "0.14"
+near-jsonrpc-client = "0.4.0-beta.0"
+near-jsonrpc-primitives = "0.14"
 
 interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="23481402d7f36d9e7b0f5460f6d249bcf4c31ec5" }
 interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="23481402d7f36d9e7b0f5460f6d249bcf4c31ec5" }

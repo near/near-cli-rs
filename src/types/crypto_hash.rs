@@ -17,7 +17,8 @@ impl std::str::FromStr for CryptoHash {
     type Err = Box<dyn std::error::Error>;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let crypto_hash = near_primitives::hash::CryptoHash::from_str(s)?;
+        let crypto_hash =
+            near_primitives::hash::CryptoHash::from_str(s).map_err(|err| err.to_string())?;
         Ok(Self(crypto_hash))
     }
 }

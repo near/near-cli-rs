@@ -27,11 +27,8 @@ fn main() -> CliResult {
     let cli = match CliArgs::try_parse() {
         Ok(cli) => cli,
         Err(error) => {
-            if matches!(
-                error.kind,
-                clap::ErrorKind::UnknownArgument | clap::ErrorKind::InvalidSubcommand
-            ) {
-                return try_external_subcommand_execution();
+            if matches!(error.kind, clap::ErrorKind::UnknownArgument) {
+                return try_external_subcommand_execution(error);
             }
             error.exit();
         }
@@ -48,7 +45,9 @@ fn main() -> CliResult {
 
     let completed_cli = CliArgs::from(args.clone());
 
-    let process_result = actix::System::new().block_on(args.process());
+    let process_result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(args.process());
 
     println!(
         "Your console command:\n{} {}",

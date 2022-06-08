@@ -149,9 +149,10 @@ impl std::str::FromStr for AvailableRpcServerUrl {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let url: url::Url =
             url::Url::parse(s).map_err(|err| format!("URL is not parsed: {}", err))?;
-        actix::System::new()
+        tokio::runtime::Runtime::new()
+            .unwrap()
             .block_on(async {
-                near_jsonrpc_client::JsonRpcClient::connect(&url.as_str())
+                near_jsonrpc_client::JsonRpcClient::connect(url.clone())
                     .call(near_jsonrpc_client::methods::status::RpcStatusRequest)
                     .await
             })
@@ -511,9 +512,9 @@ pub fn get_account_transfer_allowance(
                 pessimistic_transaction_fee: NearBalance::from_yoctonear(0),
             });
         };
-    let storage_amount_per_byte = actix::System::new()
+    let storage_amount_per_byte = tokio::runtime::Runtime::new().unwrap()
         .block_on(async {
-            near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url().as_str())
+            near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url())
                 .call(
                     near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
                         block_reference: near_primitives::types::BlockReference::Finality(
@@ -545,8 +546,8 @@ pub fn get_account_state(
     connection_config: &ConnectionConfig,
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
-    let query_view_method_response = actix::System::new().block_on(async {
-        near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url().as_str())
+    let query_view_method_response = tokio::runtime::Runtime::new().unwrap().block_on(async {
+        near_jsonrpc_client::JsonRpcClient::connect(connection_config.rpc_url())
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewAccount { account_id },
@@ -1250,7 +1251,7 @@ pub async fn save_access_key_to_keychain(
     Ok(())
 }
 
-pub fn try_external_subcommand_execution() -> CliResult {
+pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
     let (subcommand, args) = {
         let mut args = std::env::args().skip(1);
         let subcommand = args
@@ -1258,6 +1259,13 @@ pub fn try_external_subcommand_execution() -> CliResult {
             .ok_or_else(|| color_eyre::eyre::eyre!("subcommand is not provided"))?;
         (subcommand, args.collect::<Vec<String>>())
     };
+    let is_top_level_command_known = crate::commands::TopLevelCommandDiscriminants::iter()
+        .map(|x| format!("{:?}", &x).to_lowercase())
+        .find(|x| x == &subcommand)
+        .is_some();
+    if is_top_level_command_known {
+        error.exit()
+    }
     let subcommand_exe = format!("near-cli-{}{}", subcommand, std::env::consts::EXE_SUFFIX);
 
     let path = path_directories()
@@ -1314,7 +1322,7 @@ pub async fn display_account_info(
     conf: &ConnectionConfig,
     block_ref: BlockReference,
 ) -> crate::CliResult {
-    let resp = near_jsonrpc_client::JsonRpcClient::connect(&conf.archival_rpc_url().as_str())
+    let resp = near_jsonrpc_client::JsonRpcClient::connect(conf.archival_rpc_url())
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_ref,
             request: QueryRequest::ViewAccount {
@@ -1360,7 +1368,7 @@ pub async fn display_access_key_list(
     conf: &ConnectionConfig,
     block_ref: BlockReference,
 ) -> crate::CliResult {
-    let resp = near_jsonrpc_client::JsonRpcClient::connect(&conf.archival_rpc_url().as_str())
+    let resp = near_jsonrpc_client::JsonRpcClient::connect(conf.archival_rpc_url())
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_ref,
             request: QueryRequest::ViewAccessKeyList { account_id },

@@ -34,7 +34,8 @@ impl SignLedger {
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path
         );
-        let public_key = actix::System::new()
+        let public_key = tokio::runtime::Runtime::new()
+            .unwrap()
             .block_on(async {
                 near_ledger::get_public_key(seed_phrase_hd_path.clone().into()).await
             })
@@ -167,7 +168,7 @@ impl SignLedger {
             Some(network_connection_config) => {
                 let online_signer_access_key_response =
                     near_jsonrpc_client::JsonRpcClient::connect(
-                        &network_connection_config.rpc_url().as_str(),
+                        network_connection_config.rpc_url(),
                     )
                     .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                         block_reference: near_primitives::types::Finality::Final.into(),
