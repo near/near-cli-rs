@@ -21,7 +21,7 @@ impl BlockIdHash {
         network_connection_config: crate::common::ConnectionConfig,
     ) -> crate::CliResult {
         let query_view_method_response =
-            near_jsonrpc_client::JsonRpcClient::connect(network_connection_config.rpc_url())
+            near_jsonrpc_client::JsonRpcClient::connect(network_connection_config.archival_rpc_url())
                 .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                     block_reference: near_primitives::types::BlockReference::BlockId(
                         near_primitives::types::BlockId::Hash(self.block_id_hash.clone().into()),
