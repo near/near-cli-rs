@@ -24,25 +24,23 @@ impl BlockIdHeight {
     ) -> crate::CliResult {
         let args: near_primitives::types::FunctionArgs =
             near_primitives::types::FunctionArgs::from(args);
-        let query_view_method_response =
-            near_jsonrpc_client::JsonRpcClient::connect(network_connection_config.archival_rpc_url())
-                .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                    block_reference: near_primitives::types::BlockReference::BlockId(
-                        near_primitives::types::BlockId::Height(self.block_id_height.clone()),
-                    ),
-                    request: near_primitives::views::QueryRequest::CallFunction {
-                        account_id: contract_account_id,
-                        method_name,
-                        args,
-                    },
-                })
-                .await
-                .map_err(|err| {
-                    color_eyre::Report::msg(format!(
-                        "Failed to fetch query for view method: {:?}",
-                        err
-                    ))
-                })?;
+        let query_view_method_response = near_jsonrpc_client::JsonRpcClient::connect(
+            network_connection_config.archival_rpc_url(),
+        )
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::BlockReference::BlockId(
+                near_primitives::types::BlockId::Height(self.block_id_height.clone()),
+            ),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: contract_account_id,
+                method_name,
+                args,
+            },
+        })
+        .await
+        .map_err(|err| {
+            color_eyre::Report::msg(format!("Failed to fetch query for view method: {:?}", err))
+        })?;
         let call_result =
             if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
                 query_view_method_response.kind
