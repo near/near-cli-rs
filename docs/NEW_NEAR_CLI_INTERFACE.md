@@ -73,8 +73,6 @@ contract
       - transaction signature options here (see below)
 
   - download-wasm <account-id> to-folder <path-to-download-folder> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
-
-  - inspect-storage <account-id> key-prefix <storage-key-prefix> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 ```
 
 ```
@@ -154,6 +152,7 @@ Extensions design is a work in progress. They are here mostly to show that we ha
 ### `developer` extension
 ```txt
 - dev-deploy-code <wasm-file>
+- inspect-storage <account-id> key-prefix <storage-key-prefix> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 - ...
 ```
 
