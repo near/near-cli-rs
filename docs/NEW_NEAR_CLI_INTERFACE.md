@@ -42,15 +42,18 @@ account
   - list-keys <account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 
   - add-key <account-id>
-    - autogenerate-new-keypair network <"mainnet"|"testnet"|...>
-      - save-to-keychain network <"mainnet"|"testnet"|...>
+    - grant-full-access
+      - autogenerate-new-keypair
+        - save-to-keychain network <"mainnet"|"testnet"|...>
+          - transaction signature options here (see below)
+        - print-to-terminal network <"mainnet"|"testnet"|...>
+          - transaction signature options here (see below)
+      - use-manually-provided-seed-phrase "twelve words goes here" network <"mainnet"|"testnet"|...>
         - transaction signature options here (see below)
-      - print-to-terminal network <"mainnet"|"testnet"|...>
+      - use-manually-provided-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
         - transaction signature options here (see below)
-    - use-manually-provided-seed-prase "twelve words goes here" network <"mainnet"|"testnet"|...>
-      - transaction signature options here (see below)
-    - use-manually-provided-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
-      - transaction signature options here (see below)
+    - grant-function-call-access --receiver-account-id <account-id> --method-names 'comma,separated,list' --allowance '0.25NEAR'
+      - (use the same follow-up parameters as for `grant-full-access`)
 
   - delete-key <account-id> <public-key> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
