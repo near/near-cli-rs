@@ -11,7 +11,7 @@ Before proceeding to the description of specific commands, it is necessary to co
 
 1. _Online_ / _Offline_ mode
 
-    The result of the creation of any transaction in the _Offline_ mode (display)  is a prepared transaction in the form of a Base64-encoded string, which can then be [sent to the network via RPC](https://docs.near.org/docs/api/rpc#transactions). In _Online_ mode, such a function has already been added (send).
+    The result of the creation of any transaction in the _Offline_ mode (display)  is a prepared transaction in the form of a Base64-encoded string, which can then be [sent to the network via RPC](https://docs.near.org/api/rpc/transactions). In _Online_ mode, such a function has already been added (send).
     Also, the _Online_ mode provides automatic collection of data necessary to form and send a transaction, and in the _Offline_ mode, you will need to enter some parameters manually:
 
       * _transaction nonce_
