@@ -15,7 +15,7 @@ impl GenerateKeypair {
         network_connection_config: Option<crate::common::ConnectionConfig>,
     ) -> crate::CliResult {
         let key_pair_properties: crate::common::KeyPairProperties =
-            crate::common::generate_keypair().await?;
+            crate::common::generate_keypair(None).await?;
         crate::common::save_access_key_to_keychain(
             network_connection_config.clone(),
             key_pair_properties.clone(),

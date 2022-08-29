@@ -590,9 +590,12 @@ pub struct KeyPairProperties {
     pub secret_keypair_str: String,
 }
 
-pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
-    let generate_keypair: crate::commands::utils_command::generate_keypair_subcommand::CliGenerateKeypair =
-        crate::commands::utils_command::generate_keypair_subcommand::CliGenerateKeypair::default();
+pub async fn generate_keypair(
+    generate_keypair: Option<
+        crate::commands::utils_command::generate_keypair_subcommand::CliGenerateKeypair,
+    >,
+) -> color_eyre::eyre::Result<KeyPairProperties> {
+    let generate_keypair = generate_keypair.unwrap_or_default();
     let (master_seed_phrase, master_seed) =
         if let Some(master_seed_phrase) = generate_keypair.master_seed_phrase.as_deref() {
             (

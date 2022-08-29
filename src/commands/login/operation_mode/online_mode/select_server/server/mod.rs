@@ -63,7 +63,7 @@ impl Server {
 
 async fn login(connection_config: crate::common::ConnectionConfig) -> crate::CliResult {
     let key_pair_properties: crate::common::KeyPairProperties =
-        crate::common::generate_keypair().await?;
+        crate::common::generate_keypair(None).await?;
     let mut url: url::Url = connection_config.wallet_url().join("login/")?;
     url.query_pairs_mut()
         .append_pair("title", "NEAR CLI")
