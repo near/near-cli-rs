@@ -1,69 +1,48 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-pub mod add_command;
-pub mod construct_transaction_command;
-pub mod delete_command;
-pub mod execute_command;
-pub mod generate_shell_completions_command;
-pub mod login;
-pub mod transfer_command;
-pub mod utils_command;
-pub mod view_command;
+mod account;
+mod config;
+mod contract;
+mod tokens;
+mod transaction;
 
-#[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-#[interactive_clap(context = ())]
-///Choose transaction action
+#[interactive_clap(disable_back)]
+/// What are you up to? (select one of the options with the up-down arrows on your keyboard and press Enter)
 pub enum TopLevelCommand {
-    #[strum_discriminants(strum(message = "Login with wallet authorization"))]
-    ///Use these to login with wallet authorization
-    Login(self::login::operation_mode::OperationMode),
+    #[strum_discriminants(strum(message = "account     - Manage accounts"))]
+    /// View account summary, create subaccount, delete account, list keys, add key, delete key, import account
+    Account(self::account::AccountCommands),
     #[strum_discriminants(strum(
-        message = "View account, contract code, contract state, transaction, nonce, recent block hash"
+        message = "tokens      - Manage token assets such as NEAR, FT, NFT"
     ))]
-    ///View account, contract code, contract state, transaction, nonce, recent block hash
-    View(self::view_command::ViewQueryRequest),
-    #[strum_discriminants(strum(message = "Transfer tokens"))]
-    ///Use these to transfer tokens
-    Transfer(self::transfer_command::Currency),
-    #[strum_discriminants(strum(message = "Execute function (contract method)"))]
-    ///Execute function (contract method)
-    Execute(self::execute_command::OptionMethod),
+    /// Use this for token actions: send or view balances of NEAR, FT, or NFT
+    Tokens(self::tokens::TokensCommands),
     #[strum_discriminants(strum(
-        message = "Add access key, contract code, stake proposal, sub-account, implicit-account"
+        message = "contract    - Manage smart-contracts: deploy code, call functions"
     ))]
-    ///Use these to add access key, contract code, stake proposal, sub-account, implicit-account
-    Add(self::add_command::AddAction),
-    #[strum_discriminants(strum(message = "Delete access key, account"))]
-    ///Use these to delete access key, sub-account
-    Delete(self::delete_command::DeleteAction),
-    #[strum_discriminants(strum(message = "Construct a new transaction"))]
-    ///Prepare and, optionally, submit a new transaction
-    ConstructTransaction(self::construct_transaction_command::operation_mode::OperationMode),
-    #[strum_discriminants(strum(message = "Helpers"))]
-    ///Helpers
-    Utils(self::utils_command::Utils),
+    /// Use this for contract actions: call function, deploy, download wasm, inspect storage
+    Contract(self::contract::ContractCommands),
+    #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
+    /// Use this to construct transactions or view a transaction status.
+    Transaction(self::transaction::TransactionCommands),
+    #[strum_discriminants(strum(
+        message = "config      - Manage connections in a configuration file (config.toml)"
+    ))]
+    /// Use this to manage connections in a configuration file (config.toml).
+    Config(self::config::ConfigCommands),
 }
 
 impl TopLevelCommand {
-    pub async fn process(self) -> crate::CliResult {
-        let unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: "test".parse().unwrap(),
-            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-            nonce: 0,
-            receiver_id: "test".parse().unwrap(),
-            block_hash: Default::default(),
-            actions: vec![],
-        };
+    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         match self {
-            Self::Add(add_action) => add_action.process(unsigned_transaction).await,
-            Self::ConstructTransaction(mode) => mode.process(unsigned_transaction).await,
-            Self::Delete(delete_action) => delete_action.process(unsigned_transaction).await,
-            Self::Execute(option_method) => option_method.process(unsigned_transaction).await,
-            Self::Login(mode) => mode.process().await,
-            Self::Transfer(currency) => currency.process(unsigned_transaction).await,
-            Self::Utils(util_type) => util_type.process().await,
-            Self::View(view_query_request) => view_query_request.process().await,
+            Self::Tokens(tokens_commands) => tokens_commands.process(config).await,
+            Self::Account(account_commands) => account_commands.process(config).await,
+            Self::Contract(contract_commands) => contract_commands.process(config).await,
+            Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
+            Self::Config(config_commands) => config_commands.process(config).await,
         }
     }
 }

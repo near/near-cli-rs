@@ -1,33 +1,42 @@
-use clap::Clap;
-use shell_words;
-
 use common::{try_external_subcommand_execution, CliResult};
 
 mod commands;
 mod common;
-mod consts;
+mod config;
+mod network;
+mod network_for_transaction;
+mod network_view_at_block;
+mod transaction_signature_options;
 mod types;
+mod utils_command;
 
-#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = ())]
-struct Args {
+pub type GlobalContext = (crate::config::Config,);
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = crate::GlobalContext)]
+struct Cmd {
     #[interactive_clap(subcommand)]
-    top_level_command: self::commands::TopLevelCommand,
+    top_level: self::commands::TopLevelCommand,
 }
 
-impl Args {
-    async fn process(self) -> CliResult {
-        self.top_level_command.process().await
+impl Cmd {
+    async fn process(&self, config: crate::config::Config) -> CliResult {
+        self.top_level.process(config).await
     }
 }
 
 fn main() -> CliResult {
+    let config = crate::common::get_config_toml()?;
+
     color_eyre::install()?;
 
-    let cli = match CliArgs::try_parse() {
+    let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
         Err(error) => {
-            if matches!(error.kind, clap::ErrorKind::UnknownArgument) {
+            if matches!(
+                error.kind(),
+                clap::error::ErrorKind::UnknownArgument | clap::error::ErrorKind::InvalidSubcommand
+            ) {
                 return try_external_subcommand_execution(error);
             }
             error.exit();
@@ -41,13 +50,17 @@ fn main() -> CliResult {
     //     return Ok(());
     // }
 
-    let args = Args::from_cli(Some(cli), ())?;
+    let cmd = loop {
+        if let Some(cmd) = Cmd::from_cli(Some(cli.clone()), (config.clone(),))? {
+            break cmd;
+        }
+    };
 
-    let completed_cli = CliArgs::from(args.clone());
+    let completed_cli = CliCmd::from(cmd.clone());
 
     let process_result = tokio::runtime::Runtime::new()
         .unwrap()
-        .block_on(args.process());
+        .block_on(cmd.process(config));
 
     println!(
         "Your console command:\n{} {}",

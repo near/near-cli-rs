@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 #[derive(Eq, Ord, Hash, Clone, Debug, PartialEq, PartialOrd)]
 pub struct AccountId(pub near_primitives::types::AccountId);
 
@@ -30,4 +32,12 @@ impl AsRef<str> for AccountId {
 
 impl interactive_clap::ToCli for AccountId {
     type CliVariant = AccountId;
+}
+
+impl AccountId {
+    pub fn get_owner_account_id_from_sub_account(self) -> Self {
+        let owner_account_id = self.to_string();
+        let owner_account_id = owner_account_id.split_once('.').map_or("default", |s| s.1);
+        Self::from_str(owner_account_id).unwrap()
+    }
 }

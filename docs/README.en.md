@@ -18,29 +18,30 @@ near-cli is a command line utility for working with the Near Protocol blockchain
 In general, it is difficult for a beginner to immediately understand how commands work.  
 For example, I consider having the following command to do a transfer:
 ```txt
-near-cli transfer near \
+./near-cli tokens \
+    'volodymyr.testnet' \
+    send-near \
+    'fro_volod.testnet' \
+    '1 NEAR' \
     network testnet \
-    sender 'volodymyr.testnet' \
-    receiver '21.volodymyr.testnet' \
-    amount  '1 NEAR' \
     sign-with-keychain \
     send
 ```
 This is the complete version of the command. The result of this command will be as follows:
 ```txt
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(``),
-    ...
-}
+Successful transaction
+<volodymyr.testnet> has transferred 1 NEAR to <fro_volod.testnet> successfully.
+Transaction ID: G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaqmj8Nup2TaAg
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaqmj8Nup2TaAg
 ```
 Typing this or another command manually, you can make a mistake or forget the sequence of the command.  
 It is not a problem. `--help` will tell you how to build a command properly.  
 However, using near-cli, you can press _Enter_ anywhere in the command line and the interactive mode of the program will continue to compose the command from the place where you finished entering the necessary parameters.
 
 <details><summary><i>Demonstration of the utility with a partially recruited command</i></summary>
-<a href="https://asciinema.org/a/tdNu6qoDKUzFH6ZCsfADHoqOP?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/tdNu6qoDKUzFH6ZCsfADHoqOP.png" width="836"/>
+<a href="https://asciinema.org/a/AfxLN1QtJi1z1qXuowTj2nDw2?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/AfxLN1QtJi1z1qXuowTj2nDw2.png" width="836"/>
 </a>
 </details>
 
@@ -59,7 +60,7 @@ The resulting directory contains the executable file _near-cli_, which is accomp
 
 near-cli is written in Rust, so you'll need to grab a
 [Rust installation](https://www.rust-lang.org/) in order to compile it.
-near-cli compiles with Rust 1.53.0 (stable) or newer. In general, near-cli tracks the latest stable release of the Rust compiler.
+near-cli compiles with Rust 1.61.0 (stable) or newer. In general, near-cli tracks the latest stable release of the Rust compiler.
 
 To build near-cli:
 
