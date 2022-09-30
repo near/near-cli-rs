@@ -19,11 +19,12 @@ near-cli – это утилита командной строки для раб
 Например, для осуществления перевода токенов необходимо набрать в терминале такую команду:
 
 ```txt
-./near-cli transfer near \
+./near-cli tokens \
+    'volodymyr.testnet' \
+    send-near \
+    'fro_volod.testnet' \
+    '1 NEAR' \
     network testnet \
-    sender 'volodymyr.testnet' \
-    receiver '21.volodymyr.testnet' \
-    amount  '1 NEAR' \
     sign-with-keychain \
     send
 ```
@@ -31,11 +32,11 @@ near-cli – это утилита командной строки для раб
 Это полная команда. Результат ее работы будет такой:
 
 ```txt
----  Success:  ---
- FinalExecutionOutcome {
-    status: SuccessValue(``),
-    ...
-}
+Successful transaction
+<volodymyr.testnet> has transferred 1 NEAR to <fro_volod.testnet> successfully.
+Transaction ID: G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaqmj8Nup2TaAg
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaqmj8Nup2TaAg
 ```
 
 Набирая эту или другую команду вручную, Вы можете допустить ошибку, либо забыть последовательность набора команды.  
@@ -43,8 +44,8 @@ near-cli – это утилита командной строки для раб
 Однако, используя near-cli, Вы __в любом месте набора команды__ можете нажать Enter и интерактивный режим программы продолжит работу по составлению команды с того места, где Вы закончили вводить необходимые параметры.
 
 <details><summary><i>Демонстрация работы утилиты с частично набранной командой</i></summary>
-<a href="https://asciinema.org/a/tdNu6qoDKUzFH6ZCsfADHoqOP?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/tdNu6qoDKUzFH6ZCsfADHoqOP.png" width="836"/>
+<a href="https://asciinema.org/a/AfxLN1QtJi1z1qXuowTj2nDw2?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/AfxLN1QtJi1z1qXuowTj2nDw2.png" width="836"/>
 </a>
 </details>
 
@@ -63,7 +64,7 @@ near-cli – это утилита командной строки для раб
 
 near-cli написан на Rust. Поэтому необходимо
 [установить Rust](https://www.rust-lang.org/) для компиляции программы.
-near-cli компилируется на версии Rust 1.53.0 (stable) или новее.
+near-cli компилируется на версии Rust 1.61.0 (stable) или новее.
 
 Сборка near-cli:
 

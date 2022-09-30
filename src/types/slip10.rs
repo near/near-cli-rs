@@ -8,10 +8,10 @@ impl std::fmt::Display for BIP32Path {
 }
 
 impl std::str::FromStr for BIP32Path {
-    type Err = slip10::Error;
+    type Err = color_eyre::eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let bip32path = slip10::BIP32Path::from_str(s)?;
+        let bip32path = slip10::BIP32Path::from_str(s).map_err(Self::Err::msg)?;
         Ok(Self(bip32path))
     }
 }

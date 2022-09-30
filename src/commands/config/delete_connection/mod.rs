@@ -1,0 +1,18 @@
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = crate::GlobalContext)]
+pub struct DeleteNetworkConnection {
+    ///What is the network name?
+    #[interactive_clap(skip_default_input_arg)]
+    network_name: String,
+}
+
+impl DeleteNetworkConnection {
+    fn input_network_name(context: &crate::GlobalContext) -> color_eyre::eyre::Result<String> {
+        crate::common::input_network_name(context)
+    }
+
+    pub async fn process(&self, mut config: crate::config::Config) -> crate::CliResult {
+        config.networks.remove(&self.network_name);
+        crate::common::write_config_toml(config)
+    }
+}
