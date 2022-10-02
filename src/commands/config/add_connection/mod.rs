@@ -4,16 +4,22 @@ use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 #[interactive_clap(context = crate::GlobalContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct AddNetworkConnection {
+    #[interactive_clap(long)]
     ///What is the NEAR network? (e.g. mainnet, testnet, shardnet)
     network_name: String,
+    #[interactive_clap(long)]
     ///What is the connection name? (e.g. pagoda-mainnet)
     connection_name: String,
+    #[interactive_clap(long)]
     ///What is the RPC endpoint?
     rpc_url: crate::types::url::Url,
+    #[interactive_clap(long)]
     ///What is the wallet endpoint?
     wallet_url: crate::types::url::Url,
+    #[interactive_clap(long)]
     ///What is the transaction explorer endpoint?
     explorer_transaction_url: crate::types::url::Url,
+    #[interactive_clap(long)]
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     api_key: Option<String>,
@@ -113,6 +119,11 @@ impl AddNetworkConnection {
             },
         );
         println!();
-        crate::common::write_config_toml(config)
+        crate::common::write_config_toml(config)?;
+        println!(
+            "Network connection \"{}\" was successfully added to config.toml",
+            &self.connection_name
+        );
+        Ok(())
     }
 }
