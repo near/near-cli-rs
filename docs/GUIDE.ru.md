@@ -23,21 +23,21 @@
        Ключи доступа должны находиться в файле \*публичный*ключ.json*, расположенном в */Users/user/.near-credentials/имя*сети/имя*пользователя/_.  
        Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json\*
 
-   - _sign-with-ledger - Sign the transaction with a ledger_
+        <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+        <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
+            <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
+        </a>
+        </details>
 
-     Этот вариант предполагает подписание созданной транзакции при помощи леджера.
+     - _sign-with-ledger - Sign the transaction with a ledger_
 
-   - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
+       Этот вариант предполагает подписание созданной транзакции при помощи леджера.
 
-     При выборе этого варианта подписи near-cli попросит пользователя ввести ключи доступа:
-     "public_key":"ed25519:Ebx7...",
-     "private_key":"ed25519:2qM8..."
+     - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
 
-     <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-     <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
-         <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
-     </a>
-     </details>
+       При выборе этого варианта подписи near-cli попросит пользователя ввести ключи доступа:
+       - "public_key":"ed25519:Ebx7...",
+       - "private_key":"ed25519:2qM8..."
 
 2. Действия с подписанной транзакцией
 
@@ -55,6 +55,7 @@
 - [tokens      - Manage token assets such as NEAR, FT, NFT](#tokens---Manage-token-assets-such-as-NEAR-FT-NFT)
 - [contract    - Manage smart-contracts: deploy code, call functions](#contract---Manage-smart-contracts-deploy-code-call-functions)
 - [transaction - Operate transactions](#transaction---Operate-transactions)
+- [config      - Manage connections in a configuration file](#config---Manage-connections-in-a-configuration-file)
 
 ### account - Manage accounts
 
@@ -533,7 +534,7 @@ https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWe
     fro_volod.testnet \
     send-ft usdn.testnet volodymyr.testnet 10000000000000000000 \
         --prepaid-gas 100.000TeraGas \
-        --attached-deposit 0.000000000000000000000001NEAR \
+        --attached-deposit 1yoctoNEAR \
     network testnet \
     sign-with-keychain \
     send
@@ -566,7 +567,7 @@ https://explorer.testnet.near.org/transactions/5a7YmANdpimiqUm6WC6n4dd91b6A9PafN
     fro_volod.testnet \
     send-nft paras-token-v2.testnet volodymyr.testnet 1604:4 \
         --prepaid-gas 100.000TeraGas \
-        --attached-deposit 0.000000000000000000000001NEAR \
+        --attached-deposit 1yoctoNEAR \
     network testnet \
     sign-with-keychain \
     send
@@ -1032,4 +1033,85 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 <a href="https://asciinema.org/a/WNbxN1GB861q2sBbiKbQyVl3S?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/WNbxN1GB861q2sBbiKbQyVl3S.png" width="836"/>
 </a>
+</details>
+
+### config - Manage connections in a configuration file
+
+- [show-connections](#show-connections---Show-a-list-of-network-connections)
+- [add-connection](#add-connection---Add-a-network-connection)
+- [delete-connection](#delete-connection---Delete-a-network-connection)
+
+#### show-connections - Show a list of network connections
+
+Для просмотра данных конфигурационного файла (_config.toml_) можно воспользоваться интерактивным режимом либо ввести в командной строке терминала:
+```txt
+./near-cli config show-connections
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Configuration data is stored in a file "/Users/frovolod/Library/Application Support/near-cli/config.toml"
+credentials_home_dir = "/Users/frovolod/.near-credentials"
+[networks.mainnet]
+network_name = "mainnet"
+rpc_url = "https://archival-rpc.mainnet.near.org/"
+wallet_url = "https://wallet.mainnet.near.org/"
+explorer_transaction_url = "https://explorer.mainnet.near.org/transactions/"
+
+[networks.testnet]
+network_name = "testnet"
+rpc_url = "https://archival-rpc.testnet.near.org/"
+wallet_url = "https://wallet.testnet.near.org/"
+explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+
+[networks.shardnet]
+network_name = "shardnet"
+rpc_url = "https://rpc.shardnet.near.org/"
+wallet_url = "https://wallet.shardnet.near.org/"
+explorer_transaction_url = "https://explorer.shardnet.near.org/transactions/"
+```
+</details>
+
+#### add-connection - Add a network connection
+
+Для добавления данных о сети в конфигурационный файл (_config.toml_) можно воспользоваться интерактивным режимом либо ввести в командной строке терминала:
+```txt
+./near-cli config \
+    add-connection \
+        --network-name testnet \
+        --connection-name pagoda-testnet \
+        --rpc-url https://near-testnet.api.pagoda.co/rpc/v1/ \
+        --wallet-url https://wallet.testnet.near.org/ \
+        --explorer-transaction-url https://explorer.testnet.near.org/transactions/ \
+        --api-key c0a25b3c-39c2-4f62-a621-50e208b88e64
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Configuration data is stored in a file "/Users/frovolod/Library/Application Support/near-cli/config.toml"
+Network connection "pagoda-testnet" was successfully added to config.toml
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/49s6yuDmxQyaA2XgEqlBC6cpN?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/49s6yuDmxQyaA2XgEqlBC6cpN.png" width="836"/>
+</a>
+</details>
+
+#### delete-connection - Delete a network connection
+
+Для удаления сети из конфигурационного файла (_config.toml_) можно воспользоваться интерактивным режимом либо ввести в командной строке терминала:
+```txt
+./near-cli config delete-connection pagoda-testnet
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Configuration data is stored in a file "/Users/frovolod/Library/Application Support/near-cli/config.toml"
+Network connection "pagoda-testnet" was successfully removed from config.toml
+```
 </details>
