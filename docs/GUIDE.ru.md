@@ -20,8 +20,6 @@
      - Linux: $XDG_CONFIG_HOME или $HOME/.config (/home/alice/.config)
      - macOS: $HOME/Library/Application Support (/Users/Alice/Library/Application Support)
      - Windows: {FOLDERID*RoamingAppData} (C:\Users\Alice\AppData\Roaming)
-       Ключи доступа должны находиться в файле \*публичный*ключ.json*, расположенном в */Users/user/.near-credentials/имя*сети/имя*пользователя/_.  
-       Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json\*
 
         <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
         <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
@@ -59,7 +57,7 @@
 
 ### account - Manage accounts
 
-Просмотреть сведения об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)) и просмотреть ключи доступа к аккаунту ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) возможно в режиме реального времени (**now**) и режиме архивных данных (**at-block-height**, **at-block-hash**). На примерах ниже показаны варианты применения этих режимов.
+Просмотреть сведения об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)) и просмотреть ключи доступа к аккаунту ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) возможно на текущий момент времени (**now**) и на определеный момент в прошлом, указав блок (**at-block-height** или **at-block-hash**). На примерах ниже показаны варианты применения этих режимов.
 
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
 - [login](#login---Log-in-with-NEAR-Wallet-authorization)
