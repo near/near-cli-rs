@@ -47,8 +47,8 @@ near-primitives = "0.14"
 near-jsonrpc-client = "0.4.0-beta.0"
 near-jsonrpc-primitives = "0.14"
 
-interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="56ffcc743bb4f823d47980f77a9c5de40301fc3f" }
-interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="56ffcc743bb4f823d47980f77a9c5de40301fc3f" }
+interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="b6294f2bd0a5133e71d822dc3e982c23755cd61b" }
+interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="b6294f2bd0a5133e71d822dc3e982c23755cd61b" }
 
 [features]
 default = ["ledger"]

@@ -1,29 +1,5 @@
 use dialoguer::Input;
 
-#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
-pub struct CallFunctionProperties {
-    ///What is the contract account ID?
-    contract_account_id: crate::types::account_id::AccountId,
-    ///What is the name of the function?
-    function_name: String,
-    #[interactive_clap(subcommand)]
-    function_args: super::call_function_args::CallFunctionArgs,
-}
-
-impl CallFunctionProperties {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let function_call_action = FunctionCallAction {
-            contract_account_id: Some(self.contract_account_id.clone()),
-            function_name: self.function_name.clone(),
-            ..Default::default()
-        };
-        self.function_args
-            .process(config, Some(function_call_action))
-            .await
-    }
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct FunctionCallAction {
     pub contract_account_id: Option<crate::types::account_id::AccountId>,
@@ -31,6 +7,42 @@ pub struct FunctionCallAction {
     pub function_args: String,
     pub gas: crate::common::NearGas,
     pub deposit: crate::common::NearBalance,
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = crate::GlobalContext)]
+pub struct CallFunctionProperties {
+    ///What is the contract account ID?
+    contract_account_id: crate::types::account_id::AccountId,
+    ///What is the name of the function?
+    function_name: String,
+    #[interactive_clap(arg_enum)]
+    #[interactive_clap(skip_default_input_arg)]
+    ///How do you want to pass the function call arguments?
+    function_args_type: super::call_function_args_type::FunctionArgsType,
+    ///Enter arguments to this function
+    function_args: String,
+    #[interactive_clap(named_arg)]
+    ///Enter gas for function call
+    prepaid_gas: super::as_transaction::PrepaidGas,
+}
+
+impl CallFunctionProperties {
+    fn input_function_args_type(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<super::call_function_args_type::FunctionArgsType> {
+        super::call_function_args_type::input_function_args_type()
+    }
+
+    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
+        let function_call_action = FunctionCallAction {
+            contract_account_id: Some(self.contract_account_id.clone()),
+            function_name: self.function_name.clone(),
+            function_args: self.function_args.clone(),
+            ..Default::default()
+        };
+        self.prepaid_gas.process(config, function_call_action).await
+    }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
