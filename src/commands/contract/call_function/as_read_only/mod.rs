@@ -5,23 +5,33 @@ pub struct CallFunctionView {
     account_id: crate::types::account_id::AccountId,
     ///What is the name of the function?
     function_name: String,
+    #[interactive_clap(arg_enum)]
+    #[interactive_clap(skip_default_input_arg)]
+    ///How do you want to pass the function call arguments?
+    function_args_type: super::call_function_args_type::FunctionArgsType,
     ///Enter arguments to this function
     function_args: String,
     #[interactive_clap(named_arg)]
     ///Select network
-    network: crate::network_view_at_block::NetworkViewAtBlockArgs,
+    network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
 }
 
 impl CallFunctionView {
+    fn input_function_args_type(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<super::call_function_args_type::FunctionArgsType> {
+        super::call_function_args_type::input_function_args_type()
+    }
+
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         let args: near_primitives::types::FunctionArgs =
             near_primitives::types::FunctionArgs::from(self.function_args.clone().into_bytes());
         let query_view_method_response = self
-            .network
+            .network_config
             .get_network_config(config)
             .json_rpc_client()?
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: self.network.get_block_ref(),
+                block_reference: self.network_config.get_block_ref(),
                 request: near_primitives::views::QueryRequest::CallFunction {
                     account_id: self.account_id.clone().into(),
                     method_name: self.function_name.clone(),
