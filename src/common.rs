@@ -140,8 +140,9 @@ impl std::str::FromStr for BlockHashAsBase58 {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
-            inner: near_primitives::serialize::from_base(s)
-                .map_err(|err| format!("base block hash sequence is invalid: {}", err))?
+            inner: bs58::decode(s)
+                .into_vec()
+                .map_err(|err| format!("base58 block hash sequence is invalid: {}", err))?
                 .as_slice()
                 .try_into()
                 .map_err(|err| format!("block hash could not be collected: {}", err))?,
