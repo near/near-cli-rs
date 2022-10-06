@@ -9,7 +9,7 @@ pub struct CallFunctionView {
     #[interactive_clap(skip_default_input_arg)]
     ///How do you want to pass the function call arguments?
     function_args_type: super::call_function_args_type::FunctionArgsType,
-    ///Enter arguments to this function
+    ///Enter the arguments to this function or the path to the arguments file
     function_args: String,
     #[interactive_clap(named_arg)]
     ///Select network
@@ -24,8 +24,18 @@ impl CallFunctionView {
     }
 
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let args: near_primitives::types::FunctionArgs =
-            near_primitives::types::FunctionArgs::from(self.function_args.clone().into_bytes());
+        let args: near_primitives::types::FunctionArgs = match self.function_args_type {
+            super::call_function_args_type::FunctionArgsType::FileArgs => {
+                let data_path = std::path::PathBuf::from(self.function_args.clone());
+                let data = std::fs::read(data_path).map_err(|err| {
+                    color_eyre::Report::msg(format!("Data file access not found! Error: {}", err))
+                })?;
+                near_primitives::types::FunctionArgs::from(data)
+            }
+            _ => {
+                near_primitives::types::FunctionArgs::from(self.function_args.clone().into_bytes())
+            }
+        };
         let query_view_method_response = self
             .network_config
             .get_network_config(config)

@@ -4,7 +4,7 @@ use dialoguer::Input;
 pub struct FunctionCallAction {
     pub contract_account_id: Option<crate::types::account_id::AccountId>,
     pub function_name: String,
-    pub function_args: String,
+    pub function_args: Vec<u8>,
     pub gas: crate::common::NearGas,
     pub deposit: crate::common::NearBalance,
 }
@@ -20,7 +20,7 @@ pub struct CallFunctionProperties {
     #[interactive_clap(skip_default_input_arg)]
     ///How do you want to pass the function call arguments?
     function_args_type: super::call_function_args_type::FunctionArgsType,
-    ///Enter arguments to this function
+    ///Enter the arguments to this function or the path to the arguments file
     function_args: String,
     #[interactive_clap(named_arg)]
     ///Enter gas for function call
@@ -35,10 +35,19 @@ impl CallFunctionProperties {
     }
 
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
+        let function_args: Vec<u8> = match self.function_args_type {
+            super::call_function_args_type::FunctionArgsType::FileArgs => {
+                let data_path = std::path::PathBuf::from(self.function_args.clone());
+                std::fs::read(data_path).map_err(|err| {
+                    color_eyre::Report::msg(format!("Data file access not found! Error: {}", err))
+                })?
+            }
+            _ => self.function_args.clone().into_bytes(),
+        };
         let function_call_action = FunctionCallAction {
             contract_account_id: Some(self.contract_account_id.clone()),
             function_name: self.function_name.clone(),
-            function_args: self.function_args.clone(),
+            function_args,
             ..Default::default()
         };
         self.prepaid_gas.process(config, function_call_action).await
@@ -160,7 +169,7 @@ impl SignerAccountId {
             actions: vec![near_primitives::transaction::Action::FunctionCall(
                 near_primitives::transaction::FunctionCallAction {
                     method_name: function_call_action.function_name.clone(),
-                    args: function_call_action.function_args.clone().into_bytes(),
+                    args: function_call_action.function_args.clone(),
                     gas: function_call_action.gas.clone().inner,
                     deposit: function_call_action.deposit.clone().to_yoctonear(),
                 },
