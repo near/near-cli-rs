@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
@@ -68,5 +70,30 @@ pub fn input_function_args_type() -> color_eyre::eyre::Result<FunctionArgsType> 
         FunctionArgsTypeDiscriminants::TextArgs => Ok(FunctionArgsType::TextArgs),
         FunctionArgsTypeDiscriminants::Base64Args => Ok(FunctionArgsType::Base64Args),
         FunctionArgsTypeDiscriminants::FileArgs => Ok(FunctionArgsType::FileArgs),
+    }
+}
+
+pub fn function_args(
+    args: String,
+    function_args_type: FunctionArgsType,
+) -> color_eyre::eyre::Result<Vec<u8>> {
+    match function_args_type {
+        super::call_function_args_type::FunctionArgsType::JsonArgs => {
+            let data_json = serde_json::Value::from_str(&args).map_err(|err| {
+                color_eyre::Report::msg(format!("Data not in JSON format! Error: {}", err))
+            })?;
+            Ok(data_json.to_string().into_bytes())
+        }
+        super::call_function_args_type::FunctionArgsType::TextArgs => Ok(args.clone().into_bytes()),
+        super::call_function_args_type::FunctionArgsType::Base64Args => {
+            Ok(base64::decode(args.as_bytes())?)
+        }
+        super::call_function_args_type::FunctionArgsType::FileArgs => {
+            let data_path = std::path::PathBuf::from(args.clone());
+            let data = std::fs::read(data_path).map_err(|err| {
+                color_eyre::Report::msg(format!("Data file access not found! Error: {}", err))
+            })?;
+            Ok(data)
+        }
     }
 }

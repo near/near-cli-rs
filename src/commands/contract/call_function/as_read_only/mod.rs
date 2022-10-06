@@ -24,18 +24,10 @@ impl CallFunctionView {
     }
 
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let args: near_primitives::types::FunctionArgs = match self.function_args_type {
-            super::call_function_args_type::FunctionArgsType::FileArgs => {
-                let data_path = std::path::PathBuf::from(self.function_args.clone());
-                let data = std::fs::read(data_path).map_err(|err| {
-                    color_eyre::Report::msg(format!("Data file access not found! Error: {}", err))
-                })?;
-                near_primitives::types::FunctionArgs::from(data)
-            }
-            _ => {
-                near_primitives::types::FunctionArgs::from(self.function_args.clone().into_bytes())
-            }
-        };
+        let args = super::call_function_args_type::function_args(
+            self.function_args.clone(),
+            self.function_args_type.clone(),
+        )?;
         let query_view_method_response = self
             .network_config
             .get_network_config(config)
@@ -45,7 +37,7 @@ impl CallFunctionView {
                 request: near_primitives::views::QueryRequest::CallFunction {
                     account_id: self.account_id.clone().into(),
                     method_name: self.function_name.clone(),
-                    args,
+                    args: near_primitives::types::FunctionArgs::from(args),
                 },
             })
             .await

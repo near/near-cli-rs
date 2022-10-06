@@ -35,15 +35,10 @@ impl CallFunctionProperties {
     }
 
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let function_args: Vec<u8> = match self.function_args_type {
-            super::call_function_args_type::FunctionArgsType::FileArgs => {
-                let data_path = std::path::PathBuf::from(self.function_args.clone());
-                std::fs::read(data_path).map_err(|err| {
-                    color_eyre::Report::msg(format!("Data file access not found! Error: {}", err))
-                })?
-            }
-            _ => self.function_args.clone().into_bytes(),
-        };
+        let function_args = super::call_function_args_type::function_args(
+            self.function_args.clone(),
+            self.function_args_type.clone(),
+        )?;
         let function_call_action = FunctionCallAction {
             contract_account_id: Some(self.contract_account_id.clone()),
             function_name: self.function_name.clone(),
