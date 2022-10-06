@@ -1,3 +1,4 @@
+#![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use common::{try_external_subcommand_execution, CliResult};
 
 mod commands;
