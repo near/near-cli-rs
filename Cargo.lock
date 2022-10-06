@@ -1186,7 +1186,7 @@ dependencies = [
 [[package]]
 name = "interactive_clap"
 version = "0.1.0"
-source = "git+https://github.com/FroVolod/interactive-clap?rev=56ffcc743bb4f823d47980f77a9c5de40301fc3f#56ffcc743bb4f823d47980f77a9c5de40301fc3f"
+source = "git+https://github.com/FroVolod/interactive-clap?rev=b6294f2bd0a5133e71d822dc3e982c23755cd61b#b6294f2bd0a5133e71d822dc3e982c23755cd61b"
 dependencies = [
  "interactive_clap_derive",
 ]
@@ -1194,7 +1194,7 @@ dependencies = [
 [[package]]
 name = "interactive_clap_derive"
 version = "0.1.0"
-source = "git+https://github.com/FroVolod/interactive-clap?rev=56ffcc743bb4f823d47980f77a9c5de40301fc3f#56ffcc743bb4f823d47980f77a9c5de40301fc3f"
+source = "git+https://github.com/FroVolod/interactive-clap?rev=b6294f2bd0a5133e71d822dc3e982c23755cd61b#b6294f2bd0a5133e71d822dc3e982c23755cd61b"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",
@@ -1441,7 +1441,7 @@ dependencies = [
 
 [[package]]
 name = "near-cli"
-version = "0.2.0"
+version = "0.2.0-pre.1"
 dependencies = [
  "async-recursion",
  "base64 0.12.3",
