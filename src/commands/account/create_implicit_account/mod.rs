@@ -61,7 +61,7 @@ impl Mode {
                     "Please allow getting the PublicKey on Ledger device (HD Path: {})",
                     seed_phrase_hd_path
                 );
-                let public_key = near_ledger::get_public_key(seed_phrase_hd_path.clone().into()).await
+                let public_key = near_ledger::get_public_key(seed_phrase_hd_path.clone().into())
                     .map_err(|near_ledger_error| {
                         color_eyre::Report::msg(format!(
                             "An error occurred while trying to get PublicKey from Ledger device: {:?}",
