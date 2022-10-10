@@ -39,17 +39,14 @@ impl SignLedger {
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path
         );
-        let public_key = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(async {
-                near_ledger::get_public_key(seed_phrase_hd_path.clone().into()).await
-            })
-            .map_err(|near_ledger_error| {
+        let public_key = near_ledger::get_public_key(seed_phrase_hd_path.clone().into()).map_err(
+            |near_ledger_error| {
                 color_eyre::Report::msg(format!(
                     "An error occurred while trying to get PublicKey from Ledger device: {:?}",
                     near_ledger_error
                 ))
-            })?;
+            },
+        )?;
         let signer_public_key: crate::types::public_key::PublicKey =
             near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
                 public_key.to_bytes(),
@@ -126,9 +123,7 @@ impl SignLedger {
                 .try_to_vec()
                 .expect("Transaction is not expected to fail on serialization"),
             seed_phrase_hd_path,
-        )
-        .await
-        {
+        ) {
             Ok(signature) => {
                 near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
                     .expect("Signature is not expected to fail on deserialization")
