@@ -81,7 +81,7 @@
 ```txt
 ./near-cli account \
     view-account-summary fro_volod.testnet \
-    network testnet \
+    network-config testnet \
     now
 ```
 
@@ -123,7 +123,7 @@ Number of access keys: 14
 ```txt
 ./near-cli account \
     view-account-summary fro_volod.testnet \
-    network testnet \
+    network-config testnet \
     at-block-height 73069245
 ```
 
@@ -163,7 +163,7 @@ Number of access keys: 12
 ```txt
 ./near-cli account \
     view-account-summary fro_volod.testnet \
-    network testnet \
+    network-config testnet \
     at-block-hash HCUJq3vQ3ztyCZAhmRmHR3cwSDcoE4zEbaWkhAjFuxUY
 ````
 
@@ -203,7 +203,7 @@ Number of access keys: 12
 ```txt
 ./near-cli account \
     import-account \
-    network testnet
+    network-config testnet
 ```
 
 Вы будете перенаправлены браузер для авторизации. После успешной авторизации в "NEAR Wallet" необходимо вернуться в терминал и ввести имя пользователя.
@@ -230,7 +230,7 @@ The file: /Users/frovolod/.near-credentials/testnet/fro_volod.testnet.json alrea
     '10 NEAR' \
     autogenerate-new-keypair \
     save-to-keychain \
-    network testnet \
+    network-config testnet \
     sign-with-keychain \
     send
 ```
@@ -316,7 +316,7 @@ The file "/Users/frovolod/.near-credentials/implicit/ledger/739c872c3057cd5d812c
 ./near-cli account \
     delete-account 2.fro_volod.testnet \
     beneficiary volodymyr.testnet \
-    network testnet \
+    network-config testnet \
     sign-with-keychain \
     send
 ```
@@ -347,7 +347,7 @@ https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MG
 ```txt
 ./near-cli account \
     list-keys fro_volod.testnet \
-    network testnet \
+    network-config testnet \
     now
 ```
 
@@ -391,7 +391,7 @@ Number of access keys: 14
     add-key fro_volod.testnet \
     grant-full-access \
     use-manually-provided-public-key ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 \
-    network testnet \
+    network-config testnet \
     sign-with-keychain \
     send
 ```
@@ -429,7 +429,7 @@ https://explorer.testnet.near.org/transactions/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jS
         --method-names 'set_a, set_b' \
     autogenerate-new-keypair \
     save-to-keychain \
-    network testnet \
+    network-config testnet \
     sign-with-plaintext-private-key \
         --signer-public-key ed25519:D31un5TFeABdNUVMaf3QzeBz3Z3yau2GZA2VPe8XX6GB \
         --signer-private-key  ed25519:3UVo1GAatRz12iX3CRuKAuK3MPLDD9bPf4LXJD5DkHs13er3UeJLW7aRPAVsFQ2FjopUw6DEApEngac8FPtnnkYB \
@@ -461,7 +461,7 @@ https://explorer.testnet.near.org/transactions/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvn
 ./near-cli account \
     delete-key fro_volod.testnet \
     ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 \
-    network testnet \
+    network-config testnet \
     sign-with-keychain \
     send
 ```
@@ -500,7 +500,7 @@ https://explorer.testnet.near.org/transactions/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2
 ./near-cli tokens \
     fro_volod.testnet \
     send-near volodymyr.testnet 0.1NEAR \
-    network testnet \
+    network-config testnet \
     sign-with-keychain \
     send
 ```
@@ -533,7 +533,7 @@ https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWe
     send-ft usdn.testnet volodymyr.testnet 10000000000000000000 \
         --prepaid-gas 100.000TeraGas \
         --attached-deposit 1yoctoNEAR \
-    network testnet \
+    network-config testnet \
     sign-with-keychain \
     send
 ```
@@ -566,7 +566,7 @@ https://explorer.testnet.near.org/transactions/5a7YmANdpimiqUm6WC6n4dd91b6A9PafN
     send-nft paras-token-v2.testnet volodymyr.testnet 1604:4 \
         --prepaid-gas 100.000TeraGas \
         --attached-deposit 1yoctoNEAR \
-    network testnet \
+    network-config testnet \
     sign-with-keychain \
     send
 ```
@@ -598,7 +598,7 @@ https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7
 ./near-cli tokens \
     fro_volod.testnet \
     view-near-balance \
-    network testnet \
+    network-config testnet \
     now
 ```
 
@@ -624,7 +624,7 @@ fro_volod.testnet account has 169.589001320890476999999994 NEAR available for tr
 ./near-cli tokens \
     fro_volod.testnet \
     view-ft-balance usdn.testnet \
-    network testnet \
+    network-config testnet \
     now
 ```
 
@@ -650,7 +650,7 @@ fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usd
 ./near-cli tokens \
     fro_volod.testnet \
     view-nft-assets paras-token-v2.testnet \
-    network testnet \
+    network-config testnet \
     now
 ```
 
@@ -790,7 +790,7 @@ https://explorer.testnet.near.org/transactions/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUC
     with-init-call increment {} \
         --prepaid-gas '1 TGas' \
         --attached-deposit '0 NEAR' \
-    network testnet \
+    network-config testnet \
     sign-with-keychain \
     send
 ```
@@ -824,7 +824,7 @@ https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7
 ./near-cli contract \
     download-wasm 262.volodymyr.testnet \
     to-folder /Users/frovolod/Downloads \
-    network testnet \
+    network-config testnet \
     now
 ```
 
@@ -852,7 +852,7 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 ./near-cli transaction \
     view-status GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank \
     volodymyr.testnet \
-    network testnet
+    network-config testnet
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
