@@ -41,7 +41,7 @@ impl InitializeMode {
 pub struct NoInitialize {
     #[interactive_clap(named_arg)]
     ///Select network
-    network: crate::network_for_transaction::NetworkForTransactionArgs,
+    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
 impl NoInitialize {
@@ -50,14 +50,14 @@ impl NoInitialize {
         config: crate::config::Config,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        match self.network.get_sign_option() {
+        match self.network_config.get_sign_option() {
             crate::transaction_signature_options::SignWith::SignWithPlaintextPrivateKey(
                 sign_private_key,
             ) => {
                 sign_private_key
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config),
+                        self.network_config.get_network_config(config),
                     )
                     .await
             }
@@ -65,7 +65,7 @@ impl NoInitialize {
                 sign_keychain
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config.clone()),
+                        self.network_config.get_network_config(config.clone()),
                         config.credentials_home_dir,
                     )
                     .await
@@ -75,7 +75,7 @@ impl NoInitialize {
                 sign_ledger
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config),
+                        self.network_config.get_network_config(config),
                     )
                     .await
             }

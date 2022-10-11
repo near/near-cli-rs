@@ -47,7 +47,9 @@ pub enum NextAction {
 impl From<NextAction> for CliSkipNextAction {
     fn from(next_action: NextAction) -> Self {
         match next_action {
-            NextAction::AddAction(_select_action) => Self::Skip(CliSkipAction { network: None }),
+            NextAction::AddAction(_select_action) => Self::Skip(CliSkipAction {
+                network_config: None,
+            }),
             NextAction::Skip(skip_action) => Self::Skip(skip_action.into()),
         }
     }
@@ -73,10 +75,10 @@ impl NextAction {
                 if let Some(skip_action) = optional_skip_action {
                     Ok(Some(Self::Skip(skip_action)))
                 } else {
-                    Self::choose_variant(context.clone())
+                    Self::choose_variant(context)
                 }
             }
-            None => Self::choose_variant(context.clone()),
+            None => Self::choose_variant(context),
         }
     }
 }
@@ -134,7 +136,7 @@ impl BoxNextAction {
                 inner: Box::new(next_action),
             }))
         } else {
-            return Ok(None);
+            Ok(None)
         }
     }
 }
@@ -151,7 +153,7 @@ impl BoxNextAction {
                 inner: Box::new(next_action),
             }))
         } else {
-            return Ok(None);
+            Ok(None)
         }
     }
 }
@@ -270,7 +272,7 @@ impl ActionSubcommand {
 pub struct SkipAction {
     #[interactive_clap(named_arg)]
     ///Select network
-    network: crate::network_for_transaction::NetworkForTransactionArgs,
+    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 //------------------------------------
 // impl From<SelectAction> for CliSkipAction {
@@ -288,14 +290,14 @@ impl SkipAction {
         config: crate::config::Config,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
-        match self.network.get_sign_option() {
+        match self.network_config.get_sign_option() {
             crate::transaction_signature_options::SignWith::SignWithPlaintextPrivateKey(
                 sign_private_key,
             ) => {
                 sign_private_key
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config),
+                        self.network_config.get_network_config(config),
                     )
                     .await
             }
@@ -303,7 +305,7 @@ impl SkipAction {
                 sign_keychain
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config.clone()),
+                        self.network_config.get_network_config(config.clone()),
                         config.credentials_home_dir,
                     )
                     .await
@@ -313,7 +315,7 @@ impl SkipAction {
                 sign_ledger
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config),
+                        self.network_config.get_network_config(config),
                     )
                     .await
             }

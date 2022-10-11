@@ -95,12 +95,12 @@ jobs:
     - name: View account summary for 'fro_volod.testnet'
       if: matrix.build != 'linux-aarch64-musl'
       run: |
-        ${{ env.TARGET_DIR }}/debug/near-cli account view-account-summary fro_volod.testnet network testnet now
+        ${{ env.TARGET_DIR }}/debug/near-cli account view-account-summary fro_volod.testnet network-config testnet now
     
     - name: Transfer NEAR Tokens
       if: matrix.build != 'linux-aarch64-musl'
       run: |
-        ${{ env.TARGET_DIR }}/debug/near-cli tokens volodymyr.testnet send-near fro_volod.testnet '0.1 NEAR' network testnet sign-with-plaintext-private-key --signer-public-key ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF --signer-private-key ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB display
+        ${{ env.TARGET_DIR }}/debug/near-cli tokens volodymyr.testnet send-near fro_volod.testnet '0.1 NEAR' network-config testnet sign-with-plaintext-private-key --signer-public-key ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF --signer-private-key ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB display
 
   rustfmt:
     name: rustfmt

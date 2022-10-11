@@ -61,13 +61,11 @@ impl AddNetworkConnection {
             Some(cli_explorer_transaction_url) => cli_explorer_transaction_url,
             None => Self::input_explorer_transaction_url(&context)?,
         };
-        let api_key: Option<String> = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.api_key)
-        {
-            Some(cli_api_key) => Some(cli_api_key),
-            None => Self::input_api_key()?,
-        };
+        let api_key: Option<String> =
+            match optional_clap_variant.and_then(|clap_variant| clap_variant.api_key) {
+                Some(cli_api_key) => Some(cli_api_key),
+                None => Self::input_api_key()?,
+            };
         Ok(Some(Self {
             network_name,
             connection_name,

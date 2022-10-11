@@ -50,7 +50,7 @@ impl CallFunctionView {
             {
                 result.result
             } else {
-                return Err(color_eyre::Report::msg(format!("Error call result")));
+                return Err(color_eyre::Report::msg("Error call result".to_string()));
             };
 
         let serde_call_result = if call_result.is_empty() {

@@ -27,7 +27,7 @@ pub struct DownloadContract {
     folder_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(named_arg)]
     ///Select network
-    network: crate::network_view_at_block::NetworkViewAtBlockArgs,
+    network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
 }
 
 impl DownloadContract {
@@ -52,11 +52,11 @@ impl DownloadContract {
         account_id: near_primitives::types::AccountId,
     ) -> crate::CliResult {
         let query_view_method_response = self
-            .network
+            .network_config
             .get_network_config(config)
             .json_rpc_client()?
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: self.network.get_block_ref(),
+                block_reference: self.network_config.get_block_ref(),
                 request: near_primitives::views::QueryRequest::ViewCode {
                     account_id: account_id.clone(),
                 },
@@ -74,12 +74,12 @@ impl DownloadContract {
             {
                 result
             } else {
-                return Err(color_eyre::Report::msg(format!("Error call result")));
+                return Err(color_eyre::Report::msg("Error call result".to_string()));
             };
         let mut file_path = self.folder_path.0.clone();
         std::fs::create_dir_all(&file_path)?;
         let file_name: std::path::PathBuf =
-            format!("contract_{}.wasm", account_id.as_str().replace(".", "_")).into();
+            format!("contract_{}.wasm", account_id.as_str().replace('.', "_")).into();
         file_path.push(file_name);
         std::fs::File::create(&file_path)
             .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?

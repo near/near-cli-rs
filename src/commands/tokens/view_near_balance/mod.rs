@@ -3,7 +3,7 @@
 pub struct ViewNearBalance {
     #[interactive_clap(named_arg)]
     ///Select network
-    network: crate::network_view_at_block::NetworkViewAtBlockArgs,
+    network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
 }
 
 impl ViewNearBalance {
@@ -13,9 +13,9 @@ impl ViewNearBalance {
         owner_account_id: near_primitives::types::AccountId,
     ) -> crate::CliResult {
         let account_transfer_allowance = crate::common::get_account_transfer_allowance(
-            self.network.get_network_config(config),
+            self.network_config.get_network_config(config),
             owner_account_id,
-            self.network.get_block_ref(),
+            self.network_config.get_block_ref(),
         )
         .await?;
         println! {"{}", &account_transfer_allowance};

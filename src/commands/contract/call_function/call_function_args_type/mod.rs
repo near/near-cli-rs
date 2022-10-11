@@ -37,7 +37,7 @@ impl std::str::FromStr for FunctionArgsType {
             "text-args" => Ok(Self::TextArgs),
             "base64-args" => Ok(Self::Base64Args),
             "file-args" => Ok(Self::FileArgs),
-            _ => return Err("FunctionArgsType: incorrect value entered".to_string()),
+            _ => Err("FunctionArgsType: incorrect value entered".to_string()),
         }
     }
 }
@@ -84,12 +84,12 @@ pub fn function_args(
             })?;
             Ok(data_json.to_string().into_bytes())
         }
-        super::call_function_args_type::FunctionArgsType::TextArgs => Ok(args.clone().into_bytes()),
+        super::call_function_args_type::FunctionArgsType::TextArgs => Ok(args.into_bytes()),
         super::call_function_args_type::FunctionArgsType::Base64Args => {
             Ok(base64::decode(args.as_bytes())?)
         }
         super::call_function_args_type::FunctionArgsType::FileArgs => {
-            let data_path = std::path::PathBuf::from(args.clone());
+            let data_path = std::path::PathBuf::from(args);
             let data = std::fs::read(data_path).map_err(|err| {
                 color_eyre::Report::msg(format!("Data file access not found! Error: {}", err))
             })?;

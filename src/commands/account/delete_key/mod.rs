@@ -7,7 +7,7 @@ pub struct DeleteKeyCommand {
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(named_arg)]
     ///Select network
-    network: crate::network_for_transaction::NetworkForTransactionArgs,
+    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
 impl DeleteKeyCommand {
@@ -25,14 +25,14 @@ impl DeleteKeyCommand {
             )],
         };
 
-        match self.network.get_sign_option() {
+        match self.network_config.get_sign_option() {
             crate::transaction_signature_options::SignWith::SignWithPlaintextPrivateKey(
                 sign_private_key,
             ) => {
                 sign_private_key
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config),
+                        self.network_config.get_network_config(config),
                     )
                     .await
             }
@@ -40,7 +40,7 @@ impl DeleteKeyCommand {
                 sign_keychain
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config.clone()),
+                        self.network_config.get_network_config(config.clone()),
                         config.credentials_home_dir,
                     )
                     .await
@@ -50,7 +50,7 @@ impl DeleteKeyCommand {
                 sign_ledger
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config),
+                        self.network_config.get_network_config(config),
                     )
                     .await
             }

@@ -3,7 +3,7 @@
 pub struct PrintKeypairToTerminal {
     #[interactive_clap(named_arg)]
     ///Select network
-    network: crate::network_for_transaction::NetworkForTransactionArgs,
+    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
 impl PrintKeypairToTerminal {
@@ -16,19 +16,19 @@ impl PrintKeypairToTerminal {
         println!(
             "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
             key_pair_properties.master_seed_phrase,
-            key_pair_properties.seed_phrase_hd_path.to_string(),
+            key_pair_properties.seed_phrase_hd_path,
             key_pair_properties.implicit_account_id,
             key_pair_properties.public_key_str,
             key_pair_properties.secret_keypair_str,
         );
-        match self.network.get_sign_option() {
+        match self.network_config.get_sign_option() {
             crate::transaction_signature_options::SignWith::SignWithPlaintextPrivateKey(
                 sign_private_key,
             ) => {
                 sign_private_key
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config),
+                        self.network_config.get_network_config(config),
                     )
                     .await
             }
@@ -36,7 +36,7 @@ impl PrintKeypairToTerminal {
                 sign_keychain
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config.clone()),
+                        self.network_config.get_network_config(config.clone()),
                         config.credentials_home_dir,
                     )
                     .await
@@ -46,7 +46,7 @@ impl PrintKeypairToTerminal {
                 sign_ledger
                     .process(
                         prepopulated_unsigned_transaction,
-                        self.network.get_network_config(config),
+                        self.network_config.get_network_config(config),
                     )
                     .await
             }
