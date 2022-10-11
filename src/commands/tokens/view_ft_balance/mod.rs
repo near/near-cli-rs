@@ -7,7 +7,7 @@ pub struct ViewFtBalance {
     ft_contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     ///Select network
-    network: crate::network_view_at_block::NetworkViewAtBlockArgs,
+    network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
 }
 
 impl ViewFtBalance {
@@ -23,11 +23,11 @@ impl ViewFtBalance {
         .to_string()
         .into_bytes();
         let query_view_method_response = self
-            .network
+            .network_config
             .get_network_config(config)
             .json_rpc_client()?
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: self.network.get_block_ref(),
+                block_reference: self.network_config.get_block_ref(),
                 request: near_primitives::views::QueryRequest::CallFunction {
                     account_id: self.ft_contract_account_id.clone().into(),
                     method_name,
