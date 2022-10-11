@@ -44,7 +44,7 @@ impl ViewNftAssets {
             {
                 result.result
             } else {
-                return Err(color_eyre::Report::msg(format!("Error call result")));
+                return Err(color_eyre::Report::msg("Error call result".to_string()));
             };
 
         let serde_call_result = if call_result.is_empty() {
@@ -53,7 +53,7 @@ impl ViewNftAssets {
             serde_json::from_slice(&call_result)
                 .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?
         };
-        println!("\n{} account has NFT tokens:", owner_account_id.to_string());
+        println!("\n{} account has NFT tokens:", owner_account_id);
         println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
         Ok(())
     }

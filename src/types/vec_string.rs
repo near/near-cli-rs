@@ -13,7 +13,7 @@ impl std::str::FromStr for VecString {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let vec_str: Vec<String> = s
             .trim_matches(|p| p == '[' || p == ']')
-            .split(",")
+            .split(',')
             .map(|str| str.trim().to_string())
             .collect();
         Ok(Self(vec_str))

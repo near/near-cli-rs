@@ -73,10 +73,10 @@ impl NextAction {
                 if let Some(skip_action) = optional_skip_action {
                     Ok(Some(Self::Skip(skip_action)))
                 } else {
-                    Self::choose_variant(context.clone())
+                    Self::choose_variant(context)
                 }
             }
-            None => Self::choose_variant(context.clone()),
+            None => Self::choose_variant(context),
         }
     }
 }
@@ -134,7 +134,7 @@ impl BoxNextAction {
                 inner: Box::new(next_action),
             }))
         } else {
-            return Ok(None);
+            Ok(None)
         }
     }
 }
@@ -151,7 +151,7 @@ impl BoxNextAction {
                 inner: Box::new(next_action),
             }))
         } else {
-            return Ok(None);
+            Ok(None)
         }
     }
 }

@@ -87,7 +87,7 @@ impl Mode {
         file_path.push(file_name);
         std::fs::File::create(&file_path)
             .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
-            .write(&buf.as_bytes())
+            .write(buf.as_bytes())
             .map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
             })?;

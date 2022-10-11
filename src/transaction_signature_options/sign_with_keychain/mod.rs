@@ -29,9 +29,8 @@ impl SignKeychain {
         optional_clap_variant: Option<<SignKeychain as interactive_clap::ToCli>::CliVariant>,
         _context: crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<Self>> {
-        let submit: Option<super::Submit> = optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.submit);
+        let submit: Option<super::Submit> =
+            optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
         Ok(Some(Self {
             nonce: None,
             block_hash: None,
@@ -80,7 +79,7 @@ impl SignKeychain {
                     {
                         result
                     } else {
-                        return Err(color_eyre::Report::msg(format!("Error call result")));
+                        return Err(color_eyre::Report::msg("Error call result".to_string()));
                     };
                 let mut path = std::path::PathBuf::from(&credentials_home_dir);
                 path.push(dir_name);
@@ -116,9 +115,8 @@ impl SignKeychain {
                                 break 'outer;
                             }
                         } else {
-                            return Err(color_eyre::Report::msg(format!(
-                                    "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain."
-                                )));
+                            return Err(color_eyre::Report::msg(
+                                    "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.".to_string()));
                         };
                     }
                 }
@@ -133,7 +131,7 @@ impl SignKeychain {
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
             signer_public_key: crate::types::public_key::PublicKey(account_json.public_key),
             signer_private_key: crate::types::secret_key::SecretKey(account_json.private_key),
-            nonce: self.nonce.clone(),
+            nonce: self.nonce,
             block_hash: self.block_hash.clone(),
             submit: self.submit.clone(),
         };

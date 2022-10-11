@@ -52,9 +52,8 @@ impl SignLedger {
                 public_key.to_bytes(),
             ))
             .into();
-        let submit: Option<super::Submit> = optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.submit);
+        let submit: Option<super::Submit> =
+            optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
         Ok(Some(Self {
             seed_phrase_hd_path,
             signer_public_key,
@@ -104,7 +103,7 @@ impl SignLedger {
             {
                 online_signer_access_key.nonce
             } else {
-                return Err(color_eyre::Report::msg(format!("Error current_nonce")));
+                return Err(color_eyre::Report::msg("Error current_nonce".to_string()));
             };
         let unsigned_transaction = near_primitives::transaction::Transaction {
             public_key: self.signer_public_key.clone().into(),

@@ -44,7 +44,7 @@ impl ViewFtBalance {
             {
                 result.result
             } else {
-                return Err(color_eyre::Report::msg(format!("Error call result")));
+                return Err(color_eyre::Report::msg("Error call result".to_string()));
             };
 
         let serde_call_result = if call_result.is_empty() {
@@ -55,7 +55,7 @@ impl ViewFtBalance {
         };
         println!(
             "\n{} account has {} FT tokens (FT-contract: {})",
-            owner_account_id.to_string(),
+            owner_account_id,
             serde_json::to_string_pretty(&serde_call_result)?,
             self.ft_contract_account_id
         );

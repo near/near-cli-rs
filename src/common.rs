@@ -12,52 +12,7 @@ use near_primitives::{
 pub type CliResult = color_eyre::eyre::Result<()>;
 
 use dialoguer::{theme::ColorfulTheme, Select};
-use strum::{EnumMessage, IntoEnumIterator};
-pub fn prompt_variant<T>(prompt: &str) -> T
-where
-    T: IntoEnumIterator + EnumMessage,
-    T: Copy + Clone,
-{
-    let variants = T::iter().collect::<Vec<_>>();
-    let actions = variants
-        .iter()
-        .map(|p| {
-            p.get_message()
-                .unwrap_or_else(|| "error[This entry does not have an option message!!]")
-                .to_owned()
-        })
-        .collect::<Vec<_>>();
-
-    let selected = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt(prompt)
-        .items(&actions)
-        .default(0)
-        .interact()
-        .unwrap();
-
-    variants[selected]
-}
-
-// #[derive(Debug, Clone)]
-// pub enum ViewItems {
-//     ViewAccountSummary,
-//     ViewAccessKeyList,
-//     ViewNonce,
-//     ViewCallFunction,
-//     ViewContractHash,
-//     ViewContractCode,
-//     ViewContractState,
-//     ViewTransactionStatus,
-//     ViewNearBalance,
-//     ViewFtBalance,
-//     ViewNftBalance,
-// }
-
-// #[derive(Debug, Clone)]
-// pub struct SignerContext {
-//     pub connection_config: Option<ConnectionConfig>,
-//     pub signer_account_id: crate::types::account_id::AccountId,
-// }
+use strum::IntoEnumIterator;
 
 #[derive(
     Debug,
@@ -158,7 +113,7 @@ impl std::fmt::Display for BlockHashAsBase58 {
 
 const ONE_NEAR: u128 = 10u128.pow(24);
 
-#[derive(Debug, Clone, Default, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
 pub struct NearBalance {
     pub yoctonear_amount: u128,
 }
@@ -204,14 +159,14 @@ impl std::str::FromStr for NearBalance {
                             .parse::<u128>()
                             .map_err(|err| format!("Near Balance: {}", err))?
                             .checked_mul(10u128.pow(24))
-                            .ok_or_else(|| "Near Balance: underflow or overflow happens")?;
+                            .ok_or("Near Balance: underflow or overflow happens")?;
                         let len_fract = res_split[1].len() as u32;
                         let num_fract_yocto = if len_fract <= 24 {
                             res_split[1]
                                 .parse::<u128>()
                                 .map_err(|err| format!("Near Balance: {}", err))?
                                 .checked_mul(10u128.pow(24 - res_split[1].len() as u32))
-                                .ok_or_else(|| "Near Balance: underflow or overflow happens")?
+                                .ok_or("Near Balance: underflow or overflow happens")?
                         } else {
                             return Err(
                                 "Near Balance: too large fractional part of a number".to_string()
@@ -219,13 +174,13 @@ impl std::str::FromStr for NearBalance {
                         };
                         num_int_yocto
                             .checked_add(num_fract_yocto)
-                            .ok_or_else(|| "Near Balance: underflow or overflow happens")?
+                            .ok_or("Near Balance: underflow or overflow happens")?
                     }
                     1 => res_split[0]
                         .parse::<u128>()
                         .map_err(|err| format!("Near Balance: {}", err))?
                         .checked_mul(10u128.pow(24))
-                        .ok_or_else(|| "Near Balance: underflow or overflow happens")?,
+                        .ok_or("Near Balance: underflow or overflow happens")?,
                     _ => return Err("Near Balance: incorrect number entered".to_string()),
                 }
             }
@@ -245,7 +200,7 @@ impl interactive_clap::ToCli for NearBalance {
 const ONE_TERA_GAS: u64 = 10u64.pow(12);
 const ONE_GIGA_GAS: u64 = 10u64.pow(9);
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct NearGas {
     pub inner: u64,
 }
@@ -301,27 +256,27 @@ impl NearGas {
                     .parse::<u64>()
                     .map_err(|err| format!("Near Gas: {}", err))?
                     .checked_mul(10u64.pow(12))
-                    .ok_or_else(|| "Near Gas: underflow or overflow happens")?;
+                    .ok_or("Near Gas: underflow or overflow happens")?;
                 let len_fract = res_split[1].len() as u32;
                 let num_fract_gas = if len_fract <= 12 {
                     res_split[1]
                         .parse::<u64>()
                         .map_err(|err| format!("Near Gas: {}", err))?
                         .checked_mul(10u64.pow(12 - res_split[1].len() as u32))
-                        .ok_or_else(|| "Near Gas: underflow or overflow happens")?
+                        .ok_or("Near Gas: underflow or overflow happens")?
                 } else {
                     return Err("Near Gas: too large fractional part of a number".to_string());
                 };
                 Ok(num_int_gas
                     .checked_add(num_fract_gas)
-                    .ok_or_else(|| "Near Gas: underflow or overflow happens")?)
+                    .ok_or("Near Gas: underflow or overflow happens")?)
             }
             1 => Ok(res_split[0]
                 .parse::<u64>()
                 .map_err(|err| format!("Near Gas: {}", err))?
                 .checked_mul(10u64.pow(12))
-                .ok_or_else(|| "Near Gas: underflow or overflow happens")?),
-            _ => return Err("Near Gas: incorrect number entered".to_string()),
+                .ok_or("Near Gas: underflow or overflow happens")?),
+            _ => Err("Near Gas: incorrect number entered".to_string()),
         }
     }
 }
@@ -330,7 +285,7 @@ impl interactive_clap::ToCli for NearGas {
     type CliVariant = NearGas;
 }
 
-#[derive(Debug, Clone, Default, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
 pub struct TransferAmount {
     amount: NearBalance,
 }
@@ -486,22 +441,12 @@ pub async fn get_account_state(
                 {
                     result
                 } else {
-                    return Err(color_eyre::Report::msg(format!("Error call result")));
+                    return Err(color_eyre::Report::msg("Error call result".to_string()));
                 };
-            Ok(Some(account_view.into()))
+            Ok(Some(account_view))
         }
-        Err(_) => return Ok(None),
+        Err(_) => Ok(None),
     }
-}
-
-/// Returns true if the account ID length is 64 characters and it's a hex representation. This is used to check the implicit account.
-pub fn is_64_len_hex(account_id: impl AsRef<str>) -> bool {
-    let account_id = account_id.as_ref();
-    account_id.len() == 64
-        && account_id
-            .as_bytes()
-            .iter()
-            .all(|b| matches!(b, b'a'..=b'f' | b'0'..=b'9'))
 }
 
 #[derive(Debug, Clone)]
@@ -948,7 +893,7 @@ pub fn handler_invalid_tx_error(
                     format!("Error: Transaction method name <{}> isn't allowed by the access key.", method_name)
                 },
                 near_primitives::errors::InvalidAccessKeyError::RequiresFullAccess => {
-                    format!("Error: Transaction requires a full permission access key.")
+                    "Error: Transaction requires a full permission access key.".to_string()
                 },
                 near_primitives::errors::InvalidAccessKeyError::NotEnoughAllowance{account_id, public_key, allowance, cost} => {
                     format!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
@@ -959,7 +904,7 @@ pub fn handler_invalid_tx_error(
                     )
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
-                    format!("Error: Having a deposit with a function call action is not allowed with a function call access key.")
+                    "Error: Having a deposit with a function call action is not allowed with a function call access key.".to_string()
                 }
             }
         },
@@ -979,7 +924,7 @@ pub fn handler_invalid_tx_error(
             format!("Error: TX receiver ID ({}) is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::is_valid_account_id\".", receiver_id)
         },
         near_primitives::errors::InvalidTxError::InvalidSignature => {
-            format!("Error: TX signature is not valid")
+            "Error: TX signature is not valid".to_string()
         },
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             format!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
@@ -995,18 +940,18 @@ pub fn handler_invalid_tx_error(
             )
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
-            format!("Error: An integer overflow occurred during transaction cost estimation.")
+            "Error: An integer overflow occurred during transaction cost estimation.".to_string()
         },
         near_primitives::errors::InvalidTxError::InvalidChain => {
-            format!("Error: Transaction parent block hash doesn't belong to the current chain.")
+            "Error: Transaction parent block hash doesn't belong to the current chain.".to_string()
         },
         near_primitives::errors::InvalidTxError::Expired => {
-            format!("Error: Transaction has expired.")
+            "Error: Transaction has expired.".to_string()
         },
         near_primitives::errors::InvalidTxError::ActionsValidation(actions_validation_error) => {
             match actions_validation_error {
                 near_primitives::errors::ActionsValidationError::DeleteActionMustBeFinal => {
-                    format!("Error: The delete action must be the final action in transaction.")
+                    "Error: The delete action must be the final action in transaction.".to_string()
                 },
                 near_primitives::errors::ActionsValidationError::TotalPrepaidGasExceeded {total_prepaid_gas, limit} => {
                     format!("Error: The total prepaid gas ({}) for all given actions exceeded the limit ({}).",
@@ -1024,7 +969,7 @@ pub fn handler_invalid_tx_error(
                     format!("Error: The length ({}) of some method name exceeded the limit ({}) in a Add Key action.", length, limit)
                 },
                 near_primitives::errors::ActionsValidationError::IntegerOverflow => {
-                    format!("Error: Integer overflow.")
+                    "Error: Integer overflow.".to_string()
                 },
                 near_primitives::errors::ActionsValidationError::InvalidAccountId {account_id} => {
                     format!("Error: Invalid account ID <{}>.", account_id)
@@ -1042,7 +987,7 @@ pub fn handler_invalid_tx_error(
                     format!("Error: An attempt to stake with a public key <{}> that is not convertible to ristretto.", public_key)
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallZeroAttachedGas => {
-                    format!("Error: The attached amount of gas in a FunctionCall action has to be a positive number.")
+                    "Error: The attached amount of gas in a FunctionCall action has to be a positive number.".to_string()
                 }
             }
         },
@@ -1103,7 +1048,7 @@ pub async fn save_access_key_to_keychain(
     let dir_name = network_config.network_name.as_str();
     let file_with_key_name: std::path::PathBuf = format!(
         "{}.json",
-        key_pair_properties.public_key_str.replace(":", "_")
+        key_pair_properties.public_key_str.replace(':', "_")
     )
     .into();
     let mut path_with_key_name = std::path::PathBuf::from(&credentials_home_dir);
@@ -1185,8 +1130,7 @@ pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
     };
     let is_top_level_command_known = crate::commands::TopLevelCommandDiscriminants::iter()
         .map(|x| format!("{:?}", &x).to_lowercase())
-        .find(|x| x == &subcommand)
-        .is_some();
+        .any(|x| x == subcommand);
     if is_top_level_command_known {
         error.exit()
     }
@@ -1218,7 +1162,7 @@ pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
             return Err(color_eyre::eyre::eyre!("perror occurred, code: {}", code));
         }
     }
-    return Err(color_eyre::eyre::eyre!(err));
+    Err(color_eyre::eyre::eyre!(err))
 }
 
 fn is_executable<P: AsRef<std::path::Path>>(path: P) -> bool {
@@ -1246,11 +1190,6 @@ pub async fn display_account_info(
     network_config: crate::config::NetworkConfig,
     block_ref: BlockReference,
 ) -> crate::CliResult {
-    // let mut json_rpc_client =
-    //     near_jsonrpc_client::JsonRpcClient::connect(network_config.rpc_url.clone());
-    // if let Some(api_key) = network_config.api_key {
-    //     json_rpc_client = json_rpc_client.header(near_jsonrpc_client::auth::ApiKey::new(api_key)?)
-    // };
     let resp = network_config
         .json_rpc_client()?
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
@@ -1314,7 +1253,7 @@ pub async fn display_access_key_list(
 
     let view = match resp.kind {
         near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(result) => result,
-        _ => return Err(color_eyre::Report::msg(format!("Error call result"))),
+        _ => return Err(color_eyre::Report::msg("Error call result".to_string())),
     };
 
     println!("Number of access keys: {}", view.keys.len());
@@ -1331,7 +1270,7 @@ pub async fn display_access_key_list(
                         "with an allowance of {}",
                         NearBalance::from_yoctonear(*amount)
                     ),
-                    None => format!("with no limit"),
+                    None => "with no limit".to_string(),
                 };
                 format!(
                     "only do {:?} function calls on {} {}",

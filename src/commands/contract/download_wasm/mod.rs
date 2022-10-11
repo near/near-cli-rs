@@ -74,12 +74,12 @@ impl DownloadContract {
             {
                 result
             } else {
-                return Err(color_eyre::Report::msg(format!("Error call result")));
+                return Err(color_eyre::Report::msg("Error call result".to_string()));
             };
         let mut file_path = self.folder_path.0.clone();
         std::fs::create_dir_all(&file_path)?;
         let file_name: std::path::PathBuf =
-            format!("contract_{}.wasm", account_id.as_str().replace(".", "_")).into();
+            format!("contract_{}.wasm", account_id.as_str().replace('.', "_")).into();
         file_path.push(file_name);
         std::fs::File::create(&file_path)
             .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?

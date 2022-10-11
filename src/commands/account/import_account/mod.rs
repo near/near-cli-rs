@@ -39,12 +39,11 @@ async fn login(
         near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
 
     let account_id = get_account_from_cli(public_key, network_config.clone()).await?;
-    // save_account(&account_id, key_pair_properties, self.connection_config).await?
     crate::common::save_access_key_to_keychain(
         network_config,
         credentials_home_dir,
         key_pair_properties.clone(),
-        &account_id.to_string(),
+        &account_id,
     )
     .await
     .map_err(|err| {

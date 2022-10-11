@@ -16,7 +16,7 @@ impl PrintKeypairToTerminal {
         println!(
             "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
             key_pair_properties.master_seed_phrase,
-            key_pair_properties.seed_phrase_hd_path.to_string(),
+            key_pair_properties.seed_phrase_hd_path,
             key_pair_properties.implicit_account_id,
             key_pair_properties.public_key_str,
             key_pair_properties.secret_keypair_str,

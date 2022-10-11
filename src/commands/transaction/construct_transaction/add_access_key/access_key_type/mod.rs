@@ -114,7 +114,7 @@ impl FunctionCallType {
                     .with_prompt("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
                     .interact_text()
                     ?;
-                if input_method_names.contains("\"") {
+                if input_method_names.contains('\"') {
                     input_method_names.clear()
                 };
                 if input_method_names.is_empty() {
@@ -159,13 +159,11 @@ impl FunctionCallType {
     ) -> crate::CliResult {
         let permission = near_primitives::account::AccessKeyPermission::FunctionCall(
             near_primitives::account::FunctionCallPermission {
-                allowance: {
-                    match self.allowance.clone() {
-                        Some(allowance) => Some(allowance.to_yoctonear()),
-                        None => None,
-                    }
-                },
-                receiver_id: self.receiver_account_id.to_string().clone(),
+                allowance: self
+                    .allowance
+                    .clone()
+                    .map(|allowance| allowance.to_yoctonear()),
+                receiver_id: self.receiver_account_id.to_string(),
                 method_names: self.method_names.clone().into(),
             },
         );

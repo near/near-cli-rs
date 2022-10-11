@@ -33,9 +33,8 @@ impl SendFtCommand {
                 .with_prompt("Enter gas for function call")
                 .with_initial_text("100 TeraGas")
                 .interact_text()?;
-            let gas: u64 = match input_gas {
-                crate::common::NearGas { inner: num } => num,
-            };
+            let crate::common::NearGas { inner: num } = input_gas;
+            let gas = num;
             if gas <= 300000000000000 {
                 break gas;
             } else {

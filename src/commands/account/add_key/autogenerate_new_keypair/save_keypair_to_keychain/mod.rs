@@ -18,7 +18,7 @@ impl SaveKeypairToKeychain {
             network_config,
             config.credentials_home_dir.clone(),
             key_pair_properties,
-            &prepopulated_unsigned_transaction.receiver_id.to_string(),
+            &prepopulated_unsigned_transaction.receiver_id,
         )
         .await
         .map_err(|err| {
