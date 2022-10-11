@@ -707,10 +707,9 @@ fro_volod.testnet account has NFT tokens:
 ```txt
 ./near-cli contract \
     call-function \
-    as-read-only \
-    zavodil.poolv1.near \
-    get_accounts '{"from_index": 0, "limit": 3}' \
-    network mainnet \
+    as-read-only zavodil.poolv1.near get_accounts \
+    json-args '{"from_index": 0, "limit": 3}' \
+    network-config mainnet \
     now
 ```
 
@@ -752,13 +751,12 @@ fro_volod.testnet account has NFT tokens:
 ```txt
 ./near-cli contract \
     call-function \
-    as-transaction \
-    turbo.volodymyr.testnet \
-    rate '{"other_user":"volodymyr.testnet", "vote":5}' \
-        --prepaid-gas '3 Tgas' \
-        --attached-deposit '1 NEAR' \
-    fro_volod.testnet \
-    network testnet \
+    as-transaction turbo.volodymyr.testnet rate \
+    json-args '{"other_user":"volodymyr.testnet", "vote":5}' \
+    prepaid-gas '3 Tgas' \
+    attached-deposit '1 NEAR' \
+    sign-as fro_volod.testnet \
+    network-config testnet \
     sign-with-keychain \
     send
 ```
