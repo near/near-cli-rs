@@ -19,9 +19,9 @@ pub struct SignKeychain {
 }
 
 #[derive(Debug, Deserialize)]
-struct User {
-    public_key: near_crypto::PublicKey,
-    private_key: near_crypto::SecretKey,
+pub struct AccountKeyPair {
+    pub public_key: near_crypto::PublicKey,
+    pub private_key: near_crypto::SecretKey,
 }
 
 impl SignKeychain {
@@ -72,7 +72,7 @@ impl SignKeychain {
                             err
                         ))
                     })?;
-                let access_key_view =
+                let access_key_list =
                     if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
                         result,
                     ) = query_view_method_response.kind
@@ -85,7 +85,7 @@ impl SignKeychain {
                 path.push(dir_name);
                 path.push(&prepopulated_unsigned_transaction.signer_id.to_string());
                 let mut data_path = std::path::PathBuf::new();
-                'outer: for access_key in access_key_view.keys {
+                'outer: for access_key in access_key_list.keys {
                     let account_public_key = access_key.public_key.to_string();
                     let is_full_access_key: bool = match &access_key.access_key.permission {
                         near_primitives::views::AccessKeyPermissionView::FullAccess => true,
@@ -126,7 +126,7 @@ impl SignKeychain {
         let data = std::fs::read_to_string(data_path).map_err(|err| {
             color_eyre::Report::msg(format!("Access key file not found! Error: {}", err))
         })?;
-        let account_json: User = serde_json::from_str(&data)
+        let account_json: AccountKeyPair = serde_json::from_str(&data)
             .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
             signer_public_key: crate::types::public_key::PublicKey(account_json.public_key),

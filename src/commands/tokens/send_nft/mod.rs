@@ -105,6 +105,17 @@ impl SendNftCommand {
                     )
                     .await
             }
+            #[cfg(target_os = "macos")]
+            crate::transaction_signature_options::SignWith::SignWithOsxKeychain(
+                sign_osx_keychain,
+            ) => {
+                sign_osx_keychain
+                    .process(
+                        prepopulated_unsigned_transaction,
+                        self.network_config.get_network_config(config.clone()),
+                    )
+                    .await
+            }
             #[cfg(feature = "ledger")]
             crate::transaction_signature_options::SignWith::SignWithLedger(sign_ledger) => {
                 sign_ledger

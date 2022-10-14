@@ -50,6 +50,9 @@ near-jsonrpc-primitives = "0.15"
 interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="b6294f2bd0a5133e71d822dc3e982c23755cd61b" }
 interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="b6294f2bd0a5133e71d822dc3e982c23755cd61b" }
 
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework = "2.7.0"
+
 [features]
 default = ["ledger"]
 ledger = ["near-ledger"]

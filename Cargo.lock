@@ -1301,6 +1301,7 @@ dependencies = [
  "near-primitives",
  "open",
  "openssl",
+ "security-framework",
  "serde",
  "serde_json",
  "shell-words",

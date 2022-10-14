@@ -4,6 +4,8 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
+#[cfg(target_os = "macos")]
+pub mod sign_with_osx_keychain;
 pub mod sign_with_private_key;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
@@ -16,6 +18,12 @@ pub enum SignWith {
     ))]
     ///Sign the transaction with a keychain
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
+    #[cfg(target_os = "macos")]
+    #[strum_discriminants(strum(
+        message = "sign-with-macos-keychain         - Sign the transaction with an OS X keychain"
+    ))]
+    ///Sign the transaction with an OS X keychain
+    SignWithOsxKeychain(self::sign_with_osx_keychain::SignOsxKeychain),
     #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(
         message = "sign-with-ledger                 - Sign the transaction with a ledger"
