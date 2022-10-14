@@ -48,6 +48,50 @@ pub fn input_signer_private_key() -> color_eyre::eyre::Result<crate::types::secr
         .with_prompt("Enter sender (signer) private (secret) key")
         .interact_text()?)
 }
+
+pub async fn sign_with(
+    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+    prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+    config: crate::config::Config,
+) -> crate::CliResult {
+    match network_config.get_sign_option() {
+        SignWith::SignWithPlaintextPrivateKey(sign_private_key) => {
+            sign_private_key
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config),
+                )
+                .await
+        }
+        SignWith::SignWithKeychain(sign_keychain) => {
+            sign_keychain
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config.clone()),
+                    config.credentials_home_dir,
+                )
+                .await
+        }
+        #[cfg(target_os = "macos")]
+        SignWith::SignWithOsxKeychain(sign_osx_keychain) => {
+            sign_osx_keychain
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config.clone()),
+                )
+                .await
+        }
+        #[cfg(feature = "ledger")]
+        SignWith::SignWithLedger(sign_ledger) => {
+            sign_ledger
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config),
+                )
+                .await
+        }
+    }
+}
 //-----------------------------------------------------------------------------------
 //---- these functions are used for offline mode ----
 // pub fn input_access_key_nonce(public_key: &str) -> color_eyre::eyre::Result<u64> {

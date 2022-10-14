@@ -73,46 +73,11 @@ impl CallFunctionAction {
             actions,
             ..prepopulated_unsigned_transaction
         };
-        match self.network_config.get_sign_option() {
-            crate::transaction_signature_options::SignWith::SignWithPlaintextPrivateKey(
-                sign_private_key,
-            ) => {
-                sign_private_key
-                    .process(
-                        prepopulated_unsigned_transaction,
-                        self.network_config.get_network_config(config),
-                    )
-                    .await
-            }
-            crate::transaction_signature_options::SignWith::SignWithKeychain(sign_keychain) => {
-                sign_keychain
-                    .process(
-                        prepopulated_unsigned_transaction,
-                        self.network_config.get_network_config(config.clone()),
-                        config.credentials_home_dir,
-                    )
-                    .await
-            }
-            #[cfg(target_os = "macos")]
-            crate::transaction_signature_options::SignWith::SignWithOsxKeychain(
-                sign_osx_keychain,
-            ) => {
-                sign_osx_keychain
-                    .process(
-                        prepopulated_unsigned_transaction,
-                        self.network_config.get_network_config(config.clone()),
-                    )
-                    .await
-            }
-            #[cfg(feature = "ledger")]
-            crate::transaction_signature_options::SignWith::SignWithLedger(sign_ledger) => {
-                sign_ledger
-                    .process(
-                        prepopulated_unsigned_transaction,
-                        self.network_config.get_network_config(config),
-                    )
-                    .await
-            }
-        }
+        crate::transaction_signature_options::sign_with(
+            self.network_config.clone(),
+            prepopulated_unsigned_transaction,
+            config,
+        )
+        .await
     }
 }
