@@ -69,14 +69,7 @@ impl SignOsxKeychain {
         let full_access_publik_key = access_key_list
             .keys
             .iter()
-            .filter(|key| match key.access_key.permission {
-                near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                    allowance: _,
-                    receiver_id: _,
-                    method_names: _,
-                } => false,
-            })
+            .filter(|key| matches!(key.access_key.permission, near_primitives::views::AccessKeyPermissionView::FullAccess))
             .map(|key| key.public_key.clone())
             .find(|public_key| {
                 keychain
