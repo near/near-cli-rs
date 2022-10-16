@@ -49,7 +49,6 @@ async fn login(
             .default(0)
             .interact()?;
         if selection == 1 {
-            #[cfg(target_os = "macos")]
             crate::common::save_access_key_to_macos_keychain(
                 network_config,
                 key_pair_properties,
