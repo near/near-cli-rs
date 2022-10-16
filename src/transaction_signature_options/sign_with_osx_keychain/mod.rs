@@ -68,7 +68,7 @@ impl SignOsxKeychain {
         ));
         let full_access_publik_key = access_key_list
             .keys
-            .iter()
+            .into_iter()
             .filter(|key| matches!(key.access_key.permission, near_primitives::views::AccessKeyPermissionView::FullAccess))
             .map(|key| key.public_key.clone())
             .find(|public_key| {
