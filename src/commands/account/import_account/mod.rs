@@ -56,7 +56,7 @@ async fn login(
             )
             .await
             .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
+                color_eyre::Report::msg(format!("Failed to save the access key to the keychain: {}", err))
             })?;
             return Ok(());
         }
