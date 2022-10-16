@@ -82,7 +82,7 @@ impl SignOsxKeychain {
                     )
                     .is_ok()
             })
-            .expect("The access key for this account is not in the OS X keychain.");
+            .ok_or_else(|| format!(There are no access keys for {} account in the OS X keychain.", prepopulated_unsigned_transaction.signer_id))?;
         let (password, _) = keychain
             .find_generic_password(
                 &service_name,
