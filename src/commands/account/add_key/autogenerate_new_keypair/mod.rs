@@ -30,7 +30,7 @@ impl GenerateKeypair {
 ///Save an access key for this account
 pub enum SaveMode {
     #[strum_discriminants(strum(
-        message = "save-to-keychain         - Save automatically generated key pair to keychain"
+        message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
     ///Save automatically generated key pair to keychain
     SaveToKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
