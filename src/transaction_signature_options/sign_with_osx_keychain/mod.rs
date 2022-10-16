@@ -50,7 +50,8 @@ impl SignOsxKeychain {
             .await
             .map_err(|err| {
                 color_eyre::Report::msg(format!(
-                    "Failed to fetch query for view key list: {:?}",
+                    "Failed to fetch access key list for {}: {:?}",
+                    prepopulated_unsigned_transaction.signer_id,
                     err
                 ))
             })?;
