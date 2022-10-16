@@ -70,7 +70,7 @@ impl SignOsxKeychain {
             .keys
             .into_iter()
             .filter(|key| matches!(key.access_key.permission, near_primitives::views::AccessKeyPermissionView::FullAccess))
-            .map(|key| key.public_key.clone())
+            .map(|key| key.public_key)
             .find(|public_key| {
                 keychain
                     .find_generic_password(
