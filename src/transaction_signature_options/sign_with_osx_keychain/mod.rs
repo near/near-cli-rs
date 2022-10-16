@@ -80,9 +80,6 @@ impl SignOsxKeychain {
                             prepopulated_unsigned_transaction.signer_id, public_key
                         ),
                     )
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!("Failed to find password: {:?}", err))
-                    })
                     .is_ok()
             })
             .expect("The access key for this account is not in the OS X keychain.");
