@@ -3,6 +3,8 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod print_keypair_to_terminal;
 mod save_keypair_to_keychain;
+#[cfg(target_os = "macos")]
+mod save_keypair_to_macos_keychain;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -34,7 +36,7 @@ pub enum SaveMode {
         message = "save-to-macos-keychain   - Save automatically generated key pair to macOS keychain"
     ))]
     ///Save automatically generated key pair to macOS keychain
-    SaveToMacosKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
+    SaveToMacosKeychain(self::save_keypair_to_macos_keychain::SaveKeypairToMacosKeychain),
     #[strum_discriminants(strum(
         message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
@@ -73,26 +75,22 @@ impl SaveMode {
             ..prepopulated_unsigned_transaction
         };
         match self {
-            SaveMode::SaveToKeychain(save_keypair_to_keychain) => {
-                let is_save_to_macos_keychain = false;
-                save_keypair_to_keychain
+            #[cfg(target_os = "macos")]
+            SaveMode::SaveToMacosKeychain(save_keypair_to_macos_keychain) => {
+                save_keypair_to_macos_keychain
                     .process(
                         config,
                         key_pair_properties,
                         prepopulated_unsigned_transaction,
-                        is_save_to_macos_keychain,
                     )
                     .await
             }
-            #[cfg(target_os = "macos")]
-            SaveMode::SaveToMacosKeychain(save_keypair_to_keychain) => {
-                let is_save_to_macos_keychain = true;
+            SaveMode::SaveToKeychain(save_keypair_to_keychain) => {
                 save_keypair_to_keychain
                     .process(
                         config,
                         key_pair_properties,
                         prepopulated_unsigned_transaction,
-                        is_save_to_macos_keychain,
                     )
                     .await
             }
