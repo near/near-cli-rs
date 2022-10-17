@@ -59,10 +59,10 @@ impl SaveKeypairToKeychain {
                     .await
             }
             #[cfg(target_os = "macos")]
-            crate::transaction_signature_options::SignWith::SignWithOsxKeychain(
-                sign_osx_keychain,
+            crate::transaction_signature_options::SignWith::SignWithMacosKeychain(
+                sign_macos_keychain,
             ) => {
-                sign_osx_keychain
+                sign_macos_keychain
                     .process(
                         prepopulated_unsigned_transaction,
                         self.network_config.get_network_config(config.clone()),

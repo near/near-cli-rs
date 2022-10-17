@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[interactive_clap(skip_default_from_cli)]
-pub struct SignOsxKeychain {
+pub struct SignMacosKeychain {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
@@ -14,9 +14,9 @@ pub struct SignOsxKeychain {
     pub submit: Option<super::Submit>,
 }
 
-impl SignOsxKeychain {
+impl SignMacosKeychain {
     pub fn from_cli(
-        optional_clap_variant: Option<<SignOsxKeychain as interactive_clap::ToCli>::CliVariant>,
+        optional_clap_variant: Option<<SignMacosKeychain as interactive_clap::ToCli>::CliVariant>,
         _context: crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<Self>> {
         let submit: Option<super::Submit> =
@@ -29,7 +29,7 @@ impl SignOsxKeychain {
     }
 }
 
-impl SignOsxKeychain {
+impl SignMacosKeychain {
     pub async fn process(
         &self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
@@ -90,7 +90,7 @@ impl SignOsxKeychain {
             })
             .ok_or_else(|| {
                 color_eyre::eyre::eyre!(format!(
-                    "There are no access keys for {} account in the OS X keychain.",
+                    "There are no access keys for {} account in the macOS keychain.",
                     prepopulated_unsigned_transaction.signer_id
                 ))
             })?;

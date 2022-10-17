@@ -1058,7 +1058,7 @@ pub async fn save_access_key_to_macos_keychain(
         .map_err(|err| {
             color_eyre::Report::msg(format!("Failed to save password to keychain: {:?}", err))
         })?;
-    println!("The data for the access key is saved in OS X Keychain");
+    println!("The data for the access key is saved in macOS Keychain");
     Ok(())
 }
 

@@ -5,7 +5,7 @@ pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
 #[cfg(target_os = "macos")]
-pub mod sign_with_osx_keychain;
+pub mod sign_with_macos_keychain;
 pub mod sign_with_private_key;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
@@ -20,10 +20,10 @@ pub enum SignWith {
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
     #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
-        message = "sign-with-macos-keychain         - Sign the transaction with an OS X keychain"
+        message = "sign-with-macos-keychain         - Sign the transaction with an macOS keychain"
     ))]
-    ///Sign the transaction with an OS X keychain
-    SignWithOsxKeychain(self::sign_with_osx_keychain::SignOsxKeychain),
+    ///Sign the transaction with an macOS keychain
+    SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
     #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(
         message = "sign-with-ledger                 - Sign the transaction with a ledger"
@@ -73,8 +73,8 @@ pub async fn sign_with(
                 .await
         }
         #[cfg(target_os = "macos")]
-        SignWith::SignWithOsxKeychain(sign_osx_keychain) => {
-            sign_osx_keychain
+        SignWith::SignWithMacosKeychain(sign_macos_keychain) => {
+            sign_macos_keychain
                 .process(
                     prepopulated_unsigned_transaction,
                     network_config.get_network_config(config.clone()),

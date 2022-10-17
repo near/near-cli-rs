@@ -31,10 +31,10 @@ impl GenerateKeypair {
 pub enum SaveMode {
     #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
-        message = "save-to-macos-keychain   - Save automatically generated key pair to OS X keychain"
+        message = "save-to-macos-keychain   - Save automatically generated key pair to macOS keychain"
     ))]
-    ///Save automatically generated key pair to OS X keychain
-    SaveToOsxKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
+    ///Save automatically generated key pair to macOS keychain
+    SaveToMacosKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
     #[strum_discriminants(strum(
         message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
@@ -85,7 +85,7 @@ impl SaveMode {
                     .await
             }
             #[cfg(target_os = "macos")]
-            SaveMode::SaveToOsxKeychain(save_keypair_to_keychain) => {
+            SaveMode::SaveToMacosKeychain(save_keypair_to_keychain) => {
                 let is_save_to_macos_keychain = true;
                 save_keypair_to_keychain
                     .process(
