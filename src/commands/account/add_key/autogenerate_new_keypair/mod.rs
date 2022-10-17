@@ -29,17 +29,17 @@ impl GenerateKeypair {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 ///Save an access key for this account
 pub enum SaveMode {
-    #[strum_discriminants(strum(
-        message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
-    ))]
-    ///Save automatically generated key pair to keychain
-    SaveToKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
     #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
         message = "save-to-macos-keychain   - Save automatically generated key pair to OS X keychain"
     ))]
     ///Save automatically generated key pair to OS X keychain
     SaveToOsxKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
+    #[strum_discriminants(strum(
+        message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
+    ))]
+    ///Save automatically generated key pair to keychain
+    SaveToKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
     #[strum_discriminants(strum(
         message = "print-to-terminal        - Print automatically generated key pair in terminal"
     ))]
