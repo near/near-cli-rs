@@ -51,8 +51,7 @@ impl SignOsxKeychain {
             .map_err(|err| {
                 color_eyre::Report::msg(format!(
                     "Failed to fetch access key list for {}: {:?}",
-                    prepopulated_unsigned_transaction.signer_id,
-                    err
+                    prepopulated_unsigned_transaction.signer_id, err
                 ))
             })?;
         let access_key_list =
@@ -67,13 +66,18 @@ impl SignOsxKeychain {
             "near-testnet-{}",
             prepopulated_unsigned_transaction.signer_id.as_str()
         ));
-        let full_access_publik_key = access_key_list
+        let password = access_key_list
             .keys
             .into_iter()
-            .filter(|key| matches!(key.access_key.permission, near_primitives::views::AccessKeyPermissionView::FullAccess))
+            .filter(|key| {
+                matches!(
+                    key.access_key.permission,
+                    near_primitives::views::AccessKeyPermissionView::FullAccess
+                )
+            })
             .map(|key| key.public_key)
-            .find(|public_key| {
-                keychain
+            .find_map(|public_key| {
+                let (password, _) = keychain
                     .find_generic_password(
                         &service_name,
                         &format!(
@@ -81,23 +85,18 @@ impl SignOsxKeychain {
                             prepopulated_unsigned_transaction.signer_id, public_key
                         ),
                     )
-                    .is_ok()
+                    .ok()?;
+                Some(password)
             })
-            .ok_or_else(|| format!(There are no access keys for {} account in the OS X keychain.", prepopulated_unsigned_transaction.signer_id))?;
-        let (password, _) = keychain
-            .find_generic_password(
-                &service_name,
-                &format!(
-                    "{}:{}",
-                    prepopulated_unsigned_transaction.signer_id, full_access_publik_key
-                ),
-            )
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to find password: {:?}", err))
+            .ok_or_else(|| {
+                color_eyre::eyre::eyre!(format!(
+                    "There are no access keys for {} account in the OS X keychain.",
+                    prepopulated_unsigned_transaction.signer_id
+                ))
             })?;
         let account_json: super::sign_with_keychain::AccountKeyPair =
             serde_json::from_slice(password.as_ref())
-                .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
+                .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {:?}", err)))?;
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
             signer_public_key: crate::types::public_key::PublicKey(account_json.public_key),
             signer_private_key: crate::types::secret_key::SecretKey(account_json.private_key),
