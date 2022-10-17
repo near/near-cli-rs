@@ -1035,16 +1035,13 @@ pub async fn save_access_key_to_macos_keychain(
     key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
 ) -> crate::CliResult {
-    let buf = format!(
-        "{}",
-        serde_json::json!({
+    let buf = serde_json::json!({
             "master_seed_phrase": key_pair_properties.master_seed_phrase,
             "seed_phrase_hd_path": key_pair_properties.seed_phrase_hd_path.to_string(),
             "account_id": account_id,
             "public_key": key_pair_properties.public_key_str,
             "private_key": key_pair_properties.secret_keypair_str,
-        })
-    );
+        }).to_string();
     let keychain = security_framework::os::macos::keychain::SecKeychain::default()
         .map_err(|err| color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err)))?;
     let service_name = std::borrow::Cow::Owned(format!(
