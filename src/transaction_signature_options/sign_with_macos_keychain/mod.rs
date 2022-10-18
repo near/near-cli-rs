@@ -63,7 +63,8 @@ impl SignMacosKeychain {
                 return Err(color_eyre::Report::msg("Error call result".to_string()));
             };
         let service_name = std::borrow::Cow::Owned(format!(
-            "near-testnet-{}",
+            "near-{}-{}",
+            network_config.network_name,
             prepopulated_unsigned_transaction.signer_id.as_str()
         ));
         let password = access_key_list
