@@ -10,9 +10,9 @@ near-cli – это утилита командной строки для раб
 
 - [Применение](#применение)
 - [Установка](#установка)
-- [Сборка](#сборка)
-- [Конфигурационный файл](#конфигурационный-файл)
 - [Инструкция](#инструкция)
+- [Конфигурационный файл](#конфигурационный-файл)
+- [Сборка](#сборка)
 
 ## Применение
 
@@ -55,22 +55,11 @@ https://explorer.testnet.near.org/transactions/G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaq
 На данном этапе разработки утилиты установка программы не требуется.  
 Достаточно [загрузить](https://github.com/FroVolod/near-cli/releases/) архивный файл, подходящий к Вашей операциой системе, установленной на компьютере, и разархивировать его.  
 В полученном каталоге находится исполняемый файл _near-cli_, к которому прилагается [подробная инструкция для пользователя](GUIDE.ru.md).
+Для желающих скопировать CLI из исходного кода могут перейти к разделу [Сборка](#сборка).
 
-## Сборка
+## Инструкция
 
-near-cli написан на Rust. Поэтому необходимо
-[установить Rust](https://www.rust-lang.org/) для компиляции программы.
-near-cli компилируется на версии Rust 1.61.0 (stable) или новее.
-
-Сборка near-cli:
-
-```txt
-$ git clone https://github.com/FroVolod/near-cli
-$ cd near-cli
-$ cargo build --release
-$ ./target/release/near-cli --version
-near-cli 0.1.0
-```
+Подробная инструкция доступна в файле [GUIDE.ru.md](GUIDE.ru.md).
 
 ## Конфигурационный файл
 
@@ -82,7 +71,18 @@ near-cli 0.1.0
 
 Подробнее о работе с конфигурационным файлом можно ознакомиться [здесь](GUIDE.ru.md#config---manage-connections-in-a-configuration-file).
 
-## Инструкция
+## Сборка
 
-Подробная инструкция доступна в файле [GUIDE.ru.md](GUIDE.ru.md).
+near-cli написан на Rust. Поэтому необходимо
+[установить Rust](https://www.rust-lang.org/) для компиляции программы.
+near-cli компилируется на версии Rust 1.64.0 (stable) или новее.
 
+Сборка near-cli:
+
+```txt
+$ git clone https://github.com/near/near-cli-rs.git
+$ cd near-cli-rs
+$ cargo build --release
+$ ./target/release/near-cli --version
+near-cli 0.2.0
+```

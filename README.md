@@ -17,6 +17,6 @@ Just run `near-cli` and let it guide you.
 #### [README на Русском (in Russian)](docs/README.ru.md)
   * [Применение](docs/README.ru.md#применение)
   * [Установка](docs/README.ru.md#установка)
-  * [Сборка](docs/README.ru.md#сборка)
-  * [Конфигурационный файл](docs/README.ru.md#конфигурационный-файл)
   * [Инструкция](docs/README.ru.md#инструкция)
+  * [Конфигурационный файл](docs/README.ru.md#конфигурационный-файл)
+  * [Сборка](docs/README.ru.md#сборка)
