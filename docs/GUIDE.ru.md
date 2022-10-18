@@ -14,12 +14,11 @@
 
    - _sign-with-keychain - Sign the transaction with a keychain_
 
-     near-cli самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
-     Каталог с ключами доступа определен в конфигурационном файле (near-cli/config.toml), который находится в зависимости от операциооной системы в следующих местах:
-
-     - Linux: $XDG_CONFIG_HOME или $HOME/.config (/home/alice/.config)
-     - macOS: $HOME/Library/Application Support (/Users/Alice/Library/Application Support)
-     - Windows: {FOLDERID*RoamingAppData} (C:\Users\Alice\AppData\Roaming)
+    near-cli самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
+    Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).
+    
+    Ключи доступа должны находиться в файле _публичный*ключ.json*, расположенном в */Users/user/.near-credentials/имя*сети/имя*пользователя/_.  
+    Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
         <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
         <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">

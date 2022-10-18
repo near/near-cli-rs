@@ -10,12 +10,13 @@ Just run `near-cli` and let it guide you.
 
 #### [README in English](docs/README.en.md)  
   * [Usage](docs/README.en.md#usage)
-  * [User Guide](docs/README.en.md#user-guide)
   * [Installation](docs/README.en.md#installation)
   * [Building](docs/README.en.md#building)
+  * [User Guide](docs/README.en.md#user-guide)
 
 #### [README на Русском (in Russian)](docs/README.ru.md)
   * [Применение](docs/README.ru.md#применение)
-  * [Инструкция](docs/README.ru.md#инструкция)
   * [Установка](docs/README.ru.md#установка)
   * [Сборка](docs/README.ru.md#сборка)
+  * [Конфигурационный файл](docs/README.ru.md#конфигурационный-файл)
+  * [Инструкция](docs/README.ru.md#инструкция)

@@ -4,14 +4,15 @@ near-cli – это утилита командной строки для раб
 
 ## README.md
 
-* en [English](README.en.md)
+- en [English](README.en.md)
 
 ## Оглавление
 
-* [Применение](#применение)
-* [Инструкция](#инструкция)
-* [Установка](#установка)
-* [Сборка](#сборка)
+- [Применение](#применение)
+- [Установка](#установка)
+- [Сборка](#сборка)
+- [Конфигурационный файл](#конфигурационный-файл)
+- [Инструкция](#инструкция)
 
 ## Применение
 
@@ -49,11 +50,6 @@ https://explorer.testnet.near.org/transactions/G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaq
 </a>
 </details>
 
-
-## Инструкция
-
-Подробная инструкция доступна в файле [GUIDE.ru.md](GUIDE.ru.md).
-
 ## Установка
 
 На данном этапе разработки утилиты установка программы не требуется.  
@@ -75,3 +71,18 @@ $ cargo build --release
 $ ./target/release/near-cli --version
 near-cli 0.1.0
 ```
+
+## Конфигурационный файл
+
+Каталог с ключами доступа и доступные сети подключения определены в конфигурационном файле (near-cli/config.toml), который находится в зависимости от операциооной системы в следующих местах:
+
+    - macOS: $HOME/Library/Application Support (/Users/Alice/Library/Application Support)
+    - Linux: $XDG_CONFIG_HOME или $HOME/.config (/home/alice/.config)
+    - Windows: {FOLDERID*RoamingAppData} (C:\Users\Alice\AppData\Roaming)
+
+Подробнее о работе с конфигурационным файлом можно ознакомиться [здесь](GUIDE.ru.md#config---manage-connections-in-a-configuration-file).
+
+## Инструкция
+
+Подробная инструкция доступна в файле [GUIDE.ru.md](GUIDE.ru.md).
+
