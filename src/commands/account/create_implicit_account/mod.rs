@@ -41,16 +41,16 @@ impl Mode {
         match self {
             Mode::UseAutoGeneration(save_implicit_account) => {
                 let key_pair_properties = crate::common::generate_keypair().await?;
-                buf.push_str(&format!(
-                    "{}",
-                    serde_json::json!({
+                buf.push_str(
+                    &serde_json::json!({
                         "master_seed_phrase": key_pair_properties.master_seed_phrase,
-                        "seed_phrase_hd_path": key_pair_properties.seed_phrase_hd_path.to_string(),
+                        "seed_phrase_hd_path": key_pair_properties.seed_phrase_hd_path,
                         "implicit_account_id": key_pair_properties.implicit_account_id,
                         "public_key": key_pair_properties.public_key_str,
                         "private_key": key_pair_properties.secret_keypair_str,
                     })
-                ));
+                    .to_string(),
+                );
                 file_name.push(format!("{}.json", key_pair_properties.implicit_account_id));
                 file_path.push(save_implicit_account.save_to_folder.get_folder_path());
             }
@@ -71,14 +71,14 @@ impl Mode {
                 let public_key_str = format!("ed25519:{}", bs58::encode(&public_key).into_string());
                 let implicit_account_id =
                     near_primitives::types::AccountId::try_from(hex::encode(&public_key))?;
-                buf.push_str(&format!(
-                    "{}",
-                    serde_json::json!({
+                buf.push_str(
+                    &serde_json::json!({
                         "seed_phrase_hd_path": seed_phrase_hd_path.to_string(),
                         "implicit_account_id": implicit_account_id.to_string(),
                         "public_key": public_key_str,
                     })
-                ));
+                    .to_string(),
+                );
                 file_name = format!("{}.json", implicit_account_id).into();
                 file_path.push(save_implicit_account.save_to_folder.get_folder_path());
             }
