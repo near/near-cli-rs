@@ -19,11 +19,17 @@ impl SignMacosKeychain {
         optional_clap_variant: Option<<SignMacosKeychain as interactive_clap::ToCli>::CliVariant>,
         _context: crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<Self>> {
+        let nonce: Option<u64> = optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.nonce);
+        let block_hash: Option<String> = optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.block_hash);
         let submit: Option<super::Submit> =
             optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
         Ok(Some(Self {
-            nonce: None,
-            block_hash: None,
+            nonce,
+            block_hash,
             submit,
         }))
     }

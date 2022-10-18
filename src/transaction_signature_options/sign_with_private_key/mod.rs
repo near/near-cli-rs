@@ -43,13 +43,19 @@ impl SignPrivateKey {
             Some(signer_private_key) => signer_private_key,
             None => super::input_signer_private_key()?,
         };
+        let nonce: Option<u64> = optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.nonce);
+        let block_hash: Option<String> = optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.block_hash);
         let submit: Option<super::Submit> =
             optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
         Ok(Some(Self {
             signer_public_key,
             signer_private_key,
-            nonce: None,
-            block_hash: None,
+            nonce,
+            block_hash,
             submit,
         }))
     }
