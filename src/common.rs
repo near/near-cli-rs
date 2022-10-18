@@ -449,9 +449,9 @@ pub async fn get_account_state(
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct KeyPairProperties {
-    pub seed_phrase_hd_path: slip10::BIP32Path,
+    pub seed_phrase_hd_path: String,
     pub master_seed_phrase: String,
     pub implicit_account_id: near_primitives::types::AccountId,
     pub public_key_str: String,
@@ -528,7 +528,7 @@ pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         bs58::encode(secret_keypair.to_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
-        seed_phrase_hd_path: generate_keypair.seed_phrase_hd_path.into(),
+        seed_phrase_hd_path: generate_keypair.seed_phrase_hd_path.to_string(),
         master_seed_phrase,
         implicit_account_id,
         public_key_str,
@@ -1035,14 +1035,7 @@ pub async fn save_access_key_to_macos_keychain(
     key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
 ) -> crate::CliResult {
-    let buf = serde_json::json!({
-        "master_seed_phrase": key_pair_properties.master_seed_phrase,
-        "seed_phrase_hd_path": key_pair_properties.seed_phrase_hd_path.to_string(),
-        "account_id": account_id,
-        "public_key": key_pair_properties.public_key_str,
-        "private_key": key_pair_properties.secret_keypair_str,
-    })
-    .to_string();
+    let buf = serde_json::to_string(&key_pair_properties)?;
     let keychain = security_framework::os::macos::keychain::SecKeychain::default()
         .map_err(|err| color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err)))?;
     let service_name = std::borrow::Cow::Owned(format!(
@@ -1068,14 +1061,7 @@ pub async fn save_access_key_to_keychain(
     key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
 ) -> crate::CliResult {
-    let buf = serde_json::json!({
-        "master_seed_phrase": key_pair_properties.master_seed_phrase,
-        "seed_phrase_hd_path": key_pair_properties.seed_phrase_hd_path.to_string(),
-        "account_id": account_id,
-        "public_key": key_pair_properties.public_key_str,
-        "private_key": key_pair_properties.secret_keypair_str,
-    })
-    .to_string();
+    let buf = serde_json::to_string(&key_pair_properties)?;
     let dir_name = network_config.network_name.as_str();
     let file_with_key_name: std::path::PathBuf = format!(
         "{}.json",
