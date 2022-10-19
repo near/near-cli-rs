@@ -58,11 +58,11 @@ Detailed user guide is available in the file [GUIDE.en.md](GUIDE.en.md).
 
 ## Config
 
-The directory with access keys and available connection networks are defined in the configuration file _(near-cli/config.toml)_, which is located depending on the operating system in the following places:
+The directory with access keys and available connection networks are defined in the configuration file (`near-cli/config.toml`), which is located depending on the operating system in the following places:
 
-    - macOS: $HOME/Library/Application Support (/Users/Alice/Library/Application Support)
-    - Linux: $XDG_CONFIG_HOME или $HOME/.config (/home/alice/.config)
-    - Windows: {FOLDERID*RoamingAppData} (C:\Users\Alice\AppData\Roaming)
+- macOS: `$HOME/Library/Application Support` (e.g. `/Users/Alice/Library/Application Support`)
+- Linux: `$XDG_CONFIG_HOME` or `$HOME/.config` (e.g. `/home/alice/.config`)
+- Windows: `{FOLDERID*RoamingAppData}` (e.g. `C:\Users\Alice\AppData\Roaming`)
 
 You can learn more about working with the configuration file [here](GUIDE.en.md#config---manage-connections-in-a-configuration-file).
 
