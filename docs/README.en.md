@@ -38,7 +38,7 @@ https://explorer.testnet.near.org/transactions/G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaq
 ```
 Typing this or another command manually, you can make a mistake or forget the sequence of the command.  
 It is not a problem. `--help` will tell you how to build a command properly.  
-However, using near-cli, you can press _Enter_ anywhere in the command line and the interactive mode of the program will continue to compose the command from the place where you finished entering the necessary parameters.
+However, using _near-cli_, you can press _Enter_ anywhere in the command line and the interactive mode of the program will continue to compose the command from the place where you finished entering the necessary parameters.
 
 <details><summary><i>Demonstration of the utility with a partially recruited command</i></summary>
 <a href="https://asciinema.org/a/AfxLN1QtJi1z1qXuowTj2nDw2?autoplay=1&t=1&speed=2">
