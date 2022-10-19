@@ -11,7 +11,7 @@ near-cli is a command line utility for working with the Near Protocol blockchain
 - [Usage](#usage)
 - [Installation](#installation)
 - [User Guide](#user-guide)
-- [Config]
+- [Config](#config)
 - [Building](#building)
 
 ## Usage
@@ -56,7 +56,7 @@ The resulting directory contains the executable file _near-cli_, which is accomp
 
 Detailed user guide is available in the file [GUIDE.en.md](GUIDE.en.md).
 
-## Конфигурационный файл
+## Config
 
 The directory with access keys and available connection networks are defined in the configuration file _(near-cli/config.toml)_, which is located depending on the operating system in the following places:
 
