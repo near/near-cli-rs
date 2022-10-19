@@ -454,7 +454,9 @@ pub struct KeyPairProperties {
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     pub master_seed_phrase: String,
     pub implicit_account_id: near_primitives::types::AccountId,
+    #[serde(rename = "public_key")]
     pub public_key_str: String,
+    #[serde(rename = "private_key")]
     pub secret_keypair_str: String,
 }
 
