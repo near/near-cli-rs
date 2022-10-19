@@ -451,7 +451,7 @@ pub async fn get_account_state(
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct KeyPairProperties {
-    pub seed_phrase_hd_path: String,
+    pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     pub master_seed_phrase: String,
     pub implicit_account_id: near_primitives::types::AccountId,
     pub public_key_str: String,
@@ -528,7 +528,7 @@ pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         bs58::encode(secret_keypair.to_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
-        seed_phrase_hd_path: generate_keypair.seed_phrase_hd_path.to_string(),
+        seed_phrase_hd_path: generate_keypair.seed_phrase_hd_path,
         master_seed_phrase,
         implicit_account_id,
         public_key_str,
