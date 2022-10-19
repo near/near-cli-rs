@@ -345,7 +345,8 @@ https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MG
 
 #### list-keys - View a list of access keys of an account
 
-Real-time (__at-final-block__) and archived data (__at-block-height__, __at-block-hash__) modes should be used in the same way as ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Viewing access keys to an account is possible both at the current moment (***now***) and for an earlier period of time (archive). To get information from the archive, specify a specific block (***at-block-height*** or ***at-block-hash***).  
+Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view the list of access keys, type the following in the terminal command line:
 ```txt
@@ -593,7 +594,8 @@ https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7
 
 #### view-near-balance - View the balance of Near tokens
 
-Real-time (__at-final-block__) and archived data (__at-block-height__, __at-block-hash__) modes should be used in the same way as ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Viewing the account balance is possible both at the current moment (***now***) and for an earlier period of time (archive). To get information from the archive, specify a specific block (***at-block-height*** or ***at-block-hash***).  
+Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view the amount in NEAR tokens on the account, type the following in the terminal command line:
 ```txt
@@ -619,7 +621,8 @@ fro_volod.testnet account has 169.589001320890476999999994 NEAR available for tr
 
 #### view-ft-balance - View the balance of FT tokens
 
-Real-time (__at-final-block__) and archived data (__at-block-height__, __at-block-hash__) modes should be used in the same way as ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Viewing the account balance is possible both at the current moment (***now***) and for an earlier period of time (archive). To get information from the archive, specify a specific block (***at-block-height*** or ***at-block-hash***).  
+Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view funds in FT tokens on the account, type the following in the terminal command line:
 ```txt
@@ -645,7 +648,8 @@ fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usd
 
 #### view-nft-assets - View the balance of NFT tokens
 
-Real-time (__at-final-block__) and archived data (__at-block-height__, __at-block-hash__) modes should be used in the same way as ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Viewing the account balance is possible both at the current moment (***now***) and for an earlier period of time (archive). To get information from the archive, specify a specific block (***at-block-height*** or ***at-block-hash***).  
+Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view funds in NFT tokens on the account, type the following in the terminal command line:
 ```txt
@@ -703,7 +707,8 @@ fro_volod.testnet account has NFT tokens:
 
 ##### as-read-only - Calling a view method
 
-Real-time (__at-final-block__) and archived data (__at-block-height__, __at-block-hash__) modes should be used in the same way as ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Viewing data is possible both at the current moment (***now***) and for an earlier period of time (archive). To get information from the archive, specify a specific block (***at-block-height*** or ***at-block-hash***).  
+Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To run this command, type the following in the terminal command line:
 ```txt
@@ -818,7 +823,8 @@ https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7
 
 #### download-wasm - Download wasm
 
-Real-time (__at-final-block__) and archived data (__at-block-height__, __at-block-hash__) modes should be used in the same way as ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+You can download the contract file both in the current version (***now***) and in an earlier version, which is in the archive. To get a file from an archive, specify a specific block (***at-block-height*** or ***at-block-hash***).  
+Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 In order to get the contract file, type the following in the terminal command line:
 

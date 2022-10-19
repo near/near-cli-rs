@@ -343,7 +343,8 @@ https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MG
 
 #### list-keys - View a list of access keys of an account
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Просмотр ключей доступа аккаунта возможен как на текущий момент (***now***), так и на более ранний период времени (архив). Для получения информации из архива следует указать конкретный блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра списка ключей доступа необходимо ввести в командной строке терминала:
 ```txt
@@ -593,7 +594,8 @@ https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7
 
 #### view-near-balance - View the balance of Near tokens
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Просмотр баланса аккаунта возможен как на текущий момент (***now***), так и на более ранний период времени (архив). Для получения информации из архива следует указать конкретный блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в NEAR токенах на счету аккаунта необходимо ввести в командной строке терминала:
 ```txt
@@ -619,7 +621,8 @@ fro_volod.testnet account has 169.589001320890476999999994 NEAR available for tr
 
 #### view-ft-balance - View the balance of FT tokens
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Просмотр баланса аккаунта возможен как на текущий момент (***now***), так и на более ранний период времени (архив). Для получения информации из архива следует указать конкретный блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в FT токенах на счету аккаунта необходимо ввести в командной строке терминала:
 ```txt
@@ -645,7 +648,8 @@ fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usd
 
 #### view-nft-assets - View the balance of NFT tokens
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Просмотр баланса аккаунта возможен как на текущий момент (***now***), так и на более ранний период времени (архив). Для получения информации из архива следует указать конкретный блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в NFT токенах на счету аккаунта необходимо ввести в командной строке терминала:
 ```txt
@@ -703,7 +707,8 @@ fro_volod.testnet account has NFT tokens:
 
 ##### as-read-only - Calling a view method
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Просмотр данных возможен как на текущий момент (***now***), так и на более ранний период времени (архив). Для получения информации из архива следует указать конкретный блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
@@ -818,7 +823,8 @@ https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7
 
 #### download-wasm - Download wasm
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Скачать файл контракта возможно как в текущей версии (***now***), так и в более ранней, находящейся в архиве. Для получения файла из архива следует указать конкретный блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для получения файла контракта необходимо ввести в командной строке терминала:
 
