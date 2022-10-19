@@ -1,7 +1,7 @@
 ## Инструкция
 
-Это руководство предназначено для того, чтобы дать подробное описание утилиты near-cli и
-обзор её возможностей. Предполагается, что утилита near-cli
+Это руководство предназначено для того, чтобы дать подробное описание утилиты _near-cli_ и
+обзор её возможностей. Предполагается, что утилита _near-cli_
 [установлена](README.ru.md#installation)
 и пользователи знакомы с использованием инструментов командной строки. Также предполагается Unix-подобная система, хотя большинство команд, вероятно, легко
 переводимы в любую среду оболочки командной строки.
@@ -10,31 +10,34 @@
 
 1. Подпись транзакции
 
-   near-cli предполагает несколько способов подписи созданной транзакции. Рассмотрим подробнее каждый.
+   _near-cli_ предполагает несколько способов подписи созданной транзакции. Рассмотрим подробнее каждый.
 
-   - _sign-with-keychain - Sign the transaction with a keychain_
+    - _sign-with-macos-keychain - Sign the transaction with an macOS keychain_
 
-    near-cli самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
-    Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).
-    
-    Ключи доступа должны находиться в файле _публичный*ключ.json*, расположенном в */Users/user/.near-credentials/имя*сети/имя*пользователя/_.  
-    Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
+        Операционная система _MacOS_ имеет собственное приложение _[Keychain Access](https://support.apple.com/ru-ru/guide/keychain-access/welcome/mac)_, с помощью которого _near-cli_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
 
-        <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-        <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
-            <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
-        </a>
-        </details>
+    - _sign-with-keychain - Sign the transaction with a keychain_
 
-     - _sign-with-ledger - Sign the transaction with a ledger_
+        _near-cli_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
+        Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).  
+        Ключи доступа должны находиться в файле _публичный-ключ.json_, расположенном в _/Users/user/.near-credentials/имя-сети/имя-пользователя/_.  
+        Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
-       Этот вариант предполагает подписание созданной транзакции при помощи леджера.
+            <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+            <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
+                <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
+            </a>
+            </details>
 
-     - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
+    - _sign-with-ledger - Sign the transaction with a ledger_
 
-       При выборе этого варианта подписи near-cli попросит пользователя ввести ключи доступа:
-       - "public_key":"ed25519:Ebx7...",
-       - "private_key":"ed25519:2qM8..."
+        Этот вариант предполагает подписание созданной транзакции при помощи леджера.
+
+    - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
+
+        При выборе этого варианта подписи _near-cli_ попросит пользователя ввести ключи доступа:
+        - "public_key":"ed25519:Ebx7...",
+        - "private_key":"ed25519:2qM8..."
 
 2. Действия с подписанной транзакцией
 
@@ -118,7 +121,7 @@ Number of access keys: 14
 
 ##### at-block-height - View properties in a height-selected block
 
-Для просмотра сведений об аккаунте на конктретном блоке необходимо ввести в командной строке терминала:
+Для просмотра сведений об аккаунте на конктретном блоке можно указать высоту данного блока. Для этого нужно ввести в командной строке терминала:
 ```txt
 ./near-cli account \
     view-account-summary fro_volod.testnet \
@@ -205,7 +208,7 @@ Number of access keys: 12
     network-config testnet
 ```
 
-Вы будете перенаправлены браузер для авторизации. После успешной авторизации в "NEAR Wallet" необходимо вернуться в терминал и ввести имя пользователя.
+Вы будете перенаправлены браузер для авторизации. После успешной авторизации в _[NEAR Wallet](https://wallet.near.org/)_ необходимо вернуться в терминал и ввести имя пользователя.
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
@@ -261,7 +264,7 @@ https://explorer.testnet.near.org/transactions/82i7DWkAvVQFM2C1afaYhyPuZmr5DVeC4
 
 ##### use-auto-generation - Use auto-generation to create an implicit account
 
-Данная команда автоматически генерирует аккаунт с ключами доступа и сохраняет их в файле с именем implicit-account-id.
+Данная команда автоматически генерирует аккаунт с ключами доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
@@ -285,7 +288,7 @@ The file "/Users/frovolod/.near-credentials/implicit/38a078c59b84e49e01b42ae79c7
 
 ##### use-ledger - Use ledger to create an implicit account
 
-Данная команда с помощью леджера создает аккаунт с ключами доступа и сохраняет их в файле с именем implicit-account-id.
+Данная команда с помощью леджера создает аккаунт с ключами доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \

@@ -1,6 +1,6 @@
 near-cli
 --------
-near-cli – это утилита командной строки для работы с блокчейном Near Protocol.
+_near-cli_ – это утилита командной строки для работы с блокчейном Near Protocol.
 
 ## README.md
 
@@ -42,7 +42,7 @@ https://explorer.testnet.near.org/transactions/G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaq
 
 Набирая эту или другую команду вручную, Вы можете допустить ошибку, либо забыть последовательность набора команды.  
 Не проблема, `--help` подскажет как правильно выстроить команду.  
-Однако, используя near-cli, Вы __в любом месте набора команды__ можете нажать Enter и интерактивный режим программы продолжит работу по составлению команды с того места, где Вы закончили вводить необходимые параметры.
+Однако, используя _near-cli_, Вы __в любом месте набора команды__ можете нажать Enter и интерактивный режим программы продолжит работу по составлению команды с того места, где Вы закончили вводить необходимые параметры.
 
 <details><summary><i>Демонстрация работы утилиты с частично набранной командой</i></summary>
 <a href="https://asciinema.org/a/AfxLN1QtJi1z1qXuowTj2nDw2?autoplay=1&t=1&speed=2">
@@ -63,7 +63,7 @@ https://explorer.testnet.near.org/transactions/G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaq
 
 ## Конфигурационный файл
 
-Каталог с ключами доступа и доступные сети подключения определены в конфигурационном файле (near-cli/config.toml), который находится в зависимости от операциооной системы в следующих местах:
+Каталог с ключами доступа и доступные сети подключения определены в конфигурационном файле _(near-cli/config.toml)_, который находится в зависимости от операциооной системы в следующих местах:
 
     - macOS: $HOME/Library/Application Support (/Users/Alice/Library/Application Support)
     - Linux: $XDG_CONFIG_HOME или $HOME/.config (/home/alice/.config)
@@ -73,11 +73,11 @@ https://explorer.testnet.near.org/transactions/G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaq
 
 ## Сборка
 
-near-cli написан на Rust. Поэтому необходимо
+_near-cli_ написан на Rust. Поэтому необходимо
 [установить Rust](https://www.rust-lang.org/) для компиляции программы.
-near-cli компилируется на версии Rust 1.64.0 (stable) или новее.
+_near-cli_ компилируется на версии Rust 1.64.0 (stable) или новее.
 
-Сборка near-cli:
+Сборка _near-cli_:
 
 ```txt
 $ git clone https://github.com/near/near-cli-rs.git
