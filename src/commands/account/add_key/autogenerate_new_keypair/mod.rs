@@ -40,7 +40,7 @@ pub enum SaveMode {
     #[strum_discriminants(strum(
         message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
-    ///Save automatically generated key pair to keychain
+    ///Save automatically generated key pair to the legacy keychain (compatible with JS CLI)
     SaveToKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
     #[strum_discriminants(strum(
         message = "print-to-terminal        - Print automatically generated key pair in terminal"
