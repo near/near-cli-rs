@@ -20,11 +20,11 @@ impl SignMacosKeychain {
         _context: crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<Self>> {
         let nonce: Option<u64> = optional_clap_variant
-            .clone()
+            .as_ref()
             .and_then(|clap_variant| clap_variant.nonce);
         let block_hash: Option<String> = optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.block_hash);
+            .as_ref()
+            .and_then(|clap_variant| clap_variant.block_hash.clone());
         let submit: Option<super::Submit> =
             optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
         Ok(Some(Self {

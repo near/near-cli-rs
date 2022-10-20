@@ -30,25 +30,25 @@ impl SignPrivateKey {
         _context: crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<Self>> {
         let signer_public_key: crate::types::public_key::PublicKey = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.signer_public_key)
+            .as_ref()
+            .and_then(|clap_variant| clap_variant.signer_public_key.clone())
         {
             Some(cli_public_key) => cli_public_key,
             None => super::input_signer_public_key()?,
         };
         let signer_private_key: crate::types::secret_key::SecretKey = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.signer_private_key)
+            .as_ref()
+            .and_then(|clap_variant| clap_variant.signer_private_key.clone())
         {
             Some(signer_private_key) => signer_private_key,
             None => super::input_signer_private_key()?,
         };
         let nonce: Option<u64> = optional_clap_variant
-            .clone()
+            .as_ref()
             .and_then(|clap_variant| clap_variant.nonce);
         let block_hash: Option<String> = optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.block_hash);
+            .as_ref()
+            .and_then(|clap_variant| clap_variant.block_hash.clone());
         let submit: Option<super::Submit> =
             optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
         Ok(Some(Self {
