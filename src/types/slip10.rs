@@ -36,7 +36,9 @@ impl<'de> serde::de::Deserialize<'de> for BIP32Path {
     where
         D: serde::de::Deserializer<'de>,
     {
-        String::deserialize(deserializer)?.parse().map_err(|err: color_eyre::eyre::Report| serde::de::Error::custom(err.to_string()))
+        String::deserialize(deserializer)?
+            .parse()
+            .map_err(|err: color_eyre::eyre::Report| serde::de::Error::custom(err.to_string()))
     }
 }
 
