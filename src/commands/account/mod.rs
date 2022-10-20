@@ -33,9 +33,9 @@ pub enum AccountActions {
     /// View properties for an account
     ViewAccountSummary(self::view_account_summary::ViewAccountSummary),
     #[strum_discriminants(strum(
-        message = "login                   - Log in with NEAR Wallet authorization"
+        message = "import-account          - Import existing account (a.k.a. \"sign in\")"
     ))]
-    /// Log in with NEAR Wallet
+    /// Import existing account (a.k.a. "sign in")
     ImportAccount(self::import_account::Login),
     #[strum_discriminants(strum(message = "create-subaccount       - Create a new sub-account"))]
     /// Create a new sub-account

@@ -42,13 +42,16 @@ async fn login(
 
     #[cfg(target_os = "macos")]
     {
-        let items = vec!["~/.near-credentials", "Keychain Access"];
+        let items = vec![
+            "Store the access key in my macOS keychain",
+            "Store the access key in my legacy keychain (compatible with the old near CLI)",
+        ];
         let selection = dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
             .with_prompt("Select a keychain to save the access key to:")
             .items(&items)
             .default(0)
             .interact()?;
-        if selection == 1 {
+        if selection == 0 {
             crate::common::save_access_key_to_macos_keychain(
                 network_config,
                 key_pair_properties,
