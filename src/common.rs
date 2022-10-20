@@ -449,12 +449,14 @@ pub async fn get_account_state(
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct KeyPairProperties {
-    pub seed_phrase_hd_path: slip10::BIP32Path,
+    pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     pub master_seed_phrase: String,
     pub implicit_account_id: near_primitives::types::AccountId,
+    #[serde(rename = "public_key")]
     pub public_key_str: String,
+    #[serde(rename = "private_key")]
     pub secret_keypair_str: String,
 }
 
@@ -528,7 +530,7 @@ pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         bs58::encode(secret_keypair.to_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
-        seed_phrase_hd_path: generate_keypair.seed_phrase_hd_path.into(),
+        seed_phrase_hd_path: generate_keypair.seed_phrase_hd_path,
         master_seed_phrase,
         implicit_account_id,
         public_key_str,
@@ -1029,22 +1031,39 @@ pub fn print_transaction_status(
     );
 }
 
+#[cfg(target_os = "macos")]
+pub async fn save_access_key_to_macos_keychain(
+    network_config: crate::config::NetworkConfig,
+    key_pair_properties: crate::common::KeyPairProperties,
+    account_id: &str,
+) -> crate::CliResult {
+    let buf = serde_json::to_string(&key_pair_properties)?;
+    let keychain = security_framework::os::macos::keychain::SecKeychain::default()
+        .map_err(|err| color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err)))?;
+    let service_name = std::borrow::Cow::Owned(format!(
+        "near-{}-{}",
+        network_config.network_name, account_id
+    ));
+    keychain
+        .set_generic_password(
+            &service_name,
+            &format!("{}:{}", account_id, key_pair_properties.public_key_str),
+            buf.as_bytes(),
+        )
+        .map_err(|err| {
+            color_eyre::Report::msg(format!("Failed to save password to keychain: {:?}", err))
+        })?;
+    println!("The data for the access key is saved in macOS Keychain");
+    Ok(())
+}
+
 pub async fn save_access_key_to_keychain(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
 ) -> crate::CliResult {
-    let buf = format!(
-        "{}",
-        serde_json::json!({
-            "master_seed_phrase": key_pair_properties.master_seed_phrase,
-            "seed_phrase_hd_path": key_pair_properties.seed_phrase_hd_path.to_string(),
-            "account_id": account_id,
-            "public_key": key_pair_properties.public_key_str,
-            "private_key": key_pair_properties.secret_keypair_str,
-        })
-    );
+    let buf = serde_json::to_string(&key_pair_properties)?;
     let dir_name = network_config.network_name.as_str();
     let file_with_key_name: std::path::PathBuf = format!(
         "{}.json",

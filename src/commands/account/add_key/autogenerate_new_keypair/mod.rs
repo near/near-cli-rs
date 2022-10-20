@@ -3,6 +3,8 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod print_keypair_to_terminal;
 mod save_keypair_to_keychain;
+#[cfg(target_os = "macos")]
+mod save_keypair_to_macos_keychain;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -29,13 +31,19 @@ impl GenerateKeypair {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 ///Save an access key for this account
 pub enum SaveMode {
+    #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
-        message = "save-to-keychain   - Save automatically generated key pair to keychain"
+        message = "save-to-macos-keychain   - Save automatically generated key pair to macOS keychain"
     ))]
-    ///Save automatically generated key pair to keychain
+    ///Save automatically generated key pair to macOS keychain
+    SaveToMacosKeychain(self::save_keypair_to_macos_keychain::SaveKeypairToMacosKeychain),
+    #[strum_discriminants(strum(
+        message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
+    ))]
+    ///Save automatically generated key pair to the legacy keychain (compatible with JS CLI)
     SaveToKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
     #[strum_discriminants(strum(
-        message = "print-to-terminal  - Print automatically generated key pair in terminal"
+        message = "print-to-terminal        - Print automatically generated key pair in terminal"
     ))]
     ///Print automatically generated key pair in terminal
     PrintToTerminal(self::print_keypair_to_terminal::PrintKeypairToTerminal),
@@ -67,6 +75,16 @@ impl SaveMode {
             ..prepopulated_unsigned_transaction
         };
         match self {
+            #[cfg(target_os = "macos")]
+            SaveMode::SaveToMacosKeychain(save_keypair_to_macos_keychain) => {
+                save_keypair_to_macos_keychain
+                    .process(
+                        config,
+                        key_pair_properties,
+                        prepopulated_unsigned_transaction,
+                    )
+                    .await
+            }
             SaveMode::SaveToKeychain(save_keypair_to_keychain) => {
                 save_keypair_to_keychain
                     .process(

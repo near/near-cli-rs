@@ -29,8 +29,8 @@ impl SignLedger {
         _context: crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<Self>> {
         let seed_phrase_hd_path = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.seed_phrase_hd_path)
+            .as_ref()
+            .and_then(|clap_variant| clap_variant.seed_phrase_hd_path.clone())
         {
             Some(hd_path) => hd_path,
             None => SignLedger::input_seed_phrase_hd_path(),
@@ -143,7 +143,7 @@ impl SignLedger {
                 .expect("Transaction is not expected to fail on serialization"),
         );
         println!("Your transaction was signed successfully.");
-        match self.submit.clone() {
+        match &self.submit {
             None => {
                 let submit = super::Submit::choose_submit();
                 submit

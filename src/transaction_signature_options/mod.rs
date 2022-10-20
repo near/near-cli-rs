@@ -4,28 +4,36 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
+#[cfg(target_os = "macos")]
+pub mod sign_with_macos_keychain;
 pub mod sign_with_private_key;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-///Select a tool for signing the transaction
+/// Select a tool for signing the transaction
 pub enum SignWith {
+    #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
-        message = "sign-with-keychain               - Sign the transaction with a keychain"
+        message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain"
     ))]
-    ///Sign the transaction with a keychain
+    /// Sign the transaction with a key saved in macOS keychain
+    SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
+    #[strum_discriminants(strum(
+        message = "sign-with-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
+    ))]
+    /// Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
     #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(
-        message = "sign-with-ledger                 - Sign the transaction with a ledger"
+        message = "sign-with-ledger                 - Sign the transaction with Ledger Nano device"
     ))]
-    ///Sign the transaction with a ledger
+    /// Sign the transaction with Ledger Nano device
     SignWithLedger(self::sign_with_ledger::SignLedger),
     #[strum_discriminants(strum(
         message = "sign-with-plaintext-private-key  - Sign the transaction with a plaintext private key"
     ))]
-    ///Sign the transaction with a plaintext private key
+    /// Sign the transaction with a plaintext private key
     SignWithPlaintextPrivateKey(self::sign_with_private_key::SignPrivateKey),
 }
 
@@ -39,6 +47,50 @@ pub fn input_signer_private_key() -> color_eyre::eyre::Result<crate::types::secr
     Ok(Input::new()
         .with_prompt("Enter sender (signer) private (secret) key")
         .interact_text()?)
+}
+
+pub async fn sign_with(
+    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+    prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+    config: crate::config::Config,
+) -> crate::CliResult {
+    match network_config.get_sign_option() {
+        #[cfg(target_os = "macos")]
+        SignWith::SignWithMacosKeychain(sign_macos_keychain) => {
+            sign_macos_keychain
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config),
+                )
+                .await
+        }
+        SignWith::SignWithKeychain(sign_keychain) => {
+            sign_keychain
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config.clone()),
+                    config.credentials_home_dir,
+                )
+                .await
+        }
+        #[cfg(feature = "ledger")]
+        SignWith::SignWithLedger(sign_ledger) => {
+            sign_ledger
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config),
+                )
+                .await
+        }
+        SignWith::SignWithPlaintextPrivateKey(sign_private_key) => {
+            sign_private_key
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config),
+                )
+                .await
+        }
+    }
 }
 //-----------------------------------------------------------------------------------
 //---- these functions are used for offline mode ----
