@@ -87,10 +87,10 @@ jobs:
         echo "target flag is: ${{ env.TARGET_FLAGS }}"
     
     - name: Build near-cli and all crates
-      run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
+      run: ${{ env.CARGO }} +${{ matrix.rust }} build --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
 
     - name: Run tests
-      run: ${{ env.CARGO }} test --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
+      run: ${{ env.CARGO }} +${{ matrix.rust }} test --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
     
     - name: View account summary for 'fro_volod.testnet'
       if: matrix.build != 'linux-aarch64-musl'
@@ -118,6 +118,8 @@ jobs:
     - name: Check formatting
       run: |
         cargo fmt --all -- --check
+    - name: Install libudev-dev
+      run: sudo apt-get install --assume-yes libudev-dev
     - name: Check lints (cargo clippy)
       uses: actions-rs/clippy-check@v1
       with:
