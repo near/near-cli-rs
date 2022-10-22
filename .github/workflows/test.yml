@@ -72,7 +72,7 @@ jobs:
         fi
  
     - name: Setup target flags
-      run:
+      run: |
         echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
         echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
 
