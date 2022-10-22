@@ -63,21 +63,19 @@ jobs:
         override: true
 
     - name: Use Cross
+      if: matrix.os == 'ubuntu-18.04'
       run: |
-        if [ "${{ matrix.os }}" = 'ubuntu-18.04' ]; then
-          cargo install cross
-          echo "CARGO=cross" >> $GITHUB_ENV
-        fi
-        echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
-        echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
-
-    - name: Build cross environment
-      shell: bash
-      run: |
+        cargo install cross
+        echo "CARGO=cross" >> $GITHUB_ENV
         if [ -d "./cross/${{ matrix.target }}" ]; then
           docker build --tag "cross:${{ matrix.target }}" "./cross/${{ matrix.target }}"
         fi
  
+    - name: Setup target flags
+      run:
+        echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+        echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+
     - name: Disable Ledger support for platforms that don't have udev
       if: matrix.target == 'x86_64-unknown-linux-musl' || matrix.target == 'aarch64-unknown-linux-musl'
       run: |
