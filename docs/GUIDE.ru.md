@@ -1,7 +1,7 @@
 ## Инструкция
 
-Это руководство предназначено для того, чтобы дать подробное описание утилиты near-cli и
-обзор её возможностей. Предполагается, что утилита near-cli
+Это руководство предназначено для того, чтобы дать подробное описание утилиты _near-cli_ и
+обзор её возможностей. Предполагается, что утилита _near-cli_
 [установлена](README.ru.md#installation)
 и пользователи знакомы с использованием инструментов командной строки. Также предполагается Unix-подобная система, хотя большинство команд, вероятно, легко
 переводимы в любую среду оболочки командной строки.
@@ -10,32 +10,34 @@
 
 1. Подпись транзакции
 
-   near-cli предполагает несколько способов подписи созданной транзакции. Рассмотрим подробнее каждый.
+   _near-cli_ предполагает несколько способов подписи созданной транзакции. Рассмотрим подробнее каждый.
 
-   - _sign-with-keychain - Sign the transaction with a keychain_
+    - _sign-with-macos-keychain - Sign the transaction with an macOS keychain_
 
-     near-cli самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
-     Каталог с ключами доступа определен в конфигурационном файле (near-cli/config.toml), который находится в зависимости от операциооной системы в следующих местах:
+        Операционная система _MacOS_ имеет собственное приложение _[Keychain Access](https://support.apple.com/ru-ru/guide/keychain-access/welcome/mac)_, с помощью которого _near-cli_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
 
-     - Linux: $XDG_CONFIG_HOME или $HOME/.config (/home/alice/.config)
-     - macOS: $HOME/Library/Application Support (/Users/Alice/Library/Application Support)
-     - Windows: {FOLDERID*RoamingAppData} (C:\Users\Alice\AppData\Roaming)
+    - _sign-with-keychain - Sign the transaction with a keychain_
 
-        <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-        <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
-            <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
-        </a>
-        </details>
+        _near-cli_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
+        Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).  
+        Ключи доступа должны находиться в файле _публичный-ключ.json_, расположенном в _/Users/user/.near-credentials/имя-сети/имя-пользователя/_.  
+        Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
-     - _sign-with-ledger - Sign the transaction with a ledger_
+            <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+            <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
+                <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
+            </a>
+            </details>
 
-       Этот вариант предполагает подписание созданной транзакции при помощи леджера.
+    - _sign-with-ledger - Sign the transaction with a ledger_
 
-     - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
+        Этот вариант предполагает подписание созданной транзакции при помощи леджера.
 
-       При выборе этого варианта подписи near-cli попросит пользователя ввести ключи доступа:
-       - "public_key":"ed25519:Ebx7...",
-       - "private_key":"ed25519:2qM8..."
+    - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
+
+        При выборе этого варианта подписи _near-cli_ попросит пользователя ввести ключи доступа:
+        - "public_key":"ed25519:Ebx7...",
+        - "private_key":"ed25519:2qM8..."
 
 2. Действия с подписанной транзакцией
 
@@ -57,7 +59,7 @@
 
 ### account - Manage accounts
 
-Просмотреть сведения об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)) и просмотреть ключи доступа к аккаунту ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) возможно на текущий момент времени (**now**) и на определеный момент в прошлом, указав блок (**at-block-height** или **at-block-hash**). На примерах ниже показаны варианты применения этих режимов.
+Просмотреть сведения об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)) и просмотреть ключи доступа к аккаунту ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***). На примерах ниже показаны варианты применения этих режимов.
 
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
 - [login](#login---Log-in-with-NEAR-Wallet-authorization)
@@ -119,7 +121,7 @@ Number of access keys: 14
 
 ##### at-block-height - View properties in a height-selected block
 
-Для просмотра сведений об аккаунте на конктретном блоке необходимо ввести в командной строке терминала:
+Для просмотра сведений об аккаунте на конктретном блоке можно указать высоту данного блока. Для этого нужно ввести в командной строке терминала:
 ```txt
 ./near-cli account \
     view-account-summary fro_volod.testnet \
@@ -206,7 +208,7 @@ Number of access keys: 12
     network-config testnet
 ```
 
-Вы будете перенаправлены браузер для авторизации. После успешной авторизации в "NEAR Wallet" необходимо вернуться в терминал и ввести имя пользователя.
+Вы будете перенаправлены браузер для авторизации. После успешной авторизации в _[NEAR Wallet](https://wallet.near.org/)_ необходимо вернуться в терминал и ввести имя пользователя.
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
@@ -262,7 +264,7 @@ https://explorer.testnet.near.org/transactions/82i7DWkAvVQFM2C1afaYhyPuZmr5DVeC4
 
 ##### use-auto-generation - Use auto-generation to create an implicit account
 
-Данная команда автоматически генерирует аккаунт с ключами доступа и сохраняет их в файле с именем implicit-account-id.
+Данная команда автоматически генерирует аккаунт с ключами доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
@@ -286,7 +288,7 @@ The file "/Users/frovolod/.near-credentials/implicit/38a078c59b84e49e01b42ae79c7
 
 ##### use-ledger - Use ledger to create an implicit account
 
-Данная команда с помощью леджера создает аккаунт с ключами доступа и сохраняет их в файле с именем implicit-account-id.
+Данная команда с помощью леджера создает аккаунт с ключами доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
@@ -341,7 +343,8 @@ https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MG
 
 #### list-keys - View a list of access keys of an account
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Просмотр ключей доступа аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра списка ключей доступа необходимо ввести в командной строке терминала:
 ```txt
@@ -591,7 +594,8 @@ https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7
 
 #### view-near-balance - View the balance of Near tokens
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в NEAR токенах на счету аккаунта необходимо ввести в командной строке терминала:
 ```txt
@@ -617,7 +621,8 @@ fro_volod.testnet account has 169.589001320890476999999994 NEAR available for tr
 
 #### view-ft-balance - View the balance of FT tokens
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в FT токенах на счету аккаунта необходимо ввести в командной строке терминала:
 ```txt
@@ -643,7 +648,8 @@ fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usd
 
 #### view-nft-assets - View the balance of NFT tokens
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в NFT токенах на счету аккаунта необходимо ввести в командной строке терминала:
 ```txt
@@ -701,7 +707,8 @@ fro_volod.testnet account has NFT tokens:
 
 ##### as-read-only - Calling a view method
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Просмотр данных возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
@@ -816,7 +823,8 @@ https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7
 
 #### download-wasm - Download wasm
 
-Режимами реального времени (**at-final-block**) и архивных данных (**at-block-height**, **at-block-hash**) следует пользоваться аналогично просмотру сведений об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+Скачать файл контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для получения файла контракта необходимо ввести в командной строке терминала:
 
