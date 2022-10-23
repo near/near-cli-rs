@@ -28,6 +28,12 @@ impl From<near_crypto::PublicKey> for PublicKey {
     }
 }
 
+impl Default for PublicKey {
+    fn default() -> Self {
+        PublicKey::from(near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519))
+    }
+}
+
 impl interactive_clap::ToCli for PublicKey {
     type CliVariant = PublicKey;
 }
