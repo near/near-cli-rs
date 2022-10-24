@@ -706,30 +706,6 @@ fn print_value_successful_transaction(
     }
 }
 
-fn print_value_failed_transaction(
-    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
-) {
-    println!("Failed transaction");
-    for action in transaction_info.transaction.actions {
-        match action {
-            near_primitives::views::ActionView::FunctionCall {
-                method_name,
-                args: _,
-                gas: _,
-                deposit: _,
-            } => {
-                println!(
-                    "The \"{}\" call to <{}> on behalf of <{}> failed.",
-                    method_name,
-                    transaction_info.transaction.receiver_id,
-                    transaction_info.transaction.signer_id,
-                );
-            }
-            _ => todo!("Unspecified transaction error"),
-        }
-    }
-}
-
 pub fn rpc_transaction_error(
     err: near_jsonrpc_client::errors::JsonRpcError<
         near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError,
@@ -1040,14 +1016,8 @@ pub fn print_transaction_status(
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
             print_transaction_error(tx_execution_error)
         }
-        near_primitives::views::FinalExecutionStatus::SuccessValue(ref value) => {
-            let value_str = String::from_utf8(value.clone()).expect("Found invalid UTF-8");
-            let value_str = value_str.as_str();
-            if matches!(value_str, "false") {
-                print_value_failed_transaction(transaction_info.clone())
-            } else {
-                print_value_successful_transaction(transaction_info.clone())
-            }
+        near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
+            print_value_successful_transaction(transaction_info.clone())
         }
     };
     println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
