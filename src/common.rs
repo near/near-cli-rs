@@ -566,7 +566,9 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
                 );
                 println!(
                     "{:>18} {:<13} {:?}",
-                    "", "args:", &function_call_action.args
+                    "",
+                    "args:",
+                    near_primitives::logging::pretty_utf8(&function_call_action.args)
                 );
                 println!(
                     "{:>18} {:<13} {}",
@@ -707,6 +709,30 @@ fn print_value_successful_transaction(
                     transaction_info.transaction.signer_id,
                 );
             }
+        }
+    }
+}
+
+fn print_value_failed_transaction(
+    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
+) {
+    println!("Failed transaction");
+    for action in transaction_info.transaction.actions {
+        match action {
+            near_primitives::views::ActionView::FunctionCall {
+                method_name,
+                args: _,
+                gas: _,
+                deposit: _,
+            } => {
+                println!(
+                    "The \"{}\" call to <{}> on behalf of <{}> failed.",
+                    method_name,
+                    transaction_info.transaction.receiver_id,
+                    transaction_info.transaction.signer_id,
+                );
+            }
+            _ => todo!("Unspecified transaction error"),
         }
     }
 }
@@ -1021,8 +1047,14 @@ pub fn print_transaction_status(
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
             print_transaction_error(tx_execution_error)
         }
-        near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
-            print_value_successful_transaction(transaction_info.clone())
+        near_primitives::views::FinalExecutionStatus::SuccessValue(ref value) => {
+            let value_str = String::from_utf8(value.clone()).expect("Found invalid UTF-8");
+            let value_str = value_str.as_str();
+            if matches!(value_str, "false") {
+                print_value_failed_transaction(transaction_info.clone())
+            } else {
+                print_value_successful_transaction(transaction_info.clone())
+            }
         }
     };
     println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
