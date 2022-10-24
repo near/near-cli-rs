@@ -420,13 +420,8 @@ pub async fn get_account_state(
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
-    let json_rpc_client = match block_reference {
-        BlockReference::Finality(_) | BlockReference::BlockId(_) => {
-            network_config.json_rpc_client()?
-        }
-        BlockReference::SyncCheckpoint(_) => todo!(),
-    };
-    let query_view_method_response = json_rpc_client
+    let query_view_method_response = network_config
+        .json_rpc_client()?
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccount { account_id },
@@ -566,9 +561,7 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
                 );
                 println!(
                     "{:>18} {:<13} {:?}",
-                    "",
-                    "args:",
-                    near_primitives::logging::pretty_utf8(&function_call_action.args)
+                    "", "args:", &function_call_action.args
                 );
                 println!(
                     "{:>18} {:<13} {}",

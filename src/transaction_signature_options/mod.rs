@@ -1,4 +1,5 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
+use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod sign_with_keychain;
@@ -179,7 +180,43 @@ impl Submit {
                         },
                     };
                 };
-                crate::common::print_transaction_status(transaction_info, network_config);
+                // This is done to distinguish <create_new_account> from other transactions.
+                for action in &transaction_info.transaction.actions {
+                    match action {
+                        near_primitives::views::ActionView::FunctionCall {
+                            method_name,
+                            args,
+                            gas: _,
+                            deposit: _,
+                        } => {
+                            if matches!(method_name.as_str(), "create_account") {
+                                let args_str =
+                                    String::from_utf8(args.to_vec()).expect("Found invalid UTF-8");
+                                let data_json =
+                                    serde_json::Value::from_str(&args_str).map_err(|err| {
+                                        color_eyre::Report::msg(format!(
+                                            "Data not in JSON format! Error: {}",
+                                            err
+                                        ))
+                                    })?;
+                                println!(
+                                    "New account {} created successfully.",
+                                    data_json
+                                        .get("new_account_id")
+                                        .expect("new_account_id not found"),
+                                );
+                                println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+                                    id=transaction_info.transaction_outcome.id,
+                                    path=network_config.explorer_transaction_url
+                                );
+                            }
+                        }
+                        _ => crate::common::print_transaction_status(
+                            transaction_info.clone(),
+                            network_config.clone(),
+                        ),
+                    }
+                }
                 Ok(())
             }
             Submit::Display => {
