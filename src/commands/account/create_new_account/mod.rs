@@ -1,3 +1,4 @@
+use dialoguer::Input;
 use serde_json::json;
 use std::str::FromStr;
 
@@ -49,8 +50,31 @@ impl SignerAccountId {
         config: crate::config::Config,
         account_properties: AccountProperties,
     ) -> crate::CliResult {
+        let mut new_account_id = account_properties
+            .new_account_id
+            .expect("Impossible to get account_id!");
+        let network_config = self.network_config.get_network_config(config.clone());
+
+        let account_id = loop {
+            if (crate::common::get_account_state(
+                network_config.clone(),
+                new_account_id.clone().into(),
+                near_primitives::types::Finality::Final.into(),
+            )
+            .await?)
+                .is_some()
+            {
+                println!("Account <{}> already exists", new_account_id);
+            } else {
+                break new_account_id;
+            }
+            new_account_id = Input::new()
+                .with_prompt("Enter a new account name")
+                .interact_text()?;
+        };
+
         let args = json!({
-            "new_account_id": account_properties.new_account_id.expect("Impossible to get contract_account_id!").to_string(),
+            "new_account_id": account_id.to_string(),
             "new_public_key": account_properties.public_key.to_string()
         })
         .to_string()
@@ -59,12 +83,7 @@ impl SignerAccountId {
             signer_id: self.signer_account_id.clone().into(),
             public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
             nonce: 0,
-            receiver_id: self
-                .network_config
-                .get_network_config(config.clone())
-                .network_name
-                .parse()
-                .unwrap(),
+            receiver_id: network_config.clone().network_name.parse().unwrap(),
             block_hash: Default::default(),
             actions: vec![near_primitives::transaction::Action::FunctionCall(
                 near_primitives::transaction::FunctionCallAction {
