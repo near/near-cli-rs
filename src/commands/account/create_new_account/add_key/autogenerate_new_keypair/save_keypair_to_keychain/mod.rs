@@ -26,7 +26,7 @@ impl SaveKeypairToKeychain {
             account_properties
                 .new_account_id
                 .clone()
-                .expect("Impossible to get contract_account_id!")
+                .expect("Impossible to get account_id!")
                 .as_ref(),
         )
         .await
