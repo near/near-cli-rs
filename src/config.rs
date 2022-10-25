@@ -8,9 +8,11 @@ pub struct Config {
 pub struct NetworkConfig {
     pub network_name: String,
     pub rpc_url: url::Url,
+    pub rpc_api_key: Option<String>,
     pub wallet_url: url::Url,
     pub explorer_transaction_url: url::Url,
-    pub api_key: Option<String>,
+    // https://github.com/near/near-cli-rs/issues/116
+    pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
 }
 
 impl Default for Config {
@@ -29,7 +31,8 @@ impl Default for Config {
                 explorer_transaction_url: "https://explorer.mainnet.near.org/transactions/"
                     .parse()
                     .unwrap(),
-                api_key: None,
+                rpc_api_key: None,
+                linkdrop_account_id: Some("near".parse().unwrap()),
             },
         );
         networks.insert(
@@ -41,7 +44,8 @@ impl Default for Config {
                 explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
                     .parse()
                     .unwrap(),
-                api_key: None,
+                rpc_api_key: None,
+                linkdrop_account_id: Some("testnet".parse().unwrap()),
             },
         );
         networks.insert(
@@ -53,7 +57,8 @@ impl Default for Config {
                 explorer_transaction_url: "https://explorer.shardnet.near.org/transactions/"
                     .parse()
                     .unwrap(),
-                api_key: None,
+                rpc_api_key: None,
+                linkdrop_account_id: Some("shardnet".parse().unwrap()),
             },
         );
         Self {
@@ -66,9 +71,9 @@ impl Default for Config {
 impl NetworkConfig {
     pub fn json_rpc_client(&self) -> color_eyre::eyre::Result<near_jsonrpc_client::JsonRpcClient> {
         let mut json_rpc_client = near_jsonrpc_client::JsonRpcClient::connect(self.rpc_url.clone());
-        if let Some(api_key) = self.api_key.clone() {
+        if let Some(rpc_api_key) = self.rpc_api_key.clone() {
             json_rpc_client =
-                json_rpc_client.header(near_jsonrpc_client::auth::ApiKey::new(api_key)?)
+                json_rpc_client.header(near_jsonrpc_client::auth::ApiKey::new(rpc_api_key)?)
         };
         Ok(json_rpc_client)
     }
