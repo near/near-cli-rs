@@ -83,7 +83,10 @@ impl SignerAccountId {
             signer_id: self.signer_account_id.clone().into(),
             public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
             nonce: 0,
-            receiver_id: network_config.clone().linkdrop_account_id.expect("Impossible to get linkdrop_account_id!"),
+            receiver_id: network_config
+                .clone()
+                .linkdrop_account_id
+                .expect("Impossible to get linkdrop_account_id!"),
             block_hash: Default::default(),
             actions: vec![near_primitives::transaction::Action::FunctionCall(
                 near_primitives::transaction::FunctionCallAction {
