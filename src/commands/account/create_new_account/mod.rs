@@ -83,13 +83,13 @@ impl SignerAccountId {
             signer_id: self.signer_account_id.clone().into(),
             public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
             nonce: 0,
-            receiver_id: network_config.clone().network_name.parse().unwrap(),
+            receiver_id: network_config.clone().linkdrop_account_id.expect("Impossible to get linkdrop_account_id!"),
             block_hash: Default::default(),
             actions: vec![near_primitives::transaction::Action::FunctionCall(
                 near_primitives::transaction::FunctionCallAction {
                     method_name: "create_account".to_string(),
                     args,
-                    gas: crate::common::NearGas::from_str("100 TeraGas")
+                    gas: crate::common::NearGas::from_str("30 TeraGas")
                         .unwrap()
                         .inner,
                     deposit: account_properties.deposit.to_yoctonear(),
