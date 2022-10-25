@@ -19,7 +19,7 @@ impl Deposit {
             .with_prompt(
                 "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear).",
             )
-            .with_initial_text("0 NEAR")
+            .with_initial_text("0.1 NEAR")
             .interact_text()?;
         Ok(deposit)
     }
