@@ -101,7 +101,7 @@ impl FunctionCallType {
         println!();
         let choose_input = vec![
             "Yes, I want to input a list of method names that can be used",
-            "No, I don't to input a list of method names that can be used",
+            "No, I don't want to input a list of method names that can be used",
         ];
         let select_choose_input = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Do You want to input a list of method names that can be used")
@@ -132,7 +132,7 @@ impl FunctionCallType {
         println!();
         let choose_input = vec![
             "Yes, I want to input allowance for receiver ID",
-            "No, I don't to input allowance for receiver ID",
+            "No, I don't want to input allowance for receiver ID",
         ];
         let select_choose_input = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Do You want to input an allowance for receiver ID")
