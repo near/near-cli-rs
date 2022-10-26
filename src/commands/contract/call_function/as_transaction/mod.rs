@@ -1,14 +1,5 @@
 use dialoguer::Input;
 
-#[derive(Debug, Clone, Default)]
-pub struct FunctionCallAction {
-    pub contract_account_id: Option<crate::types::account_id::AccountId>,
-    pub function_name: String,
-    pub function_args: Vec<u8>,
-    pub gas: crate::common::NearGas,
-    pub deposit: crate::common::NearBalance,
-}
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct CallFunctionProperties {
@@ -39,13 +30,53 @@ impl CallFunctionProperties {
             self.function_args.clone(),
             self.function_args_type.clone(),
         )?;
-        let function_call_action = FunctionCallAction {
-            contract_account_id: Some(self.contract_account_id.clone()),
-            function_name: self.function_name.clone(),
-            function_args,
-            ..Default::default()
+        let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
+            signer_id: self
+                .prepaid_gas
+                .attached_deposit
+                .sign_as
+                .signer_account_id
+                .clone()
+                .into(),
+            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
+            nonce: 0,
+            receiver_id: self.contract_account_id.clone().into(),
+            block_hash: Default::default(),
+            actions: vec![near_primitives::transaction::Action::FunctionCall(
+                near_primitives::transaction::FunctionCallAction {
+                    method_name: self.function_name.clone(),
+                    args: function_args,
+                    gas: self.prepaid_gas.gas.clone().inner,
+                    deposit: self
+                        .prepaid_gas
+                        .attached_deposit
+                        .deposit
+                        .clone()
+                        .to_yoctonear(),
+                },
+            )],
         };
-        self.prepaid_gas.process(config, function_call_action).await
+        match crate::transaction_signature_options::sign_with(
+            self.prepaid_gas
+                .attached_deposit
+                .sign_as
+                .network_config
+                .clone(),
+            prepopulated_unsigned_transaction,
+            config.clone(),
+        )
+        .await?
+        {
+            Some(transaction_info) => crate::common::print_transaction_status(
+                transaction_info,
+                self.prepaid_gas
+                    .attached_deposit
+                    .sign_as
+                    .network_config
+                    .get_network_config(config),
+            ),
+            None => Ok(()),
+        }
     }
 }
 
@@ -80,20 +111,6 @@ impl PrepaidGas {
         };
         Ok(gas.into())
     }
-
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        function_call_action: FunctionCallAction,
-    ) -> crate::CliResult {
-        let function_call_action = FunctionCallAction {
-            gas: self.gas.clone(),
-            ..function_call_action
-        };
-        self.attached_deposit
-            .process(config, function_call_action)
-            .await
-    }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -120,18 +137,6 @@ impl Deposit {
             .interact_text()?;
         Ok(deposit)
     }
-
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        function_call_action: FunctionCallAction,
-    ) -> crate::CliResult {
-        let function_call_action = FunctionCallAction {
-            deposit: self.deposit.clone(),
-            ..function_call_action
-        };
-        self.sign_as.process(config, function_call_action).await
-    }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -142,38 +147,4 @@ pub struct SignerAccountId {
     #[interactive_clap(named_arg)]
     ///Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
-}
-
-impl SignerAccountId {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        function_call_action: FunctionCallAction,
-    ) -> crate::CliResult {
-        let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: self.signer_account_id.clone().into(),
-            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-            nonce: 0,
-            receiver_id: function_call_action
-                .contract_account_id
-                .clone()
-                .expect("Impossible to get contract_account_id!")
-                .into(),
-            block_hash: Default::default(),
-            actions: vec![near_primitives::transaction::Action::FunctionCall(
-                near_primitives::transaction::FunctionCallAction {
-                    method_name: function_call_action.function_name.clone(),
-                    args: function_call_action.function_args.clone(),
-                    gas: function_call_action.gas.clone().inner,
-                    deposit: function_call_action.deposit.clone().to_yoctonear(),
-                },
-            )],
-        };
-        crate::transaction_signature_options::sign_with(
-            self.network_config.clone(),
-            prepopulated_unsigned_transaction,
-            config,
-        )
-        .await
-    }
 }

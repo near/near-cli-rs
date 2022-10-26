@@ -99,11 +99,31 @@ impl SignerAccountId {
                 },
             )],
         };
-        crate::transaction_signature_options::sign_with(
+        match crate::transaction_signature_options::sign_with(
             self.network_config.clone(),
             prepopulated_unsigned_transaction,
-            config,
+            config.clone(),
         )
-        .await
+        .await?
+        {
+            Some(transaction_info) => {
+                if !matches!(
+                    transaction_info.status,
+                    near_primitives::views::FinalExecutionStatus::SuccessValue(_)
+                ) {
+                    return crate::common::print_transaction_status(
+                        transaction_info,
+                        self.network_config.get_network_config(config),
+                    );
+                }
+                println!("New account <{}> created successfully.", account_id);
+                println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+                    id=transaction_info.transaction_outcome.id,
+                    path=self.network_config.get_network_config(config).explorer_transaction_url
+                );
+                Ok(())
+            }
+            None => Ok(()),
+        }
     }
 }

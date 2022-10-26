@@ -75,7 +75,7 @@ impl SignLedger {
         &self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_config: crate::config::NetworkConfig,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let seed_phrase_hd_path = self.seed_phrase_hd_path.clone().into();
         let online_signer_access_key_response = network_config
             .json_rpc_client()?
