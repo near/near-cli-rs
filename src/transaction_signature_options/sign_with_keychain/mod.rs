@@ -51,7 +51,7 @@ impl SignKeychain {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_config: crate::config::NetworkConfig,
         credentials_home_dir: std::path::PathBuf,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let file_name = format!("{}.json", prepopulated_unsigned_transaction.signer_id);
         let mut path = std::path::PathBuf::from(&credentials_home_dir);
 

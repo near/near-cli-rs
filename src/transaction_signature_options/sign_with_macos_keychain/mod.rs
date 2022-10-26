@@ -40,7 +40,7 @@ impl SignMacosKeychain {
         &self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_config: crate::config::NetworkConfig,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let keychain =
             security_framework::os::macos::keychain::SecKeychain::default().map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))

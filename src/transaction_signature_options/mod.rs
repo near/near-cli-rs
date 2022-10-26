@@ -53,7 +53,7 @@ pub async fn sign_with(
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
     prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     config: crate::config::Config,
-) -> crate::CliResult {
+) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
     match network_config.get_sign_option() {
         #[cfg(target_os = "macos")]
         SignWith::SignWithMacosKeychain(sign_macos_keychain) => {
@@ -159,7 +159,7 @@ impl Submit {
         network_config: crate::config::NetworkConfig,
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         match self {
             Submit::Send => {
                 println!("Transaction sent ...");
@@ -179,11 +179,11 @@ impl Submit {
                         },
                     };
                 };
-                crate::common::print_transaction_status(transaction_info, network_config)
+                Ok(Some(transaction_info))
             }
             Submit::Display => {
                 println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
-                Ok(())
+                Ok(None)
             }
         }
     }

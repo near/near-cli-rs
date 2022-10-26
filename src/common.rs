@@ -1016,36 +1016,7 @@ pub fn print_transaction_status(
             print_transaction_error(tx_execution_error)
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
-            // This is done to distinguish <create_new_account> from other transactions.
-            for action in &transaction_info.transaction.actions {
-                match action {
-                    near_primitives::views::ActionView::FunctionCall {
-                        method_name,
-                        args,
-                        gas: _,
-                        deposit: _,
-                    } => {
-                        if matches!(method_name.as_str(), "create_account") {
-                            let args_str =
-                                String::from_utf8(args.to_vec()).expect("Found invalid UTF-8");
-                            let data_json =
-                                serde_json::Value::from_str(&args_str).map_err(|err| {
-                                    color_eyre::Report::msg(format!(
-                                        "Data not in JSON format! Error: {}",
-                                        err
-                                    ))
-                                })?;
-                            println!(
-                                "New account {} created successfully.",
-                                data_json
-                                    .get("new_account_id")
-                                    .expect("new_account_id not found"),
-                            );
-                        }
-                    }
-                    _ => print_value_successful_transaction(transaction_info.clone()),
-                }
-            }
+            print_value_successful_transaction(transaction_info.clone())
         }
     };
     println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
