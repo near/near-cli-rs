@@ -16,6 +16,13 @@ impl ViewFtBalance {
         config: crate::config::Config,
         owner_account_id: near_primitives::types::AccountId,
     ) -> crate::CliResult {
+        let (decimals, symbol) = super::params_ft_metadata(
+            config.clone(),
+            self.ft_contract_account_id.clone(),
+            self.network_config.clone(),
+        )
+        .await?;
+
         let method_name = "ft_balance_of".to_string();
         let args = json!({
             "account_id": owner_account_id.to_string(),
@@ -53,11 +60,26 @@ impl ViewFtBalance {
             serde_json::from_slice(&call_result)
                 .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?
         };
+        let amount: String = serde_json::from_value(serde_call_result.clone()).unwrap();
+        let amount = amount.parse::<u128>().unwrap();
+        let amount_fmt = {
+            if amount == 0 {
+                format!("0 {}", symbol)
+            } else if (amount % 10u128.pow(decimals as u32)) == 0 {
+                format!("{} {}", amount / 10u128.pow(decimals as u32), symbol,)
+            } else {
+                format!(
+                    "{}.{} {}",
+                    amount / 10u128.pow(decimals as u32),
+                    format!("{:0>24}", amount % 10u128.pow(decimals as u32)).trim_end_matches('0'),
+                    symbol
+                )
+            }
+        };
+
         println!(
-            "\n{} account has {} FT tokens (FT-contract: {})",
-            owner_account_id,
-            serde_json::to_string_pretty(&serde_call_result)?,
-            self.ft_contract_account_id
+            "\n<{}> account has {}  (FT-contract: {})",
+            owner_account_id, amount_fmt, self.ft_contract_account_id
         );
         Ok(())
     }
