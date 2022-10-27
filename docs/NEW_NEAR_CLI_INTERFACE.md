@@ -23,18 +23,23 @@ NEAR CLI UX principles:
 ```
 account
   - view-account-summary <account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
- 
-  - create-subaccount <new-account-id> <initial-balance> 
-    (we will treat everything after the first dot in account id as the parent account (transaction signer))
-    - autogenerate-new-keypair
-      - save-to-keychain network <"mainnet"|"testnet"|...>
+
+  - create-account
+    How do you cover the costs of account creation?
+    - sponsor-by-linkdrop (mainnet)
+    - sponsor-by-... (mainnet)
+    - sponsor-by-wallet (testnet only)
+    - fund-myself <new-account-id> <initial-balance>
+      - autogenerate-new-keypair
+        - save-to-keychain network <"mainnet"|"testnet"|...>
+          - transaction signature options here (see below)
+        - print-to-terminal network <"mainnet"|"testnet"|...>
+          - transaction signature options here (see below)
+      - use-manually-provided-seed-prase "twelve words goes here" network <"mainnet"|"testnet"|...>
         - transaction signature options here (see below)
-      - print-to-terminal network <"mainnet"|"testnet"|...>
+      - use-manually-provided-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
         - transaction signature options here (see below)
-    - use-manually-provided-seed-prase "twelve words goes here" network <"mainnet"|"testnet"|...>
-      - transaction signature options here (see below)
-    - use-manually-provided-public-key "ed25519:..." network <"mainnet"|"testnet"|...>
-      - transaction signature options here (see below)
+    - fund-later <initial-balance>  (implicit account creation)
 
   - delete-account <account-id> beneficiary <beneficiary-account-id> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
@@ -55,10 +60,12 @@ account
     - grant-function-call-access --receiver-account-id <account-id> --method-names 'comma,separated,list' --allowance '0.25NEAR'
       - (use the same follow-up parameters as for `grant-full-access`)
 
+  - import-account (a.k.a "log in" / "sign in")
+    - network <"mainnet"|"testnet">
+
   - delete-key <account-id> <public-key> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
 
-  - TODO: "import account" (aka "login") commands
 ```
 
 ```
@@ -67,7 +74,7 @@ contract
     - as-read-only <account-id> <function-name> <function-args> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
     - as-transaction <account-id> <function-name> <function-args> --prepaid-gas <prepaid-gas> --attached-deposit <deposit-amount> network <"mainnet"|"testnet"|...>
       - transaction signature options here (see below)
-  
+
   - deploy <account-id> use-file <path-to-wasm-file>
 
     - with-init-call <function-name> <function-args> --prepaid-gas <prepaid-gas> --attached-deposit <deposit-amount>
@@ -85,21 +92,21 @@ tokens <owner-account-id>
 
   - send-ft <ft-contract-account-id> <receiver-account-id> <amount-in-fungible-tokens> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
-  
+
   - send-nft <nft-contract-account-id> <receiver-account-id> <token-id> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
-  
+
   - view-near-balance network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
-  
+
   - view-ft-balance <ft-contract-account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
-  
+
   - view-nft-assets <nft-contract-account-id> network <"mainnet"|"testnet"|...> <now|at-timestamp|at-block-height|at-block-hash>
 ```
 
 ```
 transaction
   - view-status <transaction-hash> <signer-account-id> network <"mainnet"|"testnet"|...>
-  
+
   - construct-transaction (TODO: keep the current command structure for now)
 ```
 
