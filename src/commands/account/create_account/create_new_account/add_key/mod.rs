@@ -1,6 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod autogenerate_new_keypair;
+pub mod autogenerate_new_keypair;
 mod use_manually_provided_seed_phrase;
 mod use_public_key;
 
