@@ -7,7 +7,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "3.1.17", features = ["derive"] }
+clap = { version = "4.0.18", features = ["derive"] }
 
 dialoguer = "0.9"
 strum = { version = "0.24", features = ["derive"] }
@@ -47,8 +47,8 @@ near-primitives = "0.15"
 near-jsonrpc-client = "0.4.0"
 near-jsonrpc-primitives = "0.15"
 
-interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="fe9afad52810f8f90d0847de5f01b6c78e0813c5" }
-interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="fe9afad52810f8f90d0847de5f01b6c78e0813c5" }
+interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="d7855fe83fa0028a7f118aeeeaf862760e0fa974" }
+interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="d7855fe83fa0028a7f118aeeeaf862760e0fa974" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.7.0"
