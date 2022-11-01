@@ -227,6 +227,7 @@ impl SignerAccountId {
                         .storage
                         .expect("Impossible to get storage!");
                     match storage {
+                        #[cfg(target_os = "macos")]
                         add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
                             add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
                                 network_config,
