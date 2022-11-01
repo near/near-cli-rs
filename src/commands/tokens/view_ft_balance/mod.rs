@@ -60,7 +60,7 @@ impl ViewFtBalance {
             serde_json::from_slice(&call_result)
                 .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?
         };
-        let amount: String = serde_json::from_value(serde_call_result.clone()).unwrap();
+        let amount: String = serde_json::from_value(serde_call_result).unwrap();
         let amount = amount.parse::<u128>().unwrap();
         let amount_fmt = {
             if amount == 0 {
