@@ -13,12 +13,12 @@ Before proceeding to the description of specific commands, it is necessary to co
 
     _near-cli_ offers several ways to sign the created transaction. Let's take a closer look at each.
 
-    - _sign-with-macos-keychain - Sign the transaction with an macOS keychain_
+    - _sign-with-macos-keychain - Sign the transaction with a key saved in macOS keychain_
 
         The operating system _MacOS_ has its own application _[Keychain Access](https://support.apple.com/guide/keychain-access/welcome/mac)_, with the help of which _near-cli_ will independently find access keys and sign the created transaction.
 
 
-    - _sign-with-keychain - Sign the transaction with a keychain_
+    - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
     
         _near-cli_ will independently find access keys and sign the created transaction.  
         Directory with access keys defined in [config](#config---manage-connections-in-a-configuration-file).
@@ -31,7 +31,7 @@ Before proceeding to the description of specific commands, it is necessary to co
             </a>
             </details>
 
-    - _sign-with-ledger - Sign the transaction with a ledger_
+    - _sign-with-ledger - Sign the transaction with Ledger Nano device_
     
         This option involves signing the created transaction using a ledger.
 
@@ -64,7 +64,7 @@ Before proceeding to the description of specific commands, it is necessary to co
 View account details ([View properties for an account](#view-account-summary---view-properties-for-an-account)) and view account access keys ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) is possible at the current time (***now***) and at a certain point in the past by specifying the block (***at-block-height*** or ***at-block-hash***). The examples below show how these modes can be used.
 
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
-- [login](#login---Log-in-with-NEAR-Wallet-authorization)
+- [import-account](#import-account---Import-existing-account-(a.k.a.-"sign-in"))
 - [create-subaccount](#create-subaccount---Create-a-new-sub-account)
 - [create-implicit-account](#create-implicit-account---Create-an-implicit-account)
 - [delete-account](#delete-account---Delete-an-account)
@@ -201,7 +201,7 @@ Number of access keys: 12
 </a>
 </details>
 
-#### login - Log in with NEAR Wallet authorization
+#### import-account - Import existing account (a.k.a. "sign in")
 
 To authorize the user, in the terminal command line type:
 ```txt
