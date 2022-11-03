@@ -16,7 +16,7 @@ pub struct CallFunctionProperties {
     contract_account_id: crate::types::account_id::AccountId,
     ///What is the name of the function?
     function_name: String,
-    #[interactive_clap(arg_enum)]
+    #[interactive_clap(value_enum)]
     #[interactive_clap(skip_default_input_arg)]
     ///How do you want to pass the function call arguments?
     function_args_type: super::call_function_args_type::FunctionArgsType,

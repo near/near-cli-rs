@@ -3,7 +3,7 @@ use std::str::FromStr;
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-#[derive(Debug, EnumDiscriminants, Clone, clap::ArgEnum)]
+#[derive(Debug, EnumDiscriminants, Clone, clap::ValueEnum)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 ///How do you want to pass the function call arguments?
 pub enum FunctionArgsType {
