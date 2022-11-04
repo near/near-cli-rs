@@ -50,24 +50,22 @@ impl NewAccount {
                         ),
                     )?
                 }
-                None => {
-                    'block: {
-                        for network in context.0.networks.iter() {
-                            println!("\nnetwork: {:#?}", network.1.linkdrop_account_id);
-                            let optional_account_view = tokio::runtime::Runtime::new()
-                                .unwrap()
-                                .block_on(crate::common::get_account_state(
-                                    network.1.clone(),
-                                    new_account_id.clone().into(),
-                                    near_primitives::types::Finality::Final.into(),
-                                ))?;
-                            if optional_account_view.is_some() {
-                                network_config = network.1;
-                                break 'block optional_account_view;
-                            }
+                None => 'block: {
+                    for network in context.0.networks.iter() {
+                        println!("\nnetwork: {:#?}", network.1.linkdrop_account_id);
+                        let optional_account_view = tokio::runtime::Runtime::new()
+                            .unwrap()
+                            .block_on(crate::common::get_account_state(
+                                network.1.clone(),
+                                new_account_id.clone().into(),
+                                near_primitives::types::Finality::Final.into(),
+                            ))?;
+                        if optional_account_view.is_some() {
+                            network_config = network.1;
+                            break 'block optional_account_view;
                         }
-                        None
                     }
+                    None
                 }
             };
             if optional_account_view.is_some() {
