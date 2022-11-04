@@ -149,7 +149,7 @@ impl std::str::FromStr for NearBalance {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
-        let currency = s.trim().trim_start_matches(&num).trim().to_uppercase();
+        let currency = s.trim().trim_start_matches(num).trim().to_uppercase();
         let yoctonear_amount = match currency.as_str() {
             "N" | "NEAR" => {
                 let res_split: Vec<&str> = num.split('.').collect();
@@ -231,7 +231,7 @@ impl std::str::FromStr for NearGas {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
-        let currency = s.trim().trim_start_matches(&num).trim().to_uppercase();
+        let currency = s.trim().trim_start_matches(num).trim().to_uppercase();
         let number = match currency.as_str() {
             "T" | "TGAS" | "TERAGAS" => NearGas::into_tera_gas(num)?,
             "GIGAGAS" | "GGAS" => NearGas::into_tera_gas(num)? / 1000,
@@ -515,7 +515,7 @@ pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     };
 
     let implicit_account_id =
-        near_primitives::types::AccountId::try_from(hex::encode(&secret_keypair.public))?;
+        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
     let public_key_str = format!(
         "ed25519:{}",
         bs58::encode(&secret_keypair.public).into_string()

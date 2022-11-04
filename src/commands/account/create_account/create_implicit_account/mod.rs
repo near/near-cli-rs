@@ -70,7 +70,7 @@ impl Mode {
                     })?;
                 let public_key_str = format!("ed25519:{}", bs58::encode(&public_key).into_string());
                 let implicit_account_id =
-                    near_primitives::types::AccountId::try_from(hex::encode(&public_key))?;
+                    near_primitives::types::AccountId::try_from(hex::encode(public_key))?;
                 buf.push_str(
                     &serde_json::json!({
                         "seed_phrase_hd_path": seed_phrase_hd_path.to_string(),
