@@ -1,4 +1,4 @@
-use dialoguer::Input;
+use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 use serde_json::json;
 use std::str::FromStr;
 
@@ -16,6 +16,7 @@ pub struct AccountProperties {
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct NewAccount {
+    #[interactive_clap(skip_default_input_arg)]
     ///What is the new account ID?
     new_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
@@ -26,6 +27,72 @@ pub struct NewAccount {
 }
 
 impl NewAccount {
+    fn input_new_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        loop {
+            let new_account_id: crate::types::account_id::AccountId = Input::new()
+                .with_prompt("What is the new account ID?")
+                .interact_text()?;
+            let top_level_new_account_id_str = new_account_id.to_string();
+            let top_level_new_account_id_str = top_level_new_account_id_str
+                .rsplit_once('.')
+                .map_or("mainnet", |s| if s.1 == "near" { "mainnet" } else { s.1 });
+            let mut network_config = context.0.networks.iter().next().unwrap().1;
+            let optional_account_view = match context.0.networks.get(top_level_new_account_id_str) {
+                Some(network) => {
+                    network_config = network;
+                    tokio::runtime::Runtime::new().unwrap().block_on(
+                        crate::common::get_account_state(
+                            network.clone(),
+                            new_account_id.clone().into(),
+                            near_primitives::types::Finality::Final.into(),
+                        ),
+                    )?
+                }
+                None => {
+                    'block: {
+                        for network in context.0.networks.iter() {
+                            println!("\nnetwork: {:#?}", network.1.linkdrop_account_id);
+                            let optional_account_view = tokio::runtime::Runtime::new()
+                                .unwrap()
+                                .block_on(crate::common::get_account_state(
+                                    network.1.clone(),
+                                    new_account_id.clone().into(),
+                                    near_primitives::types::Finality::Final.into(),
+                                ))?;
+                            if optional_account_view.is_some() {
+                                network_config = network.1;
+                                break 'block optional_account_view;
+                            }
+                        }
+                        None
+                    }
+                }
+            };
+            if optional_account_view.is_some() {
+                println!(
+                    "Account <{}> already exists in network <{}>.",
+                    &new_account_id, network_config.network_name
+                );
+                let choose_input = vec![
+                    "Yes, I want to enter a new name for account_id.",
+                    "No, I want to use this name for account_id.",
+                ];
+                let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Do you want to enter a new name for account_id?")
+                    .items(&choose_input)
+                    .default(0)
+                    .interact_on_opt(&Term::stderr())?;
+                if matches!(select_choose_input, Some(1)) {
+                    break Ok(new_account_id);
+                }
+            } else {
+                break Ok(new_account_id);
+            }
+        }
+    }
+
     fn input_initial_balance(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
@@ -99,32 +166,17 @@ impl SignerAccountId {
         account_properties: AccountProperties,
     ) -> crate::CliResult {
         let network_config = self.network_config.get_network_config(config.clone());
-        let mut new_account_id = account_properties
+        let new_account_id = account_properties
             .clone()
             .new_account_id
             .expect("Impossible to get account_id!");
-        let account_id = loop {
-            if (crate::common::get_account_state(
-                network_config.clone(),
-                new_account_id.clone().into(),
-                near_primitives::types::Finality::Final.into(),
-            )
-            .await?)
-                .is_some()
-            {
-                println!("Account <{}> already exists", new_account_id);
-            } else {
-                break new_account_id;
-            }
-            new_account_id = Input::new()
-                .with_prompt("Enter a new account name")
-                .interact_text()?;
-        };
 
         let signer_id: near_primitives::types::AccountId = if self.signer_account_id.is_none() {
-            let account_id_str = account_id.clone().to_string();
+            let account_id_str = new_account_id.clone().to_string();
             let signer_account_id = if account_id_str.split('.').count() > 2 {
-                account_id.clone().get_owner_account_id_from_sub_account()
+                new_account_id
+                    .clone()
+                    .get_owner_account_id_from_sub_account()
             } else {
                 Input::new()
                     .with_prompt("Enter a signer account name")
@@ -139,7 +191,7 @@ impl SignerAccountId {
         };
 
         let args = json!({
-            "new_account_id": account_id.clone().to_string(),
+            "new_account_id": new_account_id.clone().to_string(),
             "new_public_key": account_properties.public_key.to_string()
         })
         .to_string()
@@ -149,7 +201,7 @@ impl SignerAccountId {
             .clone()
             .linkdrop_account_id
             .expect("Impossible to get linkdrop_account_id!");
-        let (actions, receiver_id) = if account_id.clone().0.is_sub_account_of(&signer_id) {
+        let (actions, receiver_id) = if new_account_id.clone().0.is_sub_account_of(&signer_id) {
             (
                 vec![
                     near_primitives::transaction::Action::CreateAccount(
@@ -173,7 +225,7 @@ impl SignerAccountId {
                         },
                     ),
                 ],
-                account_id.clone().into(),
+                new_account_id.clone().into(),
             )
         } else {
             (
@@ -216,11 +268,11 @@ impl SignerAccountId {
                         self.network_config.get_network_config(config),
                     );
                 }
-                println!("New account <{}> created successfully.", account_id);
+                println!("New account <{}> created successfully.", new_account_id);
 
                 if account_properties.storage.is_some() {
                     let new_account_properties = AccountProperties {
-                        new_account_id: Some(account_id),
+                        new_account_id: Some(new_account_id),
                         ..account_properties
                     };
                     let storage = account_properties
