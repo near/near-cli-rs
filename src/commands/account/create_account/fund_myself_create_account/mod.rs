@@ -284,9 +284,7 @@ impl SignerAccountId {
         {
             Some(transaction_info) => match transaction_info.status {
                 near_primitives::views::FinalExecutionStatus::SuccessValue(ref value) => {
-                    let value_str = String::from_utf8(value.clone()).expect("Found invalid UTF-8");
-                    let value_str = value_str.as_str();
-                    if matches!(value_str, "false") {
+                    if value == b"false" {
                         println!(
                             "The new account <{}> could not be created successfully.",
                             new_account_id
