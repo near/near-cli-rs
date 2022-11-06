@@ -5,7 +5,7 @@ mod use_manually_provided_seed_phrase;
 mod use_public_key;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::common::CreateAccountContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 ///Add an access key for this account
 pub enum AccessKeyMode {

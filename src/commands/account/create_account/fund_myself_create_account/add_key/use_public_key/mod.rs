@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::common::CreateAccountContext)]
 pub struct AddAccessKeyAction {
     ///Enter the public key for this account
     public_key: crate::types::public_key::PublicKey,

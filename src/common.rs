@@ -39,6 +39,12 @@ impl std::fmt::Display for OutputFormat {
 }
 
 #[derive(Debug, Clone)]
+pub struct CreateAccountContext {
+    pub config: crate::config::Config,
+    pub new_account_id: crate::types::account_id::AccountId,
+}
+
+#[derive(Debug, Clone)]
 pub struct SignedTransactionAsBase64 {
     pub inner: near_primitives::transaction::SignedTransaction,
 }

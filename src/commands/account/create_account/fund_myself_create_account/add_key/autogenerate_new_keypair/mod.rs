@@ -2,7 +2,7 @@ use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::common::CreateAccountContext)]
 pub struct GenerateKeypair {
     #[interactive_clap(subcommand)]
     save_mode: SaveMode,
@@ -19,7 +19,7 @@ impl GenerateKeypair {
 }
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::common::CreateAccountContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 ///Save an access key for this account
 pub enum SaveMode {
@@ -28,17 +28,17 @@ pub enum SaveMode {
         message = "save-to-macos-keychain   - Save automatically generated key pair to macOS keychain"
     ))]
     ///Save automatically generated key pair to macOS keychain
-    SaveToMacosKeychain(super::super::SignerAccountId),
+    SaveToMacosKeychain(SignAs),
     #[strum_discriminants(strum(
         message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
     ///Save automatically generated key pair to the legacy keychain (compatible with JS CLI)
-    SaveToKeychain(super::super::SignerAccountId),
+    SaveToKeychain(SignAs),
     #[strum_discriminants(strum(
         message = "print-to-terminal        - Print automatically generated key pair in terminal"
     ))]
     ///Print automatically generated key pair in terminal
-    PrintToTerminal(super::super::SignerAccountId),
+    PrintToTerminal(SignAs),
 }
 
 impl SaveMode {
@@ -151,5 +151,23 @@ impl SaveMode {
                     .await
             }
         }
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = crate::common::CreateAccountContext)]
+pub struct SignAs {
+    #[interactive_clap(named_arg)]
+    ///What is the signer account ID?
+    sign_as: super::super::SignerAccountId,
+}
+
+impl SignAs {
+    pub async fn process(
+        &self,
+        config: crate::config::Config,
+        account_properties: super::super::AccountProperties,
+    ) -> crate::CliResult {
+        self.sign_as.process(config, account_properties).await
     }
 }

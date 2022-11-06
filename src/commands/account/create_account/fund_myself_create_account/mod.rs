@@ -14,7 +14,8 @@ pub struct AccountProperties {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = CreateAccountContext)]
 pub struct NewAccount {
     #[interactive_clap(skip_default_input_arg)]
     ///What is the new account ID?
@@ -26,6 +27,33 @@ pub struct NewAccount {
     access_key_mode: add_key::AccessKeyMode,
 }
 
+#[derive(Debug, Clone)]
+struct NewAccountContext {
+    config: crate::config::Config,
+    new_account_id: crate::types::account_id::AccountId,
+}
+
+impl NewAccountContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<NewAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> Self {
+        Self {
+            config: previous_context.0,
+            new_account_id: scope.new_account_id.clone(),
+        }
+    }
+}
+
+impl From<NewAccountContext> for crate::common::CreateAccountContext {
+    fn from(item: NewAccountContext) -> Self {
+        Self {
+            config: item.config,
+            new_account_id: item.new_account_id,
+        }
+    }
+}
+
 impl NewAccount {
     fn input_new_account_id(
         context: &crate::GlobalContext,
@@ -34,8 +62,8 @@ impl NewAccount {
             let new_account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("What is the new account ID?")
                 .interact_text()?;
-            let top_level_new_account_id_str = new_account_id.to_string();
-            let top_level_new_account_id_str = top_level_new_account_id_str
+            let top_level_new_account_id_string = new_account_id.to_string();
+            let top_level_new_account_id_str = top_level_new_account_id_string
                 .rsplit_once('.')
                 .map_or("mainnet", |s| if s.1 == "near" { "mainnet" } else { s.1 });
             let mut network_config = context.0.networks.iter().next().unwrap().1;
@@ -70,7 +98,7 @@ impl NewAccount {
             };
             if optional_account_view.is_some() {
                 println!(
-                    "Account <{}> already exists in network <{}>.",
+                    "\nAccount <{}> already exists in network <{}>.",
                     &new_account_id, network_config.network_name
                 );
                 let choose_input = vec![
@@ -117,13 +145,12 @@ impl NewAccount {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::common::CreateAccountContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignerAccountId {
-    #[interactive_clap(long)]
     #[interactive_clap(skip_default_from_cli_arg)]
-    #[interactive_clap(skip_default_input_arg)]
-    signer_account_id: Option<crate::types::account_id::AccountId>,
+    ///What is the signer account ID?
+    signer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     ///Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -132,11 +159,25 @@ pub struct SignerAccountId {
 impl SignerAccountId {
     pub fn from_cli(
         optional_clap_variant: Option<<SignerAccountId as interactive_clap::ToCli>::CliVariant>,
-        context: crate::GlobalContext,
+        context: crate::common::CreateAccountContext,
     ) -> color_eyre::eyre::Result<Option<Self>> {
-        let signer_account_id: Option<crate::types::account_id::AccountId> = optional_clap_variant
+        let signer_account_id: crate::types::account_id::AccountId = match optional_clap_variant
             .clone()
-            .and_then(|clap_variant| clap_variant.signer_account_id);
+            .and_then(|clap_variant| clap_variant.signer_account_id)
+        {
+            Some(cli_signer_account_id) => cli_signer_account_id,
+            None => {
+                let owner_account_id = context
+                    .new_account_id
+                    .clone()
+                    .get_owner_account_id_from_sub_account();
+                if !owner_account_id.0.is_top_level() {
+                    owner_account_id
+                } else {
+                    Self::input_signer_account_id(&context)?
+                }
+            }
+        };
         let network_config = crate::network_for_transaction::NetworkForTransactionArgs::from_cli(
             optional_clap_variant.and_then(|clap_variant| {
                 clap_variant.network_config.map(
@@ -145,7 +186,7 @@ impl SignerAccountId {
                     )| cli_network_config,
                 )
             }),
-            context,
+            (context.config,),
         )?;
         let network_config = if let Some(value) = network_config {
             value
@@ -169,25 +210,6 @@ impl SignerAccountId {
             .new_account_id
             .expect("Impossible to get account_id!");
 
-        let signer_id: near_primitives::types::AccountId = if self.signer_account_id.is_none() {
-            let account_id_str = new_account_id.clone().to_string();
-            let signer_account_id = if account_id_str.split('.').count() > 2 {
-                new_account_id
-                    .clone()
-                    .get_owner_account_id_from_sub_account()
-            } else {
-                Input::new()
-                    .with_prompt("Enter a signer account name")
-                    .interact_text()?
-            };
-            signer_account_id.into()
-        } else {
-            self.signer_account_id
-                .clone()
-                .expect("Impossible to get signer_account_id!")
-                .into()
-        };
-
         let args = json!({
             "new_account_id": new_account_id.clone().to_string(),
             "new_public_key": account_properties.public_key.to_string()
@@ -199,7 +221,11 @@ impl SignerAccountId {
             .clone()
             .linkdrop_account_id
             .expect("Impossible to get linkdrop_account_id!");
-        let (actions, receiver_id) = if new_account_id.clone().0.is_sub_account_of(&signer_id) {
+        let (actions, receiver_id) = if new_account_id
+            .clone()
+            .0
+            .is_sub_account_of(&self.signer_account_id.0)
+        {
             (
                 vec![
                     near_primitives::transaction::Action::CreateAccount(
@@ -242,7 +268,7 @@ impl SignerAccountId {
         };
 
         let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id,
+            signer_id: self.signer_account_id.0.clone(),
             public_key: account_properties.clone().public_key.into(),
             nonce: 0,
             receiver_id,
@@ -256,56 +282,62 @@ impl SignerAccountId {
         )
         .await?
         {
-            Some(transaction_info) => {
-                if !matches!(
-                    transaction_info.status,
-                    near_primitives::views::FinalExecutionStatus::SuccessValue(_)
-                ) {
-                    return crate::common::print_transaction_status(
-                        transaction_info,
-                        self.network_config.get_network_config(config),
-                    );
-                }
-                println!("New account <{}> created successfully.", new_account_id);
+            Some(transaction_info) => match transaction_info.status {
+                near_primitives::views::FinalExecutionStatus::SuccessValue(ref value) => {
+                    let value_str = String::from_utf8(value.clone()).expect("Found invalid UTF-8");
+                    let value_str = value_str.as_str();
+                    if matches!(value_str, "false") {
+                        println!(
+                            "The new account <{}> could not be created successfully.",
+                            new_account_id
+                        );
+                    } else {
+                        println!("New account <{}> created successfully.", new_account_id);
 
-                if account_properties.storage.is_some() {
-                    let new_account_properties = AccountProperties {
-                        new_account_id: Some(new_account_id),
-                        ..account_properties
-                    };
-                    let storage = account_properties
-                        .storage
-                        .expect("Impossible to get storage!");
-                    match storage {
-                        #[cfg(target_os = "macos")]
-                        add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
-                            add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
-                                network_config,
-                                new_account_properties,
-                            )
-                            .await?
-                        }
-                        add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
-                            add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
-                                config.clone(),
-                                network_config,
-                                new_account_properties,
-                            )
-                            .await?
-                        }
-                        add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
-                            add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
-                                new_account_properties,
-                            )
+                        if account_properties.storage.is_some() {
+                            let new_account_properties = AccountProperties {
+                                new_account_id: Some(new_account_id),
+                                ..account_properties
+                            };
+                            let storage = account_properties
+                                .storage
+                                .expect("Impossible to get storage!");
+                            match storage {
+                                    #[cfg(target_os = "macos")]
+                                    add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
+                                        add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
+                                            network_config,
+                                            new_account_properties,
+                                        )
+                                        .await?
+                                    }
+                                    add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
+                                        add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
+                                            config.clone(),
+                                            network_config,
+                                            new_account_properties,
+                                        )
+                                        .await?
+                                    }
+                                    add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
+                                        add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
+                                            new_account_properties,
+                                        )
+                                    }
+                                }
                         }
                     }
+                    println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+                                id=transaction_info.transaction_outcome.id,
+                                path=self.network_config.get_network_config(config).explorer_transaction_url
+                            );
+                    Ok(())
                 }
-                println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
-                    id=transaction_info.transaction_outcome.id,
-                    path=self.network_config.get_network_config(config).explorer_transaction_url
-                );
-                Ok(())
-            }
+                _ => crate::common::print_transaction_status(
+                    transaction_info,
+                    self.network_config.get_network_config(config),
+                ),
+            },
             None => Ok(()),
         }
     }

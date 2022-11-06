@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::common::CreateAccountContext)]
 pub struct AddAccessWithSeedPhraseAction {
     ///Enter the seed-phrase for this sub-account
     master_seed_phrase: String,
