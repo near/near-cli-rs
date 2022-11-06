@@ -294,37 +294,31 @@ impl SignerAccountId {
                     } else {
                         println!("New account <{}> created successfully.", new_account_id);
 
-                        if account_properties.storage.is_some() {
-                            let new_account_properties = AccountProperties {
-                                new_account_id: Some(new_account_id),
-                                ..account_properties
-                            };
-                            let storage = account_properties
-                                .storage
-                                .expect("Impossible to get storage!");
-                            match storage {
-                                    #[cfg(target_os = "macos")]
-                                    add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
-                                        add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
-                                            network_config,
-                                            new_account_properties,
-                                        )
-                                        .await?
-                                    }
-                                    add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
-                                        add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
-                                            config.clone(),
-                                            network_config,
-                                            new_account_properties,
-                                        )
-                                        .await?
-                                    }
-                                    add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
-                                        add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
-                                            new_account_properties,
-                                        )
-                                    }
-                                }
+                        let storage = account_properties
+                            .storage
+                            .expect("Impossible to get storage!");
+                        match storage {
+                            #[cfg(target_os = "macos")]
+                            add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
+                                add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
+                                    network_config,
+                                    account_properties,
+                                )
+                                .await?
+                            }
+                            add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
+                                add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
+                                    config.clone(),
+                                    network_config,
+                                    account_properties,
+                                )
+                                .await?
+                            }
+                            add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
+                                add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
+                                    account_properties,
+                                )
+                            }
                         }
                     }
                     println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",

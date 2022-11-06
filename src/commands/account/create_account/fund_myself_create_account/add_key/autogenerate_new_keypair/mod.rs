@@ -144,6 +144,7 @@ impl SaveMode {
                         &key_pair_properties.public_key_str,
                     )?,
                     key_pair_properties: Some(key_pair_properties),
+                    storage: Some(SaveModeDiscriminants::PrintToTerminal),
                     ..account_properties
                 };
                 print_keypair_to_terminal
