@@ -2,6 +2,8 @@ use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 use serde_json::json;
 use std::str::FromStr;
 
+use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
+
 mod add_key;
 
 #[derive(Debug, Clone, Default)]
@@ -58,29 +60,25 @@ impl NewAccount {
     fn input_new_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
-        loop {
-            let new_account_id: crate::types::account_id::AccountId = Input::new()
-                .with_prompt("What is the new account ID?")
-                .interact_text()?;
-            let top_level_new_account_id_string = new_account_id.to_string();
-            let top_level_new_account_id_str = top_level_new_account_id_string
-                .rsplit_once('.')
-                .map_or("mainnet", |s| if s.1 == "near" { "mainnet" } else { s.1 });
-            let mut network_config = context.0.networks.iter().next().unwrap().1;
-            let optional_account_view = match context.0.networks.get(top_level_new_account_id_str) {
-                Some(network) => {
-                    network_config = network;
-                    tokio::runtime::Runtime::new().unwrap().block_on(
-                        crate::common::get_account_state(
-                            network.clone(),
-                            new_account_id.clone().into(),
-                            near_primitives::types::Finality::Final.into(),
-                        ),
-                    )?
-                }
-                None => 'block: {
+        let mut new_account_id: crate::types::account_id::AccountId = Input::new()
+            .with_prompt("What is the new account ID?")
+            .interact_text()?;
+
+        let choose_input = vec![
+            "Yes, I want to check the existence of such an account.",
+            "No, I want to use this name for account_id.",
+        ];
+        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("\nDo you want to check the existence of such an account so that you don’t send a transaction and don’t waste tokens in vain?")
+            .items(&choose_input)
+            .default(0)
+            .interact_on_opt(&Term::stderr())?;
+        match select_choose_input {
+            Some(0) => loop {
+                let mut network_config = context.0.networks.iter().next().unwrap().1;
+
+                let optional_account_view = 'block: {
                     for network in context.0.networks.iter() {
-                        println!("\nnetwork: {:#?}", network.1.linkdrop_account_id);
                         let optional_account_view = tokio::runtime::Runtime::new()
                             .unwrap()
                             .block_on(crate::common::get_account_state(
@@ -94,28 +92,53 @@ impl NewAccount {
                         }
                     }
                     None
-                }
-            };
-            if optional_account_view.is_some() {
-                println!(
-                    "\nAccount <{}> already exists in network <{}>.",
-                    &new_account_id, network_config.network_name
+                };
+                if optional_account_view.is_some() {
+                    println!(
+                        "\nAccount <{}> already exists in network <{}>.",
+                        &new_account_id, network_config.network_name
+                    );
+                    let choose_input = vec![
+                        "Yes, I want to enter a new name for account_id.",
+                        "No, I want to use this name for account_id.",
+                    ];
+                    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+                        .with_prompt("Do you want to enter a new name for account_id?")
+                        .items(&choose_input)
+                        .default(0)
+                        .interact_on_opt(&Term::stderr())?;
+                    if matches!(select_choose_input, Some(1)) {
+                        break Ok(new_account_id);
+                    }
+                } else if new_account_id.to_string().chars().count()
+                    < MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
+                    && !new_account_id.to_string().contains('.')
+                {
+                    println!(
+                    "\nAccount <{}> has <{}> character count. Only REGISTRAR_ACCOUNT_ID account can create new top level accounts that are shorter than MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH (32) characters.",
+                    &new_account_id, &new_account_id.to_string().chars().count()
                 );
-                let choose_input = vec![
-                    "Yes, I want to enter a new name for account_id.",
-                    "No, I want to use this name for account_id.",
-                ];
-                let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                    .with_prompt("Do you want to enter a new name for account_id?")
-                    .items(&choose_input)
-                    .default(0)
-                    .interact_on_opt(&Term::stderr())?;
-                if matches!(select_choose_input, Some(1)) {
+                    let choose_input = vec![
+                        "Yes, I want to enter a new name for account_id.",
+                        "No, I want to use this name for account_id.",
+                    ];
+                    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+                        .with_prompt("Do you want to enter a new name for account_id?")
+                        .items(&choose_input)
+                        .default(0)
+                        .interact_on_opt(&Term::stderr())?;
+                    if matches!(select_choose_input, Some(1)) {
+                        break Ok(new_account_id);
+                    }
+                } else {
                     break Ok(new_account_id);
                 }
-            } else {
-                break Ok(new_account_id);
-            }
+                new_account_id = Input::new()
+                    .with_prompt("What is the new account ID?")
+                    .interact_text()?;
+            },
+            Some(1) => Ok(new_account_id),
+            _ => unreachable!("Error"),
         }
     }
 
@@ -252,10 +275,48 @@ impl SignerAccountId {
         account_properties: AccountProperties,
     ) -> crate::CliResult {
         let network_config = self.network_config.get_network_config(config.clone());
+
+        if crate::common::get_account_state(
+            network_config.clone(),
+            self.signer_account_id.clone().into(),
+            near_primitives::types::Finality::Final.into(),
+        )
+        .await?
+        .is_none()
+        {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "\nSigner account <{}> does not yet exist on the network <{}>.",
+                self.signer_account_id,
+                network_config.network_name
+            ));
+        };
+
         let new_account_id = account_properties
             .clone()
             .new_account_id
             .expect("Impossible to get account_id!");
+        if new_account_id.to_string().chars().count() < MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
+            && !new_account_id.to_string().contains('.')
+        {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "\nAccount <{}> has <{}> character count. Only REGISTRAR_ACCOUNT_ID account can create new top level accounts that are shorter than MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH (32) characters.",
+                &new_account_id, &new_account_id.to_string().chars().count()
+            ));
+        }
+        if crate::common::get_account_state(
+            network_config.clone(),
+            new_account_id.clone().into(),
+            near_primitives::types::Finality::Final.into(),
+        )
+        .await?
+        .is_some()
+        {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "\nAccount <{}> already exists in network <{}>.",
+                &new_account_id,
+                network_config.network_name
+            ));
+        };
 
         let args = json!({
             "new_account_id": new_account_id.clone().to_string(),
@@ -268,6 +329,7 @@ impl SignerAccountId {
             .clone()
             .linkdrop_account_id
             .expect("Impossible to get linkdrop_account_id!");
+
         let (actions, receiver_id) = if new_account_id
             .clone()
             .0
@@ -298,6 +360,17 @@ impl SignerAccountId {
                 ],
                 new_account_id.clone().into(),
             )
+        } else if !new_account_id
+            .clone()
+            .0
+            .is_sub_account_of(&self.signer_account_id.0)
+            && new_account_id.to_string().split('.').count() > 2
+        {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "\nSigner account <{}> does not have permission to create account <{}>.",
+                self.signer_account_id,
+                new_account_id
+            ));
         } else {
             (
                 vec![near_primitives::transaction::Action::FunctionCall(

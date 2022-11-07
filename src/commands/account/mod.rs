@@ -8,6 +8,8 @@ mod import_account;
 mod list_keys;
 mod view_account_summary;
 
+pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct AccountCommands {
