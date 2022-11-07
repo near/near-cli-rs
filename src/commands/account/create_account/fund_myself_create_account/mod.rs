@@ -149,6 +149,7 @@ impl NewAccount {
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignerAccountId {
     #[interactive_clap(skip_default_from_cli_arg)]
+    #[interactive_clap(skip_default_input_arg)]
     ///What is the signer account ID?
     signer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -197,6 +198,52 @@ impl SignerAccountId {
             signer_account_id,
             network_config,
         }))
+    }
+
+    fn input_signer_account_id(
+        context: &crate::commands::account::create_account::CreateAccountContext,
+    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+        loop {
+            let signer_account_id: crate::types::account_id::AccountId = Input::new()
+                .with_prompt("What is the signer account ID?")
+                .interact_text()?;
+            let top_level_new_account_id_string = context.new_account_id.to_string();
+            let top_level_new_account_id_str = top_level_new_account_id_string
+                .rsplit_once('.')
+                .map_or("mainnet", |s| if s.1 == "near" { "mainnet" } else { s.1 });
+            let network_config = context
+                .config
+                .networks
+                .get(top_level_new_account_id_str)
+                .expect("Impossible to get network config!");
+            let optional_account_view = tokio::runtime::Runtime::new().unwrap().block_on(
+                crate::common::get_account_state(
+                    network_config.clone(),
+                    signer_account_id.clone().into(),
+                    near_primitives::types::Finality::Final.into(),
+                ),
+            )?;
+            if optional_account_view.is_none() {
+                println!(
+                    "\nThe account <{}> does not yet exist on the network <{}>.",
+                    &signer_account_id, network_config.network_name
+                );
+                let choose_input = vec![
+                    "Yes, I want to enter a new name for signer_account_id.",
+                    "No, I want to use this name for signer_account_id.",
+                ];
+                let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Do you want to enter a new name for signer_account_id?")
+                    .items(&choose_input)
+                    .default(0)
+                    .interact_on_opt(&Term::stderr())?;
+                if matches!(select_choose_input, Some(1)) {
+                    break Ok(signer_account_id);
+                }
+            } else {
+                break Ok(signer_account_id);
+            }
+        }
     }
 
     pub async fn process(
