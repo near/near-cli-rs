@@ -2,7 +2,7 @@ use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::CreateAccountContext)]
+#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
 pub struct GenerateKeypair {
     #[interactive_clap(subcommand)]
     save_mode: SaveMode,
@@ -19,7 +19,7 @@ impl GenerateKeypair {
 }
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::common::CreateAccountContext)]
+#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 ///Save an access key for this account
 pub enum SaveMode {
@@ -156,7 +156,7 @@ impl SaveMode {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::common::CreateAccountContext)]
+#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
 pub struct SignAs {
     #[interactive_clap(named_arg)]
     ///What is the signer account ID?

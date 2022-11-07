@@ -45,7 +45,7 @@ impl NewAccountContext {
     }
 }
 
-impl From<NewAccountContext> for crate::common::CreateAccountContext {
+impl From<NewAccountContext> for crate::commands::account::create_account::CreateAccountContext {
     fn from(item: NewAccountContext) -> Self {
         Self {
             config: item.config,
@@ -145,7 +145,7 @@ impl NewAccount {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::common::CreateAccountContext)]
+#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignerAccountId {
     #[interactive_clap(skip_default_from_cli_arg)]
@@ -159,7 +159,7 @@ pub struct SignerAccountId {
 impl SignerAccountId {
     pub fn from_cli(
         optional_clap_variant: Option<<SignerAccountId as interactive_clap::ToCli>::CliVariant>,
-        context: crate::common::CreateAccountContext,
+        context: crate::commands::account::create_account::CreateAccountContext,
     ) -> color_eyre::eyre::Result<Option<Self>> {
         let signer_account_id: crate::types::account_id::AccountId = match optional_clap_variant
             .clone()
