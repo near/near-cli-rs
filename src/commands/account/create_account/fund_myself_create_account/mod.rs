@@ -79,16 +79,21 @@ impl NewAccount {
 
                 let optional_account_view = 'block: {
                     for network in context.0.networks.iter() {
-                        let optional_account_view = tokio::runtime::Runtime::new()
-                            .unwrap()
-                            .block_on(crate::common::get_account_state(
+                        match tokio::runtime::Runtime::new().unwrap().block_on(
+                            crate::common::get_account_state(
                                 network.1.clone(),
                                 new_account_id.clone().into(),
                                 near_primitives::types::Finality::Final.into(),
-                            ))?;
-                        if optional_account_view.is_some() {
-                            network_config = network.1;
-                            break 'block optional_account_view;
+                            ),
+                        ) {
+                            Ok(optional_account_view) => {
+                                if optional_account_view.is_some() {
+                                    network_config = network.1;
+                                    
+                                    break 'block optional_account_view;
+                                }
+                            }
+                            Err(report) => return color_eyre::eyre::Result::Err(report),
                         }
                     }
                     None
