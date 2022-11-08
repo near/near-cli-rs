@@ -46,7 +46,7 @@ impl SaveMode {
     pub async fn save_access_key_to_macos_keychain(
         network_config: crate::config::NetworkConfig,
         account_properties: super::super::AccountProperties,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<String> {
         let key_pair_properties = account_properties
             .key_pair_properties
             .expect("Impossible to get key_pair_properties!");
@@ -69,7 +69,7 @@ impl SaveMode {
         config: crate::config::Config,
         network_config: crate::config::NetworkConfig,
         account_properties: super::super::AccountProperties,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<String> {
         let key_pair_properties = account_properties
             .key_pair_properties
             .expect("Impossible to get key_pair_properties!");
@@ -89,18 +89,20 @@ impl SaveMode {
         })
     }
 
-    pub fn print_access_key_to_terminal(account_properties: super::super::AccountProperties) {
+    pub fn print_access_key_to_terminal(
+        account_properties: super::super::AccountProperties,
+    ) -> color_eyre::eyre::Result<String> {
         let key_pair_properties = account_properties
             .key_pair_properties
             .expect("Impossible to get key_pair_properties!");
-        println!(
+        Ok(format!(
             "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
             key_pair_properties.master_seed_phrase,
             key_pair_properties.seed_phrase_hd_path,
             key_pair_properties.implicit_account_id,
             key_pair_properties.public_key_str,
             key_pair_properties.secret_keypair_str,
-        )
+        ))
     }
 
     pub async fn process(

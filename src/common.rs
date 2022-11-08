@@ -1031,7 +1031,7 @@ pub async fn save_access_key_to_macos_keychain(
     network_config: crate::config::NetworkConfig,
     key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
-) -> crate::CliResult {
+) -> color_eyre::eyre::Result<String> {
     let buf = serde_json::to_string(&key_pair_properties)?;
     let keychain = security_framework::os::macos::keychain::SecKeychain::default()
         .map_err(|err| color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err)))?;
@@ -1048,8 +1048,7 @@ pub async fn save_access_key_to_macos_keychain(
         .map_err(|err| {
             color_eyre::Report::msg(format!("Failed to save password to keychain: {:?}", err))
         })?;
-    println!("The data for the access key is saved in macOS Keychain");
-    Ok(())
+    Ok("The data for the access key is saved in macOS Keychain".to_string())
 }
 
 pub async fn save_access_key_to_keychain(
@@ -1057,7 +1056,7 @@ pub async fn save_access_key_to_keychain(
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
-) -> crate::CliResult {
+) -> color_eyre::eyre::Result<String> {
     let buf = serde_json::to_string(&key_pair_properties)?;
     let dir_name = network_config.network_name.as_str();
     let file_with_key_name: std::path::PathBuf = format!(
@@ -1074,20 +1073,14 @@ pub async fn save_access_key_to_keychain(
         .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
         .write(buf.as_bytes())
         .map_err(|err| color_eyre::Report::msg(format!("Failed to write to file: {:?}", err)))?;
-    println!(
-        "The data for the access key is saved in a file {:?}",
-        &path_with_key_name
-    );
 
     let file_with_account_name: std::path::PathBuf = format!("{}.json", account_id).into();
     let mut path_with_account_name = std::path::PathBuf::from(&credentials_home_dir);
     path_with_account_name.push(dir_name);
     path_with_account_name.push(file_with_account_name);
     if path_with_account_name.exists() {
-        println!(
-            "The file: {} already exists! Therefore it was not overwritten.",
-            &path_with_account_name.display()
-        );
+        Ok(format!("The data for the access key is saved in a file {} \nThe file: {} already exists! Therefore it was not overwritten.",
+        &path_with_key_name.display(), &path_with_account_name.display()))
     } else {
         std::fs::File::create(&path_with_account_name)
             .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
@@ -1095,12 +1088,9 @@ pub async fn save_access_key_to_keychain(
             .map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
             })?;
-        println!(
-            "The data for the access key is saved in a file {:?}",
-            &path_with_account_name
-        );
-    };
-    Ok(())
+        Ok(format!("The data for the access key is saved in a file {} \nThe data for the access key is saved in a file {}",
+        &path_with_key_name.display(), &path_with_account_name.display()))
+    }
 }
 
 pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {

@@ -89,7 +89,6 @@ impl NewAccount {
                             Ok(optional_account_view) => {
                                 if optional_account_view.is_some() {
                                     network_config = network.1;
-                                    
                                     break 'block optional_account_view;
                                 }
                             }
@@ -400,6 +399,34 @@ impl SignerAccountId {
             block_hash: Default::default(),
             actions,
         };
+
+        let storage = account_properties
+            .storage
+            .expect("Impossible to get storage!");
+        let storage_message = match storage {
+            #[cfg(target_os = "macos")]
+            add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
+                add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
+                    network_config,
+                    account_properties,
+                )
+                .await?
+            }
+            add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
+                add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
+                    config.clone(),
+                    network_config,
+                    account_properties,
+                )
+                .await?
+            }
+            add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
+                add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
+                    account_properties,
+                )?
+            }
+        };
+
         match crate::transaction_signature_options::sign_with(
             self.network_config.clone(),
             prepopulated_unsigned_transaction,
@@ -416,44 +443,22 @@ impl SignerAccountId {
                         );
                     } else {
                         println!("New account <{}> created successfully.", new_account_id);
-
-                        let storage = account_properties
-                            .storage
-                            .expect("Impossible to get storage!");
-                        match storage {
-                            #[cfg(target_os = "macos")]
-                            add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
-                                add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
-                                    network_config,
-                                    account_properties,
-                                )
-                                .await?
-                            }
-                            add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
-                                add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
-                                    config.clone(),
-                                    network_config,
-                                    account_properties,
-                                )
-                                .await?
-                            }
-                            add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
-                                add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
-                                    account_properties,
-                                )
-                            }
-                        }
                     }
                     println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
                                 id=transaction_info.transaction_outcome.id,
                                 path=self.network_config.get_network_config(config).explorer_transaction_url
                             );
+                    println!("{}\n", storage_message);
                     Ok(())
                 }
-                _ => crate::common::print_transaction_status(
-                    transaction_info,
-                    self.network_config.get_network_config(config),
-                ),
+                _ => {
+                    crate::common::print_transaction_status(
+                        transaction_info,
+                        self.network_config.get_network_config(config),
+                    )?;
+                    println!("{}\n", storage_message);
+                    Ok(())
+                }
             },
             None => Ok(()),
         }
