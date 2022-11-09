@@ -234,27 +234,27 @@ impl SignerAccountId {
             let signer_account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("What is the signer account ID?")
                 .interact_text()?;
-            let top_level_new_account_id_string = context.new_account_id.to_string();
-            let top_level_new_account_id_str = top_level_new_account_id_string
-                .rsplit_once('.')
-                .map_or("mainnet", |s| if s.1 == "near" { "mainnet" } else { s.1 });
-            let network_config = context
-                .config
-                .networks
-                .get(top_level_new_account_id_str)
-                .expect("Impossible to get network config!");
-            let optional_account_view = tokio::runtime::Runtime::new().unwrap().block_on(
-                crate::common::get_account_state(
-                    network_config.clone(),
-                    signer_account_id.clone().into(),
-                    near_primitives::types::Finality::Final.into(),
-                ),
-            )?;
+            let optional_account_view = 'block: {
+                for network in context.config.networks.iter() {
+                    match tokio::runtime::Runtime::new().unwrap().block_on(
+                        crate::common::get_account_state(
+                            network.1.clone(),
+                            signer_account_id.clone().into(),
+                            near_primitives::types::Finality::Final.into(),
+                        ),
+                    ) {
+                        Ok(optional_account_view) => {
+                            if optional_account_view.is_some() {
+                                break 'block optional_account_view;
+                            }
+                        }
+                        Err(report) => return color_eyre::eyre::Result::Err(report),
+                    }
+                }
+                None
+            };
             if optional_account_view.is_none() {
-                println!(
-                    "\nThe account <{}> does not yet exist on the network <{}>.",
-                    &signer_account_id, network_config.network_name
-                );
+                println!("\nThe account <{}> does not yet exist.", &signer_account_id);
                 let choose_input = vec![
                     "Yes, I want to enter a new name for signer_account_id.",
                     "No, I want to use this name for signer_account_id.",
