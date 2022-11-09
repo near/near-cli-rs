@@ -419,9 +419,13 @@ pub async fn get_account_state(
     network_config: crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
-) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
+) -> color_eyre::eyre::Result<
+    Option<near_primitives::views::AccountView>,
+    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+> {
     let query_view_method_response = network_config
-        .json_rpc_client()?
+        .json_rpc_client()
+        .unwrap()
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccount { account_id },
@@ -436,11 +440,11 @@ pub async fn get_account_state(
                 {
                     result
                 } else {
-                    return Err(color_eyre::Report::msg("Error call result".to_string()));
+                    return Ok(None);
                 };
             Ok(Some(account_view))
         }
-        Err(_) => Ok(None),
+        Err(rpc_query_error) => Err(rpc_query_error),
     }
 }
 

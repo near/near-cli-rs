@@ -92,7 +92,12 @@ impl NewAccount {
                                     break 'block optional_account_view;
                                 }
                             }
-                            Err(report) => return color_eyre::eyre::Result::Err(report),
+                            Err(json_rpc_error) => match &json_rpc_error {
+                                near_jsonrpc_client::errors::JsonRpcError::ServerError(_) => (),
+                                near_jsonrpc_client::errors::JsonRpcError::TransportError(_) => {
+                                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", new_account_id));
+                                }
+                            },
                         }
                     }
                     None
@@ -248,7 +253,12 @@ impl SignerAccountId {
                                 break 'block optional_account_view;
                             }
                         }
-                        Err(report) => return color_eyre::eyre::Result::Err(report),
+                        Err(json_rpc_error) => match &json_rpc_error {
+                            near_jsonrpc_client::errors::JsonRpcError::ServerError(_) => (),
+                            near_jsonrpc_client::errors::JsonRpcError::TransportError(_) => {
+                                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", signer_account_id));
+                            }
+                        },
                     }
                 }
                 None
