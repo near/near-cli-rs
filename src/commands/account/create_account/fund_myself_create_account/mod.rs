@@ -92,19 +92,18 @@ impl NewAccount {
                                     break 'block optional_account_view;
                                 }
                             }
-                            Err(json_rpc_error) => match &json_rpc_error {
-                                near_jsonrpc_client::errors::JsonRpcError::ServerError(_) => (),
-                                near_jsonrpc_client::errors::JsonRpcError::TransportError(_) => {
-                                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", new_account_id));
-                                }
+                            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+                                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", new_account_id));
                             },
-                        }
+                            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount{requested_account_id:_, block_hash:_, block_height:_}))) => {},
+                            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => println!("Unable to verify the existence of account <{}> on network <{}>", new_account_id, network.1.network_name),
+                            }
                     }
                     None
                 };
                 if optional_account_view.is_some() {
                     println!(
-                        "\nAccount <{}> already exists in network <{}>.",
+                        "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
                         &new_account_id, network_config.network_name
                     );
                     let choose_input = vec![
@@ -253,12 +252,11 @@ impl SignerAccountId {
                                 break 'block optional_account_view;
                             }
                         }
-                        Err(json_rpc_error) => match &json_rpc_error {
-                            near_jsonrpc_client::errors::JsonRpcError::ServerError(_) => (),
-                            near_jsonrpc_client::errors::JsonRpcError::TransportError(_) => {
-                                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", signer_account_id));
-                            }
+                        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+                            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", signer_account_id));
                         },
+                        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount{requested_account_id:_, block_hash:_, block_height:_}))) => {},
+                        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => println!("Unable to verify the existence of account <{}> on network <{}>", signer_account_id, network.1.network_name),
                     }
                 }
                 None
@@ -290,20 +288,45 @@ impl SignerAccountId {
     ) -> crate::CliResult {
         let network_config = self.network_config.get_network_config(config.clone());
 
-        if crate::common::get_account_state(
+        match crate::common::get_account_state(
             network_config.clone(),
             self.signer_account_id.clone().into(),
             near_primitives::types::Finality::Final.into(),
         )
-        .await?
-        .is_none()
+        .await
         {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "\nSigner account <{}> does not yet exist on the network <{}>.",
-                self.signer_account_id,
-                network_config.network_name
-            ));
-        };
+            Ok(optional_account_view) => {
+                if optional_account_view.is_none() {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                        "\nSigner account <{}> does not yet exist on the network <{}>.",
+                        self.signer_account_id,
+                        network_config.network_name
+                    ));
+                }
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", self.signer_account_id));
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                        requested_account_id,
+                        block_hash: _,
+                        block_height: _,
+                    },
+                ),
+            )) => {
+                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                    "\nSigner account <{}> does not yet exist on the network <{}>.",
+                    requested_account_id,
+                    network_config.network_name
+                ));
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => println!(
+                "Unable to verify the existence of account <{}> on network <{}>",
+                self.signer_account_id, network_config.network_name
+            ),
+        }
 
         let new_account_id = account_properties
             .clone()
@@ -317,20 +340,39 @@ impl SignerAccountId {
                 &new_account_id, &new_account_id.to_string().chars().count()
             ));
         }
-        if crate::common::get_account_state(
+        match crate::common::get_account_state(
             network_config.clone(),
             new_account_id.clone().into(),
             near_primitives::types::Finality::Final.into(),
         )
-        .await?
-        .is_some()
+        .await
         {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "\nAccount <{}> already exists in network <{}>.",
-                &new_account_id,
-                network_config.network_name
-            ));
-        };
+            Ok(optional_account_view) => {
+                if optional_account_view.is_some() {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                        "\nAccount <{}> already exists in network <{}>.",
+                        &new_account_id,
+                        network_config.network_name
+                    ));
+                }
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", self.signer_account_id));
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                        requested_account_id: _,
+                        block_hash: _,
+                        block_height: _,
+                    },
+                ),
+            )) => {}
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => println!(
+                "Unable to verify the existence of account <{}> on network <{}>",
+                self.signer_account_id, network_config.network_name
+            ),
+        }
 
         let args = json!({
             "new_account_id": new_account_id.clone().to_string(),
