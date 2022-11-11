@@ -8,7 +8,7 @@ pub struct Config {
 pub struct NetworkConfig {
     pub network_name: String,
     pub rpc_url: url::Url,
-    pub rpc_api_key: Option<String>,
+    pub rpc_api_key: Option<crate::types::api_key::ApiKey>,
     pub wallet_url: url::Url,
     pub explorer_transaction_url: url::Url,
     // https://github.com/near/near-cli-rs/issues/116
@@ -69,11 +69,17 @@ impl Default for Config {
 }
 
 impl NetworkConfig {
-    pub fn json_rpc_client(&self) -> color_eyre::eyre::Result<near_jsonrpc_client::JsonRpcClient> {
+    pub fn json_rpc_client(
+        &self,
+    ) -> color_eyre::eyre::Result<
+        near_jsonrpc_client::JsonRpcClient,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    > {
         let mut json_rpc_client = near_jsonrpc_client::JsonRpcClient::connect(self.rpc_url.clone());
         if let Some(rpc_api_key) = self.rpc_api_key.clone() {
-            json_rpc_client =
-                json_rpc_client.header(near_jsonrpc_client::auth::ApiKey::new(rpc_api_key)?)
+            json_rpc_client = json_rpc_client.header(rpc_api_key.0)
         };
         Ok(json_rpc_client)
     }

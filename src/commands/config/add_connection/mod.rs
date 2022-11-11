@@ -22,7 +22,7 @@ pub struct AddNetworkConnection {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
-    rpc_api_key: Option<String>,
+    rpc_api_key: Option<crate::types::api_key::ApiKey>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
@@ -71,7 +71,7 @@ impl AddNetworkConnection {
             Some(cli_explorer_transaction_url) => cli_explorer_transaction_url,
             None => Self::input_explorer_transaction_url(&context)?,
         };
-        let rpc_api_key: Option<String> = match optional_clap_variant
+        let rpc_api_key: Option<crate::types::api_key::ApiKey> = match optional_clap_variant
             .clone()
             .and_then(|clap_variant| clap_variant.rpc_api_key)
         {
@@ -94,7 +94,7 @@ impl AddNetworkConnection {
         }))
     }
 
-    fn input_api_key() -> color_eyre::eyre::Result<Option<String>> {
+    fn input_api_key() -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
         println!();
         let choose_input = vec![
             "Yes, the RPC endpoint requires API key",

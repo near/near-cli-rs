@@ -424,8 +424,7 @@ pub async fn get_account_state(
     near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
     let query_view_method_response = network_config
-        .json_rpc_client()
-        .unwrap()
+        .json_rpc_client()?
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccount { account_id },
