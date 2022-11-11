@@ -15,9 +15,12 @@ impl AddAccessKeyAction {
         account_properties: super::super::AccountProperties,
     ) -> crate::CliResult {
         let account_properties = super::super::AccountProperties {
-            public_key: self.public_key.clone(),
+            public_key: self.public_key.clone().into(),
             ..account_properties
         };
-        self.sign_as.process(config, account_properties).await
+        let storage_properties = None;
+        self.sign_as
+            .process(config, account_properties, storage_properties)
+            .await
     }
 }

@@ -46,63 +46,57 @@ impl SaveMode {
     pub async fn save_access_key_to_macos_keychain(
         network_config: crate::config::NetworkConfig,
         account_properties: super::super::AccountProperties,
+        storage_properties: Option<super::super::StorageProperties>,
     ) -> color_eyre::eyre::Result<String> {
-        let key_pair_properties = account_properties
-            .key_pair_properties
-            .expect("Impossible to get key_pair_properties!");
-        crate::common::save_access_key_to_macos_keychain(
-            network_config,
-            key_pair_properties.clone(),
-            account_properties
-                .new_account_id
-                .clone()
-                .expect("Impossible to get account_id!")
-                .as_ref(),
-        )
-        .await
-        .map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
-        })
+        match storage_properties {
+            Some(properties) => crate::common::save_access_key_to_macos_keychain(
+                network_config,
+                properties.key_pair_properties.clone(),
+                &account_properties.new_account_id,
+            )
+            .await
+            .map_err(|err| {
+                color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
+            }),
+            None => Ok(String::new()),
+        }
     }
 
     pub async fn save_access_key_to_keychain(
         config: crate::config::Config,
         network_config: crate::config::NetworkConfig,
         account_properties: super::super::AccountProperties,
+        storage_properties: Option<super::super::StorageProperties>,
     ) -> color_eyre::eyre::Result<String> {
-        let key_pair_properties = account_properties
-            .key_pair_properties
-            .expect("Impossible to get key_pair_properties!");
-        crate::common::save_access_key_to_keychain(
-            network_config,
-            config.credentials_home_dir.clone(),
-            key_pair_properties.clone(),
-            account_properties
-                .new_account_id
-                .clone()
-                .expect("Impossible to get account_id!")
-                .as_ref(),
-        )
-        .await
-        .map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
-        })
+        match storage_properties {
+            Some(properties) => crate::common::save_access_key_to_keychain(
+                network_config,
+                config.credentials_home_dir.clone(),
+                properties.key_pair_properties.clone(),
+                &account_properties.new_account_id,
+            )
+            .await
+            .map_err(|err| {
+                color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
+            }),
+            None => Ok(String::new()),
+        }
     }
 
     pub fn print_access_key_to_terminal(
-        account_properties: super::super::AccountProperties,
+        storage_properties: Option<super::super::StorageProperties>,
     ) -> color_eyre::eyre::Result<String> {
-        let key_pair_properties = account_properties
-            .key_pair_properties
-            .expect("Impossible to get key_pair_properties!");
-        Ok(format!(
-            "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
-            key_pair_properties.master_seed_phrase,
-            key_pair_properties.seed_phrase_hd_path,
-            key_pair_properties.implicit_account_id,
-            key_pair_properties.public_key_str,
-            key_pair_properties.secret_keypair_str,
-        ))
+        match storage_properties {
+            Some(properties) => Ok(format!(
+                "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
+                properties.key_pair_properties.master_seed_phrase,
+                properties.key_pair_properties.seed_phrase_hd_path,
+                properties.key_pair_properties.implicit_account_id,
+                properties.key_pair_properties.public_key_str,
+                properties.key_pair_properties.secret_keypair_str,
+            )),
+            None => Ok(String::new()),
+        }
     }
 
     pub async fn process(
@@ -112,45 +106,38 @@ impl SaveMode {
     ) -> crate::CliResult {
         let key_pair_properties: crate::common::KeyPairProperties =
             crate::common::generate_keypair().await?;
+        let public_key = near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
+        let account_properties = super::super::AccountProperties {
+            public_key,
+            ..account_properties
+        };
         match self {
             #[cfg(target_os = "macos")]
             SaveMode::SaveToMacosKeychain(save_keypair_to_macos_keychain) => {
-                let account_properties = super::super::AccountProperties {
-                    public_key: crate::types::public_key::PublicKey::from_str(
-                        &key_pair_properties.public_key_str,
-                    )?,
-                    key_pair_properties: Some(key_pair_properties),
-                    storage: Some(SaveModeDiscriminants::SaveToMacosKeychain),
-                    ..account_properties
+                let storage_properties = super::super::StorageProperties {
+                    key_pair_properties,
+                    storage: SaveModeDiscriminants::SaveToMacosKeychain,
                 };
                 save_keypair_to_macos_keychain
-                    .process(config, account_properties)
+                    .process(config, account_properties, Some(storage_properties))
                     .await
             }
             SaveMode::SaveToKeychain(save_keypair_to_keychain) => {
-                let account_properties = super::super::AccountProperties {
-                    public_key: crate::types::public_key::PublicKey::from_str(
-                        &key_pair_properties.public_key_str,
-                    )?,
-                    key_pair_properties: Some(key_pair_properties),
-                    storage: Some(SaveModeDiscriminants::SaveToKeychain),
-                    ..account_properties
+                let storage_properties = super::super::StorageProperties {
+                    key_pair_properties,
+                    storage: SaveModeDiscriminants::SaveToKeychain,
                 };
                 save_keypair_to_keychain
-                    .process(config, account_properties)
+                    .process(config, account_properties, Some(storage_properties))
                     .await
             }
             SaveMode::PrintToTerminal(print_keypair_to_terminal) => {
-                let account_properties = super::super::AccountProperties {
-                    public_key: crate::types::public_key::PublicKey::from_str(
-                        &key_pair_properties.public_key_str,
-                    )?,
-                    key_pair_properties: Some(key_pair_properties),
-                    storage: Some(SaveModeDiscriminants::PrintToTerminal),
-                    ..account_properties
+                let storage_properties = super::super::StorageProperties {
+                    key_pair_properties,
+                    storage: SaveModeDiscriminants::PrintToTerminal,
                 };
                 print_keypair_to_terminal
-                    .process(config, account_properties)
+                    .process(config, account_properties, Some(storage_properties))
                     .await
             }
         }
@@ -170,7 +157,10 @@ impl SignAs {
         &self,
         config: crate::config::Config,
         account_properties: super::super::AccountProperties,
+        storage_properties: Option<super::super::StorageProperties>,
     ) -> crate::CliResult {
-        self.sign_as.process(config, account_properties).await
+        self.sign_as
+            .process(config, account_properties, storage_properties)
+            .await
     }
 }

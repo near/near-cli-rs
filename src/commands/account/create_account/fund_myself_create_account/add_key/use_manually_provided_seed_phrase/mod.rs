@@ -22,9 +22,12 @@ impl AddAccessWithSeedPhraseAction {
             &self.master_seed_phrase,
         )?;
         let account_properties = super::super::AccountProperties {
-            public_key: public_key.into(),
+            public_key,
             ..account_properties
         };
-        self.sign_as.process(config, account_properties).await
+        let storage_properties = None;
+        self.sign_as
+            .process(config, account_properties, storage_properties)
+            .await
     }
 }

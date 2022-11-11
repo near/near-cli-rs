@@ -6,13 +6,17 @@ use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
 
 mod add_key;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct AccountProperties {
-    pub new_account_id: Option<crate::types::account_id::AccountId>,
-    pub public_key: crate::types::public_key::PublicKey,
+    pub new_account_id: near_primitives::types::AccountId,
+    pub public_key: near_crypto::PublicKey,
     pub initial_balance: crate::common::NearBalance,
-    pub key_pair_properties: Option<crate::common::KeyPairProperties>,
-    pub storage: Option<self::add_key::autogenerate_new_keypair::SaveModeDiscriminants>,
+}
+
+#[derive(Debug, Clone)]
+pub struct StorageProperties {
+    pub key_pair_properties: crate::common::KeyPairProperties,
+    pub storage: self::add_key::autogenerate_new_keypair::SaveModeDiscriminants,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -165,9 +169,9 @@ impl NewAccount {
 
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         let account_properties = AccountProperties {
-            new_account_id: Some(self.new_account_id.clone()),
+            new_account_id: self.new_account_id.clone().into(),
             initial_balance: self.initial_balance.clone(),
-            ..Default::default()
+            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
         };
         self.access_key_mode
             .process(config, account_properties)
@@ -285,6 +289,7 @@ impl SignerAccountId {
         &self,
         config: crate::config::Config,
         account_properties: AccountProperties,
+        storage_properties: Option<StorageProperties>,
     ) -> crate::CliResult {
         let network_config = self.network_config.get_network_config(config.clone());
 
@@ -328,21 +333,22 @@ impl SignerAccountId {
             ),
         }
 
-        let new_account_id = account_properties
-            .clone()
+        if account_properties
             .new_account_id
-            .expect("Impossible to get account_id!");
-        if new_account_id.to_string().chars().count() < MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
-            && !new_account_id.to_string().contains('.')
+            .to_string()
+            .chars()
+            .count()
+            < MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
+            && !account_properties.new_account_id.to_string().contains('.')
         {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount <{}> has <{}> character count. Only REGISTRAR_ACCOUNT_ID account can create new top level accounts that are shorter than MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH (32) characters.",
-                &new_account_id, &new_account_id.to_string().chars().count()
+                account_properties.new_account_id, account_properties.new_account_id.to_string().chars().count()
             ));
         }
         match crate::common::get_account_state(
             network_config.clone(),
-            new_account_id.clone().into(),
+            account_properties.new_account_id.clone(),
             near_primitives::types::Finality::Final.into(),
         )
         .await
@@ -351,7 +357,7 @@ impl SignerAccountId {
                 if optional_account_view.is_some() {
                     return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                         "\nAccount <{}> already exists in network <{}>.",
-                        &new_account_id,
+                        account_properties.new_account_id,
                         network_config.network_name
                     ));
                 }
@@ -375,7 +381,7 @@ impl SignerAccountId {
         }
 
         let args = json!({
-            "new_account_id": new_account_id.clone().to_string(),
+            "new_account_id": account_properties.new_account_id.clone().to_string(),
             "new_public_key": account_properties.public_key.to_string()
         })
         .to_string()
@@ -386,9 +392,9 @@ impl SignerAccountId {
             .linkdrop_account_id
             .expect("Impossible to get linkdrop_account_id!");
 
-        let (actions, receiver_id) = if new_account_id
+        let (actions, receiver_id) = if account_properties
+            .new_account_id
             .clone()
-            .0
             .is_sub_account_of(&self.signer_account_id.0)
         {
             (
@@ -414,18 +420,23 @@ impl SignerAccountId {
                         },
                     ),
                 ],
-                new_account_id.clone().into(),
+                account_properties.new_account_id.clone(),
             )
-        } else if !new_account_id
+        } else if !account_properties
+            .new_account_id
             .clone()
-            .0
             .is_sub_account_of(&self.signer_account_id.0)
-            && new_account_id.to_string().split('.').count() > 2
+            && account_properties
+                .new_account_id
+                .to_string()
+                .split('.')
+                .count()
+                > 2
         {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nSigner account <{}> does not have permission to create account <{}>.",
                 self.signer_account_id,
-                new_account_id
+                account_properties.new_account_id
             ));
         } else {
             (
@@ -445,38 +456,40 @@ impl SignerAccountId {
 
         let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
             signer_id: self.signer_account_id.0.clone(),
-            public_key: account_properties.clone().public_key.into(),
+            public_key: account_properties.clone().public_key,
             nonce: 0,
             receiver_id,
             block_hash: Default::default(),
             actions,
         };
 
-        let storage = account_properties
-            .storage
-            .expect("Impossible to get storage!");
-        let storage_message = match storage {
-            #[cfg(target_os = "macos")]
-            add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
-                add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
-                    network_config,
-                    account_properties,
-                )
-                .await?
-            }
-            add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
-                add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
-                    config.clone(),
-                    network_config,
-                    account_properties,
-                )
-                .await?
-            }
-            add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
-                add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
-                    account_properties,
-                )?
-            }
+        let storage_message = match storage_properties.clone() {
+            Some(properties) => match properties.storage {
+                #[cfg(target_os = "macos")]
+                add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
+                    add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
+                        network_config,
+                        account_properties.clone(),
+                        storage_properties.clone(),
+                    )
+                    .await?
+                }
+                add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
+                    add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
+                        config.clone(),
+                        network_config,
+                        account_properties.clone(),
+                        storage_properties.clone(),
+                    )
+                    .await?
+                }
+                add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
+                    add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
+                        storage_properties.clone(),
+                    )?
+                }
+            },
+            None => String::new(),
         };
 
         match crate::transaction_signature_options::sign_with(
@@ -491,16 +504,21 @@ impl SignerAccountId {
                     if value == b"false" {
                         println!(
                             "The new account <{}> could not be created successfully.",
-                            new_account_id
+                            account_properties.new_account_id
                         );
                     } else {
-                        println!("New account <{}> created successfully.", new_account_id);
+                        println!(
+                            "New account <{}> created successfully.",
+                            account_properties.new_account_id
+                        );
                     }
                     println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
                                 id=transaction_info.transaction_outcome.id,
                                 path=self.network_config.get_network_config(config).explorer_transaction_url
                             );
-                    println!("{}\n", storage_message);
+                    if storage_properties.is_some() {
+                        println!("{}\n", storage_message);
+                    }
                     Ok(())
                 }
                 _ => {
@@ -508,7 +526,9 @@ impl SignerAccountId {
                         transaction_info,
                         self.network_config.get_network_config(config),
                     )?;
-                    println!("{}\n", storage_message);
+                    if storage_properties.is_some() {
+                        println!("{}\n", storage_message);
+                    }
                     Ok(())
                 }
             },
