@@ -69,18 +69,11 @@ impl Default for Config {
 }
 
 impl NetworkConfig {
-    pub fn json_rpc_client(
-        &self,
-    ) -> color_eyre::eyre::Result<
-        near_jsonrpc_client::JsonRpcClient,
-        near_jsonrpc_client::errors::JsonRpcError<
-            near_jsonrpc_primitives::types::query::RpcQueryError,
-        >,
-    > {
+    pub fn json_rpc_client(&self) -> near_jsonrpc_client::JsonRpcClient {
         let mut json_rpc_client = near_jsonrpc_client::JsonRpcClient::connect(self.rpc_url.clone());
         if let Some(rpc_api_key) = self.rpc_api_key.clone() {
             json_rpc_client = json_rpc_client.header(rpc_api_key.0)
         };
-        Ok(json_rpc_client)
+        json_rpc_client
     }
 }

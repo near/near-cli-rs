@@ -31,7 +31,7 @@ impl CallFunctionView {
         let query_view_method_response = self
             .network_config
             .get_network_config(config)
-            .json_rpc_client()?
+            .json_rpc_client()
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: self.network_config.get_block_ref(),
                 request: near_primitives::views::QueryRequest::CallFunction {

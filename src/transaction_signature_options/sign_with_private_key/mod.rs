@@ -69,7 +69,7 @@ impl SignPrivateKey {
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let signer_secret_key: near_crypto::SecretKey = self.signer_private_key.clone().into();
         let online_signer_access_key_response = network_config
-            .json_rpc_client()?
+            .json_rpc_client()
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewAccessKey {

@@ -46,7 +46,7 @@ impl SignMacosKeychain {
                 color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
             })?;
         let query_view_method_response = network_config
-            .json_rpc_client()?
+            .json_rpc_client()
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewAccessKeyList {

@@ -164,7 +164,7 @@ impl Submit {
             Submit::Send => {
                 println!("Transaction sent ...");
                 let transaction_info = loop {
-                    let transaction_info_result = network_config.json_rpc_client()?
+                    let transaction_info_result = network_config.json_rpc_client()
                         .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction: signed_transaction.clone()})
                         .await;
                     match transaction_info_result {

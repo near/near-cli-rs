@@ -91,7 +91,7 @@ async fn params_ft_metadata(
 ) -> color_eyre::eyre::Result<(u64, String)> {
     let query_view_ft_metadata_response = network_config
         .get_network_config(config.clone())
-        .json_rpc_client()?
+        .json_rpc_client()
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: network_config.get_block_ref(),
             request: near_primitives::views::QueryRequest::CallFunction {
