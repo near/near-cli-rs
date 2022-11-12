@@ -232,13 +232,14 @@ The file: /Users/frovolod/.near-credentials/testnet/fro_volod.testnet.json alrea
 
 #### fund-myself - I would like fund myself to cover the cost of creating an account
 
-С помощью этой команды можно создать как суб-аккаунт, так и аккаунт "верхнего уровня".  
+С помощью этой команды можно создать как суб-аккаунт, так и аккаунт с коротким именем, например, alice.near или alice.testnet (в сети testnet).  
 Для создания суб-аккаунта необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
     create-account fund-myself new.fro_volod.testnet '1 NEAR' \
     autogenerate-new-keypair \
     save-to-keychain \
+    sign-as \
     network-config testnet \
     sign-with-keychain \
     send
@@ -249,11 +250,12 @@ The file: /Users/frovolod/.near-credentials/testnet/fro_volod.testnet.json alrea
 ```txt
 Transaction sent ...
 New account <new.fro_volod.testnet> created successfully.
-The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_DNPQYZJECUpH8AoqjkAu8RXDRxnYJFn3fhqYd52dD2Y6.json"
-The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet.json"
-Transaction ID: 6LpNWTKUHwbWT9na3NZwBVzTk7nc4cp9RJZBdt1kpEPY
+Transaction ID: DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/6LpNWTKUHwbWT9na3NZwBVzTk7nc4cp9RJZBdt1kpEPY
+https://explorer.testnet.near.org/transactions/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
+
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json 
+The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet.json"
 ```
 </details>
 
@@ -262,13 +264,14 @@ https://explorer.testnet.near.org/transactions/6LpNWTKUHwbWT9na3NZwBVzTk7nc4cp9R
     <img src="https://asciinema.org/a/62q0BKhCtXV8hQ3sxDpnO1CQl.png" width="836"/>
 </a>
 </details>
-Для создания аккаунта "верхнего уровня" необходимо ввести в командной строке терминала:
+
+Для создания аккаунта с коротким именем необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
     create-account fund-myself new7.testnet '0.1 NEAR' \
     autogenerate-new-keypair \
     save-to-keychain \
-    --signer-account-id fro_volod.testnet \
+    sign-as fro_volod.testnet \
     network-config testnet \
     sign-with-keychain \
     send
@@ -279,11 +282,12 @@ https://explorer.testnet.near.org/transactions/6LpNWTKUHwbWT9na3NZwBVzTk7nc4cp9R
 ```txt
 Transaction sent ...
 New account <new7.testnet> created successfully.
-The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new7.testnet/ed25519_EX1qK1S1T4WxXJFLH7qZvKxnGQtcKfEEsiA4BNxAZ6mP.json"
-The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already exists! Therefore it was not overwritten.
 Transaction ID: GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
 To see the transaction in the transaction explorer, please open this url in your browser:
 https://explorer.testnet.near.org/transactions/GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
+
+The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new7.testnet/ed25519_EX1qK1S1T4WxXJFLH7qZvKxnGQtcKfEEsiA4BNxAZ6mP.json"
+The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already exists! Therefore it was not overwritten.
 ```
 </details>
 
@@ -1100,18 +1104,29 @@ network_name = "mainnet"
 rpc_url = "https://archival-rpc.mainnet.near.org/"
 wallet_url = "https://wallet.mainnet.near.org/"
 explorer_transaction_url = "https://explorer.mainnet.near.org/transactions/"
+linkdrop_account_id = "near"
 
 [networks.testnet]
 network_name = "testnet"
 rpc_url = "https://archival-rpc.testnet.near.org/"
 wallet_url = "https://wallet.testnet.near.org/"
 explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+linkdrop_account_id = "testnet"
 
 [networks.shardnet]
 network_name = "shardnet"
 rpc_url = "https://rpc.shardnet.near.org/"
 wallet_url = "https://wallet.shardnet.near.org/"
 explorer_transaction_url = "https://explorer.shardnet.near.org/transactions/"
+linkdrop_account_id = "shardnet"
+
+[networks.pagoda-testnet]
+network_name = "pagoda-testnet"
+rpc_url = "https://near-testnet.api.pagoda.co/rpc/v1/"
+rpc_api_key = "x-api-key: c0a25b3c-39c2-4f62-a621-50e208b88e64"
+wallet_url = "https://wallet.testnet.near.org/"
+explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+linkdrop_account_id = "testnet"
 ```
 </details>
 
@@ -1121,12 +1136,13 @@ explorer_transaction_url = "https://explorer.shardnet.near.org/transactions/"
 ```txt
 ./near-cli config \
     add-connection \
-        --network-name testnet \
+        --network-name pagoda-testnet \
         --connection-name pagoda-testnet \
         --rpc-url https://near-testnet.api.pagoda.co/rpc/v1/ \
         --wallet-url https://wallet.testnet.near.org/ \
         --explorer-transaction-url https://explorer.testnet.near.org/transactions/ \
-        --api-key c0a25b3c-39c2-4f62-a621-50e208b88e64
+        --rpc-api-key 'x-api-key: c0a25b3c-39c2-4f62-a621-50e208b88e64' \
+        --linkdrop-account-id testnet
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
