@@ -1141,7 +1141,7 @@ linkdrop_account_id = "testnet"
         --rpc-url https://near-testnet.api.pagoda.co/rpc/v1/ \
         --wallet-url https://wallet.testnet.near.org/ \
         --explorer-transaction-url https://explorer.testnet.near.org/transactions/ \
-        --rpc-api-key 'x-api-key: c0a25b3c-39c2-4f62-a621-50e208b88e64' \
+        --rpc-api-key 'c0a25b3c-39c2-4f62-a621-50e208b88e64' \
         --linkdrop-account-id testnet
 ```
 
