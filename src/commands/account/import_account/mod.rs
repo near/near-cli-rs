@@ -38,57 +38,106 @@ async fn login(
     let public_key: near_crypto::PublicKey =
         near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
 
-    let account_id = get_account_from_cli(public_key, network_config.clone()).await?;
-
-    #[cfg(target_os = "macos")]
-    {
-        let items = vec![
-            "Store the access key in my macOS keychain",
-            "Store the access key in my legacy keychain (compatible with the old near CLI)",
-        ];
-        let selection = dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
-            .with_prompt("Select a keychain to save the access key to:")
-            .items(&items)
-            .default(0)
-            .interact()?;
-        if selection == 0 {
-            crate::common::save_access_key_to_macos_keychain(
-                network_config,
-                key_pair_properties,
-                &account_id,
-            )
-            .await
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to save the access key to the keychain: {}",
-                    err
-                ))
-            })?;
-            return Ok(());
-        }
-    }
-    crate::common::save_access_key_to_keychain(
-        network_config,
-        credentials_home_dir,
-        key_pair_properties.clone(),
-        &account_id,
+    // let account_id = get_account_from_cli(public_key, network_config.clone()).await?;
+    let account_id_from_cli = input_account_id()?;
+    println!();
+    let account_id = match verify_account_id(
+        account_id_from_cli.clone(),
+        public_key,
+        network_config.clone(),
     )
     .await
-    .map_err(|err| {
-        color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
-    })?;
-    Ok(())
-}
+    {
+        Ok(optional_access_key_view) => {
+            if optional_access_key_view.is_some() {
+                account_id_from_cli
+            } else {
+                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                    "Access key <{}> for account <{}> is not verified.",
+                    key_pair_properties.public_key_str,
+                    account_id_from_cli
+                ));
+            }
+        }
+        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+            println!("A network error may have occurred. Therefore, there is currently no way to verify the account access key. You have the option to save your access key information.");
+            save_access_key(
+                account_id_from_cli.clone(),
+                key_pair_properties.clone(),
+                network_config,
+                credentials_home_dir,
+            )?;
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. Now there is no way to check if access key <{}> exists for account <{}>.",
+                key_pair_properties.public_key_str,
+                account_id_from_cli));
+        }
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                    requested_account_id,
+                    block_hash: _,
+                    block_height: _,
+                },
+            ),
+        )) => {
+            println!("There is currently no way to verify your account. You have the option to save your access key information.");
+            save_access_key(
+                requested_account_id.clone(),
+                key_pair_properties,
+                network_config.clone(),
+                credentials_home_dir,
+            )?;
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "\nAccount <{}> does not yet exist on the network <{}>.",
+                requested_account_id,
+                network_config.network_name
+            ));
+        }
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccessKey {
+                    public_key,
+                    block_hash: _,
+                    block_height: _,
+                },
+            ),
+        )) => {
+            println!("It is currently not possible to verify the account access key. You have the option to save your access key information.");
+            save_access_key(
+                account_id_from_cli.clone(),
+                key_pair_properties,
+                network_config,
+                credentials_home_dir,
+            )?;
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "\nAccount <{}> does not have access key <{}>.",
+                account_id_from_cli,
+                public_key
+            ));
+        }
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
+            println!("It is currently not possible to verify the account access key. You have the option to save your access key information.");
+            save_access_key(
+                account_id_from_cli.clone(),
+                key_pair_properties.clone(),
+                network_config,
+                credentials_home_dir,
+            )?;
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Failed to verify access key <{}> in account <{}>",
+                key_pair_properties.public_key_str,
+                account_id_from_cli
+            ));
+        }
+    };
+    save_access_key(
+        account_id,
+        key_pair_properties,
+        network_config,
+        credentials_home_dir,
+    )?;
 
-async fn get_account_from_cli(
-    public_key: near_crypto::PublicKey,
-    network_config: crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-    let account_id = input_account_id()?;
-    verify_account_id(account_id.clone(), public_key, network_config)
-        .await
-        .map_err(|err| color_eyre::Report::msg(format!("Failed account ID: {:?}", err)))?;
-    Ok(account_id)
+    Ok(())
 }
 
 fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
@@ -101,8 +150,11 @@ async fn verify_account_id(
     account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
     network_config: crate::config::NetworkConfig,
-) -> crate::CliResult {
-    network_config
+) -> color_eyre::eyre::Result<
+    Option<near_primitives::views::AccessKeyView>,
+    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+> {
+    match network_config
         .json_rpc_client()
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),
@@ -112,11 +164,64 @@ async fn verify_account_id(
             },
         })
         .await
-        .map_err(|err| {
-            color_eyre::Report::msg(format!(
-                "Failed to fetch query for view access key: {:?}",
-                err
-            ))
-        })?;
+    {
+        Ok(rpc_query_response) => {
+            let access_key_view =
+                if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =
+                    rpc_query_response.kind
+                {
+                    result
+                } else {
+                    return Ok(None);
+                };
+            Ok(Some(access_key_view))
+        }
+        Err(rpc_query_error) => Err(rpc_query_error),
+    }
+}
+
+fn save_access_key(
+    account_id: near_primitives::types::AccountId,
+    key_pair_properties: crate::common::KeyPairProperties,
+    network_config: crate::config::NetworkConfig,
+    credentials_home_dir: std::path::PathBuf,
+) -> crate::CliResult {
+    #[cfg(target_os = "macos")]
+    {
+        let items = vec![
+            "Store the access key in my macOS keychain",
+            "Store the access key in my legacy keychain (compatible with the old near CLI)",
+        ];
+        let selection = dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
+            .with_prompt("Select a keychain to save the access key to:")
+            .items(&items)
+            .default(0)
+            .interact()?;
+        if selection == 0 {
+            let storage_message = crate::common::save_access_key_to_macos_keychain(
+                network_config,
+                key_pair_properties,
+                &account_id,
+            )
+            .map_err(|err| {
+                color_eyre::Report::msg(format!(
+                    "Failed to save the access key to the keychain: {}",
+                    err
+                ))
+            })?;
+            println!("{}", storage_message);
+            return Ok(());
+        }
+    }
+    let storage_message = crate::common::save_access_key_to_keychain(
+        network_config,
+        credentials_home_dir,
+        key_pair_properties,
+        &account_id,
+    )
+    .map_err(|err| {
+        color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
+    })?;
+    println!("{}", storage_message);
     Ok(())
 }

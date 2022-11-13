@@ -295,8 +295,7 @@ impl SignerAccountId {
                         network_config,
                         account_properties.clone(),
                         storage_properties.clone(),
-                    )
-                    .await?
+                    )?
                 }
                 super::add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
                     super::add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
@@ -304,8 +303,7 @@ impl SignerAccountId {
                         network_config,
                         account_properties.clone(),
                         storage_properties.clone(),
-                    )
-                    .await?
+                    )?
                 }
                 super::add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
                     super::add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
