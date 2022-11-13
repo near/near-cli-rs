@@ -7,7 +7,7 @@ pub struct AddAccessWithSeedPhraseAction {
     master_seed_phrase: String,
     #[interactive_clap(named_arg)]
     ///What is the signer account ID?
-    sign_as: super::super::SignerAccountId,
+    sign_as: super::super::sign_as::SignerAccountId,
 }
 
 impl AddAccessWithSeedPhraseAction {

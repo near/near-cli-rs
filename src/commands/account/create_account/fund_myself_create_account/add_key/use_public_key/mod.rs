@@ -5,7 +5,7 @@ pub struct AddAccessKeyAction {
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(named_arg)]
     ///What is the signer account ID?
-    sign_as: super::super::SignerAccountId,
+    sign_as: super::super::sign_as::SignerAccountId,
 }
 
 impl AddAccessKeyAction {
