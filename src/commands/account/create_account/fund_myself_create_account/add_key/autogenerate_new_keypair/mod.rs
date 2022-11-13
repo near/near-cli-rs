@@ -43,7 +43,7 @@ pub enum SaveMode {
 
 impl SaveMode {
     #[cfg(target_os = "macos")]
-    pub async fn save_access_key_to_macos_keychain(
+    pub fn save_access_key_to_macos_keychain(
         network_config: crate::config::NetworkConfig,
         account_properties: super::super::AccountProperties,
         storage_properties: Option<super::super::StorageProperties>,
@@ -51,10 +51,9 @@ impl SaveMode {
         match storage_properties {
             Some(properties) => crate::common::save_access_key_to_macos_keychain(
                 network_config,
-                properties.key_pair_properties.clone(),
+                properties.key_pair_properties,
                 &account_properties.new_account_id,
             )
-            .await
             .map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
             }),
@@ -62,7 +61,7 @@ impl SaveMode {
         }
     }
 
-    pub async fn save_access_key_to_keychain(
+    pub fn save_access_key_to_keychain(
         config: crate::config::Config,
         network_config: crate::config::NetworkConfig,
         account_properties: super::super::AccountProperties,
@@ -71,11 +70,10 @@ impl SaveMode {
         match storage_properties {
             Some(properties) => crate::common::save_access_key_to_keychain(
                 network_config,
-                config.credentials_home_dir.clone(),
-                properties.key_pair_properties.clone(),
+                config.credentials_home_dir,
+                properties.key_pair_properties,
                 &account_properties.new_account_id,
             )
-            .await
             .map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
             }),

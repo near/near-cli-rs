@@ -19,7 +19,6 @@ impl SaveKeypairToMacosKeychain {
             key_pair_properties,
             &prepopulated_unsigned_transaction.receiver_id,
         )
-        .await
         .map_err(|err| {
             color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
         })?;

@@ -1030,7 +1030,7 @@ pub fn print_transaction_status(
 }
 
 #[cfg(target_os = "macos")]
-pub async fn save_access_key_to_macos_keychain(
+pub fn save_access_key_to_macos_keychain(
     network_config: crate::config::NetworkConfig,
     key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
@@ -1054,7 +1054,7 @@ pub async fn save_access_key_to_macos_keychain(
     Ok("The data for the access key is saved in macOS Keychain".to_string())
 }
 
-pub async fn save_access_key_to_keychain(
+pub fn save_access_key_to_keychain(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties: crate::common::KeyPairProperties,
