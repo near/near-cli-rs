@@ -139,8 +139,7 @@ impl SignerAccountId {
                 near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
                     near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
                         requested_account_id,
-                        block_hash: _,
-                        block_height: _,
+                        ..
                     },
                 ),
             )) => {
