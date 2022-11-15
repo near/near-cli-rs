@@ -157,7 +157,7 @@ impl SignerAccountId {
 
         if account_properties
             .new_account_id
-            .to_string()
+            .as_str()
             .chars()
             .count()
             < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
