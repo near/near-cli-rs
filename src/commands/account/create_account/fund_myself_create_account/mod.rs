@@ -72,7 +72,7 @@ impl NewAccount {
             "No, I want to use this name for account_id.",
         ];
         let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("\nDo you want to check the existence of such an account so that you don’t send a transaction and don’t waste tokens in vain?")
+            .with_prompt("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?")
             .items(&choose_input)
             .default(0)
             .interact_on_opt(&Term::stderr())?;
