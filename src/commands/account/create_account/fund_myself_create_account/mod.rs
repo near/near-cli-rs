@@ -68,7 +68,7 @@ impl NewAccount {
             .interact_text()?;
 
         let choose_input = vec![
-            "Yes, I want to check the existence of such an account.",
+            format!("Yes, I want to check that <{}> account does not exist.", new_account_id),
             "No, I want to use this name for account_id.",
         ];
         let select_choose_input = Select::with_theme(&ColorfulTheme::default())
