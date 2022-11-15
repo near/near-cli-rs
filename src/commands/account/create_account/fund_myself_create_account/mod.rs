@@ -114,7 +114,7 @@ impl NewAccount {
                         "No, I want to keep using this account id.",
                     ];
                     let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                        .with_prompt("Do you want to enter a new name for account_id?")
+                        .with_prompt("Do you want to enter a new account id?")
                         .items(&choose_input)
                         .default(0)
                         .interact_on_opt(&Term::stderr())?;
