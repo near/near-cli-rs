@@ -69,7 +69,7 @@ impl NewAccount {
 
         let choose_input = vec![
             format!("Yes, I want to check that <{}> account does not exist.", new_account_id),
-            "No, I want to use this name for account_id.",
+            "No, I know that this account does not exist and I want to proceed.",
         ];
         let select_choose_input = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?")
