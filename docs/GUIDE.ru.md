@@ -224,8 +224,7 @@ The file: /Users/frovolod/.near-credentials/testnet/fro_volod.testnet.json alrea
 
 #### create-account - Create a new account
 
-- sponsor-by-linkdrop (mainnet) (Находится в разработке)
-- sponsor-by-... (mainnet) (Находится в разработке)
+- sponsor-by-linkdrop (Находится в разработке)
 - sponsor-by-wallet (testnet only) (Находится в разработке)
 - [fund-myself](#fund-myself---I-would-like-fund-myself-to-cover-the-cost-of-creating-an-account)
 - [fund-later](#fund-later---Create-an-implicit-account)
