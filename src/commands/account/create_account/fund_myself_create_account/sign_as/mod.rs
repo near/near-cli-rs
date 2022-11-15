@@ -161,7 +161,7 @@ impl SignerAccountId {
             .chars()
             .count()
             < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
-            && !account_properties.new_account_id.to_string().contains('.')
+            && !account_properties.new_account_id.as_str().contains('.')
         {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount <{}> has <{}> character count. Only REGISTRAR_ACCOUNT_ID account can create new top level accounts that are shorter than MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH (32) characters.",
