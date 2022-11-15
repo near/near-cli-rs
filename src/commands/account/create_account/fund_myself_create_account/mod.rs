@@ -126,8 +126,10 @@ impl NewAccount {
                     && !new_account_id.to_string().contains('.')
                 {
                     println!(
-                    "\nAccount <{}> has <{}> character count. Only REGISTRAR_ACCOUNT_ID account can create new top level accounts that are shorter than MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH (32) characters.",
-                    &new_account_id, &new_account_id.to_string().chars().count()
+                        "\nAccount <{}> has <{}> character count. Only the registrar account can create new top level accounts that are shorter than {} characters. Read more about it in nomicon: https://nomicon.io/DataStructures/Account#top-level-accounts",
+                        &new_account_id,
+                        &new_account_id.as_str().chars().count(),
+                        MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH,
                 );
                     let choose_input = vec![
                         "Yes, I want to enter a new name for account_id.",
