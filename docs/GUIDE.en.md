@@ -1123,7 +1123,7 @@ linkdrop_account_id = "shardnet"
 [networks.pagoda-testnet]
 network_name = "pagoda-testnet"
 rpc_url = "https://near-testnet.api.pagoda.co/rpc/v1/"
-rpc_api_key = "x-api-key: c0a25b3c-39c2-4f62-a621-50e208b88e64"
+rpc_api_key = "c0a25b3c-39c2-4f62-a621-50e208b88e64"
 wallet_url = "https://wallet.testnet.near.org/"
 explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
 linkdrop_account_id = "testnet"
