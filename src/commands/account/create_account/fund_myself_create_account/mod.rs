@@ -132,8 +132,8 @@ impl NewAccount {
                         MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH,
                 );
                     let choose_input = vec![
-                        "Yes, I want to enter a new name for account_id.",
-                        "No, I want to use this name for account_id.",
+                        "Yes, I want to enter a new account id.",
+                        "No, I want to keep using this account id.",
                     ];
                     let select_choose_input = Select::with_theme(&ColorfulTheme::default())
                         .with_prompt("Do you want to enter a new name for account_id?")
