@@ -26,7 +26,7 @@ impl serde::ser::Serialize for ApiKey {
     where
         S: serde::ser::Serializer,
     {
-        serializer.serialize_str(&self.0.to_string())
+        serializer.serialize_str(self.0.as_str())
     }
 }
 
