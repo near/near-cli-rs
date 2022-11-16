@@ -69,7 +69,7 @@ impl NewAccount {
 
         let choose_input = vec![
             format!("Yes, I want to check that <{}> account does not exist.", new_account_id),
-            "No, I know that this account does not exist and I want to proceed.",
+            "No, I know that this account does not exist and I want to proceed.".to_string(),
         ];
         let select_choose_input = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?")
@@ -128,7 +128,7 @@ impl NewAccount {
                     println!(
                         "\nAccount <{}> has <{}> character count. Only the registrar account can create new top level accounts that are shorter than {} characters. Read more about it in nomicon: https://nomicon.io/DataStructures/Account#top-level-accounts",
                         &new_account_id,
-                        &new_account_id.as_str().chars().count(),
+                        &new_account_id.0.as_str().chars().count(),
                         MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH,
                 );
                     let choose_input = vec![

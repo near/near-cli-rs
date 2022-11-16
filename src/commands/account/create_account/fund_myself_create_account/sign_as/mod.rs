@@ -202,13 +202,6 @@ impl SignerAccountId {
             ),
         }
 
-        let args = json!({
-            "new_account_id": account_properties.new_account_id.clone().to_string(),
-            "new_public_key": account_properties.public_key.to_string()
-        })
-        .to_string()
-        .into_bytes();
-
         let (actions, receiver_id) = if account_properties
             .new_account_id
             .clone()
@@ -256,25 +249,32 @@ impl SignerAccountId {
                 account_properties.new_account_id
             ));
         } else {
+            let args = json!({
+                "new_account_id": account_properties.new_account_id.clone().to_string(),
+                "new_public_key": account_properties.public_key.to_string()
+            })
+            .to_string()
+            .into_bytes();
+    
             match network_config.clone().linkdrop_account_id {
-                Some(linkdrop_account_id) => (
-                    vec![near_primitives::transaction::Action::FunctionCall(
-                        near_primitives::transaction::FunctionCallAction {
-                            method_name: "create_account".to_string(),
-                            args,
-                            gas: crate::common::NearGas::from_str("30 TeraGas")
-                                .unwrap()
-                                .inner,
-                            deposit: account_properties.initial_balance.to_yoctonear(),
-                        },
-                    )],
-                    linkdrop_account_id,
-                ),
-                None => return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                        "\nAccount <{}> cannot be created on network <{}> because a <linkdrop_account_id> is not specified in the configuration file.\nYou can learn about working with the configuration file: https://github.com/near/near-cli-rs/blob/master/docs/README.en.md#config. \nExample <linkdrop_account_id> in configuration file: https://github.com/near/near-cli-rs/blob/master/docs/media/linkdrop account_id.png",
-                        account_properties.new_account_id,
-                        network_config.network_name
-                    ))
+            Some(linkdrop_account_id) => (
+                vec![near_primitives::transaction::Action::FunctionCall(
+                    near_primitives::transaction::FunctionCallAction {
+                        method_name: "create_account".to_string(),
+                        args,
+                        gas: crate::common::NearGas::from_str("30 TeraGas")
+                            .unwrap()
+                            .inner,
+                        deposit: account_properties.initial_balance.to_yoctonear(),
+                    },
+                )],
+                linkdrop_account_id,
+            ),
+            None => return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                    "\nAccount <{}> cannot be created on network <{}> because a <linkdrop_account_id> is not specified in the configuration file.\nYou can learn about working with the configuration file: https://github.com/near/near-cli-rs/blob/master/docs/README.en.md#config. \nExample <linkdrop_account_id> in configuration file: https://github.com/near/near-cli-rs/blob/master/docs/media/linkdrop account_id.png",
+                    account_properties.new_account_id,
+                    network_config.network_name
+                ))
             }
         };
 
