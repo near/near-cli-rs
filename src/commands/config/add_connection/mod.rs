@@ -121,7 +121,7 @@ impl AddNetworkConnection {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         let account_id: crate::types::account_id::AccountId = Input::new()
             .with_prompt(
-                "What is the name of the account that hosts the \"linkdrop\" program?(e.g. on mainnet it is near, and on testnet it is testnet)",
+                "What is the name of the account that hosts the \"linkdrop\" program? (e.g. on mainnet it is near, and on testnet it is testnet)",
             )
             .interact_text()?;
         Ok(Some(account_id))
