@@ -84,11 +84,17 @@ impl TokensActions {
     }
 }
 
+#[derive(serde::Deserialize)]
+struct FtMetadata {
+    symbol: String,
+    decimals: u64,
+}
+
 async fn params_ft_metadata(
     config: crate::config::Config,
     ft_contract_account_id: crate::types::account_id::AccountId,
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
-) -> color_eyre::eyre::Result<(u64, String)> {
+) -> color_eyre::eyre::Result<FtMetadata> {
     let query_view_ft_metadata_response = network_config
         .get_network_config(config.clone())
         .json_rpc_client()
@@ -112,21 +118,8 @@ async fn params_ft_metadata(
         } else {
             return Err(color_eyre::Report::msg("Error call result".to_string()));
         };
-    let ft_metadata = if call_result.is_empty() {
-        serde_json::Value::Null
-    } else {
-        serde_json::from_slice(&call_result)
-            .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?
-    };
-    let decimals = ft_metadata
-        .get("decimals")
-        .expect("Impossible to get decimals!")
-        .as_u64()
-        .expect("Impossible represent it as u64!");
-    let symbol = ft_metadata
-        .get("symbol")
-        .expect("Impossible to get symbol!")
-        .as_str()
-        .expect("Impossible represent it as &str!");
-    Ok((decimals, symbol.to_string()))
+    let ft_metadata: FtMetadata = serde_json::from_slice(&call_result).map_err(|err| {
+        color_eyre::Report::msg(format!("Impossible to get FT metadata! Error: {}", err))
+    })?;
+    Ok(ft_metadata)
 }

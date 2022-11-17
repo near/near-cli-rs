@@ -16,7 +16,7 @@ impl ViewFtBalance {
         config: crate::config::Config,
         owner_account_id: near_primitives::types::AccountId,
     ) -> crate::CliResult {
-        let (decimals, symbol) = super::params_ft_metadata(
+        let super::FtMetadata { decimals, symbol } = super::params_ft_metadata(
             config.clone(),
             self.ft_contract_account_id.clone(),
             self.network_config.clone(),
