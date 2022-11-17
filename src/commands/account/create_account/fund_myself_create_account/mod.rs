@@ -121,9 +121,9 @@ impl NewAccount {
                     if matches!(select_choose_input, Some(1)) {
                         break Ok(new_account_id);
                     }
-                } else if new_account_id.to_string().chars().count()
+                } else if new_account_id.0.as_str().chars().count()
                     < MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
-                    && !new_account_id.to_string().contains('.')
+                    && !new_account_id.0.as_str().contains('.')
                 {
                     println!(
                         "\nAccount <{}> has <{}> character count. Only the registrar account can create new top level accounts that are shorter than {} characters. Read more about it in nomicon: https://nomicon.io/DataStructures/Account#top-level-accounts",

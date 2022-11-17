@@ -165,7 +165,7 @@ impl SignerAccountId {
         {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount <{}> has <{}> character count. Only REGISTRAR_ACCOUNT_ID account can create new top level accounts that are shorter than MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH (32) characters.",
-                account_properties.new_account_id, account_properties.new_account_id.to_string().chars().count()
+                account_properties.new_account_id, account_properties.new_account_id.as_str().chars().count()
             ));
         }
         match crate::common::get_account_state(
@@ -238,7 +238,7 @@ impl SignerAccountId {
             .is_sub_account_of(&self.signer_account_id.0)
             && account_properties
                 .new_account_id
-                .to_string()
+                .as_str()
                 .split('.')
                 .count()
                 > 2
