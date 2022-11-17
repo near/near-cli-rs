@@ -155,11 +155,7 @@ impl SignerAccountId {
             ),
         }
 
-        if account_properties
-            .new_account_id
-            .as_str()
-            .chars()
-            .count()
+        if account_properties.new_account_id.as_str().chars().count()
             < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
             && !account_properties.new_account_id.as_str().contains('.')
         {
@@ -255,7 +251,7 @@ impl SignerAccountId {
             })
             .to_string()
             .into_bytes();
-    
+
             match network_config.clone().linkdrop_account_id {
             Some(linkdrop_account_id) => (
                 vec![near_primitives::transaction::Action::FunctionCall(
