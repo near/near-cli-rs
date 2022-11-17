@@ -102,7 +102,7 @@ impl NewAccount {
                                 return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", new_account_id));
                             },
                             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount{requested_account_id:_, block_hash:_, block_height:_}))) => {},
-                            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => println!("Unable to verify the existence of account <{}> on network <{}>", new_account_id, network.1.network_name),
+                            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => println!("Unable to verify the existence of account <{}> on network <{}>. Re-trying...", new_account_id, network.1.network_name),
                             }
                     }
                     None
