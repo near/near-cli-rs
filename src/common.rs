@@ -764,6 +764,76 @@ pub fn rpc_transaction_error(
     Ok(())
 }
 
+pub fn rpc_query_error(
+    err: &near_jsonrpc_client::errors::JsonRpcError<
+        near_jsonrpc_primitives::types::query::RpcQueryError,
+    >,
+) -> CliResult {
+    match err {
+        near_jsonrpc_client::errors::JsonRpcError::TransportError(_rpc_transport_error) => {
+            println!("Transport error request. If you want to exit the program, press ^C.\nPlease wait. The next try to send this request is happening right now ...");
+        }
+        near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_query_error) => match rpc_query_error {
+                near_jsonrpc_primitives::types::query::RpcQueryError::NoSyncedBlocks => {
+                    println!("There are no fully synchronized blocks on the node yet. If you want to exit the program, press ^C.\nPlease wait. The next try to send this request is happening right now ...");
+                }
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnavailableShard { requested_shard_id } => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("The node does not track the shard ID {requested_shard_id}"));
+                }
+                near_jsonrpc_primitives::types::query::RpcQueryError::GarbageCollectedBlock { block_height, ..} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("The data for block #{block_height} is garbage collected on this node, use an archival node to fetch historical data"));
+                }
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownBlock {block_reference} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Block either has never been observed on the node or has been garbage collected: {block_reference:?}"));
+                }
+                near_jsonrpc_primitives::types::query::RpcQueryError::InvalidAccount {requested_account_id, ..} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Account ID {requested_account_id} is invalid"));
+                }
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {requested_account_id, ..} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Account {requested_account_id} does not exist while viewing"));
+                }
+                near_jsonrpc_primitives::types::query::RpcQueryError::NoContractCode {contract_account_id, ..} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Contract code for contract ID #{contract_account_id} has never been observed on the node"));
+                }
+                near_jsonrpc_primitives::types::query::RpcQueryError::TooLargeContractState {contract_account_id, ..} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("State of contract {contract_account_id} is too large to be viewed"));
+                }
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccessKey {public_key, ..} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Access key for public key {public_key} has never been observed on the node"));
+                }
+                near_jsonrpc_primitives::types::query::RpcQueryError::ContractExecutionError {vm_error, ..} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Function call returned an error: {vm_error}"));
+                }
+                near_jsonrpc_primitives::types::query::RpcQueryError::InternalError {error_message} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("The node reached its limits. Try again later. More details: {error_message}"));
+                }
+            }
+            near_jsonrpc_client::errors::JsonRpcServerError::RequestValidationError(rpc_request_validation_error) => {
+                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Incompatible request with the server: {:#?}",  rpc_request_validation_error));
+            }
+            near_jsonrpc_client::errors::JsonRpcServerError::InternalError{ info } => {
+                println!("Internal server error: {}. If you want to exit the program, press ^C.\nPlease wait. The next try to send this request is happening right now ...", info.clone().unwrap_or_default());
+            }
+            near_jsonrpc_client::errors::JsonRpcServerError::NonContextualError(rpc_error) => {
+                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Unexpected response: {}", rpc_error));
+            }
+            near_jsonrpc_client::errors::JsonRpcServerError::ResponseStatusError(json_rpc_server_response_status_error) => match json_rpc_server_response_status_error {
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unauthorized => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use."));
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TooManyRequests => {
+                    println!("JSON RPC server is currently busy. If you want to exit the program, press ^C.\nPlease wait. The next try to send this request is happening right now ...");
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
     match action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
