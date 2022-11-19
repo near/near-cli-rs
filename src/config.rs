@@ -70,9 +70,11 @@ impl Default for Config {
 
 impl NetworkConfig {
     pub fn json_rpc_client(&self) -> near_jsonrpc_client::JsonRpcClient {
-        let mut json_rpc_client = near_jsonrpc_client::JsonRpcClient::connect(self.rpc_url.as_ref());
+        let mut json_rpc_client =
+            near_jsonrpc_client::JsonRpcClient::connect(self.rpc_url.as_ref());
         if let Some(rpc_api_key) = &self.rpc_api_key {
-            json_rpc_client = json_rpc_client.header(near_jsonrpc_client::auth::ApiKey::from(rpc_api_key.clone()))
+            json_rpc_client =
+                json_rpc_client.header(near_jsonrpc_client::auth::ApiKey::from(rpc_api_key.clone()))
         };
         json_rpc_client
     }
