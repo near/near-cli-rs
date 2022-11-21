@@ -16,9 +16,11 @@ impl AddAccessWithSeedPhraseAction {
         config: crate::config::Config,
         account_properties: super::super::AccountProperties,
     ) -> crate::CliResult {
-        let seed_phrase_hd_path_default = slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
+        // This is the HD path that is used in NEAR Wallet for plaintext seed phrase generation and, subsequently, for account recovery by a seed phrase.
+        let near_wallet_seed_phrase_hd_path_default =
+            slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
         let public_key = crate::common::get_public_key_from_seed_phrase(
-            seed_phrase_hd_path_default,
+            near_wallet_seed_phrase_hd_path_default,
             &self.master_seed_phrase,
         )?;
         let account_properties = super::super::AccountProperties {
