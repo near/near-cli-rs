@@ -79,18 +79,17 @@ impl NewAccount {
             .items(&choose_input)
             .default(0)
             .interact_on_opt(&Term::stderr())?;
-        if let Some(0) = select_choose_input {
+        let account_id = if let Some(0) = select_choose_input {
             loop {
-                if let Some(new_account_view) =
-                    optional_new_account_view(context, new_account_id.clone().into())?
-                {
+                let optional = optional_new_account_view(context, new_account_id.clone().into())?;
+                if let Some(new_account_view) = optional {
                     println!(
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
                         &new_account_id, new_account_view.network_config.network_name
                     );
                     if !is_input_new_name()? {
-                        break Ok(new_account_id);
-                    }
+                        break new_account_id;
+                    };
                 } else if new_account_id.0.as_str().chars().count()
                     < MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
                     && !new_account_id.0.as_str().contains('.')
@@ -102,18 +101,38 @@ impl NewAccount {
                         MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH,
                     );
                     if !is_input_new_name()? {
-                        break Ok(new_account_id);
-                    }
+                        break new_account_id;
+                    };
                 } else {
-                    break Ok(new_account_id);
-                }
+                    let parent_account_id = new_account_id
+                        .clone()
+                        .get_owner_account_id_from_sub_account();
+                    if !near_primitives::types::AccountId::from(parent_account_id.clone())
+                        .is_top_level()
+                    {
+                        if optional_new_account_view(context, parent_account_id.clone().into())?
+                            .is_none()
+                        {
+                            println!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
+                            &parent_account_id, &new_account_id);
+                            if !is_input_new_name()? {
+                                break new_account_id;
+                            };
+                        } else {
+                            break new_account_id;
+                        }
+                    } else {
+                        break new_account_id;
+                    }
+                };
                 new_account_id = Input::new()
                     .with_prompt("What is the new account ID?")
                     .interact_text()?;
             }
         } else {
-            Ok(new_account_id)
-        }
+            new_account_id
+        };
+        Ok(account_id)
     }
 
     fn input_initial_balance(
@@ -141,6 +160,7 @@ impl NewAccount {
     }
 }
 
+#[derive(Debug, Clone)]
 struct NewAccountView {
     _optional_account_view: Option<near_primitives::views::AccountView>,
     network_config: crate::config::NetworkConfig,
