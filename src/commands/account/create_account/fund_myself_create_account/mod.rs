@@ -79,49 +79,16 @@ impl NewAccount {
             .items(&choose_input)
             .default(0)
             .interact_on_opt(&Term::stderr())?;
-        match select_choose_input {
-            Some(0) => loop {
-                let mut network_config = context.0.networks.iter().next().unwrap().1;
-
-                let optional_account_view = 'block: {
-                    for network in context.0.networks.iter() {
-                        match tokio::runtime::Runtime::new().unwrap().block_on(
-                            crate::common::get_account_state(
-                                network.1.clone(),
-                                new_account_id.clone().into(),
-                                near_primitives::types::Finality::Final.into(),
-                            ),
-                        ) {
-                            Ok(optional_account_view) => {
-                                if optional_account_view.is_some() {
-                                    network_config = network.1;
-                                    break 'block optional_account_view;
-                                }
-                            }
-                            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
-                                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", new_account_id));
-                            },
-                            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount{requested_account_id:_, block_hash:_, block_height:_}))) => {},
-                            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => println!("Unable to verify the existence of account <{}> on network <{}>. Re-trying...", new_account_id, network.1.network_name),
-                            }
-                    }
-                    None
-                };
-                if optional_account_view.is_some() {
+        if let Some(0) = select_choose_input {
+            loop {
+                if let Some(new_account_view) =
+                    optional_new_account_view(context, new_account_id.clone().into())?
+                {
                     println!(
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
-                        &new_account_id, network_config.network_name
+                        &new_account_id, new_account_view.network_config.network_name
                     );
-                    let choose_input = vec![
-                        "Yes, I want to enter a new account id.",
-                        "No, I want to keep using this account id.",
-                    ];
-                    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                        .with_prompt("Do you want to enter a new account id?")
-                        .items(&choose_input)
-                        .default(0)
-                        .interact_on_opt(&Term::stderr())?;
-                    if matches!(select_choose_input, Some(1)) {
+                    if !is_input_new_name()? {
                         break Ok(new_account_id);
                     }
                 } else if new_account_id.0.as_str().chars().count()
@@ -133,17 +100,8 @@ impl NewAccount {
                         &new_account_id,
                         &new_account_id.0.as_str().chars().count(),
                         MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH,
-                );
-                    let choose_input = vec![
-                        "Yes, I want to enter a new account id.",
-                        "No, I want to keep using this account id.",
-                    ];
-                    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                        .with_prompt("Do you want to enter a new name for account_id?")
-                        .items(&choose_input)
-                        .default(0)
-                        .interact_on_opt(&Term::stderr())?;
-                    if matches!(select_choose_input, Some(1)) {
+                    );
+                    if !is_input_new_name()? {
                         break Ok(new_account_id);
                     }
                 } else {
@@ -152,9 +110,9 @@ impl NewAccount {
                 new_account_id = Input::new()
                     .with_prompt("What is the new account ID?")
                     .interact_text()?;
-            },
-            Some(1) => Ok(new_account_id),
-            _ => unreachable!("Error"),
+            }
+        } else {
+            Ok(new_account_id)
         }
     }
 
@@ -181,4 +139,88 @@ impl NewAccount {
             .process(config, account_properties)
             .await
     }
+}
+
+struct NewAccountView {
+    _optional_account_view: Option<near_primitives::views::AccountView>,
+    network_config: crate::config::NetworkConfig,
+}
+
+fn optional_new_account_view(
+    context: &crate::GlobalContext,
+    new_account_id: near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<Option<NewAccountView>> {
+    for network in context.0.networks.iter() {
+        let _is_new_account_id = loop {
+            match tokio::runtime::Runtime::new().unwrap().block_on(
+                crate::common::get_account_state(
+                    network.1.clone(),
+                    new_account_id.clone(),
+                    near_primitives::types::Finality::Final.into(),
+                ),
+            ) {
+                Ok(optional_account_view) => {
+                    if optional_account_view.is_some() {
+                        return Ok(Some(NewAccountView {
+                            _optional_account_view: optional_account_view,
+                            network_config: network.1.clone(),
+                        }));
+                    } else {
+                        return Ok(None);
+                    }
+                }
+                Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+                    println!("\nAddress information not found: A host or server name was specified, or the network connection <{}> is missing. So now there is no way to check if <{}> exists.",
+                        network.1.network_name, new_account_id
+                    );
+
+                    let choose_input = vec![
+                        "Yes, I want to check the account_id again.",
+                        "No, I want to keep using this account id.",
+                    ];
+                    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+                        .with_prompt("Do you want to check the account_id again on this network?")
+                        .items(&choose_input)
+                        .default(0)
+                        .interact_on_opt(&Term::stderr())?;
+                    if matches!(select_choose_input, Some(1)) {
+                        break false;
+                    }
+                }
+                Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                            ..
+                        },
+                    ),
+                )) => {
+                    break false;
+                }
+                Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
+                    println!(
+                        "Unable to verify the existence of account <{}> on network <{}>",
+                        new_account_id, network.1.network_name
+                    );
+                    break false;
+                }
+            }
+        };
+    }
+    Ok(None)
+}
+
+fn is_input_new_name() -> color_eyre::eyre::Result<bool> {
+    let choose_input = vec![
+        "Yes, I want to enter a new account_id.",
+        "No, I want to keep using this account_id.",
+    ];
+    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Do you want to enter a new name for account_id?")
+        .items(&choose_input)
+        .default(0)
+        .interact_on_opt(&Term::stderr())?;
+    if matches!(select_choose_input, Some(1)) {
+        return Ok(false);
+    }
+    Ok(true)
 }
