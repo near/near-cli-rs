@@ -1,4 +1,4 @@
-use dialoguer::Input;
+use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -38,96 +38,32 @@ async fn login(
     let public_key: near_crypto::PublicKey =
         near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
 
-    // let account_id = get_account_from_cli(public_key, network_config.clone()).await?;
-    let account_id_from_cli = input_account_id()?;
-    println!();
-    let account_id = match verify_account_id(
-        account_id_from_cli.clone(),
-        public_key,
-        network_config.clone(),
-    )
-    .await
-    {
-        Ok(optional_access_key_view) => {
-            if optional_access_key_view.is_some() {
-                account_id_from_cli
-            } else {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                    "Access key <{}> for account <{}> is not verified.",
-                    key_pair_properties.public_key_str,
-                    account_id_from_cli
-                ));
+    let account_id = loop {
+        let account_id_from_cli = input_account_id()?;
+        println!();
+        if verify_account_id(
+            account_id_from_cli.clone(),
+            public_key.clone(),
+            network_config.clone(),
+        )
+        .await?
+        .is_none()
+        {
+            println!("\nIt is currently not possible to verify the account access key.\nYou may not be logged in to {} or you may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n", &url.as_str());
+            let choose_input = vec![
+                "Yes, I want to re-enter the account_id.",
+                "No, I want to save the access key information.",
+            ];
+            let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("Would you like to re-enter the account_id?")
+                .items(&choose_input)
+                .default(0)
+                .interact_on_opt(&Term::stderr())?;
+            if matches!(select_choose_input, Some(1)) {
+                break account_id_from_cli;
             }
-        }
-        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
-            println!("A network error may have occurred. Therefore, there is currently no way to verify the account access key. You have the option to save your access key information.");
-            save_access_key(
-                account_id_from_cli.clone(),
-                key_pair_properties.clone(),
-                network_config,
-                credentials_home_dir,
-            )?;
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. Now there is no way to check if access key <{}> exists for account <{}>.",
-                key_pair_properties.public_key_str,
-                account_id_from_cli));
-        }
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                    requested_account_id,
-                    block_hash: _,
-                    block_height: _,
-                },
-            ),
-        )) => {
-            println!("There is currently no way to verify your account. You have the option to save your access key information.");
-            save_access_key(
-                requested_account_id.clone(),
-                key_pair_properties,
-                network_config.clone(),
-                credentials_home_dir,
-            )?;
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "\nAccount <{}> does not yet exist on the network <{}>.",
-                requested_account_id,
-                network_config.network_name
-            ));
-        }
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccessKey {
-                    public_key,
-                    block_hash: _,
-                    block_height: _,
-                },
-            ),
-        )) => {
-            println!("It is currently not possible to verify the account access key. You have the option to save your access key information.");
-            save_access_key(
-                account_id_from_cli.clone(),
-                key_pair_properties,
-                network_config,
-                credentials_home_dir,
-            )?;
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "\nAccount <{}> does not have access key <{}>.",
-                account_id_from_cli,
-                public_key
-            ));
-        }
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
-            println!("It is currently not possible to verify the account access key. You have the option to save your access key information.");
-            save_access_key(
-                account_id_from_cli.clone(),
-                key_pair_properties.clone(),
-                network_config,
-                credentials_home_dir,
-            )?;
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Failed to verify access key <{}> in account <{}>",
-                key_pair_properties.public_key_str,
-                account_id_from_cli
-            ));
+        } else {
+            break account_id_from_cli;
         }
     };
     save_access_key(
@@ -150,34 +86,61 @@ async fn verify_account_id(
     account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
     network_config: crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<
-    Option<near_primitives::views::AccessKeyView>,
-    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
-> {
-    match network_config
-        .json_rpc_client()
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::ViewAccessKey {
-                account_id,
-                public_key,
-            },
-        })
-        .await
-    {
-        Ok(rpc_query_response) => {
-            let access_key_view =
+) -> color_eyre::eyre::Result<Option<near_primitives::views::AccessKeyView>> {
+    let _is_access_key = loop {
+        match network_config
+            .json_rpc_client()
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: near_primitives::types::Finality::Final.into(),
+                request: near_primitives::views::QueryRequest::ViewAccessKey {
+                    account_id: account_id.clone(),
+                    public_key: public_key.clone(),
+                },
+            })
+            .await
+        {
+            Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =
                     rpc_query_response.kind
                 {
-                    result
+                    return Ok(Some(result));
                 } else {
                     return Ok(None);
-                };
-            Ok(Some(access_key_view))
+                }
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+                println!("\nAddress information not found: A host or server name was specified, or the network connection <{}> is missing. So now there is no way to check if <{}> exists.", network_config.network_name, account_id);
+
+                let choose_input = vec![
+                    "Yes, I want to check the account_id again.",
+                    "No, I don't want to check the account_id again.",
+                ];
+                let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Do you want to check the account_id again on this network?")
+                    .items(&choose_input)
+                    .default(0)
+                    .interact_on_opt(&Term::stderr())?;
+                if matches!(select_choose_input, Some(1)) {
+                    break false;
+                }
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
+                ),
+            )) => {
+                break false;
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
+                println!(
+                    "Unable to verify the existence of account <{}> on network <{}>",
+                    account_id, network_config.network_name
+                );
+                break false;
+            }
         }
-        Err(rpc_query_error) => Err(rpc_query_error),
-    }
+    };
+    Ok(None)
 }
 
 fn save_access_key(
