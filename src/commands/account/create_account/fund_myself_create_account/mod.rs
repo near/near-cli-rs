@@ -69,7 +69,7 @@ impl NewAccount {
 
         let choose_input = vec![
             format!(
-                "Yes, I want to check that <{}> account does not exist.",
+                "Yes, I want to check that <{}> account does not exist. (It is free of charge, and only requires Internet access)",
                 new_account_id
             ),
             "No, I know that this account does not exist and I want to proceed.".to_string(),
@@ -92,7 +92,7 @@ impl NewAccount {
                     };
                 } else if new_account_id.0.as_str().chars().count()
                     < MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
-                    && !new_account_id.0.as_str().contains('.')
+                    && new_account_id.0.is_top_level()
                 {
                     println!(
                         "\nAccount <{}> has <{}> character count. Only the registrar account can create new top level accounts that are shorter than {} characters. Read more about it in nomicon: https://nomicon.io/DataStructures/Account#top-level-accounts",
@@ -141,7 +141,7 @@ impl NewAccount {
         println!();
         let initial_balance: crate::common::NearBalance = Input::new()
             .with_prompt(
-                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear).",
+                "Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear).",
             )
             .with_initial_text("0.1 NEAR")
             .interact_text()?;
@@ -235,7 +235,7 @@ fn is_input_new_name() -> color_eyre::eyre::Result<bool> {
         "No, I want to keep using this account_id.",
     ];
     let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Do you want to enter a new name for account_id?")
+        .with_prompt("Do you want to enter a different account id for the new account?")
         .items(&choose_input)
         .default(0)
         .interact_on_opt(&Term::stderr())?;
