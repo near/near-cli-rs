@@ -171,7 +171,7 @@ fn optional_new_account_view(
     new_account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<NewAccountView>> {
     for network in context.0.networks.iter() {
-        let _is_new_account_id = loop {
+        loop {
             match tokio::runtime::Runtime::new().unwrap().block_on(
                 crate::common::get_account_state(
                     network.1.clone(),
@@ -204,7 +204,7 @@ fn optional_new_account_view(
                         .default(0)
                         .interact_on_opt(&Term::stderr())?;
                     if matches!(select_choose_input, Some(1)) {
-                        break false;
+                        break;
                     }
                 }
                 Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
@@ -214,17 +214,17 @@ fn optional_new_account_view(
                         },
                     ),
                 )) => {
-                    break false;
+                    break;
                 }
                 Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
                     println!(
                         "Unable to verify the existence of account <{}> on network <{}>",
                         new_account_id, network.1.network_name
                     );
-                    break false;
+                    break;
                 }
             }
-        };
+        }
     }
     Ok(None)
 }
