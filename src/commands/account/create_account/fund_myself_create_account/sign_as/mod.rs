@@ -3,7 +3,8 @@ use serde_json::json;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(input_context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(output_context = crate::GlobalContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignerAccountId {
     #[interactive_clap(skip_default_from_cli_arg)]
@@ -13,6 +14,12 @@ pub struct SignerAccountId {
     #[interactive_clap(named_arg)]
     ///Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+}
+
+impl From<crate::commands::account::create_account::CreateAccountContext> for crate::GlobalContext {
+    fn from(item: crate::commands::account::create_account::CreateAccountContext) -> Self {
+        (item.config,)
+    }
 }
 
 impl SignerAccountId {
