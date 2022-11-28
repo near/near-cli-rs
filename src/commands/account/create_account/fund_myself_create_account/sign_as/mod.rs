@@ -99,7 +99,7 @@ impl SignerAccountId {
     ) -> crate::CliResult {
         let network_config = self.network_config.get_network_config(config.clone());
 
-        is_signer_account_id(&network_config, &self.signer_account_id.clone().into()).await?;
+        validate_signer_account_id(&network_config, &self.signer_account_id.clone().into()).await?;
 
         if account_properties.new_account_id.as_str().chars().count()
             < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
@@ -343,10 +343,10 @@ fn optional_signer_account_view(
     Ok(None)
 }
 
-async fn is_signer_account_id(
+async fn validate_signer_account_id(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<bool> {
+) -> crate::CliResult {
     for retries_left in (0..5).rev() {
         match crate::common::get_account_state(
             network_config.clone(),
@@ -363,7 +363,7 @@ async fn is_signer_account_id(
                         network_config.network_name
                     ));
                 } else {
-                    return Ok(true);
+                    return Ok(());
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
@@ -390,7 +390,7 @@ async fn is_signer_account_id(
             }
         }
     }
-    Ok(true)
+    Ok(())
 }
 
 async fn is_new_account_id(
