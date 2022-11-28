@@ -87,7 +87,7 @@ impl NewAccount {
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
                         &new_account_id, network_config.network_name
                     );
-                    if !is_input_new_name()? {
+                    if !ask_if_different_account_id_wanted()? {
                         break new_account_id;
                     };
                 } else if new_account_id.0.as_str().chars().count()
@@ -100,7 +100,7 @@ impl NewAccount {
                         &new_account_id.0.as_str().chars().count(),
                         MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH,
                     );
-                    if !is_input_new_name()? {
+                    if !ask_if_different_account_id_wanted()? {
                         break new_account_id;
                     };
                 } else {
@@ -115,7 +115,7 @@ impl NewAccount {
                         {
                             println!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
                             &parent_account_id, &new_account_id);
-                            if !is_input_new_name()? {
+                            if !ask_if_different_account_id_wanted()? {
                                 break new_account_id;
                             };
                         } else {
@@ -220,7 +220,7 @@ fn is_account_on_network(
     Ok(None)
 }
 
-fn is_input_new_name() -> color_eyre::eyre::Result<bool> {
+fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
     let choose_input = vec![
         "Yes, I want to enter a new name for account ID.",
         "No, I want to keep using this name for account ID.",
