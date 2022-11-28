@@ -431,11 +431,15 @@ async fn validate_new_account_id(
                 return Ok(());
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                    "Unable to verify the existence of account <{}> on network <{}>",
-                    account_id,
-                    network_config.network_name
-                ))
+                println!("Server error request. If you want to exit the program, press ^C.\nThe next try to send this request is happening right now. Please wait ...");
+                if retries_left == 0 {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                        "Unable to verify the existence of account <{}> on network <{}>",
+                        account_id,
+                        network_config.network_name
+                    ));
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(1000)).await
             }
         }
     }
