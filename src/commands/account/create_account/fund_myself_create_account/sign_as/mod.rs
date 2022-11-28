@@ -309,11 +309,11 @@ fn optional_signer_account_view(
                     println!("\nAddress information not found: A host or server name was specified, or the network connection <{}> is missing. So now there is no way to check if <{}> exists.", network.1.network_name, account_id);
 
                     let choose_input = vec![
-                        "Yes, I want to check the account_id again.",
-                        "No, I don't want to check the account_id again.",
+                        "Yes, I want to check the account ID again.",
+                        "No, I don't want to check the account ID again.",
                     ];
                     let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                        .with_prompt("Do you want to check the account_id again on this network?")
+                        .with_prompt("Do you want to check the account ID again on this network?")
                         .items(&choose_input)
                         .default(0)
                         .interact_on_opt(&Term::stderr())?;

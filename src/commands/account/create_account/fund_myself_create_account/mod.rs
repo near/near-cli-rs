@@ -186,11 +186,11 @@ fn is_account_on_network(
                     );
 
                     let choose_input = vec![
-                        "Yes, I want to check the account_id again.",
-                        "No, I want to keep using this account id.",
+                        "Yes, I want to check the account ID again.",
+                        "No, I want to keep using this account ID.",
                     ];
                     let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                        .with_prompt("Do you want to check the account_id again on this network?")
+                        .with_prompt("Do you want to check the account ID again on this network?")
                         .items(&choose_input)
                         .default(0)
                         .interact_on_opt(&Term::stderr())?;
@@ -222,11 +222,11 @@ fn is_account_on_network(
 
 fn is_input_new_name() -> color_eyre::eyre::Result<bool> {
     let choose_input = vec![
-        "Yes, I want to enter a new account_id.",
-        "No, I want to keep using this account_id.",
+        "Yes, I want to enter a new name for account ID.",
+        "No, I want to keep using this name for account ID.",
     ];
     let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Do you want to enter a different account id for the new account?")
+        .with_prompt("Do you want to enter a different name for the new account ID?")
         .items(&choose_input)
         .default(0)
         .interact_on_opt(&Term::stderr())?;
