@@ -81,11 +81,11 @@ impl NewAccount {
             .interact_on_opt(&Term::stderr())?;
         let account_id = if let Some(0) = select_choose_input {
             loop {
-                let optional = optional_new_account_view(context, new_account_id.clone().into())?;
-                if let Some(new_account_view) = optional {
+                let optional = is_account_on_network(context, new_account_id.clone().into())?;
+                if let Some(network_config) = optional {
                     println!(
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
-                        &new_account_id, new_account_view.network_config.network_name
+                        &new_account_id, network_config.network_name
                     );
                     if !is_input_new_name()? {
                         break new_account_id;
@@ -110,7 +110,7 @@ impl NewAccount {
                     if !near_primitives::types::AccountId::from(parent_account_id.clone())
                         .is_top_level()
                     {
-                        if optional_new_account_view(context, parent_account_id.clone().into())?
+                        if is_account_on_network(context, parent_account_id.clone().into())?
                             .is_none()
                         {
                             println!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
@@ -160,16 +160,10 @@ impl NewAccount {
     }
 }
 
-#[derive(Debug, Clone)]
-struct NewAccountView {
-    _optional_account_view: Option<near_primitives::views::AccountView>,
-    network_config: crate::config::NetworkConfig,
-}
-
-fn optional_new_account_view(
+fn is_account_on_network(
     context: &crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<Option<NewAccountView>> {
+) -> color_eyre::eyre::Result<Option<crate::config::NetworkConfig>> {
     for network in context.0.networks.iter() {
         loop {
             match tokio::runtime::Runtime::new().unwrap().block_on(
@@ -181,10 +175,7 @@ fn optional_new_account_view(
             ) {
                 Ok(optional_account_view) => {
                     if optional_account_view.is_some() {
-                        return Ok(Some(NewAccountView {
-                            _optional_account_view: optional_account_view,
-                            network_config: network.1.clone(),
-                        }));
+                        return Ok(Some(network.1.clone()));
                     } else {
                         return Ok(None);
                     }
