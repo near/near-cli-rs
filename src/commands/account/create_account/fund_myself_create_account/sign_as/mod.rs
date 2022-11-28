@@ -67,7 +67,7 @@ impl SignerAccountId {
     fn input_signer_account_id(
         context: &crate::commands::account::create_account::CreateAccountContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
-        let signer_account_id = loop {
+        loop {
             let signer_account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("What is the signer account ID?")
                 .interact_text()?;
@@ -83,13 +83,12 @@ impl SignerAccountId {
                     .default(0)
                     .interact_on_opt(&Term::stderr())?;
                 if matches!(select_choose_input, Some(1)) {
-                    break signer_account_id;
+                    return Ok(signer_account_id);
                 }
             } else {
-                break signer_account_id;
+                return Ok(signer_account_id);
             }
-        };
-        Ok(signer_account_id)
+        }
     }
 
     pub async fn process(
@@ -291,7 +290,7 @@ fn optional_signer_account_view(
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
     for network in context.config.networks.iter() {
-        let _is_signer_account_id = loop {
+        loop {
             match tokio::runtime::Runtime::new().unwrap().block_on(
                 crate::common::get_account_state(
                     network.1.clone(),
@@ -319,7 +318,7 @@ fn optional_signer_account_view(
                         .default(0)
                         .interact_on_opt(&Term::stderr())?;
                     if matches!(select_choose_input, Some(1)) {
-                        break false;
+                        break;
                     }
                 }
                 Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
@@ -329,17 +328,17 @@ fn optional_signer_account_view(
                         },
                     ),
                 )) => {
-                    break false;
+                    break;
                 }
                 Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
                     println!(
                         "Unable to verify the existence of account <{}> on network <{}>",
                         account_id, network.1.network_name
                     );
-                    break false;
+                    break;
                 }
             }
-        };
+        }
     }
     Ok(None)
 }
