@@ -110,7 +110,7 @@ impl SignerAccountId {
                 account_properties.new_account_id, account_properties.new_account_id.as_str().chars().count()
             ));
         }
-        is_new_account_id(&network_config, &account_properties.new_account_id).await?;
+        validate_new_account_id(&network_config, &account_properties.new_account_id).await?;
 
         let (actions, receiver_id) = if account_properties
             .new_account_id
@@ -393,10 +393,10 @@ async fn validate_signer_account_id(
     Ok(())
 }
 
-async fn is_new_account_id(
+async fn validate_new_account_id(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<bool> {
+) -> crate::CliResult {
     for retries_left in (0..5).rev() {
         match crate::common::get_account_state(
             network_config.clone(),
@@ -413,7 +413,7 @@ async fn is_new_account_id(
                         network_config.network_name
                     ));
                 } else {
-                    return Ok(false);
+                    return Ok(());
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
@@ -428,7 +428,7 @@ async fn is_new_account_id(
                     near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
                 ),
             )) => {
-                return Ok(false);
+                return Ok(());
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
                 return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
@@ -439,5 +439,5 @@ async fn is_new_account_id(
             }
         }
     }
-    Ok(false)
+    Ok(())
 }
