@@ -23,11 +23,11 @@
         Ключи доступа должны находиться в файле _публичный-ключ.json_, расположенном в _/Users/user/.near-credentials/имя-сети/имя-пользователя/_.  
         Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
-            <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-            <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
-                <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
-            </a>
-            </details>
+        <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+        <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
+            <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
+        </a>
+        </details>
 
     - _sign-with-ledger - Sign the transaction with Ledger Nano device_
 

@@ -19,17 +19,17 @@ Before proceeding to the description of specific commands, it is necessary to co
 
 
     - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
-    
+
         _near-cli_ will independently find access keys and sign the created transaction.  
         Directory with access keys defined in [config](#config---manage-connections-in-a-configuration-file).
         The access keys must be in the _public-key.json_ file located in _/Users/user/.near-credentials/network-name/user-name/_  
         For example, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
-            <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-            <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
-                <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
-            </a>
-            </details>
+        <details><summary><i>Demonstration of the command in interactive mode</i></summary>
+        <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
+            <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
+        </a>
+        </details>
 
     - _sign-with-ledger - Sign the transaction with Ledger Nano device_
     
@@ -64,7 +64,7 @@ Before proceeding to the description of specific commands, it is necessary to co
 View account details ([View properties for an account](#view-account-summary---view-properties-for-an-account)) and view account access keys ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) is possible at the current time (***now***) and at a certain point in the past by specifying the block (***at-block-height*** or ***at-block-hash***). The examples below show how these modes can be used.
 
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
-- [import-account](#import-account---Import-existing-account-(a.k.a.-"sign-in"))
+- [import-account](#import-account---import-existing-account-aka-sign-in)
 - [create-account](#create-account---Create-a-new-account)
 - [delete-account](#delete-account---Delete-an-account)
 - [list-keys](#list-keys---View-a-list-of-access-keys-of-an-account)
