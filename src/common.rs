@@ -11,7 +11,7 @@ use near_primitives::{
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
-use dialoguer::{theme::ColorfulTheme, Select};
+use dialoguer::{console::Term, theme::ColorfulTheme, Select};
 use strum::IntoEnumIterator;
 
 #[derive(
@@ -423,28 +423,79 @@ pub async fn get_account_state(
     Option<near_primitives::views::AccountView>,
     near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
-    let query_view_method_response = network_config
-        .json_rpc_client()
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccount { account_id },
-        })
-        .await;
-    match query_view_method_response {
-        Ok(rpc_query_response) => {
-            let account_view =
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
-                    result,
-                ) = rpc_query_response.kind
-                {
-                    result
-                } else {
-                    return Ok(None);
-                };
-            Ok(Some(account_view))
+    loop {
+        let query_view_method_response = network_config
+            .json_rpc_client()
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: block_reference.clone(),
+                request: near_primitives::views::QueryRequest::ViewAccount {
+                    account_id: account_id.clone(),
+                },
+            })
+            .await;
+        match query_view_method_response {
+            Ok(rpc_query_response) => {
+                let account_view =
+                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
+                        result,
+                    ) = rpc_query_response.kind
+                    {
+                        result
+                    } else {
+                        return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
+                        near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
+                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
+                        ),
+                    )));
+                    };
+                return Ok(Some(account_view));
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
+                println!("\nAddress information not found: A host or server name was specified, or the network connection <{}> is missing. So now there is no way to check if <{}> exists.",
+                    network_config.network_name, account_id
+                );
+                if !need_check_account() {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
+                        err,
+                    ));
+                }
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
+                ),
+            )) => {
+                break;
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
+                println!(
+                    "Server error request.\nUnable to verify the existence of account <{}> on network <{}>",
+                    account_id, network_config.network_name
+                );
+                if !need_check_account() {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
+                }
+            }
         }
-        Err(rpc_query_error) => Err(rpc_query_error),
     }
+    Ok(None)
+}
+
+fn need_check_account() -> bool {
+    let choose_input = vec![
+        "Yes, I want to check the account ID again.",
+        "No, I want to keep using this account ID.",
+    ];
+    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Do you want to check the account ID again on this network?")
+        .items(&choose_input)
+        .default(0)
+        .interact_on_opt(&Term::stderr())
+        .unwrap_or_default();
+    if matches!(select_choose_input, Some(1)) {
+        return false;
+    }
+    true
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
