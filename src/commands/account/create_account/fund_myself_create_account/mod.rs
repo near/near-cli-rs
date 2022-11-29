@@ -81,8 +81,9 @@ impl NewAccount {
             .interact_on_opt(&Term::stderr())?;
         let account_id = if let Some(0) = select_choose_input {
             loop {
-                let optional = is_account_on_network(context, new_account_id.clone().into())?;
-                if let Some(network_config) = optional {
+                let network =
+                    find_network_where_account_exist(context, new_account_id.clone().into())?;
+                if let Some(network_config) = network {
                     println!(
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
                         &new_account_id, network_config.network_name
@@ -110,8 +111,11 @@ impl NewAccount {
                     if !near_primitives::types::AccountId::from(parent_account_id.clone())
                         .is_top_level()
                     {
-                        if is_account_on_network(context, parent_account_id.clone().into())?
-                            .is_none()
+                        if find_network_where_account_exist(
+                            context,
+                            parent_account_id.clone().into(),
+                        )?
+                        .is_none()
                         {
                             println!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
                             &parent_account_id, &new_account_id);
@@ -160,7 +164,7 @@ impl NewAccount {
     }
 }
 
-fn is_account_on_network(
+fn find_network_where_account_exist(
     context: &crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<crate::config::NetworkConfig>> {
@@ -177,7 +181,7 @@ fn is_account_on_network(
                     if optional_account_view.is_some() {
                         return Ok(Some(network.1.clone()));
                     } else {
-                        return Ok(None);
+                        return Ok(None); // невірна обробка. Після переробки get_account_state() переробити. Перейти до перевірки наступної мережі
                     }
                 }
                 Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
