@@ -62,7 +62,7 @@
 Просмотреть сведения об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)) и просмотреть ключи доступа к аккаунту ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***). На примерах ниже показаны варианты применения этих режимов.
 
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
-- [import-account](#import-account---Import-existing-account-(a.k.a.-"sign-in"))
+- [import-account](#import-account---import-existing-account-aka-sign-in)
 - [create-account](#create-account---Create-a-new-account)
 - [delete-account](#delete-account---Delete-an-account)
 - [list-keys](#list-keys---View-a-list-of-access-keys-of-an-account)
