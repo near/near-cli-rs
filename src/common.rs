@@ -435,20 +435,18 @@ pub async fn get_account_state(
             .await;
         match query_view_method_response {
             Ok(rpc_query_response) => {
-                let account_view =
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
-                        result,
-                    ) = rpc_query_response.kind
-                    {
-                        result
-                    } else {
-                        return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
+                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
+                    account_view,
+                ) = rpc_query_response.kind
+                {
+                    return Ok(Some(account_view));
+                } else {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
                         near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
                             near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
                         ),
                     )));
-                    };
-                return Ok(Some(account_view));
+                }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
                 println!("\nAddress information not found: A host or server name was specified, or the network connection <{}> is missing. So now there is no way to check if <{}> exists.",
@@ -465,7 +463,7 @@ pub async fn get_account_state(
                     near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
                 ),
             )) => {
-                break;
+                return Ok(None);
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
                 println!(
@@ -478,7 +476,6 @@ pub async fn get_account_state(
             }
         }
     }
-    Ok(None)
 }
 
 fn need_check_account() -> bool {
@@ -492,10 +489,7 @@ fn need_check_account() -> bool {
         .default(0)
         .interact_on_opt(&Term::stderr())
         .unwrap_or_default();
-    if matches!(select_choose_input, Some(1)) {
-        return false;
-    }
-    true
+    return !matches!(select_choose_input, Some(1));
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
