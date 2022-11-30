@@ -374,8 +374,8 @@ pub async fn get_account_transfer_allowance(
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
-    let account_view = if let Some(account_view) =
-        get_account_state(network_config.clone(), account_id.clone(), block_reference).await?
+    let account_view = if let Ok(account_view) =
+        get_account_state(network_config.clone(), account_id.clone(), block_reference).await
     {
         account_view
     } else {
@@ -420,7 +420,7 @@ pub async fn get_account_state(
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<
-    Option<near_primitives::views::AccountView>,
+    near_primitives::views::AccountView,
     near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
     loop {
@@ -439,7 +439,7 @@ pub async fn get_account_state(
                     account_view,
                 ) = rpc_query_response.kind
                 {
-                    return Ok(Some(account_view));
+                    return Ok(account_view);
                 } else {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
                         near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
@@ -460,14 +460,26 @@ pub async fn get_account_state(
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
                 near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
+                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                        requested_account_id,
+                        block_hash,
+                        block_height,
+                    },
                 ),
             )) => {
-                return Ok(None);
+                return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                            requested_account_id,
+                            block_hash,
+                            block_height,
+                        },
+                    ),
+                ));
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
                 println!(
-                    "Server error request.\nUnable to verify the existence of account <{}> on network <{}>",
+                    "Unable to verify the existence of account <{}> on the <{}> network. Server error request.",
                     account_id, network_config.network_name
                 );
                 if !need_check_account() {
@@ -489,7 +501,7 @@ fn need_check_account() -> bool {
         .default(0)
         .interact_on_opt(&Term::stderr())
         .unwrap_or_default();
-    return !matches!(select_choose_input, Some(1));
+    !matches!(select_choose_input, Some(1))
 }
 
 #[derive(Debug, Clone, serde::Serialize)]

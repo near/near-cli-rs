@@ -82,7 +82,7 @@ impl NewAccount {
         let account_id = if let Some(0) = select_choose_input {
             loop {
                 let network =
-                    find_network_where_account_exist(context, new_account_id.clone().into())?;
+                    find_network_where_account_exist(context, new_account_id.clone().into());
                 if let Some(network_config) = network {
                     println!(
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
@@ -107,14 +107,14 @@ impl NewAccount {
                 } else {
                     let parent_account_id = new_account_id
                         .clone()
-                        .get_owner_account_id_from_sub_account();
+                        .get_parent_account_id_from_sub_account();
                     if !near_primitives::types::AccountId::from(parent_account_id.clone())
                         .is_top_level()
                     {
                         if find_network_where_account_exist(
                             context,
                             parent_account_id.clone().into(),
-                        )?
+                        )
                         .is_none()
                         {
                             println!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
@@ -167,61 +167,21 @@ impl NewAccount {
 fn find_network_where_account_exist(
     context: &crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<Option<crate::config::NetworkConfig>> {
+) -> Option<crate::config::NetworkConfig> {
     for network in context.0.networks.iter() {
-        loop {
-            match tokio::runtime::Runtime::new().unwrap().block_on(
-                crate::common::get_account_state(
-                    network.1.clone(),
-                    new_account_id.clone(),
-                    near_primitives::types::Finality::Final.into(),
-                ),
-            ) {
-                Ok(optional_account_view) => {
-                    if optional_account_view.is_some() {
-                        return Ok(Some(network.1.clone()));
-                    } else {
-                        return Ok(None); // невірна обробка. Після переробки get_account_state() переробити. Перейти до перевірки наступної мережі
-                    }
-                }
-                Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
-                    println!("\nAddress information not found: A host or server name was specified, or the network connection <{}> is missing. So now there is no way to check if <{}> exists.",
-                        network.1.network_name, new_account_id
-                    );
-
-                    let choose_input = vec![
-                        "Yes, I want to check the account ID again.",
-                        "No, I want to keep using this account ID.",
-                    ];
-                    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                        .with_prompt("Do you want to check the account ID again on this network?")
-                        .items(&choose_input)
-                        .default(0)
-                        .interact_on_opt(&Term::stderr())?;
-                    if matches!(select_choose_input, Some(1)) {
-                        break;
-                    }
-                }
-                Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                            ..
-                        },
-                    ),
-                )) => {
-                    break;
-                }
-                Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
-                    println!(
-                        "Unable to verify the existence of account <{}> on network <{}>",
-                        new_account_id, network.1.network_name
-                    );
-                    break;
-                }
-            }
+        if tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(crate::common::get_account_state(
+                network.1.clone(),
+                new_account_id.clone(),
+                near_primitives::types::Finality::Final.into(),
+            ))
+            .is_ok()
+        {
+            return Some(network.1.clone());
         }
     }
-    Ok(None)
+    None
 }
 
 fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
@@ -234,8 +194,5 @@ fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
         .items(&choose_input)
         .default(0)
         .interact_on_opt(&Term::stderr())?;
-    if matches!(select_choose_input, Some(1)) {
-        return Ok(false);
-    }
-    Ok(true)
+    Ok(!matches!(select_choose_input, Some(1)))
 }
