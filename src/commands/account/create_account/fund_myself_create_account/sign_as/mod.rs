@@ -33,15 +33,13 @@ impl SignerAccountId {
         {
             Some(cli_signer_account_id) => cli_signer_account_id,
             None => {
-                let owner_account_id = context
+                let parent_account_id = context
                     .new_account_id
                     .clone()
-                    .get_owner_account_id_from_sub_account();
-                if !owner_account_id.0.is_top_level() {
-                    if optional_owner_account_view(&context, owner_account_id.clone().into())
-                        .is_some()
-                    {
-                        owner_account_id
+                    .get_parent_account_id_from_sub_account();
+                if !parent_account_id.0.is_top_level() {
+                    if is_account_exist(&context, parent_account_id.clone().into()) {
+                        parent_account_id
                     } else {
                         Self::input_signer_account_id(&context)?
                     }
@@ -78,7 +76,7 @@ impl SignerAccountId {
             let signer_account_id: crate::types::account_id::AccountId = Input::new()
                 .with_prompt("What is the signer account ID?")
                 .interact_text()?;
-            if optional_signer_account_view(context, signer_account_id.clone().into())?.is_none() {
+            if !is_account_exist(context, signer_account_id.clone().into()) {
                 println!("\nThe account <{}> does not yet exist.", &signer_account_id);
                 let choose_input = vec![
                     "Yes, I want to enter a new name for signer_account_id.",
@@ -110,7 +108,7 @@ impl SignerAccountId {
 
         if account_properties.new_account_id.as_str().chars().count()
             < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
-            && !account_properties.new_account_id.as_str().contains('.')
+            && account_properties.new_account_id.is_top_level()
         {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount <{}> has <{}> character count. Only REGISTRAR_ACCOUNT_ID account can create new top level accounts that are shorter than MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH (32) characters.",
@@ -158,7 +156,7 @@ impl SignerAccountId {
                 if account_properties
                     .new_account_id
                     .is_sub_account_of(linkdrop_account_id)
-                    || !account_properties.new_account_id.as_str().contains('.')
+                    || account_properties.new_account_id.is_top_level()
                 {
                     (
                         vec![near_primitives::transaction::Action::FunctionCall(
@@ -272,185 +270,79 @@ impl SignerAccountId {
     }
 }
 
-fn optional_owner_account_view(
+fn is_account_exist(
     context: &crate::commands::account::create_account::CreateAccountContext,
     account_id: near_primitives::types::AccountId,
-) -> Option<near_primitives::views::AccountView> {
+) -> bool {
     for network in context.config.networks.iter() {
-        if let Ok(optional_account_view) =
-            tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(crate::common::get_account_state(
-                    network.1.clone(),
-                    account_id.clone(),
-                    near_primitives::types::Finality::Final.into(),
-                ))
+        if tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(crate::common::get_account_state(
+                network.1.clone(),
+                account_id.clone(),
+                near_primitives::types::Finality::Final.into(),
+            ))
+            .is_ok()
         {
-            if optional_account_view.is_some() {
-                return optional_account_view;
-            }
+            return true;
         }
     }
-    None
-}
-
-fn optional_signer_account_view(
-    context: &crate::commands::account::create_account::CreateAccountContext,
-    account_id: near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
-    for network in context.config.networks.iter() {
-        loop {
-            match tokio::runtime::Runtime::new().unwrap().block_on(
-                crate::common::get_account_state(
-                    network.1.clone(),
-                    account_id.clone(),
-                    near_primitives::types::Finality::Final.into(),
-                ),
-            ) {
-                Ok(optional_account_view) => {
-                    if optional_account_view.is_some() {
-                        return Ok(optional_account_view);
-                    } else {
-                        return Ok(None);
-                    }
-                }
-                Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
-                    println!("\nAddress information not found: A host or server name was specified, or the network connection <{}> is missing. So now there is no way to check if <{}> exists.", network.1.network_name, account_id);
-
-                    let choose_input = vec![
-                        "Yes, I want to check the account ID again.",
-                        "No, I don't want to check the account ID again.",
-                    ];
-                    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                        .with_prompt("Do you want to check the account ID again on this network?")
-                        .items(&choose_input)
-                        .default(0)
-                        .interact_on_opt(&Term::stderr())?;
-                    if matches!(select_choose_input, Some(1)) {
-                        break;
-                    }
-                }
-                Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                            ..
-                        },
-                    ),
-                )) => {
-                    break;
-                }
-                Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
-                    println!(
-                        "Unable to verify the existence of account <{}> on network <{}>",
-                        account_id, network.1.network_name
-                    );
-                    break;
-                }
-            }
-        }
-    }
-    Ok(None)
+    false
 }
 
 async fn validate_signer_account_id(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> crate::CliResult {
-    for retries_left in (0..5).rev() {
-        match crate::common::get_account_state(
-            network_config.clone(),
-            account_id.clone(),
-            near_primitives::types::Finality::Final.into(),
-        )
-        .await
-        {
-            Ok(optional_account_view) => {
-                if optional_account_view.is_none() {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                        "\nSigner account <{}> does not yet exist on the network <{}>.",
-                        account_id,
-                        network_config.network_name
-                    ));
-                } else {
-                    return Ok(());
-                }
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                println!("Transport error request. If you want to exit the program, press ^C.\nThe next try to send this request is happening right now. Please wait ...");
-                if retries_left == 0 {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("{err}"));
-                }
-                tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                        requested_account_id,
-                        ..
-                    },
-                ),
-            )) => {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                    "Signer account {requested_account_id} does not exist now."
-                ));
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string()))
-            }
-        }
+    match crate::common::get_account_state(
+        network_config.clone(),
+        account_id.clone(),
+        near_primitives::types::Finality::Final.into(),
+    )
+    .await
+    {
+        Ok(_) => Ok(()),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                    requested_account_id,
+                    ..
+                },
+            ),
+        )) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Signer account <{}> does not currently exist on network <{}>.",
+            requested_account_id,
+            network_config.network_name
+        )),
+        Err(err) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string())),
     }
-    Ok(())
 }
 
 async fn validate_new_account_id(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> crate::CliResult {
-    for retries_left in (0..5).rev() {
-        match crate::common::get_account_state(
+    match crate::common::get_account_state(
             network_config.clone(),
             account_id.clone(),
             near_primitives::types::Finality::Final.into(),
         )
         .await
         {
-            Ok(optional_account_view) => {
-                if optional_account_view.is_some() {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                        "\nAccount <{}> already exists in network <{}>.",
-                        account_id,
-                        network_config.network_name
-                    ));
-                } else {
-                    return Ok(());
-                }
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
-                println!("Transport error request. If you want to exit the program, press ^C.\nThe next try to send this request is happening right now. Please wait ...");
-                if retries_left == 0 {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Failed to lookup address information: nodename nor servname provided, or no network connection. So now there is no way to check if <{}> exists.", account_id));
-                }
-                tokio::time::sleep(std::time::Duration::from_millis(1000)).await
+            Ok(_) => {
+                color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                    "\nAccount <{}> already exists in network <{}>. Therefore, it is not possible to create an account with this name.",
+                    account_id,
+                    network_config.network_name
+                ))
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
                 near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
                     near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
                 ),
             )) => {
-                return Ok(());
+                Ok(())
             }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
-                println!("Server error request. If you want to exit the program, press ^C.\nThe next try to send this request is happening right now. Please wait ...");
-                if retries_left == 0 {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                        "Unable to verify the existence of account <{}> on network <{}>",
-                        account_id,
-                        network_config.network_name
-                    ));
-                }
-                tokio::time::sleep(std::time::Duration::from_millis(1000)).await
-            }
+            Err(err) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string())),
         }
-    }
-    Ok(())
 }
