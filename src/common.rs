@@ -448,9 +448,20 @@ pub async fn get_account_state(
                     )));
                 }
             }
+            Err(
+                err @ near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                            ..
+                        },
+                    ),
+                ),
+            ) => {
+                return Err(err);
+            }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                println!("\nAddress information not found: A host or server name was specified, or the network connection <{}> is missing. So now there is no way to check if <{}> exists.",
-                    network_config.network_name, account_id
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue: {:?}",
+                    account_id, network_config.network_name, err
                 );
                 if !need_check_account() {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
@@ -458,29 +469,9 @@ pub async fn get_account_state(
                     ));
                 }
             }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                        requested_account_id,
-                        block_hash,
-                        block_height,
-                    },
-                ),
-            )) => {
-                return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                            requested_account_id,
-                            block_hash,
-                            block_height,
-                        },
-                    ),
-                ));
-            }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                println!(
-                    "Unable to verify the existence of account <{}> on the <{}> network. Server error request.",
-                    account_id, network_config.network_name
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error: {:?}",
+                    account_id, network_config.network_name, err
                 );
                 if !need_check_account() {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
@@ -491,13 +482,12 @@ pub async fn get_account_state(
 }
 
 fn need_check_account() -> bool {
-    let choose_input = vec![
-        "Yes, I want to check the account ID again.",
-        "No, I want to keep using this account ID.",
-    ];
     let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Do you want to check the account ID again on this network?")
-        .items(&choose_input)
+        .with_prompt("Do you want to try again?")
+        .items(&[
+            "Yes, I want to check the account again.",
+            "No, I want to skip the check and use the specified account ID.",
+        ])
         .default(0)
         .interact_on_opt(&Term::stderr())
         .unwrap_or_default();
