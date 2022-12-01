@@ -14,7 +14,7 @@ pub struct TransactionInfo {
 
 impl TransactionInfo {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let query_view_transaction_status = self.network_config.get_network_config(config).json_rpc_client()?
+        let query_view_transaction_status = self.network_config.get_network_config(config).json_rpc_client()
             .call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
                 transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
                     hash: near_primitives::hash::CryptoHash::from_str(&self.transaction_hash).unwrap(),

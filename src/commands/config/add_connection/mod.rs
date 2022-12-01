@@ -22,7 +22,11 @@ pub struct AddNetworkConnection {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
-    api_key: Option<String>,
+    rpc_api_key: Option<crate::types::api_key::ApiKey>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_from_cli_arg)]
+    #[interactive_clap(skip_default_input_arg)]
+    linkdrop_account_id: Option<crate::types::account_id::AccountId>,
 }
 
 impl AddNetworkConnection {
@@ -67,10 +71,17 @@ impl AddNetworkConnection {
             Some(cli_explorer_transaction_url) => cli_explorer_transaction_url,
             None => Self::input_explorer_transaction_url(&context)?,
         };
-        let api_key: Option<String> =
-            match optional_clap_variant.and_then(|clap_variant| clap_variant.api_key) {
-                Some(cli_api_key) => Some(cli_api_key),
-                None => Self::input_api_key()?,
+        let rpc_api_key: Option<crate::types::api_key::ApiKey> = match optional_clap_variant
+            .clone()
+            .and_then(|clap_variant| clap_variant.rpc_api_key)
+        {
+            Some(cli_api_key) => Some(cli_api_key),
+            None => Self::input_api_key()?,
+        };
+        let linkdrop_account_id: Option<crate::types::account_id::AccountId> =
+            match optional_clap_variant.and_then(|clap_variant| clap_variant.linkdrop_account_id) {
+                Some(cli_linkdrop_account_id) => Some(cli_linkdrop_account_id),
+                None => Self::input_linkdrop_account_id()?,
             };
         Ok(Some(Self {
             network_name,
@@ -78,11 +89,12 @@ impl AddNetworkConnection {
             rpc_url,
             wallet_url,
             explorer_transaction_url,
-            api_key,
+            rpc_api_key,
+            linkdrop_account_id,
         }))
     }
 
-    fn input_api_key() -> color_eyre::eyre::Result<Option<String>> {
+    fn input_api_key() -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
         println!();
         let choose_input = vec![
             "Yes, the RPC endpoint requires API key",
@@ -105,6 +117,16 @@ impl AddNetworkConnection {
         }
     }
 
+    fn input_linkdrop_account_id(
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        let account_id: crate::types::account_id::AccountId = Input::new()
+            .with_prompt(
+                "What is the name of the account that hosts the \"linkdrop\" program? (e.g. on mainnet it is near, and on testnet it is testnet)",
+            )
+            .interact_text()?;
+        Ok(Some(account_id))
+    }
+
     pub async fn process(&self, mut config: crate::config::Config) -> crate::CliResult {
         config.networks.insert(
             self.connection_name.clone(),
@@ -113,7 +135,11 @@ impl AddNetworkConnection {
                 rpc_url: self.rpc_url.0.clone(),
                 wallet_url: self.wallet_url.0.clone(),
                 explorer_transaction_url: self.explorer_transaction_url.0.clone(),
-                api_key: self.api_key.clone(),
+                rpc_api_key: self.rpc_api_key.clone(),
+                linkdrop_account_id: self
+                    .linkdrop_account_id
+                    .clone()
+                    .map(|linkdrop_account_id| linkdrop_account_id.into()),
             },
         );
         println!();

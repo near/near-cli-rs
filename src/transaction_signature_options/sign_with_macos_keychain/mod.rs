@@ -40,13 +40,13 @@ impl SignMacosKeychain {
         &self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_config: crate::config::NetworkConfig,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let keychain =
             security_framework::os::macos::keychain::SecKeychain::default().map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
             })?;
         let query_view_method_response = network_config
-            .json_rpc_client()?
+            .json_rpc_client()
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewAccessKeyList {

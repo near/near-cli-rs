@@ -103,7 +103,7 @@ async fn verify_account_id(
     network_config: crate::config::NetworkConfig,
 ) -> crate::CliResult {
     network_config
-        .json_rpc_client()?
+        .json_rpc_client()
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),
             request: near_primitives::views::QueryRequest::ViewAccessKey {

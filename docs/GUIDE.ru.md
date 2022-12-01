@@ -12,24 +12,24 @@
 
    _near-cli_ предполагает несколько способов подписи созданной транзакции. Рассмотрим подробнее каждый.
 
-    - _sign-with-macos-keychain - Sign the transaction with an macOS keychain_
+    - _sign-with-macos-keychain - Sign the transaction with a key saved in macOS keychain_
 
         Операционная система _MacOS_ имеет собственное приложение _[Keychain Access](https://support.apple.com/ru-ru/guide/keychain-access/welcome/mac)_, с помощью которого _near-cli_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
 
-    - _sign-with-keychain - Sign the transaction with a keychain_
+    - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
 
         _near-cli_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
         Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).  
         Ключи доступа должны находиться в файле _публичный-ключ.json_, расположенном в _/Users/user/.near-credentials/имя-сети/имя-пользователя/_.  
         Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
-            <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-            <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
-                <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
-            </a>
-            </details>
+        <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+        <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
+            <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
+        </a>
+        </details>
 
-    - _sign-with-ledger - Sign the transaction with a ledger_
+    - _sign-with-ledger - Sign the transaction with Ledger Nano device_
 
         Этот вариант предполагает подписание созданной транзакции при помощи леджера.
 
@@ -62,9 +62,8 @@
 Просмотреть сведения об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)) и просмотреть ключи доступа к аккаунту ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***). На примерах ниже показаны варианты применения этих режимов.
 
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
-- [login](#login---Log-in-with-NEAR-Wallet-authorization)
-- [create-subaccount](#create-subaccount---Create-a-new-sub-account)
-- [create-implicit-account](#create-implicit-account---Create-an-implicit-account)
+- [import-account](#import-account---import-existing-account-aka-sign-in)
+- [create-account](#create-account---Create-a-new-account)
 - [delete-account](#delete-account---Delete-an-account)
 - [list-keys](#list-keys---View-a-list-of-access-keys-of-an-account)
 - [add-key](#add-key---Add-an-access-key-to-an-account)
@@ -199,7 +198,7 @@ Number of access keys: 12
 </a>
 </details>
 
-#### login - Log in with NEAR Wallet authorization
+#### import-account - Import existing account (a.k.a. "sign in")
 
 Для авторизации пользователя необходимо ввести в командной строке терминала:
 ```txt
@@ -223,15 +222,23 @@ The file: /Users/frovolod/.near-credentials/testnet/fro_volod.testnet.json alrea
 </a>
 </details>
 
-#### create-subaccount - Create a new sub-account
+#### create-account - Create a new account
 
+- sponsor-by-linkdrop (Находится в разработке)
+- sponsor-by-wallet (testnet only) (Находится в разработке)
+- [fund-myself](#fund-myself---I-would-like-fund-myself-to-cover-the-cost-of-creating-an-account)
+- [fund-later](#fund-later---Create-an-implicit-account)
+
+#### fund-myself - I would like fund myself to cover the cost of creating an account
+
+С помощью этой команды можно создать как суб-аккаунт, так и аккаунт с коротким именем, например, alice.near или alice.testnet (в сети testnet).  
 Для создания суб-аккаунта необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
-    create-subaccount 2.fro_volod.testnet \
-    '10 NEAR' \
+    create-account fund-myself new.fro_volod.testnet '1 NEAR' \
     autogenerate-new-keypair \
     save-to-keychain \
+    sign-as \
     network-config testnet \
     sign-with-keychain \
     send
@@ -241,23 +248,55 @@ The file: /Users/frovolod/.near-credentials/testnet/fro_volod.testnet.json alrea
 
 ```txt
 Transaction sent ...
-Successful transaction
-New account <2.fro_volod.testnet> has been successfully created.
-<fro_volod.testnet> has transferred 10 NEAR to <2.fro_volod.testnet> successfully.
-Added access key = ed25519:EvGEHtEdEqsywGcGbegLpm5JQvqbv1Bo19jUa8jidqZc to 2.fro_volod.testnet.
-Transaction ID: 82i7DWkAvVQFM2C1afaYhyPuZmr5DVeC4qQfM6D5V7Yt
+New account <new.fro_volod.testnet> created successfully.
+Transaction ID: DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/82i7DWkAvVQFM2C1afaYhyPuZmr5DVeC4qQfM6D5V7Yt
+https://explorer.testnet.near.org/transactions/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
+
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json 
+The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet.json"
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/NjpfOJDMlOrr7chIyYrWCZAzH?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/NjpfOJDMlOrr7chIyYrWCZAzH.png" width="836"/>
+<a href="https://asciinema.org/a/62q0BKhCtXV8hQ3sxDpnO1CQl?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/62q0BKhCtXV8hQ3sxDpnO1CQl.png" width="836"/>
 </a>
 </details>
 
-#### create-implicit-account - Create an implicit-account
+Для создания аккаунта с коротким именем необходимо ввести в командной строке терминала:
+```txt
+./near-cli account \
+    create-account fund-myself new7.testnet '0.1 NEAR' \
+    autogenerate-new-keypair \
+    save-to-keychain \
+    sign-as fro_volod.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Transaction sent ...
+New account <new7.testnet> created successfully.
+Transaction ID: GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
+
+The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new7.testnet/ed25519_EX1qK1S1T4WxXJFLH7qZvKxnGQtcKfEEsiA4BNxAZ6mP.json"
+The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already exists! Therefore it was not overwritten.
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/MxmfDRdKPeP0VdXUiENmV2UXr?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/MxmfDRdKPeP0VdXUiENmV2UXr.png" width="836"/>
+</a>
+</details>
+
+#### fund-later - Create an implicit-account
 
 - [use-auto-generation](#use-auto-generation---Use-auto-generation-to-create-an-implicit-account)
 - [use-ledger](#use-ledger---Use-ledger-to-create-an-implicit-account)
@@ -268,7 +307,8 @@ https://explorer.testnet.near.org/transactions/82i7DWkAvVQFM2C1afaYhyPuZmr5DVeC4
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
-    create-implicit-account \
+    create-account \
+    fund-later \
     use-auto-generation \
     save-to-folder /Users/frovolod/.near-credentials/implicit
 ```
@@ -276,13 +316,13 @@ https://explorer.testnet.near.org/transactions/82i7DWkAvVQFM2C1afaYhyPuZmr5DVeC4
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-The file "/Users/frovolod/.near-credentials/implicit/38a078c59b84e49e01b42ae79c77992b86dd1204c79cac688401a33045199441.json" was saved successfully
+The file "/Users/frovolod/.near-credentials/implicit/1573066d3fa7a2d56357aa5ddbc84295d94c61590390000981f5900b04e2f55f.json" was saved successfully
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/wvItMyT51nBKAbnlhW7D13reT?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/wvItMyT51nBKAbnlhW7D13reT.png" width="836"/>
+<a href="https://asciinema.org/a/qPqMPP3tKwliWw2cu5vwCRfJi?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/qPqMPP3tKwliWw2cu5vwCRfJi.png" width="836"/>
 </a>
 </details>
 
@@ -292,7 +332,8 @@ The file "/Users/frovolod/.near-credentials/implicit/38a078c59b84e49e01b42ae79c7
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
-    create-implicit-account \
+    create-account \
+    fund-later \
     use-ledger \
     save-to-folder /Users/frovolod/.near-credentials/implicit/ledger
 ```
@@ -1062,18 +1103,29 @@ network_name = "mainnet"
 rpc_url = "https://archival-rpc.mainnet.near.org/"
 wallet_url = "https://wallet.mainnet.near.org/"
 explorer_transaction_url = "https://explorer.mainnet.near.org/transactions/"
+linkdrop_account_id = "near"
 
 [networks.testnet]
 network_name = "testnet"
 rpc_url = "https://archival-rpc.testnet.near.org/"
 wallet_url = "https://wallet.testnet.near.org/"
 explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+linkdrop_account_id = "testnet"
 
 [networks.shardnet]
 network_name = "shardnet"
 rpc_url = "https://rpc.shardnet.near.org/"
 wallet_url = "https://wallet.shardnet.near.org/"
 explorer_transaction_url = "https://explorer.shardnet.near.org/transactions/"
+linkdrop_account_id = "shardnet"
+
+[networks.pagoda-testnet]
+network_name = "pagoda-testnet"
+rpc_url = "https://near-testnet.api.pagoda.co/rpc/v1/"
+rpc_api_key = "x-api-key: c0a25b3c-39c2-4f62-a621-50e208b88e64"
+wallet_url = "https://wallet.testnet.near.org/"
+explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+linkdrop_account_id = "testnet"
 ```
 </details>
 
@@ -1083,12 +1135,13 @@ explorer_transaction_url = "https://explorer.shardnet.near.org/transactions/"
 ```txt
 ./near-cli config \
     add-connection \
-        --network-name testnet \
+        --network-name pagoda-testnet \
         --connection-name pagoda-testnet \
         --rpc-url https://near-testnet.api.pagoda.co/rpc/v1/ \
         --wallet-url https://wallet.testnet.near.org/ \
         --explorer-transaction-url https://explorer.testnet.near.org/transactions/ \
-        --api-key c0a25b3c-39c2-4f62-a621-50e208b88e64
+        --rpc-api-key 'c0a25b3c-39c2-4f62-a621-50e208b88e64' \
+        --linkdrop-account-id testnet
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>

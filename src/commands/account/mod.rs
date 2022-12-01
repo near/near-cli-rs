@@ -1,13 +1,14 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod add_key;
-mod create_implicit_account;
-mod create_subaccount;
+mod create_account;
 mod delete_account;
 mod delete_key;
 mod import_account;
 mod list_keys;
 mod view_account_summary;
+
+pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -37,14 +38,9 @@ pub enum AccountActions {
     ))]
     /// Import existing account (a.k.a. "sign in")
     ImportAccount(self::import_account::Login),
-    #[strum_discriminants(strum(message = "create-subaccount       - Create a new sub-account"))]
-    /// Create a new sub-account
-    CreateSubaccount(self::create_subaccount::SubAccount),
-    #[strum_discriminants(strum(
-        message = "create-implicit-account - Create an implicit-account"
-    ))]
-    /// Create an implicit-account
-    CreateImplicitAccount(self::create_implicit_account::ImplicitAccount),
+    #[strum_discriminants(strum(message = "create-account          - Create a new account"))]
+    /// Create a new account
+    CreateAccount(self::create_account::CreateAccount),
     #[strum_discriminants(strum(message = "delete-account          - Delete an account"))]
     /// Delete an account
     DeleteAccount(self::delete_account::DeleteAccount),
@@ -73,8 +69,7 @@ impl AccountActions {
             }
             Self::ListKeys(view_list_keys) => view_list_keys.process(config).await,
             Self::DeleteAccount(delete_account) => delete_account.process(config).await,
-            Self::CreateSubaccount(sub_account) => sub_account.process(config).await,
-            Self::CreateImplicitAccount(implicit_account) => implicit_account.process().await,
+            Self::CreateAccount(account) => account.process(config).await,
             Self::AddKey(add_key_command) => add_key_command.process(config).await,
             Self::DeleteKey(delete_key_command) => delete_key_command.process(config).await,
             Self::ImportAccount(login) => login.process(config).await,

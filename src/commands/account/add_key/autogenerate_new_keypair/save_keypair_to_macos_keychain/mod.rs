@@ -23,11 +23,18 @@ impl SaveKeypairToMacosKeychain {
         .map_err(|err| {
             color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
         })?;
-        crate::transaction_signature_options::sign_with(
+        match crate::transaction_signature_options::sign_with(
             self.network_config.clone(),
             prepopulated_unsigned_transaction,
-            config,
+            config.clone(),
         )
-        .await
+        .await?
+        {
+            Some(transaction_info) => crate::common::print_transaction_status(
+                transaction_info,
+                self.network_config.get_network_config(config),
+            ),
+            None => Ok(()),
+        }
     }
 }

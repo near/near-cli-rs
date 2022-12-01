@@ -51,7 +51,7 @@ impl SignKeychain {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_config: crate::config::NetworkConfig,
         credentials_home_dir: std::path::PathBuf,
-    ) -> crate::CliResult {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let file_name = format!("{}.json", prepopulated_unsigned_transaction.signer_id);
         let mut path = std::path::PathBuf::from(&credentials_home_dir);
 
@@ -64,7 +64,7 @@ impl SignKeychain {
                 path
             } else {
                 let query_view_method_response = network_config
-                    .json_rpc_client()?
+                    .json_rpc_client()
                     .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                         block_reference: near_primitives::types::Finality::Final.into(),
                         request: near_primitives::views::QueryRequest::ViewAccessKeyList {

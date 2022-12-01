@@ -11,7 +11,7 @@ use near_primitives::{
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
-use dialoguer::{theme::ColorfulTheme, Select};
+use dialoguer::{console::Term, theme::ColorfulTheme, Select};
 use strum::IntoEnumIterator;
 
 #[derive(
@@ -149,7 +149,7 @@ impl std::str::FromStr for NearBalance {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
-        let currency = s.trim().trim_start_matches(&num).trim().to_uppercase();
+        let currency = s.trim().trim_start_matches(num).trim().to_uppercase();
         let yoctonear_amount = match currency.as_str() {
             "N" | "NEAR" => {
                 let res_split: Vec<&str> = num.split('.').collect();
@@ -231,7 +231,7 @@ impl std::str::FromStr for NearGas {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
-        let currency = s.trim().trim_start_matches(&num).trim().to_uppercase();
+        let currency = s.trim().trim_start_matches(num).trim().to_uppercase();
         let number = match currency.as_str() {
             "T" | "TGAS" | "TERAGAS" => NearGas::into_tera_gas(num)?,
             "GIGAGAS" | "GGAS" => NearGas::into_tera_gas(num)? / 1000,
@@ -374,8 +374,8 @@ pub async fn get_account_transfer_allowance(
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
-    let account_view = if let Some(account_view) =
-        get_account_state(network_config.clone(), account_id.clone(), block_reference).await?
+    let account_view = if let Ok(account_view) =
+        get_account_state(network_config.clone(), account_id.clone(), block_reference).await
     {
         account_view
     } else {
@@ -388,7 +388,7 @@ pub async fn get_account_transfer_allowance(
         });
     };
     let storage_amount_per_byte = network_config
-        .json_rpc_client()?
+        .json_rpc_client()
         .call(
             near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
                 block_reference: near_primitives::types::BlockReference::Finality(
@@ -419,34 +419,79 @@ pub async fn get_account_state(
     network_config: crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
-) -> color_eyre::eyre::Result<Option<near_primitives::views::AccountView>> {
-    let json_rpc_client = match block_reference {
-        BlockReference::Finality(_) | BlockReference::BlockId(_) => {
-            network_config.json_rpc_client()?
-        }
-        BlockReference::SyncCheckpoint(_) => todo!(),
-    };
-    let query_view_method_response = json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccount { account_id },
-        })
-        .await;
-    match query_view_method_response {
-        Ok(rpc_query_response) => {
-            let account_view =
+) -> color_eyre::eyre::Result<
+    near_primitives::views::AccountView,
+    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+> {
+    loop {
+        let query_view_method_response = network_config
+            .json_rpc_client()
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: block_reference.clone(),
+                request: near_primitives::views::QueryRequest::ViewAccount {
+                    account_id: account_id.clone(),
+                },
+            })
+            .await;
+        match query_view_method_response {
+            Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
-                    result,
+                    account_view,
                 ) = rpc_query_response.kind
                 {
-                    result
+                    return Ok(account_view);
                 } else {
-                    return Err(color_eyre::Report::msg("Error call result".to_string()));
-                };
-            Ok(Some(account_view))
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
+                        near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
+                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
+                        ),
+                    )));
+                }
+            }
+            Err(
+                err @ near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                            ..
+                        },
+                    ),
+                ),
+            ) => {
+                return Err(err);
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue: {:?}",
+                    account_id, network_config.network_name, err
+                );
+                if !need_check_account() {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
+                        err,
+                    ));
+                }
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error: {:?}",
+                    account_id, network_config.network_name, err
+                );
+                if !need_check_account() {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
+                }
+            }
         }
-        Err(_) => Ok(None),
     }
+}
+
+fn need_check_account() -> bool {
+    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Do you want to try again?")
+        .items(&[
+            "Yes, I want to check the account again.",
+            "No, I want to skip the check and use the specified account ID.",
+        ])
+        .default(0)
+        .interact_on_opt(&Term::stderr())
+        .unwrap_or_default();
+    !matches!(select_choose_input, Some(1))
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -520,7 +565,7 @@ pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     };
 
     let implicit_account_id =
-        near_primitives::types::AccountId::try_from(hex::encode(&secret_keypair.public))?;
+        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
     let public_key_str = format!(
         "ed25519:{}",
         bs58::encode(&secret_keypair.public).into_string()
@@ -643,7 +688,6 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
 fn print_value_successful_transaction(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
 ) {
-    println!("Successful transaction");
     for action in transaction_info.transaction.actions {
         match action {
             near_primitives::views::ActionView::CreateAccount => {
@@ -1014,7 +1058,7 @@ pub fn print_transaction_error(tx_execution_error: near_primitives::errors::TxEx
 pub fn print_transaction_status(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
     network_config: crate::config::NetworkConfig,
-) {
+) -> crate::CliResult {
     match transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
@@ -1029,6 +1073,7 @@ pub fn print_transaction_status(
         id=transaction_info.transaction_outcome.id,
         path=network_config.explorer_transaction_url
     );
+    Ok(())
 }
 
 #[cfg(target_os = "macos")]
@@ -1036,7 +1081,7 @@ pub async fn save_access_key_to_macos_keychain(
     network_config: crate::config::NetworkConfig,
     key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
-) -> crate::CliResult {
+) -> color_eyre::eyre::Result<String> {
     let buf = serde_json::to_string(&key_pair_properties)?;
     let keychain = security_framework::os::macos::keychain::SecKeychain::default()
         .map_err(|err| color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err)))?;
@@ -1053,8 +1098,7 @@ pub async fn save_access_key_to_macos_keychain(
         .map_err(|err| {
             color_eyre::Report::msg(format!("Failed to save password to keychain: {:?}", err))
         })?;
-    println!("The data for the access key is saved in macOS Keychain");
-    Ok(())
+    Ok("The data for the access key is saved in macOS Keychain".to_string())
 }
 
 pub async fn save_access_key_to_keychain(
@@ -1062,7 +1106,7 @@ pub async fn save_access_key_to_keychain(
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
-) -> crate::CliResult {
+) -> color_eyre::eyre::Result<String> {
     let buf = serde_json::to_string(&key_pair_properties)?;
     let dir_name = network_config.network_name.as_str();
     let file_with_key_name: std::path::PathBuf = format!(
@@ -1079,20 +1123,14 @@ pub async fn save_access_key_to_keychain(
         .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
         .write(buf.as_bytes())
         .map_err(|err| color_eyre::Report::msg(format!("Failed to write to file: {:?}", err)))?;
-    println!(
-        "The data for the access key is saved in a file {:?}",
-        &path_with_key_name
-    );
 
     let file_with_account_name: std::path::PathBuf = format!("{}.json", account_id).into();
     let mut path_with_account_name = std::path::PathBuf::from(&credentials_home_dir);
     path_with_account_name.push(dir_name);
     path_with_account_name.push(file_with_account_name);
     if path_with_account_name.exists() {
-        println!(
-            "The file: {} already exists! Therefore it was not overwritten.",
-            &path_with_account_name.display()
-        );
+        Ok(format!("The data for the access key is saved in a file {} \nThe file: {} already exists! Therefore it was not overwritten.",
+        &path_with_key_name.display(), &path_with_account_name.display()))
     } else {
         std::fs::File::create(&path_with_account_name)
             .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
@@ -1100,12 +1138,9 @@ pub async fn save_access_key_to_keychain(
             .map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
             })?;
-        println!(
-            "The data for the access key is saved in a file {:?}",
-            &path_with_account_name
-        );
-    };
-    Ok(())
+        Ok(format!("The data for the access key is saved in a file {} \nThe data for the access key is saved in a file {}",
+        &path_with_key_name.display(), &path_with_account_name.display()))
+    }
 }
 
 pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {
@@ -1210,7 +1245,7 @@ pub async fn display_account_info(
     block_ref: BlockReference,
 ) -> crate::CliResult {
     let resp = network_config
-        .json_rpc_client()?
+        .json_rpc_client()
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_ref,
             request: QueryRequest::ViewAccount {
@@ -1257,7 +1292,7 @@ pub async fn display_access_key_list(
     block_ref: BlockReference,
 ) -> crate::CliResult {
     let resp = network_config
-        .json_rpc_client()?
+        .json_rpc_client()
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_ref,
             request: QueryRequest::ViewAccessKeyList { account_id },
