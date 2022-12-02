@@ -41,22 +41,21 @@ async fn login(
     let account_id = loop {
         let account_id_from_cli = input_account_id()?;
         println!();
-        if verify_account_id(
+        if crate::common::verify_account_access_key(
             account_id_from_cli.clone(),
             public_key.clone(),
             network_config.clone(),
         )
-        .await?
-        .is_none()
+        .await
+        .is_err()
         {
             println!("\nIt is currently not possible to verify the account access key.\nYou may not be logged in to {} or you may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n", &url.as_str());
-            let choose_input = vec![
-                "Yes, I want to re-enter the account_id.",
-                "No, I want to save the access key information.",
-            ];
             let select_choose_input = Select::with_theme(&ColorfulTheme::default())
                 .with_prompt("Would you like to re-enter the account_id?")
-                .items(&choose_input)
+                .items(&[
+                    "Yes, I want to re-enter the account_id.",
+                    "No, I want to save the access key information.",
+                ])
                 .default(0)
                 .interact_on_opt(&Term::stderr())?;
             if matches!(select_choose_input, Some(1)) {
@@ -80,67 +79,6 @@ fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::Accoun
     Ok(Input::new()
         .with_prompt("Enter account ID")
         .interact_text()?)
-}
-
-async fn verify_account_id(
-    account_id: near_primitives::types::AccountId,
-    public_key: near_crypto::PublicKey,
-    network_config: crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<Option<near_primitives::views::AccessKeyView>> {
-    let _is_access_key = loop {
-        match network_config
-            .json_rpc_client()
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewAccessKey {
-                    account_id: account_id.clone(),
-                    public_key: public_key.clone(),
-                },
-            })
-            .await
-        {
-            Ok(rpc_query_response) => {
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =
-                    rpc_query_response.kind
-                {
-                    return Ok(Some(result));
-                } else {
-                    return Ok(None);
-                }
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
-                println!("\nAddress information not found: A host or server name was specified, or the network connection <{}> is missing. So now there is no way to check if <{}> exists.", network_config.network_name, account_id);
-
-                let choose_input = vec![
-                    "Yes, I want to check the account_id again.",
-                    "No, I don't want to check the account_id again.",
-                ];
-                let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                    .with_prompt("Do you want to check the account_id again on this network?")
-                    .items(&choose_input)
-                    .default(0)
-                    .interact_on_opt(&Term::stderr())?;
-                if matches!(select_choose_input, Some(1)) {
-                    break false;
-                }
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-                ),
-            )) => {
-                break false;
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(_)) => {
-                println!(
-                    "Unable to verify the existence of account <{}> on network <{}>",
-                    account_id, network_config.network_name
-                );
-                break false;
-            }
-        }
-    };
-    Ok(None)
 }
 
 fn save_access_key(
