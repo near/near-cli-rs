@@ -307,7 +307,6 @@ dependencies = [
 
 [[package]]
 name = "clap"
-
 version = "4.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0acbd8d28a0a60d7108d7ae850af6ba34cf2d1257fc646980e5f97ce14275966"
@@ -1114,7 +1113,6 @@ dependencies = [
  "rustix",
  "windows-sys 0.42.0",
 ]
-
 
 [[package]]
 name = "itoa"

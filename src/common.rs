@@ -432,7 +432,8 @@ pub async fn verify_account_access_key(
                     account_id: account_id.clone(),
                     public_key: public_key.clone(),
                 },
-            }).await
+            })
+            .await
         {
             Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =
