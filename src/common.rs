@@ -460,8 +460,8 @@ pub async fn verify_account_access_key(
                 return Err(err);
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue:\n{:?}",
-                    account_id, network_config.network_name, err
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
+                    account_id, network_config.network_name
                 );
                 if !need_check_account() {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
@@ -470,8 +470,8 @@ pub async fn verify_account_access_key(
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error:\n{:?}",
-                    account_id, network_config.network_name, err
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
+                    account_id, network_config.network_name
                 );
                 if !need_check_account() {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
@@ -526,8 +526,8 @@ pub async fn get_account_state(
                 return Err(err);
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue:\n{:?}",
-                    account_id, network_config.network_name, err
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
+                    account_id, network_config.network_name
                 );
                 if !need_check_account() {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
@@ -536,8 +536,8 @@ pub async fn get_account_state(
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error:\n{:?}",
-                    account_id, network_config.network_name, err
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
+                    account_id, network_config.network_name
                 );
                 if !need_check_account() {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
