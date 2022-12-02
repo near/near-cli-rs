@@ -451,7 +451,7 @@ pub async fn verify_account_access_key(
             Err(
                 err @ near_jsonrpc_client::errors::JsonRpcError::ServerError(
                     near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccessKey {
                             ..
                         },
                     ),
