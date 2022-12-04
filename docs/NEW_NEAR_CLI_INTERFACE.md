@@ -145,8 +145,11 @@ local-keys
 ```
 
 Transaction signature options:
+  * `sign-with-macos-keychain`
   * `sign-with-keychain`
   * `sign-with-ledger`
+  * `sign-with-access-key-file <path.json>`
+  * `sign-with-seed-phrase <seed-phrase> --hd-path "m/44'/397'/0'"`
   * `sign-with-plaintext-private-key "ed25519:..."`
 
 ### Top-level `Core NEAR CLI` flags
