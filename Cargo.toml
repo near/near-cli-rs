@@ -1,6 +1,6 @@
 [package]
 name = "near-cli"
-version = "0.2.0-pre.4"
+version = "0.2.0"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
 edition = "2021"
 
