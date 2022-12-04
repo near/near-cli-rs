@@ -415,6 +415,72 @@ pub async fn get_account_transfer_allowance(
     })
 }
 
+pub async fn verify_account_access_key(
+    account_id: near_primitives::types::AccountId,
+    public_key: near_crypto::PublicKey,
+    network_config: crate::config::NetworkConfig,
+) -> color_eyre::eyre::Result<
+    near_primitives::views::AccessKeyView,
+    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+> {
+    loop {
+        match network_config
+            .json_rpc_client()
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: near_primitives::types::Finality::Final.into(),
+                request: near_primitives::views::QueryRequest::ViewAccessKey {
+                    account_id: account_id.clone(),
+                    public_key: public_key.clone(),
+                },
+            })
+            .await
+        {
+            Ok(rpc_query_response) => {
+                if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =
+                    rpc_query_response.kind
+                {
+                    return Ok(result);
+                } else {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
+                        near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
+                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
+                        ),
+                    )));
+                }
+            }
+            Err(
+                err @ near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccessKey {
+                            ..
+                        },
+                    ),
+                ),
+            ) => {
+                return Err(err);
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
+                    account_id, network_config.network_name
+                );
+                if !need_check_account() {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
+                        err,
+                    ));
+                }
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
+                    account_id, network_config.network_name
+                );
+                if !need_check_account() {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
+                }
+            }
+        }
+    }
+}
+
 pub async fn get_account_state(
     network_config: crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
@@ -460,8 +526,8 @@ pub async fn get_account_state(
                 return Err(err);
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue: {:?}",
-                    account_id, network_config.network_name, err
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
+                    account_id, network_config.network_name
                 );
                 if !need_check_account() {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
@@ -470,8 +536,8 @@ pub async fn get_account_state(
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error: {:?}",
-                    account_id, network_config.network_name, err
+                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
+                    account_id, network_config.network_name
                 );
                 if !need_check_account() {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
@@ -1077,7 +1143,7 @@ pub fn print_transaction_status(
 }
 
 #[cfg(target_os = "macos")]
-pub async fn save_access_key_to_macos_keychain(
+pub fn save_access_key_to_macos_keychain(
     network_config: crate::config::NetworkConfig,
     key_pair_properties: crate::common::KeyPairProperties,
     account_id: &str,
@@ -1101,7 +1167,7 @@ pub async fn save_access_key_to_macos_keychain(
     Ok("The data for the access key is saved in macOS Keychain".to_string())
 }
 
-pub async fn save_access_key_to_keychain(
+pub fn save_access_key_to_keychain(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties: crate::common::KeyPairProperties,

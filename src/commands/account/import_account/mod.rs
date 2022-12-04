@@ -1,4 +1,4 @@
-use dialoguer::Input;
+use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -38,8 +38,55 @@ async fn login(
     let public_key: near_crypto::PublicKey =
         near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
 
-    let account_id = get_account_from_cli(public_key, network_config.clone()).await?;
+    let account_id = loop {
+        let account_id_from_cli = input_account_id()?;
+        println!();
+        if crate::common::verify_account_access_key(
+            account_id_from_cli.clone(),
+            public_key.clone(),
+            network_config.clone(),
+        )
+        .await
+        .is_err()
+        {
+            println!("\nIt is currently not possible to verify the account access key.\nYou may not be logged in to {} or you may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n", &url.as_str());
+            let select_choose_input = Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("Would you like to re-enter the account_id?")
+                .items(&[
+                    "Yes, I want to re-enter the account_id.",
+                    "No, I want to save the access key information.",
+                ])
+                .default(0)
+                .interact_on_opt(&Term::stderr())?;
+            if matches!(select_choose_input, Some(1)) {
+                break account_id_from_cli;
+            }
+        } else {
+            break account_id_from_cli;
+        }
+    };
+    save_access_key(
+        account_id,
+        key_pair_properties,
+        network_config,
+        credentials_home_dir,
+    )?;
 
+    Ok(())
+}
+
+fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+    Ok(Input::new()
+        .with_prompt("Enter account ID")
+        .interact_text()?)
+}
+
+fn save_access_key(
+    account_id: near_primitives::types::AccountId,
+    key_pair_properties: crate::common::KeyPairProperties,
+    network_config: crate::config::NetworkConfig,
+    credentials_home_dir: std::path::PathBuf,
+) -> crate::CliResult {
     #[cfg(target_os = "macos")]
     {
         let items = vec![
@@ -52,71 +99,30 @@ async fn login(
             .default(0)
             .interact()?;
         if selection == 0 {
-            crate::common::save_access_key_to_macos_keychain(
+            let storage_message = crate::common::save_access_key_to_macos_keychain(
                 network_config,
                 key_pair_properties,
                 &account_id,
             )
-            .await
             .map_err(|err| {
                 color_eyre::Report::msg(format!(
                     "Failed to save the access key to the keychain: {}",
                     err
                 ))
             })?;
+            println!("{}", storage_message);
             return Ok(());
         }
     }
-    crate::common::save_access_key_to_keychain(
+    let storage_message = crate::common::save_access_key_to_keychain(
         network_config,
         credentials_home_dir,
-        key_pair_properties.clone(),
+        key_pair_properties,
         &account_id,
     )
-    .await
     .map_err(|err| {
         color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
     })?;
-    Ok(())
-}
-
-async fn get_account_from_cli(
-    public_key: near_crypto::PublicKey,
-    network_config: crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-    let account_id = input_account_id()?;
-    verify_account_id(account_id.clone(), public_key, network_config)
-        .await
-        .map_err(|err| color_eyre::Report::msg(format!("Failed account ID: {:?}", err)))?;
-    Ok(account_id)
-}
-
-fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-    Ok(Input::new()
-        .with_prompt("Enter account ID")
-        .interact_text()?)
-}
-
-async fn verify_account_id(
-    account_id: near_primitives::types::AccountId,
-    public_key: near_crypto::PublicKey,
-    network_config: crate::config::NetworkConfig,
-) -> crate::CliResult {
-    network_config
-        .json_rpc_client()
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::ViewAccessKey {
-                account_id,
-                public_key,
-            },
-        })
-        .await
-        .map_err(|err| {
-            color_eyre::Report::msg(format!(
-                "Failed to fetch query for view access key: {:?}",
-                err
-            ))
-        })?;
+    println!("{}", storage_message);
     Ok(())
 }
