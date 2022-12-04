@@ -41,6 +41,17 @@ account
         - transaction signature options here (see below)
     - fund-later <initial-balance>  (implicit account creation)
 
+  - import-account (a.k.a "log in" / "sign in")
+    - from-web-wallet
+      - save-access-key-to-macos-keychain network <"mainnet"|"testnet">
+      - save-access-key-to-keychain network <"mainnet"|"testnet">
+    - from-seed-phrase <seed-phrase> --hd-path "m/44'/397'/0'"
+      - save-access-key-to-macos-keychain network <"mainnet"|"testnet">
+      - save-access-key-to-keychain network <"mainnet"|"testnet">
+    - from-private-key <private-key>
+      - save-access-key-to-macos-keychain network <"mainnet"|"testnet">
+      - save-access-key-to-keychain network <"mainnet"|"testnet">
+
   - delete-account <account-id> beneficiary <beneficiary-account-id> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
 
@@ -59,9 +70,6 @@ account
         - transaction signature options here (see below)
     - grant-function-call-access --receiver-account-id <account-id> --method-names 'comma,separated,list' --allowance '0.25NEAR'
       - (use the same follow-up parameters as for `grant-full-access`)
-
-  - import-account (a.k.a "log in" / "sign in")
-    - network <"mainnet"|"testnet">
 
   - delete-key <account-id> <public-key> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
