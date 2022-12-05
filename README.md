@@ -5,7 +5,7 @@ near-cli is your **human-friendly** companion that helps to interact with [NEAR 
 Just run `near-cli` and let it guide you through!
 
 <p>
-  <img src="docs/media/view-account.svg" alt="" width="1200">
+  <img src="docs/media/create-account.svg" alt="" width="1200">
 </p>
 
 ## Install
