@@ -469,7 +469,7 @@ In order to execute this command, in the terminal command line type:
 ./near-cli account \
     add-key fro_volod.testnet \
     grant-function-call-access \
-        --allowance '10 NEAR' \
+        --allowance '1 NEAR' \
         --receiver-account-id 'meta.pool.testnet' \
         --method-names 'set_a, set_b' \
     autogenerate-new-keypair \
