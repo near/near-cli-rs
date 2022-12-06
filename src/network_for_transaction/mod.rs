@@ -12,7 +12,6 @@ impl NetworkForTransactionArgs {
     fn input_network_name(context: &crate::GlobalContext) -> color_eyre::eyre::Result<String> {
         crate::common::input_network_name(context)
     }
-
     pub fn get_network_config(
         &self,
         config: crate::config::Config,

@@ -15,10 +15,16 @@ pub struct SignMacosKeychain {
 }
 
 impl SignMacosKeychain {
-    pub fn from_cli(
+    type FromCliContext = crate::GlobalContext;
+    type FromCliError = color_eyre::eyre::Error;
+
+    fn from_cli(
         optional_clap_variant: Option<<SignMacosKeychain as interactive_clap::ToCli>::CliVariant>,
-        _context: crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<Self>> {
+        _context: Self::FromCliContext,
+    ) -> Result<Option<Self>, Self::FromCliError>
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
         let nonce: Option<u64> = optional_clap_variant
             .as_ref()
             .and_then(|clap_variant| clap_variant.nonce);

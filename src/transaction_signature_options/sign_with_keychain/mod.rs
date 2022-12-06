@@ -24,11 +24,17 @@ pub struct AccountKeyPair {
     pub private_key: near_crypto::SecretKey,
 }
 
-impl SignKeychain {
-    pub fn from_cli(
+impl interactive_clap::FromCli for SignKeychain {
+    type FromCliContext = crate::GlobalContext;
+    type FromCliError = color_eyre::eyre::Error;
+
+    fn from_cli(
         optional_clap_variant: Option<<SignKeychain as interactive_clap::ToCli>::CliVariant>,
-        _context: crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<Self>> {
+        _context: Self::FromCliContext,
+    ) -> Result<Option<Self>, Self::FromCliError>
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
         let nonce: Option<u64> = optional_clap_variant
             .as_ref()
             .and_then(|clap_variant| clap_variant.nonce);
