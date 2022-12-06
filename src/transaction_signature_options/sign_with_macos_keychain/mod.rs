@@ -14,7 +14,7 @@ pub struct SignMacosKeychain {
     pub submit: Option<super::Submit>,
 }
 
-impl SignMacosKeychain {
+impl interactive_clap::FromCli for SignMacosKeychain {
     type FromCliContext = crate::GlobalContext;
     type FromCliError = color_eyre::eyre::Error;
 
