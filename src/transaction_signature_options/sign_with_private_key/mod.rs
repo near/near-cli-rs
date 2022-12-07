@@ -24,11 +24,17 @@ pub struct SignPrivateKey {
     pub submit: Option<super::Submit>,
 }
 
-impl SignPrivateKey {
-    pub fn from_cli(
+impl interactive_clap::FromCli for SignPrivateKey {
+    type FromCliContext = crate::GlobalContext;
+    type FromCliError = color_eyre::eyre::Error;
+
+    fn from_cli(
         optional_clap_variant: Option<<SignPrivateKey as interactive_clap::ToCli>::CliVariant>,
-        _context: crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<Self>> {
+        _context: Self::FromCliContext,
+    ) -> Result<Option<Self>, Self::FromCliError>
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
         let signer_public_key: crate::types::public_key::PublicKey = match optional_clap_variant
             .as_ref()
             .and_then(|clap_variant| clap_variant.signer_public_key.clone())

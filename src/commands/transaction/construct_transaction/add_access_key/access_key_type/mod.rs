@@ -43,11 +43,17 @@ pub struct FunctionCallType {
     access_key_mode: super::AccessKeyMode,
 }
 
-impl FunctionCallType {
-    pub fn from_cli(
+impl interactive_clap::FromCli for FunctionCallType {
+    type FromCliContext = crate::GlobalContext;
+    type FromCliError = color_eyre::eyre::Error;
+
+    fn from_cli(
         optional_clap_variant: Option<<FunctionCallType as interactive_clap::ToCli>::CliVariant>,
-        context: crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<Self>> {
+        context: Self::FromCliContext,
+    ) -> Result<Option<Self>, Self::FromCliError>
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
         let allowance: Option<crate::common::NearBalance> = match optional_clap_variant
             .clone()
             .and_then(|clap_variant| clap_variant.allowance)

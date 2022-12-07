@@ -1,5 +1,7 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use common::{try_external_subcommand_execution, CliResult};
+use interactive_clap::FromCli;
+use interactive_clap::ToCliArgs;
 
 mod commands;
 mod common;

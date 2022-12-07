@@ -22,11 +22,17 @@ impl From<crate::commands::account::create_account::CreateAccountContext> for cr
     }
 }
 
-impl SignerAccountId {
-    pub fn from_cli(
+impl interactive_clap::FromCli for SignerAccountId {
+    type FromCliContext = crate::commands::account::create_account::CreateAccountContext;
+    type FromCliError = color_eyre::eyre::Error;
+
+    fn from_cli(
         optional_clap_variant: Option<<SignerAccountId as interactive_clap::ToCli>::CliVariant>,
-        context: crate::commands::account::create_account::CreateAccountContext,
-    ) -> color_eyre::eyre::Result<Option<Self>> {
+        context: Self::FromCliContext,
+    ) -> Result<Option<Self>, Self::FromCliError>
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
         let signer_account_id: crate::types::account_id::AccountId = match optional_clap_variant
             .clone()
             .and_then(|clap_variant| clap_variant.signer_account_id)
@@ -68,7 +74,9 @@ impl SignerAccountId {
             network_config,
         }))
     }
+}
 
+impl SignerAccountId {
     fn input_signer_account_id(
         context: &crate::commands::account::create_account::CreateAccountContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {

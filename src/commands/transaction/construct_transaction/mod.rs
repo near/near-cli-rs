@@ -1,3 +1,5 @@
+use interactive_clap::FromCli;
+use interactive_clap::ToCliArgs;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod add_access_key;
@@ -141,11 +143,17 @@ impl BoxNextAction {
     }
 }
 
-impl BoxNextAction {
-    pub fn from_cli(
+impl interactive_clap::FromCli for BoxNextAction {
+    type FromCliContext = crate::GlobalContext;
+    type FromCliError = color_eyre::eyre::Error;
+
+    fn from_cli(
         optional_clap_variant: Option<<BoxNextAction as interactive_clap::ToCli>::CliVariant>,
-        context: crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<Self>> {
+        context: Self::FromCliContext,
+    ) -> Result<Option<Self>, Self::FromCliError>
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
         let optional_next_action =
             NextAction::from_cli(optional_clap_variant.map(Into::into), context)?;
         if let Some(next_action) = optional_next_action {
