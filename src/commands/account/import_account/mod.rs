@@ -1,4 +1,5 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
+use dialoguer::{console::Term, theme::ColorfulTheme, Select};
+use inquire::CustomType;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -76,9 +77,7 @@ async fn login(
 }
 
 fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-    Ok(Input::new()
-        .with_prompt("Enter account ID")
-        .interact_text()?)
+    Ok(CustomType::new("Enter account ID").prompt()?)
 }
 
 fn save_access_key(
