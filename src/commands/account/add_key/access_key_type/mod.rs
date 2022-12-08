@@ -1,6 +1,6 @@
+use dialoguer::{console::Term, theme::ColorfulTheme, Select};
+use inquire::{CustomType, Text};
 use std::str::FromStr;
-
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -117,10 +117,8 @@ impl FunctionCallType {
             .interact_on_opt(&Term::stderr())?;
         match select_choose_input {
             Some(0) => {
-                let mut input_method_names: String = Input::new()
-                    .with_prompt("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
-                    .interact_text()
-                    ?;
+                let mut input_method_names = Text::new("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
+                    .prompt()?;
                 if input_method_names.contains('\"') {
                     input_method_names.clear()
                 };
@@ -148,10 +146,9 @@ impl FunctionCallType {
             .interact_on_opt(&Term::stderr())?;
         match select_choose_input {
             Some(0) => {
-                let allowance_near_balance: crate::common::NearBalance = Input::new()
-                    .with_prompt("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees. (example: 10NEAR or 0.5near or 10000yoctonear)")
-                    .interact_text()
-                    ?;
+                let allowance_near_balance: crate::common::NearBalance =
+                    CustomType::new("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees. (example: 10NEAR or 0.5near or 10000yoctonear)")
+                    .prompt()?;
                 Ok(Some(allowance_near_balance))
             }
             Some(1) => Ok(None),

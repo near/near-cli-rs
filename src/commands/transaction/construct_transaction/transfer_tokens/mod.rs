@@ -1,5 +1,5 @@
 use async_recursion::async_recursion;
-use dialoguer::Input;
+use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -15,10 +15,9 @@ impl SendNearCommand {
     fn input_amount_in_near(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
-        let input_amount: crate::common::NearBalance = Input::new()
-                        .with_prompt("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
-                        .interact_text()
-                        ?;
+        let input_amount: crate::common::NearBalance =
+            CustomType::new("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)")
+                .prompt()?;
         Ok(input_amount)
     }
 

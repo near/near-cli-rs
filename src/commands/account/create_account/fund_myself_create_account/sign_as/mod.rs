@@ -1,4 +1,5 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
+use dialoguer::{console::Term, theme::ColorfulTheme, Select};
+use inquire::CustomType;
 use serde_json::json;
 use std::str::FromStr;
 
@@ -81,9 +82,8 @@ impl SignerAccountId {
         context: &crate::commands::account::create_account::CreateAccountContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         loop {
-            let signer_account_id: crate::types::account_id::AccountId = Input::new()
-                .with_prompt("What is the signer account ID?")
-                .interact_text()?;
+            let signer_account_id: crate::types::account_id::AccountId =
+                CustomType::new("What is the signer account ID?").prompt()?;
             if !is_account_exist(context, signer_account_id.clone().into()) {
                 println!("\nThe account <{}> does not yet exist.", &signer_account_id);
                 let choose_input = vec![

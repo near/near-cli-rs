@@ -1,4 +1,6 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
+use dialoguer::{console::Term, theme::ColorfulTheme, Select};
+use inquire::{CustomType, Text};
+use std::str::FromStr;
 
 use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
 
@@ -63,9 +65,8 @@ impl NewAccount {
     fn input_new_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
-        let mut new_account_id: crate::types::account_id::AccountId = Input::new()
-            .with_prompt("What is the new account ID?")
-            .interact_text()?;
+        let mut new_account_id: crate::types::account_id::AccountId =
+            CustomType::new("What is the new account ID?").prompt()?;
 
         let choose_input = vec![
             format!(
@@ -129,9 +130,7 @@ impl NewAccount {
                         break new_account_id;
                     }
                 };
-                new_account_id = Input::new()
-                    .with_prompt("What is the new account ID?")
-                    .interact_text()?;
+                new_account_id = CustomType::new("What is the new account ID?").prompt()?;
             }
         } else {
             new_account_id
@@ -143,13 +142,15 @@ impl NewAccount {
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
         println!();
-        let initial_balance: crate::common::NearBalance = Input::new()
-            .with_prompt(
-                "Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear).",
-            )
-            .with_initial_text("0.1 NEAR")
-            .interact_text()?;
-        Ok(initial_balance)
+        match crate::common::NearBalance::from_str(&Text::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear).")
+            .with_initial_value("0.1 NEAR")
+            .prompt()?
+            ) {
+                Ok(initial_balance) => Ok(initial_balance),
+                Err(err) => Err(color_eyre::Report::msg(
+                    err,
+                ))
+            }
     }
 
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {

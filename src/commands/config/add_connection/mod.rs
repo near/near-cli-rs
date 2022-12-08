@@ -1,4 +1,5 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
+use dialoguer::{console::Term, theme::ColorfulTheme, Select};
+use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -115,9 +116,8 @@ impl AddNetworkConnection {
             .interact_on_opt(&Term::stderr())?;
         match select_choose_input {
             Some(0) => {
-                let api_key = Input::new()
-                    .with_prompt("Enter an API key")
-                    .interact_text()?;
+                let api_key: crate::types::api_key::ApiKey =
+                    CustomType::new("Enter an API key").prompt()?;
                 Ok(Some(api_key))
             }
             Some(1) => Ok(None),
@@ -127,11 +127,8 @@ impl AddNetworkConnection {
 
     fn input_linkdrop_account_id(
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let account_id: crate::types::account_id::AccountId = Input::new()
-            .with_prompt(
-                "What is the name of the account that hosts the \"linkdrop\" program? (e.g. on mainnet it is near, and on testnet it is testnet)",
-            )
-            .interact_text()?;
+        let account_id: crate::types::account_id::AccountId =
+            CustomType::new("What is the name of the account that hosts the \"linkdrop\" program? (e.g. on mainnet it is near, and on testnet it is testnet)").prompt()?;
         Ok(Some(account_id))
     }
 

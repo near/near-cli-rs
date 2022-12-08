@@ -1,4 +1,5 @@
-use dialoguer::{theme::ColorfulTheme, Input, Select};
+use dialoguer::{theme::ColorfulTheme, Select};
+use inquire::CustomType;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod sign_with_keychain;
@@ -38,15 +39,11 @@ pub enum SignWith {
 }
 
 pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
-    Ok(Input::new()
-        .with_prompt("Enter sender (signer) public key")
-        .interact_text()?)
+    Ok(CustomType::new("Enter sender (signer) public key").prompt()?)
 }
 
 pub fn input_signer_private_key() -> color_eyre::eyre::Result<crate::types::secret_key::SecretKey> {
-    Ok(Input::new()
-        .with_prompt("Enter sender (signer) private (secret) key")
-        .interact_text()?)
+    Ok(CustomType::new("Enter sender (signer) private (secret) key").prompt()?)
 }
 
 pub async fn sign_with(

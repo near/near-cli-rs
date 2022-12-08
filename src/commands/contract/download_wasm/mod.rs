@@ -1,4 +1,4 @@
-use dialoguer::Input;
+use inquire::Text;
 use std::io::Write;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -38,10 +38,9 @@ impl DownloadContract {
         let mut folder_path = std::path::PathBuf::from(&home_dir);
         folder_path.push("Downloads");
         println!();
-        let input_folder_path: String = Input::new()
-            .with_prompt("Where to download the contract file?")
-            .with_initial_text(format!("{}", folder_path.to_string_lossy()))
-            .interact_text()?;
+        let input_folder_path = Text::new("Where to download the contract file?")
+            .with_initial_value(&format!("{}", folder_path.to_string_lossy()))
+            .prompt()?;
         let folder_path = shellexpand::tilde(&input_folder_path).as_ref().parse()?;
         Ok(folder_path)
     }
