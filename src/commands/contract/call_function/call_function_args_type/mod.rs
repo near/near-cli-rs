@@ -1,6 +1,5 @@
+use inquire::Select;
 use std::str::FromStr;
-
-use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 #[derive(Debug, EnumDiscriminants, Clone, clap::ValueEnum)]
@@ -53,19 +52,21 @@ impl std::fmt::Display for FunctionArgsType {
     }
 }
 
+impl std::fmt::Display for FunctionArgsTypeDiscriminants {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::JsonArgs => write!(f, "json-args"),
+            Self::TextArgs => write!(f, "text-args"),
+            Self::Base64Args => write!(f, "base64-args"),
+            Self::FileArgs => write!(f, "file-args"),
+        }
+    }
+}
+
 pub fn input_function_args_type() -> color_eyre::eyre::Result<FunctionArgsType> {
     let variants = FunctionArgsTypeDiscriminants::iter().collect::<Vec<_>>();
-    let function_args_types = variants
-        .iter()
-        .map(|p| p.get_message().unwrap().to_owned())
-        .collect::<Vec<_>>();
-    let selected = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("How would you like to proceed")
-        .items(&function_args_types)
-        .default(0)
-        .interact()
-        .unwrap();
-    match variants[selected] {
+    let selected = Select::new("How would you like to proceed", variants).prompt()?;
+    match selected {
         FunctionArgsTypeDiscriminants::JsonArgs => Ok(FunctionArgsType::JsonArgs),
         FunctionArgsTypeDiscriminants::TextArgs => Ok(FunctionArgsType::TextArgs),
         FunctionArgsTypeDiscriminants::Base64Args => Ok(FunctionArgsType::Base64Args),

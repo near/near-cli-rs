@@ -1,5 +1,4 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Select};
-use inquire::{CustomType, Text};
+use inquire::{CustomType, Select, Text};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -106,54 +105,46 @@ impl interactive_clap::FromCli for FunctionCallType {
 impl FunctionCallType {
     pub fn input_method_names() -> color_eyre::eyre::Result<crate::types::vec_string::VecString> {
         println!();
-        let choose_input = vec![
-            "Yes, I want to input a list of method names that can be used",
-            "No, I don't want to input a list of method names that can be used",
-        ];
-        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Do You want to input a list of method names that can be used")
-            .items(&choose_input)
-            .default(0)
-            .interact_on_opt(&Term::stderr())?;
-        match select_choose_input {
-            Some(0) => {
-                let mut input_method_names =
+        let yes = "Yes, I want to input a list of method names that can be used";
+        let no = "No, I don't want to input a list of method names that can be used";
+        let select_choose_input = Select::new(
+            "Do You want to input a list of method names that can be used",
+            vec![yes, no],
+        )
+        .prompt()?;
+        if select_choose_input == yes {
+            let mut input_method_names =
                     Text::new("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
                         .prompt()?;
-                if input_method_names.contains('\"') {
-                    input_method_names.clear()
-                };
-                if input_method_names.is_empty() {
-                    Ok(crate::types::vec_string::VecString(vec![]))
-                } else {
-                    crate::types::vec_string::VecString::from_str(&input_method_names)
-                }
+            if input_method_names.contains('\"') {
+                input_method_names.clear()
+            };
+            if input_method_names.is_empty() {
+                Ok(crate::types::vec_string::VecString(vec![]))
+            } else {
+                crate::types::vec_string::VecString::from_str(&input_method_names)
             }
-            Some(1) => Ok(crate::types::vec_string::VecString(vec![])),
-            _ => unreachable!("Error"),
+        } else {
+            Ok(crate::types::vec_string::VecString(vec![]))
         }
     }
 
     pub fn input_allowance() -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         println!();
-        let choose_input = vec![
-            "Yes, I want to input allowance for receiver ID",
-            "No, I don't want to input allowance for receiver ID",
-        ];
-        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Do You want to input an allowance for receiver ID")
-            .items(&choose_input)
-            .default(0)
-            .interact_on_opt(&Term::stderr())?;
-        match select_choose_input {
-            Some(0) => {
-                let allowance_near_balance: crate::common::NearBalance =
+        let yes = "Yes, I want to input allowance for receiver ID";
+        let no = "No, I don't want to input allowance for receiver ID";
+        let select_choose_input = Select::new(
+            "Do You want to input an allowance for receiver ID",
+            vec![yes, no],
+        )
+        .prompt()?;
+        if select_choose_input == yes {
+            let allowance_near_balance: crate::common::NearBalance =
                     CustomType::new("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees. (example: 10NEAR or 0.5near or 10000yoctonear)")
                         .prompt()?;
-                Ok(Some(allowance_near_balance))
-            }
-            Some(1) => Ok(None),
-            _ => unreachable!("Error"),
+            Ok(Some(allowance_near_balance))
+        } else {
+            Ok(None)
         }
     }
 

@@ -1,5 +1,4 @@
-use dialoguer::{theme::ColorfulTheme, Select};
-use inquire::CustomType;
+use inquire::{CustomType, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod sign_with_keychain;
@@ -132,20 +131,22 @@ impl interactive_clap::ToCli for Submit {
     type CliVariant = Submit;
 }
 
+impl std::fmt::Display for SubmitDiscriminants {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Send => write!(f, "send"),
+            Self::Display => write!(f, "display"),
+        }
+    }
+}
+
 impl Submit {
     pub fn choose_submit() -> Self {
         let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
-        let submits = variants
-            .iter()
-            .map(|p| p.get_message().unwrap().to_owned())
-            .collect::<Vec<_>>();
-        let select_submit = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("How would you like to proceed")
-            .items(&submits)
-            .default(0)
-            .interact()
-            .unwrap();
-        match variants[select_submit] {
+        let select_submit = Select::new("How would you like to proceed", variants)
+            .prompt()
+            .unwrap_or(SubmitDiscriminants::Display);
+        match select_submit {
             SubmitDiscriminants::Send => Submit::Send,
             SubmitDiscriminants::Display => Submit::Display,
         }

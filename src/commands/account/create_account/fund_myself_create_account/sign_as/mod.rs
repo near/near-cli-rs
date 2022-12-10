@@ -1,5 +1,4 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Select};
-use inquire::CustomType;
+use inquire::{CustomType, Select};
 use serde_json::json;
 use std::str::FromStr;
 
@@ -86,16 +85,14 @@ impl SignerAccountId {
                 CustomType::new("What is the signer account ID?").prompt()?;
             if !is_account_exist(context, signer_account_id.clone().into()) {
                 println!("\nThe account <{}> does not yet exist.", &signer_account_id);
-                let choose_input = vec![
-                    "Yes, I want to enter a new name for signer_account_id.",
-                    "No, I want to use this name for signer_account_id.",
-                ];
-                let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                    .with_prompt("Do you want to enter a new name for signer_account_id?")
-                    .items(&choose_input)
-                    .default(0)
-                    .interact_on_opt(&Term::stderr())?;
-                if matches!(select_choose_input, Some(1)) {
+                let yes = "Yes, I want to enter a new name for signer_account_id.";
+                let no = "No, I want to use this name for signer_account_id.";
+                let select_choose_input = Select::new(
+                    "Do you want to enter a new name for signer_account_id?",
+                    vec![yes, no],
+                )
+                .prompt()?;
+                if select_choose_input == no {
                     return Ok(signer_account_id);
                 }
             } else {

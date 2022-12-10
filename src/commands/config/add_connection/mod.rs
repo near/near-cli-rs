@@ -1,5 +1,4 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Select};
-use inquire::CustomType;
+use inquire::{CustomType, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -105,23 +104,16 @@ impl interactive_clap::FromCli for AddNetworkConnection {
 impl AddNetworkConnection {
     fn input_api_key() -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
         println!();
-        let choose_input = vec![
-            "Yes, the RPC endpoint requires API key",
-            "No, the RPC endpoint does not require API key",
-        ];
-        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Do you want to input an API key?")
-            .items(&choose_input)
-            .default(0)
-            .interact_on_opt(&Term::stderr())?;
-        match select_choose_input {
-            Some(0) => {
-                let api_key: crate::types::api_key::ApiKey =
-                    CustomType::new("Enter an API key").prompt()?;
-                Ok(Some(api_key))
-            }
-            Some(1) => Ok(None),
-            _ => unreachable!("Error"),
+        let yes = "Yes, the RPC endpoint requires API key";
+        let no = "No, the RPC endpoint does not require API key";
+        let select_choose_input =
+            Select::new("Do you want to input an API key?", vec![yes, no]).prompt()?;
+        if select_choose_input == yes {
+            let api_key: crate::types::api_key::ApiKey =
+                CustomType::new("Enter an API key").prompt()?;
+            Ok(Some(api_key))
+        } else {
+            Ok(None)
         }
     }
 

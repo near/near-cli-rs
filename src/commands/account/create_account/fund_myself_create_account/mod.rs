@@ -1,5 +1,4 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Select};
-use inquire::{CustomType, Text};
+use inquire::{CustomType, Select, Text};
 use std::str::FromStr;
 
 use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
@@ -68,19 +67,15 @@ impl NewAccount {
         let mut new_account_id: crate::types::account_id::AccountId =
             CustomType::new("What is the new account ID?").prompt()?;
 
-        let choose_input = vec![
-            format!(
+        let yes = format!(
                 "Yes, I want to check that <{}> account does not exist. (It is free of charge, and only requires Internet access)",
                 new_account_id
-            ),
-            "No, I know that this account does not exist and I want to proceed.".to_string(),
-        ];
-        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?")
-            .items(&choose_input)
-            .default(0)
-            .interact_on_opt(&Term::stderr())?;
-        let account_id = if let Some(0) = select_choose_input {
+            );
+        let no = "No, I know that this account does not exist and I want to proceed.";
+        let select_choose_input =
+            Select::new("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?", vec![yes.as_str(), no])
+                .prompt()?;
+        let account_id = if select_choose_input == yes {
             loop {
                 let network =
                     find_network_where_account_exist(context, new_account_id.clone().into());
@@ -186,14 +181,12 @@ fn find_network_where_account_exist(
 }
 
 fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
-    let choose_input = vec![
-        "Yes, I want to enter a new name for account ID.",
-        "No, I want to keep using this name for account ID.",
-    ];
-    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Do you want to enter a different name for the new account ID?")
-        .items(&choose_input)
-        .default(0)
-        .interact_on_opt(&Term::stderr())?;
-    Ok(!matches!(select_choose_input, Some(1)))
+    let yes = "Yes, I want to enter a new name for account ID.";
+    let no = "No, I want to keep using this name for account ID.";
+    let select_choose_input = Select::new(
+        "Do you want to enter a different name for the new account ID?",
+        vec![yes, no],
+    )
+    .prompt()?;
+    Ok(select_choose_input == yes)
 }
