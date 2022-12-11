@@ -9,7 +9,6 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.0.18", features = ["derive"] }
 inquire = "0.5"
-dialoguer = "0.9"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 smart-default = "0.6.0"
@@ -47,8 +46,8 @@ near-primitives = "0.15"
 near-jsonrpc-client = "0.4.0"
 near-jsonrpc-primitives = "0.15"
 
-interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="02532b36878631cdea182e804db3beb33bd24314" }
-interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="02532b36878631cdea182e804db3beb33bd24314" }
+interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="41ab2a0a3f62619a1cf00d99d7880e160151e009" }
+interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="41ab2a0a3f62619a1cf00d99d7880e160151e009" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.7.0"
