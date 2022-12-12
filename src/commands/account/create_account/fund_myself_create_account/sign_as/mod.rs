@@ -85,14 +85,19 @@ impl SignerAccountId {
                 CustomType::new("What is the signer account ID?").prompt()?;
             if !is_account_exist(context, signer_account_id.clone().into()) {
                 println!("\nThe account <{}> does not yet exist.", &signer_account_id);
-                let yes = "Yes, I want to enter a new name for signer_account_id.";
-                let no = "No, I want to use this name for signer_account_id.";
+                #[derive(strum_macros::Display)]
+                enum ConfirmOptions {
+                    #[strum(to_string = "Yes, I want to enter a new name for signer_account_id.")]
+                    Yes,
+                    #[strum(to_string = "No, I want to use this name for signer_account_id.")]
+                    No,
+                }
                 let select_choose_input = Select::new(
                     "Do you want to enter a new name for signer_account_id?",
-                    vec![yes, no],
+                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
                 )
                 .prompt()?;
-                if select_choose_input == no {
+                if let ConfirmOptions::No = select_choose_input {
                     return Ok(signer_account_id);
                 }
             } else {

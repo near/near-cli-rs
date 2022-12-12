@@ -104,11 +104,19 @@ impl interactive_clap::FromCli for AddNetworkConnection {
 impl AddNetworkConnection {
     fn input_api_key() -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
         println!();
-        let yes = "Yes, the RPC endpoint requires API key";
-        let no = "No, the RPC endpoint does not require API key";
-        let select_choose_input =
-            Select::new("Do you want to input an API key?", vec![yes, no]).prompt()?;
-        if select_choose_input == yes {
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, the RPC endpoint requires API key")]
+            Yes,
+            #[strum(to_string = "No, the RPC endpoint does not require API key")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to input an API key?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
             let api_key: crate::types::api_key::ApiKey =
                 CustomType::new("Enter an API key").prompt()?;
             Ok(Some(api_key))

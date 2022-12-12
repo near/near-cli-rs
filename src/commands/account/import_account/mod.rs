@@ -50,12 +50,19 @@ async fn login(
         .is_err()
         {
             println!("\nIt is currently not possible to verify the account access key.\nYou may not be logged in to {} or you may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n", &url.as_str());
-            let yes = "Yes, I want to re-enter the account_id.";
-            let no = "No, I want to save the access key information.";
-            let select_choose_input =
-                Select::new("Would you like to re-enter the account_id?", vec![yes, no])
-                    .prompt()?;
-            if select_choose_input == no {
+            #[derive(strum_macros::Display)]
+            enum ConfirmOptions {
+                #[strum(to_string = "Yes, I want to re-enter the account_id.")]
+                Yes,
+                #[strum(to_string = "No, I want to save the access key information.")]
+                No,
+            }
+            let select_choose_input = Select::new(
+                "Would you like to re-enter the account_id?",
+                vec![ConfirmOptions::Yes, ConfirmOptions::No],
+            )
+            .prompt()?;
+            if let ConfirmOptions::No = select_choose_input {
                 break account_id_from_cli;
             }
         } else {

@@ -548,12 +548,20 @@ pub async fn get_account_state(
 }
 
 fn need_check_account() -> bool {
-    let yes = "Yes, I want to check the account again.";
-    let no = "No, I want to skip the check and use the specified account ID.";
-    let select_choose_input = Select::new("Do you want to try again?", vec![yes, no])
-        .prompt()
-        .unwrap_or(yes);
-    select_choose_input == yes
+    #[derive(strum_macros::Display, PartialEq)]
+    enum ConfirmOptions {
+        #[strum(to_string = "Yes, I want to check the account again.")]
+        Yes,
+        #[strum(to_string = "No, I want to skip the check and use the specified account ID.")]
+        No,
+    }
+    let select_choose_input = Select::new(
+        "Do you want to try again?",
+        vec![ConfirmOptions::Yes, ConfirmOptions::No],
+    )
+    .prompt()
+    .unwrap_or(ConfirmOptions::Yes);
+    select_choose_input == ConfirmOptions::Yes
 }
 
 #[derive(Debug, Clone, serde::Serialize)]

@@ -181,12 +181,17 @@ fn find_network_where_account_exist(
 }
 
 fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
-    let yes = "Yes, I want to enter a new name for account ID.";
-    let no = "No, I want to keep using this name for account ID.";
+    #[derive(strum_macros::Display, PartialEq)]
+    enum ConfirmOptions {
+        #[strum(to_string = "Yes, I want to enter a new name for account ID.")]
+        Yes,
+        #[strum(to_string = "No, I want to keep using this name for account ID.")]
+        No,
+    }
     let select_choose_input = Select::new(
         "Do you want to enter a different name for the new account ID?",
-        vec![yes, no],
+        vec![ConfirmOptions::Yes, ConfirmOptions::No],
     )
     .prompt()?;
-    Ok(select_choose_input == yes)
+    Ok(select_choose_input == ConfirmOptions::Yes)
 }

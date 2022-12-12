@@ -105,14 +105,21 @@ impl interactive_clap::FromCli for FunctionCallType {
 impl FunctionCallType {
     pub fn input_method_names() -> color_eyre::eyre::Result<crate::types::vec_string::VecString> {
         println!();
-        let yes = "Yes, I want to input a list of method names that can be used";
-        let no = "No, I don't want to input a list of method names that can be used";
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to input a list of method names that can be used")]
+            Yes,
+            #[strum(
+                to_string = "No, I don't want to input a list of method names that can be used"
+            )]
+            No,
+        }
         let select_choose_input = Select::new(
             "Do You want to input a list of method names that can be used",
-            vec![yes, no],
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
-        if select_choose_input == yes {
+        if let ConfirmOptions::Yes = select_choose_input {
             let mut input_method_names =
                     Text::new("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
                         .prompt()?;
@@ -131,14 +138,19 @@ impl FunctionCallType {
 
     pub fn input_allowance() -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         println!();
-        let yes = "Yes, I want to input allowance for receiver ID";
-        let no = "No, I don't want to input allowance for receiver ID";
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to input allowance for receiver ID")]
+            Yes,
+            #[strum(to_string = "No, I don't want to input allowance for receiver ID")]
+            No,
+        }
         let select_choose_input = Select::new(
             "Do You want to input an allowance for receiver ID",
-            vec![yes, no],
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
-        if select_choose_input == yes {
+        if let ConfirmOptions::Yes = select_choose_input {
             let allowance_near_balance: crate::common::NearBalance =
                     CustomType::new("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees. (example: 10NEAR or 0.5near or 10000yoctonear)")
                         .prompt()?;
