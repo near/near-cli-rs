@@ -1085,15 +1085,17 @@ dependencies = [
 [[package]]
 name = "interactive_clap"
 version = "0.1.0"
-source = "git+https://github.com/FroVolod/interactive-clap?rev=41ab2a0a3f62619a1cf00d99d7880e160151e009#41ab2a0a3f62619a1cf00d99d7880e160151e009"
+source = "git+https://github.com/FroVolod/interactive-clap?rev=8593aba4696583808b8f712907eca601f24ac807#8593aba4696583808b8f712907eca601f24ac807"
 dependencies = [
  "interactive_clap_derive",
+ "strum",
+ "strum_macros",
 ]
 
 [[package]]
 name = "interactive_clap_derive"
 version = "0.1.0"
-source = "git+https://github.com/FroVolod/interactive-clap?rev=41ab2a0a3f62619a1cf00d99d7880e160151e009#41ab2a0a3f62619a1cf00d99d7880e160151e009"
+source = "git+https://github.com/FroVolod/interactive-clap?rev=8593aba4696583808b8f712907eca601f24ac807#8593aba4696583808b8f712907eca601f24ac807"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",
