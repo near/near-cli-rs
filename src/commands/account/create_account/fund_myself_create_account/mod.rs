@@ -69,10 +69,14 @@ impl NewAccount {
 
         #[derive(derive_more::Display)]
         enum ConfirmOptions {
-            #[display(fmt = "Yes, I want to check that <{}> account does not exist. (It is free of charge, and only requires Internet access)", account_id)]
-            Yes{account_id: crate::types::account_id::AccountId},
-            #[display(fmt = "No, I know that this account does not exist and I want to proceed."
+            #[display(
+                fmt = "Yes, I want to check that <{}> account does not exist. (It is free of charge, and only requires Internet access)",
+                account_id
             )]
+            Yes {
+                account_id: crate::types::account_id::AccountId,
+            },
+            #[display(fmt = "No, I know that this account does not exist and I want to proceed.")]
             No,
         }
         let select_choose_input =
@@ -80,7 +84,7 @@ impl NewAccount {
             vec![ConfirmOptions::Yes{account_id: new_account_id.clone()}, ConfirmOptions::No],
         )
                 .prompt()?;
-        let account_id = if let ConfirmOptions::Yes{mut account_id} = select_choose_input {
+        let account_id = if let ConfirmOptions::Yes { mut account_id } = select_choose_input {
             loop {
                 let network = find_network_where_account_exist(context, account_id.clone().into());
                 if let Some(network_config) = network {
