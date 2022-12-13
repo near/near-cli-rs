@@ -64,46 +64,52 @@ impl NewAccount {
     fn input_new_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
-        let mut new_account_id: crate::types::account_id::AccountId =
+        let new_account_id: crate::types::account_id::AccountId =
             CustomType::new("What is the new account ID?").prompt()?;
 
-        let yes = format!(
-                "Yes, I want to check that <{}> account does not exist. (It is free of charge, and only requires Internet access)",
-                new_account_id
-            );
-        let no = "No, I know that this account does not exist and I want to proceed.";
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(
+                to_string = "Yes, I want to check that <{}> account does not exist. (It is free of charge, and only requires Internet access)"
+            )]
+            Yes(crate::types::account_id::AccountId),
+            #[strum(
+                to_string = "No, I know that this account does not exist and I want to proceed."
+            )]
+            No,
+        }
         let select_choose_input =
-            Select::new("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?", vec![yes.as_str(), no])
+            Select::new("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?",
+            vec![ConfirmOptions::Yes(new_account_id.clone()), ConfirmOptions::No],
+        )
                 .prompt()?;
-        let account_id = if select_choose_input == yes {
+        let account_id = if let ConfirmOptions::Yes(mut account_id) = select_choose_input {
             loop {
-                let network =
-                    find_network_where_account_exist(context, new_account_id.clone().into());
+                let network = find_network_where_account_exist(context, account_id.clone().into());
                 if let Some(network_config) = network {
                     println!(
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
-                        &new_account_id, network_config.network_name
+                        &account_id, network_config.network_name
                     );
                     if !ask_if_different_account_id_wanted()? {
-                        break new_account_id;
+                        break account_id;
                     };
-                } else if new_account_id.0.as_str().chars().count()
+                } else if account_id.0.as_str().chars().count()
                     < MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
-                    && new_account_id.0.is_top_level()
+                    && account_id.0.is_top_level()
                 {
                     println!(
                         "\nAccount <{}> has <{}> character count. Only the registrar account can create new top level accounts that are shorter than {} characters. Read more about it in nomicon: https://nomicon.io/DataStructures/Account#top-level-accounts",
-                        &new_account_id,
-                        &new_account_id.0.as_str().chars().count(),
+                        &account_id,
+                        &account_id.0.as_str().chars().count(),
                         MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH,
                     );
                     if !ask_if_different_account_id_wanted()? {
-                        break new_account_id;
+                        break account_id;
                     };
                 } else {
-                    let parent_account_id = new_account_id
-                        .clone()
-                        .get_parent_account_id_from_sub_account();
+                    let parent_account_id =
+                        account_id.clone().get_parent_account_id_from_sub_account();
                     if !near_primitives::types::AccountId::from(parent_account_id.clone())
                         .is_top_level()
                     {
@@ -114,18 +120,18 @@ impl NewAccount {
                         .is_none()
                         {
                             println!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
-                            &parent_account_id, &new_account_id);
+                            &parent_account_id, &account_id);
                             if !ask_if_different_account_id_wanted()? {
-                                break new_account_id;
+                                break account_id;
                             };
                         } else {
-                            break new_account_id;
+                            break account_id;
                         }
                     } else {
-                        break new_account_id;
+                        break account_id;
                     }
                 };
-                new_account_id = CustomType::new("What is the new account ID?").prompt()?;
+                account_id = CustomType::new("What is the new account ID?").prompt()?;
             }
         } else {
             new_account_id
