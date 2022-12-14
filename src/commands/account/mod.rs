@@ -33,11 +33,9 @@ pub enum AccountActions {
     ))]
     /// View properties for an account
     ViewAccountSummary(self::view_account_summary::ViewAccountSummary),
-    #[strum_discriminants(strum(
-        message = "import-account          - Import existing account (a.k.a. \"sign in\")"
-    ))]
-    /// Import existing account (a.k.a. "sign in")
-    ImportAccount(self::import_account::Login),
+    #[strum_discriminants(strum(message = "import-account          - Import existing account"))]
+    /// Import existing account
+    ImportAccount(self::import_account::ImportAccountCommand),
     #[strum_discriminants(strum(message = "create-account          - Create a new account"))]
     /// Create a new account
     CreateAccount(self::create_account::CreateAccount),
@@ -72,7 +70,9 @@ impl AccountActions {
             Self::CreateAccount(account) => account.process(config).await,
             Self::AddKey(add_key_command) => add_key_command.process(config).await,
             Self::DeleteKey(delete_key_command) => delete_key_command.process(config).await,
-            Self::ImportAccount(login) => login.process(config).await,
+            Self::ImportAccount(import_account_command) => {
+                import_account_command.process(config).await
+            }
         }
     }
 }
