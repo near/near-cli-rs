@@ -11,8 +11,8 @@ impl std::str::FromStr for SecretKey {
     type Err = near_crypto::ParseKeyError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let public_key = near_crypto::SecretKey::from_str(s)?;
-        Ok(Self(public_key))
+        let private_key = near_crypto::SecretKey::from_str(s)?;
+        Ok(Self(private_key))
     }
 }
 
