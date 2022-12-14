@@ -24,11 +24,13 @@ impl LoginFromWebWallet {
         // url.open();
         open::that(url.as_ref()).ok();
 
+        let key_pair_properties_buf = serde_json::to_string(&key_pair_properties)?;
         let error_message = format!("\nIt is currently not possible to verify the account access key.\nYou may not be logged in to {} or you may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n", &url.as_str());
         super::login(
             network_config,
             config.credentials_home_dir,
-            key_pair_properties,
+            &key_pair_properties_buf,
+            &key_pair_properties.public_key_str,
             error_message,
         )
         .await

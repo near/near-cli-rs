@@ -47,11 +47,11 @@ impl ImportAccountActions {
 pub async fn login(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
-    key_pair_properties: crate::common::KeyPairProperties,
+    key_pair_properties_buf: &str,
+    public_key_str: &str,
     error_message: String,
 ) -> crate::CliResult {
-    let public_key: near_crypto::PublicKey =
-        near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
+    let public_key: near_crypto::PublicKey = near_crypto::PublicKey::from_str(public_key_str)?;
 
     let account_id = loop {
         let account_id_from_cli = input_account_id()?;
@@ -86,7 +86,8 @@ pub async fn login(
     };
     save_access_key(
         account_id,
-        key_pair_properties,
+        key_pair_properties_buf,
+        public_key_str,
         network_config,
         credentials_home_dir,
     )?;
@@ -100,12 +101,11 @@ fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::Accoun
 
 fn save_access_key(
     account_id: near_primitives::types::AccountId,
-    key_pair_properties: crate::common::KeyPairProperties,
+    key_pair_properties_buf: &str,
+    public_key_str: &str,
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
 ) -> crate::CliResult {
-    let key_pair_properties_buf = serde_json::to_string(&key_pair_properties)?;
-
     #[cfg(target_os = "macos")]
     {
         let macos_keychain = "Store the access key in my macOS keychain";
@@ -119,8 +119,8 @@ fn save_access_key(
         if selection == macos_keychain {
             let storage_message = crate::common::save_access_key_to_macos_keychain(
                 network_config,
-                &key_pair_properties_buf,
-                &key_pair_properties.public_key_str,
+                key_pair_properties_buf,
+                key_pair_properties.public_key_str,
                 &account_id,
             )
             .map_err(|err| {
@@ -136,8 +136,8 @@ fn save_access_key(
     let storage_message = crate::common::save_access_key_to_keychain(
         network_config,
         credentials_home_dir,
-        &key_pair_properties_buf,
-        &key_pair_properties.public_key_str,
+        key_pair_properties_buf,
+        public_key_str,
         &account_id,
     )
     .map_err(|err| {
