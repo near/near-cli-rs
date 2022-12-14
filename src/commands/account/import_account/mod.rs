@@ -2,7 +2,7 @@ use inquire::{CustomType, Select};
 use std::{str::FromStr, vec};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-// mod from_private_key;
+mod from_private_key;
 mod from_web_wallet;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -28,18 +28,18 @@ pub enum ImportAccountActions {
     ))]
     /// Import existing account (a.k.a. "sign in")
     ImportAccountFromWebWallet(self::from_web_wallet::LoginFromWebWallet),
-    // #[strum_discriminants(strum(
-    //     message = "import-account-from-private-key         - Import existing account from private key"
-    // ))]
-    // /// Import existing account from private key
-    // ImportAccountFromPrivateKey(self::from_private_key::LoginFromPrivateKey),
+    #[strum_discriminants(strum(
+        message = "import-account-from-private-key         - Import existing account from private key"
+    ))]
+    /// Import existing account from private key
+    ImportAccountFromPrivateKey(self::from_private_key::LoginFromPrivateKey),
 }
 
 impl ImportAccountActions {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         match self {
             Self::ImportAccountFromWebWallet(login) => login.process(config).await,
-            // Self::ImportAccountFromPrivateKey(login) => login.process(config).await,
+            Self::ImportAccountFromPrivateKey(login) => login.process(config).await,
         }
     }
 }
@@ -49,7 +49,7 @@ pub async fn login(
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties_buf: &str,
     public_key_str: &str,
-    error_message: String,
+    error_message: &str,
 ) -> crate::CliResult {
     let public_key: near_crypto::PublicKey = near_crypto::PublicKey::from_str(public_key_str)?;
 
