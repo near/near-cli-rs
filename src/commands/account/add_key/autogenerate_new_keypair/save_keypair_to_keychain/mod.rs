@@ -14,10 +14,12 @@ impl SaveKeypairToKeychain {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
         let network_config = self.network_config.get_network_config(config.clone());
+        let key_pair_properties_buf = serde_json::to_string(&key_pair_properties)?;
         crate::common::save_access_key_to_keychain(
             network_config,
             config.credentials_home_dir.clone(),
-            key_pair_properties,
+            &key_pair_properties_buf,
+            &key_pair_properties.public_key_str,
             &prepopulated_unsigned_transaction.receiver_id,
         )
         .map_err(|err| {

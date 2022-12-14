@@ -1149,10 +1149,10 @@ pub fn print_transaction_status(
 #[cfg(target_os = "macos")]
 pub fn save_access_key_to_macos_keychain(
     network_config: crate::config::NetworkConfig,
-    key_pair_properties: crate::common::KeyPairProperties,
+    key_pair_properties_buf: &str,
+    public_key_str: &str,
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
-    let buf = serde_json::to_string(&key_pair_properties)?;
     let keychain = security_framework::os::macos::keychain::SecKeychain::default()
         .map_err(|err| color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err)))?;
     let service_name = std::borrow::Cow::Owned(format!(
@@ -1162,8 +1162,8 @@ pub fn save_access_key_to_macos_keychain(
     keychain
         .set_generic_password(
             &service_name,
-            &format!("{}:{}", account_id, key_pair_properties.public_key_str),
-            buf.as_bytes(),
+            &format!("{}:{}", account_id, public_key_str),
+            key_pair_properties_buf.as_bytes(),
         )
         .map_err(|err| {
             color_eyre::Report::msg(format!("Failed to save password to keychain: {:?}", err))
@@ -1174,16 +1174,13 @@ pub fn save_access_key_to_macos_keychain(
 pub fn save_access_key_to_keychain(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
-    key_pair_properties: crate::common::KeyPairProperties,
+    key_pair_properties_buf: &str,
+    public_key_str: &str,
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
-    let buf = serde_json::to_string(&key_pair_properties)?;
     let dir_name = network_config.network_name.as_str();
-    let file_with_key_name: std::path::PathBuf = format!(
-        "{}.json",
-        key_pair_properties.public_key_str.replace(':', "_")
-    )
-    .into();
+    let file_with_key_name: std::path::PathBuf =
+        format!("{}.json", public_key_str.replace(':', "_")).into();
     let mut path_with_key_name = std::path::PathBuf::from(&credentials_home_dir);
     path_with_key_name.push(dir_name);
     path_with_key_name.push(account_id);
@@ -1191,7 +1188,7 @@ pub fn save_access_key_to_keychain(
     path_with_key_name.push(file_with_key_name);
     std::fs::File::create(&path_with_key_name)
         .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
-        .write(buf.as_bytes())
+        .write(key_pair_properties_buf.as_bytes())
         .map_err(|err| color_eyre::Report::msg(format!("Failed to write to file: {:?}", err)))?;
 
     let file_with_account_name: std::path::PathBuf = format!("{}.json", account_id).into();
@@ -1204,7 +1201,7 @@ pub fn save_access_key_to_keychain(
     } else {
         std::fs::File::create(&path_with_account_name)
             .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
-            .write(buf.as_bytes())
+            .write(key_pair_properties_buf.as_bytes())
             .map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
             })?;
