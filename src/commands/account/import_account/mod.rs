@@ -127,7 +127,7 @@ fn save_access_key(
             let storage_message = crate::common::save_access_key_to_macos_keychain(
                 network_config,
                 key_pair_properties_buf,
-                key_pair_properties.public_key_str,
+                public_key_str,
                 &account_id,
             )
             .map_err(|err| {
