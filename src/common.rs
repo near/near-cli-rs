@@ -11,7 +11,7 @@ use near_primitives::{
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
-use dialoguer::{console::Term, theme::ColorfulTheme, Select};
+use inquire::Select;
 use strum::IntoEnumIterator;
 
 #[derive(
@@ -548,16 +548,20 @@ pub async fn get_account_state(
 }
 
 fn need_check_account() -> bool {
-    let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Do you want to try again?")
-        .items(&[
-            "Yes, I want to check the account again.",
-            "No, I want to skip the check and use the specified account ID.",
-        ])
-        .default(0)
-        .interact_on_opt(&Term::stderr())
-        .unwrap_or_default();
-    !matches!(select_choose_input, Some(1))
+    #[derive(strum_macros::Display, PartialEq)]
+    enum ConfirmOptions {
+        #[strum(to_string = "Yes, I want to check the account again.")]
+        Yes,
+        #[strum(to_string = "No, I want to skip the check and use the specified account ID.")]
+        No,
+    }
+    let select_choose_input = Select::new(
+        "Do you want to try again?",
+        vec![ConfirmOptions::Yes, ConfirmOptions::No],
+    )
+    .prompt()
+    .unwrap_or(ConfirmOptions::Yes);
+    select_choose_input == ConfirmOptions::Yes
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -1412,13 +1416,8 @@ pub async fn display_access_key_list(
 
 pub fn input_network_name(context: &crate::GlobalContext) -> color_eyre::eyre::Result<String> {
     let variants = context.0.networks.keys().collect::<Vec<_>>();
-    let select_submit = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("What is the name of the network?")
-        .items(&variants)
-        .default(0)
-        .interact()
-        .unwrap();
-    Ok(variants[select_submit].to_string())
+    let select_submit = Select::new("What is the name of the network?", variants).prompt()?;
+    Ok(select_submit.clone())
 }
 
 #[cfg(test)]

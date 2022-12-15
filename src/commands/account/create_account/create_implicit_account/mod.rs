@@ -1,4 +1,4 @@
-use dialoguer::Input;
+use inquire::Text;
 use std::io::Write;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
@@ -121,13 +121,15 @@ impl SaveToFolder {
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::types::path_buf::PathBuf> {
         println!();
-        let input_folder_path: String = Input::new()
-            .with_prompt("Where to save the implicit account file?")
-            .with_initial_text(format!(
-                "{}/implicit",
-                context.0.credentials_home_dir.to_string_lossy()
-            ))
-            .interact_text()?;
+        let input_folder_path: String = Text::new("Where to save the implicit account file?")
+            .with_initial_value(
+                format!(
+                    "{}/implicit",
+                    context.0.credentials_home_dir.to_string_lossy()
+                )
+                .as_str(),
+            )
+            .prompt()?;
         let folder_path = shellexpand::tilde(&input_folder_path).as_ref().parse()?;
         Ok(folder_path)
     }

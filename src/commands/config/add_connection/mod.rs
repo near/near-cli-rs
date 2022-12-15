@@ -1,4 +1,4 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
+use inquire::{CustomType, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -104,34 +104,31 @@ impl interactive_clap::FromCli for AddNetworkConnection {
 impl AddNetworkConnection {
     fn input_api_key() -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
         println!();
-        let choose_input = vec![
-            "Yes, the RPC endpoint requires API key",
-            "No, the RPC endpoint does not require API key",
-        ];
-        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Do you want to input an API key?")
-            .items(&choose_input)
-            .default(0)
-            .interact_on_opt(&Term::stderr())?;
-        match select_choose_input {
-            Some(0) => {
-                let api_key = Input::new()
-                    .with_prompt("Enter an API key")
-                    .interact_text()?;
-                Ok(Some(api_key))
-            }
-            Some(1) => Ok(None),
-            _ => unreachable!("Error"),
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, the RPC endpoint requires API key")]
+            Yes,
+            #[strum(to_string = "No, the RPC endpoint does not require API key")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to input an API key?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let api_key: crate::types::api_key::ApiKey =
+                CustomType::new("Enter an API key").prompt()?;
+            Ok(Some(api_key))
+        } else {
+            Ok(None)
         }
     }
 
     fn input_linkdrop_account_id(
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let account_id: crate::types::account_id::AccountId = Input::new()
-            .with_prompt(
-                "What is the name of the account that hosts the \"linkdrop\" program? (e.g. on mainnet it is near, and on testnet it is testnet)",
-            )
-            .interact_text()?;
+        let account_id: crate::types::account_id::AccountId =
+            CustomType::new("What is the name of the account that hosts the \"linkdrop\" program? (e.g. on mainnet it is near, and on testnet it is testnet)").prompt()?;
         Ok(Some(account_id))
     }
 

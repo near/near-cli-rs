@@ -1,6 +1,5 @@
+use inquire::{CustomType, Select, Text};
 use std::str::FromStr;
-
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -105,57 +104,59 @@ impl interactive_clap::FromCli for FunctionCallType {
 
 impl FunctionCallType {
     pub fn input_method_names() -> color_eyre::eyre::Result<crate::types::vec_string::VecString> {
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to input a list of method names that can be used")]
+            Yes,
+            #[strum(
+                to_string = "No, I don't want to input a list of method names that can be used"
+            )]
+            No,
+        }
+
         println!();
-        let choose_input = vec![
-            "Yes, I want to input a list of method names that can be used",
-            "No, I don't want to input a list of method names that can be used",
-        ];
-        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Do You want to input a list of method names that can be used")
-            .items(&choose_input)
-            .default(0)
-            .interact_on_opt(&Term::stderr())?;
-        match select_choose_input {
-            Some(0) => {
-                let mut input_method_names: String = Input::new()
-                    .with_prompt("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
-                    .interact_text()
-                    ?;
-                if input_method_names.contains('\"') {
-                    input_method_names.clear()
-                };
-                if input_method_names.is_empty() {
-                    Ok(crate::types::vec_string::VecString(vec![]))
-                } else {
-                    crate::types::vec_string::VecString::from_str(&input_method_names)
-                }
+        let select_choose_input = Select::new(
+            "Do You want to input a list of method names that can be used",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let mut input_method_names = Text::new("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
+                    .prompt()?;
+            if input_method_names.contains('\"') {
+                input_method_names.clear()
+            };
+            if input_method_names.is_empty() {
+                Ok(crate::types::vec_string::VecString(vec![]))
+            } else {
+                crate::types::vec_string::VecString::from_str(&input_method_names)
             }
-            Some(1) => Ok(crate::types::vec_string::VecString(vec![])),
-            _ => unreachable!("Error"),
+        } else {
+            Ok(crate::types::vec_string::VecString(vec![]))
         }
     }
 
     pub fn input_allowance() -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         println!();
-        let choose_input = vec![
-            "Yes, I want to input allowance for receiver ID",
-            "No, I don't want to input allowance for receiver ID",
-        ];
-        let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Do You want to input an allowance for receiver ID")
-            .items(&choose_input)
-            .default(0)
-            .interact_on_opt(&Term::stderr())?;
-        match select_choose_input {
-            Some(0) => {
-                let allowance_near_balance: crate::common::NearBalance = Input::new()
-                    .with_prompt("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees. (example: 10NEAR or 0.5near or 10000yoctonear)")
-                    .interact_text()
-                    ?;
-                Ok(Some(allowance_near_balance))
-            }
-            Some(1) => Ok(None),
-            _ => unreachable!("Error"),
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to input allowance for receiver ID")]
+            Yes,
+            #[strum(to_string = "No, I don't want to input allowance for receiver ID")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do You want to input an allowance for receiver ID",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let allowance_near_balance: crate::common::NearBalance =
+                    CustomType::new("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees. (example: 10NEAR or 0.5near or 10000yoctonear)")
+                    .prompt()?;
+            Ok(Some(allowance_near_balance))
+        } else {
+            Ok(None)
         }
     }
 

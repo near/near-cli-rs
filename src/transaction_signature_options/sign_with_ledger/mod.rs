@@ -1,5 +1,6 @@
-use dialoguer::Input;
+use inquire::Text;
 use near_primitives::borsh::BorshSerialize;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -72,11 +73,13 @@ impl interactive_clap::FromCli for SignLedger {
 
 impl SignLedger {
     pub fn input_seed_phrase_hd_path() -> crate::types::slip10::BIP32Path {
-        Input::new()
-            .with_prompt("Enter seed phrase HD Path (if you not sure leave blank for default)")
-            .with_initial_text("44'/397'/0'/0'/1'")
-            .interact_text()
-            .unwrap()
+        crate::types::slip10::BIP32Path::from_str(
+            &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default)")
+                .with_initial_value("44'/397'/0'/0'/1'")
+                .prompt()
+                .unwrap(),
+        )
+        .unwrap()
     }
 
     pub async fn process(

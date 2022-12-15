@@ -1,5 +1,5 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
-use std::str::FromStr;
+use inquire::{CustomType, Select};
+use std::{str::FromStr, vec};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -50,15 +50,19 @@ async fn login(
         .is_err()
         {
             println!("\nIt is currently not possible to verify the account access key.\nYou may not be logged in to {} or you may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n", &url.as_str());
-            let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                .with_prompt("Would you like to re-enter the account_id?")
-                .items(&[
-                    "Yes, I want to re-enter the account_id.",
-                    "No, I want to save the access key information.",
-                ])
-                .default(0)
-                .interact_on_opt(&Term::stderr())?;
-            if matches!(select_choose_input, Some(1)) {
+            #[derive(strum_macros::Display)]
+            enum ConfirmOptions {
+                #[strum(to_string = "Yes, I want to re-enter the account_id.")]
+                Yes,
+                #[strum(to_string = "No, I want to save the access key information.")]
+                No,
+            }
+            let select_choose_input = Select::new(
+                "Would you like to re-enter the account_id?",
+                vec![ConfirmOptions::Yes, ConfirmOptions::No],
+            )
+            .prompt()?;
+            if let ConfirmOptions::No = select_choose_input {
                 break account_id_from_cli;
             }
         } else {
@@ -76,9 +80,7 @@ async fn login(
 }
 
 fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-    Ok(Input::new()
-        .with_prompt("Enter account ID")
-        .interact_text()?)
+    Ok(CustomType::new("Enter account ID").prompt()?)
 }
 
 fn save_access_key(
@@ -89,16 +91,15 @@ fn save_access_key(
 ) -> crate::CliResult {
     #[cfg(target_os = "macos")]
     {
-        let items = vec![
-            "Store the access key in my macOS keychain",
-            "Store the access key in my legacy keychain (compatible with the old near CLI)",
-        ];
-        let selection = dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
-            .with_prompt("Select a keychain to save the access key to:")
-            .items(&items)
-            .default(0)
-            .interact()?;
-        if selection == 0 {
+        let macos_keychain = "Store the access key in my macOS keychain";
+        let legacy_keychain =
+            "Store the access key in my legacy keychain (compatible with the old near CLI)";
+        let selection = Select::new(
+            "Select a keychain to save the access key to:",
+            vec![macos_keychain, legacy_keychain],
+        )
+        .prompt()?;
+        if selection == macos_keychain {
             let storage_message = crate::common::save_access_key_to_macos_keychain(
                 network_config,
                 key_pair_properties,

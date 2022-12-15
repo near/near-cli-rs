@@ -1,5 +1,6 @@
 use async_recursion::async_recursion;
-use dialoguer::Input;
+use inquire::Text;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -26,16 +27,21 @@ impl CallFunctionAction {
     ) -> color_eyre::eyre::Result<crate::common::NearGas> {
         println!();
         let gas: u64 = loop {
-            let input_gas: crate::common::NearGas = Input::new()
-                .with_prompt("Enter gas for function call")
-                .with_initial_text("100 TeraGas")
-                .interact_text()?;
-            let crate::common::NearGas { inner: num } = input_gas;
-            let gas = num;
-            if gas <= 300000000000000 {
-                break gas;
-            } else {
-                println!("You need to enter a value of no more than 300 TERAGAS")
+            match crate::common::NearGas::from_str(
+                &Text::new("Enter gas for function call")
+                    .with_initial_value("100 TeraGas")
+                    .prompt()?,
+            ) {
+                Ok(input_gas) => {
+                    let crate::common::NearGas { inner: num } = input_gas;
+                    let gas = num;
+                    if gas <= 300000000000000 {
+                        break gas;
+                    } else {
+                        println!("You need to enter a value of no more than 300 TERAGAS")
+                    }
+                }
+                Err(err) => return Err(color_eyre::Report::msg(err)),
             }
         };
         Ok(gas.into())
@@ -45,13 +51,16 @@ impl CallFunctionAction {
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
         println!();
-        let deposit: crate::common::NearBalance = Input::new()
-            .with_prompt(
+        match crate::common::NearBalance::from_str(
+            &Text::new(
                 "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear).",
             )
-            .with_initial_text("0 NEAR")
-            .interact_text()?;
-        Ok(deposit)
+            .with_initial_value("0 NEAR")
+            .prompt()?,
+        ) {
+            Ok(deposit) => Ok(deposit),
+            Err(err) => Err(color_eyre::Report::msg(err)),
+        }
     }
 
     #[async_recursion(?Send)]

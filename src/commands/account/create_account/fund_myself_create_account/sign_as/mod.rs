@@ -1,4 +1,4 @@
-use dialoguer::{console::Term, theme::ColorfulTheme, Input, Select};
+use inquire::{CustomType, Select};
 use serde_json::json;
 use std::str::FromStr;
 
@@ -81,21 +81,23 @@ impl SignerAccountId {
         context: &crate::commands::account::create_account::CreateAccountContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         loop {
-            let signer_account_id: crate::types::account_id::AccountId = Input::new()
-                .with_prompt("What is the signer account ID?")
-                .interact_text()?;
+            let signer_account_id: crate::types::account_id::AccountId =
+                CustomType::new("What is the signer account ID?").prompt()?;
             if !is_account_exist(context, signer_account_id.clone().into()) {
                 println!("\nThe account <{}> does not yet exist.", &signer_account_id);
-                let choose_input = vec![
-                    "Yes, I want to enter a new name for signer_account_id.",
-                    "No, I want to use this name for signer_account_id.",
-                ];
-                let select_choose_input = Select::with_theme(&ColorfulTheme::default())
-                    .with_prompt("Do you want to enter a new name for signer_account_id?")
-                    .items(&choose_input)
-                    .default(0)
-                    .interact_on_opt(&Term::stderr())?;
-                if matches!(select_choose_input, Some(1)) {
+                #[derive(strum_macros::Display)]
+                enum ConfirmOptions {
+                    #[strum(to_string = "Yes, I want to enter a new name for signer_account_id.")]
+                    Yes,
+                    #[strum(to_string = "No, I want to use this name for signer_account_id.")]
+                    No,
+                }
+                let select_choose_input = Select::new(
+                    "Do you want to enter a new name for signer_account_id?",
+                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
+                )
+                .prompt()?;
+                if let ConfirmOptions::No = select_choose_input {
                     return Ok(signer_account_id);
                 }
             } else {
