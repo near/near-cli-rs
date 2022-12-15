@@ -33,8 +33,10 @@ pub enum AccountActions {
     ))]
     /// View properties for an account
     ViewAccountSummary(self::view_account_summary::ViewAccountSummary),
-    #[strum_discriminants(strum(message = "import-account          - Import existing account"))]
-    /// Import existing account
+    #[strum_discriminants(strum(
+        message = "import-account          - Import existing account (a.k.a. \"sign in\")"
+    ))]
+    /// Import existing account (a.k.a. "sign in")
     ImportAccount(self::import_account::ImportAccountCommand),
     #[strum_discriminants(strum(message = "create-account          - Create a new account"))]
     /// Create a new account
