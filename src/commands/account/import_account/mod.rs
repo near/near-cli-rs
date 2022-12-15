@@ -2,9 +2,9 @@ use inquire::{CustomType, Select};
 use std::{str::FromStr, vec};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod from_private_key;
-mod from_seed_phrase;
-mod from_web_wallet;
+mod using_private_key;
+mod using_seed_phrase;
+mod using_web_wallet;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -44,9 +44,9 @@ pub enum ImportAccountActions {
 impl ImportAccountActions {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         match self {
-            Self::ImportAccountFromWebWallet(login) => login.process(config).await,
-            Self::ImportAccountFromSeedPhrase(login) => login.process(config).await,
-            Self::ImportAccountFromPrivateKey(login) => login.process(config).await,
+            Self::UsingWebWallet(login) => login.process(config).await,
+            Self::UsingSeedPhrase(login) => login.process(config).await,
+            Self::UsingPrivateKey(login) => login.process(config).await,
         }
     }
 }
