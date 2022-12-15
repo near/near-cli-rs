@@ -1,5 +1,6 @@
 use inquire::{CustomType, Select};
 use std::{str::FromStr, vec};
+
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod using_private_key;
@@ -72,6 +73,7 @@ pub async fn login(
         .is_err()
         {
             println!("{}", error_message);
+
             #[derive(strum_macros::Display)]
             enum ConfirmOptions {
                 #[strum(to_string = "Yes, I want to re-enter the account_id.")]
