@@ -25,20 +25,20 @@ impl ImportAccountCommand {
 /// How would you like to import the account?
 pub enum ImportAccountActions {
     #[strum_discriminants(strum(
-        message = "import-account-from-web-wallet          - Import existing account (a.k.a. \"sign in\")"
+        message = "using-web-wallet          - Import existing account using NEAR Wallet (a.k.a. \"sign in\")"
     ))]
-    /// Import existing account (a.k.a. "sign in")
-    ImportAccountFromWebWallet(self::from_web_wallet::LoginFromWebWallet),
+    /// Import existing account using NEAR Wallet (a.k.a. "sign in")
+    UsingWebWallet(self::using_web_wallet::LoginFromWebWallet),
     #[strum_discriminants(strum(
-        message = "import-account-from-seed-phrase         - Import existing account from seed phrase"
+        message = "using-seed-phrase         - Import existing account using a seed phrase"
     ))]
-    /// Import existing account from seed phrase
-    ImportAccountFromSeedPhrase(self::from_seed_phrase::LoginFromSeedPhrase),
+    /// Import existing account using a seed phrase
+    UsingSeedPhrase(self::using_seed_phrase::LoginFromSeedPhrase),
     #[strum_discriminants(strum(
-        message = "import-account-from-private-key         - Import existing account from private key"
+        message = "using-private-key         - Import existing account using a private key"
     ))]
-    /// Import existing account from private key
-    ImportAccountFromPrivateKey(self::from_private_key::LoginFromPrivateKey),
+    /// Import existing account using a private key
+    UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
 }
 
 impl ImportAccountActions {
