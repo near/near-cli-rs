@@ -3,6 +3,7 @@ use std::{str::FromStr, vec};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod from_private_key;
+mod from_seed_phrase;
 mod from_web_wallet;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -29,6 +30,11 @@ pub enum ImportAccountActions {
     /// Import existing account (a.k.a. "sign in")
     ImportAccountFromWebWallet(self::from_web_wallet::LoginFromWebWallet),
     #[strum_discriminants(strum(
+        message = "import-account-from-seed-phrase         - Import existing account from seed phrase"
+    ))]
+    /// Import existing account from seed phrase
+    ImportAccountFromSeedPhrase(self::from_seed_phrase::LoginFromSeedPhrase),
+    #[strum_discriminants(strum(
         message = "import-account-from-private-key         - Import existing account from private key"
     ))]
     /// Import existing account from private key
@@ -39,6 +45,7 @@ impl ImportAccountActions {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         match self {
             Self::ImportAccountFromWebWallet(login) => login.process(config).await,
+            Self::ImportAccountFromSeedPhrase(login) => login.process(config).await,
             Self::ImportAccountFromPrivateKey(login) => login.process(config).await,
         }
     }

@@ -22,7 +22,7 @@ impl LoginFromPrivateKey {
         let public_key = private_key.public_key();
         let key_pair_properties = KeyPairProperties {
             public_key: public_key.clone(),
-            private_key
+            private_key,
         };
         let key_pair_properties_buf = serde_json::to_string(&key_pair_properties).unwrap();
         let error_message = "\nIt is currently not possible to verify the account access key.\nYou may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n";

@@ -575,6 +575,49 @@ pub struct KeyPairProperties {
     pub secret_keypair_str: String,
 }
 
+pub fn get_key_pair_properties_from_seed_phrase(
+    seed_phrase_hd_path: crate::types::slip10::BIP32Path,
+    master_seed_phrase: String,
+) -> color_eyre::eyre::Result<KeyPairProperties> {
+    let master_seed = bip39::Mnemonic::parse(&master_seed_phrase)?.to_seed("");
+    let derived_private_key = slip10::derive_key_from_path(
+        &master_seed,
+        slip10::Curve::Ed25519,
+        &seed_phrase_hd_path.clone().into(),
+    )
+    .map_err(|err| {
+        color_eyre::Report::msg(format!(
+            "Failed to derive a key from the master key: {}",
+            err
+        ))
+    })?;
+
+    let secret_keypair = {
+        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
+        let public = ed25519_dalek::PublicKey::from(&secret);
+        ed25519_dalek::Keypair { secret, public }
+    };
+
+    let implicit_account_id =
+        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
+    let public_key_str = format!(
+        "ed25519:{}",
+        bs58::encode(&secret_keypair.public).into_string()
+    );
+    let secret_keypair_str = format!(
+        "ed25519:{}",
+        bs58::encode(secret_keypair.to_bytes()).into_string()
+    );
+    let key_pair_properties: KeyPairProperties = KeyPairProperties {
+        seed_phrase_hd_path,
+        master_seed_phrase,
+        implicit_account_id,
+        public_key_str,
+        secret_keypair_str,
+    };
+    Ok(key_pair_properties)
+}
+
 pub fn get_public_key_from_seed_phrase(
     seed_phrase_hd_path: slip10::BIP32Path,
     master_seed_phrase: &str,
