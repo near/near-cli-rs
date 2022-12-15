@@ -42,15 +42,9 @@ account
     - fund-later <initial-balance>  (implicit account creation)
 
   - import-account (a.k.a "log in" / "sign in")
-    - from-web-wallet
-      - save-access-key-to-macos-keychain network <"mainnet"|"testnet">
-      - save-access-key-to-keychain network <"mainnet"|"testnet">
-    - from-seed-phrase <seed-phrase> --hd-path "m/44'/397'/0'"
-      - save-access-key-to-macos-keychain network <"mainnet"|"testnet">
-      - save-access-key-to-keychain network <"mainnet"|"testnet">
-    - from-private-key <private-key>
-      - save-access-key-to-macos-keychain network <"mainnet"|"testnet">
-      - save-access-key-to-keychain network <"mainnet"|"testnet">
+    - using-web-wallet network-config <"mainnet"|"testnet">
+    - using-seed-phrase <seed-phrase> --hd-path "m/44'/397'/0'" network-config <"mainnet"|"testnet">
+    - using-private-key <private-key> network-config <"mainnet"|"testnet">
 
   - delete-account <account-id> beneficiary <beneficiary-account-id> network <"mainnet"|"testnet"|...>
     - transaction signature options here (see below)
