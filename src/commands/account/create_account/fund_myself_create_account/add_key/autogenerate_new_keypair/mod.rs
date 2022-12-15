@@ -49,14 +49,22 @@ impl SaveMode {
         storage_properties: Option<super::super::StorageProperties>,
     ) -> color_eyre::eyre::Result<String> {
         match storage_properties {
-            Some(properties) => crate::common::save_access_key_to_macos_keychain(
-                network_config,
-                properties.key_pair_properties,
-                &account_properties.new_account_id,
-            )
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
-            }),
+            Some(properties) => {
+                let key_pair_properties_buf =
+                    serde_json::to_string(&properties.key_pair_properties)?;
+                crate::common::save_access_key_to_macos_keychain(
+                    network_config,
+                    &key_pair_properties_buf,
+                    &properties.key_pair_properties.public_key_str,
+                    &account_properties.new_account_id,
+                )
+                .map_err(|err| {
+                    color_eyre::Report::msg(format!(
+                        "Failed to save a file with access key: {}",
+                        err
+                    ))
+                })
+            }
             None => Ok(String::new()),
         }
     }
@@ -68,15 +76,23 @@ impl SaveMode {
         storage_properties: Option<super::super::StorageProperties>,
     ) -> color_eyre::eyre::Result<String> {
         match storage_properties {
-            Some(properties) => crate::common::save_access_key_to_keychain(
-                network_config,
-                config.credentials_home_dir,
-                properties.key_pair_properties,
-                &account_properties.new_account_id,
-            )
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
-            }),
+            Some(properties) => {
+                let key_pair_properties_buf =
+                    serde_json::to_string(&properties.key_pair_properties)?;
+                crate::common::save_access_key_to_keychain(
+                    network_config,
+                    config.credentials_home_dir,
+                    &key_pair_properties_buf,
+                    &properties.key_pair_properties.public_key_str,
+                    &account_properties.new_account_id,
+                )
+                .map_err(|err| {
+                    color_eyre::Report::msg(format!(
+                        "Failed to save a file with access key: {}",
+                        err
+                    ))
+                })
+            }
             None => Ok(String::new()),
         }
     }

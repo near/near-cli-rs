@@ -1,42 +1,65 @@
 use inquire::{CustomType, Select};
 use std::{str::FromStr, vec};
 
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
+mod using_private_key;
+mod using_seed_phrase;
+mod using_web_wallet;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
-pub struct Login {
-    #[interactive_clap(named_arg)]
-    ///Select network
-    network_config: crate::network::Network,
+pub struct ImportAccountCommand {
+    #[interactive_clap(subcommand)]
+    import_account_actions: ImportAccountActions,
 }
 
-impl Login {
+impl ImportAccountCommand {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let network_config = self.network_config.get_network_config(config.clone());
-        login(network_config, config.credentials_home_dir).await
+        self.import_account_actions.process(config).await
     }
 }
 
-async fn login(
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = crate::GlobalContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// How would you like to import the account?
+pub enum ImportAccountActions {
+    #[strum_discriminants(strum(
+        message = "using-web-wallet          - Import existing account using NEAR Wallet (a.k.a. \"sign in\")"
+    ))]
+    /// Import existing account using NEAR Wallet (a.k.a. "sign in")
+    UsingWebWallet(self::using_web_wallet::LoginFromWebWallet),
+    #[strum_discriminants(strum(
+        message = "using-seed-phrase         - Import existing account using a seed phrase"
+    ))]
+    /// Import existing account using a seed phrase
+    UsingSeedPhrase(self::using_seed_phrase::LoginFromSeedPhrase),
+    #[strum_discriminants(strum(
+        message = "using-private-key         - Import existing account using a private key"
+    ))]
+    /// Import existing account using a private key
+    UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
+}
+
+impl ImportAccountActions {
+    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
+        match self {
+            Self::UsingWebWallet(login) => login.process(config).await,
+            Self::UsingSeedPhrase(login) => login.process(config).await,
+            Self::UsingPrivateKey(login) => login.process(config).await,
+        }
+    }
+}
+
+pub async fn login(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
+    key_pair_properties_buf: &str,
+    public_key_str: &str,
+    error_message: &str,
 ) -> crate::CliResult {
-    let key_pair_properties: crate::common::KeyPairProperties =
-        crate::common::generate_keypair().await?;
-    let mut url: url::Url = network_config.wallet_url.join("login/")?;
-    url.query_pairs_mut()
-        .append_pair("title", "NEAR CLI")
-        .append_pair("public_key", &key_pair_properties.public_key_str);
-    // Use `success_url` once capture mode is implemented
-    //.append_pair("success_url", "http://127.0.0.1:8080");
-    println!(
-        "If your browser doesn't automatically open, please visit this URL:\n {}\n",
-        &url.as_str()
-    );
-    // url.open();
-    open::that(url.as_ref()).ok();
-
-    let public_key: near_crypto::PublicKey =
-        near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
+    let public_key: near_crypto::PublicKey = near_crypto::PublicKey::from_str(public_key_str)?;
 
     let account_id = loop {
         let account_id_from_cli = input_account_id()?;
@@ -49,7 +72,8 @@ async fn login(
         .await
         .is_err()
         {
-            println!("\nIt is currently not possible to verify the account access key.\nYou may not be logged in to {} or you may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n", &url.as_str());
+            println!("{}", error_message);
+
             #[derive(strum_macros::Display)]
             enum ConfirmOptions {
                 #[strum(to_string = "Yes, I want to re-enter the account_id.")]
@@ -71,7 +95,8 @@ async fn login(
     };
     save_access_key(
         account_id,
-        key_pair_properties,
+        key_pair_properties_buf,
+        public_key_str,
         network_config,
         credentials_home_dir,
     )?;
@@ -85,7 +110,8 @@ fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::Accoun
 
 fn save_access_key(
     account_id: near_primitives::types::AccountId,
-    key_pair_properties: crate::common::KeyPairProperties,
+    key_pair_properties_buf: &str,
+    public_key_str: &str,
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
 ) -> crate::CliResult {
@@ -102,7 +128,8 @@ fn save_access_key(
         if selection == macos_keychain {
             let storage_message = crate::common::save_access_key_to_macos_keychain(
                 network_config,
-                key_pair_properties,
+                key_pair_properties_buf,
+                public_key_str,
                 &account_id,
             )
             .map_err(|err| {
@@ -118,7 +145,8 @@ fn save_access_key(
     let storage_message = crate::common::save_access_key_to_keychain(
         network_config,
         credentials_home_dir,
-        key_pair_properties,
+        key_pair_properties_buf,
+        public_key_str,
         &account_id,
     )
     .map_err(|err| {

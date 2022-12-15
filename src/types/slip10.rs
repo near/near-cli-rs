@@ -22,6 +22,12 @@ impl From<BIP32Path> for slip10::BIP32Path {
     }
 }
 
+impl From<slip10::BIP32Path> for BIP32Path {
+    fn from(item: slip10::BIP32Path) -> Self {
+        Self(item)
+    }
+}
+
 impl serde::ser::Serialize for BIP32Path {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
