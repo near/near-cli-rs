@@ -1,6 +1,7 @@
 use inquire::{CustomType, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
+pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
@@ -35,6 +36,11 @@ pub enum SignWith {
     ))]
     /// Sign the transaction with a plaintext private key
     SignWithPlaintextPrivateKey(self::sign_with_private_key::SignPrivateKey),
+    #[strum_discriminants(strum(
+        message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
+    ))]
+    /// Sign the transaction using the account access key file (access-key-file.json)
+    SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
 }
 
 pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
@@ -80,6 +86,14 @@ pub async fn sign_with(
         }
         SignWith::SignWithPlaintextPrivateKey(sign_private_key) => {
             sign_private_key
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config),
+                )
+                .await
+        }
+        SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
+            sign_access_key_file
                 .process(
                     prepopulated_unsigned_transaction,
                     network_config.get_network_config(config),
