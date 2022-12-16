@@ -176,11 +176,16 @@ impl std::str::FromStr for NearBalance {
                             .checked_add(num_fract_yocto)
                             .ok_or("Near Balance: underflow or overflow happens")?
                     }
-                    1 => res_split[0]
-                        .parse::<u128>()
-                        .map_err(|err| format!("Near Balance: {}", err))?
-                        .checked_mul(10u128.pow(24))
-                        .ok_or("Near Balance: underflow or overflow happens")?,
+                    1 => {
+                        if res_split[0].starts_with('0') && res_split[0] != "0" {
+                            return Err("Near Balance: incorrect number entered".to_string());
+                        };
+                        res_split[0]
+                            .parse::<u128>()
+                            .map_err(|err| format!("Near Balance: {}", err))?
+                            .checked_mul(10u128.pow(24))
+                            .ok_or("Near Balance: underflow or overflow happens")?
+                    }
                     _ => return Err("Near Balance: incorrect number entered".to_string()),
                 }
             }
@@ -1611,11 +1616,28 @@ mod tests {
         );
     }
     #[test]
+    fn near_balance_from_str_0_near() {
+        assert_eq!(
+            NearBalance::from_str("0 near").unwrap(),
+            NearBalance {
+                yoctonear_amount: 0
+            }
+        );
+    }
+    #[test]
     fn near_balance_from_str_f64_near_without_int() {
         let near_balance = NearBalance::from_str(".055NEAR");
         assert_eq!(
             near_balance,
             Err("Near Balance: cannot parse integer from empty string".to_string())
+        );
+    }
+    #[test]
+    fn near_balance_from_str_05_near() {
+        let near_balance = NearBalance::from_str("05NEAR");
+        assert_eq!(
+            near_balance,
+            Err("Near Balance: incorrect number entered".to_string())
         );
     }
     #[test]
