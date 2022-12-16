@@ -1,6 +1,5 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
-// #[interactive_clap(skip_default_from_cli)]
 pub struct LoginFromPrivateKey {
     /// Enter your private (secret) key
     private_key: crate::types::secret_key::SecretKey,

@@ -100,7 +100,6 @@ pub async fn login(
         network_config,
         credentials_home_dir,
     )?;
-
     Ok(())
 }
 
@@ -117,15 +116,24 @@ fn save_access_key(
 ) -> crate::CliResult {
     #[cfg(target_os = "macos")]
     {
-        let macos_keychain = "Store the access key in my macOS keychain";
-        let legacy_keychain =
-            "Store the access key in my legacy keychain (compatible with the old near CLI)";
+        #[derive(strum_macros::Display)]
+        enum SelectStorage {
+            #[strum(to_string = "Store the access key in my macOS keychain")]
+            SaveToMacosKeychain,
+            #[strum(
+                to_string = "Store the access key in my legacy keychain (compatible with the old near CLI)"
+            )]
+            SaveToKeychain,
+        }
         let selection = Select::new(
             "Select a keychain to save the access key to:",
-            vec![macos_keychain, legacy_keychain],
+            vec![
+                SelectStorage::SaveToMacosKeychain,
+                SelectStorage::SaveToKeychain,
+            ],
         )
         .prompt()?;
-        if selection == macos_keychain {
+        if let SelectStorage::SaveToMacosKeychain = selection {
             let storage_message = crate::common::save_access_key_to_macos_keychain(
                 network_config,
                 key_pair_properties_buf,

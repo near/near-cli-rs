@@ -3,7 +3,6 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
-// #[interactive_clap(skip_default_from_cli)]
 pub struct LoginFromSeedPhrase {
     /// Enter the seed-phrase for this account
     master_seed_phrase: String,
