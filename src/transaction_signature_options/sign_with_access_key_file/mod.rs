@@ -41,9 +41,8 @@ impl SignAccessKeyFile {
         let data = std::fs::read_to_string(&self.file_path.0.clone()).map_err(|err| {
             color_eyre::Report::msg(format!("Access key file not found! Error: {}", err))
         })?;
-        let account_json: super::sign_with_keychain::AccountKeyPair =
-            serde_json::from_str(&data)
-                .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
+        let account_json: super::AccountKeyPair = serde_json::from_str(&data)
+            .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
             signer_public_key: crate::types::public_key::PublicKey(account_json.public_key),
             signer_private_key: crate::types::secret_key::SecretKey(account_json.private_key),

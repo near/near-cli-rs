@@ -1,7 +1,5 @@
 extern crate dirs;
 
-use serde::Deserialize;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[interactive_clap(skip_default_from_cli)]
@@ -16,12 +14,6 @@ pub struct SignKeychain {
     block_hash: Option<String>,
     #[interactive_clap(subcommand)]
     submit: Option<super::Submit>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct AccountKeyPair {
-    pub public_key: near_crypto::PublicKey,
-    pub private_key: near_crypto::SecretKey,
 }
 
 impl interactive_clap::FromCli for SignKeychain {
@@ -138,7 +130,7 @@ impl SignKeychain {
         let data = std::fs::read_to_string(data_path).map_err(|err| {
             color_eyre::Report::msg(format!("Access key file not found! Error: {}", err))
         })?;
-        let account_json: AccountKeyPair = serde_json::from_str(&data)
+        let account_json: super::AccountKeyPair = serde_json::from_str(&data)
             .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
             signer_public_key: crate::types::public_key::PublicKey(account_json.public_key),

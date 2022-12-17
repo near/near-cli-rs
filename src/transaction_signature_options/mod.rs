@@ -1,4 +1,5 @@
 use inquire::{CustomType, Select};
+use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod sign_with_access_key_file;
@@ -213,4 +214,10 @@ impl Submit {
             }
         }
     }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AccountKeyPair {
+    pub public_key: near_crypto::PublicKey,
+    pub private_key: near_crypto::SecretKey,
 }
