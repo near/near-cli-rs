@@ -21,17 +21,14 @@ impl interactive_clap::FromCli for SignAccessKeyFile {
     {
         let file_path: crate::types::path_buf::PathBuf = match optional_clap_variant
             .clone()
-            .and_then(|clap_variant| clap_variant.file_path.clone())
+            .and_then(|clap_variant| clap_variant.file_path)
         {
             Some(cli_file_path) => cli_file_path,
             None => Self::input_file_path(&context)?,
         };
         let submit: Option<super::Submit> =
             optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
-        Ok(Some(Self {
-            file_path,
-            submit,
-        }))
+        Ok(Some(Self { file_path, submit }))
     }
 }
 
@@ -41,12 +38,12 @@ impl SignAccessKeyFile {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_config: crate::config::NetworkConfig,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        let data = std::fs::read_to_string(&self.file_path.0.clone())
-        .map_err(|err| {
+        let data = std::fs::read_to_string(&self.file_path.0.clone()).map_err(|err| {
             color_eyre::Report::msg(format!("Access key file not found! Error: {}", err))
         })?;
-        let account_json: super::sign_with_keychain::AccountKeyPair = serde_json::from_str(&data)
-            .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
+        let account_json: super::sign_with_keychain::AccountKeyPair =
+            serde_json::from_str(&data)
+                .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
             signer_public_key: crate::types::public_key::PublicKey(account_json.public_key),
             signer_private_key: crate::types::secret_key::SecretKey(account_json.private_key),
