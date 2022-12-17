@@ -8,6 +8,7 @@ pub mod sign_with_ledger;
 #[cfg(target_os = "macos")]
 pub mod sign_with_macos_keychain;
 pub mod sign_with_private_key;
+pub mod sign_with_seed_phrase;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -41,6 +42,11 @@ pub enum SignWith {
     ))]
     /// Sign the transaction using the account access key file (access-key-file.json)
     SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
+    #[strum_discriminants(strum(
+        message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
+    ))]
+    /// Sign the transaction using the seed phrase
+    SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
 }
 
 pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
@@ -94,6 +100,14 @@ pub async fn sign_with(
         }
         SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
             sign_access_key_file
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config),
+                )
+                .await
+        }
+        SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
+            sign_seed_phrase
                 .process(
                     prepopulated_unsigned_transaction,
                     network_config.get_network_config(config),
