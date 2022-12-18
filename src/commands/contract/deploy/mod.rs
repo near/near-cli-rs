@@ -33,7 +33,7 @@ impl ContractFile {
         config: crate::config::Config,
         account_id: near_primitives::types::AccountId,
     ) -> crate::CliResult {
-        let code = std::fs::read(&self.file_path.0.clone()).map_err(|err| {
+        let code = std::fs::read(&self.file_path).map_err(|err| {
             color_eyre::Report::msg(format!(
                 "Failed to open or read the file: {:?}.\nError: {:?}",
                 &self.file_path.0.clone(),

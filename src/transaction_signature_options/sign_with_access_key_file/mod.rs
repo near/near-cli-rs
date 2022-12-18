@@ -38,7 +38,7 @@ impl SignAccessKeyFile {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
         network_config: crate::config::NetworkConfig,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        let data = std::fs::read_to_string(&self.file_path.0.clone()).map_err(|err| {
+        let data = std::fs::read_to_string(&self.file_path).map_err(|err| {
             color_eyre::Report::msg(format!("Access key file not found! Error: {}", err))
         })?;
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)

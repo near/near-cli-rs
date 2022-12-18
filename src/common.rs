@@ -1335,7 +1335,7 @@ pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
         )
     })?;
 
-    let err = match cargo_util::ProcessBuilder::new(&command)
+    let err = match cargo_util::ProcessBuilder::new(command)
         .args(&args)
         .exec_replace()
     {

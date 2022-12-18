@@ -26,17 +26,17 @@ impl interactive_clap::FromCli for SignSeedPhrase {
         Self: Sized + interactive_clap::ToCli,
     {
         let master_seed_phrase: String = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.master_seed_phrase)
+            .as_ref()
+            .and_then(|clap_variant| clap_variant.master_seed_phrase.as_ref())
         {
-            Some(master_seed_phrase) => master_seed_phrase,
+            Some(master_seed_phrase) => master_seed_phrase.clone(),
             None => Self::input_master_seed_phrase(&context)?,
         };
         let seed_phrase_hd_path: crate::types::slip10::BIP32Path = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.seed_phrase_hd_path)
+            .as_ref()
+            .and_then(|clap_variant| clap_variant.seed_phrase_hd_path.as_ref())
         {
-            Some(seed_phrase_hd_path) => seed_phrase_hd_path,
+            Some(seed_phrase_hd_path) => seed_phrase_hd_path.clone(),
             None => Self::input_seed_phrase_hd_path(&context)?,
         };
         let submit: Option<super::Submit> =
