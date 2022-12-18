@@ -4,7 +4,7 @@ use std::str::FromStr;
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct LoginFromSeedPhrase {
-    /// Enter the seed-phrase for this sub-account
+    /// Enter the seed-phrase for this account
     master_seed_phrase: String,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]

@@ -107,9 +107,8 @@ impl SignMacosKeychain {
                     prepopulated_unsigned_transaction.signer_id
                 ))
             })?;
-        let account_json: super::sign_with_keychain::AccountKeyPair =
-            serde_json::from_slice(password.as_ref())
-                .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {:?}", err)))?;
+        let account_json: super::AccountKeyPair = serde_json::from_slice(password.as_ref())
+            .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {:?}", err)))?;
         let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
             signer_public_key: crate::types::public_key::PublicKey(account_json.public_key),
             signer_private_key: crate::types::secret_key::SecretKey(account_json.private_key),

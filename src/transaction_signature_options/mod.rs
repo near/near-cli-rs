@@ -1,12 +1,15 @@
 use inquire::{CustomType, Select};
+use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
+pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
 #[cfg(target_os = "macos")]
 pub mod sign_with_macos_keychain;
 pub mod sign_with_private_key;
+pub mod sign_with_seed_phrase;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -35,6 +38,16 @@ pub enum SignWith {
     ))]
     /// Sign the transaction with a plaintext private key
     SignWithPlaintextPrivateKey(self::sign_with_private_key::SignPrivateKey),
+    #[strum_discriminants(strum(
+        message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
+    ))]
+    /// Sign the transaction using the account access key file (access-key-file.json)
+    SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
+    #[strum_discriminants(strum(
+        message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
+    ))]
+    /// Sign the transaction using the seed phrase
+    SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
 }
 
 pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
@@ -80,6 +93,22 @@ pub async fn sign_with(
         }
         SignWith::SignWithPlaintextPrivateKey(sign_private_key) => {
             sign_private_key
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config),
+                )
+                .await
+        }
+        SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
+            sign_access_key_file
+                .process(
+                    prepopulated_unsigned_transaction,
+                    network_config.get_network_config(config),
+                )
+                .await
+        }
+        SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
+            sign_seed_phrase
                 .process(
                     prepopulated_unsigned_transaction,
                     network_config.get_network_config(config),
@@ -185,4 +214,10 @@ impl Submit {
             }
         }
     }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AccountKeyPair {
+    pub public_key: near_crypto::PublicKey,
+    pub private_key: near_crypto::SecretKey,
 }
