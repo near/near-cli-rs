@@ -54,8 +54,16 @@ fn main() -> CliResult {
     // }
 
     let cmd = loop {
-        if let Some(cmd) = Cmd::from_cli(Some(cli.clone()), (config.clone(),))? {
-            break cmd;
+        match Cmd::from_cli(Some(cli.clone()), (config.clone(),)) {
+            Ok(cmd_optional) => {
+                if let Some(cmd) = cmd_optional {
+                    break cmd;
+                }
+            }
+            Err(err) => {
+                println!("{}", err);
+                return Ok(());
+            }
         }
     };
 
@@ -71,5 +79,11 @@ fn main() -> CliResult {
         shell_words::join(&completed_cli.to_cli_args())
     );
 
-    process_result
+    match process_result {
+        Ok(()) => Ok(()),
+        Err(err) => {
+            println!("{}", err);
+            Ok(())
+        }
+    }
 }
