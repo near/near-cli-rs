@@ -1,4 +1,3 @@
-use inquire::Text;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
