@@ -92,9 +92,9 @@ fn main() -> CliResult {
                 | inquire::InquireError::OperationInterrupted,
             ) => {
                 println!("<Operation was interrupted. Goodbye>");
-                return Ok(());
+                Ok(())
             }
-            Some(_) | None => return Err(err),
+            Some(_) | None => Err(err),
         },
     }
 }
