@@ -46,8 +46,8 @@ near-primitives = "0.15"
 near-jsonrpc-client = "0.4.0"
 near-jsonrpc-primitives = "0.15"
 
-interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="8593aba4696583808b8f712907eca601f24ac807" }
-interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="8593aba4696583808b8f712907eca601f24ac807" }
+interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="d751aca94ee1e0ed93ac4905619174185fc0eef5" }
+interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="d751aca94ee1e0ed93ac4905619174185fc0eef5" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.7.0"
