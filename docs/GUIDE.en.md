@@ -38,8 +38,16 @@ Before proceeding to the description of specific commands, it is necessary to co
     - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
 
         When choosing this signature option, _near-cli_ will ask the user to enter access keys:
-          "public_key":"ed25519:Ebx7...",
-          "private_key":"ed25519:2qM8..."
+        - "public_key":"ed25519:Ebx7...",
+        - "private_key":"ed25519:2qM8..."
+
+    - _sign-with-access-key-file - Sign the transaction using the account access key file (access-key-file.json)_
+
+        When choosing this signature option, _near-cli_ will ask the user to enter the path to a file that contains information about account access keys.
+
+    - _sign-with-seed-phrase - Sign the transaction using the seed phrase_
+
+        When choosing this signature option, _near-cli_ will ask the user to enter the mnemonic phrase associated with the account.
 
 2. Actions with a signed transaction
 

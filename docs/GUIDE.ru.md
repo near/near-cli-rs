@@ -39,6 +39,14 @@
         - "public_key":"ed25519:Ebx7...",
         - "private_key":"ed25519:2qM8..."
 
+    - _sign-with-access-key-file - Sign the transaction using the account access key file (access-key-file.json)_
+
+        При выборе этого варианта подписи _near-cli_ попросит пользователя ввести путь к файлу, в котором находится информация о ключах доступа к аккаунту.
+
+    - _sign-with-seed-phrase - Sign the transaction using the seed phrase_
+
+        При выборе этого варианта подписи _near-cli_ попросит пользователя ввести мнемоническую фразу, связанную с аккаунтом.
+
 2. Действия с подписанной транзакцией
 
    Подписанную транзакцию можно либо немедленно отправить на выполнение:
