@@ -1,10 +1,18 @@
 [package]
-name = "near-cli"
-version = "0.2.0"
+name = "near-cli-rs"
+version = "0.2.1"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
+license = "MIT OR Apache-2.0"
 edition = "2021"
+homepage = "https://near.cli.rs"
+repository = "https://github.com/near/near-cli-rs"
+description = "near-cli-rs is your human-friendly companion that helps to interact with NEAR Protocol from command line."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "near-cli"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.0.18", features = ["derive"] }
@@ -46,8 +54,8 @@ near-primitives = "0.15"
 near-jsonrpc-client = "0.4.0"
 near-jsonrpc-primitives = "0.15"
 
-interactive_clap = { git = "https://github.com/FroVolod/interactive-clap", rev="d751aca94ee1e0ed93ac4905619174185fc0eef5" }
-interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap", rev="d751aca94ee1e0ed93ac4905619174185fc0eef5" }
+interactive-clap = "0.1.0"
+interactive-clap-derive = "0.1.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.7.0"
