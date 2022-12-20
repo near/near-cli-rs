@@ -53,13 +53,11 @@ impl SignSeedPhrase {
     fn input_seed_phrase_hd_path(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::types::slip10::BIP32Path> {
-        Ok(crate::types::slip10::BIP32Path::from_str(
-            &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default)")
-                .with_initial_value("m/44'/397'/0'")
-                .prompt()
-                .unwrap(),
+        Ok(
+            inquire::CustomType::new("Enter seed phrase HD Path [if not sure, keep the default]")
+                .with_default(crate::types::slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap())
+                .prompt()?,
         )
-        .unwrap())
     }
 
     pub async fn process(

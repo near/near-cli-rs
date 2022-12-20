@@ -55,15 +55,20 @@ fn main() -> CliResult {
 
     let cmd = loop {
         match Cmd::from_cli(Some(cli.clone()), (config.clone(),)) {
-            Ok(cmd_optional) => {
-                if let Some(cmd) = cmd_optional {
-                    break cmd;
+            Ok(Some(cmd)) => {
+                break cmd;
+            }
+            Ok(None) => {}
+            Err(err) => match err.downcast_ref() {
+                Some(
+                    inquire::InquireError::OperationCanceled
+                    | inquire::InquireError::OperationInterrupted,
+                ) => {
+                    println!("<Operation was interrupted. Goodbye>");
+                    return Ok(());
                 }
-            }
-            Err(err) => {
-                println!("{}", err);
-                return Ok(());
-            }
+                Some(_) | None => return Err(err),
+            },
         }
     };
 
@@ -81,9 +86,15 @@ fn main() -> CliResult {
 
     match process_result {
         Ok(()) => Ok(()),
-        Err(err) => {
-            println!("{}", err);
-            Ok(())
-        }
+        Err(err) => match err.downcast_ref() {
+            Some(
+                inquire::InquireError::OperationCanceled
+                | inquire::InquireError::OperationInterrupted,
+            ) => {
+                println!("<Operation was interrupted. Goodbye>");
+                return Ok(());
+            }
+            Some(_) | None => return Err(err),
+        },
     }
 }
