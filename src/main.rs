@@ -81,7 +81,7 @@ fn main() -> CliResult {
     println!(
         "Your console command:\n{} {}",
         std::env::args().next().as_deref().unwrap_or("./near_cli"),
-        shell_words::join(&completed_cli.to_cli_args())
+        shell_words::join(completed_cli.to_cli_args())
     );
 
     match process_result {
