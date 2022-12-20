@@ -38,8 +38,16 @@ Before proceeding to the description of specific commands, it is necessary to co
     - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
 
         When choosing this signature option, _near-cli_ will ask the user to enter access keys:
-          "public_key":"ed25519:Ebx7...",
-          "private_key":"ed25519:2qM8..."
+        - "public_key":"ed25519:Ebx7...",
+        - "private_key":"ed25519:2qM8..."
+
+    - _sign-with-access-key-file - Sign the transaction using the account access key file (access-key-file.json)_
+
+        When choosing this signature option, _near-cli_ will ask the user to enter the path to a file that contains information about account access keys.
+
+    - _sign-with-seed-phrase - Sign the transaction using the seed phrase_
+
+        When choosing this signature option, _near-cli_ will ask the user to enter the mnemonic phrase associated with the account.
 
 2. Actions with a signed transaction
 
@@ -202,10 +210,17 @@ Number of access keys: 12
 
 #### import-account - Import existing account (a.k.a. "sign in")
 
+- [using-web-wallet](#using-web-wallet---Import-existing-account-using-NEAR-Wallet-aka-sign-in)
+- [using-seed-phrase](#using-seed-phrase---Import-existing-account-using-a-seed-phrase)
+- [using-private-key](#using-private-key---Import-existing-account-using-a-private-key)
+
+#### using-web-wallet - Import existing account using NEAR Wallet (a.k.a. "sign in")
+
 To authorize the user, in the terminal command line type:
 ```txt
 ./near-cli account \
     import-account \
+    using-web-wallet \
     network-config testnet
 ```
 
@@ -213,14 +228,60 @@ You will be redirected to the browser for authorization. After successful author
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/fro_volod.testnet/ed25519_GicfpXn1Ebb71gkBAoXKsoU1Nwv2hBppiMexxSFRHjyM.json
-The file: /Users/frovolod/.near-credentials/testnet/fro_volod.testnet.json already exists! Therefore it was not overwritten.
+The data for the access key is saved in macOS Keychain
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/ham4fYGgVjOJq3U2gfwwySIvj?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/ham4fYGgVjOJq3U2gfwwySIvj.png" width="836"/>
+<a href="https://asciinema.org/a/qEqxCxVMKjAWg92XhYCzWYhxO?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/qEqxCxVMKjAWg92XhYCzWYhxO.png" width="836"/>
+</a>
+</details>
+
+#### using-seed-phrase - Import existing account using a seed phrase
+
+To authorize the user, in the terminal command line type:
+```txt
+./near-cli account \
+    import-account \
+    using-seed-phrase 'rapid cover napkin accuse junk drill sick tooth poem patch evil fan' \
+        --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''' \
+    network-config testnet
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+The data for the access key is saved in macOS Keychain
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/G9l4So0zbT3bNGekePp1tzJg5?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/G9l4So0zbT3bNGekePp1tzJg5.png" width="836"/>
+</a>
+</details>
+
+#### using-private-key - Import existing account using a private key
+
+To authorize the user, in the terminal command line type:
+```txt
+./near-cli account \
+    import-account \
+    using-private-key ed25519:5YhAaEe3G4VtiBavJMvpzPPmknfsTauzVjwK1ZjPVw2MFM6zFyUv4tSiSfCbCn78mEnMifE6iX5qbhFsWEwErcC2 \
+    network-config testnet
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+The data for the access key is saved in macOS Keychain
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/KK14atSSbI8dLB3RcuyI2tfP8?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/KK14atSSbI8dLB3RcuyI2tfP8.png" width="836"/>
 </a>
 </details>
 
