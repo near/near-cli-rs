@@ -1,5 +1,6 @@
 mod create_account;
 mod delete;
+mod deploy;
 mod keys;
 mod state;
 mod tx_status;
@@ -11,6 +12,7 @@ pub enum JsCmd {
     Delete(self::delete::DeleteArgs),
     Keys(self::keys::KeysArgs),
     TxStatus(self::tx_status::TxStatusArgs),
+    Deploy(self::deploy::DeployArgs),
 }
 
 impl JsCmd {
@@ -21,6 +23,7 @@ impl JsCmd {
             Self::Delete(delete_args) => delete_args.to_cli_args(),
             Self::Keys(keys_args) => keys_args.to_cli_args(),
             Self::TxStatus(tx_status_args) => tx_status_args.to_cli_args(),
+            Self::Deploy(deploy_args) => deploy_args.to_cli_args(),
         }
     }
 }
