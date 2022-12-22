@@ -1,4 +1,5 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
+use clap::Parser;
 use common::{try_external_subcommand_execution, CliResult};
 use interactive_clap::FromCli;
 use interactive_clap::ToCliArgs;
@@ -6,6 +7,7 @@ use interactive_clap::ToCliArgs;
 mod commands;
 mod common;
 mod config;
+mod js_command_match;
 mod network;
 mod network_for_transaction;
 mod network_view_at_block;
@@ -36,6 +38,18 @@ fn main() -> CliResult {
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
         Err(error) => {
+            match self::js_command_match::JsCmd::try_parse() {
+                Ok(js_cmd) => {
+                    println!("Maybe this command was intended for <near JS>");
+                    println!(
+                        "Your new command:\n{} {}",
+                        std::env::args().next().as_deref().unwrap_or("./near_cli"),
+                        shell_words::join(js_cmd.rust_command_generation())
+                    );
+                }
+                Err(error) => error.exit(),
+            }
+
             if matches!(
                 error.kind(),
                 clap::error::ErrorKind::UnknownArgument | clap::error::ErrorKind::InvalidSubcommand
