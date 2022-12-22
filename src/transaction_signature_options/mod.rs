@@ -125,6 +125,8 @@ pub async fn sign_with(
 pub enum Submit {
     #[strum_discriminants(strum(message = "send      - Send the transaction to the network"))]
     Send,
+    #[strum_discriminants(strum(message = "send via relay     - Send to a relayer"))]
+    SendViaRelay,
     #[strum_discriminants(strum(
         message = "display   - Print only base64 encoded transaction for JSON RPC input and exit"
     ))]
@@ -180,6 +182,27 @@ impl Submit {
                     };
                 };
                 Ok(Some(transaction_info))
+            }
+            Submit::SendViaRelay => {  // TODO should this be moved elsewhere (further up) since it's taking a signed tx as input, but needs a SignedDelegateAction as input
+                // TODO relayer type and info
+                let relayer = Ok(Input::new()
+                    .with_prompt("Enter relayer")
+                    .interact_text()?);
+                // create signed delegate action and send to relayer
+                // TODO fill in params from https://github.com/near/nearcore/pull/7497/files#diff-90dfa190ec8dff070747d21fd42e25f6022268a7d008ae1e00c0dd5ada2e5bd2R247
+                let delegate_action = near_primitives::transaction::DelegateAction(
+                    sender_id,
+                    receiver_id,
+                    actions,
+                    nonce,
+                    max_block_height,
+                    public_key
+                );
+                let signed_delegate_action = near_primitives::transaction::SignedDelegateAction(
+                    delegate_action,
+                    signature // TODO get signature
+                );
+                // TODO send signed_delegate_action to relayer
             }
             Submit::Display => {
                 println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
