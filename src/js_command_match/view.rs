@@ -7,16 +7,17 @@ pub struct ViewArgs {
 
 impl ViewArgs {
     pub fn to_cli_args(&self) -> Vec<String> {
-        let mut args: Vec<String> = vec!["contract".to_owned()];
-        args.push("call-function".to_owned());
-        args.push("as-read-only".to_owned());
-        args.push(self.contract_account_id.to_owned());
-        args.push(self.method_name.to_owned());
-        args.push("json-args".to_owned());
-        args.push(self.args.to_owned());
-        args.push("network-config".to_owned());
-        args.push("mainnet".to_owned());
-        args.push("now".to_owned());
-        args
+        vec![
+            "contract".to_owned(),
+            "call-function".to_owned(),
+            "as-read-only".to_owned(),
+            self.contract_account_id.to_owned(),
+            self.method_name.to_owned(),
+            "json-args".to_owned(),
+            self.args.to_owned(),
+            "network-config".to_owned(),
+            "testnet".to_owned(),
+            "now".to_owned(),
+        ]
     }
 }

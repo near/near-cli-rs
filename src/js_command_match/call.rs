@@ -9,23 +9,24 @@ pub struct CallArgs {
 
 impl CallArgs {
     pub fn to_cli_args(&self) -> Vec<String> {
-        let mut args: Vec<String> = vec!["contract".to_owned()];
-        args.push("call-function".to_owned());
-        args.push("as-transaction".to_owned());
-        args.push(self.contract_account_id.to_owned());
-        args.push(self.method_name.to_owned());
-        args.push("json-args".to_owned());
-        args.push(self.args.to_owned());
-        args.push("prepaid-gas".to_owned());
-        args.push("30 TeraGas".to_owned());
-        args.push("attached-deposit".to_owned());
-        args.push("0 NEAR".to_owned());
-        args.push("sign-as".to_owned());
-        args.push(self.master_account.to_owned());
-        args.push("network-config".to_owned());
-        args.push("testnet".to_owned());
-        args.push("sign-with-keychain".to_owned());
-        args.push("send".to_owned());
-        args
+        vec![
+            "contract".to_owned(),
+            "call-function".to_owned(),
+            "as-transaction".to_owned(),
+            self.contract_account_id.to_owned(),
+            self.method_name.to_owned(),
+            "json-args".to_owned(),
+            self.args.to_owned(),
+            "prepaid-gas".to_owned(),
+            "30 TeraGas".to_owned(),
+            "attached-deposit".to_owned(),
+            "0 NEAR".to_owned(),
+            "sign-as".to_owned(),
+            self.master_account.to_owned(),
+            "network-config".to_owned(),
+            "testnet".to_owned(),
+            "sign-with-keychain".to_owned(),
+            "send".to_owned(),
+        ]
     }
 }

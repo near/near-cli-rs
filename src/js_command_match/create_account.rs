@@ -5,18 +5,19 @@ pub struct CreateAccountArgs {
 
 impl CreateAccountArgs {
     pub fn to_cli_args(&self) -> Vec<String> {
-        let mut args: Vec<String> = vec!["account".to_owned()];
-        args.push("create-account".to_owned());
-        args.push("fund-myself".to_owned());
-        args.push(self.account_id.to_owned());
-        args.push("100 NEAR".to_owned());
-        args.push("autogenerate-new-keypair".to_owned());
-        args.push("save-to-keychain".to_owned());
-        args.push("sign-as".to_owned());
-        args.push("network-config".to_owned());
-        args.push("testnet".to_owned());
-        args.push("sign-with-keychain".to_owned());
-        args.push("send".to_owned());
-        args
+        vec![
+            "account".to_owned(),
+            "create-account".to_owned(),
+            "fund-myself".to_owned(),
+            self.account_id.to_owned(),
+            "100 NEAR".to_owned(),
+            "autogenerate-new-keypair".to_owned(),
+            "save-to-keychain".to_owned(),
+            "sign-as".to_owned(),
+            "network-config".to_owned(),
+            "testnet".to_owned(),
+            "sign-with-keychain".to_owned(),
+            "send".to_owned(),
+        ]
     }
 }
