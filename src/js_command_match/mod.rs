@@ -3,6 +3,7 @@ mod create_account;
 mod delete;
 mod deploy;
 mod keys;
+mod send;
 mod state;
 mod tx_status;
 mod view;
@@ -18,6 +19,8 @@ pub enum JsCmd {
     DevDeploy,
     Call(self::call::CallArgs),
     View(self::view::ViewArgs),
+    ViewState,
+    Send(self::send::SendArgs),
 }
 
 impl JsCmd {
@@ -32,6 +35,8 @@ impl JsCmd {
             Self::DevDeploy => todo!("We plan to implement it in dev extension. Here is a standalone implementation: https://github.com/frolvanya/dev-deploy"),
             Self::Call(call_args) => call_args.to_cli_args(),
             Self::View(view_args) => view_args.to_cli_args(),
+            Self::ViewState => todo!("We plan to implement it in dev extension"),
+            Self::Send(send_args) => send_args.to_cli_args(),
         }
     }
 }
