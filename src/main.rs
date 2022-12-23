@@ -38,16 +38,14 @@ fn main() -> CliResult {
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
         Err(error) => {
-            match self::js_command_match::JsCmd::try_parse() {
-                Ok(js_cmd) => {
-                    println!("Maybe this command was intended for <near JS>");
-                    println!(
-                        "Your new command:\n{} {}",
-                        std::env::args().next().as_deref().unwrap_or("./near_cli"),
-                        shell_words::join(js_cmd.rust_command_generation())
-                    );
-                }
-                Err(error) => error.exit(),
+            if let Ok(js_cmd) = self::js_command_match::JsCmd::try_parse() {
+                println!("Maybe this command was intended for <near JS>");
+                println!(
+                    "Your new command:\n{} {}",
+                    std::env::args().next().as_deref().unwrap_or("./near_cli"),
+                    shell_words::join(js_cmd.rust_command_generation())
+                );
+                std::process::exit(1);
             }
 
             if matches!(
