@@ -1766,7 +1766,7 @@ mod tests {
     }
 
     #[test]
-    fn near_balance_from_str_currency_tgas() {
+    fn near_gas_from_str_currency_tgas() {
         assert_eq!(
             NearGas::from_str("10 tgas").unwrap(),
             NearGas {
