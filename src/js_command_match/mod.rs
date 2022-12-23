@@ -5,6 +5,7 @@ mod deploy;
 mod keys;
 mod state;
 mod tx_status;
+mod view;
 
 #[derive(Debug, Clone, clap::Parser)]
 pub enum JsCmd {
@@ -16,6 +17,7 @@ pub enum JsCmd {
     Deploy(self::deploy::DeployArgs),
     DevDeploy,
     Call(self::call::CallArgs),
+    View(self::view::ViewArgs),
 }
 
 impl JsCmd {
@@ -29,6 +31,7 @@ impl JsCmd {
             Self::Deploy(deploy_args) => deploy_args.to_cli_args(),
             Self::DevDeploy => todo!("We plan to implement it in dev extension. Here is a standalone implementation: https://github.com/frolvanya/dev-deploy"),
             Self::Call(call_args) => call_args.to_cli_args(),
+            Self::View(view_args) => view_args.to_cli_args(),
         }
     }
 }
