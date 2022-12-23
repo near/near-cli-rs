@@ -4,28 +4,31 @@ pub struct DeployArgs {
     wasm_file: String,
     init_function: String,
     init_args: String,
-    init_gas: String,
+    #[clap(default_value_t = 30_000_000_000_000)]
+    init_gas: u64,
+    #[clap(default_value = "0")]
     init_deposit: String,
 }
 
 impl DeployArgs {
     pub fn to_cli_args(&self) -> Vec<String> {
-        let mut args: Vec<String> = vec!["contract".to_owned()];
-        args.push("deploy".to_owned());
-        args.push(self.contract_account_id.to_owned());
-        args.push("use-file".to_owned());
-        args.push(self.wasm_file.to_owned());
-        args.push("with-init-call".to_owned());
-        args.push(self.init_function.to_owned());
-        args.push(self.init_args.to_owned());
-        args.push("--prepaid-gas".to_owned());
-        args.push(self.init_gas.to_owned());
-        args.push("--attached-deposit".to_owned());
-        args.push(self.init_deposit.to_owned());
-        args.push("network-config".to_owned());
-        args.push("testnet".to_owned());
-        args.push("sign-with-keychain".to_owned());
-        args.push("send".to_owned());
-        args
+        vec![
+            "contract".to_owned(),
+            "deploy".to_owned(),
+            self.contract_account_id.to_owned(),
+            "use-file".to_owned(),
+            self.wasm_file.to_owned(),
+            "with-init-call".to_owned(),
+            self.init_function.to_owned(),
+            self.init_args.to_owned(),
+            "--prepaid-gas".to_owned(),
+            format!("{} TeraGas", self.init_gas / 1_000_000_000_000),
+            "--attached-deposit".to_owned(),
+            format!("{} NEAR", self.init_deposit),
+            "network-config".to_owned(),
+            "testnet".to_owned(),
+            "sign-with-keychain".to_owned(),
+            "send".to_owned(),
+        ]
     }
 }
