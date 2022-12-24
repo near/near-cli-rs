@@ -3,7 +3,7 @@ pub struct CallArgs {
     contract_account_id: String,
     method_name: String,
     args: String,
-    #[clap(long = "masterAccount")]
+    #[clap(long = "account-id")]
     master_account: String,
 }
 
