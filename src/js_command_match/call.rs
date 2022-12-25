@@ -3,12 +3,17 @@ pub struct CallArgs {
     contract_account_id: String,
     method_name: String,
     args: String,
-    #[clap(long = "account-id")]
-    master_account: String,
+    #[clap(long)]
+    account_id: String,
+    #[clap(default_value_t = 30_000_000_000_000, long)]
+    gas: u64,
+    #[clap(default_value = "0", long)]
+    deposit: String,
 }
 
 impl CallArgs {
     pub fn to_cli_args(&self) -> Vec<String> {
+        let network_config = std::env::var("NEAR_ENV").unwrap_or_else(|_| "testnet".to_owned());
         vec![
             "contract".to_owned(),
             "call-function".to_owned(),
@@ -18,13 +23,13 @@ impl CallArgs {
             "json-args".to_owned(),
             self.args.to_owned(),
             "prepaid-gas".to_owned(),
-            "30 TeraGas".to_owned(),
+            format!("{} TeraGas", self.gas / 1_000_000_000_000),
             "attached-deposit".to_owned(),
-            "0 NEAR".to_owned(),
+            format!("{} NEAR", self.deposit),
             "sign-as".to_owned(),
-            self.master_account.to_owned(),
+            self.account_id.to_owned(),
             "network-config".to_owned(),
-            "testnet".to_owned(),
+            network_config,
             "sign-with-keychain".to_owned(),
             "send".to_owned(),
         ]
