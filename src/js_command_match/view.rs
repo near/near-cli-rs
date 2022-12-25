@@ -7,6 +7,7 @@ pub struct ViewArgs {
 
 impl ViewArgs {
     pub fn to_cli_args(&self) -> Vec<String> {
+        let network_config = std::env::var("NEAR_ENV").unwrap_or_else(|_| "testnet".to_owned());
         vec![
             "contract".to_owned(),
             "call-function".to_owned(),
@@ -16,7 +17,7 @@ impl ViewArgs {
             "json-args".to_owned(),
             self.args.to_owned(),
             "network-config".to_owned(),
-            "testnet".to_owned(),
+            network_config,
             "now".to_owned(),
         ]
     }
