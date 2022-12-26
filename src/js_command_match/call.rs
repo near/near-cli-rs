@@ -3,11 +3,11 @@ pub struct CallArgs {
     contract_account_id: String,
     method_name: String,
     args: String,
-    #[clap(long)]
+    #[clap(long, aliases = ["account_id", "accountId"])]
     account_id: String,
-    #[clap(default_value_t = 30_000_000_000_000, long)]
+    #[clap(long, default_value_t = 30_000_000_000_000)]
     gas: u64,
-    #[clap(default_value = "0", long)]
+    #[clap(long, default_value = "0")]
     deposit: String,
 }
 
