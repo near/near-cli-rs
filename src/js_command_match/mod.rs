@@ -27,6 +27,7 @@ pub enum JsCmd {
 
 impl JsCmd {
     pub fn rust_command_generation(&self) -> color_eyre::eyre::Result<Vec<String>, String> {
+        //NEAR_ENV=testnet default
         let network_config = std::env::var("NEAR_ENV").unwrap_or_else(|_| "testnet".to_owned());
         match self {
             Self::CreateAccount(create_account_args) => Ok(create_account_args.to_cli_args(network_config)),
