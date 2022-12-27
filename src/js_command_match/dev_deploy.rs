@@ -11,6 +11,6 @@ pub struct DevDeployArgs {
     init_deposit: String,
     #[clap(long, aliases = ["initial_balance", "initialBalance"], default_value = "100")]
     initial_balance: String,
-    #[clap(long, default_value_t = false)]
-    force: bool,
+    #[clap(long, default_value = "false")]
+    force: String,
 }
