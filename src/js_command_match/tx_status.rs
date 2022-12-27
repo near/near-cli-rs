@@ -6,8 +6,7 @@ pub struct TxStatusArgs {
 }
 
 impl TxStatusArgs {
-    pub fn to_cli_args(&self) -> Vec<String> {
-        let network_config = std::env::var("NEAR_ENV").unwrap_or_else(|_| "testnet".to_owned());
+    pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
         vec![
             "transaction".to_owned(),
             "view-status".to_owned(),

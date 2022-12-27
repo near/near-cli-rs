@@ -6,8 +6,7 @@ pub struct SendArgs {
 }
 
 impl SendArgs {
-    pub fn to_cli_args(&self) -> Vec<String> {
-        let network_config = std::env::var("NEAR_ENV").unwrap_or_else(|_| "testnet".to_owned());
+    pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
         vec![
             "tokens".to_owned(),
             self.sender_account_id.to_owned(),

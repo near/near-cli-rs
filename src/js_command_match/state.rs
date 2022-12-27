@@ -4,13 +4,13 @@ pub struct StateArgs {
 }
 
 impl StateArgs {
-    pub fn to_cli_args(&self) -> Vec<String> {
+    pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
         vec![
             "account".to_owned(),
             "view-account-summary".to_owned(),
             self.account_id.to_owned(),
             "network-config".to_owned(),
-            "testnet".to_owned(),
+            network_config,
             "now".to_owned(),
         ]
     }

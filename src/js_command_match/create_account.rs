@@ -4,7 +4,7 @@ pub struct CreateAccountArgs {
 }
 
 impl CreateAccountArgs {
-    pub fn to_cli_args(&self) -> Vec<String> {
+    pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
         vec![
             "account".to_owned(),
             "create-account".to_owned(),
@@ -15,7 +15,7 @@ impl CreateAccountArgs {
             "save-to-keychain".to_owned(),
             "sign-as".to_owned(),
             "network-config".to_owned(),
-            "testnet".to_owned(),
+            network_config,
             "sign-with-keychain".to_owned(),
             "send".to_owned(),
         ]
