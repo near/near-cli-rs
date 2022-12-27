@@ -6,6 +6,7 @@ pub struct DeleteArgs {
 
 impl DeleteArgs {
     pub fn to_cli_args(&self) -> Vec<String> {
+        let network_config = std::env::var("NEAR_ENV").unwrap_or_else(|_| "testnet".to_owned());
         vec![
             "account".to_owned(),
             "delete-account".to_owned(),
@@ -13,7 +14,7 @@ impl DeleteArgs {
             "beneficiary".to_owned(),
             self.beneficiary_id.to_owned(),
             "network-config".to_owned(),
-            "testnet".to_owned(),
+            network_config,
             "sign-with-keychain".to_owned(),
             "send".to_owned(),
         ]
