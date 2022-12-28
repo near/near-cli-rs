@@ -5,6 +5,7 @@ mod delete;
 mod deploy;
 mod dev_deploy;
 mod keys;
+mod login;
 mod send;
 mod stake;
 mod state;
@@ -27,6 +28,7 @@ pub enum JsCmd {
     Send(self::send::SendArgs),
     Clean(self::clean::CleanArgs),
     Stake(self::stake::StakeArgs),
+    Login(self::login::LoginArgs),
 }
 
 impl JsCmd {
@@ -47,6 +49,7 @@ impl JsCmd {
             Self::Send(send_args) => Ok(send_args.to_cli_args(network_config)),
             Self::Clean(_) => Err("Potentially will be implemented in dev extension.".to_string()),
             Self::Stake(_) => Err("We plan to implement it in validators extension".to_string()),
+            Self::Login(login_args) => Ok(login_args.to_cli_args(network_config)),
         }
     }
 }
