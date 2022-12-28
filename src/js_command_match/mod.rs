@@ -1,4 +1,5 @@
 mod call;
+mod clean;
 mod create_account;
 mod delete;
 mod deploy;
@@ -23,6 +24,7 @@ pub enum JsCmd {
     View(self::view::ViewArgs),
     ViewState(self::view_state::ViewStateArgs),
     Send(self::send::SendArgs),
+    Clean(self::clean::CleanArgs),
 }
 
 impl JsCmd {
@@ -41,6 +43,7 @@ impl JsCmd {
             Self::View(view_args) => Ok(view_args.to_cli_args(network_config)),
             Self::ViewState(_) => Err("We plan to implement it in dev extension".to_string()),
             Self::Send(send_args) => Ok(send_args.to_cli_args(network_config)),
+            Self::Clean(_) => Err("Potentially will be implemented in dev extension.".to_string()),
         }
     }
 }
