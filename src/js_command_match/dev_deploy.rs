@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, clap::Parser)]
 pub struct DevDeployArgs {
-    wasm_file: String,
+    wasm_file: Option<String>,
     #[clap(long, aliases = ["init_function", "initFunction"])]
     init_function: Option<String>,
     #[clap(long, aliases = ["init_args", "initArgs"], default_value = "{}")]
