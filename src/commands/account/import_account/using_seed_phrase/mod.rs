@@ -29,9 +29,8 @@ impl LoginFromSeedPhrase {
 
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         let network_config = self.network_config.get_network_config(config.clone());
-        let seed_phrase_hd_path_default = slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
         let key_pair_properties = crate::common::get_key_pair_properties_from_seed_phrase(
-            seed_phrase_hd_path_default.into(),
+            self.seed_phrase_hd_path.clone(),
             self.master_seed_phrase.clone(),
         )?;
         let key_pair_properties_buf = serde_json::to_string(&key_pair_properties).unwrap();
