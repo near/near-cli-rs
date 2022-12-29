@@ -362,10 +362,11 @@ The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already ex
 
 - [use-auto-generation](#use-auto-generation---Use-auto-generation-to-create-an-implicit-account)
 - [use-ledger](#use-ledger---Use-ledger-to-create-an-implicit-account)
+- [use-seed-phrase](#use-seed-phrase---Use-seed-phrase-to-create-an-implicit-account)
 
 ##### use-auto-generation - Use auto-generation to create an implicit account
 
-Данная команда автоматически генерирует аккаунт с ключами доступа и сохраняет их в файле с именем _implicit-account-id_.
+Данная команда автоматически генерирует ключи доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
@@ -390,7 +391,7 @@ The file "/Users/frovolod/.near-credentials/implicit/1573066d3fa7a2d56357aa5ddbc
 
 ##### use-ledger - Use ledger to create an implicit account
 
-Данная команда с помощью леджера создает аккаунт с ключами доступа и сохраняет их в файле с именем _implicit-account-id_.
+Данная команда с помощью леджера генерирует ключи доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
@@ -410,6 +411,32 @@ The file "/Users/frovolod/.near-credentials/implicit/ledger/739c872c3057cd5d812c
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/kL5x9MXNrlSZWS83YjVkxnsf7?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/kL5x9MXNrlSZWS83YjVkxnsf7.png" width="836"/>
+</a>
+</details>
+
+##### use-seed-phrase - Use seed phrase to create an implicit account
+
+Данная команда с помощью мнемонической фразы генерирует ключи доступа и сохраняет их в файле с именем _implicit-account-id_.
+Для выполнения этой команды необходимо ввести в командной строке терминала:
+```txt
+./near-cli account \
+    create-account \
+    fund-later \
+    use-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
+        --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''' \
+    save-to-folder /Users/frovolod/.near-credentials/implicit
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa6508f90f98e646836647ecd883d1d2b1989e5.json" was saved successfully
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/rtmvhKL9eQXqIKBkvX62oi0qx?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/rtmvhKL9eQXqIKBkvX62oi0qx.png" width="836"/>
 </a>
 </details>
 
