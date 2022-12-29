@@ -2,6 +2,8 @@ use inquire::Text;
 use std::io::Write;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+mod seed_phrase;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct ImplicitAccount {
@@ -31,6 +33,11 @@ pub enum Mode {
     ))]
     ///Use ledger to create an implicit account
     UseLedger(self::SaveImplicitAccount),
+    #[strum_discriminants(strum(
+        message = "use-seed-phrase      - Use seed phrase to create an implicit account"
+    ))]
+    ///Use seed phrase to create an implicit account
+    UseSeedPhrase(self::seed_phrase::SeedPhrase),
 }
 
 impl Mode {
@@ -81,6 +88,21 @@ impl Mode {
                 );
                 file_name = format!("{}.json", implicit_account_id).into();
                 file_path.push(save_implicit_account.save_to_folder.get_folder_path());
+            }
+            Mode::UseSeedPhrase(seed_phrase) => {
+                let key_pair_properties = seed_phrase.get_key_pair_properties()?;
+                buf.push_str(
+                    &serde_json::json!({
+                        "master_seed_phrase": key_pair_properties.master_seed_phrase,
+                        "seed_phrase_hd_path": key_pair_properties.seed_phrase_hd_path,
+                        "implicit_account_id": key_pair_properties.implicit_account_id,
+                        "public_key": key_pair_properties.public_key_str,
+                        "private_key": key_pair_properties.secret_keypair_str,
+                    })
+                    .to_string(),
+                );
+                file_name.push(format!("{}.json", key_pair_properties.implicit_account_id));
+                file_path.push(seed_phrase.get_folder_path());
             }
         }
         std::fs::create_dir_all(&file_path)?;
