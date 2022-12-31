@@ -56,7 +56,7 @@ impl JsCmd {
             Self::Login(login_args) => Ok(login_args.to_cli_args(network_config)),
             Self::Repl(_) => Err("We won't be able to implement it here".to_string()),
             Self::GenerateKey(generate_key_args) => {
-                match generate_key_args.to_cli_args(){
+                match generate_key_args.to_cli_args(network_config){
                     Ok(res) => Ok(res),
                     Err(err) => Err(err.to_string())
                 }
