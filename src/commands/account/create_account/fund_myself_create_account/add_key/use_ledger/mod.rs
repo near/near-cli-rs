@@ -9,6 +9,8 @@ pub struct AddAccessWithLedger {
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
+    #[interactive_clap(skip)]
+    public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(named_arg)]
     ///What is the signer account ID?
     sign_as: super::super::sign_as::SignerAccountId,
@@ -36,6 +38,18 @@ impl interactive_clap::FromCli for AddAccessWithLedger {
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path
         );
+        let public_key = near_ledger::get_public_key(seed_phrase_hd_path.clone().into()).map_err(
+            |near_ledger_error| {
+                color_eyre::Report::msg(format!(
+                    "An error occurred while trying to get PublicKey from Ledger device: {:?}",
+                    near_ledger_error
+                ))
+            },
+        )?;
+        let public_key: crate::types::public_key::PublicKey = near_crypto::PublicKey::ED25519(
+            near_crypto::ED25519PublicKey::from(public_key.to_bytes()),
+        )
+        .into();
         let sign_as = super::super::sign_as::SignerAccountId::from_cli(
             optional_clap_variant.and_then(|clap_variant| {
                 clap_variant.sign_as.map(
@@ -51,9 +65,9 @@ impl interactive_clap::FromCli for AddAccessWithLedger {
         } else {
             return Ok(None);
         };
-
         Ok(Some(Self {
             seed_phrase_hd_path,
+            public_key,
             sign_as,
         }))
     }
@@ -75,18 +89,8 @@ impl AddAccessWithLedger {
         config: crate::config::Config,
         account_properties: super::super::AccountProperties,
     ) -> crate::CliResult {
-        let public_key = near_ledger::get_public_key(self.seed_phrase_hd_path.clone().into())
-            .map_err(|near_ledger_error| {
-                color_eyre::Report::msg(format!(
-                    "An error occurred while trying to get PublicKey from Ledger device: {:?}",
-                    near_ledger_error
-                ))
-            })?;
-        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
-            public_key.to_bytes(),
-        ));
         let account_properties = super::super::AccountProperties {
-            public_key,
+            public_key: self.public_key.clone().into(),
             ..account_properties
         };
         let storage_properties = None;
