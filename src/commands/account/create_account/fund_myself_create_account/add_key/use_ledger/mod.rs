@@ -1,14 +1,7 @@
-use inquire::Text;
-use std::str::FromStr;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct AddAccessWithLedger {
-    #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
-    #[interactive_clap(skip_default_input_arg)]
-    seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     #[interactive_clap(skip)]
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(named_arg)]
@@ -27,13 +20,7 @@ impl interactive_clap::FromCli for AddAccessWithLedger {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let seed_phrase_hd_path = match optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.seed_phrase_hd_path.clone())
-        {
-            Some(hd_path) => hd_path,
-            None => Self::input_seed_phrase_hd_path(),
-        };
+        let seed_phrase_hd_path = crate::transaction_signature_options::sign_with_ledger::SignLedger::input_seed_phrase_hd_path();
         println!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path
@@ -66,7 +53,6 @@ impl interactive_clap::FromCli for AddAccessWithLedger {
             return Ok(None);
         };
         Ok(Some(Self {
-            seed_phrase_hd_path,
             public_key,
             sign_as,
         }))
@@ -74,16 +60,6 @@ impl interactive_clap::FromCli for AddAccessWithLedger {
 }
 
 impl AddAccessWithLedger {
-    pub fn input_seed_phrase_hd_path() -> crate::types::slip10::BIP32Path {
-        crate::types::slip10::BIP32Path::from_str(
-            &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default)")
-                .with_initial_value("44'/397'/0'/0'/1'")
-                .prompt()
-                .unwrap(),
-        )
-        .unwrap()
-    }
-
     pub async fn process(
         &self,
         config: crate::config::Config,
