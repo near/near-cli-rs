@@ -1,3 +1,4 @@
+mod add_key;
 mod call;
 mod clean;
 mod create_account;
@@ -33,6 +34,7 @@ pub enum JsCmd {
     Login(self::login::LoginArgs),
     Repl(self::repl::ReplArgs),
     GenerateKey(self::generate_key::GenerateKeyArgs),
+    AddKey(self::add_key::AddKeyArgs),
 }
 
 impl JsCmd {
@@ -61,6 +63,7 @@ impl JsCmd {
                     Err(err) => Err(err.to_string())
                 }
             },
+            Self::AddKey(add_key_args) => Ok(add_key_args.to_cli_args(network_config)),
         }
     }
 }
