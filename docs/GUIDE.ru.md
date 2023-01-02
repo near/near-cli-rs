@@ -294,6 +294,14 @@ The data for the access key is saved in macOS Keychain
 #### fund-myself - I would like fund myself to cover the cost of creating an account
 
 С помощью этой команды можно создать как суб-аккаунт, так и аккаунт с коротким именем, например, alice.near или alice.testnet (в сети testnet).  
+Ключи доступа к создаваемому аккаунту можно добавить несколькими способами:  
+- [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
+- [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
+- [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
+- [use-ledger](#use-ledger---Use-a-ledger)
+
+##### autogenerate-new-keypair - Automatically generate a key pair
+
 Для создания суб-аккаунта необходимо ввести в командной строке терминала:
 ```txt
 ./near-cli account \
@@ -355,6 +363,99 @@ The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already ex
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/MxmfDRdKPeP0VdXUiENmV2UXr?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/MxmfDRdKPeP0VdXUiENmV2UXr.png" width="836"/>
+</a>
+</details>
+
+##### use-manually-provided-seed-prase - Use the provided seed phrase manually
+
+Данная команда добавляет аккаунту заранее известную мнемоническую фразу.
+Для выполнения этой команды необходимо ввести в командной строке терминала:
+```txt
+./near-cli account \
+    create-account fund-myself seed.volodymyr.testnet '0.1 NEAR' \
+    use-manually-provided-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
+    sign-as volodymyr.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Transaction sent ...
+New account <seed.volodymyr.testnet> created successfully.
+Transaction ID: 31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/gEr7nG46C5kRp1DokYAQA28Qp?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/gEr7nG46C5kRp1DokYAQA28Qp.png" width="836"/>
+</a>
+</details>
+
+##### use-manually-provided-public-key - Use the provided public key manually
+
+Данная команда добавляет аккаунту заранее известный публичный ключ доступа.
+Для выполнения этой команды необходимо ввести в командной строке терминала:
+```txt
+./near-cli account \
+    create-account fund-myself pk.volodymyr.testnet '0.1 NEAR' \
+    use-manually-provided-public-key ed25519:6jm8hWUgwoEeGmpdEyk9zrCqtXM8kHhvg8M236ZaGusS \
+    sign-as volodymyr.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Transaction sent ...
+New account <pk.volodymyr.testnet> created successfully.
+Transaction ID: CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/R90IRnacRBO3Ni4PcpbRwm6Tt?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/R90IRnacRBO3Ni4PcpbRwm6Tt.png" width="836"/>
+</a>
+</details>
+
+##### use-ledger - Use a ledger
+
+Данная команда с помощью леджера добавляет ключи доступа аккаунту.
+Для выполнения этой команды необходимо ввести в командной строке терминала:
+```txt
+./near-cli account \
+    create-account fund-myself ledger1.volodymyr.testnet '0.1 NEAR' \
+    use-ledger \
+    sign-as volodymyr.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Transaction sent ...
+New account <ledger1.volodymyr.testnet> created successfully.
+Transaction ID: BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/SN2DNObpJeqI2QrN7BNjLNdU6?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/SN2DNObpJeqI2QrN7BNjLNdU6.png" width="836"/>
 </a>
 </details>
 

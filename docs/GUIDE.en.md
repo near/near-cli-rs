@@ -295,6 +295,14 @@ The data for the access key is saved in macOS Keychain
 #### fund-myself - I would like fund myself to cover the cost of creating an account
 
 With this command, you can create both a sub account and a "short name" account.  
+Access keys to the created account can be added in several ways:  
+- [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
+- [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
+- [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
+- [use-ledger](#use-ledger---Use-a-ledger)
+
+##### autogenerate-new-keypair - Automatically generate a key pair
+
 In order to create a sub-account, in the terminal command line type:
 ```txt
 ./near-cli account \
@@ -359,6 +367,98 @@ The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already ex
 </a>
 </details>
 
+##### use-manually-provided-seed-prase - Use the provided seed phrase manually
+
+This command adds a previously known mnemonic phrase to the account.
+In order to execute this command, in the terminal command line type:
+```txt
+./near-cli account \
+    create-account fund-myself seed.volodymyr.testnet '0.1 NEAR' \
+    use-manually-provided-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
+    sign-as volodymyr.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Transaction sent ...
+New account <seed.volodymyr.testnet> created successfully.
+Transaction ID: 31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/gEr7nG46C5kRp1DokYAQA28Qp?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/gEr7nG46C5kRp1DokYAQA28Qp.png" width="836"/>
+</a>
+</details>
+
+##### use-manually-provided-public-key - Use the provided public key manually
+
+This command adds a pre-known public access key to the account.
+In order to execute this command, in the terminal command line type:
+```txt
+./near-cli account \
+    create-account fund-myself pk.volodymyr.testnet '0.1 NEAR' \
+    use-manually-provided-public-key ed25519:6jm8hWUgwoEeGmpdEyk9zrCqtXM8kHhvg8M236ZaGusS \
+    sign-as volodymyr.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Transaction sent ...
+New account <pk.volodymyr.testnet> created successfully.
+Transaction ID: CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/R90IRnacRBO3Ni4PcpbRwm6Tt?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/R90IRnacRBO3Ni4PcpbRwm6Tt.png" width="836"/>
+</a>
+</details>
+
+##### use-ledger - Use a ledger
+
+This command adds access keys to an account using a ledger.
+In order to execute this command, in the terminal command line type:
+```txt
+./near-cli account \
+    create-account fund-myself ledger1.volodymyr.testnet '0.1 NEAR' \
+    use-ledger \
+    sign-as volodymyr.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Transaction sent ...
+New account <ledger1.volodymyr.testnet> created successfully.
+Transaction ID: BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/SN2DNObpJeqI2QrN7BNjLNdU6?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/SN2DNObpJeqI2QrN7BNjLNdU6.png" width="836"/>
+</a>
+</details>
 
 #### fund-later - Create an implicit-account
 
