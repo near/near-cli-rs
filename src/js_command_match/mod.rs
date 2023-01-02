@@ -3,6 +3,7 @@ mod call;
 mod clean;
 mod create_account;
 mod delete;
+mod delete_key;
 mod deploy;
 mod dev_deploy;
 mod generate_key;
@@ -35,6 +36,7 @@ pub enum JsCmd {
     Repl(self::repl::ReplArgs),
     GenerateKey(self::generate_key::GenerateKeyArgs),
     AddKey(self::add_key::AddKeyArgs),
+    DeleteKey(self::delete_key::DeleteKeyArgs),
 }
 
 impl JsCmd {
@@ -64,6 +66,7 @@ impl JsCmd {
                 }
             },
             Self::AddKey(add_key_args) => Ok(add_key_args.to_cli_args(network_config)),
+            Self::DeleteKey(delete_key_args) => Ok(delete_key_args.to_cli_args(network_config)),
         }
     }
 }
