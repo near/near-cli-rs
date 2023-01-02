@@ -21,7 +21,6 @@ impl CreateAccountArgs {
                 self.account_id.to_owned(),
                 format!("{} NEAR", self.initial_balance),
                 "use-ledger".to_owned(),
-                "save-to-keychain".to_owned(),
                 "sign-as".to_owned(),
                 self.master_account.to_owned(),
                 "network-config".to_owned(),
