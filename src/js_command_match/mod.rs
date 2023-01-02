@@ -14,6 +14,7 @@ mod send;
 mod stake;
 mod state;
 mod tx_status;
+mod validators;
 mod view;
 mod view_state;
 
@@ -37,6 +38,7 @@ pub enum JsCmd {
     GenerateKey(self::generate_key::GenerateKeyArgs),
     AddKey(self::add_key::AddKeyArgs),
     DeleteKey(self::delete_key::DeleteKeyArgs),
+    Validators(self::validators::ValidatorsArgs),
 }
 
 impl JsCmd {
@@ -67,6 +69,7 @@ impl JsCmd {
             },
             Self::AddKey(add_key_args) => Ok(add_key_args.to_cli_args(network_config)),
             Self::DeleteKey(delete_key_args) => Ok(delete_key_args.to_cli_args(network_config)),
+            Self::Validators(_) => Err("We plan to implement it in validators extension".to_string()),
         }
     }
 }
