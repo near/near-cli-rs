@@ -4,8 +4,8 @@ pub struct AddKeyArgs {
     access_key: String,
     #[clap(long, aliases = ["contract_id", "contractId"], default_value = None)]
     contract_id: Option<String>,
-    #[clap(long, aliases = ["method_names", "methodNames"], default_value = None)]
-    method_names: Option<String>,
+    #[clap(long, aliases = ["method_names", "methodNames"], default_value = None, value_delimiter = ',', num_args = 1..)]
+    method_names: Option<Vec<String>>,
     #[clap(long, default_value = "0")]
     allowance: String,
 }
@@ -24,7 +24,7 @@ impl AddKeyArgs {
                     "--receiver-account-id".to_owned(),
                     contract_id.to_owned(),
                     "--method-names".to_owned(),
-                    method_names.to_owned(),
+                    method_names.join(","),
                     "use-manually-provided-public-key".to_owned(),
                     self.access_key.to_owned(),
                     "network-config".to_owned(),
