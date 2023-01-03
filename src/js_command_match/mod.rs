@@ -6,6 +6,7 @@ mod delete;
 mod delete_key;
 mod deploy;
 mod dev_deploy;
+mod evm_call;
 mod generate_key;
 mod keys;
 mod login;
@@ -39,6 +40,8 @@ pub enum JsCmd {
     AddKey(self::add_key::AddKeyArgs),
     DeleteKey(self::delete_key::DeleteKeyArgs),
     Validators(self::validators::ValidatorsArgs),
+    Proposals,
+    EvmCall(self::evm_call::EvmCallArgs),
 }
 
 impl JsCmd {
@@ -70,6 +73,8 @@ impl JsCmd {
             Self::AddKey(add_key_args) => Ok(add_key_args.to_cli_args(network_config)),
             Self::DeleteKey(delete_key_args) => Ok(delete_key_args.to_cli_args(network_config)),
             Self::Validators(_) => Err("We plan to implement it in validators extension".to_string()),
+            Self::Proposals => Err("We plan to implement it in validators extension".to_string()),
+            Self::EvmCall(_) => Err("We plan to implement it in evm extension".to_string()),
         }
     }
 }
