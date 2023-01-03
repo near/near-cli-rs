@@ -15,6 +15,7 @@ mod keys;
 mod login;
 mod repl;
 mod send;
+mod set_api_key;
 mod stake;
 mod state;
 mod tx_status;
@@ -47,6 +48,7 @@ pub enum JsCmd {
     EvmCall(self::evm_call::EvmCallArgs),
     EvmDevInit(self::evm_dev_init::EvmDevInitArgs),
     EvmView(self::evm_view::EvmViewArgs),
+    SetApiKey(self::set_api_key::SetApiKeyArgs),
     Js(self::js::JsArgs),
 }
 
@@ -83,6 +85,12 @@ impl JsCmd {
             Self::EvmCall(_) => Err("We plan to implement it in evm extension".to_string()),
             Self::EvmDevInit(_) => Err("We plan to implement it in evm extension".to_string()),
             Self::EvmView(_) => Err("We plan to implement it in evm extension".to_string()),
+            Self::SetApiKey(set_api_key_args) => {
+                match set_api_key_args.to_cli_args(network_config){
+                    Ok(res) => Ok(res),
+                    Err(err) => Err(err.to_string())
+                }
+            },
             Self::Js(_) => Err("We won't be able to implement it here".to_string()),
         }
     }
