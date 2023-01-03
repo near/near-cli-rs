@@ -7,6 +7,7 @@ mod delete_key;
 mod deploy;
 mod dev_deploy;
 mod evm_call;
+mod evm_dev_init;
 mod generate_key;
 mod keys;
 mod login;
@@ -42,6 +43,7 @@ pub enum JsCmd {
     Validators(self::validators::ValidatorsArgs),
     Proposals,
     EvmCall(self::evm_call::EvmCallArgs),
+    EvmDevInit(self::evm_dev_init::EvmDevInitArgs),
 }
 
 impl JsCmd {
@@ -75,6 +77,7 @@ impl JsCmd {
             Self::Validators(_) => Err("We plan to implement it in validators extension".to_string()),
             Self::Proposals => Err("We plan to implement it in validators extension".to_string()),
             Self::EvmCall(_) => Err("We plan to implement it in evm extension".to_string()),
+            Self::EvmDevInit(_) => Err("We plan to implement it in evm extension".to_string()),
         }
     }
 }
