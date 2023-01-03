@@ -10,6 +10,7 @@ mod evm_call;
 mod evm_dev_init;
 mod evm_view;
 mod generate_key;
+mod js;
 mod keys;
 mod login;
 mod repl;
@@ -46,6 +47,7 @@ pub enum JsCmd {
     EvmCall(self::evm_call::EvmCallArgs),
     EvmDevInit(self::evm_dev_init::EvmDevInitArgs),
     EvmView(self::evm_view::EvmViewArgs),
+    Js(self::js::JsArgs),
 }
 
 impl JsCmd {
@@ -81,6 +83,7 @@ impl JsCmd {
             Self::EvmCall(_) => Err("We plan to implement it in evm extension".to_string()),
             Self::EvmDevInit(_) => Err("We plan to implement it in evm extension".to_string()),
             Self::EvmView(_) => Err("We plan to implement it in evm extension".to_string()),
+            Self::Js(_) => Err("We won't be able to implement it here".to_string()),
         }
     }
 }
