@@ -1,4 +1,5 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
+use clap::Parser;
 use common::{try_external_subcommand_execution, CliResult};
 use interactive_clap::FromCli;
 use interactive_clap::ToCliArgs;
@@ -6,6 +7,7 @@ use interactive_clap::ToCliArgs;
 mod commands;
 mod common;
 mod config;
+mod js_command_match;
 mod network;
 mod network_for_transaction;
 mod network_view_at_block;
@@ -36,6 +38,38 @@ fn main() -> CliResult {
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
         Err(error) => {
+            match error.kind() {
+                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {}
+                _ => match self::js_command_match::JsCmd::try_parse() {
+                    Ok(js_cmd) => {
+                        match js_cmd.rust_command_generation() {
+                            Ok(vec_cmd) => {
+                                let near_cli_exec_path = std::env::args()
+                                    .next()
+                                    .unwrap_or_else(|| "./near_cli".to_owned());
+                                let mut suggested_cmd = Vec::with_capacity(vec_cmd.len() + 1);
+                                suggested_cmd.push(near_cli_exec_path);
+                                suggested_cmd.extend(vec_cmd);
+                                println!("The command you tried to run is deprecated in the new NEAR CLI, but we tried our best to match the old command with the new syntax, try it instead:");
+                                println!();
+                                println!("{}", shell_words::join(suggested_cmd));
+                            }
+                            Err(err) => {
+                                println!("The command you tried to run is deprecated in the new NEAR CLI and there is no equivalent command in the new NEAR CLI.");
+                                println!();
+                                println!("{}", err);
+                            }
+                        }
+                        std::process::exit(1);
+                    }
+                    Err(error) => {
+                        if let clap::error::ErrorKind::DisplayHelp = error.kind() {
+                            error.exit()
+                        }
+                    }
+                },
+            }
+
             if matches!(
                 error.kind(),
                 clap::error::ErrorKind::UnknownArgument | clap::error::ErrorKind::InvalidSubcommand
