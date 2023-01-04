@@ -1458,10 +1458,17 @@ pub async fn display_access_key_list(
                     ),
                     None => "with no limit".to_string(),
                 };
-                format!(
-                    "only do {:?} function calls on {} {}",
-                    method_names, receiver_id, allowance_message
-                )
+                if method_names.is_empty() {
+                    format!(
+                        "do any function calls on {} {}",
+                        receiver_id, allowance_message
+                    )
+                } else {
+                    format!(
+                        "only do {:?} function calls on {} {}",
+                        method_names, receiver_id, allowance_message
+                    )
+                }
             }
         };
 
