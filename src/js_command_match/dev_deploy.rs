@@ -1,4 +1,5 @@
 #[derive(Debug, Clone, clap::Parser)]
+/// This is a legacy `dev-deploy` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct DevDeployArgs {
     wasm_file: Option<String>,
     #[clap(long, aliases = ["init_function", "initFunction"])]
@@ -13,4 +14,6 @@ pub struct DevDeployArgs {
     initial_balance: String,
     #[clap(long, default_value = "false")]
     force: String,
+    #[clap(allow_hyphen_values = true, num_args = 0..)]
+    _unknown_args: Vec<String>,
 }

@@ -1,8 +1,11 @@
 #[derive(Debug, Clone, clap::Parser)]
+/// This is a legacy `send` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct SendArgs {
     sender_account_id: String,
     receiver_account_id: String,
     amount: String,
+    #[clap(allow_hyphen_values = true, num_args = 0..)]
+    _unknown_args: Vec<String>,
 }
 
 impl SendArgs {

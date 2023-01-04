@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, clap::Parser)]
 pub struct JsArgs {
-    #[clap(num_args = 0..)]
+    #[clap(allow_hyphen_values = true, num_args = 0..)]
     js_args: Vec<String>,
 }

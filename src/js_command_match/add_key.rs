@@ -1,4 +1,5 @@
 #[derive(Debug, Clone, clap::Parser)]
+/// This is a legacy `add-key` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct AddKeyArgs {
     account_id: String,
     access_key: String,
@@ -8,6 +9,8 @@ pub struct AddKeyArgs {
     method_names: Vec<String>,
     #[clap(long, default_value = "0")]
     allowance: String,
+    #[clap(allow_hyphen_values = true, num_args = 0..)]
+    _unknown_args: Vec<String>,
 }
 
 impl AddKeyArgs {

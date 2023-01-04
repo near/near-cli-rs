@@ -1,10 +1,13 @@
 #[derive(Debug, Clone, clap::Parser)]
+/// This is a legacy `generate-key` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct GenerateKeyArgs {
     account_id: Option<String>,
     #[clap(long, aliases = ["seed_phrase", "seedPhrase"], default_value = None, conflicts_with = "use_ledger_key")]
     seed_phrase: Option<String>,
     #[clap(long, aliases = ["use_ledger_key", "useLedgerKey"], default_missing_value = Some("44'/397'/0'/0'/1'"), num_args=0..=1)]
     use_ledger_key: Option<String>,
+    #[clap(allow_hyphen_values = true, num_args = 0..)]
+    _unknown_args: Vec<String>,
 }
 
 impl GenerateKeyArgs {

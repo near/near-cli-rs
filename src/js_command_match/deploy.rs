@@ -1,4 +1,5 @@
 #[derive(Debug, Clone, clap::Parser)]
+/// This is a legacy `deploy` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct DeployArgs {
     contract_account_id: String,
     wasm_file: String,
@@ -10,6 +11,8 @@ pub struct DeployArgs {
     init_gas: u64,
     #[clap(long, aliases = ["init_deposit", "initDeposit"], default_value = "0")]
     init_deposit: String,
+    #[clap(allow_hyphen_values = true, num_args = 0..)]
+    _unknown_args: Vec<String>,
 }
 
 impl DeployArgs {

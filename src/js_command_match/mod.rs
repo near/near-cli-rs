@@ -13,6 +13,7 @@ mod generate_key;
 mod js;
 mod keys;
 mod login;
+mod proposals;
 mod repl;
 mod send;
 mod set_api_key;
@@ -24,6 +25,7 @@ mod view;
 mod view_state;
 
 #[derive(Debug, Clone, clap::Parser)]
+/// Legacy CLI commands are only supported at best-effort
 pub enum JsCmd {
     CreateAccount(self::create_account::CreateAccountArgs),
     State(self::state::StateArgs),
@@ -44,7 +46,7 @@ pub enum JsCmd {
     AddKey(self::add_key::AddKeyArgs),
     DeleteKey(self::delete_key::DeleteKeyArgs),
     Validators(self::validators::ValidatorsArgs),
-    Proposals,
+    Proposals(self::proposals::ProposalsArgs),
     EvmCall(self::evm_call::EvmCallArgs),
     EvmDevInit(self::evm_dev_init::EvmDevInitArgs),
     EvmView(self::evm_view::EvmViewArgs),
@@ -63,15 +65,15 @@ impl JsCmd {
             Self::Keys(keys_args) => Ok(keys_args.to_cli_args(network_config)),
             Self::TxStatus(tx_status_args) => Ok(tx_status_args.to_cli_args(network_config)),
             Self::Deploy(deploy_args) => Ok(deploy_args.to_cli_args(network_config)),
-            Self::DevDeploy(_) => Err("We plan to implement it in dev extension. Here is a standalone implementation: https://github.com/frolvanya/dev-deploy".to_string()),
+            Self::DevDeploy(_) => Err("`dev-deploy` command is not implemented, yet. It will be implemented in a dev extension. Meanwhile, consider using the old CLI or a standalone implementation: https://github.com/frolvanya/dev-deploy".to_string()),
             Self::Call(call_args) => Ok(call_args.to_cli_args(network_config)),
             Self::View(view_args) => Ok(view_args.to_cli_args(network_config)),
-            Self::ViewState(_) => Err("We plan to implement it in dev extension".to_string()),
+            Self::ViewState(_) => Err("`view-state` command is not implemented, yet. It will be implemented in a dev extension. Meanwhile, keep using the old CLI.".to_string()),
             Self::Send(send_args) => Ok(send_args.to_cli_args(network_config)),
-            Self::Clean(_) => Err("Potentially will be implemented in dev extension.".to_string()),
-            Self::Stake(_) => Err("We plan to implement it in validators extension".to_string()),
+            Self::Clean(_) => Err("`clean` command is not implemented, yet. It will be implemented in a dev extension. Meanwhile, keep using the old CLI.".to_string()),
+            Self::Stake(_) => Err("`stake` command is not implemented, yet. It will be implemented in a validators extension. Meanwhile, keep using the old CLI.".to_string()),
             Self::Login(login_args) => Ok(login_args.to_cli_args(network_config)),
-            Self::Repl(_) => Err("We won't be able to implement it here".to_string()),
+            Self::Repl(_) => Err("`repl` command is not implemented. Use shell scripting for the new CLI.".to_string()),
             Self::GenerateKey(generate_key_args) => {
                 match generate_key_args.to_cli_args(network_config){
                     Ok(res) => Ok(res),
@@ -80,18 +82,18 @@ impl JsCmd {
             },
             Self::AddKey(add_key_args) => Ok(add_key_args.to_cli_args(network_config)),
             Self::DeleteKey(delete_key_args) => Ok(delete_key_args.to_cli_args(network_config)),
-            Self::Validators(_) => Err("We plan to implement it in validators extension".to_string()),
-            Self::Proposals => Err("We plan to implement it in validators extension".to_string()),
-            Self::EvmCall(_) => Err("We plan to implement it in evm extension".to_string()),
-            Self::EvmDevInit(_) => Err("We plan to implement it in evm extension".to_string()),
-            Self::EvmView(_) => Err("We plan to implement it in evm extension".to_string()),
+            Self::Validators(_) => Err("`validators` command is not implemented, yet. It will be implemented in a validators extension. Meanwhile, keep using the old CLI.".to_string()),
+            Self::Proposals(_) => Err("`proposals` command is not implemented, yet. It will be implemented in a validators extension. Meanwhile, keep using the old CLI.".to_string()),
+            Self::EvmCall(_) => Err("`evm-call` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.".to_string()),
+            Self::EvmDevInit(_) => Err("`evm-dev-init` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.".to_string()),
+            Self::EvmView(_) => Err("`evm-view` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.".to_string()),
             Self::SetApiKey(set_api_key_args) => {
                 match set_api_key_args.to_cli_args(network_config){
                     Ok(res) => Ok(res),
                     Err(err) => Err(err.to_string())
                 }
             },
-            Self::Js(_) => Err("We won't be able to implement it here".to_string()),
+            Self::Js(_) => Err("`js` command is not implemented. Use shell scripting for the new CLI.".to_string()),
         }
     }
 }

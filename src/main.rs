@@ -38,22 +38,36 @@ fn main() -> CliResult {
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
         Err(error) => {
-            if let Ok(js_cmd) = self::js_command_match::JsCmd::try_parse() {
-                match js_cmd.rust_command_generation() {
-                    Ok(vec_cmd) => {
-                        println!("Maybe this command was intended for <near JS>");
-                        println!(
-                            "Your new command:\n{} {}",
-                            std::env::args().next().as_deref().unwrap_or("./near_cli"),
-                            shell_words::join(vec_cmd)
-                        );
+            match error.kind() {
+                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {}
+                _ => match self::js_command_match::JsCmd::try_parse() {
+                    Ok(js_cmd) => {
+                        match js_cmd.rust_command_generation() {
+                            Ok(vec_cmd) => {
+                                let near_cli_exec_path = std::env::args()
+                                    .next()
+                                    .unwrap_or_else(|| "./near_cli".to_owned());
+                                let mut suggested_cmd = Vec::with_capacity(vec_cmd.len() + 1);
+                                suggested_cmd.push(near_cli_exec_path);
+                                suggested_cmd.extend(vec_cmd);
+                                println!("The command you tried to run is deprecated in the new NEAR CLI, but we tried our best to match the old command with the new syntax, try it instead:");
+                                println!();
+                                println!("{}", shell_words::join(suggested_cmd));
+                            }
+                            Err(err) => {
+                                println!("The command you tried to run is deprecated in the new NEAR CLI and there is no equivalent command in the new NEAR CLI.");
+                                println!();
+                                println!("{}", err);
+                            }
+                        }
                         std::process::exit(1);
                     }
-                    Err(err) => {
-                        println!("{}", err);
-                        return Ok(());
+                    Err(error) => {
+                        if let clap::error::ErrorKind::DisplayHelp = error.kind() {
+                            error.exit()
+                        }
                     }
-                }
+                },
             }
 
             if matches!(

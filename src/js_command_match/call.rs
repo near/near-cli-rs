@@ -1,4 +1,5 @@
 #[derive(Debug, Clone, clap::Parser)]
+/// This is a legacy `call` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct CallArgs {
     contract_account_id: String,
     method_name: String,
@@ -9,6 +10,8 @@ pub struct CallArgs {
     gas: u64,
     #[clap(long, default_value = "0")]
     deposit: String,
+    #[clap(allow_hyphen_values = true, num_args = 0..)]
+    _unknown_args: Vec<String>,
 }
 
 impl CallArgs {

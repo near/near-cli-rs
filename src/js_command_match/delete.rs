@@ -1,7 +1,10 @@
 #[derive(Debug, Clone, clap::Parser)]
+/// This is a legacy `delete` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct DeleteArgs {
     account_id: String,
     beneficiary_id: String,
+    #[clap(allow_hyphen_values = true, num_args = 0..)]
+    _unknown_args: Vec<String>,
 }
 
 impl DeleteArgs {

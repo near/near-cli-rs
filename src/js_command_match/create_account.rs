@@ -1,4 +1,5 @@
 #[derive(Debug, Clone, clap::Parser)]
+/// This is a legacy `create-account` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct CreateAccountArgs {
     account_id: String,
     #[clap(long, aliases = ["master_account", "masterAccount"])]
@@ -9,6 +10,8 @@ pub struct CreateAccountArgs {
     new_ledger_key: Option<String>,
     #[clap(long, aliases = ["initial_balance", "initialBalance"], default_value = "100")]
     initial_balance: String,
+    #[clap(allow_hyphen_values = true, num_args = 0..)]
+    _unknown_args: Vec<String>,
 }
 
 impl CreateAccountArgs {
