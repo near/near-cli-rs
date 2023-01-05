@@ -183,24 +183,25 @@ impl Submit {
                 };
                 Ok(Some(transaction_info))
             }
-            Submit::SendViaRelay => {  // TODO should this be moved elsewhere (further up) since it's taking a signed tx as input, but needs a SignedDelegateAction as input
+            Submit::SendViaRelay => {
                 // TODO relayer type and info
                 let relayer = Ok(Input::new()
                     .with_prompt("Enter relayer")
                     .interact_text()?);
                 // create signed delegate action and send to relayer
-                // TODO fill in params from https://github.com/near/nearcore/pull/7497/files#diff-90dfa190ec8dff070747d21fd42e25f6022268a7d008ae1e00c0dd5ada2e5bd2R247
+                // fill in params from https://github.com/near/nearcore/pull/7497/files#diff-90dfa190ec8dff070747d21fd42e25f6022268a7d008ae1e00c0dd5ada2e5bd2R247
+                let max_block_height = signed_transaction.transaction.block_hash + 100;  // TODO is 100 blocks appropriate?
                 let delegate_action = near_primitives::transaction::DelegateAction(
-                    sender_id,
-                    receiver_id,
-                    actions,
-                    nonce,
+                    signed_transaction.transaction.signer_id,
+                    signed_transaction.transaction.receiver_id,
+                    signed_transaction.transaction.actions,
+                    signed_transaction.transaction.nonce,
                     max_block_height,
-                    public_key
+                    signed_transaction.transaction.public_key
                 );
                 let signed_delegate_action = near_primitives::transaction::SignedDelegateAction(
                     delegate_action,
-                    signature // TODO get signature
+                    signed_transaction.signature
                 );
                 // TODO send signed_delegate_action to relayer
             }
