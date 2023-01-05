@@ -48,20 +48,28 @@ impl CallFunctionView {
             if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
                 query_view_method_response.kind
             {
-                result.result
+                result
             } else {
                 return Err(color_eyre::Report::msg("Error call result".to_string()));
             };
 
-        let serde_call_result = if call_result.is_empty() {
+        let serde_call_result = if call_result.result.is_empty() {
             serde_json::Value::Null
         } else {
-            serde_json::from_slice(&call_result)
+            serde_json::from_slice(&call_result.result)
                 .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?
         };
         println!("--------------");
-        println!();
+        if call_result.logs.is_empty() {
+            println!("No logs")
+        } else {
+            println!("Logs:");
+            println!("  {}", call_result.logs.join("\n  "));
+        }
+        println!("--------------");
+        println!("Result:");
         println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
+        println!("--------------");
         Ok(())
     }
 }
