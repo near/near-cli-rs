@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
@@ -184,10 +185,11 @@ impl Submit {
                 Ok(Some(transaction_info))
             }
             Submit::SendViaRelay => {
-                // TODO relayer type and info
+                // TODO relayer type and info validation
                 let relayer = Ok(Input::new()
-                    .with_prompt("Enter relayer")
-                    .interact_text()?);
+                    .with_prompt("Enter relayer endpoint (ie http://relayer.near.org:3030/relay)")
+                    .interact_text()?
+                );
                 // create signed delegate action and send to relayer
                 // fill in params from https://github.com/near/nearcore/pull/7497/files#diff-90dfa190ec8dff070747d21fd42e25f6022268a7d008ae1e00c0dd5ada2e5bd2R247
                 let max_block_height = signed_transaction.transaction.block_hash + 100;  // TODO is 100 blocks appropriate?
@@ -203,7 +205,16 @@ impl Submit {
                     delegate_action,
                     signed_transaction.signature
                 );
-                // TODO send signed_delegate_action to relayer
+                // send signed_delegate_action to relayer via a POST request
+                println!("Sending transaction to relayer ...");
+                let client = reqwest::Client::new();
+                let mut payload = HashMap::new();
+                payload.insert("signed_delegate_action", signed_delegate_action);
+                let relayer_response = client.post(relayer)
+                    .json(&payload)  // serialize signed_delegate_action to json
+                    .send()
+                    .await?;
+                Ok(Some(relayer_response))  // TODO update process fn return type
             }
             Submit::Display => {
                 println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
