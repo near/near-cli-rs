@@ -94,7 +94,28 @@ impl interactive_clap::FromCli for AddNetworkConnection {
                 .and_then(|clap_variant| clap_variant.linkdrop_account_id.clone())
             {
                 Some(cli_linkdrop_account_id) => Some(cli_linkdrop_account_id),
-                None => Self::input_linkdrop_account_id()?,
+                None => {
+                    println!();
+                    #[derive(strum_macros::Display)]
+                    enum ConfirmOptions {
+                        #[strum(
+                            to_string = "Yes, and I want to enter the name of the account hosting the program \"linkdrop\""
+                        )]
+                        Yes,
+                        #[strum(to_string = "I dont know")]
+                        No,
+                    }
+                    let select_choose_input = Select::new(
+                        "Is there a \"linkdrop\" program on this network?",
+                        vec![ConfirmOptions::Yes, ConfirmOptions::No],
+                    )
+                    .prompt()?;
+                    if let ConfirmOptions::Yes = select_choose_input {
+                        Self::input_linkdrop_account_id()?
+                    } else {
+                        None
+                    }
+                }
             };
         let faucet_url: Option<crate::types::url::Url> =
             match optional_clap_variant.and_then(|clap_variant| clap_variant.faucet_url) {
