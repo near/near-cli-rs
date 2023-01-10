@@ -86,7 +86,26 @@ impl interactive_clap::FromCli for AddNetworkConnection {
             .and_then(|clap_variant| clap_variant.rpc_api_key)
         {
             Some(cli_api_key) => Some(cli_api_key),
-            None => Self::input_api_key()?,
+            None => {
+                println!();
+                #[derive(strum_macros::Display)]
+                enum ConfirmOptions {
+                    #[strum(to_string = "Yes, the RPC endpoint requires API key")]
+                    Yes,
+                    #[strum(to_string = "No, the RPC endpoint does not require API key")]
+                    No,
+                }
+                let select_choose_input = Select::new(
+                    "Do you want to input an API key?",
+                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
+                )
+                .prompt()?;
+                if let ConfirmOptions::Yes = select_choose_input {
+                    Self::input_api_key()?
+                } else {
+                    None
+                }
+            }
         };
         let linkdrop_account_id: Option<crate::types::account_id::AccountId> =
             match optional_clap_variant
@@ -156,26 +175,9 @@ impl interactive_clap::FromCli for AddNetworkConnection {
 
 impl AddNetworkConnection {
     fn input_api_key() -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
-        println!();
-        #[derive(strum_macros::Display)]
-        enum ConfirmOptions {
-            #[strum(to_string = "Yes, the RPC endpoint requires API key")]
-            Yes,
-            #[strum(to_string = "No, the RPC endpoint does not require API key")]
-            No,
-        }
-        let select_choose_input = Select::new(
-            "Do you want to input an API key?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
-        if let ConfirmOptions::Yes = select_choose_input {
-            let api_key: crate::types::api_key::ApiKey =
-                CustomType::new("Enter an API key").prompt()?;
-            Ok(Some(api_key))
-        } else {
-            Ok(None)
-        }
+        let api_key: crate::types::api_key::ApiKey =
+            CustomType::new("Enter an API key").prompt()?;
+        Ok(Some(api_key))
     }
 
     fn input_linkdrop_account_id(
