@@ -192,8 +192,8 @@ impl Submit {
                 );
                 // create signed delegate action and send to relayer
                 // fill in params from https://github.com/near/nearcore/pull/7497/files#diff-90dfa190ec8dff070747d21fd42e25f6022268a7d008ae1e00c0dd5ada2e5bd2R247
-                let max_block_height = signed_transaction.transaction.block_hash + 100;  // TODO is 100 blocks appropriate?
-                let delegate_action = near_primitives::transaction::DelegateAction(
+                let max_block_height = signed_transaction.transaction.block_hash + 100;  // TODO is 100 blocks appropriate? - also get current block height instead of hash
+                let delegate_action = near_primitives::transaction::DelegateAction(  // TODO get DelegateAction from https://github.com/binary-star-near/nearcore/tree/NEP-366 instead of near_primatives
                     signed_transaction.transaction.signer_id,
                     signed_transaction.transaction.receiver_id,
                     signed_transaction.transaction.actions,
@@ -201,7 +201,7 @@ impl Submit {
                     max_block_height,
                     signed_transaction.transaction.public_key
                 );
-                let signed_delegate_action = near_primitives::transaction::SignedDelegateAction(
+                let signed_delegate_action = near_primitives::transaction::SignedDelegateAction(  // TODO get SignedDelegateAction from https://github.com/binary-star-near/nearcore/tree/NEP-366 instead of near_primatives
                     delegate_action,
                     signed_transaction.signature
                 );
