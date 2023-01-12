@@ -61,7 +61,7 @@ impl From<NewAccountContext> for crate::commands::account::create_account::Creat
 }
 
 impl NewAccount {
-    fn input_new_account_id(
+    pub fn input_new_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         let new_account_id: crate::types::account_id::AccountId =
