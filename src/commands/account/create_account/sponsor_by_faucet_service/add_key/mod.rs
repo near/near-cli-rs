@@ -59,10 +59,10 @@ impl AccessKeyMode {
                //         .await
                // }
         };
-        let faucet_service_url = match network_config.faucet_url {
+        let faucet_service_url = match &network_config.faucet_url {
             Some(url) => url,
             None => return Err(color_eyre::Report::msg(format!(
-                "Error: The <{}> network does not have a faucet (helper service) that can sponsor the creation of an account.",
+                "The <{}> network does not have a faucet (helper service) that can sponsor the creation of an account.",
                 network_config.network_name
             )))
         };
@@ -71,7 +71,7 @@ impl AccessKeyMode {
         data.insert("newAccountPublicKey", public_key.to_string());
 
         let client = reqwest::Client::new();
-        match client.post(faucet_service_url).json(&data).send().await {
+        match client.post(faucet_service_url.clone()).json(&data).send().await {
             Ok(response) => {
                 let account_creation_transaction = response
                     .json::<near_jsonrpc_client::methods::tx::RpcTransactionStatusResponse>()
@@ -95,16 +95,16 @@ impl AccessKeyMode {
                         // }
                         Ok(())
                     }
-                    near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-                        match tx_execution_error {
-                            near_primitives::errors::TxExecutionError::ActionError(
-                                _action_error,
-                            ) => todo!(),
-                            near_primitives::errors::TxExecutionError::InvalidTxError(_) => todo!(),
-                        }
+                    _ => {
+                        crate::common::print_transaction_status(
+                            account_creation_transaction,
+                            network_config,
+                        )?;
+                        // if storage_properties.is_some() {
+                        //     println!("{}\n", storage_message);
+                        // }
+                        Ok(())
                     }
-                    near_primitives::views::FinalExecutionStatus::NotStarted => todo!(),
-                    near_primitives::views::FinalExecutionStatus::Started => todo!(),
                 }
             }
             Err(err) => Err(color_eyre::Report::msg(err.to_string())),
