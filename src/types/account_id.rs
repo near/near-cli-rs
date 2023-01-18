@@ -9,6 +9,12 @@ impl From<AccountId> for near_primitives::types::AccountId {
     }
 }
 
+impl From<near_primitives::types::AccountId> for AccountId {
+    fn from(account_id: near_primitives::types::AccountId) -> Self {
+        Self(account_id)
+    }
+}
+
 impl std::fmt::Display for AccountId {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         self.0.fmt(f)

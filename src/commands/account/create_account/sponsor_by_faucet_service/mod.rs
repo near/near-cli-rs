@@ -1,4 +1,11 @@
 mod add_key;
+mod network;
+
+#[derive(Debug, Clone)]
+pub struct AccountProperties {
+    pub new_account_id: near_primitives::types::AccountId,
+    pub public_key: near_crypto::PublicKey,
+}
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -18,8 +25,12 @@ impl NewAccount {
     }
 
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
+        let account_properties = AccountProperties {
+            new_account_id: self.new_account_id.clone().into(),
+            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
+        };
         self.access_key_mode
-            .process(config, self.new_account_id.clone())
+            .process(config, account_properties)
             .await
     }
 }
