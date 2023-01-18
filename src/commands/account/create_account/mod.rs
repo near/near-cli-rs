@@ -54,3 +54,10 @@ impl CoverCostsCreateAccount {
         }
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct AccountProperties {
+    pub new_account_id: near_primitives::types::AccountId,
+    pub public_key: near_crypto::PublicKey,
+    pub initial_balance: crate::common::NearBalance,
+}

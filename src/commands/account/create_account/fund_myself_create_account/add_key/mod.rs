@@ -38,7 +38,7 @@ impl AccessKeyMode {
     pub async fn process(
         &self,
         config: crate::config::Config,
-        account_properties: super::AccountProperties,
+        account_properties: super::super::AccountProperties,
     ) -> crate::CliResult {
         match self {
             AccessKeyMode::UseManuallyProvidedPublicKey(add_access_key_action) => {

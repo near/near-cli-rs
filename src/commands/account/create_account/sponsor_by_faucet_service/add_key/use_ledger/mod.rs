@@ -63,9 +63,9 @@ impl AddAccessWithLedger {
     pub async fn process(
         &self,
         config: crate::config::Config,
-        account_properties: super::super::AccountProperties,
+        account_properties: super::super::super::AccountProperties,
     ) -> crate::CliResult {
-        let account_properties = super::super::AccountProperties {
+        let account_properties = super::super::super::AccountProperties {
             public_key: self.public_key.clone().into(),
             ..account_properties
         };

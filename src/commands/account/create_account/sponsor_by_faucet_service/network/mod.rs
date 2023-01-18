@@ -55,7 +55,7 @@ impl Network {
     pub async fn process(
         &self,
         config: crate::config::Config,
-        account_properties: crate::commands::account::create_account::sponsor_by_faucet_service::AccountProperties,
+        account_properties: crate::commands::account::create_account::AccountProperties,
         storage_message: Option<String>,
     ) -> crate::CliResult {
         let network_config = self.get_network_config(config.clone());
