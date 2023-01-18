@@ -29,15 +29,15 @@ impl CreateAccount {
 ///How do you cover the costs of account creation?
 pub enum CoverCostsCreateAccount {
     #[strum_discriminants(strum(
-        message = "fund-myself                  - I would like fund myself to cover the cost of creating an account"
-    ))]
-    ///I would like fund myself to cover the cost of creating an account
-    FundMyself(self::fund_myself_create_account::NewAccount),
-    #[strum_discriminants(strum(
         message = "sponsor-by-faucet-service    - I would like the faucet service sponsor to cover the cost of creating an account (testnet only for now)"
     ))]
     ///I would like the faucet service sponsor to cover the cost of creating an account (testnet only for now)
     SponsorByFaucetService(self::sponsor_by_faucet_service::NewAccount),
+    #[strum_discriminants(strum(
+        message = "fund-myself                  - I would like fund myself to cover the cost of creating an account"
+    ))]
+    ///I would like fund myself to cover the cost of creating an account
+    FundMyself(self::fund_myself_create_account::NewAccount),
     #[strum_discriminants(strum(
         message = "fund-later                   - Create an implicit-account"
     ))]

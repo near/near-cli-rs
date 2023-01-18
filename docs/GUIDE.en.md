@@ -288,9 +288,134 @@ The data for the access key is saved in macOS Keychain
 #### create-account - Create a new account
 
 - sponsor-by-linkdrop (Not implemented yet)
-- sponsor-by-wallet (testnet only) (Not implemented yet)
+- [sponsor-by-faucet-service](#sponsor-by-faucet-service---I-would-like-the-faucet-service-sponsor-to-cover-the-cost-of-creating-an-account-testnet-only-for-now)
 - [fund-myself](#fund-myself---I-would-like-fund-myself-to-cover-the-cost-of-creating-an-account)
 - [fund-later](#fund-later---Create-an-implicit-account)
+
+#### sponsor-by-faucet-service - I would like the faucet service sponsor to cover the cost of creating an account (testnet only for now)
+
+testnet has a faucet (helper service) that can sponsor account creation.  
+When adding your own network in the [add-connection](#add-connection---Add-a-network-connection) configurator, you can specify your service in the *faucet_url* field.  
+Access keys to the created account can be added in several ways:  
+- [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
+- [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
+- [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
+- [use-ledger](#use-ledger---Use-a-ledger)
+
+##### autogenerate-new-keypair - Automatically generate a key pair
+
+In order to create an account, in the terminal command line type:
+```txt
+./near-cli account \
+    create-account sponsor-by-faucet-service test_fro.testnet \
+    autogenerate-new-keypair \
+    save-to-keychain \
+    network-config testnet \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/test_fro.testnet/ed25519_CCwvhsp3Y3BfLbfYJQJqXJA2CaSP7CRjn1t7PyEtsjej.json
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/test_fro.testnet.json
+
+New account <test_fro.testnet> created successfully.
+Transaction ID: FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/gKThQJT5rwgxLiN4EPQ1HiNnG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/gKThQJT5rwgxLiN4EPQ1HiNnG.png" width="836"/>
+</a>
+</details>
+
+##### use-manually-provided-seed-prase - Use the provided seed phrase manually
+
+This command adds a previously known mnemonic phrase to the account.
+In order to execute this command, in the terminal command line type:
+```txt
+./near-cli account \
+    create-account sponsor-by-faucet-service test_fro1.testnet \
+    use-manually-provided-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
+    network-config testnet \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+New account <test_fro1.testnet> created successfully.
+Transaction ID: D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/mYTEDj9Pxe3e6hwoTnDASuv0d?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/mYTEDj9Pxe3e6hwoTnDASuv0d.png" width="836"/>
+</a>
+</details>
+
+##### use-manually-provided-public-key - Use the provided public key manually
+
+This command adds a pre-known public access key to the account.
+In order to execute this command, in the terminal command line type:
+```txt
+./near-cli account \
+    create-account sponsor-by-faucet-service test_fro2.testnet \
+    use-manually-provided-public-key ed25519:5qHMs34xnfkfWwnEk62qP7ykbcv8osbx3gvE4Cto4t3g \
+    network-config testnet \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+New account <test_fro2.testnet> created successfully.
+Transaction ID: E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/uxZ7FVsK7OQTakfrgwHhL4X7D?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/uxZ7FVsK7OQTakfrgwHhL4X7D.png" width="836"/>
+</a>
+</details>
+
+##### use-ledger - Use a ledger
+
+This command adds access keys to an account using a ledger.
+In order to execute this command, in the terminal command line type:
+```txt
+./near-cli account \
+    create-account sponsor-by-faucet-service test_fro3.testnet \
+    use-ledger \
+    network-config testnet \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+New account <test_fro3.testnet> created successfully.
+Transaction ID: BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/b0v4IhRZRxoJ91bVcPoCfe2yl?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/b0v4IhRZRxoJ91bVcPoCfe2yl.png" width="836"/>
+</a>
+</details>
 
 #### fund-myself - I would like fund myself to cover the cost of creating an account
 
@@ -1330,7 +1455,8 @@ To add network details to the configuration file (_config.toml_), you can use in
         --wallet-url https://wallet.testnet.near.org/ \
         --explorer-transaction-url https://explorer.testnet.near.org/transactions/ \
         --rpc-api-key 'c0a25b3c-39c2-4f62-a621-50e208b88e64' \
-        --linkdrop-account-id testnet
+        --linkdrop-account-id testnet \
+        --faucet_url https://helper.nearprotocol.com/account
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
