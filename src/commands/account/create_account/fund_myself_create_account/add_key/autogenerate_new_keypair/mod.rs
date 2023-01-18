@@ -45,7 +45,7 @@ impl SaveMode {
     #[cfg(target_os = "macos")]
     pub fn save_access_key_to_macos_keychain(
         network_config: crate::config::NetworkConfig,
-        account_properties: super::super::AccountProperties,
+        account_properties: super::super::super::AccountProperties,
         storage_properties: Option<super::super::StorageProperties>,
     ) -> color_eyre::eyre::Result<String> {
         match storage_properties {
