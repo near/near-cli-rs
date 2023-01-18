@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 pub mod autogenerate_new_keypair;
 #[cfg(feature = "ledger")]
 mod use_ledger;
-// mod use_manually_provided_seed_phrase;
+mod use_manually_provided_seed_phrase;
 mod use_public_key;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
@@ -16,13 +16,13 @@ pub enum AccessKeyMode {
     ))]
     ///Automatically generate a key pair
     AutogenerateNewKeypair(self::autogenerate_new_keypair::GenerateKeypair),
-    // #[strum_discriminants(strum(
-    //     message = "use-manually-provided-seed-prase  - Use the provided seed phrase manually"
-    // ))]
-    // ///Use the provided seed phrase manually
-    // UseManuallyProvidedSeedPhrase(
-    //     self::use_manually_provided_seed_phrase::AddAccessWithSeedPhraseAction,
-    // ),
+    #[strum_discriminants(strum(
+        message = "use-manually-provided-seed-prase  - Use the provided seed phrase manually"
+    ))]
+    ///Use the provided seed phrase manually
+    UseManuallyProvidedSeedPhrase(
+        self::use_manually_provided_seed_phrase::AddAccessWithSeedPhraseAction,
+    ),
     #[strum_discriminants(strum(
         message = "use-manually-provided-public-key  - Use the provided public key manually"
     ))]
@@ -48,11 +48,12 @@ impl AccessKeyMode {
             }
             AccessKeyMode::AutogenerateNewKeypair(generate_keypair) => {
                 generate_keypair.process(config, account_properties).await
-            } // AccessKeyMode::UseManuallyProvidedSeedPhrase(add_access_with_seed_phrase_action) => {
-            //     add_access_with_seed_phrase_action
-            //         .process(config, account_properties)
-            //         .await
-            // }
+            }
+            AccessKeyMode::UseManuallyProvidedSeedPhrase(add_access_with_seed_phrase_action) => {
+                add_access_with_seed_phrase_action
+                    .process(config, account_properties)
+                    .await
+            }
             #[cfg(feature = "ledger")]
             AccessKeyMode::UseLedger(add_access_with_ledger) => {
                 add_access_with_ledger
