@@ -1,6 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-// pub mod autogenerate_new_keypair;
+pub mod autogenerate_new_keypair;
 // #[cfg(feature = "ledger")]
 // mod use_ledger;
 // mod use_manually_provided_seed_phrase;
@@ -11,11 +11,11 @@ mod use_public_key;
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 ///Add an access key for this account
 pub enum AccessKeyMode {
-    // #[strum_discriminants(strum(
-    //     message = "autogenerate-new-keypair          - Automatically generate a key pair"
-    // ))]
-    // ///Automatically generate a key pair
-    // AutogenerateNewKeypair(self::autogenerate_new_keypair::GenerateKeypair),
+    #[strum_discriminants(strum(
+        message = "autogenerate-new-keypair          - Automatically generate a key pair"
+    ))]
+    ///Automatically generate a key pair
+    AutogenerateNewKeypair(self::autogenerate_new_keypair::GenerateKeypair),
     // #[strum_discriminants(strum(
     //     message = "use-manually-provided-seed-prase  - Use the provided seed phrase manually"
     // ))]
@@ -45,10 +45,10 @@ impl AccessKeyMode {
                 add_access_key_action
                     .process(config, account_properties)
                     .await
-            } // AccessKeyMode::AutogenerateNewKeypair(generate_keypair) => {
-              //     generate_keypair.process(config, account_properties).await
-              // }
-              // AccessKeyMode::UseManuallyProvidedSeedPhrase(add_access_with_seed_phrase_action) => {
+            }
+            AccessKeyMode::AutogenerateNewKeypair(generate_keypair) => {
+                generate_keypair.process(config, account_properties).await
+            } // AccessKeyMode::UseManuallyProvidedSeedPhrase(add_access_with_seed_phrase_action) => {
               //     add_access_with_seed_phrase_action
               //         .process(config, account_properties)
               //         .await
