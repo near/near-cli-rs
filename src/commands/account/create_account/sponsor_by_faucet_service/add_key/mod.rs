@@ -1,8 +1,8 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod autogenerate_new_keypair;
-// #[cfg(feature = "ledger")]
-// mod use_ledger;
+#[cfg(feature = "ledger")]
+mod use_ledger;
 // mod use_manually_provided_seed_phrase;
 mod use_public_key;
 
@@ -28,10 +28,10 @@ pub enum AccessKeyMode {
     ))]
     ///Use the provided public key manually
     UseManuallyProvidedPublicKey(self::use_public_key::AddAccessKeyAction),
-    //     #[cfg(feature = "ledger")]
-    //     #[strum_discriminants(strum(message = "use-ledger                        - Use a ledger"))]
-    //     ///Use a ledger
-    //     UseLedger(self::use_ledger::AddAccessWithLedger),
+    #[cfg(feature = "ledger")]
+    #[strum_discriminants(strum(message = "use-ledger                        - Use a ledger"))]
+    ///Use a ledger
+    UseLedger(self::use_ledger::AddAccessWithLedger),
 }
 
 impl AccessKeyMode {
@@ -49,16 +49,16 @@ impl AccessKeyMode {
             AccessKeyMode::AutogenerateNewKeypair(generate_keypair) => {
                 generate_keypair.process(config, account_properties).await
             } // AccessKeyMode::UseManuallyProvidedSeedPhrase(add_access_with_seed_phrase_action) => {
-              //     add_access_with_seed_phrase_action
-              //         .process(config, account_properties)
-              //         .await
-              // }
-              // #[cfg(feature = "ledger")]
-              // AccessKeyMode::UseLedger(add_access_with_ledger) => {
-              //     add_access_with_ledger
-              //         .process(config, account_properties)
-              //         .await
-              // }
+            //     add_access_with_seed_phrase_action
+            //         .process(config, account_properties)
+            //         .await
+            // }
+            #[cfg(feature = "ledger")]
+            AccessKeyMode::UseLedger(add_access_with_ledger) => {
+                add_access_with_ledger
+                    .process(config, account_properties)
+                    .await
+            }
         }
     }
 }
