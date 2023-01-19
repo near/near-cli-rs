@@ -1177,7 +1177,17 @@ pub fn print_transaction_status(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
     network_config: crate::config::NetworkConfig,
 ) -> crate::CliResult {
-    match transaction_info.status {
+    println!("-------------- Logs ----------------");
+    for receipt in transaction_info.receipts_outcome.clone().iter() {
+        if receipt.outcome.logs.is_empty() {
+            println!("Logs [{}]:   No logs", receipt.outcome.executor_id);
+        } else {
+            println!("Logs [{}]:", receipt.outcome.executor_id);
+            println!("  {}", receipt.outcome.logs.join("\n  "));
+        };
+    }
+    println!("------------------------------------");
+match transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {

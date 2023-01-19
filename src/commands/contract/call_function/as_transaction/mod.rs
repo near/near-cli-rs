@@ -69,21 +69,6 @@ impl CallFunctionProperties {
         .await?
         {
             Some(transaction_info) => {
-                println!("--------------");
-                if transaction_info.transaction_outcome.outcome.logs.is_empty() {
-                    println!("No logs")
-                } else {
-                    println!("Logs:");
-                    println!(
-                        "  {}",
-                        transaction_info
-                            .transaction_outcome
-                            .outcome
-                            .logs
-                            .join("\n  ")
-                    );
-                };
-                println!("--------------");
                 crate::common::print_transaction_status(
                     transaction_info,
                     self.prepaid_gas
