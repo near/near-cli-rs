@@ -1234,8 +1234,8 @@ pub fn save_access_key_to_keychain(
     path_with_key_name.push(account_id);
     std::fs::create_dir_all(&path_with_key_name)?;
     path_with_key_name.push(file_with_key_name);
-    if path_with_key_name.exists() {
-        println!(
+    let message_1 = if path_with_key_name.exists() {
+        format!(
             "The file: {} already exists! Therefore it was not overwritten.",
             &path_with_key_name.display()
         )
@@ -1246,11 +1246,11 @@ pub fn save_access_key_to_keychain(
             .map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
             })?;
-        println!(
+        format!(
             "The data for the access key is saved in a file {}",
             &path_with_key_name.display()
         )
-    }
+    };
 
     let file_with_account_name: std::path::PathBuf = format!("{}.json", account_id).into();
     let mut path_with_account_name = std::path::PathBuf::from(&credentials_home_dir);
@@ -1258,7 +1258,8 @@ pub fn save_access_key_to_keychain(
     path_with_account_name.push(file_with_account_name);
     if path_with_account_name.exists() {
         Ok(format!(
-            "The file: {} already exists! Therefore it was not overwritten.",
+            "{}\nThe file: {} already exists! Therefore it was not overwritten.",
+            message_1,
             &path_with_account_name.display()
         ))
     } else {
@@ -1269,7 +1270,8 @@ pub fn save_access_key_to_keychain(
                 color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
             })?;
         Ok(format!(
-            "The data for the access key is saved in a file {}",
+            "{}\nThe data for the access key is saved in a file {}",
+            message_1,
             &path_with_account_name.display()
         ))
     }

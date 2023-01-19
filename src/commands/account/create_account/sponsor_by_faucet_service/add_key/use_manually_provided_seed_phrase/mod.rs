@@ -1,13 +1,13 @@
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(context = crate::GlobalContext)]
 pub struct AddAccessWithSeedPhraseAction {
-    ///Enter the seed-phrase for this sub-account
+    ///Enter the seed-phrase for this account
     master_seed_phrase: String,
     #[interactive_clap(named_arg)]
-    ///What is the signer account ID?
-    sign_as: super::super::sign_as::SignerAccountId,
+    ///Select network
+    network_config: super::super::network::Network,
 }
 
 impl AddAccessWithSeedPhraseAction {
@@ -27,9 +27,9 @@ impl AddAccessWithSeedPhraseAction {
             public_key,
             ..account_properties
         };
-        let storage_properties = None;
-        self.sign_as
-            .process(config, account_properties, storage_properties)
+        let storage_message = None;
+        self.network_config
+            .process(config, account_properties, storage_message)
             .await
     }
 }

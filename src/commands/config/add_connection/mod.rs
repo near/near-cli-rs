@@ -27,6 +27,10 @@ pub struct AddNetworkConnection {
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     linkdrop_account_id: Option<crate::types::account_id::AccountId>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_from_cli_arg)]
+    #[interactive_clap(skip_default_input_arg)]
+    faucet_url: Option<crate::types::url::Url>,
 }
 
 impl interactive_clap::FromCli for AddNetworkConnection {
@@ -82,12 +86,79 @@ impl interactive_clap::FromCli for AddNetworkConnection {
             .and_then(|clap_variant| clap_variant.rpc_api_key)
         {
             Some(cli_api_key) => Some(cli_api_key),
-            None => Self::input_api_key()?,
+            None => {
+                println!();
+                #[derive(strum_macros::Display)]
+                enum ConfirmOptions {
+                    #[strum(to_string = "Yes, the RPC endpoint requires API key")]
+                    Yes,
+                    #[strum(to_string = "No, the RPC endpoint does not require API key")]
+                    No,
+                }
+                let select_choose_input = Select::new(
+                    "Do you want to input an API key?",
+                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
+                )
+                .prompt()?;
+                if let ConfirmOptions::Yes = select_choose_input {
+                    Self::input_api_key()?
+                } else {
+                    None
+                }
+            }
         };
         let linkdrop_account_id: Option<crate::types::account_id::AccountId> =
-            match optional_clap_variant.and_then(|clap_variant| clap_variant.linkdrop_account_id) {
+            match optional_clap_variant
+                .as_ref()
+                .and_then(|clap_variant| clap_variant.linkdrop_account_id.clone())
+            {
                 Some(cli_linkdrop_account_id) => Some(cli_linkdrop_account_id),
-                None => Self::input_linkdrop_account_id()?,
+                None => {
+                    println!();
+                    #[derive(strum_macros::Display)]
+                    enum ConfirmOptions {
+                        #[strum(
+                            to_string = "Yes, and I want to enter the name of the account hosting the program \"linkdrop\""
+                        )]
+                        Yes,
+                        #[strum(to_string = "I dont know")]
+                        No,
+                    }
+                    let select_choose_input = Select::new(
+                        "Is there a \"linkdrop\" program on this network?",
+                        vec![ConfirmOptions::Yes, ConfirmOptions::No],
+                    )
+                    .prompt()?;
+                    if let ConfirmOptions::Yes = select_choose_input {
+                        Self::input_linkdrop_account_id()?
+                    } else {
+                        None
+                    }
+                }
+            };
+        let faucet_url: Option<crate::types::url::Url> =
+            match optional_clap_variant.and_then(|clap_variant| clap_variant.faucet_url) {
+                Some(cli_faucet_url) => Some(cli_faucet_url),
+                None => {
+                    println!();
+                    #[derive(strum_macros::Display)]
+                    enum ConfirmOptions {
+                        #[strum(to_string = "Yes, I want to enter the URL of the faucet")]
+                        Yes,
+                        #[strum(to_string = "No, I don't want to enter the faucet URL")]
+                        No,
+                    }
+                    let select_choose_input = Select::new(
+                        "Do you want to enter the faucet URL?",
+                        vec![ConfirmOptions::Yes, ConfirmOptions::No],
+                    )
+                    .prompt()?;
+                    if let ConfirmOptions::Yes = select_choose_input {
+                        Self::input_faucet_url()?
+                    } else {
+                        None
+                    }
+                }
             };
         Ok(Some(Self {
             network_name,
@@ -97,32 +168,16 @@ impl interactive_clap::FromCli for AddNetworkConnection {
             explorer_transaction_url,
             rpc_api_key,
             linkdrop_account_id,
+            faucet_url,
         }))
     }
 }
 
 impl AddNetworkConnection {
     fn input_api_key() -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
-        println!();
-        #[derive(strum_macros::Display)]
-        enum ConfirmOptions {
-            #[strum(to_string = "Yes, the RPC endpoint requires API key")]
-            Yes,
-            #[strum(to_string = "No, the RPC endpoint does not require API key")]
-            No,
-        }
-        let select_choose_input = Select::new(
-            "Do you want to input an API key?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
-        if let ConfirmOptions::Yes = select_choose_input {
-            let api_key: crate::types::api_key::ApiKey =
-                CustomType::new("Enter an API key").prompt()?;
-            Ok(Some(api_key))
-        } else {
-            Ok(None)
-        }
+        let api_key: crate::types::api_key::ApiKey =
+            CustomType::new("Enter an API key").prompt()?;
+        Ok(Some(api_key))
     }
 
     fn input_linkdrop_account_id(
@@ -132,19 +187,26 @@ impl AddNetworkConnection {
         Ok(Some(account_id))
     }
 
+    fn input_faucet_url() -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
+        let faucet_url: crate::types::url::Url =
+            CustomType::new("What is the faucet url?").prompt()?;
+        Ok(Some(faucet_url))
+    }
+
     pub async fn process(&self, mut config: crate::config::Config) -> crate::CliResult {
         config.networks.insert(
             self.connection_name.clone(),
             crate::config::NetworkConfig {
                 network_name: self.network_name.clone(),
-                rpc_url: self.rpc_url.0.clone(),
-                wallet_url: self.wallet_url.0.clone(),
+                rpc_url: self.rpc_url.clone().into(),
+                wallet_url: self.wallet_url.clone().into(),
                 explorer_transaction_url: self.explorer_transaction_url.0.clone(),
                 rpc_api_key: self.rpc_api_key.clone(),
                 linkdrop_account_id: self
                     .linkdrop_account_id
                     .clone()
                     .map(|linkdrop_account_id| linkdrop_account_id.into()),
+                faucet_url: self.faucet_url.clone().map(|faucet_url| faucet_url.into()),
             },
         );
         println!();

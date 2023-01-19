@@ -12,7 +12,7 @@ impl GenerateKeypair {
     pub async fn process(
         &self,
         config: crate::config::Config,
-        account_properties: super::super::AccountProperties,
+        account_properties: super::super::super::AccountProperties,
     ) -> crate::CliResult {
         self.save_mode.process(config, account_properties).await
     }
@@ -45,7 +45,7 @@ impl SaveMode {
     #[cfg(target_os = "macos")]
     pub fn save_access_key_to_macos_keychain(
         network_config: crate::config::NetworkConfig,
-        account_properties: super::super::AccountProperties,
+        account_properties: super::super::super::AccountProperties,
         storage_properties: Option<super::super::StorageProperties>,
     ) -> color_eyre::eyre::Result<String> {
         match storage_properties {
@@ -72,7 +72,7 @@ impl SaveMode {
     pub fn save_access_key_to_keychain(
         config: crate::config::Config,
         network_config: crate::config::NetworkConfig,
-        account_properties: super::super::AccountProperties,
+        account_properties: super::super::super::AccountProperties,
         storage_properties: Option<super::super::StorageProperties>,
     ) -> color_eyre::eyre::Result<String> {
         match storage_properties {
@@ -116,12 +116,12 @@ impl SaveMode {
     pub async fn process(
         &self,
         config: crate::config::Config,
-        account_properties: super::super::AccountProperties,
+        account_properties: super::super::super::AccountProperties,
     ) -> crate::CliResult {
         let key_pair_properties: crate::common::KeyPairProperties =
             crate::common::generate_keypair().await?;
         let public_key = near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
-        let account_properties = super::super::AccountProperties {
+        let account_properties = super::super::super::AccountProperties {
             public_key,
             ..account_properties
         };
@@ -170,7 +170,7 @@ impl SignAs {
     pub async fn process(
         &self,
         config: crate::config::Config,
-        account_properties: super::super::AccountProperties,
+        account_properties: super::super::super::AccountProperties,
         storage_properties: Option<super::super::StorageProperties>,
     ) -> crate::CliResult {
         self.sign_as
