@@ -68,16 +68,14 @@ impl CallFunctionProperties {
         )
         .await?
         {
-            Some(transaction_info) => {
-                crate::common::print_transaction_status(
-                    transaction_info,
-                    self.prepaid_gas
-                        .attached_deposit
-                        .sign_as
-                        .network_config
-                        .get_network_config(config),
-                )
-            }
+            Some(transaction_info) => crate::common::print_transaction_status(
+                transaction_info,
+                self.prepaid_gas
+                    .attached_deposit
+                    .sign_as
+                    .network_config
+                    .get_network_config(config),
+            ),
             None => Ok(()),
         }
     }
