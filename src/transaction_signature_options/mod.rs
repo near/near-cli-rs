@@ -214,7 +214,7 @@ impl Submit {
                     .json(&payload)  // serialize signed_delegate_action to json
                     .send()
                     .await?;
-                Ok(Some(relayer_response))  // TODO update process fn return type
+                Ok(Some(relayer_response))  // TODO update process fn return type to also accept reqwest::Response
             }
             Submit::Display => {
                 println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);

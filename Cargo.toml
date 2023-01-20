@@ -53,6 +53,8 @@ interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap"
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.7.0"
 
+reqwest = "0.11.14"
+
 [features]
 default = ["ledger"]
 ledger = ["near-ledger"]
