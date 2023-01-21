@@ -2,6 +2,8 @@ use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 use std::str::FromStr;
 
+use prettytable::Table;
+
 use near_primitives::{
     borsh::BorshDeserialize,
     hash::CryptoHash,
@@ -1234,8 +1236,8 @@ pub fn save_access_key_to_keychain(
     path_with_key_name.push(account_id);
     std::fs::create_dir_all(&path_with_key_name)?;
     path_with_key_name.push(file_with_key_name);
-    if path_with_key_name.exists() {
-        println!(
+    let message_1 = if path_with_key_name.exists() {
+        format!(
             "The file: {} already exists! Therefore it was not overwritten.",
             &path_with_key_name.display()
         )
@@ -1246,11 +1248,11 @@ pub fn save_access_key_to_keychain(
             .map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
             })?;
-        println!(
+        format!(
             "The data for the access key is saved in a file {}",
             &path_with_key_name.display()
         )
-    }
+    };
 
     let file_with_account_name: std::path::PathBuf = format!("{}.json", account_id).into();
     let mut path_with_account_name = std::path::PathBuf::from(&credentials_home_dir);
@@ -1258,7 +1260,8 @@ pub fn save_access_key_to_keychain(
     path_with_account_name.push(file_with_account_name);
     if path_with_account_name.exists() {
         Ok(format!(
-            "The file: {} already exists! Therefore it was not overwritten.",
+            "{}\nThe file: {} already exists! Therefore it was not overwritten.",
+            message_1,
             &path_with_account_name.display()
         ))
     } else {
@@ -1269,7 +1272,8 @@ pub fn save_access_key_to_keychain(
                 color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
             })?;
         Ok(format!(
-            "The data for the access key is saved in a file {}",
+            "{}\nThe data for the access key is saved in a file {}",
+            message_1,
             &path_with_account_name.display()
         ))
     }
@@ -1394,18 +1398,25 @@ pub async fn display_account_info(
         _ => return Err(color_eyre::Report::msg("Error call result")),
     };
 
-    println!(
-        "Account details for '{}' at block #{} ({})\n\
-        Native account balance: {}\n\
-        Validator stake: {}\n\
-        Storage used by the account: {} bytes",
-        account_id,
-        resp.block_height,
-        resp.block_hash,
-        NearBalance::from_yoctonear(account_view.amount),
-        NearBalance::from_yoctonear(account_view.locked),
-        account_view.storage_usage
-    );
+    let mut table = Table::new();
+
+    table.add_row(row![
+        Fg->account_id,
+        format!("as of block #{}", resp.block_height)
+    ]);
+    table.add_row(row![
+        Fg->"Native account balance",
+        NearBalance::from_yoctonear(account_view.amount)
+    ]);
+    table.add_row(row![
+        Fg->"Validator stake",
+        NearBalance::from_yoctonear(account_view.locked)
+    ]);
+    table.add_row(row![
+        Fg->"Storage used by the account",
+        byte_unit::Byte::from_bytes(account_view.storage_usage.into()).get_appropriate_unit(false).to_string()
+    ]);
+    table.printstd();
 
     if account_view.code_hash == CryptoHash::default() {
         println!("Contract code is not deployed to this account.");
@@ -1442,7 +1453,9 @@ pub async fn display_access_key_list(
         _ => return Err(color_eyre::Report::msg("Error call result".to_string())),
     };
 
-    println!("Number of access keys: {}", view.keys.len());
+    let mut table = Table::new();
+    table.add_row(row![Fg=>"#", "Public Key", "Nonce", "Permissions Message"]);
+
     for (index, access_key) in view.keys.iter().enumerate() {
         let permissions_message = match &access_key.access_key.permission {
             AccessKeyPermissionView::FullAccess => "full access".to_owned(),
@@ -1472,14 +1485,16 @@ pub async fn display_access_key_list(
             }
         };
 
-        println!(
-            "{: >4}. {} (nonce: {}) is granted to {}",
-            index + 1,
+        table.add_row(row![
+            Fg->index + 1,
             access_key.public_key,
             access_key.access_key.nonce,
             permissions_message
-        );
+        ]);
     }
+
+    table.printstd();
+
     Ok(())
 }
 
