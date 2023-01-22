@@ -4,9 +4,6 @@ use common::{try_external_subcommand_execution, CliResult};
 use interactive_clap::FromCli;
 use interactive_clap::ToCliArgs;
 
-#[macro_use]
-extern crate prettytable;
-
 mod commands;
 mod common;
 mod config;

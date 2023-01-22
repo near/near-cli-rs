@@ -10,12 +10,32 @@ pub struct ViewListKeys {
 
 impl ViewListKeys {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        crate::common::display_access_key_list(
-            self.account_id.clone().into(),
-            self.network_config.get_network_config(config),
-            self.network_config.get_block_ref(),
-        )
-        .await?;
+        let resp = self
+            .network_config
+            .get_network_config(config)
+            .json_rpc_client()
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: self.network_config.get_block_ref(),
+                request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                    account_id: self.account_id.clone().into(),
+                },
+            })
+            .await
+            .map_err(|err| {
+                color_eyre::Report::msg(format!(
+                    "Failed to fetch query for view key list: {:?}",
+                    err
+                ))
+            })?;
+
+        let access_keys = match resp.kind {
+            near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(result) => {
+                result.keys
+            }
+            _ => return Err(color_eyre::Report::msg("Error call result".to_string())),
+        };
+
+        crate::common::display_access_key_list(&access_keys);
         Ok(())
     }
 }

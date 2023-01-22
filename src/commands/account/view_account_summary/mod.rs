@@ -11,18 +11,58 @@ pub struct ViewAccountSummary {
 impl ViewAccountSummary {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         let network_config = self.network_config.get_network_config(config);
+
+        let resp = network_config
+            .json_rpc_client()
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: self.network_config.get_block_ref(),
+                request: near_primitives::views::QueryRequest::ViewAccount {
+                    account_id: self.account_id.clone().into(),
+                },
+            })
+            .await
+            .map_err(|err| {
+                color_eyre::Report::msg(format!(
+                    "Failed to fetch query for view account: {:?}",
+                    err
+                ))
+            })?;
+
+        let account_view = match resp.kind {
+            near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(view) => view,
+            _ => return Err(color_eyre::Report::msg("Error call result")),
+        };
+
+        let resp = network_config
+            .json_rpc_client()
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: near_primitives::types::BlockId::Hash(resp.block_hash).into(),
+                request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                    account_id: self.account_id.clone().into(),
+                },
+            })
+            .await
+            .map_err(|err| {
+                color_eyre::Report::msg(format!(
+                    "Failed to fetch query for view key list: {:?}",
+                    err
+                ))
+            })?;
+
+        let access_keys = match resp.kind {
+            near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(result) => {
+                result.keys
+            }
+            _ => return Err(color_eyre::Report::msg("Error call result".to_string())),
+        };
+
         crate::common::display_account_info(
-            self.account_id.clone().into(),
-            network_config.clone(),
-            self.network_config.get_block_ref(),
-        )
-        .await?;
-        crate::common::display_access_key_list(
-            self.account_id.clone().into(),
-            network_config,
-            self.network_config.get_block_ref(),
-        )
-        .await?;
+            &resp.block_hash,
+            &resp.block_height,
+            &self.account_id,
+            &account_view,
+            &access_keys,
+        );
         Ok(())
     }
 }

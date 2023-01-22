@@ -5,10 +5,8 @@ use std::str::FromStr;
 use prettytable::Table;
 
 use near_primitives::{
-    borsh::BorshDeserialize,
-    hash::CryptoHash,
-    types::{AccountId, BlockReference},
-    views::{AccessKeyPermissionView, QueryRequest},
+    borsh::BorshDeserialize, hash::CryptoHash, types::BlockReference,
+    views::AccessKeyPermissionView,
 };
 
 pub type CliResult = color_eyre::eyre::Result<()>;
@@ -1375,88 +1373,78 @@ fn path_directories() -> Vec<std::path::PathBuf> {
     dirs
 }
 
-pub async fn display_account_info(
-    account_id: AccountId,
-    network_config: crate::config::NetworkConfig,
-    block_ref: BlockReference,
-) -> crate::CliResult {
-    let resp = network_config
-        .json_rpc_client()
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_ref,
-            request: QueryRequest::ViewAccount {
-                account_id: account_id.clone(),
-            },
-        })
-        .await
-        .map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to fetch query for view account: {:?}", err))
-        })?;
-
-    let account_view = match resp.kind {
-        near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(view) => view,
-        _ => return Err(color_eyre::Report::msg("Error call result")),
-    };
-
+pub fn display_account_info(
+    viewed_at_block_hash: &CryptoHash,
+    viewed_at_block_height: &near_primitives::types::BlockHeight,
+    account_id: &crate::types::account_id::AccountId,
+    account_view: &near_primitives::views::AccountView,
+    access_keys: &[near_primitives::views::AccessKeyInfoView],
+) {
     let mut table = Table::new();
+    table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
-    table.add_row(row![
-        Fg->account_id,
-        format!("as of block #{}", resp.block_height)
+    table.add_row(prettytable::row![
+        Fy->account_id,
+        format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
     ]);
-    table.add_row(row![
+    table.add_row(prettytable::row![
         Fg->"Native account balance",
-        NearBalance::from_yoctonear(account_view.amount)
+        Fy->NearBalance::from_yoctonear(account_view.amount)
     ]);
-    table.add_row(row![
+    table.add_row(prettytable::row![
         Fg->"Validator stake",
-        NearBalance::from_yoctonear(account_view.locked)
+        Fy->NearBalance::from_yoctonear(account_view.locked)
     ]);
-    table.add_row(row![
+    table.add_row(prettytable::row![
         Fg->"Storage used by the account",
-        byte_unit::Byte::from_bytes(account_view.storage_usage.into()).get_appropriate_unit(false).to_string()
+        Fy->byte_unit::Byte::from_bytes(account_view.storage_usage.into()).get_appropriate_unit(false).to_string()
     ]);
+
+    let contract_status = if account_view.code_hash == CryptoHash::default() {
+        format!("No contract code")
+    } else {
+        hex::encode(account_view.code_hash.as_ref())
+    };
+    table.add_row(prettytable::row![
+        Fg->"Contract (SHA-256 checksum hex)",
+        Fy->contract_status
+    ]);
+
+    let access_keys_summary = if access_keys.is_empty() {
+        format!("Account is locked (no access keys)")
+    } else {
+        let full_access_keys_count = access_keys
+            .iter()
+            .filter(|access_key| {
+                matches!(
+                    access_key.access_key.permission,
+                    near_primitives::views::AccessKeyPermissionView::FullAccess
+                )
+            })
+            .count();
+        format!(
+            "{} full access keys and {} function-call-only access keys",
+            full_access_keys_count,
+            access_keys.len() - full_access_keys_count
+        )
+    };
+    table.add_row(prettytable::row![
+        Fg->"Access keys",
+        Fy->access_keys_summary
+    ]);
+
     table.printstd();
 
-    if account_view.code_hash == CryptoHash::default() {
-        println!("Contract code is not deployed to this account.");
-    } else {
-        println!(
-            "Contract code SHA-256 checksum (hex): {}",
-            hex::encode(account_view.code_hash.as_ref())
-        );
+    if !access_keys.is_empty() {
+        display_access_key_list(access_keys);
     }
-    Ok(())
 }
 
-pub async fn display_access_key_list(
-    account_id: AccountId,
-    network_config: crate::config::NetworkConfig,
-    block_ref: BlockReference,
-) -> crate::CliResult {
-    let resp = network_config
-        .json_rpc_client()
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_ref,
-            request: QueryRequest::ViewAccessKeyList { account_id },
-        })
-        .await
-        .map_err(|err| {
-            color_eyre::Report::msg(format!(
-                "Failed to fetch query for view key list: {:?}",
-                err
-            ))
-        })?;
-
-    let view = match resp.kind {
-        near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(result) => result,
-        _ => return Err(color_eyre::Report::msg("Error call result".to_string())),
-    };
-
+pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyInfoView]) {
     let mut table = Table::new();
-    table.add_row(row![Fg=>"#", "Public Key", "Nonce", "Permissions Message"]);
+    table.set_titles(prettytable::row![Fg=>"#", "Public Key", "Nonce", "Permissions"]);
 
-    for (index, access_key) in view.keys.iter().enumerate() {
+    for (index, access_key) in access_keys.iter().enumerate() {
         let permissions_message = match &access_key.access_key.permission {
             AccessKeyPermissionView::FullAccess => "full access".to_owned(),
             AccessKeyPermissionView::FunctionCall {
@@ -1485,7 +1473,7 @@ pub async fn display_access_key_list(
             }
         };
 
-        table.add_row(row![
+        table.add_row(prettytable::row![
             Fg->index + 1,
             access_key.public_key,
             access_key.access_key.nonce,
@@ -1493,9 +1481,8 @@ pub async fn display_access_key_list(
         ]);
     }
 
+    table.set_format(*prettytable::format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
     table.printstd();
-
-    Ok(())
 }
 
 pub fn input_network_name(context: &crate::GlobalContext) -> color_eyre::eyre::Result<String> {
