@@ -109,7 +109,7 @@ impl SignerAccountId {
     pub async fn process(
         &self,
         config: crate::config::Config,
-        account_properties: super::AccountProperties,
+        account_properties: super::super::AccountProperties,
         storage_properties: Option<super::StorageProperties>,
     ) -> crate::CliResult {
         let network_config = self.network_config.get_network_config(config.clone());

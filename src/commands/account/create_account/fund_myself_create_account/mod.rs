@@ -7,13 +7,6 @@ mod add_key;
 mod sign_as;
 
 #[derive(Debug, Clone)]
-pub struct AccountProperties {
-    pub new_account_id: near_primitives::types::AccountId,
-    pub public_key: near_crypto::PublicKey,
-    pub initial_balance: crate::common::NearBalance,
-}
-
-#[derive(Debug, Clone)]
 pub struct StorageProperties {
     pub key_pair_properties: crate::common::KeyPairProperties,
     pub storage: self::add_key::autogenerate_new_keypair::SaveModeDiscriminants,
@@ -61,7 +54,7 @@ impl From<NewAccountContext> for crate::commands::account::create_account::Creat
 }
 
 impl NewAccount {
-    fn input_new_account_id(
+    pub fn input_new_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         let new_account_id: crate::types::account_id::AccountId =
@@ -156,7 +149,7 @@ impl NewAccount {
     }
 
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let account_properties = AccountProperties {
+        let account_properties = super::AccountProperties {
             new_account_id: self.new_account_id.clone().into(),
             initial_balance: self.initial_balance.clone(),
             public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),

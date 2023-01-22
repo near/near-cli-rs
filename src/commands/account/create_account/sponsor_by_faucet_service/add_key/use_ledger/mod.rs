@@ -1,16 +1,16 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(context = crate::GlobalContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct AddAccessWithLedger {
     #[interactive_clap(skip)]
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(named_arg)]
-    ///What is the signer account ID?
-    sign_as: super::super::sign_as::SignerAccountId,
+    ///Select network
+    network_config: super::super::network::Network,
 }
 
 impl interactive_clap::FromCli for AddAccessWithLedger {
-    type FromCliContext = crate::commands::account::create_account::CreateAccountContext;
+    type FromCliContext = crate::GlobalContext;
     type FromCliError = color_eyre::eyre::Error;
 
     fn from_cli(
@@ -37,24 +37,24 @@ impl interactive_clap::FromCli for AddAccessWithLedger {
             near_crypto::ED25519PublicKey::from(public_key.to_bytes()),
         )
         .into();
-        let sign_as = super::super::sign_as::SignerAccountId::from_cli(
+        let network_config = super::super::network::Network::from_cli(
             optional_clap_variant.and_then(|clap_variant| {
-                clap_variant.sign_as.map(
-                    |ClapNamedArgSignerAccountIdForAddAccessWithLedger::SignAs(cli_signer)| {
-                        cli_signer
+                clap_variant.network_config.map(
+                    |ClapNamedArgNetworkForAddAccessWithLedger::NetworkConfig(cli_network)| {
+                        cli_network
                     },
                 )
             }),
             context,
         )?;
-        let sign_as = if let Some(value) = sign_as {
+        let network_config = if let Some(value) = network_config {
             value
         } else {
             return Ok(None);
         };
         Ok(Some(Self {
             public_key,
-            sign_as,
+            network_config,
         }))
     }
 }
@@ -69,9 +69,9 @@ impl AddAccessWithLedger {
             public_key: self.public_key.clone().into(),
             ..account_properties
         };
-        let storage_properties = None;
-        self.sign_as
-            .process(config, account_properties, storage_properties)
+        let storage_message = None;
+        self.network_config
+            .process(config, account_properties, storage_message)
             .await
     }
 }
