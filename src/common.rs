@@ -1397,7 +1397,7 @@ pub fn display_account_info(
     ]);
     table.add_row(prettytable::row![
         Fg->"Storage used by the account",
-        Fy->byte_unit::Byte::from_bytes(account_view.storage_usage.into()).get_appropriate_unit(false).to_string()
+        Fy->bytesize::ByteSize(account_view.storage_usage),
     ]);
 
     let contract_status = if account_view.code_hash == CryptoHash::default() {
