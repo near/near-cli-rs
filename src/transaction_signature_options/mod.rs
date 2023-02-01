@@ -14,6 +14,7 @@ pub mod sign_with_seed_phrase;
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::commands::TransactionContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+// #[interactive_clap(skip_default_from_cli)]
 /// Select a tool for signing the transaction
 pub enum SignWith {
     #[cfg(target_os = "macos")]
@@ -49,6 +50,71 @@ pub enum SignWith {
     /// Sign the transaction using the seed phrase
     SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
 }
+
+// impl interactive_clap::FromCli for SignWith {
+//     type FromCliContext = crate::commands::TransactionContext;
+//     type FromCliError = color_eyre::eyre::Error;
+//     fn from_cli(
+//         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+//         context: Self::FromCliContext,
+//     ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
+//         println!("++++++  context: {:#?}", context);
+//         match optional_clap_variant {
+//             Some(CliSignWith::SignWithMacosKeychain(inner_cli_args)) => {
+//                 let optional_inner_args = self::sign_with_macos_keychain::SignMacosKeychain::from_cli(Some(inner_cli_args), context.clone().into())?;
+//                 if let Some(inner_args) = optional_inner_args {
+//                     Ok(Some(Self::SignWithMacosKeychain(inner_args,)))
+//                 } else {
+//                     Self::choose_variant(context.clone())
+//                 }
+//             }
+//             Some(CliSignWith::SignWithKeychain(inner_cli_args)) => {
+//                 let optional_inner_args = self::sign_with_keychain::SignKeychain::from_cli(Some(inner_cli_args), context.clone().into())?;
+//                 if let Some(inner_args) = optional_inner_args {
+//                     Ok(Some(Self::SignWithKeychain(inner_args,)))
+//                 } else {
+//                     Self::choose_variant(context.clone())
+//                 }
+//             }
+//             Some(CliSignWith::SignWithLedger(inner_cli_args)) => {
+//                 let optional_inner_args = self::sign_with_ledger::SignLedger::from_cli(Some(inner_cli_args), context.clone().into())?;
+//                 if let Some(inner_args) = optional_inner_args {
+//                     Ok(Some(Self::SignWithLedger(inner_args,)))
+//                 } else {
+//                     Self::choose_variant(context.clone())
+//                 }
+//             }
+//             Some(CliSignWith::SignWithPlaintextPrivateKey(inner_cli_args)) => {
+//                 let optional_inner_args = self::sign_with_private_key::SignPrivateKey::from_cli(Some(inner_cli_args), context.clone().into())?;
+//                 if let Some(inner_args) = optional_inner_args {
+//                     Ok(Some(Self::SignWithPlaintextPrivateKey(inner_args,)))
+//                 } else {
+//                     Self::choose_variant(context.clone())
+//                 }
+//             }
+//             Some(CliSignWith::SignWithAccessKeyFile(inner_cli_args)) => {
+//                 let optional_inner_args = self::sign_with_access_key_file::SignAccessKeyFile::from_cli(Some(inner_cli_args), context.clone().into())?;
+//                 if let Some(inner_args) = optional_inner_args {
+//                     Ok(Some(Self::SignWithAccessKeyFile(inner_args,)))
+//                 } else {
+//                     Self::choose_variant(context.clone())
+//                 }
+//             }
+//             Some(CliSignWith::SignWithSeedPhrase(inner_cli_args)) => {
+//                 let optional_inner_args = self::sign_with_seed_phrase::SignSeedPhrase::from_cli(Some(inner_cli_args), context.clone().into())?;
+//                 if let Some(inner_args) = optional_inner_args {
+//                     Ok(Some(Self::SignWithSeedPhrase(inner_args,)))
+//                 } else {
+//                     Self::choose_variant(context.clone())
+//                 }
+//             }
+//             None => {
+//                 println!("******** context<NetworkForTransactionArgs>: {:#?}", context);
+
+//                 Self::choose_variant(context.clone())},
+//         }
+//     }
+// }
 
 pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
     Ok(CustomType::new("Enter sender (signer) public key").prompt()?)

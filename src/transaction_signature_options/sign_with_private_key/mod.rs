@@ -85,8 +85,8 @@ impl SignPrivateKey {
             })
             .await
             .map_err(|err| {
-                println!("\nUnsigned transaction:\n");
-                crate::common::print_transaction(prepopulated_unsigned_transaction.clone());
+                // println!("\nUnsigned transaction:\n");
+                // crate::common::print_transaction(prepopulated_unsigned_transaction.clone());
                 println!("\nYour transaction was not successfully signed.\n");
                 color_eyre::Report::msg(format!(
                     "Failed to fetch public key information for nonce: {:?}",
@@ -109,16 +109,19 @@ impl SignPrivateKey {
             ..prepopulated_unsigned_transaction
         };
         let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
-        let signed_transaction =
-            near_primitives::transaction::SignedTransaction::new(signature, unsigned_transaction);
+        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+            signature.clone(),
+            unsigned_transaction,
+        );
         let serialize_to_base64 = near_primitives::serialize::to_base64(
             signed_transaction
                 .try_to_vec()
                 .expect("Transaction is not expected to fail on serialization"),
         );
         println!("\nYour transaction was signed successfully.");
-        println!("Signed transaction:\n");
-        crate::common::print_transaction(signed_transaction.transaction.clone());
+        println!("Public key: {}", self.signer_public_key);
+        println!("Signature: {}", signature);
+        // crate::common::print_transaction(signed_transaction.transaction.clone());
         println!();
         match self.submit.clone() {
             None => {

@@ -52,7 +52,7 @@ pub struct TransactionContext {
     pub config: crate::config::Config,
     pub signer_account_id: crate::types::account_id::AccountId,
     pub receiver_account_id: crate::types::account_id::AccountId,
-    pub actions: Vec<near_primitives::transaction::Action>
+    pub actions: Vec<near_primitives::transaction::Action>,
 }
 
 impl From<TransactionContext> for crate::GlobalContext {

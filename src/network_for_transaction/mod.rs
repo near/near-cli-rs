@@ -24,8 +24,6 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        println!("******** context<NetworkForTransactionArgs>: {:#?}", context);
-
         let network_name = match optional_clap_variant
             .as_ref()
             .and_then(|clap_variant| clap_variant.network_name.clone())
@@ -35,30 +33,30 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
         };
         let prepopulated_unsigned_transaction =
             crate::types::transaction::Transaction(near_primitives::transaction::Transaction {
-                signer_id: "volodymyr.testnet".parse()?,
+                signer_id: context.signer_account_id.clone().into(),
                 public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
                 nonce: 0,
-                receiver_id: "fro_volod.testnet".parse()?,
+                receiver_id: context.receiver_account_id.clone().into(),
                 block_hash: Default::default(),
-                actions: vec![],
+                actions: context.actions.clone(),
             });
-        let optional_transaction_signature_options = match optional_clap_variant
-            .and_then(|clap_variant| clap_variant.transaction_signature_options)
-        {
-            Some(cli_transaction_signature_options) => {
-                crate::transaction_signature_options::SignWith::from_cli(
-                    Some(cli_transaction_signature_options),
-                    context,
-                )?
-            }
-            None => crate::transaction_signature_options::SignWith::choose_variant(context)?,
-        };
+        println!("\nUnsigned transaction:\n");
+        crate::common::print_unsigned_transaction(prepopulated_unsigned_transaction.clone().into());
+        println!();
+        let optional_transaction_signature_options =
+            crate::transaction_signature_options::SignWith::from_cli(
+                optional_clap_variant
+                    .and_then(|clap_variant| clap_variant.transaction_signature_options),
+                context,
+            )?;
+
         let transaction_signature_options =
             if let Some(transaction_signature_options) = optional_transaction_signature_options {
                 transaction_signature_options
             } else {
                 return Ok(None);
             };
+
         Ok(Some(Self {
             network_name,
             prepopulated_unsigned_transaction,
@@ -86,5 +84,11 @@ impl NetworkForTransactionArgs {
 
     pub fn get_sign_option(&self) -> crate::transaction_signature_options::SignWith {
         self.transaction_signature_options.clone()
+    }
+
+    pub fn get_prepopulated_unsigned_transaction(
+        &self,
+    ) -> near_primitives::transaction::Transaction {
+        self.prepopulated_unsigned_transaction.clone().into()
     }
 }

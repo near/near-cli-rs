@@ -99,8 +99,8 @@ impl SignLedger {
             })
             .await
             .map_err(|err| {
-                println!("\nUnsigned transaction:\n");
-                crate::common::print_transaction(prepopulated_unsigned_transaction.clone());
+                // println!("\nUnsigned transaction:\n");
+                // crate::common::print_transaction(prepopulated_unsigned_transaction.clone());
                 println!("\nYour transaction was not successfully signed.\n");
                 color_eyre::Report::msg(format!(
                     "Failed to fetch public key information for nonce: {:?}",
@@ -122,8 +122,8 @@ impl SignLedger {
             nonce: current_nonce + 1,
             ..prepopulated_unsigned_transaction
         };
-        println!("\nUnsigned transaction:\n");
-        crate::common::print_transaction(unsigned_transaction.clone());
+        // println!("\nUnsigned transaction:\n");
+        // crate::common::print_transaction(unsigned_transaction.clone());
         println!(
             "Confirm transaction signing on your Ledger device (HD Path: {})",
             seed_phrase_hd_path,
@@ -146,14 +146,18 @@ impl SignLedger {
             }
         };
 
-        let signed_transaction =
-            near_primitives::transaction::SignedTransaction::new(signature, unsigned_transaction);
+        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+            signature.clone(),
+            unsigned_transaction,
+        );
         let serialize_to_base64 = near_primitives::serialize::to_base64(
             signed_transaction
                 .try_to_vec()
                 .expect("Transaction is not expected to fail on serialization"),
         );
         println!("Your transaction was signed successfully.");
+        println!("Public key: {}", self.signer_public_key);
+        println!("Signature: {}", signature);
         match &self.submit {
             None => {
                 let submit = super::Submit::choose_submit();

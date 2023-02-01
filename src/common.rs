@@ -803,6 +803,104 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
     }
 }
 
+pub fn print_unsigned_transaction(transaction: near_primitives::transaction::Transaction) {
+    println!("{:<13} {}", "signer_id:", &transaction.signer_id);
+    println!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
+    println!("actions:");
+    let actions = transaction.actions.clone();
+    for action in actions {
+        match action {
+            near_primitives::transaction::Action::CreateAccount(_) => {
+                println!(
+                    "{:>5} {:<20} {}",
+                    "--", "create account:", &transaction.receiver_id
+                )
+            }
+            near_primitives::transaction::Action::DeployContract(_) => {
+                println!("{:>5} {:<20}", "--", "deploy contract")
+            }
+            near_primitives::transaction::Action::FunctionCall(function_call_action) => {
+                println!("{:>5} {:<20}", "--", "function call:");
+                println!(
+                    "{:>18} {:<13} {}",
+                    "", "method name:", &function_call_action.method_name
+                );
+                println!(
+                    "{:>18} {:<13} {:?}",
+                    "", "args:", &function_call_action.args
+                );
+                println!(
+                    "{:>18} {:<13} {}",
+                    "",
+                    "gas:",
+                    crate::common::NearGas {
+                        inner: function_call_action.gas
+                    }
+                );
+                println!(
+                    "{:>18} {:<13} {}",
+                    "",
+                    "deposit:",
+                    crate::common::NearBalance::from_yoctonear(function_call_action.deposit)
+                );
+            }
+            near_primitives::transaction::Action::Transfer(transfer_action) => {
+                println!(
+                    "{:>5} {:<20} {}",
+                    "--",
+                    "transfer deposit:",
+                    crate::common::NearBalance::from_yoctonear(transfer_action.deposit)
+                );
+            }
+            near_primitives::transaction::Action::Stake(stake_action) => {
+                println!("{:>5} {:<20}", "--", "stake:");
+                println!(
+                    "{:>18} {:<13} {}",
+                    "", "public key:", &stake_action.public_key
+                );
+                println!(
+                    "{:>18} {:<13} {}",
+                    "",
+                    "stake:",
+                    crate::common::NearBalance::from_yoctonear(stake_action.stake)
+                );
+            }
+            near_primitives::transaction::Action::AddKey(add_key_action) => {
+                println!("{:>5} {:<20}", "--", "add access key:");
+                println!(
+                    "{:>18} {:<13} {}",
+                    "", "public key:", &add_key_action.public_key
+                );
+                println!(
+                    "{:>18} {:<13} {}",
+                    "", "nonce:", &add_key_action.access_key.nonce
+                );
+                println!(
+                    "{:>18} {:<13} {:?}",
+                    "", "permission:", &add_key_action.access_key.permission
+                );
+            }
+            near_primitives::transaction::Action::DeleteKey(delete_key_action) => {
+                println!("{:>5} {:<20}", "--", "delete access key:");
+                println!(
+                    "{:>18} {:<13} {}",
+                    "", "public key:", &delete_key_action.public_key
+                );
+            }
+            near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
+                println!(
+                    "{:>5} {:<20} {}",
+                    "--", "delete account:", &transaction.receiver_id
+                );
+                println!(
+                    "{:>5} {:<20} {}",
+                    "", "beneficiary id:", &delete_account_action.beneficiary_id
+                );
+            }
+        }
+    }
+}
+
 fn print_value_successful_transaction(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
 ) {

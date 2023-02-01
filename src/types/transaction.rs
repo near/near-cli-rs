@@ -15,7 +15,8 @@ impl std::str::FromStr for Transaction {
     type Err = color_eyre::eyre::ErrReport;
 
     fn from_str(transaction_str: &str) -> Result<Self, Self::Err> {
-        let transaction: near_primitives::transaction::Transaction = serde_json::from_str(transaction_str)?;
+        let transaction: near_primitives::transaction::Transaction =
+            serde_json::from_str(transaction_str)?;
         Ok(Self(transaction))
     }
 }
