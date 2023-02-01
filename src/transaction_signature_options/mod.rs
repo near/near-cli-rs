@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
+use either::Either;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod sign_with_keychain;
@@ -162,7 +163,7 @@ impl Submit {
         network_config: crate::config::NetworkConfig,
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
+    ) -> Either<color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>>, reqwest::Result<T>> {
         match self {
             Submit::Send => {
                 println!("Transaction sent ...");
@@ -214,7 +215,7 @@ impl Submit {
                     .json(&payload)  // serialize signed_delegate_action to json
                     .send()
                     .await?;
-                Ok(Some(relayer_response))  // TODO update process fn return type to also accept reqwest::Response
+                Ok(Some(relayer_response))
             }
             Submit::Display => {
                 println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
