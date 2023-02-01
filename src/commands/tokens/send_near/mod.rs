@@ -1,7 +1,7 @@
 use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::commands::TransactionContext)]
 pub struct SendNearCommand {
     ///What is the receiver account ID?
     receiver_account_id: crate::types::account_id::AccountId,
@@ -13,9 +13,46 @@ pub struct SendNearCommand {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
+// #[derive(Debug, Clone)]
+// struct SendNearCommandContext {
+//     config: crate::config::Config,
+//     signer_account_id: crate::types::account_id::AccountId,
+//     receiver_account_id: crate::types::account_id::AccountId,
+//     amount_in_near: crate::common::NearBalance,
+// }
+
+// impl SendNearCommandContext {
+//     pub fn from_previous_context(
+//         previous_context: crate::commands::TransactionContext,
+//         scope: &<SendNearCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+//     ) -> Self {
+//         Self {
+//             config: previous_context.config,
+//             signer_account_id: previous_context.signer_account_id,
+//             receiver_account_id: scope.receiver_account_id.clone(),
+//             amount_in_near: scope.amount_in_near.clone(),
+//         }
+//     }
+// }
+
+// impl From<SendNearCommandContext> for crate::commands::TransactionContext {
+//     fn from(item: SendNearCommandContext) -> Self {
+//         Self {
+//             config: item.config,
+//             signer_account_id: item.signer_account_id.clone(),
+//             receiver_account_id: item.receiver_account_id,
+//             actions: vec![near_primitives::transaction::Action::Transfer(
+//                 near_primitives::transaction::TransferAction {
+//                     deposit: item.amount_in_near.to_yoctonear(),
+//                 },
+//             )],
+//         }
+//     }
+// }
+
 impl SendNearCommand {
     fn input_amount_in_near(
-        _context: &crate::GlobalContext,
+        _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
         let input_amount =
             CustomType::new("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)").prompt()?;

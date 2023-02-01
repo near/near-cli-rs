@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::commands::TransactionContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignAccessKeyFile {
     /// What is the location of the account access key file (path/to/access-key-file.json)?
@@ -9,7 +9,7 @@ pub struct SignAccessKeyFile {
 }
 
 impl interactive_clap::FromCli for SignAccessKeyFile {
-    type FromCliContext = crate::GlobalContext;
+    type FromCliContext = crate::commands::TransactionContext;
     type FromCliError = color_eyre::eyre::Error;
 
     fn from_cli(

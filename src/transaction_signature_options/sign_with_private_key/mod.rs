@@ -1,7 +1,7 @@
 use near_primitives::borsh::BorshSerialize;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::commands::TransactionContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignPrivateKey {
     #[interactive_clap(long)]
@@ -25,7 +25,7 @@ pub struct SignPrivateKey {
 }
 
 impl interactive_clap::FromCli for SignPrivateKey {
-    type FromCliContext = crate::GlobalContext;
+    type FromCliContext = crate::commands::TransactionContext;
     type FromCliError = color_eyre::eyre::Error;
 
     fn from_cli(

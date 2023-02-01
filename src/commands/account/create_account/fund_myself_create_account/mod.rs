@@ -14,7 +14,7 @@ pub struct StorageProperties {
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = CreateAccountContext)]
+#[interactive_clap(output_context = NewAccountContext)]
 pub struct NewAccount {
     #[interactive_clap(skip_default_input_arg)]
     ///What is the new account ID?

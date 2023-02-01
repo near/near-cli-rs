@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::commands::TransactionContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignSeedPhrase {
     /// Enter the seed-phrase for this account
@@ -14,7 +14,7 @@ pub struct SignSeedPhrase {
 }
 
 impl interactive_clap::FromCli for SignSeedPhrase {
-    type FromCliContext = crate::GlobalContext;
+    type FromCliContext = crate::commands::TransactionContext;
     type FromCliError = color_eyre::eyre::Error;
 
     fn from_cli(
@@ -50,7 +50,7 @@ impl interactive_clap::FromCli for SignSeedPhrase {
 
 impl SignSeedPhrase {
     fn input_seed_phrase_hd_path(
-        _context: &crate::GlobalContext,
+        _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<crate::types::slip10::BIP32Path> {
         Ok(
             inquire::CustomType::new("Enter seed phrase HD Path [if not sure, keep the default]")

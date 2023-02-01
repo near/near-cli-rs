@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::commands::TransactionContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignMacosKeychain {
     #[interactive_clap(long)]
@@ -15,7 +15,7 @@ pub struct SignMacosKeychain {
 }
 
 impl interactive_clap::FromCli for SignMacosKeychain {
-    type FromCliContext = crate::GlobalContext;
+    type FromCliContext = crate::commands::TransactionContext;
     type FromCliError = color_eyre::eyre::Error;
 
     fn from_cli(

@@ -12,7 +12,7 @@ pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::commands::TransactionContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Select a tool for signing the transaction
 pub enum SignWith {
