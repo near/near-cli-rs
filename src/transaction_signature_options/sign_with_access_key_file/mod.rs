@@ -1,36 +1,43 @@
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = crate::commands::TransactionContext)]
-#[interactive_clap(skip_default_from_cli)]
+// #[interactive_clap(skip_default_from_cli)]
 pub struct SignAccessKeyFile {
     /// What is the location of the account access key file (path/to/access-key-file.json)?
     file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(subcommand)]
-    submit: Option<super::Submit>,
+    submit: super::Submit,
 }
 
-impl interactive_clap::FromCli for SignAccessKeyFile {
-    type FromCliContext = crate::commands::TransactionContext;
-    type FromCliError = color_eyre::eyre::Error;
+// impl interactive_clap::FromCli for SignAccessKeyFile {
+//     type FromCliContext = crate::commands::TransactionContext;
+//     type FromCliError = color_eyre::eyre::Error;
 
-    fn from_cli(
-        optional_clap_variant: Option<<SignAccessKeyFile as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let file_path: crate::types::path_buf::PathBuf = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.file_path)
-        {
-            Some(cli_file_path) => cli_file_path,
-            None => Self::input_file_path(&context)?,
-        };
-        let submit: Option<super::Submit> =
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
-        Ok(Some(Self { file_path, submit }))
-    }
-}
+//     fn from_cli(
+//         optional_clap_variant: Option<<SignAccessKeyFile as interactive_clap::ToCli>::CliVariant>,
+//         context: Self::FromCliContext,
+//     ) -> Result<Option<Self>, Self::FromCliError>
+//     where
+//         Self: Sized + interactive_clap::ToCli,
+//     {
+//         let file_path: crate::types::path_buf::PathBuf = match optional_clap_variant
+//             .clone()
+//             .and_then(|clap_variant| clap_variant.file_path)
+//         {
+//             Some(cli_file_path) => cli_file_path,
+//             None => Self::input_file_path(&context)?,
+//         };
+//         let optional_submit = super::Submit::from_cli(
+//             optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
+//             context,
+//         )?;
+//         let submit = if let Some(submit) = optional_submit {
+//             submit
+//         } else {
+//             return Ok(None);
+//         };
+//         Ok(Some(Self { file_path, submit }))
+//     }
+// }
 
 impl SignAccessKeyFile {
     pub async fn process(

@@ -9,7 +9,7 @@ mod send_near;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = crate::commands::TransactionContext)]
+#[interactive_clap(output_context = TokensCommandsContext)]
 pub struct TokensCommands {
     ///What is your account ID?
     owner_account_id: crate::types::account_id::AccountId,
@@ -35,17 +35,6 @@ impl TokensCommandsContext {
     }
 }
 
-impl From<TokensCommandsContext> for crate::commands::TransactionContext {
-    fn from(item: TokensCommandsContext) -> Self {
-        Self {
-            config: item.config,
-            signer_account_id: item.owner_account_id.clone(),
-            receiver_account_id: item.owner_account_id,
-            actions: vec![],
-        }
-    }
-}
-
 impl TokensCommands {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         self.tokens_actions
@@ -55,7 +44,7 @@ impl TokensCommands {
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::TransactionContext)]
+#[interactive_clap(context = TokensCommandsContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 ///Select actions with tokens
 pub enum TokensActions {

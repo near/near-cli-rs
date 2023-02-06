@@ -1,6 +1,7 @@
+use near_primitives::transaction;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-// mod account;
+mod account;
 mod config;
 // mod contract;
 mod tokens;
@@ -12,9 +13,9 @@ mod tokens;
 #[interactive_clap(disable_back)]
 /// What are you up to? (select one of the options with the up-down arrows on your keyboard and press Enter)
 pub enum TopLevelCommand {
-    // #[strum_discriminants(strum(message = "account     - Manage accounts"))]
-    // /// View account summary, create subaccount, delete account, list keys, add key, delete key, import account
-    // Account(self::account::AccountCommands),
+    #[strum_discriminants(strum(message = "account     - Manage accounts"))]
+    /// View account summary, create subaccount, delete account, list keys, add key, delete key, import account
+    Account(self::account::AccountCommands),
     #[strum_discriminants(strum(
         message = "tokens      - Manage token assets such as NEAR, FT, NFT"
     ))]
@@ -39,7 +40,7 @@ impl TopLevelCommand {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         match self {
             Self::Tokens(tokens_commands) => tokens_commands.process(config).await,
-            // Self::Account(account_commands) => account_commands.process(config).await,
+            Self::Account(account_commands) => account_commands.process(config).await,
             // Self::Contract(contract_commands) => contract_commands.process(config).await,
             // Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
             Self::Config(config_commands) => config_commands.process(config).await,
@@ -48,15 +49,17 @@ impl TopLevelCommand {
 }
 
 #[derive(Debug, Clone)]
-pub struct TransactionContext {
+pub struct ActionContext {
     pub config: crate::config::Config,
-    pub signer_account_id: crate::types::account_id::AccountId,
-    pub receiver_account_id: crate::types::account_id::AccountId,
+    pub signer_account_id: near_primitives::types::AccountId,
+    pub receiver_account_id: near_primitives::types::AccountId,
     pub actions: Vec<near_primitives::transaction::Action>,
 }
 
-impl From<TransactionContext> for crate::GlobalContext {
-    fn from(item: TransactionContext) -> Self {
-        (item.config,)
-    }
+
+#[derive(Debug, Clone)]
+pub struct TransactionContext {
+    pub config: crate::config::Config,
+    pub network_config: crate::config::NetworkConfig,
+    pub transaction: near_primitives::transaction::Transaction,
 }

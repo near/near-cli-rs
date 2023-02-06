@@ -11,7 +11,7 @@ pub struct SignMacosKeychain {
     #[interactive_clap(skip_default_input_arg)]
     block_hash: Option<String>,
     #[interactive_clap(subcommand)]
-    pub submit: Option<super::Submit>,
+    pub submit: super::Submit,
 }
 
 impl interactive_clap::FromCli for SignMacosKeychain {
@@ -20,7 +20,7 @@ impl interactive_clap::FromCli for SignMacosKeychain {
 
     fn from_cli(
         optional_clap_variant: Option<<SignMacosKeychain as interactive_clap::ToCli>::CliVariant>,
-        _context: Self::FromCliContext,
+        context: Self::FromCliContext,
     ) -> Result<Option<Self>, Self::FromCliError>
     where
         Self: Sized + interactive_clap::ToCli,
@@ -31,8 +31,15 @@ impl interactive_clap::FromCli for SignMacosKeychain {
         let block_hash: Option<String> = optional_clap_variant
             .as_ref()
             .and_then(|clap_variant| clap_variant.block_hash.clone());
-        let submit: Option<super::Submit> =
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
+        let optional_submit = super::Submit::from_cli(
+            optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
+            context,
+        )?;
+        let submit = if let Some(submit) = optional_submit {
+            submit
+        } else {
+            return Ok(None);
+        };
         Ok(Some(Self {
             nonce,
             block_hash,

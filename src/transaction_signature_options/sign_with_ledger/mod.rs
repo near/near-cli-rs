@@ -3,7 +3,8 @@ use near_primitives::borsh::BorshSerialize;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::TransactionContext)]
+#[interactive_clap(input_context = crate::commands::TransactionContext)]
+#[interactive_clap(output_context = super::SubmitContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignLedger {
     #[interactive_clap(long)]
@@ -21,7 +22,7 @@ pub struct SignLedger {
     #[interactive_clap(skip_default_input_arg)]
     block_hash: Option<String>,
     #[interactive_clap(subcommand)]
-    submit: Option<super::Submit>,
+    submit: super::Submit,
 }
 
 impl interactive_clap::FromCli for SignLedger {
@@ -30,7 +31,7 @@ impl interactive_clap::FromCli for SignLedger {
 
     fn from_cli(
         optional_clap_variant: Option<<SignLedger as interactive_clap::ToCli>::CliVariant>,
-        _context: Self::FromCliContext,
+        context: Self::FromCliContext,
     ) -> Result<Option<Self>, Self::FromCliError>
     where
         Self: Sized + interactive_clap::ToCli,
@@ -59,9 +60,16 @@ impl interactive_clap::FromCli for SignLedger {
                 public_key.to_bytes(),
             ))
             .into();
-        let submit: Option<super::Submit> =
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
-        Ok(Some(Self {
+            let optional_submit = super::Submit::from_cli(
+                optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
+                context,
+            )?;
+            let submit = if let Some(submit) = optional_submit {
+                submit
+            } else {
+                return Ok(None);
+            };
+            Ok(Some(Self {
             seed_phrase_hd_path,
             signer_public_key,
             nonce: None,
@@ -158,18 +166,21 @@ impl SignLedger {
         println!("Your transaction was signed successfully.");
         println!("Public key: {}", self.signer_public_key);
         println!("Signature: {}", signature);
-        match &self.submit {
-            None => {
-                let submit = super::Submit::choose_submit();
-                submit
+        // match &self.submit {
+        //     None => {
+        //         let submit = super::Submit::choose_submit();
+        //         submit
+        //             .process(network_config, signed_transaction, serialize_to_base64)
+        //             .await
+        //     }
+        //     Some(submit) => {
+        //         submit
+        //             .process(network_config, signed_transaction, serialize_to_base64)
+        //             .await
+        //     }
+        // }
+        self.submit
                     .process(network_config, signed_transaction, serialize_to_base64)
                     .await
-            }
-            Some(submit) => {
-                submit
-                    .process(network_config, signed_transaction, serialize_to_base64)
-                    .await
-            }
-        }
     }
 }

@@ -1,7 +1,8 @@
 use near_primitives::borsh::BorshSerialize;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::TransactionContext)]
+#[interactive_clap(input_context = crate::commands::TransactionContext)]
+#[interactive_clap(output_context = super::SubmitContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignPrivateKey {
     #[interactive_clap(long)]
@@ -20,8 +21,54 @@ pub struct SignPrivateKey {
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     pub block_hash: Option<String>,
+    #[interactive_clap(skip)]
+    signed_transaction: crate::types::signed_transaction::SignedTransaction,
+    #[interactive_clap(skip)]
+    base64_transaction: String,
     #[interactive_clap(subcommand)]
-    pub submit: Option<super::Submit>,
+    pub submit: super::Submit,
+}
+
+#[derive(Debug, Clone)]
+pub struct SignPrivateKeyContext {
+    config: crate::config::Config,
+    network_config: crate::config::NetworkConfig,
+    prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+    signer_public_key: crate::types::public_key::PublicKey,
+    signer_private_key: crate::types::secret_key::SecretKey,
+    nonce: Option<u64>,
+    block_hash: Option<String>,
+    signed_transaction: crate::types::signed_transaction::SignedTransaction,
+    base64_transaction: String,
+}
+
+impl SignPrivateKeyContext {
+    pub fn from_previous_context(
+        previous_context: crate::commands::TransactionContext,
+        scope: &<SignPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> Self {
+        Self {
+            config: previous_context.config,
+            network_config: previous_context.network_config,
+            prepopulated_unsigned_transaction: previous_context.transaction,
+            signer_public_key: scope.signer_public_key.clone(),
+            signer_private_key: scope.signer_private_key.clone(),
+            nonce: scope.nonce,
+            block_hash: scope.block_hash.clone(),
+            signed_transaction: scope.signed_transaction.clone(),
+            base64_transaction: scope.base64_transaction.clone(),
+        }
+    }
+}
+
+impl From<SignPrivateKeyContext> for super::SubmitContext {
+    fn from(item: SignPrivateKeyContext) -> Self {
+        Self {
+            network_config: item.network_config,
+            signed_transaction: item.signed_transaction.into(),
+            base64_transaction: item.base64_transaction,
+        }
+    }
 }
 
 impl interactive_clap::FromCli for SignPrivateKey {
@@ -30,7 +77,7 @@ impl interactive_clap::FromCli for SignPrivateKey {
 
     fn from_cli(
         optional_clap_variant: Option<<SignPrivateKey as interactive_clap::ToCli>::CliVariant>,
-        _context: Self::FromCliContext,
+        context: Self::FromCliContext,
     ) -> Result<Option<Self>, Self::FromCliError>
     where
         Self: Sized + interactive_clap::ToCli,
@@ -55,13 +102,99 @@ impl interactive_clap::FromCli for SignPrivateKey {
         let block_hash: Option<String> = optional_clap_variant
             .as_ref()
             .and_then(|clap_variant| clap_variant.block_hash.clone());
-        let submit: Option<super::Submit> =
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
+
+        // let network_name = &context.network_name.clone().expect("Failed to get network name");
+        let networks = &context.config.networks;
+        let network_config = networks
+            .get("testnet")
+            .expect("Impossible to get network name!")
+            .clone();
+
+        // println!("=============== network_config {:#?}", &context.network_config);
+        // let network_config = context.network_config.clone().expect("Failed to get network config");
+
+        let signer_secret_key: near_crypto::SecretKey = signer_private_key.clone().into();
+        let online_signer_access_key_response = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(network_config.json_rpc_client().call(
+                near_jsonrpc_client::methods::query::RpcQueryRequest {
+                    block_reference: near_primitives::types::Finality::Final.into(),
+                    request: near_primitives::views::QueryRequest::ViewAccessKey {
+                        account_id: context.transaction.signer_id.clone(),
+                        public_key: signer_public_key.clone().into(),
+                    },
+                },
+            ))
+            .map_err(|err| {
+                // println!("\nUnsigned transaction:\n");
+                // crate::common::print_transaction(prepopulated_unsigned_transaction.clone());
+                println!("\nYour transaction was not successfully signed.\n");
+                color_eyre::Report::msg(format!(
+                    "Failed to fetch public key information for nonce: {:?}",
+                    err
+                ))
+            })?;
+        let current_nonce =
+            if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
+                online_signer_access_key,
+            ) = online_signer_access_key_response.kind
+            {
+                online_signer_access_key.nonce
+            } else {
+                return Err(color_eyre::Report::msg("Error current_nonce".to_string()));
+            };
+        let unsigned_transaction = near_primitives::transaction::Transaction {
+            public_key: signer_public_key.clone().into(),
+            block_hash: online_signer_access_key_response.block_hash,
+            nonce: current_nonce + 1,
+            ..context.transaction.clone()
+        };
+        let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+            signature.clone(),
+            unsigned_transaction,
+        );
+        let base64_transaction = near_primitives::serialize::to_base64(
+            signed_transaction
+                .try_to_vec()
+                .expect("Transaction is not expected to fail on serialization"),
+        );
+        println!("\nYour transaction was signed successfully.");
+        println!("Public key: {}", signer_public_key);
+        println!("Signature: {}", signature);
+
+        let new_context_scope = InteractiveClapContextScopeForSignPrivateKey {
+            signer_public_key: signer_public_key.clone(),
+            signer_private_key: signer_private_key.clone(),
+            nonce,
+            block_hash: block_hash.clone(),
+            signed_transaction: crate::types::signed_transaction::SignedTransaction(
+                signed_transaction.clone(),
+            ),
+            base64_transaction: base64_transaction.clone(),
+        };
+        let private_key_context =
+            SignPrivateKeyContext::from_previous_context(context.clone(), &new_context_scope);
+        let new_context = super::SubmitContext::from(private_key_context);
+
+        let optional_submit = super::Submit::from_cli(
+            optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
+            new_context,
+        )?;
+        let submit = if let Some(submit) = optional_submit {
+            submit
+        } else {
+            return Ok(None);
+        };
         Ok(Some(Self {
             signer_public_key,
             signer_private_key,
             nonce,
             block_hash,
+            signed_transaction: crate::types::signed_transaction::SignedTransaction(
+                signed_transaction,
+            ),
+            base64_transaction,
             submit,
         }))
     }
@@ -123,18 +256,21 @@ impl SignPrivateKey {
         println!("Signature: {}", signature);
         // crate::common::print_transaction(signed_transaction.transaction.clone());
         println!();
-        match self.submit.clone() {
-            None => {
-                let submit = super::Submit::choose_submit();
-                submit
-                    .process(network_config, signed_transaction, serialize_to_base64)
-                    .await
-            }
-            Some(submit) => {
-                submit
-                    .process(network_config, signed_transaction, serialize_to_base64)
-                    .await
-            }
-        }
+        // match self.submit.clone() {
+        //     None => {
+        //         let submit = super::Submit::choose_submit();
+        //         submit
+        //             .process(network_config, signed_transaction, serialize_to_base64)
+        //             .await
+        //     }
+        //     Some(submit) => {
+        //         submit
+        //             .process(network_config, signed_transaction, serialize_to_base64)
+        //             .await
+        //     }
+        // }
+        self.submit
+            .process(network_config, signed_transaction, serialize_to_base64)
+            .await
     }
 }

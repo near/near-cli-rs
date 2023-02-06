@@ -1,11 +1,49 @@
 use inquire::{CustomType, Select, Text};
 use std::str::FromStr;
 
+#[derive(Debug, Clone)]
+pub struct AccessTypeContext {
+    pub config: crate::config::Config,
+    pub signer_account_id: near_primitives::types::AccountId,
+    pub permission: near_primitives::account::AccessKeyPermission
+}
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = super::AddKeyCommandContext)]
+#[interactive_clap(output_context = AccessTypeContext)]
 pub struct FullAccessType {
     #[interactive_clap(subcommand)]
     pub access_key_mode: super::AccessKeyMode,
+}
+
+#[derive(Debug, Clone)]
+pub struct FullAccessTypeContext {
+    config: crate::config::Config,
+    signer_account_id: near_primitives::types::AccountId,
+    permission: near_primitives::account::AccessKeyPermission
+}
+
+impl FullAccessTypeContext {
+    pub fn from_previous_context(
+        previous_context: super::AddKeyCommandContext,
+        scope: &<FullAccessType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> Self {
+        Self {
+            config: previous_context.config,
+            signer_account_id: previous_context.owner_account_id.into(),
+            permission: near_primitives::account::AccessKeyPermission::FullAccess
+        }
+    }
+}
+
+impl From<FullAccessTypeContext> for AccessTypeContext {
+    fn from(item: FullAccessTypeContext) -> Self {
+        Self {
+            config: item.config,
+            signer_account_id: item.signer_account_id,
+            permission: item.permission,
+        }
+    }
 }
 
 impl FullAccessType {
@@ -25,7 +63,8 @@ impl FullAccessType {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = super::AddKeyCommandContext)]
+#[interactive_clap(output_context = AccessTypeContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct FunctionCallType {
     #[interactive_clap(long)]
@@ -43,8 +82,52 @@ pub struct FunctionCallType {
     access_key_mode: super::AccessKeyMode,
 }
 
+#[derive(Debug, Clone)]
+pub struct FunctionCallTypeContext {
+    config: crate::config::Config,
+    signer_account_id: near_primitives::types::AccountId,
+    allowance: Option<crate::common::NearBalance>,
+    receiver_account_id: crate::types::account_id::AccountId,
+    method_names: crate::types::vec_string::VecString,
+}
+
+impl FunctionCallTypeContext {
+    pub fn from_previous_context(
+        previous_context: super::AddKeyCommandContext,
+        scope: &<FunctionCallType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> Self {
+        Self {
+            config: previous_context.config,
+            signer_account_id: previous_context.owner_account_id.into(),
+            allowance: scope.allowance.clone(),
+            receiver_account_id: scope.receiver_account_id.clone(),
+            method_names: scope.method_names.clone()
+        }
+    }
+}
+
+impl From<FunctionCallTypeContext> for AccessTypeContext {
+    fn from(item: FunctionCallTypeContext) -> Self {
+        Self {
+            config: item.config,
+            signer_account_id: item.signer_account_id,
+            permission: near_primitives::account::AccessKeyPermission::FunctionCall(
+                near_primitives::account::FunctionCallPermission {
+                    allowance: item
+                        .allowance
+                        // .clone()
+                        .map(|allowance| allowance.to_yoctonear()),
+                    receiver_id: item.receiver_account_id.to_string(),
+                    method_names: item.method_names.into(),
+                },
+            ),
+        }
+    }
+}
+
+
 impl interactive_clap::FromCli for FunctionCallType {
-    type FromCliContext = crate::GlobalContext;
+    type FromCliContext = super::AddKeyCommandContext;
     type FromCliError = color_eyre::eyre::Error;
 
     fn from_cli(
@@ -81,13 +164,26 @@ impl interactive_clap::FromCli for FunctionCallType {
             }
             None => FunctionCallType::input_method_names()?,
         };
-        let optional_access_key_mode =
-            match optional_clap_variant.and_then(|clap_variant| clap_variant.access_key_mode) {
-                Some(cli_access_key_mode) => {
-                    super::AccessKeyMode::from_cli(Some(cli_access_key_mode), context)?
-                }
-                None => super::AccessKeyMode::choose_variant(context)?,
-            };
+
+
+        let new_context_scope = InteractiveClapContextScopeForFunctionCallType {
+            allowance: allowance.clone(),
+            receiver_account_id: receiver_account_id.clone(),
+            method_names: method_names.clone()
+        };
+        let function_call_type_context = FunctionCallTypeContext::from_previous_context(
+            context.clone(),
+            &new_context_scope,
+        );
+        let new_context = AccessTypeContext::from(function_call_type_context);
+
+
+
+
+        let optional_access_key_mode = super::AccessKeyMode::from_cli(
+            optional_clap_variant.and_then(|clap_variant| clap_variant.access_key_mode),
+            new_context
+        )?;
         let access_key_mode = if let Some(access_key_mode) = optional_access_key_mode {
             access_key_mode
         } else {

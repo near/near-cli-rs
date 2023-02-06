@@ -2,119 +2,59 @@ use inquire::{CustomType, Select};
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-pub mod sign_with_access_key_file;
+// pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
-pub mod sign_with_ledger;
+// pub mod sign_with_ledger;
 #[cfg(target_os = "macos")]
-pub mod sign_with_macos_keychain;
+// pub mod sign_with_macos_keychain;
 pub mod sign_with_private_key;
-pub mod sign_with_seed_phrase;
+// pub mod sign_with_seed_phrase;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::commands::TransactionContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-// #[interactive_clap(skip_default_from_cli)]
 /// Select a tool for signing the transaction
 pub enum SignWith {
-    #[cfg(target_os = "macos")]
-    #[strum_discriminants(strum(
-        message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain"
-    ))]
-    /// Sign the transaction with a key saved in macOS keychain
-    SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
+    // #[cfg(target_os = "macos")]
+    // #[strum_discriminants(strum(
+    //     message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain"
+    // ))]
+    // /// Sign the transaction with a key saved in macOS keychain
+    // SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
     #[strum_discriminants(strum(
         message = "sign-with-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
     ))]
     /// Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
-    #[cfg(feature = "ledger")]
-    #[strum_discriminants(strum(
-        message = "sign-with-ledger                 - Sign the transaction with Ledger Nano device"
-    ))]
-    /// Sign the transaction with Ledger Nano device
-    SignWithLedger(self::sign_with_ledger::SignLedger),
+    // #[cfg(feature = "ledger")]
+    // #[strum_discriminants(strum(
+    //     message = "sign-with-ledger                 - Sign the transaction with Ledger Nano device"
+    // ))]
+    // /// Sign the transaction with Ledger Nano device
+    // SignWithLedger(self::sign_with_ledger::SignLedger),
     #[strum_discriminants(strum(
         message = "sign-with-plaintext-private-key  - Sign the transaction with a plaintext private key"
     ))]
     /// Sign the transaction with a plaintext private key
     SignWithPlaintextPrivateKey(self::sign_with_private_key::SignPrivateKey),
-    #[strum_discriminants(strum(
-        message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
-    ))]
-    /// Sign the transaction using the account access key file (access-key-file.json)
-    SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
-    #[strum_discriminants(strum(
-        message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
-    ))]
-    /// Sign the transaction using the seed phrase
-    SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
+    // #[strum_discriminants(strum(
+    //     message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
+    // ))]
+    // /// Sign the transaction using the account access key file (access-key-file.json)
+    // SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
+    // #[strum_discriminants(strum(
+    //     message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
+    // ))]
+    // /// Sign the transaction using the seed phrase
+    // SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
 }
 
-// impl interactive_clap::FromCli for SignWith {
-//     type FromCliContext = crate::commands::TransactionContext;
-//     type FromCliError = color_eyre::eyre::Error;
-//     fn from_cli(
-//         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-//         context: Self::FromCliContext,
-//     ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
-//         println!("++++++  context: {:#?}", context);
-//         match optional_clap_variant {
-//             Some(CliSignWith::SignWithMacosKeychain(inner_cli_args)) => {
-//                 let optional_inner_args = self::sign_with_macos_keychain::SignMacosKeychain::from_cli(Some(inner_cli_args), context.clone().into())?;
-//                 if let Some(inner_args) = optional_inner_args {
-//                     Ok(Some(Self::SignWithMacosKeychain(inner_args,)))
-//                 } else {
-//                     Self::choose_variant(context.clone())
-//                 }
-//             }
-//             Some(CliSignWith::SignWithKeychain(inner_cli_args)) => {
-//                 let optional_inner_args = self::sign_with_keychain::SignKeychain::from_cli(Some(inner_cli_args), context.clone().into())?;
-//                 if let Some(inner_args) = optional_inner_args {
-//                     Ok(Some(Self::SignWithKeychain(inner_args,)))
-//                 } else {
-//                     Self::choose_variant(context.clone())
-//                 }
-//             }
-//             Some(CliSignWith::SignWithLedger(inner_cli_args)) => {
-//                 let optional_inner_args = self::sign_with_ledger::SignLedger::from_cli(Some(inner_cli_args), context.clone().into())?;
-//                 if let Some(inner_args) = optional_inner_args {
-//                     Ok(Some(Self::SignWithLedger(inner_args,)))
-//                 } else {
-//                     Self::choose_variant(context.clone())
-//                 }
-//             }
-//             Some(CliSignWith::SignWithPlaintextPrivateKey(inner_cli_args)) => {
-//                 let optional_inner_args = self::sign_with_private_key::SignPrivateKey::from_cli(Some(inner_cli_args), context.clone().into())?;
-//                 if let Some(inner_args) = optional_inner_args {
-//                     Ok(Some(Self::SignWithPlaintextPrivateKey(inner_args,)))
-//                 } else {
-//                     Self::choose_variant(context.clone())
-//                 }
-//             }
-//             Some(CliSignWith::SignWithAccessKeyFile(inner_cli_args)) => {
-//                 let optional_inner_args = self::sign_with_access_key_file::SignAccessKeyFile::from_cli(Some(inner_cli_args), context.clone().into())?;
-//                 if let Some(inner_args) = optional_inner_args {
-//                     Ok(Some(Self::SignWithAccessKeyFile(inner_args,)))
-//                 } else {
-//                     Self::choose_variant(context.clone())
-//                 }
-//             }
-//             Some(CliSignWith::SignWithSeedPhrase(inner_cli_args)) => {
-//                 let optional_inner_args = self::sign_with_seed_phrase::SignSeedPhrase::from_cli(Some(inner_cli_args), context.clone().into())?;
-//                 if let Some(inner_args) = optional_inner_args {
-//                     Ok(Some(Self::SignWithSeedPhrase(inner_args,)))
-//                 } else {
-//                     Self::choose_variant(context.clone())
-//                 }
-//             }
-//             None => {
-//                 println!("******** context<NetworkForTransactionArgs>: {:#?}", context);
+// from_cli ...
+//         println!("\nUnsigned transaction:\n");
+//         crate::common::print_unsigned_transaction(new_context.transaction.clone().into());
+//         println!();
 
-//                 Self::choose_variant(context.clone())},
-//         }
-//     }
-// }
 
 pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
     Ok(CustomType::new("Enter sender (signer) public key").prompt()?)
@@ -131,14 +71,14 @@ pub async fn sign_with(
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
     match network_config.get_sign_option() {
         #[cfg(target_os = "macos")]
-        SignWith::SignWithMacosKeychain(sign_macos_keychain) => {
-            sign_macos_keychain
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config),
-                )
-                .await
-        }
+        // SignWith::SignWithMacosKeychain(sign_macos_keychain) => {
+        //     sign_macos_keychain
+        //         .process(
+        //             prepopulated_unsigned_transaction,
+        //             network_config.get_network_config(config),
+        //         )
+        //         .await
+        // }
         SignWith::SignWithKeychain(sign_keychain) => {
             sign_keychain
                 .process(
@@ -148,15 +88,15 @@ pub async fn sign_with(
                 )
                 .await
         }
-        #[cfg(feature = "ledger")]
-        SignWith::SignWithLedger(sign_ledger) => {
-            sign_ledger
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config),
-                )
-                .await
-        }
+        // #[cfg(feature = "ledger")]
+        // SignWith::SignWithLedger(sign_ledger) => {
+        //     sign_ledger
+        //         .process(
+        //             prepopulated_unsigned_transaction,
+        //             network_config.get_network_config(config),
+        //         )
+        //         .await
+        // }
         SignWith::SignWithPlaintextPrivateKey(sign_private_key) => {
             sign_private_key
                 .process(
@@ -165,22 +105,22 @@ pub async fn sign_with(
                 )
                 .await
         }
-        SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
-            sign_access_key_file
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config),
-                )
-                .await
-        }
-        SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
-            sign_seed_phrase
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config),
-                )
-                .await
-        }
+        // SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
+        //     sign_access_key_file
+        //         .process(
+        //             prepopulated_unsigned_transaction,
+        //             network_config.get_network_config(config),
+        //         )
+        //         .await
+        // }
+        // SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
+        //     sign_seed_phrase
+        //         .process(
+        //             prepopulated_unsigned_transaction,
+        //             network_config.get_network_config(config),
+        //         )
+        //         .await
+        // }
     }
 }
 //-----------------------------------------------------------------------------------
@@ -211,8 +151,11 @@ pub async fn sign_with(
 // }
 //-----------------------------------------------------------------------------------
 
-#[derive(Debug, EnumDiscriminants, Clone, clap::Parser, interactive_clap::ToCliArgs)]
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = SubmitContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+// #[interactive_clap(skip_default_from_cli)]
+/// How would you like to proceed
 pub enum Submit {
     #[strum_discriminants(strum(message = "send      - Send the transaction to the network"))]
     Send,
@@ -222,30 +165,50 @@ pub enum Submit {
     Display,
 }
 
-impl interactive_clap::ToCli for Submit {
-    type CliVariant = Submit;
-}
+// impl interactive_clap::ToCli for Submit {
+//     type CliVariant = Submit;
+// }
 
-impl std::fmt::Display for SubmitDiscriminants {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Send => write!(f, "send"),
-            Self::Display => write!(f, "display"),
-        }
-    }
-}
+// impl interactive_clap::FromCli for Submit {
+//     type FromCliContext = SubmitContext;
+//     type FromCliError = color_eyre::eyre::Error;
+//     fn from_cli(
+//         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+//         context: Self::FromCliContext,
+//     ) -> Result<Option<Self>, Self::FromCliError>
+//     where
+//         Self: Sized + interactive_clap::ToCli,
+//     {
+//         println!("++++++  context: ");
+
+//         match optional_clap_variant {
+//             Some(CliSubmit::Send) => Ok(Some(Self::Send)),
+//             Some(CliSubmit::Display) => Ok(Some(Self::Display)),
+//             None => Self::choose_variant(context.clone()),
+//         }
+//     }
+// }
+
+// impl std::fmt::Display for SubmitDiscriminants {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         match self {
+//             Self::Send => write!(f, "send"),
+//             Self::Display => write!(f, "display"),
+//         }
+//     }
+// }
 
 impl Submit {
-    pub fn choose_submit() -> Self {
-        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
-        let select_submit = Select::new("How would you like to proceed", variants)
-            .prompt()
-            .unwrap_or(SubmitDiscriminants::Display);
-        match select_submit {
-            SubmitDiscriminants::Send => Submit::Send,
-            SubmitDiscriminants::Display => Submit::Display,
-        }
-    }
+    // pub fn choose_submit() -> Self {
+    //     let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
+    //     let select_submit = Select::new("How would you like to proceed", variants)
+    //         .prompt()
+    //         .unwrap_or(SubmitDiscriminants::Display);
+    //     match select_submit {
+    //         SubmitDiscriminants::Send => Submit::Send,
+    //         SubmitDiscriminants::Display => Submit::Display,
+    //     }
+    // }
 
     pub async fn process(
         &self,
@@ -286,4 +249,11 @@ impl Submit {
 pub struct AccountKeyPair {
     pub public_key: near_crypto::PublicKey,
     pub private_key: near_crypto::SecretKey,
+}
+
+#[derive(Debug, Clone)]
+pub struct SubmitContext {
+    pub network_config: crate::config::NetworkConfig,
+    pub signed_transaction: near_primitives::transaction::SignedTransaction,
+    pub base64_transaction: String,
 }
