@@ -44,6 +44,7 @@ near-ledger = { version = "0.2.0", optional = true }
 
 near-crypto = "0.15"
 near-primitives = "0.15"
+near-primitives_01 = { path = "/Users/awit/repos/nearcore/core/primitives", package="near-primitives" }  # added this version for SignedDelegateAction
 near-jsonrpc-client = "0.4.0"
 near-jsonrpc-primitives = "0.15"
 
