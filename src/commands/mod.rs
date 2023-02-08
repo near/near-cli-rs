@@ -56,7 +56,6 @@ pub struct ActionContext {
     pub actions: Vec<near_primitives::transaction::Action>,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct TransactionContext {
     pub config: crate::config::Config,
