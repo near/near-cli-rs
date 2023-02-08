@@ -1,7 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod access_key_type;
-// mod autogenerate_new_keypair;
+mod autogenerate_new_keypair;
 // mod use_manually_provided_seed_phrase;
 mod use_public_key;
 
@@ -80,11 +80,11 @@ pub enum AccessKeyPermission {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 ///Add an access key for this account
 pub enum AccessKeyMode {
-    // #[strum_discriminants(strum(
-    //     message = "autogenerate-new-keypair          - Automatically generate a key pair"
-    // ))]
-    // ///Automatically generate a key pair
-    // AutogenerateNewKeypair(self::autogenerate_new_keypair::GenerateKeypair),
+    #[strum_discriminants(strum(
+        message = "autogenerate-new-keypair          - Automatically generate a key pair"
+    ))]
+    ///Automatically generate a key pair
+    AutogenerateNewKeypair(self::autogenerate_new_keypair::GenerateKeypair),
     // #[strum_discriminants(strum(
     //     message = "use-manually-provided-seed-prase  - Use the provided seed phrase manually"
     // ))]
@@ -112,16 +112,15 @@ impl AccessKeyMode {
                     .process(config, prepopulated_unsigned_transaction, permission)
                     .await
             }
-            // AccessKeyMode::AutogenerateNewKeypair(generate_keypair) => {
-            //     generate_keypair
-            //         .process(config, prepopulated_unsigned_transaction, permission)
-            //         .await
-            // }
-            // AccessKeyMode::UseManuallyProvidedSeedPhrase(add_access_with_seed_phrase_action) => {
-            //     add_access_with_seed_phrase_action
-            //         .process(config, prepopulated_unsigned_transaction, permission)
-            //         .await
-            // }
+            AccessKeyMode::AutogenerateNewKeypair(generate_keypair) => {
+                generate_keypair
+                    .process(config, prepopulated_unsigned_transaction, permission)
+                    .await
+            } // AccessKeyMode::UseManuallyProvidedSeedPhrase(add_access_with_seed_phrase_action) => {
+              //     add_access_with_seed_phrase_action
+              //         .process(config, prepopulated_unsigned_transaction, permission)
+              //         .await
+              // }
         }
     }
 }
