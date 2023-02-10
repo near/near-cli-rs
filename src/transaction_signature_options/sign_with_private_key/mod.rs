@@ -201,6 +201,10 @@ impl interactive_clap::FromCli for SignPrivateKey {
 }
 
 impl SignPrivateKey {
+    pub fn get_signer_public_key(&self) -> near_crypto::PublicKey {
+        self.signer_public_key.clone().into()
+    }
+    
     pub async fn process(
         &self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,

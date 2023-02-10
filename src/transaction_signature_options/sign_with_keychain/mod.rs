@@ -6,8 +6,8 @@ use near_primitives::borsh::BorshSerialize;
 #[interactive_clap(output_context = super::SubmitContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignKeychain {
-    // #[interactive_clap(skip)]
-    // signer_public_key: crate::types::public_key::PublicKey,
+    #[interactive_clap(skip)]
+    signer_public_key: crate::types::public_key::PublicKey,
     // #[interactive_clap(skip)]
     // signer_private_key: crate::types::secret_key::SecretKey,
     #[interactive_clap(long)]
@@ -27,7 +27,7 @@ pub struct SignKeychainContext {
     config: crate::config::Config,
     network_config: crate::config::NetworkConfig,
     prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    // signer_public_key: crate::types::public_key::PublicKey,
+    signer_public_key: crate::types::public_key::PublicKey,
     // signer_private_key: crate::types::secret_key::SecretKey,
     nonce: Option<u64>,
     block_hash: Option<String>,
@@ -36,7 +36,7 @@ pub struct SignKeychainContext {
 }
 
 impl SignKeychainContext {
-    pub fn from_previous_context(
+    pub async fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> Result<Self, color_eyre::eyre::Error> {
@@ -86,7 +86,8 @@ impl SignKeychainContext {
                     } else {
                         return Err(color_eyre::Report::msg("Error call result".to_string()));
                     };
-                let mut path = std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
+                let mut path =
+                    std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
                 path.push(dir_name);
                 path.push(&previous_context.transaction.signer_id.to_string());
                 let mut data_path = std::path::PathBuf::new();
@@ -134,7 +135,8 @@ impl SignKeychainContext {
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
             .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
 
-        // let signer_public_key = crate::types::public_key::PublicKey(account_json.public_key);
+        let signer_public_key =
+            crate::types::public_key::PublicKey(account_json.public_key.clone());
         // let signer_private_key = crate::types::secret_key::SecretKey(account_json.private_key);
 
         let online_signer_access_key_response = tokio::runtime::Runtime::new()
@@ -167,17 +169,25 @@ impl SignKeychainContext {
                 return Err(color_eyre::Report::msg("Error current_nonce".to_string()));
             };
 
-        let unsigned_transaction = near_primitives::transaction::Transaction {
+        let mut unsigned_transaction = near_primitives::transaction::Transaction {
             public_key: account_json.public_key.clone(),
             block_hash: online_signer_access_key_response.block_hash,
             nonce: current_nonce + 1,
             ..previous_context.transaction.clone()
         };
-        let signature = account_json.private_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+
+        (previous_context.on_before_signing_callback)(&mut unsigned_transaction)?;
+
+        let signature = account_json
+            .private_key
+            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
             unsigned_transaction,
         );
+
+        (previous_context.on_after_signing_callback)(&signed_transaction)?;
+
         let base64_transaction = near_primitives::serialize::to_base64(
             signed_transaction
                 .try_to_vec()
@@ -187,12 +197,11 @@ impl SignKeychainContext {
         println!("Public key: {}", account_json.public_key);
         println!("Signature: {}", signature);
 
-
         Ok(Self {
             config: previous_context.config,
             network_config: previous_context.network_config,
             prepopulated_unsigned_transaction: previous_context.transaction,
-            // signer_public_key: scope.signer_public_key.clone(),
+            signer_public_key,
             // signer_private_key: scope.signer_private_key.clone(),
             nonce: scope.nonce,
             block_hash: scope.block_hash.clone(),
@@ -233,16 +242,19 @@ impl interactive_clap::FromCli for SignKeychain {
         let block_hash: Option<String> = optional_clap_variant
             .as_ref()
             .and_then(|clap_variant| clap_variant.block_hash.clone());
-        
+
         let new_context_scope = InteractiveClapContextScopeForSignKeychain {
-            // signer_public_key: signer_public_key.clone(),
+            signer_public_key: crate::types::public_key::PublicKey(near_crypto::PublicKey::empty(
+                near_crypto::KeyType::ED25519,
+            )),
             // signer_private_key: signer_private_key.clone(),
             nonce,
             block_hash: block_hash.clone(),
         };
-        let keychain_context =
-            SignKeychainContext::from_previous_context(context.clone(), &new_context_scope)?;
-        let new_context = super::SubmitContext::from(keychain_context);
+        let keychain_context = tokio::runtime::Runtime::new().unwrap().block_on(
+            SignKeychainContext::from_previous_context(context.clone(), &new_context_scope),
+        )?;
+        let new_context = super::SubmitContext::from(keychain_context.clone());
 
         let optional_submit = super::Submit::from_cli(
             optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
@@ -253,8 +265,9 @@ impl interactive_clap::FromCli for SignKeychain {
         } else {
             return Ok(None);
         };
+
         Ok(Some(Self {
-            // signer_public_key,
+            signer_public_key: keychain_context.signer_public_key,
             // signer_private_key,
             nonce,
             block_hash,
@@ -264,6 +277,10 @@ impl interactive_clap::FromCli for SignKeychain {
 }
 
 impl SignKeychain {
+    pub fn get_signer_public_key(&self) -> near_crypto::PublicKey {
+        self.signer_public_key.clone().into()
+    }
+
     pub async fn process(
         &self,
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,

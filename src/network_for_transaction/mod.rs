@@ -12,11 +12,13 @@ pub struct NetworkForTransactionArgs {
     transaction_signature_options: crate::transaction_signature_options::SignWith,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct NetworkForTransactionArgsContext {
     config: crate::config::Config,
     network_name: String,
     prepopulated_unsigned_transaction: crate::types::transaction::Transaction,
+    on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction) -> crate::CliResult>,
+    on_after_signing_callback: std::sync::Arc<dyn Fn(&near_primitives::transaction::SignedTransaction) -> crate::CliResult>,
 }
 
 impl NetworkForTransactionArgsContext {
@@ -28,21 +30,25 @@ impl NetworkForTransactionArgsContext {
             config: previous_context.config,
             network_name: scope.network_name.clone(),
             prepopulated_unsigned_transaction: scope.prepopulated_unsigned_transaction.clone(),
+            on_before_signing_callback: previous_context.on_before_signing_callback,
+            on_after_signing_callback: previous_context.on_after_signing_callback,
         }
     }
 }
 
 impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionContext {
-    fn from(item: NetworkForTransactionArgsContext) -> Self {
-        let networks = item.config.networks.clone();
+    fn from(previous_context: NetworkForTransactionArgsContext) -> Self {
+        let networks = previous_context.config.networks.clone();
         let network_config = networks
-            .get(&item.network_name)
+            .get(&previous_context.network_name)
             .expect("Failed to get network config!")
             .clone();
         Self {
-            config: item.config,
+            config: previous_context.config,
             network_config,
-            transaction: item.prepopulated_unsigned_transaction.into(),
+            transaction: previous_context.prepopulated_unsigned_transaction.into(),
+            on_before_signing_callback: previous_context.on_before_signing_callback,
+            on_after_signing_callback: previous_context.on_after_signing_callback,
         }
     }
 }
@@ -82,14 +88,16 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
             prepopulated_unsigned_transaction: prepopulated_unsigned_transaction.clone(),
         };
         let new_context = NetworkForTransactionArgsContext::from_previous_context(
-            context.clone(),
+            context,
             &new_context_scope,
         );
         // let new_context = crate::commands::TransactionContext::from(network_context);
 
-        // println!("\nUnsigned transaction:\n");
-        // crate::common::print_unsigned_transaction(new_context.transaction.clone().into());
-        // println!();
+        println!("\nUnsigned transaction:\n"); // XXX remove!
+        crate::common::print_unsigned_transaction(
+            new_context.prepopulated_unsigned_transaction.clone().into(),
+        );
+        println!();
 
         let optional_transaction_signature_options =
             crate::transaction_signature_options::SignWith::from_cli(
@@ -132,5 +140,8 @@ impl NetworkForTransactionArgs {
 
     pub fn get_sign_option(&self) -> crate::transaction_signature_options::SignWith {
         self.transaction_signature_options.clone()
+    }
+    pub fn get_signer_public_key(&self) -> near_crypto::PublicKey {
+        self.transaction_signature_options.get_signer_public_key()
     }
 }

@@ -14,6 +14,7 @@ mod network_view_at_block;
 mod transaction_signature_options;
 mod types;
 mod utils_command;
+// mod send_near;
 
 pub type GlobalContext = (crate::config::Config,);
 

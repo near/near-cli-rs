@@ -55,6 +55,19 @@ pub enum SignWith {
 //         crate::common::print_unsigned_transaction(new_context.transaction.clone().into());
 //         println!();
 
+impl SignWith {
+    pub fn get_signer_public_key(&self) -> near_crypto::PublicKey {
+        match self {
+            Self::SignWithPlaintextPrivateKey(sign_private_key) => {
+                sign_private_key.get_signer_public_key()
+            }
+            Self::SignWithKeychain(sign_keychain) => {
+                sign_keychain.get_signer_public_key()
+            }
+            _ => todo!(),
+        }
+    }
+}
 
 pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
     Ok(CustomType::new("Enter sender (signer) public key").prompt()?)
@@ -104,23 +117,22 @@ pub async fn sign_with(
                     network_config.get_network_config(config),
                 )
                 .await
-        }
-        // SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
-        //     sign_access_key_file
-        //         .process(
-        //             prepopulated_unsigned_transaction,
-        //             network_config.get_network_config(config),
-        //         )
-        //         .await
-        // }
-        // SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
-        //     sign_seed_phrase
-        //         .process(
-        //             prepopulated_unsigned_transaction,
-        //             network_config.get_network_config(config),
-        //         )
-        //         .await
-        // }
+        } // SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
+          //     sign_access_key_file
+          //         .process(
+          //             prepopulated_unsigned_transaction,
+          //             network_config.get_network_config(config),
+          //         )
+          //         .await
+          // }
+          // SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
+          //     sign_seed_phrase
+          //         .process(
+          //             prepopulated_unsigned_transaction,
+          //             network_config.get_network_config(config),
+          //         )
+          //         .await
+          // }
     }
 }
 //-----------------------------------------------------------------------------------
@@ -154,7 +166,7 @@ pub async fn sign_with(
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = SubmitContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-// #[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(skip_default_from_cli)]
 /// How would you like to proceed
 pub enum Submit {
     #[strum_discriminants(strum(message = "send      - Send the transaction to the network"))]
@@ -169,25 +181,52 @@ pub enum Submit {
 //     type CliVariant = Submit;
 // }
 
-// impl interactive_clap::FromCli for Submit {
-//     type FromCliContext = SubmitContext;
-//     type FromCliError = color_eyre::eyre::Error;
-//     fn from_cli(
-//         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-//         context: Self::FromCliContext,
-//     ) -> Result<Option<Self>, Self::FromCliError>
-//     where
-//         Self: Sized + interactive_clap::ToCli,
-//     {
-//         println!("++++++  context: ");
+impl interactive_clap::FromCli for Submit {
+    type FromCliContext = SubmitContext;
+    type FromCliError = color_eyre::eyre::Error;
+    fn from_cli(
+        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> Result<Option<Submit>, Self::FromCliError>
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        match optional_clap_variant {
+            Some(CliSubmit::Send) => {
+                println!("Transaction sent ...");
+                let transaction_info = loop {
+                    let transaction_info_result = tokio::runtime::Runtime::new()
+                    .unwrap()
+                    .block_on(context.network_config.json_rpc_client()
+                        .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction: context.signed_transaction.clone()})
+                        )
+                    ;
+                    match transaction_info_result {
+                        Ok(response) => {
+                            break response;
+                        }
+                        Err(err) => match crate::common::rpc_transaction_error(err) {
+                            Ok(_) => tokio::runtime::Runtime::new().unwrap().block_on(
+                                tokio::time::sleep(std::time::Duration::from_millis(100)),
+                            ),
+                            Err(report) => return color_eyre::eyre::Result::Err(report),
+                        },
+                    };
+                };
 
-//         match optional_clap_variant {
-//             Some(CliSubmit::Send) => Ok(Some(Self::Send)),
-//             Some(CliSubmit::Display) => Ok(Some(Self::Display)),
-//             None => Self::choose_variant(context.clone()),
-//         }
-//     }
-// }
+                crate::common::print_transaction_status(transaction_info, context.network_config)?;
+                // Ok(Some(transaction_info))
+
+                Ok(Some(Self::Send))
+            }
+            Some(CliSubmit::Display) => {
+                Ok(Some(Self::Display))
+                // Ok(None)
+            }
+            None => Self::choose_variant(context.clone()),
+        }
+    }
+}
 
 // impl std::fmt::Display for SubmitDiscriminants {
 //     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

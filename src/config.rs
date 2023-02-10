@@ -14,6 +14,7 @@ pub struct NetworkConfig {
     // https://github.com/near/near-cli-rs/issues/116
     pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
     pub faucet_url: Option<url::Url>,
+    pub near_social_account_id: Option<near_primitives::types::AccountId>,
 }
 
 impl Default for Config {
@@ -35,6 +36,7 @@ impl Default for Config {
                 rpc_api_key: None,
                 linkdrop_account_id: Some("near".parse().unwrap()),
                 faucet_url: None,
+                near_social_account_id: Some("social.near".parse().unwrap()),
             },
         );
         networks.insert(
@@ -49,6 +51,7 @@ impl Default for Config {
                 rpc_api_key: None,
                 linkdrop_account_id: Some("testnet".parse().unwrap()),
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
+                near_social_account_id: Some("v1.social08.testnet".parse().unwrap()),
             },
         );
         networks.insert(
@@ -63,6 +66,7 @@ impl Default for Config {
                 rpc_api_key: None,
                 linkdrop_account_id: Some("shardnet".parse().unwrap()),
                 faucet_url: None,
+                near_social_account_id: None,
             },
         );
         Self {

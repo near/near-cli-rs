@@ -31,6 +31,9 @@ pub struct AddNetworkConnection {
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     faucet_url: Option<crate::types::url::Url>,
+    #[interactive_clap(skip_default_from_cli_arg)]
+    #[interactive_clap(skip_default_input_arg)]
+    near_social_account_id: Option<crate::types::account_id::AccountId>,
 }
 
 impl interactive_clap::FromCli for AddNetworkConnection {
@@ -136,25 +139,56 @@ impl interactive_clap::FromCli for AddNetworkConnection {
                     }
                 }
             };
-        let faucet_url: Option<crate::types::url::Url> =
-            match optional_clap_variant.and_then(|clap_variant| clap_variant.faucet_url) {
-                Some(cli_faucet_url) => Some(cli_faucet_url),
+        let faucet_url: Option<crate::types::url::Url> = match optional_clap_variant
+            .as_ref()
+            .and_then(|clap_variant| clap_variant.faucet_url.clone())
+        {
+            Some(cli_faucet_url) => Some(cli_faucet_url),
+            None => {
+                println!();
+                #[derive(strum_macros::Display)]
+                enum ConfirmOptions {
+                    #[strum(to_string = "Yes, I want to enter the URL of the faucet")]
+                    Yes,
+                    #[strum(to_string = "No, I don't want to enter the faucet URL")]
+                    No,
+                }
+                let select_choose_input = Select::new(
+                    "Do you want to enter the faucet URL?",
+                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
+                )
+                .prompt()?;
+                if let ConfirmOptions::Yes = select_choose_input {
+                    Self::input_faucet_url()?
+                } else {
+                    None
+                }
+            }
+        };
+        let near_social_account_id: Option<crate::types::account_id::AccountId> =
+            match optional_clap_variant
+                .as_ref()
+                .and_then(|clap_variant| clap_variant.near_social_account_id.clone())
+            {
+                Some(cli_near_social_account_id) => Some(cli_near_social_account_id),
                 None => {
                     println!();
                     #[derive(strum_macros::Display)]
                     enum ConfirmOptions {
-                        #[strum(to_string = "Yes, I want to enter the URL of the faucet")]
+                        #[strum(
+                            to_string = "Yes, and I want to enter the name of the contract ID for \"near-social\""
+                        )]
                         Yes,
-                        #[strum(to_string = "No, I don't want to enter the faucet URL")]
+                        #[strum(to_string = "I dont know")]
                         No,
                     }
                     let select_choose_input = Select::new(
-                        "Do you want to enter the faucet URL?",
+                        "Is there a \"near-social\" contract on this network?",
                         vec![ConfirmOptions::Yes, ConfirmOptions::No],
                     )
                     .prompt()?;
                     if let ConfirmOptions::Yes = select_choose_input {
-                        Self::input_faucet_url()?
+                        Self::input_near_social_account_id()?
                     } else {
                         None
                     }
@@ -169,6 +203,7 @@ impl interactive_clap::FromCli for AddNetworkConnection {
             rpc_api_key,
             linkdrop_account_id,
             faucet_url,
+            near_social_account_id,
         }))
     }
 }
@@ -193,6 +228,13 @@ impl AddNetworkConnection {
         Ok(Some(faucet_url))
     }
 
+    fn input_near_social_account_id(
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        let account_id: crate::types::account_id::AccountId =
+            CustomType::new("What is the name of the contract that hosts the \"near-social\" program? (e.g. on mainnet it is social.near, and on testnet it is v1.social08.testnet)").prompt()?;
+        Ok(Some(account_id))
+    }
+
     pub async fn process(&self, mut config: crate::config::Config) -> crate::CliResult {
         config.networks.insert(
             self.connection_name.clone(),
@@ -207,6 +249,10 @@ impl AddNetworkConnection {
                     .clone()
                     .map(|linkdrop_account_id| linkdrop_account_id.into()),
                 faucet_url: self.faucet_url.clone().map(|faucet_url| faucet_url.into()),
+                near_social_account_id: self
+                    .near_social_account_id
+                    .clone()
+                    .map(|near_social_account_id| near_social_account_id.into()),
             },
         );
         println!();

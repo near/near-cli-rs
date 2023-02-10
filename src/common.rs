@@ -728,8 +728,15 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
                     "", "method name:", &function_call_action.method_name
                 );
                 println!(
-                    "{:>18} {:<13} {:?}",
-                    "", "args:", &function_call_action.args
+                    "{:>18} {:<13} {}",
+                    "",
+                    "args:",
+                    serde_json::to_string_pretty(
+                        &serde_json::from_slice::<serde_json::Value>(&function_call_action.args)
+                            .unwrap_or_default()
+                    )
+                    .unwrap_or_else(|_| "".to_string())
+                    .replace('\n', "\n                                 ")
                 );
                 println!(
                     "{:>18} {:<13} {}",
@@ -826,8 +833,15 @@ pub fn print_unsigned_transaction(transaction: near_primitives::transaction::Tra
                     "", "method name:", &function_call_action.method_name
                 );
                 println!(
-                    "{:>18} {:<13} {:?}",
-                    "", "args:", &function_call_action.args
+                    "{:>18} {:<13} {}",
+                    "",
+                    "args:",
+                    serde_json::to_string_pretty(
+                        &serde_json::from_slice::<serde_json::Value>(&function_call_action.args)
+                            .unwrap_or_default()
+                    )
+                    .unwrap_or_else(|_| "".to_string())
+                    .replace('\n', "\n                                 ")
                 );
                 println!(
                     "{:>18} {:<13} {}",

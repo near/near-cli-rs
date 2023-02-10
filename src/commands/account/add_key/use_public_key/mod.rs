@@ -46,6 +46,13 @@ impl From<AddAccessKeyActionContext> for crate::commands::ActionContext {
                     },
                 },
             )],
+            on_before_signing_callback: std::sync::Arc::new(|prepolulated_unsinged_transaction| {
+                Ok(())
+            }),
+            on_after_signing_callback: std::sync::Arc::new(|singed_transaction| {
+                Ok(())
+            }),
+
         }
     }
 }

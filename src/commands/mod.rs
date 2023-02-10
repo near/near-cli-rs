@@ -1,7 +1,7 @@
 use near_primitives::transaction;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod account;
+pub mod account;
 mod config;
 // mod contract;
 mod tokens;
@@ -48,17 +48,22 @@ impl TopLevelCommand {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ActionContext {
     pub config: crate::config::Config,
     pub signer_account_id: near_primitives::types::AccountId,
     pub receiver_account_id: near_primitives::types::AccountId,
     pub actions: Vec<near_primitives::transaction::Action>,
+    //pub on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction) -> futures::future::BoxFuture<crate::CliResult>>,
+    pub on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction) -> crate::CliResult>,
+    pub on_after_signing_callback: std::sync::Arc<dyn Fn(&near_primitives::transaction::SignedTransaction) -> crate::CliResult>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TransactionContext {
     pub config: crate::config::Config,
     pub network_config: crate::config::NetworkConfig,
     pub transaction: near_primitives::transaction::Transaction,
+    pub on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction) -> crate::CliResult>,
+    pub on_after_signing_callback: std::sync::Arc<dyn Fn(&near_primitives::transaction::SignedTransaction) -> crate::CliResult>,
 }
