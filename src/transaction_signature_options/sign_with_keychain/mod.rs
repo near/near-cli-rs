@@ -22,7 +22,7 @@ pub struct SignKeychain {
     submit: super::Submit,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SignKeychainContext {
     config: crate::config::Config,
     network_config: crate::config::NetworkConfig,
@@ -59,74 +59,77 @@ impl SignKeychainContext {
             if path.exists() {
                 path
             } else {
-                let query_view_method_response = tokio::runtime::Runtime::new()
-                    .unwrap()
-                    .block_on(
-                        network_config.json_rpc_client().call(
-                            near_jsonrpc_client::methods::query::RpcQueryRequest {
-                                block_reference: near_primitives::types::Finality::Final.into(),
-                                request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                                    account_id: previous_context.transaction.signer_id.clone(),
-                                },
-                            },
-                        ), // .await
-                    )
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to fetch query for view key list: {:?}",
-                            err
-                        ))
-                    })?;
-                let access_key_list =
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
-                        result,
-                    ) = query_view_method_response.kind
-                    {
-                        result
-                    } else {
-                        return Err(color_eyre::Report::msg("Error call result".to_string()));
-                    };
-                let mut path =
-                    std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
-                path.push(dir_name);
-                path.push(&previous_context.transaction.signer_id.to_string());
-                let mut data_path = std::path::PathBuf::new();
-                'outer: for access_key in access_key_list.keys {
-                    let account_public_key = access_key.public_key.to_string();
-                    let is_full_access_key: bool = match &access_key.access_key.permission {
-                        near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                        near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                            allowance: _,
-                            receiver_id: _,
-                            method_names: _,
-                        } => false,
-                    };
-                    let dir = path
-                                .read_dir()
-                                .map_err(|err| {
-                                    color_eyre::Report::msg(format!("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain. {}", err))
-                                })?;
-                    for entry in dir {
-                        if let Ok(entry) = entry {
-                            if entry
-                                .path()
-                                .file_stem()
-                                .unwrap()
-                                .to_str()
-                                .unwrap()
-                                .contains(account_public_key.rsplit(':').next().unwrap())
-                                && is_full_access_key
-                            {
-                                data_path.push(entry.path());
-                                break 'outer;
-                            }
-                        } else {
-                            return Err(color_eyre::Report::msg(
-                                        "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.".to_string()));
-                        };
-                    }
-                }
-                data_path
+                return Err(color_eyre::Report::msg(format!(
+                            "Failed to fetch query for view key list: = = = = = = = = = = = "
+                        )));
+                // let query_view_method_response = tokio::runtime::Runtime::new()
+                //     .unwrap()
+                //     .block_on(
+                //         network_config.json_rpc_client().call(
+                //             near_jsonrpc_client::methods::query::RpcQueryRequest {
+                //                 block_reference: near_primitives::types::Finality::Final.into(),
+                //                 request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                //                     account_id: previous_context.transaction.signer_id.clone(),
+                //                 },
+                //             },
+                //         ), // .await
+                //     )
+                //     .map_err(|err| {
+                //         color_eyre::Report::msg(format!(
+                //             "Failed to fetch query for view key list: {:?}",
+                //             err
+                //         ))
+                //     })?;
+                // let access_key_list =
+                //     if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
+                //         result,
+                //     ) = query_view_method_response.kind
+                //     {
+                //         result
+                //     } else {
+                //         return Err(color_eyre::Report::msg("Error call result".to_string()));
+                //     };
+                // let mut path =
+                //     std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
+                // path.push(dir_name);
+                // path.push(&previous_context.transaction.signer_id.to_string());
+                // let mut data_path = std::path::PathBuf::new();
+                // 'outer: for access_key in access_key_list.keys {
+                //     let account_public_key = access_key.public_key.to_string();
+                //     let is_full_access_key: bool = match &access_key.access_key.permission {
+                //         near_primitives::views::AccessKeyPermissionView::FullAccess => true,
+                //         near_primitives::views::AccessKeyPermissionView::FunctionCall {
+                //             allowance: _,
+                //             receiver_id: _,
+                //             method_names: _,
+                //         } => false,
+                //     };
+                //     let dir = path
+                //                 .read_dir()
+                //                 .map_err(|err| {
+                //                     color_eyre::Report::msg(format!("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain. {}", err))
+                //                 })?;
+                //     for entry in dir {
+                //         if let Ok(entry) = entry {
+                //             if entry
+                //                 .path()
+                //                 .file_stem()
+                //                 .unwrap()
+                //                 .to_str()
+                //                 .unwrap()
+                //                 .contains(account_public_key.rsplit(':').next().unwrap())
+                //                 && is_full_access_key
+                //             {
+                //                 data_path.push(entry.path());
+                //                 break 'outer;
+                //             }
+                //         } else {
+                //             return Err(color_eyre::Report::msg(
+                //                         "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.".to_string()));
+                //         };
+                //     }
+                // }
+                // data_path
             }
         };
         let data = std::fs::read_to_string(data_path).map_err(|err| {
@@ -139,9 +142,27 @@ impl SignKeychainContext {
             crate::types::public_key::PublicKey(account_json.public_key.clone());
         // let signer_private_key = crate::types::secret_key::SecretKey(account_json.private_key);
 
-        let online_signer_access_key_response = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(network_config.json_rpc_client().call(
+        // let online_signer_access_key_response = tokio::runtime::Runtime::new()
+        //     .unwrap()
+        //     .block_on(network_config.json_rpc_client().call(
+        //         near_jsonrpc_client::methods::query::RpcQueryRequest {
+        //             block_reference: near_primitives::types::Finality::Final.into(),
+        //             request: near_primitives::views::QueryRequest::ViewAccessKey {
+        //                 account_id: previous_context.transaction.signer_id.clone(),
+        //                 public_key: account_json.public_key.clone(),
+        //             },
+        //         },
+        //     ))
+        //     .map_err(|err| {
+        //         // println!("\nUnsigned transaction:\n");
+        //         // crate::common::print_transaction(prepopulated_unsigned_transaction.clone());
+        //         println!("\nYour transaction was not successfully signed.\n");
+        //         color_eyre::Report::msg(format!(
+        //             "Failed to fetch public key information for nonce: {:?}",
+        //             err
+        //         ))
+        //     })?;
+            let online_signer_access_key_response = network_config.json_rpc_client().call(
                 near_jsonrpc_client::methods::query::RpcQueryRequest {
                     block_reference: near_primitives::types::Finality::Final.into(),
                     request: near_primitives::views::QueryRequest::ViewAccessKey {
@@ -149,7 +170,7 @@ impl SignKeychainContext {
                         public_key: account_json.public_key.clone(),
                     },
                 },
-            ))
+            ).await
             .map_err(|err| {
                 // println!("\nUnsigned transaction:\n");
                 // crate::common::print_transaction(prepopulated_unsigned_transaction.clone());

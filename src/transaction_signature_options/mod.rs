@@ -68,7 +68,6 @@ impl SignWith {
         }
     }
 }
-
 pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
     Ok(CustomType::new("Enter sender (signer) public key").prompt()?)
 }
