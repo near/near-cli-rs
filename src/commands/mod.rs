@@ -3,6 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 mod account;
 mod config;
 mod contract;
+mod extensions;
 mod tokens;
 mod transaction;
 
@@ -33,6 +34,9 @@ pub enum TopLevelCommand {
     ))]
     /// Use this to manage connections in a configuration file (config.toml).
     Config(self::config::ConfigCommands),
+    #[strum_discriminants(strum(message = "extension   - TEMPLATE!!!!!!!!!!"))]
+    /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    Extensions(self::extensions::ExtensionsCommands),
 }
 
 impl TopLevelCommand {
@@ -43,6 +47,7 @@ impl TopLevelCommand {
             Self::Contract(contract_commands) => contract_commands.process(config).await,
             Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
             Self::Config(config_commands) => config_commands.process(config).await,
+            Self::Extensions(extensions_commands) => extensions_commands.process().await,
         }
     }
 }
