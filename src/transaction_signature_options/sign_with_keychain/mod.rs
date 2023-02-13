@@ -209,7 +209,16 @@ impl SignKeychainContext {
             ..previous_context.transaction.clone()
         };
 
-        (previous_context.on_before_signing_callback)(&mut unsigned_transaction)?;
+        (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
+
+        //XXX print unsigned transaction
+        //XXX do you want to sign transaction?
+
+        println!("++++++++++++++++++ unsigned_transaction {:#?}", unsigned_transaction);
+
+
+
+
 
         let signature = account_json
             .private_key

@@ -17,7 +17,7 @@ pub struct NetworkForTransactionArgsContext {
     config: crate::config::Config,
     network_name: String,
     prepopulated_unsigned_transaction: crate::types::transaction::Transaction,
-    on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction) -> crate::CliResult>,
+    on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction, &crate::config::NetworkConfig) -> crate::CliResult>,
     on_after_signing_callback: std::sync::Arc<dyn Fn(&near_primitives::transaction::SignedTransaction) -> crate::CliResult>,
     // on_after_getting_network_connection_callback: std::sync::Arc<dyn Fn(&crate::config::NetworkConfig) -> crate::CliResult>,
 }

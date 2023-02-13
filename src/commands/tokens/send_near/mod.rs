@@ -47,7 +47,7 @@ impl From<SendNearCommandContext> for crate::commands::ActionContext {
                     deposit: item.amount_in_near.to_yoctonear(),
                 },
             )],
-            on_before_signing_callback: std::sync::Arc::new(|prepolulated_unsinged_transaction| {
+            on_before_signing_callback: std::sync::Arc::new(|prepolulated_unsinged_transaction, network_config| {
                 Ok(())
             }),
             on_after_signing_callback: std::sync::Arc::new(|singed_transaction| Ok(())),

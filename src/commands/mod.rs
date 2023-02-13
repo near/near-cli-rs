@@ -55,7 +55,7 @@ pub struct ActionContext {
     pub receiver_account_id: near_primitives::types::AccountId,
     pub actions: Vec<near_primitives::transaction::Action>,
     //pub on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction) -> futures::future::BoxFuture<crate::CliResult>>,
-    pub on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction) -> crate::CliResult>,
+    pub on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction, &crate::config::NetworkConfig) -> crate::CliResult>,
     pub on_after_signing_callback: std::sync::Arc<dyn Fn(&near_primitives::transaction::SignedTransaction) -> crate::CliResult>,
     pub on_after_getting_network_connection_callback: std::sync::Arc<dyn Fn(&mut crate::config::NetworkConfig) -> crate::config::NetworkConfig>,
 }
@@ -65,6 +65,6 @@ pub struct TransactionContext {
     pub config: crate::config::Config,
     pub network_config: crate::config::NetworkConfig,
     pub transaction: near_primitives::transaction::Transaction,
-    pub on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction) -> crate::CliResult>,
+    pub on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction, &crate::config::NetworkConfig) -> crate::CliResult>,
     pub on_after_signing_callback: std::sync::Arc<dyn Fn(&near_primitives::transaction::SignedTransaction) -> crate::CliResult>,
 }
