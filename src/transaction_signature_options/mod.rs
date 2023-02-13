@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
+use near_primitives::types::{BlockId, BlockReference};
 // use either::Either;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
@@ -203,25 +204,33 @@ impl Submit {
                 let block_header = network_config
                     .json_rpc_client()
                     .call(near_jsonrpc_client::methods::block::RpcBlockRequest{
-                        block_reference: near_primitives::types::BlockReference::from(
-                            signed_transaction.transaction.block_hash
-                        )
+                        block_reference: BlockReference::from(
+                            BlockId::Hash(
+                                signed_transaction.transaction.block_hash
+                            )
+                        ),
                     })
                     .await?
                     .header;
                 let max_block_height = block_header.height + 100;  // TODO is 100 blocks appropriate?
-                let delegate_action = near_primitives_01::transaction::DelegateAction(
-                    signed_transaction.transaction.signer_id,
-                    signed_transaction.transaction.receiver_id,
-                    signed_transaction.transaction.actions,
-                    signed_transaction.transaction.nonce,
+                let sender_id = signed_transaction.transaction.signer_id.clone();
+                let receiver_id = signed_transaction.transaction.receiver_id.clone();
+                let actions = signed_transaction.transaction.actions.clone();
+                let nonce = signed_transaction.transaction.nonce.clone();
+                let public_key = signed_transaction.transaction.public_key.clone();
+                let delegate_action = near_primitives_01::transaction::DelegateAction{
+                    sender_id,
+                    receiver_id,
+                    actions,
+                    nonce,
                     max_block_height,
-                    signed_transaction.transaction.public_key
-                );
-                let signed_delegate_action = near_primitives_01::transaction::SignedDelegateAction(
+                    public_key,
+                };
+                let signature = signed_transaction.signature.clone();
+                let signed_delegate_action = near_primitives_01::transaction::SignedDelegateAction{
                     delegate_action,
-                    signed_transaction.signature
-                );
+                    signature,
+                };
                 // send signed_delegate_action to relayer via a POST request
                 println!("Sending transaction to relayer ...");
                 let client = reqwest::Client::new();
