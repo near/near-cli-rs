@@ -206,7 +206,7 @@ impl Submit {
                     .call(near_jsonrpc_client::methods::block::RpcBlockRequest{
                         block_reference: BlockReference::from(
                             BlockId::Hash(
-                                signed_transaction.transaction.block_hash
+                                signed_transaction.transaction.block_hash.clone()
                             )
                         ),
                     })
@@ -240,7 +240,13 @@ impl Submit {
                     .json(&payload)  // serialize signed_delegate_action to json
                     .send()
                     .await?;
-                Ok(Some(relayer_response))
+                if relayer_response.status().is_success() {
+                    let json_response = relayer_response.json::<serde_json::Value>().await?;
+                    println!("Relayer JSON response: {:#?}", json_response);
+                } else {
+                    println!("Request failed with status code: {}", relayer_response.status());
+                }
+                Ok(None)
             }
             Submit::Display => {
                 println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
