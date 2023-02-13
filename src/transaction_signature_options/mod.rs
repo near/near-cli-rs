@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
+use near_jsonrpc_client::methods::status;
 use either::Either;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
@@ -163,7 +164,7 @@ impl Submit {
         network_config: crate::config::NetworkConfig,
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String,
-    ) -> Either<color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>>, reqwest::Result<T>> {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         match self {
             Submit::Send => {
                 println!("Transaction sent ...");
@@ -186,14 +187,25 @@ impl Submit {
                 Ok(Some(transaction_info))
             }
             Submit::SendViaRelay => {
-                // TODO relayer type and info validation
-                let relayer = Ok(Input::new()
-                    .with_prompt("Enter relayer endpoint (ie http://relayer.near.org:3030/relay)")
-                    .interact_text()?
-                );
+                let url = Input::new()
+                    .with_prompt("Enter relayer endpoint (ie http://relayer.near.org:3030/relay): ")
+                    .validate_with(|input: &String| -> Result<(), &str> {
+                        if input.starts_with("http://") || input.starts_with("https://") {
+                            Ok(())
+                        } else {
+                            Err("Invalid URL")
+                        }
+                    })
+                    .interact_text()?;
+
+                let relayer = url.to_string();
                 // create signed delegate action and send to relayer
                 // fill in params from https://github.com/near/nearcore/pull/7497/files#diff-90dfa190ec8dff070747d21fd42e25f6022268a7d008ae1e00c0dd5ada2e5bd2R247
-                let max_block_height = signed_transaction.transaction.block_hash + 100;  // TODO is 100 blocks appropriate? - also get current block height instead of hash
+                //let max_block_height = signed_transaction.transaction.block_hash + 100;  // TODO is 100 blocks appropriate? - also get current block height instead of hash
+                let max_block_height = network_config.json_rpc_client()
+                    .call(near_jsonrpc_client::methods::status)
+                    .await
+                    .unwrap().sync_info.latest_block_height;
                 let delegate_action = near_primitives_01::transaction::DelegateAction(
                     signed_transaction.transaction.signer_id,
                     signed_transaction.transaction.receiver_id,
