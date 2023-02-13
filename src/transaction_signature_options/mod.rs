@@ -1,7 +1,6 @@
-use std::collections::HashMap;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
+use near_primitives::borsh::BorshSerialize;
 use near_primitives::types::{BlockId, BlockReference};
-// use either::Either;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod sign_with_keychain;
@@ -234,15 +233,14 @@ impl Submit {
                 // send signed_delegate_action to relayer via a POST request
                 println!("Sending transaction to relayer ...");
                 let client = reqwest::Client::new();
-                let mut payload = HashMap::new();
-                payload.insert("signed_delegate_action", signed_delegate_action);
+                let mut payload = signed_delegate_action.try_to_vec()?;  // serialize signed_delegate_action using borsh
                 let relayer_response = client.post(relayer)
-                    .json(&payload)  // serialize signed_delegate_action to json
+                    .body(payload)
                     .send()
                     .await?;
                 if relayer_response.status().is_success() {
-                    let json_response = relayer_response.json::<serde_json::Value>().await?;
-                    println!("Relayer JSON response: {:#?}", json_response);
+                    let response_text = relayer_response.text().await?;
+                    println!("Relayer Response text: {}", response_text);
                 } else {
                     println!("Request failed with status code: {}", relayer_response.status());
                 }
