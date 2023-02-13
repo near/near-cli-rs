@@ -3,7 +3,7 @@ pub struct VecString(pub Vec<String>);
 
 impl std::fmt::Display for VecString {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{:?}", self.0)
+        write!(f, "{}", self.0.join(","))
     }
 }
 
@@ -12,7 +12,6 @@ impl std::str::FromStr for VecString {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let vec_str: Vec<String> = s
-            .trim_matches(|p| p == '[' || p == ']')
             .split(',')
             .map(|str| str.trim().to_string())
             .collect();
