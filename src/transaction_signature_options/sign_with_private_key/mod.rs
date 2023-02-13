@@ -143,12 +143,15 @@ impl interactive_clap::FromCli for SignPrivateKey {
             } else {
                 return Err(color_eyre::Report::msg("Error current_nonce".to_string()));
             };
-        let unsigned_transaction = near_primitives::transaction::Transaction {
+        let mut unsigned_transaction = near_primitives::transaction::Transaction {
             public_key: signer_public_key.clone().into(),
             block_hash: online_signer_access_key_response.block_hash,
             nonce: current_nonce + 1,
             ..context.transaction.clone()
         };
+
+        (context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
+
         let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
