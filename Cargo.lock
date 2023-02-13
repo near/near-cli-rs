@@ -1661,7 +1661,6 @@ dependencies = [
  "dialoguer",
  "dirs",
  "ed25519-dalek",
- "either",
  "hex 0.4.3",
  "interactive_clap",
  "interactive_clap_derive",

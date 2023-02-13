@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use near_jsonrpc_client::methods::status;
-use either::Either;
+// use either::Either;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 pub mod sign_with_keychain;
@@ -201,11 +200,16 @@ impl Submit {
                 let relayer = url.to_string();
                 // create signed delegate action and send to relayer
                 // fill in params from https://github.com/near/nearcore/pull/7497/files#diff-90dfa190ec8dff070747d21fd42e25f6022268a7d008ae1e00c0dd5ada2e5bd2R247
-                //let max_block_height = signed_transaction.transaction.block_hash + 100;  // TODO is 100 blocks appropriate? - also get current block height instead of hash
-                let max_block_height = network_config.json_rpc_client()
-                    .call(near_jsonrpc_client::methods::status)
-                    .await
-                    .unwrap().sync_info.latest_block_height;
+                let block_header = network_config
+                    .json_rpc_client()
+                    .call(near_jsonrpc_client::methods::block::RpcBlockRequest{
+                        block_reference: near_primitives::types::BlockReference::from(
+                            signed_transaction.transaction.block_hash
+                        )
+                    })
+                    .await?
+                    .header;
+                let max_block_height = block_header.height + 100;  // TODO is 100 blocks appropriate?
                 let delegate_action = near_primitives_01::transaction::DelegateAction(
                     signed_transaction.transaction.signer_id,
                     signed_transaction.transaction.receiver_id,
