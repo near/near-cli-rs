@@ -6,7 +6,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 // pub mod sign_with_ledger;
-#[cfg(target_os = "macos")]
+// #[cfg(target_os = "macos")]
 // pub mod sign_with_macos_keychain;
 pub mod sign_with_private_key;
 // pub mod sign_with_seed_phrase;
@@ -82,7 +82,7 @@ pub async fn sign_with(
     config: crate::config::Config,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
     match network_config.get_sign_option() {
-        #[cfg(target_os = "macos")]
+        // #[cfg(target_os = "macos")]
         // SignWith::SignWithMacosKeychain(sign_macos_keychain) => {
         //     sign_macos_keychain
         //         .process(
