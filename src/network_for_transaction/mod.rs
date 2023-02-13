@@ -19,7 +19,6 @@ pub struct NetworkForTransactionArgsContext {
     prepopulated_unsigned_transaction: crate::types::transaction::Transaction,
     on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction, &crate::config::NetworkConfig) -> crate::CliResult>,
     on_after_signing_callback: std::sync::Arc<dyn Fn(&near_primitives::transaction::SignedTransaction) -> crate::CliResult>,
-    // on_after_getting_network_connection_callback: std::sync::Arc<dyn Fn(&crate::config::NetworkConfig) -> crate::CliResult>,
 }
 
 impl NetworkForTransactionArgsContext {
@@ -33,7 +32,6 @@ impl NetworkForTransactionArgsContext {
             prepopulated_unsigned_transaction: scope.prepopulated_unsigned_transaction.clone(),
             on_before_signing_callback: previous_context.on_before_signing_callback,
             on_after_signing_callback: previous_context.on_after_signing_callback,
-            // on_after_getting_network_connection_callback: previous_context.on_after_getting_network_connection_callback
         }
     }
 }
@@ -75,12 +73,6 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
             Some(network_name) => network_name,
             None => NetworkForTransactionArgs::input_network_name(&context)?,
         };
-        let networks = context.config.networks.clone();
-        let mut network_config = networks
-            .get(network_name.as_str())
-            .expect("Impossible to get network name!")
-            .clone();
-        (context.on_after_getting_network_connection_callback)(&mut network_config);
             
         let prepopulated_unsigned_transaction =
             crate::types::transaction::Transaction(near_primitives::transaction::Transaction {

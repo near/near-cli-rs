@@ -52,7 +52,6 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                 Ok(())
             }),
             on_after_signing_callback: std::sync::Arc::new(|singed_transaction| Ok(())),
-            on_after_getting_network_connection_callback: std::sync::Arc::new(|network_config| network_config.clone()),
         }
     }
 }

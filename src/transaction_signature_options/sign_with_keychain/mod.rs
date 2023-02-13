@@ -36,7 +36,7 @@ pub struct SignKeychainContext {
 }
 
 impl SignKeychainContext {
-    pub async fn from_previous_context(
+    pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> Result<Self, color_eyre::eyre::Error> {
@@ -77,7 +77,9 @@ impl SignKeychainContext {
                 //             err
                 //         ))
                 //     })?;
-                let query_view_method_response = 
+                let query_view_method_response = tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(
                         network_config.json_rpc_client().call(
                             near_jsonrpc_client::methods::query::RpcQueryRequest {
                                 block_reference: near_primitives::types::Finality::Final.into(),
@@ -85,7 +87,7 @@ impl SignKeychainContext {
                                     account_id: previous_context.transaction.signer_id.clone(),
                                 },
                             },
-                        ).await
+                        ))
                     .map_err(|err| {
                         color_eyre::Report::msg(format!(
                             "Failed to fetch query for view key list: {:?}",
@@ -174,7 +176,9 @@ impl SignKeychainContext {
         //             err
         //         ))
         //     })?;
-            let online_signer_access_key_response = network_config.json_rpc_client().call(
+            let online_signer_access_key_response = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(network_config.json_rpc_client().call(
                 near_jsonrpc_client::methods::query::RpcQueryRequest {
                     block_reference: near_primitives::types::Finality::Final.into(),
                     request: near_primitives::views::QueryRequest::ViewAccessKey {
@@ -182,7 +186,7 @@ impl SignKeychainContext {
                         public_key: account_json.public_key.clone(),
                     },
                 },
-            ).await
+            ))
             .map_err(|err| {
                 // println!("\nUnsigned transaction:\n");
                 // crate::common::print_transaction(prepopulated_unsigned_transaction.clone());
@@ -293,9 +297,8 @@ impl interactive_clap::FromCli for SignKeychain {
             nonce,
             block_hash: block_hash.clone(),
         };
-        let keychain_context = tokio::runtime::Runtime::new().unwrap().block_on(
-            SignKeychainContext::from_previous_context(context.clone(), &new_context_scope),
-        )?;
+        let keychain_context = 
+            SignKeychainContext::from_previous_context(context.clone(), &new_context_scope)?;
         let new_context = super::SubmitContext::from(keychain_context.clone());
 
         let optional_submit = super::Submit::from_cli(
