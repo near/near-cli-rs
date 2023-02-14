@@ -87,7 +87,7 @@ impl SelfUpdateCommand {
 
                 let archive_path = std::path::Path::new(&tmp_dir.path()).join(&asset.name);
                 let folder_path = std::path::Path::new(&tmp_dir.path())
-                    .join(&asset.name.split(".tar").collect::<Vec<_>>()[0]);
+                    .join(asset.name.split(".tar").collect::<Vec<_>>()[0]);
 
                 let tmp_archive = std::fs::File::create(&archive_path).map_err(|err| {
                     color_eyre::Report::msg(format!(
@@ -102,7 +102,7 @@ impl SelfUpdateCommand {
                         reqwest::header::ACCEPT,
                         "application/octet-stream".parse().unwrap(),
                     )
-                    .download_to(&tmp_archive)
+                    .download_to(tmp_archive)
                     .map_err(|err| {
                         color_eyre::Report::msg(format!(
                             "Failed to download latest release from GitHub: {:?}",
@@ -117,12 +117,12 @@ impl SelfUpdateCommand {
                     })?,
                 );
                 let mut tar = tar::Archive::new(tar_gz);
-                tar.unpack(&tmp_dir.path()).map_err(|err| {
+                tar.unpack(tmp_dir.path()).map_err(|err| {
                     color_eyre::Report::msg(format!("Failed to unpack archive: {:?}", err))
                 })?;
 
                 println!("Moving near-cli binary to ~/.local/bin...");
-                std::fs::copy(&folder_path.join("near-cli"), bin_dir.join("near-cli")).map_err(
+                std::fs::copy(folder_path.join("near-cli"), bin_dir.join("near-cli")).map_err(
                     |err| {
                         color_eyre::Report::msg(format!(
                             "Failed to copy near-cli binary to ~/.local/bin: {:?}",
@@ -144,7 +144,7 @@ impl SelfUpdateCommand {
     fn export_path(&self, path: &str) -> crate::CliResult {
         let mut export = true;
 
-        for path in env!("PATH").split(":") {
+        for path in env!("PATH").split(':') {
             if std::path::Path::new(path).eq(&dirs::home_dir()
                 .expect("Failed to get path to home directory")
                 .join(".local/bin"))
@@ -157,9 +157,9 @@ impl SelfUpdateCommand {
         println!("Exporting PATH variable to ~/.local/bin");
         if export {
             let home_dir = dirs::home_dir().unwrap();
-            let shell = env!("SHELL").split("/").last().unwrap_or("fruit");
+            let shell = env!("SHELL").split('/').last().unwrap_or("fruit");
 
-            let profile_file = match shell.clone() {
+            let profile_file = match shell {
                 "bash" => ".bash_profile",
                 "zsh" => ".zshrc",
                 "fish" => ".config/fish/config.fish",
