@@ -16,6 +16,11 @@ impl SelfUpdateCommand {
         let self_clone = self.clone();
 
         tokio::task::spawn_blocking(move || {
+            println!(
+                "Welcome to NEAR!\n
+This will download and install the official release of near-cli-rs."
+            );
+
             let releases = self_update::backends::github::ReleaseList::configure()
                 .repo_owner("near")
                 .repo_name("near-cli-rs")
@@ -52,23 +57,14 @@ impl SelfUpdateCommand {
                     ))
                 })?;
 
-            println!(
-                "Your current near-cli-rs version: {}",
-                current_version.to_string()
-            );
-            println!(
-                "Latest near-cli-rs release version: {}\n",
-                latest_release_version.to_string()
-            );
-
             if current_version == latest_release_version {
-                println!("You're already up to date!");
+                println!("\ninfo: near-cli-rs is already up to date\n");
                 Ok(())
             } else {
                 self_clone.download_release(&releases[0])?;
-                self_clone.export_path("~/.local/bin")?;
+                self_clone.export_path("$HOME/.local/bin")?;
 
-                println!("Done!");
+                println!("\nnear-cli-rs is installed now. Great!\n");
 
                 Ok(())
             }
@@ -80,14 +76,20 @@ impl SelfUpdateCommand {
         &self,
         release: &self_update::update::Release,
     ) -> color_eyre::eyre::Result<self_update::update::ReleaseAsset> {
+        let home_dir = dirs::home_dir().expect("Failed to get home directory path");
+        let bin_dir = home_dir.join(".local/bin");
+
+        println!("near-cli-rs binary will be installed into the local bin home directory, located at:\n\n{}\n", bin_dir.display());
+
         let mut compatible_triplets = HashMap::new();
         compatible_triplets.insert("aarch64-apple-darwin", "x86_64-apple-darwin");
 
         let triplet = self_update::get_target();
+        println!("info: default host triple is {}", triplet);
 
         let asset = if compatible_triplets.contains_key(triplet) {
             println!(
-                "Сould not find near-cli-rs release for `{}`, trying to download `{}` instead...",
+                "info: could not find release for {}, trying to download {} instead",
                 triplet,
                 compatible_triplets.get(triplet).unwrap()
             );
@@ -98,9 +100,6 @@ impl SelfUpdateCommand {
         } else {
             release.asset_for(triplet).unwrap()
         };
-
-        let home_dir = dirs::home_dir().expect("Failed to get home directory path");
-        let bin_dir = home_dir.join(".local/bin");
 
         let tmp_dir = tempfile::Builder::new()
             .prefix("near-cli")
@@ -117,8 +116,9 @@ impl SelfUpdateCommand {
             color_eyre::Report::msg(format!("Failed to create path to an archive: {:?}", err))
         })?;
 
-        println!("Downloading {} version...", asset.name);
+        println!("info: downloading {}", asset.name);
         self_update::Download::from_url(&asset.download_url)
+            .show_progress(true)
             .set_header(
                 reqwest::header::ACCEPT,
                 "application/octet-stream".parse().unwrap(),
@@ -149,7 +149,7 @@ impl SelfUpdateCommand {
         asset: &self_update::update::ReleaseAsset,
         download_dirs: DownloadDirs,
     ) -> crate::CliResult {
-        println!("Unpacking {} archive...", asset.name);
+        println!("\ninfo: unpacking {} archive", asset.name);
         let tar_gz = flate2::read::GzDecoder::new(
             std::fs::File::open(&download_dirs.archive_path).map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to open archive path: {:?}", err))
@@ -160,14 +160,14 @@ impl SelfUpdateCommand {
             color_eyre::Report::msg(format!("Failed to unpack archive: {:?}", err))
         })?;
 
-        println!("Moving near-cli binary to ~/.local/bin...");
+        println!("info: moving near-cli binary to $HOME/.local/bin");
         std::fs::copy(
             download_dirs.folder_path.join("near-cli"),
             download_dirs.bin_dir.join("near-cli"),
         )
         .map_err(|err| {
             color_eyre::Report::msg(format!(
-                "Failed to copy near-cli binary to ~/.local/bin: {:?}",
+                "Failed to copy near-cli binary to $HOME/.local/bin: {:?}",
                 err
             ))
         })?;
@@ -188,8 +188,13 @@ impl SelfUpdateCommand {
             }
         }
 
-        println!("Exporting PATH variable to ~/.local/bin");
         if export {
+            println!(
+                "To get started you may need to restart your current shell.
+This would reload your PATH environment variable to include
+local's bin directory ($HOME/.local/bin)."
+            );
+
             let home_dir = dirs::home_dir().unwrap();
             let shell = env!("SHELL").split('/').last().unwrap_or("fruit");
 
@@ -227,9 +232,9 @@ impl SelfUpdateCommand {
                     err
                 ))
             })?;
-            println!("PATH was added to `{}`", profile_path.display());
+            println!("info: PATH was added to {}", profile_path.display());
         } else {
-            println!("~/.local/bin is already in PATH variable");
+            println!("info: $HOME/.local/bin is already in PATH variable");
         }
 
         Ok(())
