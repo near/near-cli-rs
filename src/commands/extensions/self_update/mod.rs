@@ -1,5 +1,12 @@
 use std::{collections::HashMap, io::Write};
 
+struct DownloadDirs {
+    tmp_dir: tempfile::TempDir,
+    bin_dir: std::path::PathBuf,
+    archive_path: std::path::PathBuf,
+    folder_path: std::path::PathBuf,
+}
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct SelfUpdateCommand;
@@ -56,89 +63,116 @@ impl SelfUpdateCommand {
 
             if current_version == latest_release_version {
                 println!("You're already up to date!");
+                Ok(())
             } else {
-                let mut compatible_triplets = HashMap::new();
-                compatible_triplets.insert("aarch64-apple-darwin", "x86_64-apple-darwin");
-
-                let triplet = self_update::get_target();
-
-                let asset = if compatible_triplets.contains_key(triplet) {
-                    println!("Сould not find near-cli-rs release for `{}`, trying to download `{}` instead...", triplet, compatible_triplets.get(triplet).unwrap());
-
-                    releases[0]
-                        .asset_for(compatible_triplets.get(triplet).unwrap())
-                        .unwrap()
-                } else {
-                    releases[0].asset_for(triplet).unwrap()
-                };
-
-                let home_dir = dirs::home_dir().expect("Failed to get home directory path");
-                let bin_dir = home_dir.join(".local/bin");
-
-                let tmp_dir = tempfile::Builder::new()
-                    .prefix("near-cli")
-                    .tempdir_in(std::env::current_dir().unwrap())
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to create temporary directory: {:?}",
-                            err
-                        ))
-                    })?;
-
-                let archive_path = std::path::Path::new(&tmp_dir.path()).join(&asset.name);
-                let folder_path = std::path::Path::new(&tmp_dir.path())
-                    .join(asset.name.split(".tar").collect::<Vec<_>>()[0]);
-
-                let tmp_archive = std::fs::File::create(&archive_path).map_err(|err| {
-                    color_eyre::Report::msg(format!(
-                        "Failed to create path to an archive: {:?}",
-                        err
-                    ))
-                })?;
-
-                println!("Downloading {} version...", asset.name);
-                self_update::Download::from_url(&asset.download_url)
-                    .set_header(
-                        reqwest::header::ACCEPT,
-                        "application/octet-stream".parse().unwrap(),
-                    )
-                    .download_to(tmp_archive)
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to download latest release from GitHub: {:?}",
-                            err
-                        ))
-                    })?;
-
-                println!("Unpacking {} archive...", asset.name);
-                let tar_gz = flate2::read::GzDecoder::new(
-                    std::fs::File::open(&archive_path).map_err(|err| {
-                        color_eyre::Report::msg(format!("Failed to open archive path: {:?}", err))
-                    })?,
-                );
-                let mut tar = tar::Archive::new(tar_gz);
-                tar.unpack(tmp_dir.path()).map_err(|err| {
-                    color_eyre::Report::msg(format!("Failed to unpack archive: {:?}", err))
-                })?;
-
-                println!("Moving near-cli binary to ~/.local/bin...");
-                std::fs::copy(folder_path.join("near-cli"), bin_dir.join("near-cli")).map_err(
-                    |err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to copy near-cli binary to ~/.local/bin: {:?}",
-                            err
-                        ))
-                    },
-                )?;
-
+                self_clone.download_release(&releases[0])?;
                 self_clone.export_path("~/.local/bin")?;
 
                 println!("Done!");
-            }
 
-            Ok(())
+                Ok(())
+            }
         })
         .await?
+    }
+
+    fn download_release(
+        &self,
+        release: &self_update::update::Release,
+    ) -> color_eyre::eyre::Result<self_update::update::ReleaseAsset> {
+        let mut compatible_triplets = HashMap::new();
+        compatible_triplets.insert("aarch64-apple-darwin", "x86_64-apple-darwin");
+
+        let triplet = self_update::get_target();
+
+        let asset = if compatible_triplets.contains_key(triplet) {
+            println!(
+                "Сould not find near-cli-rs release for `{}`, trying to download `{}` instead...",
+                triplet,
+                compatible_triplets.get(triplet).unwrap()
+            );
+
+            release
+                .asset_for(compatible_triplets.get(triplet).unwrap())
+                .unwrap()
+        } else {
+            release.asset_for(triplet).unwrap()
+        };
+
+        let home_dir = dirs::home_dir().expect("Failed to get home directory path");
+        let bin_dir = home_dir.join(".local/bin");
+
+        let tmp_dir = tempfile::Builder::new()
+            .prefix("near-cli")
+            .tempdir_in(std::env::current_dir().unwrap())
+            .map_err(|err| {
+                color_eyre::Report::msg(format!("Failed to create temporary directory: {:?}", err))
+            })?;
+
+        let archive_path = std::path::Path::new(&tmp_dir.path()).join(&asset.name);
+        let folder_path = std::path::Path::new(&tmp_dir.path())
+            .join(asset.name.split(".tar").collect::<Vec<_>>()[0]);
+
+        let tmp_archive = std::fs::File::create(&archive_path).map_err(|err| {
+            color_eyre::Report::msg(format!("Failed to create path to an archive: {:?}", err))
+        })?;
+
+        println!("Downloading {} version...", asset.name);
+        self_update::Download::from_url(&asset.download_url)
+            .set_header(
+                reqwest::header::ACCEPT,
+                "application/octet-stream".parse().unwrap(),
+            )
+            .download_to(&tmp_archive)
+            .map_err(|err| {
+                color_eyre::Report::msg(format!(
+                    "Failed to download latest release from GitHub: {:?}",
+                    err
+                ))
+            })?;
+
+        self.unpack_archive(
+            &asset,
+            DownloadDirs {
+                tmp_dir,
+                bin_dir,
+                archive_path,
+                folder_path,
+            },
+        )?;
+
+        Ok(asset)
+    }
+
+    fn unpack_archive(
+        &self,
+        asset: &self_update::update::ReleaseAsset,
+        download_dirs: DownloadDirs,
+    ) -> crate::CliResult {
+        println!("Unpacking {} archive...", asset.name);
+        let tar_gz = flate2::read::GzDecoder::new(
+            std::fs::File::open(&download_dirs.archive_path).map_err(|err| {
+                color_eyre::Report::msg(format!("Failed to open archive path: {:?}", err))
+            })?,
+        );
+        let mut tar = tar::Archive::new(tar_gz);
+        tar.unpack(download_dirs.tmp_dir.path()).map_err(|err| {
+            color_eyre::Report::msg(format!("Failed to unpack archive: {:?}", err))
+        })?;
+
+        println!("Moving near-cli binary to ~/.local/bin...");
+        std::fs::copy(
+            download_dirs.folder_path.join("near-cli"),
+            download_dirs.bin_dir.join("near-cli"),
+        )
+        .map_err(|err| {
+            color_eyre::Report::msg(format!(
+                "Failed to copy near-cli binary to ~/.local/bin: {:?}",
+                err
+            ))
+        })?;
+
+        Ok(())
     }
 
     fn export_path(&self, path: &str) -> crate::CliResult {
