@@ -1,8 +1,4 @@
-use reqwest::header::USER_AGENT;
-use tokio::time::{sleep, Duration};
-
-use std::fs;
-use std::path::Path;
+use std::{collections::HashMap, io::Write};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -10,167 +6,196 @@ pub struct SelfUpdateCommand;
 
 impl SelfUpdateCommand {
     pub async fn process(&self) -> crate::CliResult {
-        let github_releases_api = "https://api.github.com/repos/near/near-cli-rs/releases/latest";
+        let self_clone = self.clone();
 
-        let current_version = clap::crate_version!()
-            .parse::<crate::types::version::Version>()
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to parse current version of near-cli-rs as Version: {:?}",
-                    err
-                ))
-            })?;
-        let latest_release_version = self.get_new_version(github_releases_api).await?;
-
-        println!(
-            "Updating\n{} -> {}",
-            current_version.to_string(),
-            latest_release_version.to_string()
-        );
-        self.download_release(current_version).await?;
-
-        // if current_version == latest_release_version {
-        //     println!("You are already up to date");
-        // } else if current_version < latest_release_version {
-        //     println!(
-        //         "Updating\n{} -> {}",
-        //         current_version.to_string(),
-        //         latest_release_version.to_string()
-        //     );
-        //     self.download_release(current_version).await?;
-        // }
-
-        Ok(())
-    }
-
-    async fn get_new_version(
-        &self,
-        api: &str,
-    ) -> color_eyre::eyre::Result<crate::types::version::Version> {
-        let client = reqwest::Client::new();
-
-        for _ in 0..10 {
-            let response = client
-                .get(api)
-                .header(USER_AGENT, "Just Random")
-                .send()
-                .await
+        tokio::task::spawn_blocking(move || {
+            let releases = self_update::backends::github::ReleaseList::configure()
+                .repo_owner("near")
+                .repo_name("near-cli-rs")
+                .build()
                 .map_err(|err| {
                     color_eyre::Report::msg(format!(
-                        "Failed to send request to get latest git release version: {:?}",
+                        "Failed to build release list from github: {:?}",
+                        err
+                    ))
+                })?
+                .fetch()
+                .map_err(|err| {
+                    color_eyre::Report::msg(format!(
+                        "Failed to fetch release list from github: {:?}",
                         err
                     ))
                 })?;
 
-            let response_json = json::parse(
-                response
-                    .text()
-                    .await
+            let current_version = clap::crate_version!()
+                .parse::<crate::types::version::Version>()
+                .map_err(|err| {
+                    color_eyre::Report::msg(format!(
+                        "Failed to parse current version of near-cli-rs as Version: {:?}",
+                        err
+                    ))
+                })?;
+            let latest_release_version = releases[0]
+                .version
+                .parse::<crate::types::version::Version>()
+                .map_err(|err| {
+                    color_eyre::Report::msg(format!(
+                        "Failed to parse current version of near-cli-rs as Version: {:?}",
+                        err
+                    ))
+                })?;
+
+            println!(
+                "Your current near-cli-rs version: {}",
+                current_version.to_string()
+            );
+            println!(
+                "Latest near-cli-rs release version: {}\n",
+                latest_release_version.to_string()
+            );
+
+            if current_version == latest_release_version {
+                println!("You're already up to date!");
+            } else {
+                let mut compatible_triplets = HashMap::new();
+                compatible_triplets.insert("aarch64-apple-darwin", "x86_64-apple-darwin");
+
+                let triplet = self_update::get_target();
+
+                let asset = if compatible_triplets.contains_key(triplet) {
+                    println!("Сould not find near-cli-rs release for `{}`, trying to download `{}` instead...", triplet, compatible_triplets.get(triplet).unwrap());
+
+                    releases[0]
+                        .asset_for(compatible_triplets.get(triplet).unwrap())
+                        .unwrap()
+                } else {
+                    releases[0].asset_for(triplet).unwrap()
+                };
+
+                let home_dir = dirs::home_dir().expect("Failed to get home directory path");
+                let bin_dir = home_dir.join(".local/bin");
+
+                let tmp_dir = tempfile::Builder::new()
+                    .prefix("near-cli")
+                    .tempdir_in(std::env::current_dir().unwrap())
                     .map_err(|err| {
                         color_eyre::Report::msg(format!(
-                            "Failed to parse request response as a text: {:?}",
+                            "Failed to create temporary directory: {:?}",
                             err
                         ))
-                    })?
-                    .as_str(),
-            )
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to parse request response as a json: {:?}",
-                    err
-                ))
-            })?;
+                    })?;
 
-            match response_json["name"].as_str() {
-                Some(version) => {
-                    return Ok(version
-                        .trim()
-                        .parse::<crate::types::version::Version>()
-                        .map_err(|err| {
-                            color_eyre::Report::msg(format!(
-                                "Failed to parse current version of near-cli-rs as Version: {:?}",
-                                err
-                            ))
-                        })?);
-                }
-                None => {
-                    sleep(Duration::from_secs(5)).await;
-                }
+                let archive_path = std::path::Path::new(&tmp_dir.path()).join(&asset.name);
+                let folder_path = std::path::Path::new(&tmp_dir.path())
+                    .join(&asset.name.split(".tar").collect::<Vec<_>>()[0]);
+
+                let tmp_archive = std::fs::File::create(&archive_path).map_err(|err| {
+                    color_eyre::Report::msg(format!(
+                        "Failed to create path to an archive: {:?}",
+                        err
+                    ))
+                })?;
+
+                println!("Downloading {} version...", asset.name);
+                self_update::Download::from_url(&asset.download_url)
+                    .set_header(
+                        reqwest::header::ACCEPT,
+                        "application/octet-stream".parse().unwrap(),
+                    )
+                    .download_to(&tmp_archive)
+                    .map_err(|err| {
+                        color_eyre::Report::msg(format!(
+                            "Failed to download latest release from GitHub: {:?}",
+                            err
+                        ))
+                    })?;
+
+                println!("Unpacking {} archive...", asset.name);
+                let tar_gz = flate2::read::GzDecoder::new(
+                    std::fs::File::open(&archive_path).map_err(|err| {
+                        color_eyre::Report::msg(format!("Failed to open archive path: {:?}", err))
+                    })?,
+                );
+                let mut tar = tar::Archive::new(tar_gz);
+                tar.unpack(&tmp_dir.path()).map_err(|err| {
+                    color_eyre::Report::msg(format!("Failed to unpack archive: {:?}", err))
+                })?;
+
+                println!("Moving near-cli binary to ~/.local/bin...");
+                std::fs::copy(&folder_path.join("near-cli"), bin_dir.join("near-cli")).map_err(
+                    |err| {
+                        color_eyre::Report::msg(format!(
+                            "Failed to copy near-cli binary to ~/.local/bin: {:?}",
+                            err
+                        ))
+                    },
+                )?;
+
+                self_clone.export_path("~/.local/bin")?;
+
+                println!("Done!");
+            }
+
+            Ok(())
+        })
+        .await?
+    }
+
+    fn export_path(&self, path: &str) -> crate::CliResult {
+        let mut export = true;
+
+        for path in env!("PATH").split(":") {
+            if std::path::Path::new(path).eq(&dirs::home_dir()
+                .expect("Failed to get path to home directory")
+                .join(".local/bin"))
+            {
+                export = false;
+                break;
             }
         }
 
-        Err(color_eyre::Report::msg(
-            "Failed to get last release version from github".to_string(),
-        ))
-    }
+        println!("Exporting PATH variable to ~/.local/bin");
+        if export {
+            let home_dir = dirs::home_dir().unwrap();
+            let shell = env!("SHELL").split("/").last().unwrap_or("fruit");
 
-    async fn download_release(&self, version: crate::types::version::Version) -> crate::CliResult {
-        let home_dir = dirs::home_dir().expect("Failed to get home directory path");
-        let bin_dir = home_dir.join(".local/bin");
+            let profile_file = match shell.clone() {
+                "bash" => ".bash_profile",
+                "zsh" => ".zshrc",
+                "fish" => ".config/fish/config.fish",
+                _ => ".bash_profile",
+            };
+            let profile_path = home_dir.join(profile_file);
 
-        if !bin_dir.is_dir() {
-            std::fs::create_dir(bin_dir.clone()).map_err(|err| {
+            let mut file = std::fs::OpenOptions::new()
+                .append(true)
+                .create(true)
+                .open(&profile_path)
+                .map_err(|err| {
+                    color_eyre::Report::msg(format!(
+                        "Failed to open file `{}`: {:?}",
+                        profile_path.display(),
+                        err
+                    ))
+                })?;
+
+            let line = match shell {
+                "bash" => format!("export PATH={}:{}\n", path, "$PATH"),
+                "zsh" => format!("export PATH={}:{}\n", path, "$PATH"),
+                "fish" => format!("set -gx PATH {} $PATH\n", path),
+                _ => format!("export PATH={}:{}\n", path, "$PATH"),
+            };
+
+            file.write(line.as_bytes()).map_err(|err| {
                 color_eyre::Report::msg(format!(
-                    "Failed to create ~/.local/bin directory: {:?}",
+                    "Failed to write to file `{}`: {:?}",
+                    profile_path.display(),
                     err
                 ))
             })?;
-            println!("Created ~/.local/bin");
-        }
-
-        // let filename = format!(
-        //     "near-cli-{}-{}.tar.gz",
-        //     version.to_string(),
-        //     current_platform::CURRENT_PLATFORM
-        // );
-
-        let hardcoded_filename = format!(
-            "near-cli-{}-x86_64-apple-darwin.tar.gz",
-            version.to_string()
-        );
-        let hardcoded_unpacked_filename =
-            format!("near-cli-{}-x86_64-apple-darwin", version.to_string());
-
-        let response = reqwest::get(format!(
-            "https://github.com/near/near-cli-rs/releases/download/{}/{}",
-            version.to_string(),
-            hardcoded_filename
-        ))
-        .await
-        .map_err(|err| {
-            color_eyre::Report::msg(format!(
-                "Failed to send request to download latest near-cli-rs release: {:?}",
-                err
-            ))
-        })?;
-
-        if response.status().is_success() {
-            let data = response.bytes().await?;
-
-            let temp_dir = tempfile::TempDir::new().map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to create temporary directory: {:?}", err))
-            })?;
-            let file_path = Path::new(&temp_dir.path()).join(hardcoded_filename);
-
-            fs::write(&file_path, data)?;
-
-            let tar_gz = flate2::read::GzDecoder::new(fs::File::open(&file_path)?);
-            let mut tar = tar::Archive::new(tar_gz);
-            tar.unpack(&temp_dir.path())?;
-
-            let unpacked_file_path = Path::new(&temp_dir.path()).join(hardcoded_unpacked_filename);
-
-            fs::copy(
-                unpacked_file_path.join("near-cli"),
-                bin_dir.join("near-cli"),
-            )
-            .unwrap();
-
-            println!("{}", bin_dir.join("near-cli").display());
+            println!("PATH was added to `{}`", profile_path.display());
         } else {
-            return Err(color_eyre::Report::msg(
-                "Failed to download new version of near-cli-rs".to_string(),
-            ));
+            println!("~/.local/bin is already in PATH variable");
         }
 
         Ok(())

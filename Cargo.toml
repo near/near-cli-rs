@@ -49,6 +49,7 @@ json = "0.12.4"
 current_platform = "0.2.0"
 flate2 = "1.0.25"
 tar = "0.4.38"
+self_update = "0.34.0"
 
 color-eyre = "0.6"
 
