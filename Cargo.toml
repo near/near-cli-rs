@@ -43,8 +43,7 @@ color-eyre = "0.6"
 near-ledger = { version = "0.2.0", optional = true }
 
 near-crypto = "0.15"
-near-primitives = "0.15"
-near-primitives_01 = { path = "/Users/awit/repos/nearcore/core/primitives", package="near-primitives" }  # added this version for SignedDelegateAction
+near-primitives = { package="near-primitives", version = "0.15.0" }
 near-jsonrpc-client = "0.4.0"
 near-jsonrpc-primitives = "0.15"
 
@@ -55,8 +54,12 @@ interactive_clap_derive = { git = "https://github.com/FroVolod/interactive-clap"
 security-framework = "2.7.0"
 
 reqwest = "0.11.14"
-#either = "1.8.1"
 
 [features]
 default = ["ledger"]
 ledger = ["near-ledger"]
+
+[patch.crates-io]
+near-primitives = { path = "/Users/awit/repos/nearcore/core/primitives", package="near-primitives" }  # added this version for SignedDelegateAction
+near-crypto = { path = "/Users/awit/repos/nearcore/core/crypto", package="near-crypto" }
+near-chain-configs = { path = "/Users/awit/repos/nearcore/core/chain-configs", package="near-chain-configs" }

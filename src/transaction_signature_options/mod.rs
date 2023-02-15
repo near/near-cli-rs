@@ -1,5 +1,6 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use near_primitives::borsh::BorshSerialize;
+use near_primitives::delegate_action::{DelegateAction, SignedDelegateAction};
 use near_primitives::types::{BlockId, BlockReference};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
@@ -217,7 +218,7 @@ impl Submit {
                 let actions = signed_transaction.transaction.actions.clone();
                 let nonce = signed_transaction.transaction.nonce.clone();
                 let public_key = signed_transaction.transaction.public_key.clone();
-                let delegate_action = near_primitives_01::transaction::DelegateAction{
+                let delegate_action = DelegateAction{
                     sender_id,
                     receiver_id,
                     actions,
@@ -226,7 +227,7 @@ impl Submit {
                     public_key,
                 };
                 let signature = signed_transaction.signature.clone();
-                let signed_delegate_action = near_primitives_01::transaction::SignedDelegateAction{
+                let signed_delegate_action = SignedDelegateAction{
                     delegate_action,
                     signature,
                 };
