@@ -1,4 +1,5 @@
 use inquire::{CustomType, Select};
+use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
@@ -55,19 +56,6 @@ pub enum SignWith {
 //         crate::common::print_unsigned_transaction(new_context.transaction.clone().into());
 //         println!();
 
-impl SignWith {
-    pub fn get_signer_public_key(&self) -> near_crypto::PublicKey {
-        match self {
-            Self::SignWithPlaintextPrivateKey(sign_private_key) => {
-                sign_private_key.get_signer_public_key()
-            }
-            Self::SignWithKeychain(sign_keychain) => {
-                sign_keychain.get_signer_public_key()
-            }
-            _ => todo!(),
-        }
-    }
-}
 pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
     Ok(CustomType::new("Enter sender (signer) public key").prompt()?)
 }
@@ -91,15 +79,7 @@ pub async fn sign_with(
         //         )
         //         .await
         // }
-        SignWith::SignWithKeychain(sign_keychain) => {
-            sign_keychain
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config.clone()),
-                    config.credentials_home_dir,
-                )
-                .await
-        }
+        SignWith::SignWithKeychain(_) => Ok(None),
         // #[cfg(feature = "ledger")]
         // SignWith::SignWithLedger(sign_ledger) => {
         //     sign_ledger
@@ -109,29 +89,23 @@ pub async fn sign_with(
         //         )
         //         .await
         // }
-        SignWith::SignWithPlaintextPrivateKey(sign_private_key) => {
-            sign_private_key
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config),
-                )
-                .await
-        } // SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
-          //     sign_access_key_file
-          //         .process(
-          //             prepopulated_unsigned_transaction,
-          //             network_config.get_network_config(config),
-          //         )
-          //         .await
-          // }
-          // SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
-          //     sign_seed_phrase
-          //         .process(
-          //             prepopulated_unsigned_transaction,
-          //             network_config.get_network_config(config),
-          //         )
-          //         .await
-          // }
+        SignWith::SignWithPlaintextPrivateKey(_) => Ok(None),
+        // SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
+        //     sign_access_key_file
+        //         .process(
+        //             prepopulated_unsigned_transaction,
+        //             network_config.get_network_config(config),
+        //         )
+        //         .await
+        // }
+        // SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
+        //     sign_seed_phrase
+        //         .process(
+        //             prepopulated_unsigned_transaction,
+        //             network_config.get_network_config(config),
+        //         )
+        //         .await
+        // }
     }
 }
 //-----------------------------------------------------------------------------------
@@ -219,6 +193,13 @@ impl interactive_clap::FromCli for Submit {
                 Ok(Some(Self::Send))
             }
             Some(CliSubmit::Display) => {
+                let base64_transaction = near_primitives::serialize::to_base64(
+                    context
+                        .signed_transaction
+                        .try_to_vec()
+                        .expect("Transaction is not expected to fail on serialization"),
+                );
+                println!("\nSerialize_to_base64:\n{}", &base64_transaction);
                 Ok(Some(Self::Display))
                 // Ok(None)
             }
@@ -293,5 +274,5 @@ pub struct AccountKeyPair {
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
     pub signed_transaction: near_primitives::transaction::SignedTransaction,
-    pub base64_transaction: String,
+    // pub base64_transaction: String,
 }

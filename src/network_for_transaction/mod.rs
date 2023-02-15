@@ -13,7 +13,6 @@ pub struct NetworkForTransactionArgs {
 #[derive(Clone)]
 pub struct NetworkForTransactionArgsContext {
     config: crate::config::Config,
-    network_name: String,
     network_config: crate::config::NetworkConfig,
     prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     on_before_signing_callback: crate::commands::OnBeforeSigningCallback,
@@ -40,7 +39,6 @@ impl NetworkForTransactionArgsContext {
             .clone();
         Self {
             config: previous_context.config,
-            network_name: scope.network_name.clone(),
             network_config,
             prepopulated_unsigned_transaction,
             on_before_signing_callback: previous_context.on_before_signing_callback,
@@ -148,8 +146,5 @@ impl NetworkForTransactionArgs {
 
     pub fn get_sign_option(&self) -> crate::transaction_signature_options::SignWith {
         self.transaction_signature_options.clone()
-    }
-    pub fn get_signer_public_key(&self) -> near_crypto::PublicKey {
-        self.transaction_signature_options.get_signer_public_key()
     }
 }
