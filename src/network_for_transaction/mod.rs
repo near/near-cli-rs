@@ -3,11 +3,9 @@
 #[interactive_clap(output_context = crate::commands::TransactionContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct NetworkForTransactionArgs {
-    ///What is the name of the network
+    /// What is the name of the network
     #[interactive_clap(skip_default_input_arg)]
     network_name: String,
-    #[interactive_clap(skip)]
-    prepopulated_unsigned_transaction: crate::types::transaction::Transaction,
     #[interactive_clap(subcommand)]
     transaction_signature_options: crate::transaction_signature_options::SignWith,
 }
@@ -16,9 +14,10 @@ pub struct NetworkForTransactionArgs {
 pub struct NetworkForTransactionArgsContext {
     config: crate::config::Config,
     network_name: String,
-    prepopulated_unsigned_transaction: crate::types::transaction::Transaction,
-    on_before_signing_callback: std::sync::Arc<dyn Fn(&mut near_primitives::transaction::Transaction, &crate::config::NetworkConfig) -> crate::CliResult>,
-    on_after_signing_callback: std::sync::Arc<dyn Fn(&near_primitives::transaction::SignedTransaction) -> crate::CliResult>,
+    network_config: crate::config::NetworkConfig,
+    prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+    on_before_signing_callback: crate::commands::OnBeforeSigningCallback,
+    on_after_signing_callback: crate::commands::OnAfterSigningCallback,
 }
 
 impl NetworkForTransactionArgsContext {
@@ -26,10 +25,24 @@ impl NetworkForTransactionArgsContext {
         previous_context: crate::commands::ActionContext,
         scope: &<NetworkForTransactionArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> Self {
+        let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
+            signer_id: previous_context.signer_account_id.clone(),
+            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
+            nonce: 0,
+            receiver_id: previous_context.receiver_account_id.clone(),
+            block_hash: Default::default(),
+            actions: previous_context.actions.clone(),
+        };
+        let networks = previous_context.config.networks.clone();
+        let network_config = networks
+            .get(&scope.network_name)
+            .expect("Failed to get network config!")
+            .clone();
         Self {
             config: previous_context.config,
             network_name: scope.network_name.clone(),
-            prepopulated_unsigned_transaction: scope.prepopulated_unsigned_transaction.clone(),
+            network_config,
+            prepopulated_unsigned_transaction,
             on_before_signing_callback: previous_context.on_before_signing_callback,
             on_after_signing_callback: previous_context.on_after_signing_callback,
         }
@@ -38,15 +51,10 @@ impl NetworkForTransactionArgsContext {
 
 impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionContext {
     fn from(previous_context: NetworkForTransactionArgsContext) -> Self {
-        let networks = previous_context.config.networks.clone();
-        let network_config = networks
-            .get(&previous_context.network_name)
-            .expect("Failed to get network config!")
-            .clone();
         Self {
             config: previous_context.config,
-            network_config,
-            transaction: previous_context.prepopulated_unsigned_transaction.into(),
+            network_config: previous_context.network_config,
+            transaction: previous_context.prepopulated_unsigned_transaction,
             on_before_signing_callback: previous_context.on_before_signing_callback,
             on_after_signing_callback: previous_context.on_after_signing_callback,
         }
@@ -73,26 +81,26 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
             Some(network_name) => network_name,
             None => NetworkForTransactionArgs::input_network_name(&context)?,
         };
-            
-        let prepopulated_unsigned_transaction =
-            crate::types::transaction::Transaction(near_primitives::transaction::Transaction {
-                signer_id: context.signer_account_id.clone(),
-                public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-                nonce: 0,
-                receiver_id: context.receiver_account_id.clone(),
-                block_hash: Default::default(),
-                actions: context.actions.clone(),
-            });
 
         let new_context_scope = InteractiveClapContextScopeForNetworkForTransactionArgs {
             network_name: network_name.clone(),
-            prepopulated_unsigned_transaction: prepopulated_unsigned_transaction.clone(),
         };
-        let new_context = NetworkForTransactionArgsContext::from_previous_context(
-            context,
+        let mut new_context = NetworkForTransactionArgsContext::from_previous_context(
+            context.clone(),
             &new_context_scope,
         );
-        // let new_context = crate::commands::TransactionContext::from(network_context);
+
+        (context.on_after_getting_network_callback)(
+            &mut new_context.prepopulated_unsigned_transaction,
+            &new_context.network_config,
+        )?;
+        if new_context
+            .prepopulated_unsigned_transaction
+            .actions
+            .is_empty()
+        {
+            return Ok(None); // XXX ?????????????????????????
+        }
 
         println!("\nUnsigned transaction:\n"); // XXX remove!
         crate::common::print_unsigned_transaction(
@@ -115,7 +123,6 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
 
         Ok(Some(Self {
             network_name,
-            prepopulated_unsigned_transaction,
             transaction_signature_options,
         }))
     }
