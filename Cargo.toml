@@ -60,6 +60,8 @@ default = ["ledger"]
 ledger = ["near-ledger"]
 
 [patch.crates-io]
-near-primitives = { path = "/Users/awit/repos/nearcore/core/primitives", package="near-primitives" }  # added this version for SignedDelegateAction
+# NOTE: to get this to work locally you also need to update the "version" in each of the "Cargo.toml" files in the directories in lcoal nearcore
+# added these patches for SignedDelegateAction, DelegateAction
+near-primitives = { path = "/Users/awit/repos/nearcore/core/primitives", package="near-primitives" }
 near-crypto = { path = "/Users/awit/repos/nearcore/core/crypto", package="near-crypto" }
 near-chain-configs = { path = "/Users/awit/repos/nearcore/core/chain-configs", package="near-chain-configs" }
