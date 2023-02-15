@@ -1,6 +1,7 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use near_primitives::borsh::BorshSerialize;
-use near_primitives::delegate_action::{DelegateAction, SignedDelegateAction};
+use near_primitives::delegate_action::{DelegateAction, NonDelegateAction, SignedDelegateAction};
+use near_primitives::transaction::Action;
 use near_primitives::types::{BlockId, BlockReference};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
@@ -215,7 +216,11 @@ impl Submit {
                 let max_block_height = block_header.height + 100;  // TODO is 100 blocks appropriate?
                 let sender_id = signed_transaction.transaction.signer_id.clone();
                 let receiver_id = signed_transaction.transaction.receiver_id.clone();
-                let actions = signed_transaction.transaction.actions.clone();
+                // convert Actions to NonDelegateActions
+                let actions: Vec<NonDelegateAction> = signed_transaction.transaction.actions
+                    .iter()
+                    .map(|a| NonDelegateAction(a.clone()))
+                    .collect();
                 let nonce = signed_transaction.transaction.nonce.clone();
                 let public_key = signed_transaction.transaction.public_key.clone();
                 let delegate_action = DelegateAction{
