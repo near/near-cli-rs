@@ -3,7 +3,7 @@ use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-// pub mod sign_with_access_key_file;
+pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
@@ -39,11 +39,11 @@ pub enum SignWith {
     ))]
     /// Sign the transaction with a plaintext private key
     SignWithPlaintextPrivateKey(self::sign_with_private_key::SignPrivateKey),
-    // #[strum_discriminants(strum(
-    //     message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
-    // ))]
-    // /// Sign the transaction using the account access key file (access-key-file.json)
-    // SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
+    #[strum_discriminants(strum(
+        message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
+    ))]
+    /// Sign the transaction using the account access key file (access-key-file.json)
+    SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
     // #[strum_discriminants(strum(
     //     message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
     // ))]
@@ -76,14 +76,7 @@ pub async fn sign_with(
         #[cfg(feature = "ledger")]
         SignWith::SignWithLedger(_) => Ok(None),
         SignWith::SignWithPlaintextPrivateKey(_) => Ok(None),
-        // SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
-        //     sign_access_key_file
-        //         .process(
-        //             prepopulated_unsigned_transaction,
-        //             network_config.get_network_config(config),
-        //         )
-        //         .await
-        // }
+        SignWith::SignWithAccessKeyFile(sign_access_key_file) => Ok(None),
         // SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
         //     sign_seed_phrase
         //         .process(
