@@ -122,9 +122,9 @@ impl interactive_clap::FromCli for SignAccessKeyFile {
         let new_context_scope = InteractiveClapContextScopeForSignAccessKeyFile {
             file_path: file_path.clone(),
         };
-        let keychain_context =
+        let access_key_file_context =
             SignAccessKeyFileContext::from_previous_context(context.clone(), &new_context_scope)?;
-        let new_context = super::SubmitContext::from(keychain_context.clone());
+        let new_context = super::SubmitContext::from(access_key_file_context.clone());
 
         let optional_submit = super::Submit::from_cli(
             optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
