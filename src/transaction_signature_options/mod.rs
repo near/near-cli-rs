@@ -1,7 +1,7 @@
-use inquire::{CustomType, Select};
+use inquire::{CustomType};
 use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
@@ -10,7 +10,7 @@ pub mod sign_with_ledger;
 #[cfg(target_os = "macos")]
 pub mod sign_with_macos_keychain;
 pub mod sign_with_private_key;
-// pub mod sign_with_seed_phrase;
+pub mod sign_with_seed_phrase;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::commands::TransactionContext)]
@@ -44,11 +44,11 @@ pub enum SignWith {
     ))]
     /// Sign the transaction using the account access key file (access-key-file.json)
     SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
-    // #[strum_discriminants(strum(
-    //     message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
-    // ))]
-    // /// Sign the transaction using the seed phrase
-    // SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
+    #[strum_discriminants(strum(
+        message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
+    ))]
+    /// Sign the transaction using the seed phrase
+    SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
 }
 
 // from_cli ...
@@ -66,25 +66,18 @@ pub fn input_signer_private_key() -> color_eyre::eyre::Result<crate::types::secr
 
 pub async fn sign_with(
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
-    prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    config: crate::config::Config,
+    _prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+    _config: crate::config::Config,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
     match network_config.get_sign_option() {
         #[cfg(target_os = "macos")]
-        SignWith::SignWithMacosKeychain(sign_macos_keychain) => Ok(None),
+        SignWith::SignWithMacosKeychain(_) => Ok(None),
         SignWith::SignWithKeychain(_) => Ok(None),
         #[cfg(feature = "ledger")]
         SignWith::SignWithLedger(_) => Ok(None),
         SignWith::SignWithPlaintextPrivateKey(_) => Ok(None),
-        SignWith::SignWithAccessKeyFile(sign_access_key_file) => Ok(None),
-        // SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
-        //     sign_seed_phrase
-        //         .process(
-        //             prepopulated_unsigned_transaction,
-        //             network_config.get_network_config(config),
-        //         )
-        //         .await
-        // }
+        SignWith::SignWithAccessKeyFile(_) => Ok(None),
+        SignWith::SignWithSeedPhrase(_) => Ok(None),
     }
 }
 //-----------------------------------------------------------------------------------
@@ -129,10 +122,6 @@ pub enum Submit {
     Display,
 }
 
-// impl interactive_clap::ToCli for Submit {
-//     type CliVariant = Submit;
-// }
-
 impl interactive_clap::FromCli for Submit {
     type FromCliContext = SubmitContext;
     type FromCliError = color_eyre::eyre::Error;
@@ -165,10 +154,7 @@ impl interactive_clap::FromCli for Submit {
                         },
                     };
                 };
-
                 crate::common::print_transaction_status(transaction_info, context.network_config)?;
-                // Ok(Some(transaction_info))
-
                 Ok(Some(Self::Send))
             }
             Some(CliSubmit::Display) => {
@@ -180,7 +166,6 @@ impl interactive_clap::FromCli for Submit {
                 );
                 println!("\nSerialize_to_base64:\n{}", &base64_transaction);
                 Ok(Some(Self::Display))
-                // Ok(None)
             }
             None => Self::choose_variant(context.clone()),
         }
@@ -196,53 +181,6 @@ impl interactive_clap::FromCli for Submit {
 //     }
 // }
 
-impl Submit {
-    // pub fn choose_submit() -> Self {
-    //     let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
-    //     let select_submit = Select::new("How would you like to proceed", variants)
-    //         .prompt()
-    //         .unwrap_or(SubmitDiscriminants::Display);
-    //     match select_submit {
-    //         SubmitDiscriminants::Send => Submit::Send,
-    //         SubmitDiscriminants::Display => Submit::Display,
-    //     }
-    // }
-
-    pub async fn process(
-        &self,
-        network_config: crate::config::NetworkConfig,
-        signed_transaction: near_primitives::transaction::SignedTransaction,
-        serialize_to_base64: String,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        match self {
-            Submit::Send => {
-                println!("Transaction sent ...");
-                let transaction_info = loop {
-                    let transaction_info_result = network_config.json_rpc_client()
-                        .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction: signed_transaction.clone()})
-                        .await;
-                    match transaction_info_result {
-                        Ok(response) => {
-                            break response;
-                        }
-                        Err(err) => match crate::common::rpc_transaction_error(err) {
-                            Ok(_) => {
-                                tokio::time::sleep(std::time::Duration::from_millis(100)).await
-                            }
-                            Err(report) => return color_eyre::eyre::Result::Err(report),
-                        },
-                    };
-                };
-                Ok(Some(transaction_info))
-            }
-            Submit::Display => {
-                println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
-                Ok(None)
-            }
-        }
-    }
-}
-
 #[derive(Debug, Deserialize)]
 pub struct AccountKeyPair {
     pub public_key: near_crypto::PublicKey,
@@ -253,5 +191,4 @@ pub struct AccountKeyPair {
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
     pub signed_transaction: near_primitives::transaction::SignedTransaction,
-    // pub base64_transaction: String,
 }
