@@ -17,6 +17,8 @@ pub struct SignSeedPhrase {
 pub struct SignSeedPhraseContext {
     network_config: crate::config::NetworkConfig,
     signed_transaction: near_primitives::transaction::SignedTransaction,
+    on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }
 
 impl SignSeedPhraseContext {
@@ -94,6 +96,8 @@ impl SignSeedPhraseContext {
         Ok(Self {
             network_config: previous_context.network_config,
             signed_transaction,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
         })
     }
 }
@@ -103,6 +107,7 @@ impl From<SignSeedPhraseContext> for super::SubmitContext {
         Self {
             network_config: item.network_config,
             signed_transaction: item.signed_transaction,
+            on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }
     }
 }

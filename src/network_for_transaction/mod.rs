@@ -17,6 +17,8 @@ pub struct NetworkForTransactionArgsContext {
     prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     on_before_signing_callback: crate::commands::OnBeforeSigningCallback,
     on_after_signing_callback: crate::commands::OnAfterSigningCallback,
+    on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }
 
 impl NetworkForTransactionArgsContext {
@@ -43,6 +45,8 @@ impl NetworkForTransactionArgsContext {
             prepopulated_unsigned_transaction,
             on_before_signing_callback: previous_context.on_before_signing_callback,
             on_after_signing_callback: previous_context.on_after_signing_callback,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
         }
     }
 }
@@ -55,6 +59,8 @@ impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionCont
             transaction: previous_context.prepopulated_unsigned_transaction,
             on_before_signing_callback: previous_context.on_before_signing_callback,
             on_after_signing_callback: previous_context.on_after_signing_callback,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
         }
     }
 }

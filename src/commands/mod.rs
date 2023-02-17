@@ -72,6 +72,8 @@ pub struct ActionContext {
     pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,
     pub on_after_signing_callback: OnAfterSigningCallback,
+    pub on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }
 
 #[derive(Clone)]
@@ -81,4 +83,6 @@ pub struct TransactionContext {
     pub transaction: near_primitives::transaction::Transaction,
     pub on_before_signing_callback: OnBeforeSigningCallback,
     pub on_after_signing_callback: OnAfterSigningCallback,
+    pub on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }

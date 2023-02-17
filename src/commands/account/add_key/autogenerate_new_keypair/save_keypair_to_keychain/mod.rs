@@ -49,11 +49,14 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                 },
             )],
             on_before_signing_callback: std::sync::Arc::new(
-                |prepolulated_unsinged_transaction, network_config| Ok(()),
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_after_signing_callback: std::sync::Arc::new(|singed_transaction| Ok(())),
-            on_after_getting_network_callback: std::sync::Arc::new(
-                |actions, network_config| Ok(()),
+            on_after_signing_callback: std::sync::Arc::new(|_singed_transaction| Ok(())),
+            on_after_getting_network_callback: std::sync::Arc::new(|_actions, _network_config| {
+                Ok(())
+            }),
+            on_after_sending_transaction_callback: std::sync::Arc::new(
+                |_outcome_view, _network_config| Ok(()),
             ),
         }
     }

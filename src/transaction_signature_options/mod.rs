@@ -1,4 +1,4 @@
-use inquire::{CustomType};
+use inquire::CustomType;
 use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
@@ -154,6 +154,10 @@ impl interactive_clap::FromCli for Submit {
                         },
                     };
                 };
+                (context.on_after_sending_transaction_callback)(
+                    &transaction_info,
+                    &context.network_config,
+                )?;
                 crate::common::print_transaction_status(transaction_info, context.network_config)?;
                 Ok(Some(Self::Send))
             }
@@ -187,8 +191,16 @@ pub struct AccountKeyPair {
     pub private_key: near_crypto::SecretKey,
 }
 
-#[derive(Debug, Clone)]
+pub type OnAfterSendingTransactionCallback = std::sync::Arc<
+    dyn Fn(
+        &near_primitives::views::FinalExecutionOutcomeView,
+        &crate::config::NetworkConfig,
+    ) -> crate::CliResult,
+>;
+
+#[derive(Clone)]
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
     pub signed_transaction: near_primitives::transaction::SignedTransaction,
+    pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
 }
