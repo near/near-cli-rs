@@ -80,8 +80,6 @@ impl SignSeedPhraseContext {
             unsigned_transaction,
         );
 
-        (previous_context.on_after_signing_callback)(&signed_transaction)?;
-
         for action in signed_transaction.transaction.actions.iter() {
             if let near_primitives::transaction::Action::FunctionCall(_) = action {
                 println!("\nSigned transaction:\n");
