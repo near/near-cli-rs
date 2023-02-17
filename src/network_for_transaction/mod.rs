@@ -103,7 +103,7 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
             .actions
             .is_empty()
         {
-            return Ok(None); // XXX ?????????????????????????
+            return Err(crate::common::CliError::ExitOk.into());
         }
 
         println!("\nUnsigned transaction:\n"); // XXX remove!

@@ -47,6 +47,7 @@ shell-words = "1.0.0"
 cargo-util = "0.1.1"
 
 color-eyre = "0.6"
+thiserror = "1"
 
 bytesize = "1.1.0"
 prettytable = "0.10.0"

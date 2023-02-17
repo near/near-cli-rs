@@ -14,6 +14,12 @@ pub type CliResult = color_eyre::eyre::Result<()>;
 use inquire::Select;
 use strum::IntoEnumIterator;
 
+#[derive(thiserror::Error, Debug)]
+pub enum CliError {
+    #[error("Exit with zero exit code")]
+    ExitOk,
+}
+
 #[derive(
     Debug,
     Clone,
