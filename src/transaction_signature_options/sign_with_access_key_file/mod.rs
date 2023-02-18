@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::commands::TransactionContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(input_context = crate::commands::TransactionContext)]
+#[interactive_clap(output_context = super::SubmitContext)]
 pub struct SignAccessKeyFile {
     /// What is the location of the account access key file (path/to/access-key-file.json)?
     file_path: crate::types::path_buf::PathBuf,
@@ -20,7 +20,7 @@ impl SignAccessKeyFileContext {
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignAccessKeyFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Result<Self, color_eyre::eyre::Error> {
+    ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
         let data = std::fs::read_to_string(&scope.file_path).map_err(|err| {
@@ -101,44 +101,5 @@ impl From<SignAccessKeyFileContext> for super::SubmitContext {
             signed_transaction: item.signed_transaction.into(),
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }
-    }
-}
-
-impl interactive_clap::FromCli for SignAccessKeyFile {
-    type FromCliContext = crate::commands::TransactionContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        optional_clap_variant: Option<<SignAccessKeyFile as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let file_path: crate::types::path_buf::PathBuf = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.file_path)
-        {
-            Some(cli_file_path) => cli_file_path,
-            None => Self::input_file_path(&context)?,
-        };
-        let new_context_scope = InteractiveClapContextScopeForSignAccessKeyFile {
-            file_path: file_path.clone(),
-        };
-        let access_key_file_context =
-            SignAccessKeyFileContext::from_previous_context(context.clone(), &new_context_scope)?;
-        let new_context = super::SubmitContext::from(access_key_file_context.clone());
-
-        let optional_submit = super::Submit::from_cli(
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
-            new_context,
-        )?;
-        let submit = if let Some(submit) = optional_submit {
-            submit
-        } else {
-            return Ok(None);
-        };
-
-        Ok(Some(Self { file_path, submit }))
     }
 }

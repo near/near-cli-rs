@@ -1,8 +1,8 @@
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::commands::TransactionContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(input_context = crate::commands::TransactionContext)]
+#[interactive_clap(output_context = super::SubmitContext)]
 pub struct SignSeedPhrase {
     /// Enter the seed-phrase for this account
     master_seed_phrase: String,
@@ -25,7 +25,7 @@ impl SignSeedPhraseContext {
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Result<Self, color_eyre::eyre::Error> {
+    ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
         let key_pair_properties = crate::common::get_key_pair_properties_from_seed_phrase(
@@ -107,56 +107,6 @@ impl From<SignSeedPhraseContext> for super::SubmitContext {
             signed_transaction: item.signed_transaction,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }
-    }
-}
-
-impl interactive_clap::FromCli for SignSeedPhrase {
-    type FromCliContext = crate::commands::TransactionContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        optional_clap_variant: Option<<SignSeedPhrase as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let master_seed_phrase: String = match optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.master_seed_phrase.as_ref())
-        {
-            Some(master_seed_phrase) => master_seed_phrase.clone(),
-            None => Self::input_master_seed_phrase(&context)?,
-        };
-        let seed_phrase_hd_path: crate::types::slip10::BIP32Path = match optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.seed_phrase_hd_path.as_ref())
-        {
-            Some(seed_phrase_hd_path) => seed_phrase_hd_path.clone(),
-            None => Self::input_seed_phrase_hd_path(&context)?,
-        };
-        let new_context_scope = InteractiveClapContextScopeForSignSeedPhrase {
-            seed_phrase_hd_path: seed_phrase_hd_path.clone(),
-            master_seed_phrase: master_seed_phrase.clone(),
-        };
-        let seed_phrase_context =
-            SignSeedPhraseContext::from_previous_context(context.clone(), &new_context_scope)?;
-        let new_context = super::SubmitContext::from(seed_phrase_context.clone());
-
-        let optional_submit = super::Submit::from_cli(
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
-            new_context,
-        )?;
-        let submit = if let Some(submit) = optional_submit {
-            submit
-        } else {
-            return Ok(None);
-        };
-        Ok(Some(Self {
-            master_seed_phrase,
-            seed_phrase_hd_path,
-            submit,
-        }))
     }
 }
 

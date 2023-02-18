@@ -37,7 +37,7 @@ impl SignLedgerContext {
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Result<Self, color_eyre::eyre::Error> {
+    ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
         let seed_phrase_hd_path: slip10::BIP32Path = scope.seed_phrase_hd_path.clone().into();
 

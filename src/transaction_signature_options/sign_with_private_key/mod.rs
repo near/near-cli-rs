@@ -1,15 +1,12 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
 #[interactive_clap(output_context = super::SubmitContext)]
-#[interactive_clap(skip_default_from_cli)]
 pub struct SignPrivateKey {
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
-    #[interactive_clap(skip_default_input_arg)]
+    /// Enter sender (signer) public key
     pub signer_public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
-    #[interactive_clap(skip_default_input_arg)]
+    /// Enter sender (signer) private (secret) key
     pub signer_private_key: crate::types::secret_key::SecretKey,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_from_cli_arg)]
@@ -35,7 +32,7 @@ impl SignPrivateKeyContext {
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Result<Self, color_eyre::eyre::Error> {
+    ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
         let signer_secret_key: near_crypto::SecretKey = scope.signer_private_key.clone().into();
         let online_signer_access_key_response = tokio::runtime::Runtime::new()
@@ -112,66 +109,5 @@ impl From<SignPrivateKeyContext> for super::SubmitContext {
             signed_transaction: item.signed_transaction,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }
-    }
-}
-
-impl interactive_clap::FromCli for SignPrivateKey {
-    type FromCliContext = crate::commands::TransactionContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        optional_clap_variant: Option<<SignPrivateKey as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let signer_public_key: crate::types::public_key::PublicKey = match optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.signer_public_key.clone())
-        {
-            Some(cli_public_key) => cli_public_key,
-            None => super::input_signer_public_key()?,
-        };
-        let signer_private_key: crate::types::secret_key::SecretKey = match optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.signer_private_key.clone())
-        {
-            Some(signer_private_key) => signer_private_key,
-            None => super::input_signer_private_key()?,
-        };
-        let nonce: Option<u64> = optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.nonce);
-        let block_hash: Option<String> = optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.block_hash.clone());
-
-        let new_context_scope = InteractiveClapContextScopeForSignPrivateKey {
-            signer_public_key: signer_public_key.clone(),
-            signer_private_key: signer_private_key.clone(),
-            nonce,
-            block_hash: block_hash.clone(),
-        };
-        let private_key_context =
-            SignPrivateKeyContext::from_previous_context(context.clone(), &new_context_scope)?;
-        let new_context = super::SubmitContext::from(private_key_context);
-
-        let optional_submit = super::Submit::from_cli(
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
-            new_context,
-        )?;
-        let submit = if let Some(submit) = optional_submit {
-            submit
-        } else {
-            return Ok(None);
-        };
-        Ok(Some(Self {
-            signer_public_key,
-            signer_private_key,
-            nonce,
-            block_hash,
-            submit,
-        }))
     }
 }

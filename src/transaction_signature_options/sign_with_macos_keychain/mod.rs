@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::TransactionContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(input_context = crate::commands::TransactionContext)]
+#[interactive_clap(output_context = super::SubmitContext)]
 pub struct SignMacosKeychain {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_from_cli_arg)]
@@ -26,7 +26,7 @@ impl SignMacosKeychainContext {
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         _scope: &<SignMacosKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Result<Self, color_eyre::eyre::Error> {
+    ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
         let keychain =
@@ -170,49 +170,5 @@ impl From<SignMacosKeychainContext> for super::SubmitContext {
             signed_transaction: item.signed_transaction.into(),
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }
-    }
-}
-
-impl interactive_clap::FromCli for SignMacosKeychain {
-    type FromCliContext = crate::commands::TransactionContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        optional_clap_variant: Option<<SignMacosKeychain as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let nonce: Option<u64> = optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.nonce);
-        let block_hash: Option<String> = optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.block_hash.clone());
-
-        let new_context_scope = InteractiveClapContextScopeForSignMacosKeychain {
-            nonce,
-            block_hash: block_hash.clone(),
-        };
-        let keychain_context =
-            SignMacosKeychainContext::from_previous_context(context.clone(), &new_context_scope)?;
-        let new_context = super::SubmitContext::from(keychain_context.clone());
-
-        let optional_submit = super::Submit::from_cli(
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
-            new_context,
-        )?;
-        let submit = if let Some(submit) = optional_submit {
-            submit
-        } else {
-            return Ok(None);
-        };
-
-        Ok(Some(Self {
-            nonce,
-            block_hash,
-            submit,
-        }))
     }
 }
