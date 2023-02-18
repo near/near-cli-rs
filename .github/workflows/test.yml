@@ -18,7 +18,7 @@ jobs:
       # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
       TARGET_DIR: ./target
       # For some builds, we disable ledger support
-      FEATURES_FLAGS:
+      FEATURES_FLAGS: ""
       # Emit backtraces on panics.
       RUST_BACKTRACE: 1
     runs-on: ${{ matrix.os }}
@@ -28,27 +28,24 @@ jobs:
         include:
         - build: linux-x86_64
           os: ubuntu-18.04
-          rust: stable
           target: x86_64-unknown-linux-gnu
         - build: linux-x86_64-musl
           os: ubuntu-18.04
-          rust: stable
           target: x86_64-unknown-linux-musl
         - build: linux-aarch64-musl
           os: ubuntu-18.04
-          rust: stable
           target: aarch64-unknown-linux-musl
         - build: macos-x86_64
           os: macos-latest
-          rust: stable
           target: x86_64-apple-darwin
+        - build: macos-aarch64
+          os: macos-latest
+          target: aarch64-apple-darwin
         - build: win64-msvc
           os: windows-2019
-          rust: stable
           target: x86_64-pc-windows-msvc
         - build: win32-msvc
           os: windows-2019
-          rust: stable
           target: i686-pc-windows-msvc
 
     steps:
@@ -56,11 +53,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: ${{ matrix.rust }}
-        profile: minimal
-        override: true
+      run: rustup update stable && rustup default stable && rustup target add ${{ matrix.target }}
 
     - name: Use Cross
       if: matrix.os == 'ubuntu-18.04'
@@ -87,18 +80,19 @@ jobs:
         echo "target flag is: ${{ env.TARGET_FLAGS }}"
     
     - name: Build near-cli and all crates
-      run: ${{ env.CARGO }} +${{ matrix.rust }} build --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
+      run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
 
     - name: Run tests
-      run: ${{ env.CARGO }} +${{ matrix.rust }} test --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
+      if: matrix.build != 'macos-aarch64'
+      run: ${{ env.CARGO }} test --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
     
     - name: View account summary for 'fro_volod.testnet'
-      if: matrix.build != 'linux-aarch64-musl'
+      if: matrix.build != 'linux-aarch64-musl' && matrix.build != 'macos-aarch64'
       run: |
         ${{ env.TARGET_DIR }}/debug/near-cli account view-account-summary fro_volod.testnet network-config testnet now
     
     - name: Transfer NEAR Tokens
-      if: matrix.build != 'linux-aarch64-musl'
+      if: matrix.build != 'linux-aarch64-musl' && matrix.build != 'macos-aarch64'
       run: |
         ${{ env.TARGET_DIR }}/debug/near-cli tokens volodymyr.testnet send-near fro_volod.testnet '0.1 NEAR' network-config testnet sign-with-plaintext-private-key --signer-public-key ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF --signer-private-key ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB display
 

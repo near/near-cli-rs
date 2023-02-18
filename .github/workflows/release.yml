@@ -49,7 +49,7 @@ jobs:
       # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
       TARGET_DIR: ./target
       # For some builds, we disable ledger support
-      FEATURES_FLAGS:
+      FEATURES_FLAGS: ""
       # Emit backtraces on panics.
       RUST_BACKTRACE: 1
       # Build static releases with PCRE2.
@@ -60,27 +60,24 @@ jobs:
         include:
         - build: linux-x86_64
           os: ubuntu-18.04
-          rust: stable
           target: x86_64-unknown-linux-gnu
         - build: linux-x86_64-musl
           os: ubuntu-18.04
-          rust: stable
           target: x86_64-unknown-linux-musl
         - build: linux-aarch64-musl
           os: ubuntu-18.04
-          rust: stable
           target: aarch64-unknown-linux-musl
         - build: macos-x86_64
           os: macos-latest
-          rust: stable
           target: x86_64-apple-darwin
+        - build: macos-aarch64
+          os: macos-latest
+          target: aarch64-apple-darwin
         - build: win64-msvc
           os: windows-2019
-          rust: stable
           target: x86_64-pc-windows-msvc
         - build: win32-msvc
           os: windows-2019
-          rust: stable
           target: i686-pc-windows-msvc
 
     steps:
@@ -90,12 +87,7 @@ jobs:
         fetch-depth: 1
 
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: ${{ matrix.rust }}
-        profile: minimal
-        override: true
-        target: ${{ matrix.target }}
+      run: rustup update stable && rustup default stable && rustup target add ${{ matrix.target }}
 
     - name: Use Cross
       run: |
@@ -126,7 +118,7 @@ jobs:
       run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
 
     - name: Strip release binary (linux and macos)
-      if: matrix.build == 'linux-x86_64' || matrix.build == 'macos-x86_64'
+      if: matrix.build == 'linux-x86_64' || matrix.build == 'macos-x86_64' || matrix.build == 'macos-aarch64'
       run: strip "${{ env.TARGET_DIR }}/release/near-cli"
 
     - name: Strip release binary (linux-aarch64)
