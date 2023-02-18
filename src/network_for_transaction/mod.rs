@@ -24,7 +24,7 @@ impl NetworkForTransactionArgsContext {
     pub fn from_previous_context(
         previous_context: crate::commands::ActionContext,
         scope: &<NetworkForTransactionArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Self {
+    ) -> color_eyre::eyre::Result<Self> {
         let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
             signer_id: previous_context.signer_account_id.clone(),
             public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
@@ -38,14 +38,14 @@ impl NetworkForTransactionArgsContext {
             .get(&scope.network_name)
             .expect("Failed to get network config!")
             .clone();
-        Self {
+        Ok(Self {
             config: previous_context.config,
             network_config,
             prepopulated_unsigned_transaction,
             on_before_signing_callback: previous_context.on_before_signing_callback,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
-        }
+        })
     }
 }
 
@@ -89,7 +89,7 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
         let mut new_context = NetworkForTransactionArgsContext::from_previous_context(
             context.clone(),
             &new_context_scope,
-        );
+        )?;
 
         (context.on_after_getting_network_callback)(
             &mut new_context.prepopulated_unsigned_transaction,

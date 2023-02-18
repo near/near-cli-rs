@@ -21,13 +21,13 @@ impl AddAccessKeyActionContext {
     pub fn from_previous_context(
         previous_context: super::access_key_type::AccessTypeContext,
         scope: &<AddAccessKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Self {
-        Self {
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
             config: previous_context.config,
             signer_account_id: previous_context.signer_account_id,
             permission: previous_context.permission,
             public_key: scope.public_key.clone(),
-        }
+        })
     }
 }
 

@@ -27,12 +27,12 @@ impl FullAccessTypeContext {
     pub fn from_previous_context(
         previous_context: super::AddKeyCommandContext,
         _scope: &<FullAccessType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Self {
-        Self {
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
             config: previous_context.config,
             signer_account_id: previous_context.owner_account_id.into(),
             permission: near_primitives::account::AccessKeyPermission::FullAccess,
-        }
+        })
     }
 }
 
@@ -95,14 +95,14 @@ impl FunctionCallTypeContext {
     pub fn from_previous_context(
         previous_context: super::AddKeyCommandContext,
         scope: &<FunctionCallType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Self {
-        Self {
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
             config: previous_context.config,
             signer_account_id: previous_context.owner_account_id.into(),
             allowance: scope.allowance.clone(),
             receiver_account_id: scope.receiver_account_id.clone(),
             method_names: scope.method_names.clone(),
-        }
+        })
     }
 }
 
@@ -170,7 +170,7 @@ impl interactive_clap::FromCli for FunctionCallType {
             method_names: method_names.clone(),
         };
         let function_call_type_context =
-            FunctionCallTypeContext::from_previous_context(context.clone(), &new_context_scope);
+            FunctionCallTypeContext::from_previous_context(context.clone(), &new_context_scope)?;
         let new_context = AccessTypeContext::from(function_call_type_context);
 
         let optional_access_key_mode = super::AccessKeyMode::from_cli(

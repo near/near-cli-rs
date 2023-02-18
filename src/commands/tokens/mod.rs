@@ -27,11 +27,11 @@ impl TokensCommandsContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
         scope: &<TokensCommands as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Self {
-        Self {
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
             config: previous_context.0,
             owner_account_id: scope.owner_account_id.clone(),
-        }
+        })
     }
 }
 

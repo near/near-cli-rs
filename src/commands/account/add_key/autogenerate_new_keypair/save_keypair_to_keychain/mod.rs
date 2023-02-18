@@ -22,7 +22,6 @@ impl SaveKeypairToKeychainContext {
         previous_context: super::GenerateKeypairContext,
         _scope: &<SaveKeypairToKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        // ) -> Self {
         Ok(Self {
             config: previous_context.config,
             signer_account_id: previous_context.signer_account_id,

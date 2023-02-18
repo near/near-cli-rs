@@ -36,11 +36,11 @@ impl NewAccountContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
         scope: &<NewAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Self {
-        Self {
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
             config: previous_context.0,
             new_account_id: scope.new_account_id.clone(),
-        }
+        })
     }
 }
 

@@ -26,13 +26,13 @@ impl SendNearCommandContext {
     pub fn from_previous_context(
         previous_context: super::TokensCommandsContext,
         scope: &<SendNearCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Self {
-        Self {
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
             config: previous_context.config,
             signer_account_id: previous_context.owner_account_id.into(),
             receiver_account_id: scope.receiver_account_id.clone().into(),
             amount_in_near: scope.amount_in_near.clone(),
-        }
+        })
     }
 }
 
