@@ -56,14 +56,6 @@ pub enum SignWith {
 //         crate::common::print_unsigned_transaction(new_context.transaction.clone().into());
 //         println!();
 
-pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
-    Ok(CustomType::new("Enter sender (signer) public key").prompt()?)
-}
-
-pub fn input_signer_private_key() -> color_eyre::eyre::Result<crate::types::secret_key::SecretKey> {
-    Ok(CustomType::new("Enter sender (signer) private (secret) key").prompt()?)
-}
-
 pub async fn sign_with(
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
     _prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
