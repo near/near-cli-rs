@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 mod add_key;
 //pub mod create_account;
 // mod delete_account;
-// mod delete_key;
+mod delete_key;
 mod import_account;
 mod list_keys;
 mod view_account_summary;
@@ -42,7 +42,7 @@ pub enum AccountActions {
     // /// Create a new account
     // CreateAccount(self::create_account::CreateAccount),
     // #[strum_discriminants(strum(message = "delete-account          - Delete an account"))]
-    // /// Delete an account
+    /// Delete an account
     // DeleteAccount(self::delete_account::DeleteAccount),
     #[strum_discriminants(strum(
         message = "list-keys               - View a list of access keys of an account"
@@ -54,11 +54,11 @@ pub enum AccountActions {
     ))]
     /// Add an access key to an account
     AddKey(self::add_key::AddKeyCommand),
-    // #[strum_discriminants(strum(
-    //     message = "delete-key              - Delete an access key from an account"
-    // ))]
-    // /// Delete an access key from an account
-    // DeleteKey(self::delete_key::DeleteKeyCommand),
+    #[strum_discriminants(strum(
+        message = "delete-key              - Delete an access key from an account"
+    ))]
+    /// Delete an access key from an account
+    DeleteKey(self::delete_key::DeleteKeyCommand),
 }
 
 impl AccountActions {
@@ -71,7 +71,7 @@ impl AccountActions {
             // Self::DeleteAccount(delete_account) => delete_account.process(config).await,
             // Self::CreateAccount(account) => account.process(config).await,
             Self::AddKey(add_key_command) => add_key_command.process(config).await,
-            // Self::DeleteKey(delete_key_command) => delete_key_command.process(config).await,
+            Self::DeleteKey(delete_key_command) => delete_key_command.process(config).await,
             Self::ImportAccount(import_account_command) => {
                 import_account_command.process(config).await
             }
