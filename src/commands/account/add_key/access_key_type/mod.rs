@@ -1,5 +1,6 @@
-use inquire::{CustomType, Select, Text};
 use std::str::FromStr;
+
+use inquire::{CustomType, Select, Text};
 
 #[derive(Debug, Clone)]
 pub struct AccessTypeContext {
@@ -65,17 +66,14 @@ impl FullAccessType {
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::AddKeyCommandContext)]
 #[interactive_clap(output_context = AccessTypeContext)]
-#[interactive_clap(skip_default_from_cli)]
 pub struct FunctionCallType {
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     allowance: Option<crate::common::NearBalance>,
     #[interactive_clap(long)]
     ///Enter a receiver to use by this access key to pay for function call gas and transaction fees.
     receiver_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     method_names: crate::types::vec_string::VecString,
     #[interactive_clap(subcommand)]
@@ -125,74 +123,10 @@ impl From<FunctionCallTypeContext> for AccessTypeContext {
     }
 }
 
-impl interactive_clap::FromCli for FunctionCallType {
-    type FromCliContext = super::AddKeyCommandContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        optional_clap_variant: Option<<FunctionCallType as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let allowance: Option<crate::common::NearBalance> = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.allowance)
-        {
-            Some(cli_allowance) => Some(cli_allowance),
-            None => FunctionCallType::input_allowance()?,
-        };
-        let receiver_account_id = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.receiver_account_id)
-        {
-            Some(cli_receiver_account_id) => cli_receiver_account_id,
-            None => Self::input_receiver_account_id(&context)?,
-        };
-        let method_names: crate::types::vec_string::VecString = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.method_names)
-        {
-            Some(cli_method_names) => {
-                if cli_method_names.0.is_empty() {
-                    crate::types::vec_string::VecString(vec![])
-                } else {
-                    cli_method_names
-                }
-            }
-            None => FunctionCallType::input_method_names()?,
-        };
-
-        let new_context_scope = InteractiveClapContextScopeForFunctionCallType {
-            allowance: allowance.clone(),
-            receiver_account_id: receiver_account_id.clone(),
-            method_names: method_names.clone(),
-        };
-        let function_call_type_context =
-            FunctionCallTypeContext::from_previous_context(context.clone(), &new_context_scope)?;
-        let new_context = AccessTypeContext::from(function_call_type_context);
-
-        let optional_access_key_mode = super::AccessKeyMode::from_cli(
-            optional_clap_variant.and_then(|clap_variant| clap_variant.access_key_mode),
-            new_context,
-        )?;
-        let access_key_mode = if let Some(access_key_mode) = optional_access_key_mode {
-            access_key_mode
-        } else {
-            return Ok(None);
-        };
-        Ok(Some(Self {
-            allowance,
-            receiver_account_id,
-            method_names,
-            access_key_mode,
-        }))
-    }
-}
-
 impl FunctionCallType {
-    pub fn input_method_names() -> color_eyre::eyre::Result<crate::types::vec_string::VecString> {
+    pub fn input_method_names(
+        _context: &super::AddKeyCommandContext,
+    ) -> color_eyre::eyre::Result<crate::types::vec_string::VecString> {
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to input a list of method names that can be used")]
@@ -225,7 +159,9 @@ impl FunctionCallType {
         }
     }
 
-    pub fn input_allowance() -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
+    pub fn input_allowance(
+        _context: &super::AddKeyCommandContext,
+    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         println!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {

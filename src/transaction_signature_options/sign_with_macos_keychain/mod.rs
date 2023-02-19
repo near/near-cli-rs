@@ -1,13 +1,13 @@
+use inquire::{CustomType, Select, Text};
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
 #[interactive_clap(output_context = super::SubmitContext)]
 pub struct SignMacosKeychain {
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     nonce: Option<u64>,
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     block_hash: Option<String>,
     #[interactive_clap(subcommand)]
@@ -169,6 +169,56 @@ impl From<SignMacosKeychainContext> for super::SubmitContext {
             network_config: item.network_config,
             signed_transaction: item.signed_transaction.into(),
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+        }
+    }
+}
+
+impl SignMacosKeychain {
+    pub fn input_nonce(
+        _context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<u64>> {
+        println!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to input nonce for signer access key")]
+            Yes,
+            #[strum(to_string = "No, I don't want to input nonce for signer access key")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do You want to input a nonce for signer access key?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let nonce: u64 = CustomType::new("Enter a nonce for signer access key").prompt()?;
+            Ok(Some(nonce))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn input_block_hash(
+        _context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        println!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to input recent block hash")]
+            Yes,
+            #[strum(to_string = "No, I don't want to input recent block hash")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do You want to input a recent block hash?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let block_hash = Text::new("Enter a recent block hash").prompt()?;
+            Ok(Some(block_hash))
+        } else {
+            Ok(None)
         }
     }
 }
