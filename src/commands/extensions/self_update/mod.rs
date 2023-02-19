@@ -57,7 +57,7 @@ This will download and install the official release of near-cli-rs."
                     ))
                 })?;
 
-            if current_version == latest_release_version {
+            if current_version >= latest_release_version {
                 println!("\ninfo: near-cli-rs is already up to date\n");
                 Ok(())
             } else {
@@ -78,6 +78,14 @@ This will download and install the official release of near-cli-rs."
     ) -> color_eyre::eyre::Result<self_update::update::ReleaseAsset> {
         let home_dir = dirs::home_dir().expect("Failed to get home directory path");
         let bin_dir = home_dir.join(".local/bin");
+
+        if !bin_dir.is_dir() {
+            std::fs::create_dir(&bin_dir).map_err(|err| {
+                color_eyre::Report::msg(format!("Failed to create directory: {:?}", err))
+            })?;
+
+            println!("info: creating $HOME/.local/bin");
+        }
 
         println!("near-cli-rs binary will be installed into the local bin home directory, located at:\n\n{}\n", bin_dir.display());
 

@@ -34,7 +34,7 @@ pub enum TopLevelCommand {
     ))]
     /// Use this to manage connections in a configuration file (config.toml).
     Config(self::config::ConfigCommands),
-    #[strum_discriminants(strum(message = "extension   - TEMPLATE!!!!!!!!!!"))]
+    #[strum_discriminants(strum(message = "extension   - Manage near-cli-rs extensions"))]
     /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     Extensions(self::extensions::ExtensionsCommands),
 }
