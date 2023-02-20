@@ -33,31 +33,6 @@ impl AddKeyCommandContext {
     }
 }
 
-impl AddKeyCommand {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: self.owner_account_id.clone().into(),
-            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-            nonce: 0,
-            receiver_id: self.owner_account_id.clone().into(),
-            block_hash: Default::default(),
-            actions: vec![],
-        };
-        match self.permission.clone() {
-            AccessKeyPermission::GrantFullAccess(full_access_type) => {
-                full_access_type
-                    .process(config, prepopulated_unsigned_transaction)
-                    .await
-            }
-            AccessKeyPermission::GrantFunctionCallAccess(function_call_type) => {
-                function_call_type
-                    .process(config, prepopulated_unsigned_transaction)
-                    .await
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = AddKeyCommandContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -97,19 +72,4 @@ pub enum AccessKeyMode {
     ))]
     /// Use the provided public key manually
     UseManuallyProvidedPublicKey(self::use_public_key::AddAccessKeyAction),
-}
-
-impl AccessKeyMode {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        permission: near_primitives::account::AccessKeyPermission,
-    ) -> crate::CliResult {
-        match self {
-            AccessKeyMode::UseManuallyProvidedPublicKey(_) => Ok(()),
-            AccessKeyMode::AutogenerateNewKeypair(_) => Ok(()),
-            AccessKeyMode::UseManuallyProvidedSeedPhrase(_) => Ok(()),
-        }
-    }
 }

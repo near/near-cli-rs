@@ -47,22 +47,6 @@ impl From<FullAccessTypeContext> for AccessTypeContext {
     }
 }
 
-impl FullAccessType {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        self.access_key_mode
-            .process(
-                config,
-                prepopulated_unsigned_transaction,
-                near_primitives::account::AccessKeyPermission::FullAccess,
-            )
-            .await
-    }
-}
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::AddKeyCommandContext)]
 #[interactive_clap(output_context = AccessTypeContext)]
@@ -183,25 +167,5 @@ impl FunctionCallType {
         } else {
             Ok(None)
         }
-    }
-
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        let permission = near_primitives::account::AccessKeyPermission::FunctionCall(
-            near_primitives::account::FunctionCallPermission {
-                allowance: self
-                    .allowance
-                    .clone()
-                    .map(|allowance| allowance.to_yoctonear()),
-                receiver_id: self.receiver_account_id.to_string(),
-                method_names: self.method_names.clone().into(),
-            },
-        );
-        self.access_key_mode
-            .process(config, prepopulated_unsigned_transaction, permission)
-            .await
     }
 }
