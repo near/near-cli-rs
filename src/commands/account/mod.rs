@@ -71,7 +71,7 @@ impl AccountActions {
             // Self::DeleteAccount(delete_account) => delete_account.process(config).await,
             // Self::CreateAccount(account) => account.process(config).await,
             Self::AddKey(_) => Ok(()),
-            Self::DeleteKey(delete_key_command) => delete_key_command.process(config).await,
+            Self::DeleteKey(_) => Ok(()),
             Self::ImportAccount(import_account_command) => {
                 import_account_command.process(config).await
             }
