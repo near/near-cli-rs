@@ -9,7 +9,6 @@ mod save_keypair_to_macos_keychain;
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]
 #[interactive_clap(output_context = GenerateKeypairContext)]
-// #[interactive_clap(skip_default_from_cli)]
 pub struct GenerateKeypair {
     #[interactive_clap(subcommand)]
     save_mode: SaveMode,
@@ -43,47 +42,6 @@ impl GenerateKeypairContext {
     }
 }
 
-// impl interactive_clap::FromCli for GenerateKeypair {
-//     type FromCliContext = super::access_key_type::AccessTypeContext;
-//     type FromCliError = color_eyre::eyre::Error;
-
-//     fn from_cli(
-//         optional_clap_variant: Option<<GenerateKeypair as interactive_clap::ToCli>::CliVariant>,
-//         context: Self::FromCliContext,
-//     ) -> Result<Option<Self>, Self::FromCliError>
-//     where
-//         Self: Sized + interactive_clap::ToCli,
-//     {
-//         let new_context_scope = InteractiveClapContextScopeForGenerateKeypair {};
-//         let new_context =
-//             GenerateKeypairContext::from_previous_context(context.clone(), &new_context_scope)?;
-
-//         let optional_save_mode = SaveMode::from_cli(
-//             optional_clap_variant.and_then(|clap_variant| clap_variant.save_mode),
-//             new_context,
-//         )?;
-//         let save_mode = if let Some(save_mode) = optional_save_mode {
-//             save_mode
-//         } else {
-//             return Ok(None);
-//         };
-//         Ok(Some(Self { save_mode }))
-//     }
-// }
-
-impl GenerateKeypair {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        permission: near_primitives::account::AccessKeyPermission,
-    ) -> crate::CliResult {
-        self.save_mode
-            .process(config, prepopulated_unsigned_transaction, permission)
-            .await
-    }
-}
-
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = GenerateKeypairContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -105,38 +63,4 @@ pub enum SaveMode {
     ))]
     /// Print automatically generated key pair in terminal
     PrintToTerminal(self::print_keypair_to_terminal::PrintKeypairToTerminal),
-}
-
-impl SaveMode {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        permission: near_primitives::account::AccessKeyPermission,
-    ) -> crate::CliResult {
-        let key_pair_properties: crate::common::KeyPairProperties =
-            crate::common::generate_keypair().await?;
-        let access_key: near_primitives::account::AccessKey = near_primitives::account::AccessKey {
-            nonce: 0,
-            permission,
-        };
-        let action = near_primitives::transaction::Action::AddKey(
-            near_primitives::transaction::AddKeyAction {
-                public_key: near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?,
-                access_key,
-            },
-        );
-        let mut actions = prepopulated_unsigned_transaction.actions.clone();
-        actions.push(action);
-        let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
-            actions,
-            ..prepopulated_unsigned_transaction
-        };
-        match self {
-            #[cfg(target_os = "macos")]
-            SaveMode::SaveToMacosKeychain(_) => Ok(()),
-            SaveMode::SaveToKeychain(_) => Ok(()),
-            SaveMode::PrintToTerminal(_) => Ok(()),
-        }
-    }
 }

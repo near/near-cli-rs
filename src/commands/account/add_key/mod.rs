@@ -112,15 +112,12 @@ impl AccessKeyMode {
                     .process(config, prepopulated_unsigned_transaction, permission)
                     .await
             }
-            AccessKeyMode::AutogenerateNewKeypair(generate_keypair) => {
-                generate_keypair
-                    .process(config, prepopulated_unsigned_transaction, permission)
-                    .await
-            } // AccessKeyMode::UseManuallyProvidedSeedPhrase(add_access_with_seed_phrase_action) => {
-              //     add_access_with_seed_phrase_action
-              //         .process(config, prepopulated_unsigned_transaction, permission)
-              //         .await
-              // }
+            AccessKeyMode::AutogenerateNewKeypair(_) => Ok(()),
+            // AccessKeyMode::UseManuallyProvidedSeedPhrase(add_access_with_seed_phrase_action) => {
+            //     add_access_with_seed_phrase_action
+            //         .process(config, prepopulated_unsigned_transaction, permission)
+            //         .await
+            // }
         }
     }
 }
