@@ -1,38 +1,72 @@
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = super::GenerateKeypairContext)]
+#[interactive_clap(output_context = crate::commands::ActionContext)]
 pub struct PrintKeypairToTerminal {
     #[interactive_clap(named_arg)]
-    ///Select network
+    /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-impl PrintKeypairToTerminal {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        key_pair_properties: crate::common::KeyPairProperties,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        println!(
-            "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
-            key_pair_properties.master_seed_phrase,
-            key_pair_properties.seed_phrase_hd_path,
-            key_pair_properties.implicit_account_id,
-            key_pair_properties.public_key_str,
-            key_pair_properties.secret_keypair_str,
-        );
-        match crate::transaction_signature_options::sign_with(
-            self.network_config.clone(),
-            prepopulated_unsigned_transaction,
-            config.clone(),
-        )
-        .await?
-        {
-            Some(transaction_info) => crate::common::print_transaction_status(
-                transaction_info,
-                self.network_config.get_network_config(config),
+#[derive(Debug, Clone)]
+pub struct PrintKeypairToTerminalContext {
+    config: crate::config::Config,
+    signer_account_id: near_primitives::types::AccountId,
+    permission: near_primitives::account::AccessKeyPermission,
+    key_pair_properties: crate::common::KeyPairProperties,
+    public_key: near_crypto::PublicKey,
+}
+
+impl PrintKeypairToTerminalContext {
+    pub fn from_previous_context(
+        previous_context: super::GenerateKeypairContext,
+        _scope: &<PrintKeypairToTerminal as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            config: previous_context.config,
+            signer_account_id: previous_context.signer_account_id,
+            permission: previous_context.permission,
+            key_pair_properties: previous_context.key_pair_properties,
+            public_key: previous_context.public_key,
+        })
+    }
+}
+
+impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
+    fn from(item: PrintKeypairToTerminalContext) -> Self {
+        Self {
+            config: item.config.clone(),
+            signer_account_id: item.signer_account_id.clone(),
+            receiver_account_id: item.signer_account_id.clone(),
+            actions: vec![near_primitives::transaction::Action::AddKey(
+                near_primitives::transaction::AddKeyAction {
+                    public_key: item.public_key,
+                    access_key: near_primitives::account::AccessKey {
+                        nonce: 0,
+                        permission: item.permission,
+                    },
+                },
+            )],
+            on_before_signing_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            None => Ok(()),
+            on_after_getting_network_callback: std::sync::Arc::new(
+                move |_actions, _network_config| {
+                    println!("\n--------------------  Access key info ------------------\n");
+                    println!(
+                        "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
+                        item.key_pair_properties.master_seed_phrase,
+                        item.key_pair_properties.seed_phrase_hd_path,
+                        item.key_pair_properties.implicit_account_id,
+                        item.key_pair_properties.public_key_str,
+                        item.key_pair_properties.secret_keypair_str,
+                    );
+                    println!("\n--------------------------------------------------------");
+                    Ok(())
+                },
+            ),
+            on_after_sending_transaction_callback: std::sync::Arc::new(
+                |_outcome_view, _network_config| Ok(()),
+            ),
         }
     }
 }

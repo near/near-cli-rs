@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-// mod print_keypair_to_terminal;
+mod print_keypair_to_terminal;
 mod save_keypair_to_keychain;
 #[cfg(target_os = "macos")]
 mod save_keypair_to_macos_keychain;
@@ -87,24 +87,24 @@ impl GenerateKeypair {
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = GenerateKeypairContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-///Save an access key for this account
+/// Save an access key for this account
 pub enum SaveMode {
     #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
         message = "save-to-macos-keychain   - Save automatically generated key pair to macOS keychain"
     ))]
-    ///Save automatically generated key pair to macOS keychain
+    /// Save automatically generated key pair to macOS keychain
     SaveToMacosKeychain(self::save_keypair_to_macos_keychain::SaveKeypairToMacosKeychain),
     #[strum_discriminants(strum(
         message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
-    ///Save automatically generated key pair to the legacy keychain (compatible with JS CLI)
+    /// Save automatically generated key pair to the legacy keychain (compatible with JS CLI)
     SaveToKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
-    // #[strum_discriminants(strum(
-    //     message = "print-to-terminal        - Print automatically generated key pair in terminal"
-    // ))]
-    // ///Print automatically generated key pair in terminal
-    // PrintToTerminal(self::print_keypair_to_terminal::PrintKeypairToTerminal),
+    #[strum_discriminants(strum(
+        message = "print-to-terminal        - Print automatically generated key pair in terminal"
+    ))]
+    /// Print automatically generated key pair in terminal
+    PrintToTerminal(self::print_keypair_to_terminal::PrintKeypairToTerminal),
 }
 
 impl SaveMode {
@@ -136,15 +136,7 @@ impl SaveMode {
             #[cfg(target_os = "macos")]
             SaveMode::SaveToMacosKeychain(_) => Ok(()),
             SaveMode::SaveToKeychain(_) => Ok(()),
-             // SaveMode::PrintToTerminal(print_keypair_to_terminal) => {
-              //     print_keypair_to_terminal
-              //         .process(
-              //             config,
-              //             key_pair_properties,
-              //             prepopulated_unsigned_transaction,
-              //         )
-              //         .await
-              // }
+            SaveMode::PrintToTerminal(_) => Ok(()),
         }
     }
 }
