@@ -1,49 +1,83 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = DeleteAccountContext)]
 pub struct DeleteAccount {
-    ///What Account ID to be deleted
+    /// What Account ID to be deleted
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    ///Enter the beneficiary ID to delete this account ID
+    /// Enter the beneficiary ID to delete this account ID
     beneficiary: BeneficiaryAccount,
 }
 
-impl DeleteAccount {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let beneficiary_id: near_primitives::types::AccountId =
-            self.beneficiary.beneficiary_account_id.clone().into();
-        let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: self.account_id.clone().into(),
-            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-            nonce: 0,
-            receiver_id: self.account_id.clone().into(),
-            block_hash: Default::default(),
-            actions: vec![near_primitives::transaction::Action::DeleteAccount(
-                near_primitives::transaction::DeleteAccountAction { beneficiary_id },
-            )],
-        };
-        match crate::transaction_signature_options::sign_with(
-            self.beneficiary.network_config.clone(),
-            prepopulated_unsigned_transaction,
-            config.clone(),
-        )
-        .await?
-        {
-            Some(transaction_info) => crate::common::print_transaction_status(
-                transaction_info,
-                self.beneficiary.network_config.get_network_config(config),
-            ),
-            None => Ok(()),
-        }
+#[derive(Debug, Clone)]
+pub struct DeleteAccountContext {
+    config: crate::config::Config,
+    account_id: near_primitives::types::AccountId,
+}
+
+impl DeleteAccountContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<DeleteAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            config: previous_context.0,
+            account_id: scope.account_id.clone().into(),
+        })
     }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = DeleteAccountContext)]
+#[interactive_clap(output_context = crate::commands::ActionContext)]
 pub struct BeneficiaryAccount {
-    ///Specify a beneficiary
+    /// Specify a beneficiary
     beneficiary_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    ///Select network
+    /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+}
+
+#[derive(Debug, Clone)]
+pub struct BeneficiaryAccountContext {
+    config: crate::config::Config,
+    account_id: near_primitives::types::AccountId,
+    beneficiary_account_id: near_primitives::types::AccountId,
+}
+
+impl BeneficiaryAccountContext {
+    pub fn from_previous_context(
+        previous_context: DeleteAccountContext,
+        scope: &<BeneficiaryAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            config: previous_context.config,
+            account_id: previous_context.account_id,
+            beneficiary_account_id: scope.beneficiary_account_id.clone().into(),
+        })
+    }
+}
+
+impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
+    fn from(item: BeneficiaryAccountContext) -> Self {
+        Self {
+            config: item.config,
+            signer_account_id: item.account_id.clone(),
+            receiver_account_id: item.account_id,
+            actions: vec![near_primitives::transaction::Action::DeleteAccount(
+                near_primitives::transaction::DeleteAccountAction {
+                    beneficiary_id: item.beneficiary_account_id,
+                },
+            )],
+            on_before_signing_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+            ),
+            on_after_getting_network_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+            ),
+            on_after_sending_transaction_callback: std::sync::Arc::new(
+                |_outcome_view, _network_config| Ok(()),
+            ),
+        }
+    }
 }
