@@ -83,7 +83,7 @@ pub enum AccessKeyMode {
     #[strum_discriminants(strum(
         message = "autogenerate-new-keypair          - Automatically generate a key pair"
     ))]
-    ///Automatically generate a key pair
+    /// Automatically generate a key pair
     AutogenerateNewKeypair(self::autogenerate_new_keypair::GenerateKeypair),
     // #[strum_discriminants(strum(
     //     message = "use-manually-provided-seed-prase  - Use the provided seed phrase manually"
@@ -95,7 +95,7 @@ pub enum AccessKeyMode {
     #[strum_discriminants(strum(
         message = "use-manually-provided-public-key  - Use the provided public key manually"
     ))]
-    ///Use the provided public key manually
+    /// Use the provided public key manually
     UseManuallyProvidedPublicKey(self::use_public_key::AddAccessKeyAction),
 }
 
@@ -107,11 +107,7 @@ impl AccessKeyMode {
         permission: near_primitives::account::AccessKeyPermission,
     ) -> crate::CliResult {
         match self {
-            AccessKeyMode::UseManuallyProvidedPublicKey(add_access_key_action) => {
-                add_access_key_action
-                    .process(config, prepopulated_unsigned_transaction, permission)
-                    .await
-            }
+            AccessKeyMode::UseManuallyProvidedPublicKey(_) => Ok(()),
             AccessKeyMode::AutogenerateNewKeypair(_) => Ok(()),
             // AccessKeyMode::UseManuallyProvidedSeedPhrase(add_access_with_seed_phrase_action) => {
             //     add_access_with_seed_phrase_action
