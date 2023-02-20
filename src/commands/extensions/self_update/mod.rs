@@ -207,10 +207,10 @@ local's bin directory ($HOME/.local/bin)."
             let shell = env!("SHELL").split('/').last().unwrap_or("fruit");
 
             let profile_file = match shell {
-                "bash" => ".bash_profile",
+                "bash" => ".bashrc",
                 "zsh" => ".zshrc",
                 "fish" => ".config/fish/config.fish",
-                _ => ".bash_profile",
+                _ => ".profile",
             };
             let profile_path = home_dir.join(profile_file);
 
@@ -227,7 +227,7 @@ local's bin directory ($HOME/.local/bin)."
                 })?;
 
             let line = match shell {
-                "bash" => format!("export PATH={}:{}\n", path, "$PATH"),
+                "bash" => format!("export PATH={}:{}\n", "$PATH", path),
                 "zsh" => format!("export PATH={}:{}\n", path, "$PATH"),
                 "fish" => format!("set -gx PATH {} $PATH\n", path),
                 _ => format!("export PATH={}:{}\n", path, "$PATH"),
