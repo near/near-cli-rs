@@ -199,48 +199,12 @@ impl SignKeychain {
     pub fn input_nonce(
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
-        println!();
-        #[derive(strum_macros::Display)]
-        enum ConfirmOptions {
-            #[strum(to_string = "Yes, I want to input nonce for signer access key")]
-            Yes,
-            #[strum(to_string = "No, I don't want to input nonce for signer access key")]
-            No,
-        }
-        let select_choose_input = Select::new(
-            "Do You want to input a nonce for signer access key?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
-        if let ConfirmOptions::Yes = select_choose_input {
-            let nonce: u64 = CustomType::new("Enter a nonce for signer access key").prompt()?;
-            Ok(Some(nonce))
-        } else {
-            Ok(None)
-        }
+        Ok(None)
     }
 
     pub fn input_block_hash(
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        println!();
-        #[derive(strum_macros::Display)]
-        enum ConfirmOptions {
-            #[strum(to_string = "Yes, I want to input recent block hash")]
-            Yes,
-            #[strum(to_string = "No, I don't want to input recent block hash")]
-            No,
-        }
-        let select_choose_input = Select::new(
-            "Do You want to input a recent block hash?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
-        if let ConfirmOptions::Yes = select_choose_input {
-            let block_hash = Text::new("Enter a recent block hash").prompt()?;
-            Ok(Some(block_hash))
-        } else {
-            Ok(None)
-        }
+        Ok(None)
     }
 }
