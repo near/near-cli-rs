@@ -219,7 +219,7 @@ impl Submit {
                 // convert Actions to NonDelegateActions
                 let actions: Vec<NonDelegateAction> = signed_transaction.transaction.actions
                     .iter()
-                    .map(|a| NonDelegateAction(a.clone()))
+                    .map(|a| NonDelegateAction::try_from(a.clone()).unwrap())
                     .collect();
                 let nonce = signed_transaction.transaction.nonce.clone();
                 let public_key = signed_transaction.transaction.public_key.clone();

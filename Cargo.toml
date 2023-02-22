@@ -42,8 +42,9 @@ color-eyre = "0.6"
 
 near-ledger = { version = "0.2.0", optional = true }
 
+# TODO update these crate versions
 near-crypto = "0.15"
-near-primitives = { package="near-primitives", version = "0.15.0" }
+near-primitives = { package="near-primitives", version = "0.15.0", features = ["protocol_feature_nep366_delegate_action"] }
 near-jsonrpc-client = "0.4.0"
 near-jsonrpc-primitives = "0.15"
 
@@ -59,9 +60,10 @@ reqwest = "0.11.14"
 default = ["ledger"]
 ledger = ["near-ledger"]
 
+# TODO remove these local crates
 [patch.crates-io]
 # NOTE: to get this to work locally you also need to update the "version" in each of the "Cargo.toml" files in the directories in lcoal nearcore
 # added these patches for SignedDelegateAction, DelegateAction
-near-primitives = { path = "/Users/awit/repos/nearcore/core/primitives", package="near-primitives" }
+near-primitives = { path = "/Users/awit/repos/nearcore/core/primitives", package="near-primitives", features = ["protocol_feature_nep366_delegate_action"] }
 near-crypto = { path = "/Users/awit/repos/nearcore/core/crypto", package="near-crypto" }
 near-chain-configs = { path = "/Users/awit/repos/nearcore/core/chain-configs", package="near-chain-configs" }
