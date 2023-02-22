@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::Write};
+use std::io::Write;
 
 struct DownloadDirs {
     tmp_dir: tempfile::TempDir,
@@ -89,25 +89,23 @@ This will download and install the official release of near-cli-rs."
 
         println!("near-cli-rs binary will be installed into the local bin home directory, located at:\n\n{}\n", bin_dir.display());
 
-        let mut compatible_triplets = HashMap::new();
-        compatible_triplets.insert("aarch64-apple-darwin", "x86_64-apple-darwin");
-
         let triplet = self_update::get_target();
         println!("info: default host triple is {}", triplet);
 
-        let asset = if compatible_triplets.contains_key(triplet) {
+        let option_asset = release.asset_for(triplet);
+        let unwrapped_asset;
+
+        if let Some(asset) = option_asset {
+            unwrapped_asset = asset;
+            println!("info: found release for {}", triplet);
+        } else {
             println!(
-                "info: could not find release for {}, trying to download {} instead",
-                triplet,
-                compatible_triplets.get(triplet).unwrap()
+                "error: could not find release for {}\n\nExiting...",
+                triplet
             );
 
-            release
-                .asset_for(compatible_triplets.get(triplet).unwrap())
-                .unwrap()
-        } else {
-            release.asset_for(triplet).unwrap()
-        };
+            return Err(color_eyre::Report::msg("hello"));
+        }
 
         let tmp_dir = tempfile::Builder::new()
             .prefix("near-cli")
@@ -116,16 +114,16 @@ This will download and install the official release of near-cli-rs."
                 color_eyre::Report::msg(format!("Failed to create temporary directory: {:?}", err))
             })?;
 
-        let archive_path = std::path::Path::new(&tmp_dir.path()).join(&asset.name);
+        let archive_path = std::path::Path::new(&tmp_dir.path()).join(&unwrapped_asset.name);
         let folder_path = std::path::Path::new(&tmp_dir.path())
-            .join(asset.name.split(".tar").collect::<Vec<_>>()[0]);
+            .join(unwrapped_asset.name.split(".tar").collect::<Vec<_>>()[0]);
 
         let tmp_archive = std::fs::File::create(&archive_path).map_err(|err| {
             color_eyre::Report::msg(format!("Failed to create path to an archive: {:?}", err))
         })?;
 
-        println!("info: downloading {}", asset.name);
-        self_update::Download::from_url(&asset.download_url)
+        println!("info: downloading {}", unwrapped_asset.name);
+        self_update::Download::from_url(&unwrapped_asset.download_url)
             .show_progress(true)
             .set_header(
                 reqwest::header::ACCEPT,
@@ -140,7 +138,7 @@ This will download and install the official release of near-cli-rs."
             })?;
 
         self.unpack_archive(
-            &asset,
+            &unwrapped_asset,
             DownloadDirs {
                 tmp_dir,
                 bin_dir,
@@ -149,7 +147,7 @@ This will download and install the official release of near-cli-rs."
             },
         )?;
 
-        Ok(asset)
+        Ok(unwrapped_asset)
     }
 
     fn unpack_archive(
