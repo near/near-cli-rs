@@ -16,6 +16,8 @@ pub struct NetworkForTransactionArgsContext {
     network_config: crate::config::NetworkConfig,
     prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     on_before_signing_callback: crate::commands::OnBeforeSigningCallback,
+    on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }
@@ -43,6 +45,8 @@ impl NetworkForTransactionArgsContext {
             network_config,
             prepopulated_unsigned_transaction,
             on_before_signing_callback: previous_context.on_before_signing_callback,
+            on_before_sending_transaction_callback: previous_context
+                .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
         })
@@ -50,14 +54,14 @@ impl NetworkForTransactionArgsContext {
 }
 
 impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionContext {
-    fn from(previous_context: NetworkForTransactionArgsContext) -> Self {
+    fn from(item: NetworkForTransactionArgsContext) -> Self {
         Self {
-            config: previous_context.config,
-            network_config: previous_context.network_config,
-            transaction: previous_context.prepopulated_unsigned_transaction,
-            on_before_signing_callback: previous_context.on_before_signing_callback,
-            on_after_sending_transaction_callback: previous_context
-                .on_after_sending_transaction_callback,
+            config: item.config,
+            network_config: item.network_config,
+            transaction: item.prepopulated_unsigned_transaction,
+            on_before_signing_callback: item.on_before_signing_callback,
+            on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
+            on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }
     }
 }

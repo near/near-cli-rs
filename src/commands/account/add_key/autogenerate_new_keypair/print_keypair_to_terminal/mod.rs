@@ -46,11 +46,17 @@ impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
                     },
                 },
             )],
+            on_after_getting_network_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+            ),
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_after_getting_network_callback: std::sync::Arc::new(
-                move |_actions, _network_config| {
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                |_signed_transaction, _network_config| Ok(()),
+            ),
+            on_after_sending_transaction_callback: std::sync::Arc::new(
+                move |_outcome_view, _network_config| {
                     println!("\n--------------------  Access key info ------------------\n");
                     println!(
                         "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
@@ -63,9 +69,6 @@ impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
                     println!("\n--------------------------------------------------------");
                     Ok(())
                 },
-            ),
-            on_after_sending_transaction_callback: std::sync::Arc::new(
-                |_outcome_view, _network_config| Ok(()),
             ),
         }
     }

@@ -69,6 +69,8 @@ pub struct ActionContext {
     pub actions: Vec<near_primitives::transaction::Action>,
     pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,
+    pub on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }
@@ -79,6 +81,8 @@ pub struct TransactionContext {
     pub network_config: crate::config::NetworkConfig,
     pub transaction: near_primitives::transaction::Transaction,
     pub on_before_signing_callback: OnBeforeSigningCallback,
+    pub on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }

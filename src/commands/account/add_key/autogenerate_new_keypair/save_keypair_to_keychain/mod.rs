@@ -46,9 +46,6 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                     },
                 },
             )],
-            on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
             on_after_getting_network_callback: std::sync::Arc::new(
                 move |_actions, network_config| {
                     let key_pair_properties_buf = serde_json::to_string(&item.key_pair_properties)?;
@@ -67,6 +64,12 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                     })?;
                     Ok(())
                 },
+            ),
+            on_before_signing_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+            ),
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                |_signed_transaction, _network_config| Ok(()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),

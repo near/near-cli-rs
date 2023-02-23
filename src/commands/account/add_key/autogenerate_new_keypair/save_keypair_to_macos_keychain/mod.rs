@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::GenerateKeypairContext)]
-#[interactive_clap(output_context = SaveKeypairToMacosKeychainContext)]
+#[interactive_clap(output_context = crate::commands::ActionContext)]
 pub struct SaveKeypairToMacosKeychain {
     #[interactive_clap(named_arg)]
     /// Select network
@@ -47,6 +47,9 @@ impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext 
             ),
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+            ),
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                |_signed_transaction, _network_config| Ok(()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),

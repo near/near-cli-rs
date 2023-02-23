@@ -24,6 +24,8 @@ pub struct SignPrivateKey {
 pub struct SignPrivateKeyContext {
     network_config: crate::config::NetworkConfig,
     signed_transaction: near_primitives::transaction::SignedTransaction,
+    on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }
@@ -96,6 +98,8 @@ impl SignPrivateKeyContext {
         Ok(Self {
             network_config: previous_context.network_config,
             signed_transaction,
+            on_before_sending_transaction_callback: previous_context
+                .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
         })
@@ -107,6 +111,7 @@ impl From<SignPrivateKeyContext> for super::SubmitContext {
         Self {
             network_config: item.network_config,
             signed_transaction: item.signed_transaction,
+            on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }
     }

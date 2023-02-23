@@ -126,6 +126,10 @@ impl interactive_clap::FromCli for Submit {
     {
         match optional_clap_variant {
             Some(CliSubmit::Send) => {
+                (context.on_before_sending_transaction_callback)(
+                    &context.signed_transaction,
+                    &context.network_config,
+                )?;
                 println!("Transaction sent ...");
                 let transaction_info = loop {
                     let transaction_info_result = tokio::runtime::Runtime::new()
@@ -183,6 +187,13 @@ pub struct AccountKeyPair {
     pub private_key: near_crypto::SecretKey,
 }
 
+pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
+    dyn Fn(
+        &near_primitives::transaction::SignedTransaction,
+        &crate::config::NetworkConfig,
+    ) -> crate::CliResult,
+>;
+
 pub type OnAfterSendingTransactionCallback = std::sync::Arc<
     dyn Fn(
         &near_primitives::views::FinalExecutionOutcomeView,
@@ -194,5 +205,6 @@ pub type OnAfterSendingTransactionCallback = std::sync::Arc<
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
     pub signed_transaction: near_primitives::transaction::SignedTransaction,
+    pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
 }
