@@ -9,25 +9,29 @@ pub struct AddPublicKeyAction {
     sign_as: super::super::sign_as::SignerAccountId,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct AddPublicKeyActionContext(
     crate::commands::account::create_account::CreateAccountContext,
 );
 
 impl AddPublicKeyActionContext {
     pub fn from_previous_context(
-        previous_context: crate::commands::account::create_account::CreateAccountContext,
+        previous_context: super::super::NewAccountContext,
         scope: &<AddPublicKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let account_properties = super::super::super::AccountProperties {
+        let account_properties = crate::commands::account::create_account::AccountProperties {
+            new_account_id: previous_context.new_account_id,
+            initial_balance: previous_context.initial_balance,
             public_key: scope.public_key.clone().into(),
-            ..previous_context.account_properties
         };
 
         Ok(Self(
             crate::commands::account::create_account::CreateAccountContext {
+                config: previous_context.config,
                 account_properties,
-                ..previous_context
+                on_before_sending_transaction_callback: std::sync::Arc::new(
+                    |_signed_transaction, _network_config| Ok(()),
+                ),
             },
         ))
     }
@@ -38,23 +42,5 @@ impl From<AddPublicKeyActionContext>
 {
     fn from(item: AddPublicKeyActionContext) -> Self {
         item.0
-    }
-}
-
-impl AddPublicKeyAction {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        account_properties: super::super::super::AccountProperties,
-    ) -> crate::CliResult {
-        // let account_properties = super::super::super::AccountProperties {
-        //     public_key: self.public_key.clone().into(),
-        //     ..account_properties
-        // };
-        // let storage_properties = None;
-        // self.sign_as
-        //     .process(config, account_properties, storage_properties)
-        //     .await
-        Ok(())
     }
 }

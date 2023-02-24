@@ -7,11 +7,9 @@ mod fund_myself_create_account;
 #[derive(Clone)]
 pub struct CreateAccountContext {
     pub config: crate::config::Config,
-    // pub new_account_id: crate::types::account_id::AccountId,
     pub account_properties: AccountProperties,
-    // pub storage_properties: Option<self::fund_myself_create_account::StorageProperties>,
-    pub on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
-
+    pub on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -40,7 +38,7 @@ pub enum CoverCostsCreateAccount {
     #[strum_discriminants(strum(
         message = "fund-myself                  - I would like fund myself to cover the cost of creating an account"
     ))]
-    ///I would like fund myself to cover the cost of creating an account
+    /// I would like fund myself to cover the cost of creating an account
     FundMyself(self::fund_myself_create_account::NewAccount),
     // #[strum_discriminants(strum(
     //     message = "fund-later                   - Create an implicit-account"
@@ -50,9 +48,9 @@ pub enum CoverCostsCreateAccount {
 }
 
 impl CoverCostsCreateAccount {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
+    pub async fn process(&self, _config: crate::config::Config) -> crate::CliResult {
         match self {
-            Self::FundMyself(new_account) => new_account.process(config).await,
+            Self::FundMyself(_) => Ok(()),
             // Self::SponsorByFaucetService(new_account) => new_account.process(config).await,
             // Self::FundLater(implicit_account) => implicit_account.process().await,
         }
@@ -61,8 +59,7 @@ impl CoverCostsCreateAccount {
 
 #[derive(Debug, Clone)]
 pub struct AccountProperties {
-    pub new_account_id: near_primitives::types::AccountId,
+    pub new_account_id: crate::types::account_id::AccountId,
     pub public_key: near_crypto::PublicKey,
     pub initial_balance: crate::common::NearBalance,
-    pub key_pair_properties: crate::common::KeyPairProperties,
 }

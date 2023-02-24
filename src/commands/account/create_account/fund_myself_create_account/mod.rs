@@ -1,33 +1,28 @@
-use inquire::{CustomType, Select, Text};
 use std::str::FromStr;
+
+use inquire::{CustomType, Select, Text};
 
 use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
 
 mod add_key;
 mod sign_as;
 
-// #[derive(Debug, Clone)]
-// pub struct StorageProperties {
-//     pub key_pair_properties: crate::common::KeyPairProperties,
-//     pub storage: self::add_key::autogenerate_new_keypair::SaveModeDiscriminants,
-// }
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = NewAccountContext)]
 pub struct NewAccount {
     #[interactive_clap(skip_default_input_arg)]
-    ///What is the new account ID?
+    /// What is the new account ID?
     new_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
-    ///Enter the amount for the account
+    /// Enter the amount for the account
     initial_balance: crate::common::NearBalance,
     #[interactive_clap(subcommand)]
     access_key_mode: add_key::AccessKeyMode,
 }
 
 #[derive(Debug, Clone)]
-struct NewAccountContext {
+pub struct NewAccountContext {
     config: crate::config::Config,
     new_account_id: crate::types::account_id::AccountId,
     initial_balance: crate::common::NearBalance,
@@ -45,22 +40,6 @@ impl NewAccountContext {
         })
     }
 }
-
-// impl From<NewAccountContext> for crate::commands::account::create_account::CreateAccountContext {
-//     fn from(item: NewAccountContext) -> Self {
-//         let account_properties = super::AccountProperties {
-//             new_account_id: item.new_account_id.clone().into(),
-//             initial_balance: item.initial_balance,
-//             public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-//         };
-//         Self {
-//             config: item.config,
-//             new_account_id: item.new_account_id,
-//             account_properties,
-//             storage_properties: None,
-//         }
-//     }
-// }
 
 impl NewAccount {
     pub fn input_new_account_id(
@@ -155,18 +134,6 @@ impl NewAccount {
                     err,
                 ))
             }
-    }
-
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        // let account_properties = super::AccountProperties {
-        //     new_account_id: self.new_account_id.clone().into(),
-        //     initial_balance: self.initial_balance.clone(),
-        //     public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-        // };
-        // self.access_key_mode
-        //     .process(config, account_properties)
-        //     .await
-        Ok(())
     }
 }
 

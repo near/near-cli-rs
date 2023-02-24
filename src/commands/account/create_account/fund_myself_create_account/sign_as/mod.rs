@@ -1,13 +1,13 @@
-use inquire::{CustomType, Select};
-use serde_json::json;
 use std::str::FromStr;
+
+use serde_json::json;
+
+use inquire::{CustomType, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::account::create_account::CreateAccountContext)]
 #[interactive_clap(output_context = crate::commands::ActionContext)]
-// #[interactive_clap(skip_default_from_cli)]
 pub struct SignerAccountId {
-    // #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     /// What is the signer account ID?
     signer_account_id: crate::types::account_id::AccountId,
@@ -16,12 +16,10 @@ pub struct SignerAccountId {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SignerAccountIdContext {
     config: crate::config::Config,
-    new_account_id: near_primitives::types::AccountId,
     account_properties: super::super::AccountProperties,
-    storage_properties: Option<super::super::fund_myself_create_account::StorageProperties>,
     signer_account_id: near_primitives::types::AccountId,
 }
 
@@ -32,9 +30,7 @@ impl SignerAccountIdContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
-            new_account_id: previous_context.new_account_id.into(),
             account_properties: previous_context.account_properties,
-            storage_properties: previous_context.storage_properties,
             signer_account_id: scope.signer_account_id.clone().into(),
         })
     }
@@ -42,14 +38,15 @@ impl SignerAccountIdContext {
 
 impl From<SignerAccountIdContext> for crate::commands::ActionContext {
     fn from(item: SignerAccountIdContext) -> Self {
-        let receiver_account_id = item.new_account_id.clone();
-        let signer_account_id = item.signer_account_id.clone();
-        let credentials_home_dir = item.config.credentials_home_dir.clone();
+        let receiver_account_id: near_primitives::types::AccountId =
+            item.account_properties.new_account_id.clone().into();
+        let signer_account_id: near_primitives::types::AccountId = item.signer_account_id.clone();
         let config = item.config.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let new_account_id = item.new_account_id.clone();
+                let new_account_id: near_primitives::types::AccountId =
+                    item.account_properties.new_account_id.clone().into();
                 let signer_account_id = item.signer_account_id.clone();
 
                 move |prepopulated_unsigned_transaction, network_config| {
@@ -143,61 +140,61 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     prepopulated_unsigned_transaction.receiver_id = receiver_id;
                     prepopulated_unsigned_transaction.actions = actions;
 
-                    let storage_message = match item.storage_properties.clone() {
-                        Some(properties) => {
-                            let key_pair_properties_buf =
-                                serde_json::to_string(&properties.key_pair_properties)?;
-                            match properties.storage {
-                                #[cfg(target_os = "macos")]
-                                super::add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
-                                    // super::add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
-                                    //     network_config.clone(),
-                                    //     item.account_properties.clone(),
-                                    //     item.storage_properties.clone(),
-                                    // )?
-                                    crate::common::save_access_key_to_macos_keychain(
-                                        network_config.clone(),
-                                        &key_pair_properties_buf,
-                                        &properties.key_pair_properties.public_key_str,
-                                        &new_account_id,
-                                    )
-                                    .map_err(|err| {
-                                        color_eyre::Report::msg(format!(
-                                            "Failed to save a file with access key: {}",
-                                            err
-                                        ))
-                                    })?
-                                                    }
-                                super::add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
-                                    // super::add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
-                                    //     item.config.clone(),
-                                    //     network_config.clone(),
-                                    //     item.account_properties.clone(),
-                                    //     item.storage_properties.clone(),
-                                    // )?
-                                    crate::common::save_access_key_to_keychain(
-                                        network_config.clone(),
-                                        credentials_home_dir.clone(),
-                                        &key_pair_properties_buf,
-                                        &properties.key_pair_properties.public_key_str,
-                                        &new_account_id,
-                                    )
-                                    .map_err(|err| {
-                                        color_eyre::Report::msg(format!(
-                                            "Failed to save a file with access key: {}",
-                                            err
-                                        ))
-                                    })?
-                                }
-                                super::add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
-                                    super::add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
-                                        item.storage_properties.clone(),
-                                    )?
-                                }
-                            }
-                        }
-                        None => String::new(),
-                    };
+                    // let storage_message = match item.storage_properties.clone() {
+                    //     Some(properties) => {
+                    //         let key_pair_properties_buf =
+                    //             serde_json::to_string(&properties.key_pair_properties)?;
+                    //         match properties.storage {
+                    //             #[cfg(target_os = "macos")]
+                    //             super::add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToMacosKeychain => {
+                    //                 // super::add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_macos_keychain(
+                    //                 //     network_config.clone(),
+                    //                 //     item.account_properties.clone(),
+                    //                 //     item.storage_properties.clone(),
+                    //                 // )?
+                    //                 crate::common::save_access_key_to_macos_keychain(
+                    //                     network_config.clone(),
+                    //                     &key_pair_properties_buf,
+                    //                     &properties.key_pair_properties.public_key_str,
+                    //                     &new_account_id,
+                    //                 )
+                    //                 .map_err(|err| {
+                    //                     color_eyre::Report::msg(format!(
+                    //                         "Failed to save a file with access key: {}",
+                    //                         err
+                    //                     ))
+                    //                 })?
+                    //                                 }
+                    //             super::add_key::autogenerate_new_keypair::SaveModeDiscriminants::SaveToKeychain => {
+                    //                 // super::add_key::autogenerate_new_keypair::SaveMode::save_access_key_to_keychain(
+                    //                 //     item.config.clone(),
+                    //                 //     network_config.clone(),
+                    //                 //     item.account_properties.clone(),
+                    //                 //     item.storage_properties.clone(),
+                    //                 // )?
+                    //                 crate::common::save_access_key_to_keychain(
+                    //                     network_config.clone(),
+                    //                     credentials_home_dir.clone(),
+                    //                     &key_pair_properties_buf,
+                    //                     &properties.key_pair_properties.public_key_str,
+                    //                     &new_account_id,
+                    //                 )
+                    //                 .map_err(|err| {
+                    //                     color_eyre::Report::msg(format!(
+                    //                         "Failed to save a file with access key: {}",
+                    //                         err
+                    //                     ))
+                    //                 })?
+                    //             }
+                    //             super::add_key::autogenerate_new_keypair::SaveModeDiscriminants::PrintToTerminal => {
+                    //                 super::add_key::autogenerate_new_keypair::SaveMode::print_access_key_to_terminal(
+                    //                     item.storage_properties.clone(),
+                    //                 )?
+                    //             }
+                    //         }
+                    //     }
+                    //     None => String::new(),
+                    // };
 
                     // match crate::transaction_signature_options::sign_with(
                     //     network_config.clone(),
@@ -319,7 +316,8 @@ impl SignerAccountId {
         context: &crate::commands::account::create_account::CreateAccountContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         let parent_account_id = context
-        .account_properties.new_account_id
+            .account_properties
+            .new_account_id
             .clone()
             .get_parent_account_id_from_sub_account();
         if !parent_account_id.0.is_top_level() {
