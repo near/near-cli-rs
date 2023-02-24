@@ -1,4 +1,3 @@
-use inquire::CustomType;
 use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
@@ -124,12 +123,14 @@ impl interactive_clap::FromCli for Submit {
     where
         Self: Sized + interactive_clap::ToCli,
     {
+        let mut message = String::new();
+        (context.on_before_sending_transaction_callback)(
+            &context.signed_transaction,
+            &context.network_config,
+            &mut message,
+        )?;
         match optional_clap_variant {
             Some(CliSubmit::Send) => {
-                (context.on_before_sending_transaction_callback)(
-                    &context.signed_transaction,
-                    &context.network_config,
-                )?;
                 println!("Transaction sent ...");
                 let transaction_info = loop {
                     let transaction_info_result = tokio::runtime::Runtime::new()
@@ -155,6 +156,7 @@ impl interactive_clap::FromCli for Submit {
                     &context.network_config,
                 )?;
                 crate::common::print_transaction_status(transaction_info, context.network_config)?;
+                println!("{message}");
                 Ok(Some(Self::Send))
             }
             Some(CliSubmit::Display) => {
@@ -165,21 +167,13 @@ impl interactive_clap::FromCli for Submit {
                         .expect("Transaction is not expected to fail on serialization"),
                 );
                 println!("\nSerialize_to_base64:\n{}", &base64_transaction);
+                println!("{message}");
                 Ok(Some(Self::Display))
             }
             None => Self::choose_variant(context.clone()),
         }
     }
 }
-
-// impl std::fmt::Display for SubmitDiscriminants {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         match self {
-//             Self::Send => write!(f, "send"),
-//             Self::Display => write!(f, "display"),
-//         }
-//     }
-// }
 
 #[derive(Debug, Deserialize)]
 pub struct AccountKeyPair {
@@ -191,6 +185,7 @@ pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
     dyn Fn(
         &near_primitives::transaction::SignedTransaction,
         &crate::config::NetworkConfig,
+        &mut String,
     ) -> crate::CliResult,
 >;
 
