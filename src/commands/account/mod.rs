@@ -1,7 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod add_key;
-//pub mod create_account;
+pub mod create_account;
 mod delete_account;
 mod delete_key;
 mod import_account;
@@ -38,9 +38,9 @@ pub enum AccountActions {
     ))]
     /// Import existing account (a.k.a. "sign in")
     ImportAccount(self::import_account::ImportAccountCommand),
-    // #[strum_discriminants(strum(message = "create-account          - Create a new account"))]
-    // /// Create a new account
-    // CreateAccount(self::create_account::CreateAccount),
+    #[strum_discriminants(strum(message = "create-account          - Create a new account"))]
+    /// Create a new account
+    CreateAccount(self::create_account::CreateAccount),
     #[strum_discriminants(strum(message = "delete-account          - Delete an account"))]
     /// Delete an account
     DeleteAccount(self::delete_account::DeleteAccount),
@@ -69,7 +69,7 @@ impl AccountActions {
             }
             Self::ListKeys(view_list_keys) => view_list_keys.process(config).await,
             Self::DeleteAccount(_) => Ok(()),
-            // Self::CreateAccount(account) => account.process(config).await,
+            Self::CreateAccount(account) => account.process(config).await,
             Self::AddKey(_) => Ok(()),
             Self::DeleteKey(_) => Ok(()),
             Self::ImportAccount(import_account_command) => {

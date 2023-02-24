@@ -7,7 +7,7 @@ mod use_manually_provided_seed_phrase;
 mod use_public_key;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(context = super::NewAccountContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 ///Add an access key for this account
 pub enum AccessKeyMode {
@@ -27,7 +27,7 @@ pub enum AccessKeyMode {
         message = "use-manually-provided-public-key  - Use the provided public key manually"
     ))]
     ///Use the provided public key manually
-    UseManuallyProvidedPublicKey(self::use_public_key::AddAccessKeyAction),
+    UseManuallyProvidedPublicKey(self::use_public_key::AddPublicKeyAction),
     #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(message = "use-ledger                        - Use a ledger"))]
     ///Use a ledger

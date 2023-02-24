@@ -5,7 +5,7 @@ mod network;
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct NewAccount {
     #[interactive_clap(skip_default_input_arg)]
-    ///What is the new account ID?
+    /// What is the new account ID?
     new_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     access_key_mode: add_key::AccessKeyMode,
