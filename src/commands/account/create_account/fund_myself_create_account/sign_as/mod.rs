@@ -21,6 +21,8 @@ pub struct SignerAccountIdContext {
     config: crate::config::Config,
     account_properties: super::super::AccountProperties,
     signer_account_id: near_primitives::types::AccountId,
+    on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
 }
 
 impl SignerAccountIdContext {
@@ -32,6 +34,8 @@ impl SignerAccountIdContext {
             config: previous_context.config,
             account_properties: previous_context.account_properties,
             signer_account_id: scope.signer_account_id.clone().into(),
+            on_before_sending_transaction_callback: previous_context
+                .on_before_sending_transaction_callback,
         })
     }
 }
@@ -254,9 +258,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config| Ok(()),
-            ),
+            on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
             ),

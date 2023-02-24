@@ -49,7 +49,7 @@ impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext 
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config| Ok(()),
+                |_signed_transaction, _network_config, _message| Ok(()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
