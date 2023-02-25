@@ -133,7 +133,7 @@ impl From<SignLedgerContext> for super::SubmitContext {
     fn from(item: SignLedgerContext) -> Self {
         Self {
             network_config: item.network_config,
-            signed_transaction: item.signed_transaction,
+            submit_transaction: item.signed_transaction.into(),
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }

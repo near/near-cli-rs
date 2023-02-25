@@ -2,6 +2,8 @@ use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+use crate::types::signed_transaction;
+
 pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
@@ -123,51 +125,65 @@ impl interactive_clap::FromCli for Submit {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let mut message = String::new();
-        (context.on_before_sending_transaction_callback)(
-            &context.signed_transaction,
-            &context.network_config,
-            &mut message,
-        )?;
         match optional_clap_variant {
             Some(CliSubmit::Send) => {
-                println!("Transaction sent ...");
-                let transaction_info = loop {
-                    let transaction_info_result = tokio::runtime::Runtime::new()
-                    .unwrap()
-                    .block_on(context.network_config.json_rpc_client()
-                        .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction: context.signed_transaction.clone()})
-                        )
-                    ;
-                    match transaction_info_result {
-                        Ok(response) => {
-                            break response;
-                        }
-                        Err(err) => match crate::common::rpc_transaction_error(err) {
-                            Ok(_) => tokio::runtime::Runtime::new().unwrap().block_on(
-                                tokio::time::sleep(std::time::Duration::from_millis(100)),
-                            ),
-                            Err(report) => return color_eyre::eyre::Result::Err(report),
-                        },
-                    };
-                };
-                (context.on_after_sending_transaction_callback)(
-                    &transaction_info,
-                    &context.network_config,
-                )?;
-                crate::common::print_transaction_status(transaction_info, context.network_config)?;
-                println!("{message}");
-                Ok(Some(Self::Send))
+                
+                match context.submit_transaction {
+                    SubmitTransaction::SponsorService(_) => return Err(crate::common::CliError::ExitOk.into()),
+                    SubmitTransaction::SignedTransaction(signed_transaction) => {
+
+                        let mut message = String::new();
+                        (context.on_before_sending_transaction_callback)(
+                            &signed_transaction,
+                            &context.network_config,
+                            &mut message,
+                        )?;
+
+                        println!("Transaction sent ...");
+                        let transaction_info = loop {
+                            let transaction_info_result = tokio::runtime::Runtime::new()
+                            .unwrap()
+                            .block_on(context.network_config.json_rpc_client()
+                                .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction: signed_transaction.clone()})
+                                )
+                            ;
+                            match transaction_info_result {
+                                Ok(response) => {
+                                    break response;
+                                }
+                                Err(err) => match crate::common::rpc_transaction_error(err) {
+                                    Ok(_) => tokio::runtime::Runtime::new().unwrap().block_on(
+                                        tokio::time::sleep(std::time::Duration::from_millis(100)),
+                                    ),
+                                    Err(report) => return color_eyre::eyre::Result::Err(report),
+                                },
+                            };
+                        };
+                        (context.on_after_sending_transaction_callback)(
+                            &transaction_info,
+                            &context.network_config,
+                        )?;
+                        crate::common::print_transaction_status(transaction_info, context.network_config)?;
+                        println!("{message}");
+                        Ok(Some(Self::Send))
+                    }
+                }
+
+
+                
             }
             Some(CliSubmit::Display) => {
-                let base64_transaction = near_primitives::serialize::to_base64(
-                    context
-                        .signed_transaction
-                        .try_to_vec()
-                        .expect("Transaction is not expected to fail on serialization"),
-                );
-                println!("\nSerialize_to_base64:\n{}", &base64_transaction);
-                println!("{message}");
+
+
+                
+                // let base64_transaction = near_primitives::serialize::to_base64(
+                //     context
+                //         .signed_transaction
+                //         .try_to_vec()
+                //         .expect("Transaction is not expected to fail on serialization"),
+                // );
+                // println!("\nSerialize_to_base64:\n{}", &base64_transaction);
+                // println!("{message}");
                 Ok(Some(Self::Display))
             }
             None => Self::choose_variant(context.clone()),
@@ -199,7 +215,25 @@ pub type OnAfterSendingTransactionCallback = std::sync::Arc<
 #[derive(Clone)]
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
-    pub signed_transaction: near_primitives::transaction::SignedTransaction,
+    pub submit_transaction: SubmitTransaction,
     pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
+}
+
+#[derive(Debug, Clone)]
+pub enum SubmitTransaction {
+    SignedTransaction(near_primitives::transaction::SignedTransaction),
+    SponsorService(crate::commands::SponsorService),
+}
+
+impl From<near_primitives::transaction::SignedTransaction> for SubmitTransaction {
+    fn from(signed_transaction: near_primitives::transaction::SignedTransaction) -> Self {
+        Self::SignedTransaction(signed_transaction)
+    }
+}
+
+impl From<crate::commands::SponsorService> for SubmitTransaction {
+    fn from(sponsor_service: crate::commands::SponsorService) -> Self {
+        Self::SponsorService(sponsor_service)
+    }
 }
