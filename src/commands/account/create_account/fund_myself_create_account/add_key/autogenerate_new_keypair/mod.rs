@@ -75,54 +75,51 @@ impl SaveModeContext {
         let scope = scope.clone();
 
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
-        std::sync::Arc::new({
-            let new_account_id = previous_context.account_properties.new_account_id.clone();
-            let key_pair_properties = previous_context.key_pair_properties.clone();
-            let credentials_home_dir = previous_context.config.credentials_home_dir.clone();
+            std::sync::Arc::new({
+                let new_account_id = previous_context.account_properties.new_account_id.clone();
+                let key_pair_properties = previous_context.key_pair_properties.clone();
+                let credentials_home_dir = previous_context.config.credentials_home_dir.clone();
 
-            move |_signed_transaction, network_config, message| {
-
-                match scope {
-                    #[cfg(target_os = "macos")]
-                    SaveModeDiscriminants::SaveToMacosKeychain => {
-                        let key_pair_properties_buf =
-                            serde_json::to_string(&key_pair_properties)?;
-                        *message = crate::common::save_access_key_to_macos_keychain(
-                            network_config.clone(),
-                            &key_pair_properties_buf,
-                            &key_pair_properties.public_key_str,
-                            &new_account_id.to_string(),
-                        )?;
-
+                move |_signed_transaction, network_config, message| {
+                    match scope {
+                        #[cfg(target_os = "macos")]
+                        SaveModeDiscriminants::SaveToMacosKeychain => {
+                            let key_pair_properties_buf =
+                                serde_json::to_string(&key_pair_properties)?;
+                            *message = crate::common::save_access_key_to_macos_keychain(
+                                network_config.clone(),
+                                &key_pair_properties_buf,
+                                &key_pair_properties.public_key_str,
+                                &new_account_id.to_string(),
+                            )?;
+                        }
+                        SaveModeDiscriminants::SaveToKeychain => {
+                            let key_pair_properties_buf =
+                                serde_json::to_string(&key_pair_properties)?;
+                            *message = crate::common::save_access_key_to_keychain(
+                                network_config.clone(),
+                                credentials_home_dir.clone(),
+                                &key_pair_properties_buf,
+                                &key_pair_properties.public_key_str,
+                                &new_account_id.to_string(),
+                            )?;
+                        }
+                        SaveModeDiscriminants::PrintToTerminal => {
+                            println!("\n--------------------  Access key info for account <{}> ------------------\n", &new_account_id);
+                            println!(
+                                "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
+                                key_pair_properties.master_seed_phrase,
+                                key_pair_properties.seed_phrase_hd_path,
+                                key_pair_properties.implicit_account_id,
+                                key_pair_properties.public_key_str,
+                                key_pair_properties.secret_keypair_str,
+                            );
+                            println!("\n------------------------------------------------------------------------------------");
+                        }
                     }
-                    SaveModeDiscriminants::SaveToKeychain => {
-                        let key_pair_properties_buf =
-                            serde_json::to_string(&key_pair_properties)?;
-                        *message = crate::common::save_access_key_to_keychain(
-                            network_config.clone(),
-                            credentials_home_dir.clone(),
-                            &key_pair_properties_buf,
-                            &key_pair_properties.public_key_str,
-                            &new_account_id.to_string(),
-                        )?;
-
-                    }
-                    SaveModeDiscriminants::PrintToTerminal => {
-                        println!("\n--------------------  Access key info for account <{}> ------------------\n", &new_account_id);
-                        println!(
-                            "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
-                            key_pair_properties.master_seed_phrase,
-                            key_pair_properties.seed_phrase_hd_path,
-                            key_pair_properties.implicit_account_id,
-                            key_pair_properties.public_key_str,
-                            key_pair_properties.secret_keypair_str,
-                        );
-                        println!("\n------------------------------------------------------------------------------------");
-                    }
+                    Ok(())
                 }
-                Ok(())
-            }
-        });
+            });
 
         Ok(Self(
             crate::commands::account::create_account::CreateAccountContext {

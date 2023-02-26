@@ -2,8 +2,6 @@ use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::types::signed_transaction;
-
 pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
@@ -125,23 +123,88 @@ impl interactive_clap::FromCli for Submit {
     where
         Self: Sized + interactive_clap::ToCli,
     {
+        let mut storage_message = String::new();
+
         match optional_clap_variant {
             Some(CliSubmit::Send) => match context.submit_transaction {
                 SubmitTransaction::SponsorService(sponsor_service) => {
-                    let mut message = String::new();
                     (context.on_before_sending_transaction_callback)(
-                        &sponsor_service.into(),
+                        &sponsor_service.clone().into(),
                         &context.network_config,
-                        &mut message,
+                        &mut storage_message,
                     )?;
-                    return Ok(Some(Self::Send));
+
+                    println!("Transaction sent ...");
+
+                    let faucet_service_url = match &context.network_config.faucet_url {
+                        Some(url) => url,
+                        None => return Err(color_eyre::Report::msg(format!(
+                            "The <{}> network does not have a faucet (helper service) that can sponsor the creation of an account.",
+                            &context.network_config.network_name
+                        )))
+                    };
+                    let mut data = std::collections::HashMap::new();
+                    data.insert(
+                        "newAccountId",
+                        sponsor_service
+                            .account_properties
+                            .new_account_id
+                            .to_string(),
+                    );
+                    data.insert(
+                        "newAccountPublicKey",
+                        sponsor_service.account_properties.public_key.to_string(),
+                    );
+
+                    let client = reqwest::Client::new();
+                    match tokio::runtime::Runtime::new()
+                        .unwrap()
+                        .block_on(client.post(faucet_service_url.clone()).json(&data).send())
+                    {
+                        Ok(response) => {
+                            let account_creation_transaction = tokio::runtime::Runtime::new()
+                            .unwrap()
+                            .block_on(response
+                                .json::<near_jsonrpc_client::methods::tx::RpcTransactionStatusResponse>(
+                                ))?;
+                            match account_creation_transaction.status {
+                                near_primitives::views::FinalExecutionStatus::SuccessValue(
+                                    ref value,
+                                ) => {
+                                    if value == b"false" {
+                                        println!(
+                                            "The new account <{}> could not be created successfully.",
+                                            &sponsor_service.account_properties.new_account_id
+                                        );
+                                    } else {
+                                        println!(
+                                            "New account <{}> created successfully.",
+                                            &sponsor_service.account_properties.new_account_id
+                                        );
+                                    }
+                                    println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+                                        id=account_creation_transaction.transaction_outcome.id,
+                                        path=context.network_config.explorer_transaction_url
+                                    );
+                                }
+                                _ => {
+                                    crate::common::print_transaction_status(
+                                        account_creation_transaction,
+                                        context.network_config,
+                                    )?;
+                                }
+                            }
+                            println!("{storage_message}");
+                            Ok(Some(Self::Send))
+                        }
+                        Err(err) => Err(color_eyre::Report::msg(err.to_string())),
+                    }
                 }
                 SubmitTransaction::SignedTransaction(signed_transaction) => {
-                    let mut message = String::new();
                     (context.on_before_sending_transaction_callback)(
-                        &signed_transaction.into(),
+                        &signed_transaction.clone().into(),
                         &context.network_config,
-                        &mut message,
+                        &mut storage_message,
                     )?;
 
                     println!("Transaction sent ...");
@@ -172,19 +235,34 @@ impl interactive_clap::FromCli for Submit {
                         transaction_info,
                         context.network_config,
                     )?;
-                    println!("{message}");
+                    println!("{storage_message}");
                     Ok(Some(Self::Send))
                 }
             },
             Some(CliSubmit::Display) => {
-                // let base64_transaction = near_primitives::serialize::to_base64(
-                //     context
-                //         .signed_transaction
-                //         .try_to_vec()
-                //         .expect("Transaction is not expected to fail on serialization"),
-                // );
-                // println!("\nSerialize_to_base64:\n{}", &base64_transaction);
-                // println!("{message}");
+                match context.submit_transaction {
+                    SubmitTransaction::SponsorService(sponsor_service) => {
+                        (context.on_before_sending_transaction_callback)(
+                            &sponsor_service.clone().into(),
+                            &context.network_config,
+                            &mut storage_message,
+                        )?;
+                    }
+                    SubmitTransaction::SignedTransaction(signed_transaction) => {
+                        (context.on_before_sending_transaction_callback)(
+                            &signed_transaction.clone().into(),
+                            &context.network_config,
+                            &mut storage_message,
+                        )?;
+                        let base64_transaction = near_primitives::serialize::to_base64(
+                            signed_transaction
+                                .try_to_vec()
+                                .expect("Transaction is not expected to fail on serialization"),
+                        );
+                        println!("\nSerialize_to_base64:\n{}", &base64_transaction);
+                    }
+                }
+                println!("{storage_message}");
                 Ok(Some(Self::Display))
             }
             None => Self::choose_variant(context.clone()),
@@ -220,7 +298,7 @@ pub struct SubmitContext {
 #[derive(Debug, Clone)]
 pub enum SubmitTransaction {
     SignedTransaction(near_primitives::transaction::SignedTransaction),
-    SponsorService(crate::commands::SponsorService),
+    SponsorService(crate::commands::account::create_account::SponsorService),
 }
 
 impl From<near_primitives::transaction::SignedTransaction> for SubmitTransaction {
@@ -229,8 +307,8 @@ impl From<near_primitives::transaction::SignedTransaction> for SubmitTransaction
     }
 }
 
-impl From<crate::commands::SponsorService> for SubmitTransaction {
-    fn from(sponsor_service: crate::commands::SponsorService) -> Self {
+impl From<crate::commands::account::create_account::SponsorService> for SubmitTransaction {
+    fn from(sponsor_service: crate::commands::account::create_account::SponsorService) -> Self {
         Self::SponsorService(sponsor_service)
     }
 }
