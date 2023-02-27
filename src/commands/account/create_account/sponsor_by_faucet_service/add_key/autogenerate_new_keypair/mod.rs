@@ -13,7 +13,8 @@ pub struct GenerateKeypair {
 #[derive(Debug, Clone)]
 pub struct GenerateKeypairContext {
     config: crate::config::Config,
-    account_properties: crate::commands::account::create_account::AccountProperties,
+    new_account_id: crate::types::account_id::AccountId,
+    public_key: near_crypto::PublicKey,
     key_pair_properties: crate::common::KeyPairProperties,
 }
 
@@ -26,15 +27,11 @@ impl GenerateKeypairContext {
             .unwrap()
             .block_on(crate::common::generate_keypair())?;
         let public_key = near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
-        let account_properties = crate::commands::account::create_account::AccountProperties {
-            new_account_id: previous_context.new_account_id,
-            initial_balance: previous_context.initial_balance,
-            public_key,
-        };
 
         Ok(Self {
             config: previous_context.config,
-            account_properties,
+            new_account_id: previous_context.new_account_id,
+            public_key,
             key_pair_properties,
         })
     }
@@ -42,7 +39,7 @@ impl GenerateKeypairContext {
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = GenerateKeypairContext)]
-#[interactive_clap(output_context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(output_context = super::super::SponsorServiceContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Save an access key for this account
 pub enum SaveMode {
@@ -65,7 +62,7 @@ pub enum SaveMode {
 }
 
 #[derive(Clone)]
-pub struct SaveModeContext(crate::commands::account::create_account::CreateAccountContext);
+pub struct SaveModeContext(super::super::SponsorServiceContext);
 
 impl SaveModeContext {
     pub fn from_previous_context(
@@ -74,38 +71,38 @@ impl SaveModeContext {
     ) -> color_eyre::eyre::Result<Self> {
         let scope = scope.clone();
 
-        let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
+        let on_after_getting_network_callback: super::super::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let new_account_id = previous_context.account_properties.new_account_id.clone();
+                let new_account_id_str = previous_context.new_account_id.to_string();
                 let key_pair_properties = previous_context.key_pair_properties.clone();
                 let credentials_home_dir = previous_context.config.credentials_home_dir.clone();
 
-                move |_submit_transaction, network_config, message| {
+                move |network_config, storage_message| {
                     match scope {
                         #[cfg(target_os = "macos")]
                         SaveModeDiscriminants::SaveToMacosKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            *message = crate::common::save_access_key_to_macos_keychain(
+                            *storage_message = crate::common::save_access_key_to_macos_keychain(
                                 network_config.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
-                                &new_account_id.to_string(),
+                                &new_account_id_str,
                             )?;
                         }
                         SaveModeDiscriminants::SaveToKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            *message = crate::common::save_access_key_to_keychain(
+                            *storage_message = crate::common::save_access_key_to_keychain(
                                 network_config.clone(),
                                 credentials_home_dir.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
-                                &new_account_id.to_string(),
+                                &new_account_id_str,
                             )?;
                         }
                         SaveModeDiscriminants::PrintToTerminal => {
-                            println!("\n--------------------  Access key info for account <{}> ------------------\n", &new_account_id);
+                            println!("\n--------------------  Access key info for account <{}> ------------------\n", &new_account_id_str);
                             println!(
                                 "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
                                 key_pair_properties.master_seed_phrase,
@@ -121,24 +118,23 @@ impl SaveModeContext {
                 }
             });
 
-        Ok(Self(
-            crate::commands::account::create_account::CreateAccountContext {
-                config: previous_context.config,
-                account_properties: previous_context.account_properties,
-                on_before_sending_transaction_callback,
-            },
-        ))
+        Ok(Self(super::super::SponsorServiceContext {
+            config: previous_context.config,
+            new_account_id: previous_context.new_account_id,
+            public_key: previous_context.public_key,
+            on_after_getting_network_callback,
+        }))
     }
 }
 
-impl From<SaveModeContext> for crate::commands::account::create_account::CreateAccountContext {
+impl From<SaveModeContext> for super::super::SponsorServiceContext {
     fn from(item: SaveModeContext) -> Self {
         item.0
     }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(context = super::super::SponsorServiceContext)]
 pub struct SaveKeyPair {
     #[interactive_clap(named_arg)]
     /// Select network

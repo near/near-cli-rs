@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::NewAccountContext)]
-#[interactive_clap(output_context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(output_context = super::super::SponsorServiceContext)]
 pub struct AddAccessWithSeedPhraseAction {
     /// Enter the seed-phrase for this account
     master_seed_phrase: String,
@@ -12,9 +12,7 @@ pub struct AddAccessWithSeedPhraseAction {
 }
 
 #[derive(Clone)]
-struct AddAccessWithSeedPhraseActionContext(
-    crate::commands::account::create_account::CreateAccountContext,
-);
+struct AddAccessWithSeedPhraseActionContext(super::super::SponsorServiceContext);
 
 impl AddAccessWithSeedPhraseActionContext {
     pub fn from_previous_context(
@@ -28,27 +26,19 @@ impl AddAccessWithSeedPhraseActionContext {
             near_wallet_seed_phrase_hd_path_default,
             &scope.master_seed_phrase,
         )?;
-        let account_properties = crate::commands::account::create_account::AccountProperties {
-            new_account_id: previous_context.new_account_id,
-            initial_balance: previous_context.initial_balance,
-            public_key,
-        };
 
-        Ok(Self(
-            crate::commands::account::create_account::CreateAccountContext {
-                config: previous_context.config,
-                account_properties,
-                on_before_sending_transaction_callback: std::sync::Arc::new(
-                    |_signed_transaction, _network_config, _message| Ok(()),
-                ),
-            },
-        ))
+        Ok(Self(super::super::SponsorServiceContext {
+            config: previous_context.config,
+            new_account_id: previous_context.new_account_id,
+            public_key,
+            on_after_getting_network_callback: std::sync::Arc::new(
+                |_network_config, _storage_message| Ok(()),
+            ),
+        }))
     }
 }
 
-impl From<AddAccessWithSeedPhraseActionContext>
-    for crate::commands::account::create_account::CreateAccountContext
-{
+impl From<AddAccessWithSeedPhraseActionContext> for super::super::SponsorServiceContext {
     fn from(item: AddAccessWithSeedPhraseActionContext) -> Self {
         item.0
     }

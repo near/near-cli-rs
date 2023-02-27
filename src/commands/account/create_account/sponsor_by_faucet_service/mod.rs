@@ -1,7 +1,13 @@
-use std::str::FromStr;
-
 mod add_key;
 mod network;
+
+#[derive(Clone)]
+pub struct SponsorServiceContext {
+    pub config: crate::config::Config,
+    pub new_account_id: crate::types::account_id::AccountId,
+    pub public_key: near_crypto::PublicKey,
+    pub on_after_getting_network_callback: self::network::OnAfterGettingNetworkCallback,
+}
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -18,7 +24,6 @@ pub struct NewAccount {
 pub struct NewAccountContext {
     config: crate::config::Config,
     new_account_id: crate::types::account_id::AccountId,
-    initial_balance: crate::common::NearBalance,
 }
 
 impl NewAccountContext {
@@ -29,7 +34,6 @@ impl NewAccountContext {
         Ok(Self {
             config: previous_context.0,
             new_account_id: scope.new_account_id.clone(),
-            initial_balance: crate::common::NearBalance::from_str("0 NEAR").unwrap(),
         })
     }
 }

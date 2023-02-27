@@ -126,142 +126,55 @@ impl interactive_clap::FromCli for Submit {
         let mut storage_message = String::new();
 
         match optional_clap_variant {
-            Some(CliSubmit::Send) => match context.submit_transaction {
-                SubmitTransaction::SponsorService(sponsor_service) => {
-                    (context.on_before_sending_transaction_callback)(
-                        &sponsor_service.clone().into(),
-                        &context.network_config,
-                        &mut storage_message,
-                    )?;
+            Some(CliSubmit::Send) => {
+                (context.on_before_sending_transaction_callback)(
+                    &context.signed_transaction,
+                    &context.network_config,
+                    &mut storage_message,
+                )?;
 
-                    println!("Transaction sent ...");
-
-                    let faucet_service_url = match &context.network_config.faucet_url {
-                        Some(url) => url,
-                        None => return Err(color_eyre::Report::msg(format!(
-                            "The <{}> network does not have a faucet (helper service) that can sponsor the creation of an account.",
-                            &context.network_config.network_name
-                        )))
-                    };
-                    let mut data = std::collections::HashMap::new();
-                    data.insert(
-                        "newAccountId",
-                        sponsor_service
-                            .account_properties
-                            .new_account_id
-                            .to_string(),
-                    );
-                    data.insert(
-                        "newAccountPublicKey",
-                        sponsor_service.account_properties.public_key.to_string(),
-                    );
-
-                    let client = reqwest::Client::new();
-                    match tokio::runtime::Runtime::new()
-                        .unwrap()
-                        .block_on(client.post(faucet_service_url.clone()).json(&data).send())
-                    {
-                        Ok(response) => {
-                            let account_creation_transaction = tokio::runtime::Runtime::new()
-                            .unwrap()
-                            .block_on(response
-                                .json::<near_jsonrpc_client::methods::tx::RpcTransactionStatusResponse>(
-                                ))?;
-                            match account_creation_transaction.status {
-                                near_primitives::views::FinalExecutionStatus::SuccessValue(
-                                    ref value,
-                                ) => {
-                                    if value == b"false" {
-                                        println!(
-                                            "The new account <{}> could not be created successfully.",
-                                            &sponsor_service.account_properties.new_account_id
-                                        );
-                                    } else {
-                                        println!(
-                                            "New account <{}> created successfully.",
-                                            &sponsor_service.account_properties.new_account_id
-                                        );
-                                    }
-                                    println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
-                                        id=account_creation_transaction.transaction_outcome.id,
-                                        path=context.network_config.explorer_transaction_url
-                                    );
-                                }
-                                _ => {
-                                    crate::common::print_transaction_status(
-                                        account_creation_transaction,
-                                        context.network_config,
-                                    )?;
-                                }
-                            }
-                            println!("{storage_message}");
-                            Ok(Some(Self::Send))
-                        }
-                        Err(err) => Err(color_eyre::Report::msg(err.to_string())),
-                    }
-                }
-                SubmitTransaction::SignedTransaction(signed_transaction) => {
-                    (context.on_before_sending_transaction_callback)(
-                        &signed_transaction.clone().into(),
-                        &context.network_config,
-                        &mut storage_message,
-                    )?;
-
-                    println!("Transaction sent ...");
-                    let transaction_info = loop {
-                        let transaction_info_result = tokio::runtime::Runtime::new()
+                println!("Transaction sent ...");
+                let transaction_info = loop {
+                    let transaction_info_result = tokio::runtime::Runtime::new()
                             .unwrap()
                             .block_on(context.network_config.json_rpc_client()
-                                .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction: signed_transaction.clone()})
+                                .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction: context.signed_transaction.clone()})
                                 )
                             ;
-                        match transaction_info_result {
-                            Ok(response) => {
-                                break response;
-                            }
-                            Err(err) => match crate::common::rpc_transaction_error(err) {
-                                Ok(_) => tokio::runtime::Runtime::new().unwrap().block_on(
-                                    tokio::time::sleep(std::time::Duration::from_millis(100)),
-                                ),
-                                Err(report) => return color_eyre::eyre::Result::Err(report),
-                            },
-                        };
+                    match transaction_info_result {
+                        Ok(response) => {
+                            break response;
+                        }
+                        Err(err) => match crate::common::rpc_transaction_error(err) {
+                            Ok(_) => tokio::runtime::Runtime::new().unwrap().block_on(
+                                tokio::time::sleep(std::time::Duration::from_millis(100)),
+                            ),
+                            Err(report) => return color_eyre::eyre::Result::Err(report),
+                        },
                     };
-                    (context.on_after_sending_transaction_callback)(
-                        &transaction_info,
-                        &context.network_config,
-                    )?;
-                    crate::common::print_transaction_status(
-                        transaction_info,
-                        context.network_config,
-                    )?;
-                    println!("{storage_message}");
-                    Ok(Some(Self::Send))
-                }
-            },
+                };
+                (context.on_after_sending_transaction_callback)(
+                    &transaction_info,
+                    &context.network_config,
+                )?;
+                crate::common::print_transaction_status(transaction_info, context.network_config)?;
+                println!("{storage_message}");
+                Ok(Some(Self::Send))
+            }
             Some(CliSubmit::Display) => {
-                match context.submit_transaction {
-                    SubmitTransaction::SponsorService(sponsor_service) => {
-                        (context.on_before_sending_transaction_callback)(
-                            &sponsor_service.clone().into(),
-                            &context.network_config,
-                            &mut storage_message,
-                        )?;
-                    }
-                    SubmitTransaction::SignedTransaction(signed_transaction) => {
-                        (context.on_before_sending_transaction_callback)(
-                            &signed_transaction.clone().into(),
-                            &context.network_config,
-                            &mut storage_message,
-                        )?;
-                        let base64_transaction = near_primitives::serialize::to_base64(
-                            signed_transaction
-                                .try_to_vec()
-                                .expect("Transaction is not expected to fail on serialization"),
-                        );
-                        println!("\nSerialize_to_base64:\n{}", &base64_transaction);
-                    }
-                }
+                (context.on_before_sending_transaction_callback)(
+                    &context.signed_transaction,
+                    &context.network_config,
+                    &mut storage_message,
+                )?;
+                let base64_transaction = near_primitives::serialize::to_base64(
+                    context
+                        .signed_transaction
+                        .try_to_vec()
+                        .expect("Transaction is not expected to fail on serialization"),
+                );
+                println!("\nSerialize_to_base64:\n{}", &base64_transaction);
+
                 println!("{storage_message}");
                 Ok(Some(Self::Display))
             }
@@ -277,7 +190,11 @@ pub struct AccountKeyPair {
 }
 
 pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
-    dyn Fn(&SubmitTransaction, &crate::config::NetworkConfig, &mut String) -> crate::CliResult,
+    dyn Fn(
+        &near_primitives::transaction::SignedTransaction,
+        &crate::config::NetworkConfig,
+        &mut String,
+    ) -> crate::CliResult,
 >;
 
 pub type OnAfterSendingTransactionCallback = std::sync::Arc<
@@ -290,25 +207,7 @@ pub type OnAfterSendingTransactionCallback = std::sync::Arc<
 #[derive(Clone)]
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
-    pub submit_transaction: SubmitTransaction,
+    pub signed_transaction: near_primitives::transaction::SignedTransaction,
     pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
-}
-
-#[derive(Debug, Clone)]
-pub enum SubmitTransaction {
-    SignedTransaction(near_primitives::transaction::SignedTransaction),
-    SponsorService(crate::commands::account::create_account::SponsorService),
-}
-
-impl From<near_primitives::transaction::SignedTransaction> for SubmitTransaction {
-    fn from(signed_transaction: near_primitives::transaction::SignedTransaction) -> Self {
-        Self::SignedTransaction(signed_transaction)
-    }
-}
-
-impl From<crate::commands::account::create_account::SponsorService> for SubmitTransaction {
-    fn from(sponsor_service: crate::commands::account::create_account::SponsorService) -> Self {
-        Self::SponsorService(sponsor_service)
-    }
 }

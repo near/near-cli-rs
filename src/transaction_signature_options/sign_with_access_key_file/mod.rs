@@ -102,7 +102,7 @@ impl From<SignAccessKeyFileContext> for super::SubmitContext {
     fn from(item: SignAccessKeyFileContext) -> Self {
         Self {
             network_config: item.network_config,
-            submit_transaction: item.signed_transaction.into(),
+            signed_transaction: item.signed_transaction,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }

@@ -25,7 +25,7 @@ pub enum CoverCostsCreateAccount {
     #[strum_discriminants(strum(
         message = "sponsor-by-faucet-service    - I would like the faucet service sponsor to cover the cost of creating an account (testnet only for now)"
     ))]
-    ///I would like the faucet service sponsor to cover the cost of creating an account (testnet only for now)
+    /// I would like the faucet service sponsor to cover the cost of creating an account (testnet only for now)
     SponsorByFaucetService(self::sponsor_by_faucet_service::NewAccount),
     #[strum_discriminants(strum(
         message = "fund-myself                  - I would like fund myself to cover the cost of creating an account"
@@ -62,9 +62,4 @@ pub struct AccountProperties {
     pub new_account_id: crate::types::account_id::AccountId,
     pub public_key: near_crypto::PublicKey,
     pub initial_balance: crate::common::NearBalance,
-}
-
-#[derive(Debug, Clone)]
-pub struct SponsorService {
-    pub account_properties: AccountProperties,
 }

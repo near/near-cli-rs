@@ -80,13 +80,13 @@ impl SaveModeContext {
                 let key_pair_properties = previous_context.key_pair_properties.clone();
                 let credentials_home_dir = previous_context.config.credentials_home_dir.clone();
 
-                move |_signed_transaction, network_config, message| {
+                move |_signed_transaction, network_config, storage_message| {
                     match scope {
                         #[cfg(target_os = "macos")]
                         SaveModeDiscriminants::SaveToMacosKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            *message = crate::common::save_access_key_to_macos_keychain(
+                            *storage_message = crate::common::save_access_key_to_macos_keychain(
                                 network_config.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
@@ -96,7 +96,7 @@ impl SaveModeContext {
                         SaveModeDiscriminants::SaveToKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            *message = crate::common::save_access_key_to_keychain(
+                            *storage_message = crate::common::save_access_key_to_keychain(
                                 network_config.clone(),
                                 credentials_home_dir.clone(),
                                 &key_pair_properties_buf,
