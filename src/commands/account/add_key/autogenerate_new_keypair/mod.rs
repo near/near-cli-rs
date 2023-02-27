@@ -28,9 +28,8 @@ impl GenerateKeypairContext {
         previous_context: super::access_key_type::AccessTypeContext,
         _scope: &<GenerateKeypair as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let key_pair_properties: crate::common::KeyPairProperties = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(crate::common::generate_keypair())?;
+        let key_pair_properties: crate::common::KeyPairProperties =
+            crate::common::generate_keypair()?;
         let public_key = near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
         Ok(Self {
             config: previous_context.config,

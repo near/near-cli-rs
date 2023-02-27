@@ -10,7 +10,7 @@ impl LoginFromWebWallet {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         let network_config = self.network_config.get_network_config(config.clone());
         let key_pair_properties: crate::common::KeyPairProperties =
-            crate::common::generate_keypair().await?;
+            crate::common::generate_keypair()?;
         let mut url: url::Url = network_config.wallet_url.join("login/")?;
         url.query_pairs_mut()
             .append_pair("title", "NEAR CLI")

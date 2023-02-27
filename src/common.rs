@@ -654,7 +654,7 @@ pub fn get_public_key_from_seed_phrase(
     Ok(near_crypto::PublicKey::from_str(&public_key_str)?)
 }
 
-pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
+pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     let generate_keypair: crate::utils_command::generate_keypair_subcommand::CliGenerateKeypair =
         crate::utils_command::generate_keypair_subcommand::CliGenerateKeypair::default();
     let (master_seed_phrase, master_seed) =

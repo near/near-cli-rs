@@ -47,7 +47,7 @@ impl Mode {
         let mut buf = String::new();
         match self {
             Mode::UseAutoGeneration(save_implicit_account) => {
-                let key_pair_properties = crate::common::generate_keypair().await?;
+                let key_pair_properties = crate::common::generate_keypair()?;
                 buf.push_str(
                     &serde_json::json!({
                         "master_seed_phrase": key_pair_properties.master_seed_phrase,
