@@ -13,11 +13,11 @@ pub struct Network {
 
 #[derive(Clone)]
 pub struct NetworkContext {
-    config: crate::config::Config,
     new_account_id: crate::types::account_id::AccountId,
     public_key: near_crypto::PublicKey,
-    on_after_getting_network_callback: OnAfterGettingNetworkCallback,
     network_config: crate::config::NetworkConfig,
+    on_after_getting_network_callback: OnAfterGettingNetworkCallback,
+    on_before_creating_account_callback: OnBeforeCreatingAccountCallback,
 }
 
 impl NetworkContext {
@@ -47,11 +47,12 @@ impl NetworkContext {
         println!();
 
         Ok(Self {
-            config: previous_context.config,
             new_account_id: previous_context.new_account_id,
             public_key: previous_context.public_key,
             network_config,
             on_after_getting_network_callback: previous_context.on_after_getting_network_callback,
+            on_before_creating_account_callback: previous_context
+                .on_before_creating_account_callback,
         })
     }
 }
@@ -70,8 +71,8 @@ impl Network {
 #[interactive_clap(skip_default_from_cli)]
 /// How would you like to proceed
 pub enum Submit {
-    #[strum_discriminants(strum(message = "send      - Send the transaction to the network"))]
-    Send,
+    #[strum_discriminants(strum(message = "create      - Create a new account"))]
+    Create,
 }
 
 impl interactive_clap::FromCli for Submit {
@@ -87,70 +88,19 @@ impl interactive_clap::FromCli for Submit {
         let mut storage_message = String::new();
 
         match optional_clap_variant {
-            Some(CliSubmit::Send) => {
+            Some(CliSubmit::Create) => {
                 (context.on_after_getting_network_callback)(
                     &context.network_config,
                     &mut storage_message,
                 )?;
-
-                println!("Transaction sent ...");
-
-                let faucet_service_url = match &context.network_config.faucet_url {
-                        Some(url) => url,
-                        None => return Err(color_eyre::Report::msg(format!(
-                            "The <{}> network does not have a faucet (helper service) that can sponsor the creation of an account.",
-                            &context.network_config.network_name
-                        )))
-                    };
-                let mut data = std::collections::HashMap::new();
-                data.insert("newAccountId", context.new_account_id.to_string());
-                data.insert("newAccountPublicKey", context.public_key.to_string());
-
-                let client = reqwest::Client::new();
-                match tokio::runtime::Runtime::new()
-                    .unwrap()
-                    .block_on(client.post(faucet_service_url.clone()).json(&data).send())
-                {
-                    Ok(response) => {
-                        let account_creation_transaction = tokio::runtime::Runtime::new()
-                            .unwrap()
-                            .block_on(response
-                                .json::<near_jsonrpc_client::methods::tx::RpcTransactionStatusResponse>(
-                                ))?;
-                        match account_creation_transaction.status {
-                            near_primitives::views::FinalExecutionStatus::SuccessValue(
-                                ref value,
-                            ) => {
-                                if value == b"false" {
-                                    println!(
-                                        "The new account <{}> could not be created successfully.",
-                                        &context.new_account_id
-                                    );
-                                } else {
-                                    println!(
-                                        "New account <{}> created successfully.",
-                                        &context.new_account_id
-                                    );
-                                }
-                                println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
-                                        id=account_creation_transaction.transaction_outcome.id,
-                                        path=context.network_config.explorer_transaction_url
-                                    );
-                            }
-                            _ => {
-                                crate::common::print_transaction_status(
-                                    account_creation_transaction,
-                                    context.network_config,
-                                )?;
-                            }
-                        }
-                        println!("{storage_message}");
-                        Ok(Some(Self::Send))
-                    }
-                    Err(err) => Err(color_eyre::Report::msg(err.to_string())),
-                }
+                (context.on_before_creating_account_callback)(
+                    &context.network_config,
+                    &context.new_account_id,
+                    &context.public_key,
+                )?;
+                println!("{storage_message}");
+                Ok(Some(Self::Create))
             }
-
             None => Self::choose_variant(context.clone()),
         }
     }
@@ -158,3 +108,11 @@ impl interactive_clap::FromCli for Submit {
 
 pub type OnAfterGettingNetworkCallback =
     std::sync::Arc<dyn Fn(&crate::config::NetworkConfig, &mut String) -> crate::CliResult>;
+
+pub type OnBeforeCreatingAccountCallback = std::sync::Arc<
+    dyn Fn(
+        &crate::config::NetworkConfig,
+        &crate::types::account_id::AccountId,
+        &near_crypto::PublicKey,
+    ) -> crate::CliResult,
+>;

@@ -10,12 +10,13 @@ pub struct GenerateKeypair {
     save_mode: SaveMode,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct GenerateKeypairContext {
     config: crate::config::Config,
     new_account_id: crate::types::account_id::AccountId,
     public_key: near_crypto::PublicKey,
     key_pair_properties: crate::common::KeyPairProperties,
+    on_before_creating_account_callback: super::super::network::OnBeforeCreatingAccountCallback,
 }
 
 impl GenerateKeypairContext {
@@ -32,6 +33,8 @@ impl GenerateKeypairContext {
             new_account_id: previous_context.new_account_id,
             public_key,
             key_pair_properties,
+            on_before_creating_account_callback: previous_context
+                .on_before_creating_account_callback,
         })
     }
 }
@@ -122,6 +125,8 @@ impl SaveModeContext {
             new_account_id: previous_context.new_account_id,
             public_key: previous_context.public_key,
             on_after_getting_network_callback,
+            on_before_creating_account_callback: previous_context
+                .on_before_creating_account_callback,
         }))
     }
 }

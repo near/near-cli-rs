@@ -24,6 +24,8 @@ impl AddPublicKeyActionContext {
             on_after_getting_network_callback: std::sync::Arc::new(
                 |_network_config, _storage_message| Ok(()),
             ),
+            on_before_creating_account_callback: previous_context
+                .on_before_creating_account_callback,
         }))
     }
 }
