@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::NewAccountContext)]
-#[interactive_clap(output_context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(output_context = super::super::AccountPropertiesContext)]
 pub struct AddAccessWithLedger {
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?
@@ -8,9 +8,7 @@ pub struct AddAccessWithLedger {
 }
 
 #[derive(Clone)]
-pub struct AddAccessWithLedgerContext(
-    crate::commands::account::create_account::CreateAccountContext,
-);
+pub struct AddAccessWithLedgerContext(super::super::AccountPropertiesContext);
 
 impl AddAccessWithLedgerContext {
     pub fn from_previous_context(
@@ -34,27 +32,23 @@ impl AddAccessWithLedgerContext {
             public_key.to_bytes(),
         ));
 
-        let account_properties = crate::commands::account::create_account::AccountProperties {
+        let account_properties = super::super::AccountProperties {
             new_account_id: previous_context.new_account_id,
             initial_balance: previous_context.initial_balance,
             public_key,
         };
 
-        Ok(Self(
-            crate::commands::account::create_account::CreateAccountContext {
-                config: previous_context.config,
-                account_properties,
-                on_before_sending_transaction_callback: std::sync::Arc::new(
-                    |_signed_transaction, _network_config, _message| Ok(()),
-                ),
-            },
-        ))
+        Ok(Self(super::super::AccountPropertiesContext {
+            config: previous_context.config,
+            account_properties,
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                |_signed_transaction, _network_config, _message| Ok(()),
+            ),
+        }))
     }
 }
 
-impl From<AddAccessWithLedgerContext>
-    for crate::commands::account::create_account::CreateAccountContext
-{
+impl From<AddAccessWithLedgerContext> for super::super::AccountPropertiesContext {
     fn from(item: AddAccessWithLedgerContext) -> Self {
         item.0
     }

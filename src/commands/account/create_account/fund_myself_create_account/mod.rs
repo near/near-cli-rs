@@ -172,3 +172,18 @@ fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
     .prompt()?;
     Ok(select_choose_input == ConfirmOptions::Yes)
 }
+
+#[derive(Clone)]
+pub struct AccountPropertiesContext {
+    pub config: crate::config::Config,
+    pub account_properties: AccountProperties,
+    pub on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
+}
+
+#[derive(Debug, Clone)]
+pub struct AccountProperties {
+    pub new_account_id: crate::types::account_id::AccountId,
+    pub public_key: near_crypto::PublicKey,
+    pub initial_balance: crate::common::NearBalance,
+}

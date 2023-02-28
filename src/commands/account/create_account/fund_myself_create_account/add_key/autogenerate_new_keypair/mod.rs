@@ -13,7 +13,7 @@ pub struct GenerateKeypair {
 #[derive(Debug, Clone)]
 pub struct GenerateKeypairContext {
     config: crate::config::Config,
-    account_properties: crate::commands::account::create_account::AccountProperties,
+    account_properties: super::super::AccountProperties,
     key_pair_properties: crate::common::KeyPairProperties,
 }
 
@@ -25,7 +25,7 @@ impl GenerateKeypairContext {
         let key_pair_properties: crate::common::KeyPairProperties =
             crate::common::generate_keypair()?;
         let public_key = near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
-        let account_properties = crate::commands::account::create_account::AccountProperties {
+        let account_properties = super::super::AccountProperties {
             new_account_id: previous_context.new_account_id,
             initial_balance: previous_context.initial_balance,
             public_key,
@@ -41,7 +41,7 @@ impl GenerateKeypairContext {
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = GenerateKeypairContext)]
-#[interactive_clap(output_context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(output_context = super::super::AccountPropertiesContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Save an access key for this account
 pub enum SaveMode {
@@ -64,7 +64,7 @@ pub enum SaveMode {
 }
 
 #[derive(Clone)]
-pub struct SaveModeContext(crate::commands::account::create_account::CreateAccountContext);
+pub struct SaveModeContext(super::super::AccountPropertiesContext);
 
 impl SaveModeContext {
     pub fn from_previous_context(
@@ -120,24 +120,22 @@ impl SaveModeContext {
                 }
             });
 
-        Ok(Self(
-            crate::commands::account::create_account::CreateAccountContext {
-                config: previous_context.config,
-                account_properties: previous_context.account_properties,
-                on_before_sending_transaction_callback,
-            },
-        ))
+        Ok(Self(super::super::AccountPropertiesContext {
+            config: previous_context.config,
+            account_properties: previous_context.account_properties,
+            on_before_sending_transaction_callback,
+        }))
     }
 }
 
-impl From<SaveModeContext> for crate::commands::account::create_account::CreateAccountContext {
+impl From<SaveModeContext> for super::super::AccountPropertiesContext {
     fn from(item: SaveModeContext) -> Self {
         item.0
     }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(context = super::super::AccountPropertiesContext)]
 pub struct SignAs {
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?

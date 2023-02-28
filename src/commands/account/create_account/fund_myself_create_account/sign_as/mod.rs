@@ -5,7 +5,7 @@ use serde_json::json;
 use inquire::{CustomType, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = crate::commands::account::create_account::CreateAccountContext)]
+#[interactive_clap(input_context = super::AccountPropertiesContext)]
 #[interactive_clap(output_context = crate::commands::ActionContext)]
 pub struct SignerAccountId {
     #[interactive_clap(skip_default_input_arg)]
@@ -19,7 +19,7 @@ pub struct SignerAccountId {
 #[derive(Clone)]
 pub struct SignerAccountIdContext {
     config: crate::config::Config,
-    account_properties: super::super::AccountProperties,
+    account_properties: super::AccountProperties,
     signer_account_id: near_primitives::types::AccountId,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
@@ -27,7 +27,7 @@ pub struct SignerAccountIdContext {
 
 impl SignerAccountIdContext {
     pub fn from_previous_context(
-        previous_context: crate::commands::account::create_account::CreateAccountContext,
+        previous_context: super::AccountPropertiesContext,
         scope: &<SignerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
@@ -165,7 +165,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
 
 impl SignerAccountId {
     fn input_signer_account_id(
-        context: &crate::commands::account::create_account::CreateAccountContext,
+        context: &super::AccountPropertiesContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         let parent_account_id = context
             .account_properties
@@ -184,7 +184,7 @@ impl SignerAccountId {
     }
 
     fn input_account_id(
-        context: &crate::commands::account::create_account::CreateAccountContext,
+        context: &super::AccountPropertiesContext,
     ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
         loop {
             let signer_account_id: crate::types::account_id::AccountId =
@@ -214,7 +214,7 @@ impl SignerAccountId {
 }
 
 fn is_account_exist(
-    context: &crate::commands::account::create_account::CreateAccountContext,
+    context: &super::AccountPropertiesContext,
     account_id: near_primitives::types::AccountId,
 ) -> bool {
     for network in context.config.networks.iter() {
