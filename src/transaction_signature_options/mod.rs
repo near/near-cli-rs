@@ -156,6 +156,7 @@ impl Submit {
         match variants[select_submit] {
             SubmitDiscriminants::Send => Submit::Send,
             SubmitDiscriminants::Display => Submit::Display,
+            SubmitDiscriminants::SendViaRelay => todo!(),
         }
     }
 

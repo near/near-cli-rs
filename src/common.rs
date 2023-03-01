@@ -747,6 +747,7 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
                 );
             }
+            near_primitives::transaction::Action::Delegate(_) => todo!()
         }
     }
 }
@@ -817,6 +818,7 @@ fn print_value_successful_transaction(
                     transaction_info.transaction.signer_id,
                 );
             }
+            near_primitives::views::ActionView::Delegate { delegate_action: _, signature: _ } => todo!()
         }
     }
 }
@@ -986,6 +988,24 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
                 account_id
             )
         }
+        near_primitives::errors::ActionErrorKind::DelegateActionInvalidSignature => {
+            println!("Error: Invalid Signature on DelegateAction")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionSenderDoesNotMatchTxReceiver { sender_id, receiver_id } => {
+            println!("Error: Delegate Action sender {} does not match transaction receiver {}", sender_id.as_str(), receiver_id.as_str())
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionExpired => {
+            println!("Error: DelegateAction Expired")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionAccessKeyError(_0) => {
+            println!("Error: The given public key doesn't exist for the sender")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionInvalidNonce { delegate_nonce, ak_nonce } => {
+            println!("Error: DelegateAction Invalid Delegate Nonce: {} ak_nonce: {}", delegate_nonce.to_string(), ak_nonce.to_string())
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionNonceTooLarge { delegate_nonce, upper_bound } => {
+            println!("Error: DelegateAction Invalid Delegate Nonce: {} upper bound: {}", delegate_nonce.to_string(), upper_bound.to_string())
+        }
     }
 }
 
@@ -1100,6 +1120,12 @@ pub fn handler_invalid_tx_error(
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallZeroAttachedGas => {
                     "Error: The attached amount of gas in a FunctionCall action has to be a positive number.".to_string()
+                }
+                near_primitives::errors::ActionsValidationError::DelegateActionMustBeOnlyOne => {
+                    "Error: DelegateActionMustBeOnlyOne".to_string()
+                }
+                near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => {
+                    format!("Error: Protocol Feature {} is unsupported in version {}", protocol_feature, version)
                 }
             }
         },
