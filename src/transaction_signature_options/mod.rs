@@ -1,7 +1,6 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use near_primitives::borsh::BorshSerialize;
 use near_primitives::delegate_action::{DelegateAction, NonDelegateAction, SignedDelegateAction};
-use near_primitives::transaction::Action;
 use near_primitives::types::{BlockId, BlockReference};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
@@ -239,7 +238,7 @@ impl Submit {
                 // send signed_delegate_action to relayer via a POST request
                 println!("Sending transaction to relayer ...");
                 let client = reqwest::Client::new();
-                let mut payload = signed_delegate_action.try_to_vec()?;  // serialize signed_delegate_action using borsh
+                let payload = signed_delegate_action.try_to_vec()?;  // serialize signed_delegate_action using borsh
                 let relayer_response = client.post(relayer)
                     .body(payload)
                     .send()
