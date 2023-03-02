@@ -241,6 +241,7 @@ impl Submit {
                 let client = reqwest::Client::new();
                 let payload = signed_delegate_action.try_to_vec()?;  // serialize signed_delegate_action using borsh
                 let relayer_response = client.post(relayer)
+                    .header("Content-Type", "application/json")
                     .body(payload)
                     .send()
                     .await?;
