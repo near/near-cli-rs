@@ -156,7 +156,7 @@ impl Submit {
         match variants[select_submit] {
             SubmitDiscriminants::Send => Submit::Send,
             SubmitDiscriminants::Display => Submit::Display,
-            SubmitDiscriminants::SendViaRelay => todo!(),
+            SubmitDiscriminants::SendViaRelay => Submit::SendViaRelay,
         }
     }
 
@@ -189,7 +189,7 @@ impl Submit {
             }
             Submit::SendViaRelay => {
                 let url = Input::new()
-                    .with_prompt("Enter relayer endpoint (ie http://relayer.near.org:3030/relay): ")
+                    .with_prompt("Enter relayer endpoint (ie http://relayer.near.org:3030/relay) ")
                     .validate_with(|input: &String| -> Result<(), &str> {
                         if input.starts_with("http://") || input.starts_with("https://") {
                             Ok(())
