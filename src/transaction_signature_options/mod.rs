@@ -237,12 +237,13 @@ impl Submit {
                     signature,
                 };
                 // send signed_delegate_action to relayer via a POST request
-                println!("Sending transaction to relayer ...");
                 let client = reqwest::Client::new();
-                let payload = signed_delegate_action.try_to_vec()?;  // serialize signed_delegate_action using borsh
+                let payload = signed_delegate_action.try_to_vec().unwrap();  // serialize signed_delegate_action using borsh
+                let json_payload = serde_json::to_vec(&payload).unwrap();
+                println!("Sending transaction to relayer {:?}", json_payload);
                 let relayer_response = client.post(relayer)
                     .header("Content-Type", "application/json")
-                    .body(payload)
+                    .body(json_payload)
                     .send()
                     .await?;
                 if relayer_response.status().is_success() {
