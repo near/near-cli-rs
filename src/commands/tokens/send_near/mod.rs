@@ -66,10 +66,10 @@ impl From<SendNearCommandContext> for crate::commands::ActionContext {
 impl SendNearCommand {
     fn input_amount_in_near(
         _context: &super::TokensCommandsContext,
-    ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
+    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         let input_amount =
             CustomType::new("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)").prompt()?;
-        Ok(input_amount)
+        Ok(Some(input_amount))
     }
 
     pub async fn process(

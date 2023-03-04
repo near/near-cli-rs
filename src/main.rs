@@ -1,8 +1,7 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use clap::Parser;
 use common::{try_external_subcommand_execution, CliResult};
-use interactive_clap::FromCli;
-use interactive_clap::ToCliArgs;
+use interactive_clap::{FromCli, ToCliArgs};
 
 mod commands;
 mod common;
@@ -87,48 +86,71 @@ fn main() -> CliResult {
     //     return Ok(());
     // }
 
-    let cmd = loop {
-        match Cmd::from_cli(Some(cli.clone()), (config.clone(),)) {
-            Ok(Some(cmd)) => {
-                break cmd;
+    loop {
+        match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli.clone()), (config.clone(),)) {
+            // Ok(Some(cmd)) => {
+            //     break cmd;
+            // }
+            // Ok(None) => {}
+            // Err(err) => match err.downcast_ref() {
+            //     Some(
+            //         inquire::InquireError::OperationCanceled
+            //         | inquire::InquireError::OperationInterrupted,
+            //     ) => {
+            //         println!("<Operation was interrupted. Goodbye>");
+            //         return Ok(());
+            //     }
+            //     Some(_) | None => return Err(err),
+            // },
+
+            interactive_clap::ResultFromCli::Ok(Some(cli_cmd)) => {
+                println!(
+                    "Your console command:  {}",
+                    shell_words::join(&cli_cmd.to_cli_args())
+                );
+                return Ok(());
             }
-            Ok(None) => {}
-            Err(err) => match err.downcast_ref() {
-                Some(
-                    inquire::InquireError::OperationCanceled
-                    | inquire::InquireError::OperationInterrupted,
-                ) => {
-                    println!("<Operation was interrupted. Goodbye>");
-                    return Ok(());
+            interactive_clap::ResultFromCli::Ok(None) => {
+                println!("Goodbye!");
+                return Ok(());
+            }
+            interactive_clap::ResultFromCli::Back => {}
+            interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
+                if let Some(cli_cmd) = optional_cli_cmd {
+                    println!(
+                        "Your console command:  {}",
+                        shell_words::join(&cli_cmd.to_cli_args())
+                    );
                 }
-                Some(_) | None => return Err(err),
-            },
+                return Err(err);
+            }
+
         }
     };
 
-    let completed_cli = CliCmd::from(cmd.clone());
+    // let completed_cli = CliCmd::from(cmd.clone());
 
-    let process_result = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(cmd.process(config));
+    // let process_result = tokio::runtime::Runtime::new()
+    //     .unwrap()
+    //     .block_on(cmd.process(config));
 
-    println!(
-        "Your console command:\n{} {}",
-        std::env::args().next().as_deref().unwrap_or("./near_cli"),
-        shell_words::join(completed_cli.to_cli_args())
-    );
+    // println!(
+    //     "Your console command:\n{} {}",
+    //     std::env::args().next().as_deref().unwrap_or("./near_cli"),
+    //     shell_words::join(completed_cli.to_cli_args())
+    // );
 
-    match process_result {
-        Ok(()) => Ok(()),
-        Err(err) => match err.downcast_ref() {
-            Some(
-                inquire::InquireError::OperationCanceled
-                | inquire::InquireError::OperationInterrupted,
-            ) => {
-                println!("<Operation was interrupted. Goodbye>");
-                Ok(())
-            }
-            Some(_) | None => Err(err),
-        },
-    }
+    // match process_result {
+    //     Ok(()) => Ok(()),
+    //     Err(err) => match err.downcast_ref() {
+    //         Some(
+    //             inquire::InquireError::OperationCanceled
+    //             | inquire::InquireError::OperationInterrupted,
+    //         ) => {
+    //             println!("<Operation was interrupted. Goodbye>");
+    //             Ok(())
+    //         }
+    //         Some(_) | None => Err(err),
+    //     },
+    // }
 }
