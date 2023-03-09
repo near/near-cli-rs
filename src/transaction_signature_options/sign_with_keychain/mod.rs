@@ -5,6 +5,7 @@ use inquire::{CustomType, Select, Text};
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
 #[interactive_clap(output_context = super::SubmitContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct SignKeychain {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
@@ -196,6 +197,62 @@ impl From<SignKeychainContext> for super::SubmitContext {
             signed_transaction: item.signed_transaction,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+        }
+    }
+}
+
+impl interactive_clap::FromCli for SignKeychain {
+    type FromCliContext = crate::commands::TransactionContext;
+    type FromCliError = color_eyre::eyre::Error;
+    fn from_cli(
+        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+
+        if clap_variant.nonce.is_none() {
+            clap_variant.nonce = match Self::input_nonce(&context) {
+                Ok(optional_nonce) => optional_nonce,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let nonce = clap_variant.nonce.take();
+        if clap_variant.block_hash.is_none() {
+            clap_variant.block_hash = match Self::input_block_hash(&context) {
+                Ok(optional_block_hash) => optional_block_hash,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let block_hash = clap_variant.block_hash.take();
+
+        let new_context_scope = InteractiveClapContextScopeForSignKeychain { nonce, block_hash };
+        let new_context =
+            match SignKeychainContext::from_previous_context(context.clone(), &new_context_scope) {
+                Ok(new_context) => new_context,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        let output_context = super::SubmitContext::from(new_context);
+
+        match super::Submit::from_cli(clap_variant.submit.take(), output_context) {
+            interactive_clap::ResultFromCli::Ok(submit) => {
+                clap_variant.submit = Some(submit);
+                interactive_clap::ResultFromCli::Ok(clap_variant)
+            }
+            interactive_clap::ResultFromCli::Cancel(optional_submit) => {
+                clap_variant.submit = optional_submit;
+                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
+            }
+            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
+            interactive_clap::ResultFromCli::Err(optional_submit, err) => {
+                clap_variant.submit = optional_submit;
+                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+            }
         }
     }
 }

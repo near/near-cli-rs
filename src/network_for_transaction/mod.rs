@@ -75,36 +75,48 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
             <NetworkForTransactionArgs as interactive_clap::ToCli>::CliVariant,
         >,
         context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let network_name = match optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.network_name.clone())
-        {
-            Some(network_name) => network_name,
-            None => NetworkForTransactionArgs::input_network_name(&context)?,
-        };
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+
+        if clap_variant.network_name.is_none() {
+            clap_variant.network_name = match Self::input_network_name(&context) {
+                Ok(Some(network_name)) => Some(network_name),
+                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let network_name = clap_variant.network_name.clone().expect("Unexpected error");
 
         let new_context_scope = InteractiveClapContextScopeForNetworkForTransactionArgs {
             network_name: network_name.clone(),
         };
-        let mut new_context = NetworkForTransactionArgsContext::from_previous_context(
+        let mut new_context = match NetworkForTransactionArgsContext::from_previous_context(
             context.clone(),
             &new_context_scope,
-        )?;
+        ) {
+            Ok(new_context) => new_context,
+            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+        };
 
-        (context.on_after_getting_network_callback)(
+        match (context.on_after_getting_network_callback)(
             &mut new_context.prepopulated_unsigned_transaction,
             &new_context.network_config,
-        )?;
+        ) {
+            Ok(_) => (),
+            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+        };
         if new_context
             .prepopulated_unsigned_transaction
             .actions
             .is_empty()
         {
-            return Err(crate::common::CliError::ExitOk.into());
+            return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
         }
 
         println!("\nUnsigned transaction:\n"); // XXX remove!
@@ -113,30 +125,30 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
         );
         println!();
 
-        let optional_transaction_signature_options =
-            crate::transaction_signature_options::SignWith::from_cli(
-                optional_clap_variant
-                    .and_then(|clap_variant| clap_variant.transaction_signature_options),
-                new_context.into(),
-            )?;
         let transaction_signature_options =
-            if let Some(transaction_signature_options) = optional_transaction_signature_options {
-                transaction_signature_options
-            } else {
-                return Ok(None);
-            };
+            match <crate::transaction_signature_options::SignWith as interactive_clap::FromCli>::from_cli(
+                clap_variant.transaction_signature_options,
+                new_context.into(),
+            ) {
+                interactive_clap::ResultFromCli::Ok(cli_sign_with) | interactive_clap::ResultFromCli::Cancel(Some(cli_sign_with)) => {
+                    clap_variant.transaction_signature_options = Some(cli_sign_with);
+                }
+                interactive_clap::ResultFromCli::Cancel(None) => return interactive_clap::ResultFromCli::Cancel(None),
+                interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
+                interactive_clap::ResultFromCli::Err(cli_sign_with, err) => {
+                    clap_variant.transaction_signature_options = cli_sign_with;
+                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
+                }
+                };
 
-        Ok(Some(Self {
-            network_name,
-            transaction_signature_options,
-        }))
+        interactive_clap::ResultFromCli::Ok(clap_variant)
     }
 }
 
 impl NetworkForTransactionArgs {
     fn input_network_name(
         context: &crate::commands::ActionContext,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<Option<String>> {
         crate::common::input_network_name(&(context.config.clone(),))
     }
 

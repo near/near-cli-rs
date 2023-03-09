@@ -102,15 +102,15 @@ fn main() -> CliResult {
             //     }
             //     Some(_) | None => return Err(err),
             // },
-
-            interactive_clap::ResultFromCli::Ok(Some(cli_cmd)) => {
+            interactive_clap::ResultFromCli::Ok(cli_cmd)
+            | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
                 println!(
                     "Your console command:  {}",
                     shell_words::join(&cli_cmd.to_cli_args())
                 );
                 return Ok(());
             }
-            interactive_clap::ResultFromCli::Ok(None) => {
+            interactive_clap::ResultFromCli::Cancel(None) => {
                 println!("Goodbye!");
                 return Ok(());
             }
@@ -124,9 +124,8 @@ fn main() -> CliResult {
                 }
                 return Err(err);
             }
-
         }
-    };
+    }
 
     // let completed_cli = CliCmd::from(cmd.clone());
 

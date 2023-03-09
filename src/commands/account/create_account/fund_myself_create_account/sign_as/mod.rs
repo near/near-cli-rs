@@ -166,7 +166,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
 impl SignerAccountId {
     fn input_signer_account_id(
         context: &super::AccountPropertiesContext,
-    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         let parent_account_id = context
             .account_properties
             .new_account_id
@@ -174,7 +174,7 @@ impl SignerAccountId {
             .get_parent_account_id_from_sub_account();
         if !parent_account_id.0.is_top_level() {
             if is_account_exist(&context, parent_account_id.clone().into()) {
-                Ok(parent_account_id)
+                Ok(Some(parent_account_id))
             } else {
                 Self::input_account_id(&context)
             }
@@ -185,7 +185,7 @@ impl SignerAccountId {
 
     fn input_account_id(
         context: &super::AccountPropertiesContext,
-    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let signer_account_id: crate::types::account_id::AccountId =
                 CustomType::new("What is the signer account ID?").prompt()?;
@@ -204,10 +204,10 @@ impl SignerAccountId {
                 )
                 .prompt()?;
                 if let ConfirmOptions::No = select_choose_input {
-                    return Ok(signer_account_id);
+                    return Ok(Some(signer_account_id));
                 }
             } else {
-                return Ok(signer_account_id);
+                return Ok(Some(signer_account_id));
             }
         }
     }

@@ -50,6 +50,7 @@ impl From<FullAccessTypeContext> for AccessTypeContext {
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::AddKeyCommandContext)]
 #[interactive_clap(output_context = AccessTypeContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct FunctionCallType {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
@@ -107,10 +108,84 @@ impl From<FunctionCallTypeContext> for AccessTypeContext {
     }
 }
 
+impl interactive_clap::FromCli for FunctionCallType {
+    type FromCliContext = super::AddKeyCommandContext;
+    type FromCliError = color_eyre::eyre::Error;
+    fn from_cli(
+        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+
+        if clap_variant.allowance.is_none() {
+            clap_variant.allowance = match Self::input_allowance(&context) {
+                Ok(optional_allowance) => optional_allowance,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let allowance = clap_variant.allowance.take();
+        if clap_variant.receiver_account_id.is_none() {
+            clap_variant.receiver_account_id = match Self::input_receiver_account_id(&context) {
+                Ok(Some(first_receiver_account_id)) => Some(first_receiver_account_id),
+                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let receiver_account_id = clap_variant
+            .receiver_account_id
+            .clone()
+            .expect("Unexpected error");
+        if clap_variant.method_names.is_none() {
+            clap_variant.method_names = match Self::input_method_names(&context) {
+                Ok(Some(first_method_names)) => Some(first_method_names),
+                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let method_names = clap_variant.method_names.clone().expect("Unexpected error");
+
+        let new_context_scope = InteractiveClapContextScopeForFunctionCallType {
+            allowance,
+            receiver_account_id,
+            method_names,
+        };
+        let new_context = match FunctionCallTypeContext::from_previous_context(
+            context.clone(),
+            &new_context_scope,
+        ) {
+            Ok(new_context) => new_context,
+            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+        };
+        let output_context = AccessTypeContext::from(new_context);
+
+        match super::AccessKeyMode::from_cli(clap_variant.access_key_mode.take(), output_context) {
+            interactive_clap::ResultFromCli::Ok(cli_access_key_mode) => {
+                clap_variant.access_key_mode = Some(cli_access_key_mode);
+                interactive_clap::ResultFromCli::Ok(clap_variant)
+            }
+            interactive_clap::ResultFromCli::Cancel(optional_cli_access_key_mode) => {
+                clap_variant.access_key_mode = optional_cli_access_key_mode;
+                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
+            }
+            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
+            interactive_clap::ResultFromCli::Err(optional_cli_access_key_mode, err) => {
+                clap_variant.access_key_mode = optional_cli_access_key_mode;
+                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+            }
+        }
+    }
+}
+
 impl FunctionCallType {
     pub fn input_method_names(
         _context: &super::AddKeyCommandContext,
-    ) -> color_eyre::eyre::Result<crate::types::vec_string::VecString> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to input a list of method names that can be used")]
@@ -134,12 +209,14 @@ impl FunctionCallType {
                 input_method_names.clear()
             };
             if input_method_names.is_empty() {
-                Ok(crate::types::vec_string::VecString(vec![]))
+                Ok(Some(crate::types::vec_string::VecString(vec![])))
             } else {
-                crate::types::vec_string::VecString::from_str(&input_method_names)
+                Ok(Some(crate::types::vec_string::VecString::from_str(
+                    &input_method_names,
+                )?))
             }
         } else {
-            Ok(crate::types::vec_string::VecString(vec![]))
+            Ok(Some(crate::types::vec_string::VecString(vec![])))
         }
     }
 

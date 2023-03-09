@@ -147,77 +147,116 @@ impl interactive_clap::FromCli for SignLedger {
     fn from_cli(
         optional_clap_variant: Option<<SignLedger as interactive_clap::ToCli>::CliVariant>,
         context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let seed_phrase_hd_path = match optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.seed_phrase_hd_path.clone())
-        {
-            Some(hd_path) => hd_path,
-            None => SignLedger::input_seed_phrase_hd_path(),
-        };
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+
+        if clap_variant.seed_phrase_hd_path.is_none() {
+            clap_variant.seed_phrase_hd_path = match Self::input_seed_phrase_hd_path() {
+                Ok(Some(seed_phrase_hd_path)) => Some(seed_phrase_hd_path),
+                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let seed_phrase_hd_path = clap_variant
+            .seed_phrase_hd_path
+            .clone()
+            .expect("Unexpected error");
+
         println!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path
         );
-        let public_key = near_ledger::get_public_key(seed_phrase_hd_path.clone().into()).map_err(
-            |near_ledger_error| {
+        let public_key = match near_ledger::get_public_key(seed_phrase_hd_path.clone().into())
+            .map_err(|near_ledger_error| {
                 color_eyre::Report::msg(format!(
                     "An error occurred while trying to get PublicKey from Ledger device: {:?}",
                     near_ledger_error
                 ))
-            },
-        )?;
+            }) {
+            Ok(public_key) => public_key,
+            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+        };
         let signer_public_key: crate::types::public_key::PublicKey =
             near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
                 public_key.to_bytes(),
             ))
             .into();
-        let nonce: Option<u64> = optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.nonce);
-        let block_hash: Option<String> = optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.block_hash.clone());
+
+        if clap_variant.nonce.is_none() {
+            clap_variant.nonce = match Self::input_nonce(&context) {
+                Ok(optional_nonce) => optional_nonce,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let nonce = clap_variant.nonce.take();
+        if clap_variant.block_hash.is_none() {
+            clap_variant.block_hash = match Self::input_block_hash(&context) {
+                Ok(optional_block_hash) => optional_block_hash,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let block_hash = clap_variant.block_hash.take();
+
         let new_context_scope = InteractiveClapContextScopeForSignLedger {
             signer_public_key: signer_public_key.clone(),
             seed_phrase_hd_path: seed_phrase_hd_path.clone(),
             nonce,
             block_hash: block_hash.clone(),
         };
-        let ledger_context =
-            SignLedgerContext::from_previous_context(context.clone(), &new_context_scope)?;
-        let new_context = super::SubmitContext::from(ledger_context);
+        let new_context =
+            match SignLedgerContext::from_previous_context(context.clone(), &new_context_scope) {
+                Ok(new_context) => new_context,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        let output_context = super::SubmitContext::from(new_context);
 
-        let optional_submit = super::Submit::from_cli(
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit),
-            new_context,
-        )?;
-        let submit = if let Some(submit) = optional_submit {
-            submit
-        } else {
-            return Ok(None);
-        };
-        Ok(Some(Self {
-            seed_phrase_hd_path,
-            signer_public_key,
-            nonce: None,
-            block_hash: None,
-            submit,
-        }))
+        match super::Submit::from_cli(clap_variant.submit.take(), output_context) {
+            interactive_clap::ResultFromCli::Ok(submit) => {
+                clap_variant.submit = Some(submit);
+                interactive_clap::ResultFromCli::Ok(clap_variant)
+            }
+            interactive_clap::ResultFromCli::Cancel(optional_submit) => {
+                clap_variant.submit = optional_submit;
+                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
+            }
+            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
+            interactive_clap::ResultFromCli::Err(optional_submit, err) => {
+                clap_variant.submit = optional_submit;
+                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+            }
+        }
     }
 }
 
 impl SignLedger {
-    pub fn input_seed_phrase_hd_path() -> crate::types::slip10::BIP32Path {
-        crate::types::slip10::BIP32Path::from_str(
-            &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default)")
-                .with_initial_value("44'/397'/0'/0'/1'")
-                .prompt()
-                .unwrap(),
-        )
-        .unwrap()
+    pub fn input_seed_phrase_hd_path(
+    ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
+        Ok(Some(
+            crate::types::slip10::BIP32Path::from_str(
+                &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default)")
+                    .with_initial_value("44'/397'/0'/0'/1'")
+                    .prompt()
+                    .unwrap(),
+            )
+            .unwrap(),
+        ))
+    }
+
+    pub fn input_nonce(
+        _context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<u64>> {
+        Ok(None)
+    }
+
+    pub fn input_block_hash(
+        _context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        Ok(None)
     }
 }

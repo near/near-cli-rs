@@ -7,7 +7,9 @@ pub struct DeleteNetworkConnection {
 }
 
 impl DeleteNetworkConnection {
-    fn input_connection_name(context: &crate::GlobalContext) -> color_eyre::eyre::Result<String> {
+    fn input_connection_name(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
         crate::common::input_network_name(context)
     }
 

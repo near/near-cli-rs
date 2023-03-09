@@ -39,6 +39,18 @@ impl GenerateKeypairContext {
     }
 }
 
+impl From<GenerateKeypairContext> for super::super::AccountPropertiesContext {
+    fn from(item: GenerateKeypairContext) -> Self {
+        Self {
+            config: item.config,
+            account_properties: item.account_properties,
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                |_signed_transaction, _network_config, _message| Ok(()),
+            ),
+        }
+    }
+}
+
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = GenerateKeypairContext)]
 #[interactive_clap(output_context = super::super::AccountPropertiesContext)]

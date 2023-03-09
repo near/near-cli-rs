@@ -60,7 +60,7 @@ impl NetworkContext {
 impl Network {
     fn input_network_name(
         context: &super::SponsorServiceContext,
-    ) -> color_eyre::eyre::Result<String> {
+    ) -> color_eyre::eyre::Result<Option<String>> {
         crate::common::input_network_name(&(context.config.clone(),))
     }
 }
@@ -81,7 +81,10 @@ impl interactive_clap::FromCli for Submit {
     fn from_cli(
         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
         context: Self::FromCliContext,
-    ) -> Result<Option<Submit>, Self::FromCliError>
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
     where
         Self: Sized + interactive_clap::ToCli,
     {
@@ -89,17 +92,33 @@ impl interactive_clap::FromCli for Submit {
 
         match optional_clap_variant {
             Some(CliSubmit::Create) => {
-                (context.on_after_getting_network_callback)(
+                match (context.on_after_getting_network_callback)(
                     &context.network_config,
                     &mut storage_message,
-                )?;
-                (context.on_before_creating_account_callback)(
+                ) {
+                    Ok(_) => (),
+                    Err(report) => {
+                        return interactive_clap::ResultFromCli::Err(
+                            optional_clap_variant,
+                            color_eyre::Report::msg(report),
+                        )
+                    }
+                };
+                match (context.on_before_creating_account_callback)(
                     &context.network_config,
                     &context.new_account_id,
                     &context.public_key,
-                )?;
+                ) {
+                    Ok(_) => (),
+                    Err(report) => {
+                        return interactive_clap::ResultFromCli::Err(
+                            optional_clap_variant,
+                            color_eyre::Report::msg(report),
+                        )
+                    }
+                };
                 println!("{storage_message}");
-                Ok(Some(Self::Create))
+                interactive_clap::ResultFromCli::Ok(CliSubmit::Create)
             }
             None => Self::choose_variant(context.clone()),
         }

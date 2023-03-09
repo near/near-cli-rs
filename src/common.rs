@@ -1613,10 +1613,19 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
     table.printstd();
 }
 
-pub fn input_network_name(context: &crate::GlobalContext) -> color_eyre::eyre::Result<String> {
+pub fn input_network_name(
+    context: &crate::GlobalContext,
+) -> color_eyre::eyre::Result<Option<String>> {
     let variants = context.0.networks.keys().collect::<Vec<_>>();
-    let select_submit = Select::new("What is the name of the network?", variants).prompt()?;
-    Ok(select_submit.clone())
+    let select_submit = Select::new("What is the name of the network?", variants).prompt();
+    match select_submit {
+        Ok(value) => Ok(Some(value.clone())),
+        Err(
+            inquire::error::InquireError::OperationCanceled
+            | inquire::error::InquireError::OperationInterrupted,
+        ) => Ok(None),
+        Err(err) => Err(err.into()),
+    }
 }
 
 #[cfg(test)]

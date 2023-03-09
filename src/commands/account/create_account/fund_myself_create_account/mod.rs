@@ -44,7 +44,7 @@ impl NewAccountContext {
 impl NewAccount {
     pub fn input_new_account_id(
         context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         let new_account_id: crate::types::account_id::AccountId =
             CustomType::new("What is the new account ID?").prompt()?;
 
@@ -118,18 +118,18 @@ impl NewAccount {
         } else {
             new_account_id
         };
-        Ok(account_id)
+        Ok(Some(account_id))
     }
 
     fn input_initial_balance(
         _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
+    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         println!();
         match crate::common::NearBalance::from_str(&Text::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear).")
             .with_initial_value("0.1 NEAR")
             .prompt()?
             ) {
-                Ok(initial_balance) => Ok(initial_balance),
+                Ok(initial_balance) => Ok(Some(initial_balance)),
                 Err(err) => Err(color_eyre::Report::msg(
                     err,
                 ))
