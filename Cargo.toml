@@ -44,7 +44,6 @@ url = { version = "2", features = ["serde"] }
 open = "2"
 shell-words = "1.0.0"
 cargo-util = "0.1.1"
-json = "0.12.4"
 
 self_update = { version = "0.36.0", features = ["archive-tar", "compression-flate2"], optional = true }
 
