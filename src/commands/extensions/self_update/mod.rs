@@ -10,7 +10,7 @@ impl SelfUpdateCommand {
                 .repo_name("near-cli-rs")
                 .bin_name("near-cli")
                 .show_download_progress(true)
-                .target("x86_64-apple-darwin")
+                .target(self_update::get_target())
                 .current_version(self_update::cargo_crate_version!())
                 .build()
                 .map_err(|err| {
