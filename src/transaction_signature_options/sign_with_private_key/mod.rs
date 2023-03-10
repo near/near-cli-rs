@@ -3,6 +3,7 @@ use inquire::{CustomType, Select, Text};
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
 #[interactive_clap(output_context = super::SubmitContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct SignPrivateKey {
     #[interactive_clap(long)]
     /// Enter sender (signer) public key
@@ -113,6 +114,90 @@ impl From<SignPrivateKeyContext> for super::SubmitContext {
             signed_transaction: item.signed_transaction,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+        }
+    }
+}
+
+impl interactive_clap::FromCli for SignPrivateKey {
+    type FromCliContext = crate::commands::TransactionContext;
+    type FromCliError = color_eyre::eyre::Error;
+
+    fn from_cli(
+        optional_clap_variant: Option<<SignPrivateKey as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+
+        if clap_variant.signer_public_key.is_none() {
+            clap_variant.signer_public_key = match Self::input_signer_public_key(&context) {
+                Ok(Some(signer_public_key)) => Some(signer_public_key),
+                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let signer_public_key = clap_variant
+            .signer_public_key
+            .clone()
+            .expect("Unexpected error");
+        if clap_variant.signer_private_key.is_none() {
+            clap_variant.signer_private_key = match Self::input_signer_private_key(&context) {
+                Ok(Some(signer_private_key)) => Some(signer_private_key),
+                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let signer_private_key = clap_variant
+            .signer_private_key
+            .clone()
+            .expect("Unexpected error");
+        if clap_variant.nonce.is_none() {
+            clap_variant.nonce = match Self::input_nonce(&context) {
+                Ok(optional_nonce) => optional_nonce,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let nonce = clap_variant.nonce.take();
+        if clap_variant.block_hash.is_none() {
+            clap_variant.block_hash = match Self::input_block_hash(&context) {
+                Ok(optional_block_hash) => optional_block_hash,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let block_hash = clap_variant.block_hash.take();
+
+        let new_context_scope = InteractiveClapContextScopeForSignPrivateKey {
+            signer_public_key,
+            signer_private_key,
+            nonce,
+            block_hash: block_hash.clone(),
+        };
+        let new_context =
+            match SignPrivateKeyContext::from_previous_context(context.clone(), &new_context_scope) {
+                Ok(new_context) => new_context,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        let output_context = super::SubmitContext::from(new_context);
+
+        match super::Submit::from_cli(clap_variant.submit.take(), output_context) {
+            interactive_clap::ResultFromCli::Ok(submit) => {
+                clap_variant.submit = Some(submit);
+                interactive_clap::ResultFromCli::Ok(clap_variant)
+            }
+            interactive_clap::ResultFromCli::Cancel(optional_submit) => {
+                clap_variant.submit = optional_submit;
+                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
+            }
+            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
+            interactive_clap::ResultFromCli::Err(optional_submit, err) => {
+                clap_variant.submit = optional_submit;
+                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+            }
         }
     }
 }

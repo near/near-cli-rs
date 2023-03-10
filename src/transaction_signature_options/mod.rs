@@ -1,15 +1,17 @@
 use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
+use inquire::Select;
+use interactive_clap::SelectVariantOrBack;
 
-// pub mod sign_with_access_key_file;
+pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
 // #[cfg(target_os = "macos")]
 // pub mod sign_with_macos_keychain;
-// pub mod sign_with_private_key;
-// pub mod sign_with_seed_phrase;
+pub mod sign_with_private_key;
+pub mod sign_with_seed_phrase;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::commands::TransactionContext)]
@@ -33,21 +35,21 @@ pub enum SignWith {
     ))]
     /// Sign the transaction with Ledger Nano device
     SignWithLedger(self::sign_with_ledger::SignLedger),
-    // #[strum_discriminants(strum(
-    //     message = "sign-with-plaintext-private-key  - Sign the transaction with a plaintext private key"
-    // ))]
-    // /// Sign the transaction with a plaintext private key
-    // SignWithPlaintextPrivateKey(self::sign_with_private_key::SignPrivateKey),
-    // #[strum_discriminants(strum(
-    //     message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
-    // ))]
-    // /// Sign the transaction using the account access key file (access-key-file.json)
-    // SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
-    // #[strum_discriminants(strum(
-    //     message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
-    // ))]
-    // /// Sign the transaction using the seed phrase
-    // SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
+    #[strum_discriminants(strum(
+        message = "sign-with-plaintext-private-key  - Sign the transaction with a plaintext private key"
+    ))]
+    /// Sign the transaction with a plaintext private key
+    SignWithPlaintextPrivateKey(self::sign_with_private_key::SignPrivateKey),
+    #[strum_discriminants(strum(
+        message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
+    ))]
+    /// Sign the transaction using the account access key file (access-key-file.json)
+    SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
+    #[strum_discriminants(strum(
+        message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
+    ))]
+    /// Sign the transaction using the seed phrase
+    SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
 }
 
 // from_cli ...
@@ -66,9 +68,9 @@ pub async fn sign_with(
         SignWith::SignWithKeychain(_) => Ok(None),
         #[cfg(feature = "ledger")]
         SignWith::SignWithLedger(_) => Ok(None),
-        // SignWith::SignWithPlaintextPrivateKey(_) => Ok(None),
-        // SignWith::SignWithAccessKeyFile(_) => Ok(None),
-        // SignWith::SignWithSeedPhrase(_) => Ok(None),
+        SignWith::SignWithPlaintextPrivateKey(_) => Ok(None),
+        SignWith::SignWithAccessKeyFile(_) => Ok(None),
+        SignWith::SignWithSeedPhrase(_) => Ok(None),
     }
 }
 //-----------------------------------------------------------------------------------
@@ -113,11 +115,45 @@ pub enum Submit {
     Display,
 }
 
+fn choose_variant(context: SubmitContext) -> interactive_clap::ResultFromCli<
+        <Submit as interactive_clap::ToCli>::CliVariant,
+        <Submit as interactive_clap::FromCli>::FromCliError,
+    > {
+
+        let selected_variant = Select::new(
+            "How would you like to proceed",
+            SubmitDiscriminants::iter()
+                .map(SelectVariantOrBack::Variant)
+                .chain([SelectVariantOrBack::Back])
+                .collect(),
+        )
+        .prompt();
+        match selected_variant {
+            Ok(SelectVariantOrBack::Variant(variant)) => interactive_clap::ResultFromCli::Ok(match variant {
+                SubmitDiscriminants::Send => CliSubmit::Send,
+                SubmitDiscriminants::Display => CliSubmit::Display
+            }),
+            Ok(SelectVariantOrBack::Back) => interactive_clap::ResultFromCli::Back,
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => interactive_clap::ResultFromCli::Cancel(None),
+            Err(err) => interactive_clap::ResultFromCli::Err(None, err.into()),
+        }
+
+            // match cli_variant {
+            //     interactive_clap::ResultFromCli::Ok(cli_variant) => return interactive_clap::ResultFromCli::Ok(cli_variant),
+            //     interactive_clap::ResultFromCli::Cancel(optional_cli_variant) => return interactive_clap::ResultFromCli::Cancel(optional_cli_variant),
+            //     interactive_clap::ResultFromCli::Back => (),
+            //     interactive_clap::ResultFromCli::Err(optional_cli_variant, err) => return interactive_clap::ResultFromCli::Err(optional_cli_variant, err),
+            // }
+    }
+
 impl interactive_clap::FromCli for Submit {
     type FromCliContext = SubmitContext;
     type FromCliError = color_eyre::eyre::Error;
     fn from_cli(
-        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+        mut optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
         context: Self::FromCliContext,
     ) -> interactive_clap::ResultFromCli<
         <Self as interactive_clap::ToCli>::CliVariant,
@@ -127,6 +163,18 @@ impl interactive_clap::FromCli for Submit {
         Self: Sized + interactive_clap::ToCli,
     {
         let mut storage_message = String::new();
+
+        // let mut clap_variant = CliSubmit::Send;
+        if optional_clap_variant.is_none() {
+            let cli_variant = choose_variant(context.clone());
+            if let interactive_clap::ResultFromCli::Back = &cli_variant {
+                println!("Back - FromCli for Submit");
+                return interactive_clap::ResultFromCli::Back;
+            } 
+            if let interactive_clap::ResultFromCli::Ok(variant) = cli_variant {
+                optional_clap_variant = Some(variant)
+            }
+        }
 
         match optional_clap_variant {
             Some(CliSubmit::Send) => {
@@ -221,7 +269,7 @@ impl interactive_clap::FromCli for Submit {
                 println!("{storage_message}");
                 interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
             }
-            None => Self::choose_variant(context.clone()),
+            None => unreachable!("Unexpected error"),
         }
     }
 }

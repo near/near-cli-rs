@@ -118,11 +118,11 @@ impl From<SignSeedPhraseContext> for super::SubmitContext {
 impl SignSeedPhrase {
     fn input_seed_phrase_hd_path(
         _context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<crate::types::slip10::BIP32Path> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
         Ok(
-            inquire::CustomType::new("Enter seed phrase HD Path [if not sure, keep the default]")
+            Some(inquire::CustomType::new("Enter seed phrase HD Path [if not sure, keep the default]")
                 .with_default(crate::types::slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap())
-                .prompt()?,
+                .prompt()?),
         )
     }
 }

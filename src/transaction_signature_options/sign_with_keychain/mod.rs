@@ -214,7 +214,8 @@ impl interactive_clap::FromCli for SignKeychain {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+        let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
+        loop {
 
         if clap_variant.nonce.is_none() {
             clap_variant.nonce = match Self::input_nonce(&context) {
@@ -242,18 +243,20 @@ impl interactive_clap::FromCli for SignKeychain {
         match super::Submit::from_cli(clap_variant.submit.take(), output_context) {
             interactive_clap::ResultFromCli::Ok(submit) => {
                 clap_variant.submit = Some(submit);
-                interactive_clap::ResultFromCli::Ok(clap_variant)
+                return interactive_clap::ResultFromCli::Ok(clap_variant);
             }
             interactive_clap::ResultFromCli::Cancel(optional_submit) => {
                 clap_variant.submit = optional_submit;
-                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
+                return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
             }
-            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
+            interactive_clap::ResultFromCli::Back => {
+                println!("Back - FromCli for SignKeychain");
+            },
             interactive_clap::ResultFromCli::Err(optional_submit, err) => {
                 clap_variant.submit = optional_submit;
-                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+                return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
             }
-        }
+        }}
     }
 }
 
