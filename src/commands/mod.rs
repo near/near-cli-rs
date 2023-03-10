@@ -38,7 +38,7 @@ pub enum TopLevelCommand {
     Config(self::config::ConfigCommands),
     #[cfg(feature = "self-update")]
     #[strum_discriminants(strum(message = "extension   - Manage near-cli-rs extensions"))]
-    /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    /// Use this to manage near-cli-rs extensions
     Extensions(self::extensions::ExtensionsCommands),
 }
 
