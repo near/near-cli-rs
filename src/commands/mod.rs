@@ -7,7 +7,7 @@ mod tokens;
 mod transaction;
 
 #[cfg(feature = "self-update")]
-mod extensions;
+pub mod extensions;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]

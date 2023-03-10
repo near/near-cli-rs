@@ -1,12 +1,12 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod self_update;
+pub mod self_update;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct ExtensionsCommands {
     #[interactive_clap(subcommand)]
-    extensions_actions: ExtensionsActions,
+    pub extensions_actions: ExtensionsActions,
 }
 
 impl ExtensionsCommands {

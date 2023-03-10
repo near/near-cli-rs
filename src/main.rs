@@ -35,6 +35,23 @@ fn main() -> CliResult {
 
     color_eyre::install()?;
 
+    #[cfg(feature = "self-update")]
+    let handle = std::thread::spawn(|| -> color_eyre::eyre::Result<String> {
+        let releases = self_update::backends::github::ReleaseList::configure()
+            .repo_owner("near")
+            .repo_name("near-cli-rs")
+            .build()
+            .map_err(|err| {
+                color_eyre::Report::msg(format!("Failed to build self_update: {:?}", err))
+            })?
+            .fetch()
+            .map_err(|err| {
+                color_eyre::Report::msg(format!("Failed to fetch releases: {:?}", err))
+            })?;
+
+        Ok(releases[0].version.clone())
+    });
+
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
         Err(error) => {
@@ -117,6 +134,54 @@ fn main() -> CliResult {
         std::env::args().next().as_deref().unwrap_or("./near_cli"),
         shell_words::join(completed_cli.to_cli_args())
     );
+
+    #[cfg(feature = "self-update")]
+    {
+        let current_version = self_update::cargo_crate_version!()
+            .parse::<crate::types::version::Version>()
+            .map_err(|err| {
+                color_eyre::Report::msg(format!(
+                    "Failed to parse current version of near-cli-rs as Version: {:?}",
+                    err
+                ))
+            })?;
+
+        let result = handle.join().unwrap()?;
+        let latest_version = result
+            .parse::<crate::types::version::Version>()
+            .map_err(|err| {
+                color_eyre::Report::msg(format!(
+                    "Failed to parse latest version of near-cli-rs as Version: {:?}",
+                    err
+                ))
+            })?;
+
+        if current_version < latest_version {
+            println!(
+                "\nNEAR-CLI-RS has a new update available \x1b[2m{}\x1b[0m →  \x1b[32m{}\x1b[0m",
+                current_version.to_string(),
+                latest_version.to_string()
+            );
+
+            println!(
+                "To update NEAR-CLI-RS use: {} {}",
+                std::env::args().next().as_deref().unwrap_or("./near_cli"),
+                shell_words::join(
+                    CliCmd::from(Cmd {
+                        top_level: crate::commands::TopLevelCommand::Extensions(
+                            crate::commands::extensions::ExtensionsCommands {
+                                extensions_actions:
+                                    crate::commands::extensions::ExtensionsActions::SelfUpdate(
+                                        crate::commands::extensions::self_update::SelfUpdateCommand
+                                    )
+                            }
+                        )
+                    })
+                    .to_cli_args()
+                )
+            );
+        }
+    }
 
     match process_result {
         Ok(()) => Ok(()),
