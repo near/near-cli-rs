@@ -11,8 +11,7 @@ impl SelfUpdateCommand {
                 .bin_name("near-cli")
                 .show_download_progress(true)
                 .target("x86_64-apple-darwin")
-                // .current_version(self_update::cargo_crate_version!())
-                .current_version("0.2.1")
+                .current_version(self_update::cargo_crate_version!())
                 .build()
                 .map_err(|err| {
                     color_eyre::Report::msg(format!("Failed to build self_update: {:?}", err))
