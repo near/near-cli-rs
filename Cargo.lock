@@ -582,12 +582,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "current_platform"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a74858bcfe44b22016cb49337d7b6f04618c58e5dbfdef61b06b8c434324a0bc"
-
-[[package]]
 name = "curve25519-dalek"
 version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1512,11 +1506,9 @@ dependencies = [
  "cargo-util",
  "clap",
  "color-eyre",
- "current_platform",
  "derive_more",
  "dirs",
  "ed25519-dalek",
- "flate2",
  "hex 0.4.3",
  "inquire",
  "interactive-clap",
@@ -1542,8 +1534,6 @@ dependencies = [
  "smart-default",
  "strum",
  "strum_macros",
- "tar",
- "tempfile",
  "tokio",
  "toml",
  "url",
@@ -2426,7 +2416,8 @@ dependencies = [
 [[package]]
 name = "self_update"
 version = "0.36.0"
-source = "git+https://github.com/frolvanya/self_update.git#a132d4d2a52aa76b097953ca06aaa135497edb55"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca4e4e6f29fddb78b3e7a6e5a395e8274d4aca2d36b2278a297fa49673a5b7c7"
 dependencies = [
  "either",
  "flate2",
