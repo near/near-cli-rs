@@ -759,6 +759,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "either"
+version = "1.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91"
+
+[[package]]
 name = "encode_unicode"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2420,9 +2426,10 @@ dependencies = [
 [[package]]
 name = "self_update"
 version = "0.36.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca4e4e6f29fddb78b3e7a6e5a395e8274d4aca2d36b2278a297fa49673a5b7c7"
+source = "git+https://github.com/frolvanya/self_update.git#a132d4d2a52aa76b097953ca06aaa135497edb55"
 dependencies = [
+ "either",
+ "flate2",
  "hyper",
  "indicatif",
  "log",
@@ -2431,6 +2438,7 @@ dependencies = [
  "reqwest",
  "semver",
  "serde_json",
+ "tar",
  "tempfile",
  "urlencoding",
 ]
