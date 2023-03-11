@@ -146,7 +146,9 @@ fn main() -> CliResult {
                 ))
             })?;
 
-        let result = handle.join().unwrap()?;
+        let result = handle.join().map_err(|err| {
+            color_eyre::Report::msg(format!("Failed to join handle: {:?}", err))
+        })??;
         let latest_version = result
             .parse::<crate::types::version::Version>()
             .map_err(|err| {
