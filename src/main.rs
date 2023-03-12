@@ -51,24 +51,6 @@ fn main() -> CliResult {
                 color_eyre::Report::msg(format!("Failed to get latest release: {:?}", err))
             })?
             .version)
-
-        // let releases = self_update::backends::github::ReleaseList::configure()
-        //     .repo_owner("near")
-        //     .repo_name("near-cli-rs")
-        //     .build()
-        //     .map_err(|err| {
-        //         color_eyre::Report::msg(format!("Failed to build self_update: {:?}", err))
-        //     })?
-        //     .fetch()
-        //     .map_err(|err| {
-        //         color_eyre::Report::msg(format!("Failed to fetch releases: {:?}", err))
-        //     })?;
-
-        // Ok(releases
-        //     .first()
-        //     .ok_or_else(|| color_eyre::Report::msg("Failed to find releases"))?
-        //     .version
-        //     .clone())
     });
 
     let cli = match Cmd::try_parse() {
