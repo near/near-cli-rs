@@ -127,14 +127,18 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
 
         let transaction_signature_options =
             match <crate::transaction_signature_options::SignWith as interactive_clap::FromCli>::from_cli(
-                clap_variant.transaction_signature_options,
+                clap_variant.transaction_signature_options.take(),
                 new_context.into(),
             ) {
                 interactive_clap::ResultFromCli::Ok(cli_sign_with) | interactive_clap::ResultFromCli::Cancel(Some(cli_sign_with)) => {
                     clap_variant.transaction_signature_options = Some(cli_sign_with);
                 }
                 interactive_clap::ResultFromCli::Cancel(None) => return interactive_clap::ResultFromCli::Cancel(None),
-                interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
+                interactive_clap::ResultFromCli::Back => {
+                    clap_variant.transaction_signature_options = None;
+                    println!("Back - FromCli for NetworkForTransactionArgs");
+                    return interactive_clap::ResultFromCli::Back;
+                },
                 interactive_clap::ResultFromCli::Err(cli_sign_with, err) => {
                     clap_variant.transaction_signature_options = cli_sign_with;
                     return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
