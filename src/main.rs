@@ -37,20 +37,7 @@ fn main() -> CliResult {
 
     #[cfg(feature = "self-update")]
     let handle = std::thread::spawn(|| -> color_eyre::eyre::Result<String> {
-        Ok(self_update::backends::github::Update::configure()
-            .repo_owner("near")
-            .repo_name("near-cli-rs")
-            .bin_name("near-cli")
-            .current_version(self_update::cargo_crate_version!())
-            .build()
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to build self_update: {:?}", err))
-            })?
-            .get_latest_release()
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to get latest release: {:?}", err))
-            })?
-            .version)
+        crate::commands::extensions::self_update::SelfUpdateCommand::get_latest_version()
     });
 
     let cli = match Cmd::try_parse() {
