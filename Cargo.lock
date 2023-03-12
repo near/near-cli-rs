@@ -1519,6 +1519,7 @@ dependencies = [
  "reqwest",
  "security-framework",
  "self_update",
+ "semver",
  "serde",
  "serde_json",
  "shell-words",

@@ -45,6 +45,7 @@ open = "2"
 shell-words = "1.0.0"
 cargo-util = "0.1.1"
 
+semver = { version = "1.0.4", optional = true }
 self_update = { version = "0.36.0", features = ["archive-tar", "compression-flate2"], optional = true }
 
 color-eyre = "0.6"
@@ -68,4 +69,4 @@ security-framework = "2.7.0"
 [features]
 default = ["ledger"]
 ledger = ["near-ledger"]
-self-update = ["self_update"]
+self-update = ["self_update", "semver"]

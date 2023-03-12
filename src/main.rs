@@ -137,9 +137,8 @@ fn main() -> CliResult {
 
     #[cfg(feature = "self-update")]
     {
-        let current_version = self_update::cargo_crate_version!()
-            .parse::<crate::types::version::Version>()
-            .map_err(|err| {
+        let current_version =
+            semver::Version::parse(self_update::cargo_crate_version!()).map_err(|err| {
                 color_eyre::Report::msg(format!(
                     "Failed to parse current version of near-cli-rs as Version: {:?}",
                     err
@@ -149,14 +148,12 @@ fn main() -> CliResult {
         let result = handle.join().map_err(|err| {
             color_eyre::Report::msg(format!("Failed to join handle: {:?}", err))
         })??;
-        let latest_version = result
-            .parse::<crate::types::version::Version>()
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to parse latest version of near-cli-rs as Version: {:?}",
-                    err
-                ))
-            })?;
+        let latest_version = semver::Version::parse(result.as_str()).map_err(|err| {
+            color_eyre::Report::msg(format!(
+                "Failed to parse latest version of near-cli-rs as Version: {:?}",
+                err
+            ))
+        })?;
 
         if current_version < latest_version {
             println!(
