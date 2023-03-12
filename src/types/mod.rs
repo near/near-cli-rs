@@ -8,4 +8,3 @@ pub mod signature;
 pub mod slip10;
 pub mod url;
 pub mod vec_string;
-pub mod version;
