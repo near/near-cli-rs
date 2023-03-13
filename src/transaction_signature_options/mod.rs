@@ -1,8 +1,6 @@
 use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
-use inquire::Select;
-use interactive_clap::SelectVariantOrBack;
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
@@ -115,40 +113,6 @@ pub enum Submit {
     Display,
 }
 
-fn choose_variant(context: SubmitContext) -> interactive_clap::ResultFromCli<
-        <Submit as interactive_clap::ToCli>::CliVariant,
-        <Submit as interactive_clap::FromCli>::FromCliError,
-    > {
-
-        let selected_variant = Select::new(
-            "How would you like to proceed",
-            SubmitDiscriminants::iter()
-                .map(SelectVariantOrBack::Variant)
-                .chain([SelectVariantOrBack::Back])
-                .collect(),
-        )
-        .prompt();
-        match selected_variant {
-            Ok(SelectVariantOrBack::Variant(variant)) => interactive_clap::ResultFromCli::Ok(match variant {
-                SubmitDiscriminants::Send => CliSubmit::Send,
-                SubmitDiscriminants::Display => CliSubmit::Display
-            }),
-            Ok(SelectVariantOrBack::Back) => interactive_clap::ResultFromCli::Back,
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => interactive_clap::ResultFromCli::Cancel(None),
-            Err(err) => interactive_clap::ResultFromCli::Err(None, err.into()),
-        }
-
-            // match cli_variant {
-            //     interactive_clap::ResultFromCli::Ok(cli_variant) => return interactive_clap::ResultFromCli::Ok(cli_variant),
-            //     interactive_clap::ResultFromCli::Cancel(optional_cli_variant) => return interactive_clap::ResultFromCli::Cancel(optional_cli_variant),
-            //     interactive_clap::ResultFromCli::Back => (),
-            //     interactive_clap::ResultFromCli::Err(optional_cli_variant, err) => return interactive_clap::ResultFromCli::Err(optional_cli_variant, err),
-            // }
-    }
-
 impl interactive_clap::FromCli for Submit {
     type FromCliContext = SubmitContext;
     type FromCliError = color_eyre::eyre::Error;
@@ -164,29 +128,21 @@ impl interactive_clap::FromCli for Submit {
     {
         let mut storage_message = String::new();
 
-        // let mut clap_variant = CliSubmit::Send;
         if optional_clap_variant.is_none() {
-            println!("match - FromCli for Submit");
-            match choose_variant(context.clone()) {
+            match Self::choose_variant(context.clone()) {
                 interactive_clap::ResultFromCli::Ok(cli_submit) => {
                     optional_clap_variant = Some(cli_submit)
                 }
-                interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
-                interactive_clap::ResultFromCli::Cancel(optional_cli_submit) => return interactive_clap::ResultFromCli::Cancel(optional_cli_submit),
+                interactive_clap::ResultFromCli::Back => {
+                    return interactive_clap::ResultFromCli::Back
+                }
+                interactive_clap::ResultFromCli::Cancel(optional_cli_submit) => {
+                    return interactive_clap::ResultFromCli::Cancel(optional_cli_submit)
+                }
                 interactive_clap::ResultFromCli::Err(optional_cli_submit, err) => {
-                    // optional_clap_variant = optional_cli_field;
-                    return interactive_clap::ResultFromCli::Err(optional_cli_submit, err);
+                    return interactive_clap::ResultFromCli::Err(optional_cli_submit, err)
                 }
             }
-            // if let interactive_clap::ResultFromCli::Back = &cli_variant {
-            //     return interactive_clap::ResultFromCli::Back;
-            // } 
-            // if let interactive_clap::ResultFromCli::Cancel(optional_cli_submit) = &cli_variant {
-            //     return interactive_clap::ResultFromCli::Cancel(None);
-            // } 
-            // if let interactive_clap::ResultFromCli::Ok(cli_submit) = cli_variant {
-            //     optional_clap_variant = Some(cli_submit)
-            // }
         }
 
         match optional_clap_variant {

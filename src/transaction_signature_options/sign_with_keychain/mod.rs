@@ -1,7 +1,5 @@
 extern crate dirs;
 
-use inquire::{CustomType, Select, Text};
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
 #[interactive_clap(output_context = super::SubmitContext)]
@@ -239,27 +237,21 @@ impl interactive_clap::FromCli for SignKeychain {
             };
         let output_context = super::SubmitContext::from(new_context);
 
-        loop {
-            println!("match - FromCli for SignKeychain");
-        match super::Submit::from_cli(clap_variant.submit.take(), output_context.clone()) {
+        match super::Submit::from_cli(clap_variant.submit.take(), output_context) {
             interactive_clap::ResultFromCli::Ok(cli_submit) => {
                 clap_variant.submit = Some(cli_submit);
-                // interactive_clap::ResultFromCli::Ok(clap_variant)
-                break;
+                interactive_clap::ResultFromCli::Ok(clap_variant)
             }
             interactive_clap::ResultFromCli::Cancel(optional_cli_submit) => {
-                println!("Cancel - FromCli for SignKeychain- 2");
                 clap_variant.submit = optional_cli_submit;
-                return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
             }
-            interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
+            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
             interactive_clap::ResultFromCli::Err(optional_cli_submit, err) => {
                 clap_variant.submit = optional_cli_submit;
-                return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
+                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
             }
-        };}
-        println!("Ok - FromCli for SignKeychain");
-        interactive_clap::ResultFromCli::Ok(clap_variant)
+        }
     }
 }
 
