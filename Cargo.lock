@@ -1499,7 +1499,7 @@ dependencies = [
 
 [[package]]
 name = "near-cli-rs"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "async-recursion",
  "base64 0.13.1",
