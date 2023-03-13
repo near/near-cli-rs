@@ -1,3 +1,8 @@
+#[cfg(windows)]
+const BIN_NAME: &str = "near-cli.exe";
+#[cfg(not(windows))]
+const BIN_NAME: &str = "near-cli";
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct SelfUpdateCommand;
@@ -10,13 +15,14 @@ impl SelfUpdateCommand {
                 .repo_name("near-cli-rs")
                 .bin_path_in_archive(
                     format!(
-                        "near-cli-{}-{}/near-cli",
+                        "near-cli-{}-{}/{}",
                         Self::get_latest_version()?,
-                        self_update::get_target()
+                        self_update::get_target(),
+                        BIN_NAME
                     )
                     .as_str(),
                 )
-                .bin_name("near-cli")
+                .bin_name(BIN_NAME)
                 .show_download_progress(true)
                 .current_version(self_update::cargo_crate_version!())
                 .build()
