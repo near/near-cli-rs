@@ -6,8 +6,8 @@ pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
-// #[cfg(target_os = "macos")]
-// pub mod sign_with_macos_keychain;
+#[cfg(target_os = "macos")]
+pub mod sign_with_macos_keychain;
 pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
 
@@ -16,12 +16,12 @@ pub mod sign_with_seed_phrase;
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Select a tool for signing the transaction
 pub enum SignWith {
-    // #[cfg(target_os = "macos")]
-    // #[strum_discriminants(strum(
-    //     message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain"
-    // ))]
-    // /// Sign the transaction with a key saved in macOS keychain
-    // SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
+    #[cfg(target_os = "macos")]
+    #[strum_discriminants(strum(
+        message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain"
+    ))]
+    /// Sign the transaction with a key saved in macOS keychain
+    SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
     #[strum_discriminants(strum(
         message = "sign-with-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
     ))]
@@ -61,8 +61,8 @@ pub async fn sign_with(
     _config: crate::config::Config,
 ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
     match network_config.get_sign_option() {
-        // #[cfg(target_os = "macos")]
-        // SignWith::SignWithMacosKeychain(_) => Ok(None),
+        #[cfg(target_os = "macos")]
+        SignWith::SignWithMacosKeychain(_) => Ok(None),
         SignWith::SignWithKeychain(_) => Ok(None),
         #[cfg(feature = "ledger")]
         SignWith::SignWithLedger(_) => Ok(None),
