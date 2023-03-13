@@ -18,7 +18,7 @@ jobs:
       # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
       TARGET_DIR: ./target
       # For some builds, we disable ledger support
-      FEATURES_FLAGS: ""
+      FEATURES_FLAGS: "--features self-update"
       # Emit backtraces on panics.
       RUST_BACKTRACE: 1
     runs-on: ${{ matrix.os }}
@@ -72,7 +72,7 @@ jobs:
     - name: Disable Ledger support for platforms that don't have udev
       if: matrix.target == 'x86_64-unknown-linux-musl' || matrix.target == 'aarch64-unknown-linux-musl'
       run: |
-        echo "FEATURES_FLAGS=--no-default-features" >> $GITHUB_ENV
+        echo "FEATURES_FLAGS=${{ env.FEATURES_FLAGS }} --no-default-features" >> $GITHUB_ENV
 
     - name: Show command used for Cargo
       run: |
@@ -113,7 +113,9 @@ jobs:
       run: |
         cargo fmt --all -- --check
     - name: Install libudev-dev
-      run: sudo apt-get install --assume-yes libudev-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install --assume-yes libudev-dev
     - name: Check lints (cargo clippy)
       uses: actions-rs/clippy-check@v1
       with:

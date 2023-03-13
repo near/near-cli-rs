@@ -45,6 +45,8 @@ open = "2"
 shell-words = "1.0.0"
 cargo-util = "0.1.1"
 
+semver = { version = "1.0.4", optional = true }
+
 color-eyre = "0.6"
 
 bytesize = "1.1.0"
@@ -63,6 +65,12 @@ interactive-clap-derive = "0.1.0"
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.7.0"
 
+[target.'cfg(target_os = "windows")'.dependencies]
+self_update = { version = "0.36.0", features = ["archive-zip", "compression-zip-deflate"], optional = true }
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+self_update = { version = "0.36.0", features = ["archive-tar", "compression-flate2"], optional = true }
+
 [features]
 default = ["ledger"]
 ledger = ["near-ledger"]
+self-update = ["self_update", "semver"]

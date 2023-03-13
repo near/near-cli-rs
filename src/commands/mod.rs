@@ -6,6 +6,9 @@ mod contract;
 mod tokens;
 mod transaction;
 
+#[cfg(feature = "self-update")]
+pub mod extensions;
+
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -33,6 +36,10 @@ pub enum TopLevelCommand {
     ))]
     /// Use this to manage connections in a configuration file (config.toml).
     Config(self::config::ConfigCommands),
+    #[cfg(feature = "self-update")]
+    #[strum_discriminants(strum(message = "extension   - Manage near-cli-rs extensions"))]
+    /// Use this to manage near-cli-rs extensions
+    Extensions(self::extensions::ExtensionsCommands),
 }
 
 impl TopLevelCommand {
@@ -43,6 +50,8 @@ impl TopLevelCommand {
             Self::Contract(contract_commands) => contract_commands.process(config).await,
             Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
             Self::Config(config_commands) => config_commands.process(config).await,
+            #[cfg(feature = "self-update")]
+            Self::Extensions(extensions_commands) => extensions_commands.process().await,
         }
     }
 }
