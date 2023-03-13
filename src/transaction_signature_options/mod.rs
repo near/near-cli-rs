@@ -166,14 +166,27 @@ impl interactive_clap::FromCli for Submit {
 
         // let mut clap_variant = CliSubmit::Send;
         if optional_clap_variant.is_none() {
-            let cli_variant = choose_variant(context.clone());
-            if let interactive_clap::ResultFromCli::Back = &cli_variant {
-                println!("Back - FromCli for Submit");
-                return interactive_clap::ResultFromCli::Back;
-            } 
-            if let interactive_clap::ResultFromCli::Ok(variant) = cli_variant {
-                optional_clap_variant = Some(variant)
+            println!("match - FromCli for Submit");
+            match choose_variant(context.clone()) {
+                interactive_clap::ResultFromCli::Ok(cli_submit) => {
+                    optional_clap_variant = Some(cli_submit)
+                }
+                interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
+                interactive_clap::ResultFromCli::Cancel(optional_cli_submit) => return interactive_clap::ResultFromCli::Cancel(optional_cli_submit),
+                interactive_clap::ResultFromCli::Err(optional_cli_submit, err) => {
+                    // optional_clap_variant = optional_cli_field;
+                    return interactive_clap::ResultFromCli::Err(optional_cli_submit, err);
+                }
             }
+            // if let interactive_clap::ResultFromCli::Back = &cli_variant {
+            //     return interactive_clap::ResultFromCli::Back;
+            // } 
+            // if let interactive_clap::ResultFromCli::Cancel(optional_cli_submit) = &cli_variant {
+            //     return interactive_clap::ResultFromCli::Cancel(None);
+            // } 
+            // if let interactive_clap::ResultFromCli::Ok(cli_submit) = cli_variant {
+            //     optional_clap_variant = Some(cli_submit)
+            // }
         }
 
         match optional_clap_variant {
@@ -270,6 +283,7 @@ impl interactive_clap::FromCli for Submit {
                 interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
             }
             None => unreachable!("Unexpected error"),
+            // None => return interactive_clap::ResultFromCli::Cancel(optional_clap_variant),
         }
     }
 }

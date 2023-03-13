@@ -125,25 +125,30 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
         );
         println!();
 
-        let transaction_signature_options =
+        loop {
             match <crate::transaction_signature_options::SignWith as interactive_clap::FromCli>::from_cli(
                 clap_variant.transaction_signature_options.take(),
-                new_context.into(),
+                new_context.clone().into(),
             ) {
                 interactive_clap::ResultFromCli::Ok(cli_sign_with) | interactive_clap::ResultFromCli::Cancel(Some(cli_sign_with)) => {
                     clap_variant.transaction_signature_options = Some(cli_sign_with);
+                    break;
                 }
-                interactive_clap::ResultFromCli::Cancel(None) => return interactive_clap::ResultFromCli::Cancel(None),
+                interactive_clap::ResultFromCli::Cancel(optional_cli_field) => {
+                    // clap_variant.transaction_signature_options = optional_cli_field;
+                    return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                }
                 interactive_clap::ResultFromCli::Back => {
-                    clap_variant.transaction_signature_options = None;
-                    println!("Back - FromCli for NetworkForTransactionArgs");
-                    return interactive_clap::ResultFromCli::Back;
+                    if let interactive_clap::ResultFromCli::Back = crate::transaction_signature_options::SignWith::choose_variant(new_context.clone().into()) {
+                        return interactive_clap::ResultFromCli::Back;
+                    }
                 },
-                interactive_clap::ResultFromCli::Err(cli_sign_with, err) => {
-                    clap_variant.transaction_signature_options = cli_sign_with;
+                interactive_clap::ResultFromCli::Err(optional_cli_sign_with, err) => {
+                    clap_variant.transaction_signature_options = optional_cli_sign_with;
                     return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
                 }
-                };
+            };
+        }
 
         interactive_clap::ResultFromCli::Ok(clap_variant)
     }
