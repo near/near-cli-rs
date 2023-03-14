@@ -11,6 +11,7 @@ mod tokens;
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[interactive_clap(disable_back)]
+// #[interactive_clap(skip_default_from_cli)]
 /// What are you up to? (select one of the options with the up-down arrows on your keyboard and press Enter)
 pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "account     - Manage accounts"))]
@@ -35,6 +36,233 @@ pub enum TopLevelCommand {
     /// Use this to manage connections in a configuration file (config.toml).
     Config(self::config::ConfigCommands),
 }
+
+// impl interactive_clap::FromCli for TopLevelCommand {
+//     type FromCliContext = crate::GlobalContext;
+//     type FromCliError = color_eyre::eyre::Error;
+//     fn from_cli(
+//         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+//         context: Self::FromCliContext,
+//     ) -> interactive_clap::ResultFromCli<
+//         <Self as interactive_clap::ToCli>::CliVariant,
+//         Self::FromCliError,
+//     >
+//     where
+//         Self: Sized + interactive_clap::ToCli,
+//     {
+//         match optional_clap_variant {
+//             Some(clap_variant) => {
+//                 println!("----------------- clap_variant: {:?}", &clap_variant);
+
+//                 match <self::tokens::TokensCommands as interactive_clap::FromCli>::from_cli(
+//                     None,
+//                     context.clone(),
+//                 ) {
+//                     interactive_clap::ResultFromCli::Ok(cli_args) => {
+//                         interactive_clap::ResultFromCli::Ok(CliTopLevelCommand::Tokens(cli_args))
+//                     }
+//                     interactive_clap::ResultFromCli::Cancel(optional_cli_args) => {
+//                         interactive_clap::ResultFromCli::Cancel(Some(CliTopLevelCommand::Tokens(
+//                             optional_cli_args.unwrap_or_default(),
+//                         )))
+//                     }
+//                     interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
+//                     interactive_clap::ResultFromCli::Err(optional_cli_args, err) => {
+//                         interactive_clap::ResultFromCli::Err(
+//                             Some(CliTopLevelCommand::Tokens(
+//                                 optional_cli_args.unwrap_or_default(),
+//                             )),
+//                             err,
+//                         )
+//                     }
+//                 }
+
+//                 // interactive_clap::ResultFromCli::Ok(clap_variant)
+//             }
+//             None => choose_variant(context.into()),
+//         }
+//     }
+// }
+
+// impl interactive_clap::FromCli for TopLevelCommand {
+//     type FromCliContext = crate::GlobalContext;
+//     type FromCliError = color_eyre::eyre::Error;
+//     fn from_cli(
+//         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+//         context: Self::FromCliContext,
+//     ) -> interactive_clap::ResultFromCli<
+//         <Self as interactive_clap::ToCli>::CliVariant,
+//         Self::FromCliError,
+//     >
+//     where
+//         Self: Sized + interactive_clap::ToCli,
+//     {
+//         match optional_clap_variant {
+//             Some(CliTopLevelCommand::Account(inner_cli_args)) => {
+//                 let optional_inner_args =
+//                     <self::account::AccountCommands as interactive_clap::FromCli>::from_cli(
+//                         Some(inner_cli_args),
+//                         context.clone().into(),
+//                     );
+//                     if let interactive_clap::ResultFromCli::Ok(cli_args) = optional_inner_args {
+//                         interactive_clap::ResultFromCli::Ok(CliTopLevelCommand::Account(cli_args))
+//                     } else {
+//                         Self::choose_variant(context.clone())
+//                     }
+//                 }
+//             Some(CliTopLevelCommand::Tokens(inner_cli_args)) => {
+//                 let cli_inner_args =
+//                     <self::tokens::TokensCommands as interactive_clap::FromCli>::from_cli(
+//                         Some(inner_cli_args),
+//                         context.clone().into(),
+//                     );
+//                 // if let interactive_clap::ResultFromCli::Ok(cli_args) = optional_inner_args {
+//                 //     interactive_clap::ResultFromCli::Ok(CliTopLevelCommand::Tokens(cli_args))
+//                 // } else {
+//                 //     Self::choose_variant(context.clone())
+//                 // }
+
+//                 match cli_inner_args {
+//                     interactive_clap::ResultFromCli::Ok(cli_args) => {
+//                         interactive_clap::ResultFromCli::Ok(CliTopLevelCommand::Tokens(cli_args))
+//                     }
+//                     interactive_clap::ResultFromCli::Back => {
+//                         interactive_clap::ResultFromCli::Back
+//                     }
+//                     interactive_clap::ResultFromCli::Cancel(Some(cli_args)) => {
+//                         interactive_clap::ResultFromCli::Cancel(Some(CliTopLevelCommand::Tokens(cli_args)))
+//                     }
+//                     interactive_clap::ResultFromCli::Cancel(None) => {
+//                         interactive_clap::ResultFromCli::Cancel(None)
+//                     }
+//                     interactive_clap::ResultFromCli::Err(Some(cli_args), err) => {
+//                         interactive_clap::ResultFromCli::Err(Some(CliTopLevelCommand::Tokens(cli_args)), err)
+//                     }
+//                     interactive_clap::ResultFromCli::Err(None, err) => {
+//                         interactive_clap::ResultFromCli::Err(None, err)
+//                     }
+//                 }
+
+//             }
+//             Some(CliTopLevelCommand::Config(inner_cli_args)) => {
+//                 let optional_inner_args =
+//                     <self::config::ConfigCommands as interactive_clap::FromCli>::from_cli(
+//                         Some(inner_cli_args),
+//                         context.clone().into(),
+//                     );
+//                     if let interactive_clap::ResultFromCli::Ok(cli_args) = optional_inner_args {
+//                         interactive_clap::ResultFromCli::Ok(CliTopLevelCommand::Config(cli_args))
+//                     } else {
+//                         Self::choose_variant(context.clone())
+//                     }
+//                 }
+//             None => Self::choose_variant(context.into()),
+//         }
+//     }
+// }
+
+// pub fn choose_variant(
+//     context: crate::GlobalContext,
+// ) -> interactive_clap::ResultFromCli<
+//     <TopLevelCommand as interactive_clap::ToCli>::CliVariant,
+//     <TopLevelCommand as interactive_clap::FromCli>::FromCliError,
+// > {
+//     use inquire::Select;
+//     use interactive_clap::SelectVariantOrBack;
+//     use strum::{EnumMessage, IntoEnumIterator};
+//     loop {
+//         println!("====================");
+//         let selected_variant = Select :: new (" What are you up to? (select one of the options with the up-down arrows on your keyboard and press Enter)" , TopLevelCommandDiscriminants :: iter () . map (SelectVariantOrBack :: Variant) . collect ()) . prompt () ;
+//         match selected_variant {
+//             Ok(SelectVariantOrBack::Variant(variant)) => match variant {
+//                 TopLevelCommandDiscriminants::Account => {
+//                     match <self::account::AccountCommands as interactive_clap::FromCli>::from_cli(
+//                         None,
+//                         context.clone(),
+//                     ) {
+//                         interactive_clap::ResultFromCli::Ok(cli_args) => {
+//                             return interactive_clap::ResultFromCli::Ok(
+//                                 CliTopLevelCommand::Account(cli_args),
+//                             )
+//                         }
+//                         interactive_clap::ResultFromCli::Cancel(optional_cli_args) => {
+//                             return interactive_clap::ResultFromCli::Cancel(Some(
+//                                 CliTopLevelCommand::Account(optional_cli_args.unwrap_or_default()),
+//                             ));
+//                         }
+//                         interactive_clap::ResultFromCli::Back => continue,
+//                         interactive_clap::ResultFromCli::Err(optional_cli_args, err) => {
+//                             return interactive_clap::ResultFromCli::Err(
+//                                 Some(CliTopLevelCommand::Account(
+//                                     optional_cli_args.unwrap_or_default(),
+//                                 )),
+//                                 err,
+//                             );
+//                         }
+//                     }
+//                 }
+//                 TopLevelCommandDiscriminants::Tokens => {
+//                     match <self::tokens::TokensCommands as interactive_clap::FromCli>::from_cli(
+//                         None,
+//                         context.clone(),
+//                     ) {
+//                         interactive_clap::ResultFromCli::Ok(cli_args) => {
+//                             return interactive_clap::ResultFromCli::Ok(CliTopLevelCommand::Tokens(
+//                                 cli_args,
+//                             ))
+//                         }
+//                         interactive_clap::ResultFromCli::Cancel(optional_cli_args) => {
+//                             return interactive_clap::ResultFromCli::Cancel(Some(
+//                                 CliTopLevelCommand::Tokens(optional_cli_args.unwrap_or_default()),
+//                             ));
+//                         }
+//                         interactive_clap::ResultFromCli::Back => continue,
+//                         interactive_clap::ResultFromCli::Err(optional_cli_args, err) => {
+//                             return interactive_clap::ResultFromCli::Err(
+//                                 Some(CliTopLevelCommand::Tokens(
+//                                     optional_cli_args.unwrap_or_default(),
+//                                 )),
+//                                 err,
+//                             );
+//                         }
+//                     }
+//                 }
+//                 TopLevelCommandDiscriminants::Config => {
+//                     match <self::config::ConfigCommands as interactive_clap::FromCli>::from_cli(
+//                         None,
+//                         context.clone(),
+//                     ) {
+//                         interactive_clap::ResultFromCli::Ok(cli_args) => {
+//                             return interactive_clap::ResultFromCli::Ok(CliTopLevelCommand::Config(
+//                                 cli_args,
+//                             ))
+//                         }
+//                         interactive_clap::ResultFromCli::Cancel(optional_cli_args) => {
+//                             return interactive_clap::ResultFromCli::Cancel(Some(
+//                                 CliTopLevelCommand::Config(optional_cli_args.unwrap_or_default()),
+//                             ));
+//                         }
+//                         interactive_clap::ResultFromCli::Back => continue,
+//                         interactive_clap::ResultFromCli::Err(optional_cli_args, err) => {
+//                             return interactive_clap::ResultFromCli::Err(
+//                                 Some(CliTopLevelCommand::Config(
+//                                     optional_cli_args.unwrap_or_default(),
+//                                 )),
+//                                 err,
+//                             );
+//                         }
+//                     }
+//                 }
+//             },
+//             Ok(SelectVariantOrBack::Back) => return interactive_clap::ResultFromCli::Back,
+//             Err(
+//                 inquire::error::InquireError::OperationCanceled
+//                 | inquire::error::InquireError::OperationInterrupted,
+//             ) => return interactive_clap::ResultFromCli::Cancel(None),
+//             Err(err) => return interactive_clap::ResultFromCli::Err(None, err.into()),
+//         }
+//     }
+// }
 
 impl TopLevelCommand {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {

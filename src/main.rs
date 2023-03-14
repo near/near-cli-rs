@@ -105,7 +105,8 @@ fn main() -> CliResult {
             interactive_clap::ResultFromCli::Ok(cli_cmd)
             | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
                 println!(
-                    "Your console command:  {}",
+                    "Your console command:\n{} {}",
+                    std::env::args().next().as_deref().unwrap_or("./near_cli"),
                     shell_words::join(&cli_cmd.to_cli_args())
                 );
                 return Ok(());
@@ -118,7 +119,8 @@ fn main() -> CliResult {
             interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
                 if let Some(cli_cmd) = optional_cli_cmd {
                     println!(
-                        "Your console command:  {}",
+                        "Your console command:\n{} {}",
+                        std::env::args().next().as_deref().unwrap_or("./near_cli"),
                         shell_words::join(&cli_cmd.to_cli_args())
                     );
                 }
