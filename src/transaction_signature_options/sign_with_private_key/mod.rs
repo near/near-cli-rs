@@ -178,7 +178,8 @@ impl interactive_clap::FromCli for SignPrivateKey {
             block_hash: block_hash.clone(),
         };
         let new_context =
-            match SignPrivateKeyContext::from_previous_context(context.clone(), &new_context_scope) {
+            match SignPrivateKeyContext::from_previous_context(context.clone(), &new_context_scope)
+            {
                 Ok(new_context) => new_context,
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };

@@ -239,7 +239,6 @@ impl interactive_clap::FromCli for Submit {
                 interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
             }
             None => unreachable!("Unexpected error"),
-            // None => return interactive_clap::ResultFromCli::Cancel(optional_clap_variant),
         }
     }
 }

@@ -207,12 +207,15 @@ impl interactive_clap::FromCli for SignMacosKeychain {
         }
         let block_hash = clap_variant.block_hash.take();
 
-        let new_context_scope = InteractiveClapContextScopeForSignMacosKeychain { nonce, block_hash };
-        let new_context =
-            match SignMacosKeychainContext::from_previous_context(context.clone(), &new_context_scope) {
-                Ok(new_context) => new_context,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
+        let new_context_scope =
+            InteractiveClapContextScopeForSignMacosKeychain { nonce, block_hash };
+        let new_context = match SignMacosKeychainContext::from_previous_context(
+            context.clone(),
+            &new_context_scope,
+        ) {
+            Ok(new_context) => new_context,
+            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+        };
         let output_context = super::SubmitContext::from(new_context);
 
         match super::Submit::from_cli(clap_variant.submit.take(), output_context) {
@@ -237,12 +240,12 @@ impl SignMacosKeychain {
     pub fn input_nonce(
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
-            Ok(None)
+        Ok(None)
     }
 
     pub fn input_block_hash(
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-            Ok(None)
+        Ok(None)
     }
 }
