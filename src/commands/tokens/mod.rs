@@ -10,7 +10,6 @@ mod send_near;
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = TokensCommandsContext)]
-// #[interactive_clap(skip_default_from_cli)]
 pub struct TokensCommands {
     ///What is your account ID?
     owner_account_id: crate::types::account_id::AccountId,
@@ -35,66 +34,6 @@ impl TokensCommandsContext {
         })
     }
 }
-
-// impl interactive_clap::FromCli for TokensCommands {
-//     type FromCliContext = crate::GlobalContext;
-//     type FromCliError = color_eyre::eyre::Error;
-//     fn from_cli(
-//         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-//         context: Self::FromCliContext,
-//     ) -> interactive_clap::ResultFromCli<
-//         <Self as interactive_clap::ToCli>::CliVariant,
-//         Self::FromCliError,
-//     >
-//     where
-//         Self: Sized + interactive_clap::ToCli,
-//     {
-//         let mut clap_variant = optional_clap_variant.unwrap_or_default();
-//         if clap_variant.owner_account_id.is_none() {
-//             clap_variant.owner_account_id = match Self::input_owner_account_id(&context) {
-//                 Ok(Some(owner_account_id)) => Some(owner_account_id),
-//                 Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-//                 Err(err) => {
-//                     return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-//                 }
-//             };
-//         };
-//         let owner_account_id = clap_variant
-//             .owner_account_id
-//             .clone()
-//             .expect("Unexpected error");
-//         let new_context_scope =
-//             InteractiveClapContextScopeForTokensCommands { owner_account_id };
-//         let new_context =
-//             match TokensCommandsContext::from_previous_context(context, &new_context_scope) {
-//                 Ok(new_context) => new_context,
-//                 Err(err) => {
-//                     return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-//                 }
-//             };
-//         let output_context = TokensCommandsContext::from(new_context);
-//         match <TokensActions as interactive_clap::FromCli>::from_cli(
-//             clap_variant.tokens_actions.take(),
-//             output_context,
-//         ) {
-//             interactive_clap::ResultFromCli::Ok(cli_field) => {
-//                 clap_variant.tokens_actions = Some(cli_field);
-//             }
-//             interactive_clap::ResultFromCli::Cancel(option_cli_field) => {
-//                 clap_variant.tokens_actions = option_cli_field;
-//                 return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
-//             }
-//             interactive_clap::ResultFromCli::Back => {
-//                 return interactive_clap::ResultFromCli::Back
-//             }
-//             interactive_clap::ResultFromCli::Err(option_cli_field, err) => {
-//                 clap_variant.tokens_actions = option_cli_field;
-//                 return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
-//             }
-//         };
-//         interactive_clap::ResultFromCli::Ok(clap_variant)
-//     }
-// }
 
 impl TokensCommands {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
@@ -142,23 +81,22 @@ impl TokensActions {
         owner_account_id: near_primitives::types::AccountId,
     ) -> crate::CliResult {
         match self {
-            Self::SendNear(send_near_command) => {
-                send_near_command.process(config, owner_account_id).await
-            } // Self::ViewNearBalance(view_near_balance) => {
-              //     view_near_balance.process(config, owner_account_id).await
-              // }
-              // Self::SendFt(send_ft_command) => {
-              //     send_ft_command.process(config, owner_account_id).await
-              // }
-              // Self::SendNft(send_nft_command) => {
-              //     send_nft_command.process(config, owner_account_id).await
-              // }
-              // Self::ViewFtBalance(view_ft_balance) => {
-              //     view_ft_balance.process(config, owner_account_id).await
-              // }
-              // Self::ViewNftAssets(view_nft_assets) => {
-              //     view_nft_assets.process(config, owner_account_id).await
-              // }
+            Self::SendNear(_) => Ok(()),
+            // Self::ViewNearBalance(view_near_balance) => {
+            //     view_near_balance.process(config, owner_account_id).await
+            // }
+            // Self::SendFt(send_ft_command) => {
+            //     send_ft_command.process(config, owner_account_id).await
+            // }
+            // Self::SendNft(send_nft_command) => {
+            //     send_nft_command.process(config, owner_account_id).await
+            // }
+            // Self::ViewFtBalance(view_ft_balance) => {
+            //     view_ft_balance.process(config, owner_account_id).await
+            // }
+            // Self::ViewNftAssets(view_nft_assets) => {
+            //     view_nft_assets.process(config, owner_account_id).await
+            // }
         }
     }
 }

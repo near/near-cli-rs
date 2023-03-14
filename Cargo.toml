@@ -59,8 +59,10 @@ near-primitives = "0.15"
 near-jsonrpc-client = "0.4.0"
 near-jsonrpc-primitives = "0.15"
 
-interactive-clap = { git = "https://github.com/FroVolod/interactive-clap", rev="95d20ca7b54a8d208b2581537c464922ee6b266c" }
-interactive-clap-derive = { git = "https://github.com/FroVolod/interactive-clap", rev="95d20ca7b54a8d208b2581537c464922ee6b266c" }
+interactive-clap = { git = "https://github.com/FroVolod/interactive-clap", rev="f4eb7d872c6c720b41212ef515f51aec0ee2b14b" }
+interactive-clap-derive = { git = "https://github.com/FroVolod/interactive-clap", rev="f4eb7d872c6c720b41212ef515f51aec0ee2b14b" }
+# interactive-clap = { path="../interactive-clap/" }
+# interactive-clap-derive = { path="../interactive-clap/interactive-clap-derive/" }
 # interactive-clap = "0.1.0"
 # interactive-clap-derive = "0.1.0"
 
