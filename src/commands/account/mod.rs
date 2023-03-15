@@ -69,7 +69,7 @@ impl AccountActions {
             }
             Self::ListKeys(view_list_keys) => view_list_keys.process(config).await,
             Self::DeleteAccount(_) => Ok(()),
-            Self::CreateAccount(account) => account.process(config).await,
+            Self::CreateAccount(_) => Ok(()),
             Self::AddKey(_) => Ok(()),
             Self::DeleteKey(_) => Ok(()),
             Self::ImportAccount(import_account_command) => {

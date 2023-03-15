@@ -11,33 +11,61 @@ pub struct ImplicitAccount {
     mode: Mode,
 }
 
-impl ImplicitAccount {
-    pub async fn process(&self) -> crate::CliResult {
-        self.mode.process().await
-    }
-}
+// impl ImplicitAccount {
+//     pub async fn process(&self) -> crate::CliResult {
+//         self.mode.process().await
+//     }
+// }
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = KeyPairContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-///Choose a mode to create an implicit account
+/// Choose a mode to create an implicit account
 pub enum Mode {
     #[strum_discriminants(strum(
         message = "use-auto-generation  - Use auto-generation to create an implicit account"
     ))]
-    ///Use auto-generation to create an implicit account
+    /// Use auto-generation to create an implicit account
     UseAutoGeneration(self::SaveImplicitAccount),
     #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(
         message = "use-ledger           - Use ledger to create an implicit account"
     ))]
-    ///Use ledger to create an implicit account
+    /// Use ledger to create an implicit account
     UseLedger(self::SaveImplicitAccount),
     #[strum_discriminants(strum(
         message = "use-seed-phrase      - Use seed phrase to create an implicit account"
     ))]
-    ///Use seed phrase to create an implicit account
+    /// Use seed phrase to create an implicit account
     UseSeedPhrase(self::seed_phrase::SeedPhrase),
+}
+
+#[derive(Debug, Clone)]
+pub struct ModeContext {
+    config: crate::config::Config,
+    mode: ModeDiscriminants,
+}
+
+impl ModeContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<Mode as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            config: previous_context.0,
+            mode: scope.clone(),
+        })
+    }
+}
+
+impl From<ModeContext> for super::KeyPairContext {
+    fn from(item: ModeContext) -> Self {
+        Self {
+            config: item.config,
+            key_pair_properties: item.key_pair_properties,
+        }
+    }
 }
 
 impl Mode {
@@ -63,7 +91,7 @@ impl Mode {
             }
             #[cfg(feature = "ledger")]
             Mode::UseLedger(save_implicit_account) => {
-                let seed_phrase_hd_path = crate::transaction_signature_options::sign_with_ledger::SignLedger::input_seed_phrase_hd_path();
+                let seed_phrase_hd_path = crate::transaction_signature_options::sign_with_ledger::SignLedger::input_seed_phrase_hd_path()?.unwrap();
                 println!(
                     "Please allow getting the PublicKey on Ledger device (HD Path: {})",
                     seed_phrase_hd_path
@@ -122,16 +150,49 @@ impl Mode {
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct SaveImplicitAccount {
     #[interactive_clap(named_arg)]
-    ///Specify a folder to save the implicit account file
+    /// Specify a folder to save the implicit account file
     save_to_folder: SaveToFolder,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = KeyPairContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct SaveToFolder {
     #[interactive_clap(skip_default_input_arg)]
-    ///Where to save the implicit account file?
+    /// Where to save the implicit account file?
     folder_path: crate::types::path_buf::PathBuf,
+}
+
+impl interactive_clap::FromCli for SaveToFolder {
+    type FromCliContext = KeyPairContext;
+    type FromCliError = color_eyre::eyre::Error;
+    fn from_cli(
+        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+        if clap_variant.folder_path.is_none() {
+            clap_variant.folder_path = match Self::input_folder_path(&context) {
+                Ok(Some(folder_path)) => Some(folder_path),
+                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => {
+                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+                }
+            };
+        };
+        let folder_path = clap_variant.folder_path.clone().expect("Unexpected error");
+
+
+
+
+        interactive_clap::ResultFromCli::Ok(clap_variant)
+    }
 }
 
 impl SaveToFolder {
@@ -141,7 +202,7 @@ impl SaveToFolder {
 
     fn input_folder_path(
         context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<crate::types::path_buf::PathBuf> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
         println!();
         let input_folder_path: String = Text::new("Where to save the implicit account file?")
             .with_initial_value(
@@ -153,6 +214,12 @@ impl SaveToFolder {
             )
             .prompt()?;
         let folder_path = shellexpand::tilde(&input_folder_path).as_ref().parse()?;
-        Ok(folder_path)
+        Ok(Some(folder_path))
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct KeyPairContext {
+    config: crate::config::Config,
+    key_pair_properties: crate::common::KeyPairProperties,
 }
