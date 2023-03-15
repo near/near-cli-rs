@@ -11,12 +11,6 @@ pub struct CreateAccount {
     account_actions: CoverCostsCreateAccount,
 }
 
-// impl CreateAccount {
-//     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-//         self.account_actions.process(config).await
-//     }
-// }
-
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -35,16 +29,6 @@ pub enum CoverCostsCreateAccount {
     #[strum_discriminants(strum(
         message = "fund-later                   - Create an implicit-account"
     ))]
-    ///Create an implicit-account
+    /// Create an implicit-account
     FundLater(self::create_implicit_account::ImplicitAccount),
 }
-
-// impl CoverCostsCreateAccount {
-//     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-//         match self {
-//             Self::FundMyself(_) => Ok(()),
-//             Self::SponsorByFaucetService(_) => Ok(()),
-//             Self::FundLater(_) => Ok(()),
-//         }
-//     }
-// }
