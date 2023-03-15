@@ -2,8 +2,8 @@ use inquire::Text;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = super::KeyPairContext)]
+#[interactive_clap(input_context = super::ModeContext)]
+#[interactive_clap(output_context = super::SaveImplicitAccountContext)]
 // #[interactive_clap(skip_default_from_cli)]
 pub struct SeedPhrase {
     /// Enter the seed-phrase for this account
@@ -16,17 +16,19 @@ pub struct SeedPhrase {
     save_to_folder: super::SaveToFolder,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SeedPhraseContext {
     config: crate::config::Config,
+    mode: super::ModeDiscriminants,
     master_seed_phrase: String,
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     key_pair_properties: crate::common::KeyPairProperties,
+    on_after_getting_folder_path_callback: super::OnAfterGettingFolderPathCallback,
 }
 
 impl SeedPhraseContext {
     pub fn from_previous_context(
-        previous_context: crate::GlobalContext,
+        previous_context: super::ModeContext,
         scope: &<SeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let key_pair_properties: crate::common::KeyPairProperties =
@@ -34,27 +36,30 @@ impl SeedPhraseContext {
                 scope.seed_phrase_hd_path.clone(),
                 scope.master_seed_phrase.clone(),
             )?;
+        let on_after_getting_folder_path_callback;
         Ok(Self {
-            config: previous_context.0,
+            config: previous_context.config,
+            mode: previous_context.mode,
             master_seed_phrase: scope.master_seed_phrase.clone(),
             seed_phrase_hd_path: scope.seed_phrase_hd_path.clone(),
             key_pair_properties,
+            on_after_getting_folder_path_callback,
         })
     }
 }
 
-impl From<SeedPhraseContext> for super::KeyPairContext {
+impl From<SeedPhraseContext> for super::SaveImplicitAccountContext {
     fn from(item: SeedPhraseContext) -> Self {
         Self {
             config: item.config,
-            key_pair_properties: item.key_pair_properties,
+            on_after_getting_folder_path_callback: item.on_after_getting_folder_path_callback,
         }
     }
 }
 
 impl SeedPhrase {
     pub fn input_seed_phrase_hd_path(
-        _context: &crate::GlobalContext,
+        _context: &super::ModeContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
         Ok(Some(
             crate::types::slip10::BIP32Path::from_str(

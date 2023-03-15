@@ -19,7 +19,7 @@ pub struct ImplicitAccount {
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = KeyPairContext)]
+#[interactive_clap(output_context = ModeContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Choose a mode to create an implicit account
 pub enum Mode {
@@ -59,14 +59,6 @@ impl ModeContext {
     }
 }
 
-impl From<ModeContext> for super::KeyPairContext {
-    fn from(item: ModeContext) -> Self {
-        Self {
-            config: item.config,
-            key_pair_properties: item.key_pair_properties,
-        }
-    }
-}
 
 impl Mode {
     pub async fn process(&self) -> crate::CliResult {
@@ -147,15 +139,37 @@ impl Mode {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = ModeContext)]
+#[interactive_clap(output_context = SaveImplicitAccountContext)]
 pub struct SaveImplicitAccount {
     #[interactive_clap(named_arg)]
     /// Specify a folder to save the implicit account file
     save_to_folder: SaveToFolder,
 }
 
+#[derive(Clone)]
+pub struct SaveImplicitAccountContext {
+    config: crate::config::Config,
+    on_after_getting_folder_path_callback: OnAfterGettingFolderPathCallback,
+}
+
+impl SaveImplicitAccountContext {
+    pub fn from_previous_context(
+        previous_context: ModeContext,
+        scope: &<SaveImplicitAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        
+        let on_after_getting_folder_path_callback;
+        Ok(Self {
+            config: previous_context.config,
+            on_after_getting_folder_path_callback,
+        })
+    }
+}
+
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = KeyPairContext)]
+#[interactive_clap(context = SaveImplicitAccountContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SaveToFolder {
     #[interactive_clap(skip_default_input_arg)]
@@ -164,7 +178,7 @@ pub struct SaveToFolder {
 }
 
 impl interactive_clap::FromCli for SaveToFolder {
-    type FromCliContext = KeyPairContext;
+    type FromCliContext = SaveImplicitAccountContext;
     type FromCliError = color_eyre::eyre::Error;
     fn from_cli(
         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
@@ -201,14 +215,14 @@ impl SaveToFolder {
     }
 
     fn input_folder_path(
-        context: &crate::GlobalContext,
+        context: &SaveImplicitAccountContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
         println!();
         let input_folder_path: String = Text::new("Where to save the implicit account file?")
             .with_initial_value(
                 format!(
                     "{}/implicit",
-                    context.0.credentials_home_dir.to_string_lossy()
+                    context.config.credentials_home_dir.to_string_lossy()
                 )
                 .as_str(),
             )
@@ -218,8 +232,8 @@ impl SaveToFolder {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct KeyPairContext {
-    config: crate::config::Config,
-    key_pair_properties: crate::common::KeyPairProperties,
-}
+pub type OnAfterGettingFolderPathCallback = std::sync::Arc<
+    dyn Fn(
+        &std::path::PathBuf,
+    ) -> crate::CliResult,
+>;
