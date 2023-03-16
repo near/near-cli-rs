@@ -1,11 +1,11 @@
-use near_primitives::transaction;
+// use near_primitives::transaction;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod account;
 mod config;
 // mod contract;
 mod tokens;
-// mod transaction;
+mod transaction;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -26,9 +26,9 @@ pub enum TopLevelCommand {
     // ))]
     // /// Use this for contract actions: call function, deploy, download wasm, inspect storage
     // Contract(self::contract::ContractCommands),
-    // #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
-    // /// Use this to construct transactions or view a transaction status.
-    // Transaction(self::transaction::TransactionCommands),
+    #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
+    /// Use this to construct transactions or view a transaction status.
+    Transaction(self::transaction::TransactionCommands),
     #[strum_discriminants(strum(
         message = "config      - Manage connections in a configuration file (config.toml)"
     ))]
@@ -42,7 +42,7 @@ impl TopLevelCommand {
             Self::Tokens(tokens_commands) => tokens_commands.process(config).await,
             Self::Account(account_commands) => account_commands.process(config).await,
             // Self::Contract(contract_commands) => contract_commands.process(config).await,
-            // Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
+            Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
             Self::Config(config_commands) => config_commands.process(config).await,
         }
     }
