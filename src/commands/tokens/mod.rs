@@ -2,7 +2,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod send_ft;
 mod send_near;
-// mod send_nft;
+mod send_nft;
 // mod view_ft_balance;
 // mod view_near_balance;
 // mod view_nft_assets;
@@ -46,23 +46,23 @@ impl TokensCommands {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = TokensCommandsContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-///Select actions with tokens
+/// Select actions with tokens
 pub enum TokensActions {
     #[strum_discriminants(strum(
         message = "send-near         - The transfer is carried out in NEAR tokens"
     ))]
-    ///The transfer is carried out in NEAR tokens
+    /// The transfer is carried out in NEAR tokens
     SendNear(self::send_near::SendNearCommand),
     #[strum_discriminants(strum(
         message = "send-ft           - The transfer is carried out in FT tokens"
     ))]
-    ///The transfer is carried out in FT tokens
+    /// The transfer is carried out in FT tokens
     SendFt(self::send_ft::SendFtCommand),
-    // #[strum_discriminants(strum(
-    //     message = "send-nft          - The transfer is carried out in NFT tokens"
-    // ))]
-    // ///The transfer is carried out in NFT tokens
-    // SendNft(self::send_nft::SendNftCommand),
+    #[strum_discriminants(strum(
+        message = "send-nft          - The transfer is carried out in NFT tokens"
+    ))]
+    /// The transfer is carried out in NFT tokens
+    SendNft(self::send_nft::SendNftCommand),
     // #[strum_discriminants(strum(message = "view-near-balance - View the balance of Near tokens"))]
     // ///View the balance of Near tokens
     // ViewNearBalance(self::view_near_balance::ViewNearBalance),
@@ -86,9 +86,7 @@ impl TokensActions {
             //     view_near_balance.process(config, owner_account_id).await
             // }
             Self::SendFt(_) => Ok(()),
-            // Self::SendNft(send_nft_command) => {
-            //     send_nft_command.process(config, owner_account_id).await
-            // }
+            Self::SendNft(_) => Ok(()),
             // Self::ViewFtBalance(view_ft_balance) => {
             //     view_ft_balance.process(config, owner_account_id).await
             // }
