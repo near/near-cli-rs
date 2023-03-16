@@ -1,6 +1,7 @@
+use std::str::FromStr;
+
 use inquire::Text;
 use serde_json::json;
-use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
