@@ -941,12 +941,14 @@ fn print_value_successful_transaction(
                 gas: _,
                 deposit: _,
             } => {
-                println!(
-                    "The \"{}\" call to <{}> on behalf of <{}> succeeded.",
-                    method_name,
-                    transaction_info.transaction.receiver_id,
-                    transaction_info.transaction.signer_id,
-                );
+                if method_name != "ft_transfer".to_string() {
+                    println!(
+                        "The \"{}\" call to <{}> on behalf of <{}> succeeded.",
+                        method_name,
+                        transaction_info.transaction.receiver_id,
+                        transaction_info.transaction.signer_id,
+                    );
+                }
             }
             near_primitives::views::ActionView::Transfer { deposit } => {
                 println!(
