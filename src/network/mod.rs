@@ -7,11 +7,8 @@ pub struct Network {
     network_name: String,
 }
 
-pub type OnAfterGettingNetworkCallback = std::sync::Arc<
-    dyn Fn(
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
->;
+pub type OnAfterGettingNetworkCallback =
+    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig) -> crate::CliResult>;
 
 #[derive(Clone)]
 pub struct NetworkContext {
@@ -37,9 +34,7 @@ impl interactive_clap::FromCli for Network {
             clap_variant.network_name = match Self::input_network_name(&context) {
                 Ok(Some(network_name)) => Some(network_name),
                 Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => {
-                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-                }
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         };
         let network_name = clap_variant.network_name.clone().expect("Unexpected error");
@@ -57,20 +52,7 @@ impl interactive_clap::FromCli for Network {
 }
 
 impl Network {
-    fn input_network_name(
-        context: &NetworkContext,
-    ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&(context.config,))
-    }
-
-    pub fn get_network_config(
-        &self,
-        config: crate::config::Config,
-    ) -> crate::config::NetworkConfig {
-        let network_config = config.networks;
-        network_config
-            .get(self.network_name.as_str())
-            .expect("Impossible to get network name!")
-            .clone()
+    fn input_network_name(context: &NetworkContext) -> color_eyre::eyre::Result<Option<String>> {
+        crate::common::input_network_name(&(context.config.clone(),))
     }
 }

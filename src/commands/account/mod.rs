@@ -72,9 +72,7 @@ impl AccountActions {
             Self::CreateAccount(_) => Ok(()),
             Self::AddKey(_) => Ok(()),
             Self::DeleteKey(_) => Ok(()),
-            Self::ImportAccount(import_account_command) => {
-                import_account_command.process(config).await
-            }
+            Self::ImportAccount(_) => Ok(()),
         }
     }
 }

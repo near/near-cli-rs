@@ -1,23 +1,24 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = crate::network::NetworkContext)]
 pub struct LoginFromPrivateKey {
     /// Enter your private (secret) key
     private_key: crate::types::secret_key::SecretKey,
     #[interactive_clap(named_arg)]
-    ///Select network
+    /// Select network
     network_config: crate::network::Network,
 }
 
-#[derive(Debug, serde::Serialize)]
-struct KeyPairProperties {
-    public_key: near_crypto::PublicKey,
-    private_key: near_crypto::SecretKey,
-}
+#[derive(Clone)]
+pub struct LoginFromPrivateKeyContext(crate::network::NetworkContext);
 
-impl LoginFromPrivateKey {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let network_config = self.network_config.get_network_config(config.clone());
-        let private_key: near_crypto::SecretKey = self.private_key.clone().into();
+impl LoginFromPrivateKeyContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<LoginFromPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let config = previous_context.0.clone();
+        let private_key: near_crypto::SecretKey = scope.private_key.clone().into();
         let public_key = private_key.public_key();
         let key_pair_properties = KeyPairProperties {
             public_key: public_key.clone(),
@@ -25,13 +26,37 @@ impl LoginFromPrivateKey {
         };
         let key_pair_properties_buf = serde_json::to_string(&key_pair_properties).unwrap();
         let error_message = "\nIt is currently not possible to verify the account access key.\nYou may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n";
-        super::login(
-            network_config,
-            config.credentials_home_dir,
-            &key_pair_properties_buf,
-            &public_key.to_string(),
-            error_message,
-        )
-        .await
+
+        let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new({
+                move |network_config| {
+                    tokio::runtime::Runtime::new()
+                        .unwrap()
+                        .block_on(super::login(
+                            network_config.clone(),
+                            config.credentials_home_dir.clone(),
+                            &key_pair_properties_buf,
+                            &public_key.to_string(),
+                            &error_message,
+                        ))
+                }
+            });
+
+        Ok(Self(crate::network::NetworkContext {
+            config: previous_context.0,
+            on_after_getting_network_callback,
+        }))
     }
+}
+
+impl From<LoginFromPrivateKeyContext> for crate::network::NetworkContext {
+    fn from(item: LoginFromPrivateKeyContext) -> Self {
+        item.0
+    }
+}
+
+#[derive(Debug, serde::Serialize)]
+struct KeyPairProperties {
+    public_key: near_crypto::PublicKey,
+    private_key: near_crypto::SecretKey,
 }

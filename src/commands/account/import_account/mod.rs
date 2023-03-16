@@ -14,12 +14,6 @@ pub struct ImportAccountCommand {
     import_account_actions: ImportAccountActions,
 }
 
-impl ImportAccountCommand {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        self.import_account_actions.process(config).await
-    }
-}
-
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -40,16 +34,6 @@ pub enum ImportAccountActions {
     ))]
     /// Import existing account using a private key
     UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
-}
-
-impl ImportAccountActions {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        match self {
-            Self::UsingWebWallet(login) => login.process(config).await,
-            Self::UsingSeedPhrase(login) => login.process(config).await,
-            Self::UsingPrivateKey(login) => login.process(config).await,
-        }
-    }
 }
 
 pub async fn login(
