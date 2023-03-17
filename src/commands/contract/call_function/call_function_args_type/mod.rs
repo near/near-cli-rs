@@ -63,14 +63,14 @@ impl std::fmt::Display for FunctionArgsTypeDiscriminants {
     }
 }
 
-pub fn input_function_args_type() -> color_eyre::eyre::Result<FunctionArgsType> {
+pub fn input_function_args_type() -> color_eyre::eyre::Result<Option<FunctionArgsType>> {
     let variants = FunctionArgsTypeDiscriminants::iter().collect::<Vec<_>>();
     let selected = Select::new("How would you like to proceed", variants).prompt()?;
     match selected {
-        FunctionArgsTypeDiscriminants::JsonArgs => Ok(FunctionArgsType::JsonArgs),
-        FunctionArgsTypeDiscriminants::TextArgs => Ok(FunctionArgsType::TextArgs),
-        FunctionArgsTypeDiscriminants::Base64Args => Ok(FunctionArgsType::Base64Args),
-        FunctionArgsTypeDiscriminants::FileArgs => Ok(FunctionArgsType::FileArgs),
+        FunctionArgsTypeDiscriminants::JsonArgs => Ok(Some(FunctionArgsType::JsonArgs)),
+        FunctionArgsTypeDiscriminants::TextArgs => Ok(Some(FunctionArgsType::TextArgs)),
+        FunctionArgsTypeDiscriminants::Base64Args => Ok(Some(FunctionArgsType::Base64Args)),
+        FunctionArgsTypeDiscriminants::FileArgs => Ok(Some(FunctionArgsType::FileArgs)),
     }
 }
 

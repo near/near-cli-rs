@@ -1,8 +1,8 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod call_function;
-mod deploy;
-mod download_wasm;
+// mod deploy;
+// mod download_wasm;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -27,12 +27,12 @@ pub enum ContractActions {
     ))]
     ///Execute function (contract method)
     CallFunction(self::call_function::CallFunctionCommands),
-    #[strum_discriminants(strum(message = "deploy          - Add a new contract code"))]
-    ///Add a contract code
-    Deploy(self::deploy::Contract),
-    #[strum_discriminants(strum(message = "download-wasm   - Download wasm"))]
-    ///Download wasm
-    DownloadWasm(self::download_wasm::ContractAccount),
+    // #[strum_discriminants(strum(message = "deploy          - Add a new contract code"))]
+    // ///Add a contract code
+    // Deploy(self::deploy::Contract),
+    // #[strum_discriminants(strum(message = "download-wasm   - Download wasm"))]
+    // ///Download wasm
+    // DownloadWasm(self::download_wasm::ContractAccount),
 }
 
 impl ContractActions {
@@ -41,8 +41,8 @@ impl ContractActions {
             Self::CallFunction(call_function_commands) => {
                 call_function_commands.process(config).await
             }
-            Self::Deploy(contract) => contract.process(config).await,
-            Self::DownloadWasm(download_contract) => download_contract.process(config).await,
+            // Self::Deploy(contract) => contract.process(config).await,
+            // Self::DownloadWasm(download_contract) => download_contract.process(config).await,
         }
     }
 }
