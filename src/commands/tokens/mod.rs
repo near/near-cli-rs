@@ -103,36 +103,36 @@ struct FtMetadata {
     decimals: u64,
 }
 
-async fn params_ft_metadata(
-    config: crate::config::Config,
-    ft_contract_account_id: crate::types::account_id::AccountId,
-    network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
-) -> color_eyre::eyre::Result<FtMetadata> {
-    let query_view_ft_metadata_response = network_config
-        .get_network_config(config.clone())
-        .json_rpc_client()
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: network_config.get_block_ref(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: ft_contract_account_id.clone().into(),
-                method_name: "ft_metadata".to_string(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
-        .await
-        .map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to fetch query for view method: {:?}", err))
-        })?;
-    let call_result =
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
-            query_view_ft_metadata_response.kind
-        {
-            result.result
-        } else {
-            return Err(color_eyre::Report::msg("Error call result".to_string()));
-        };
-    let ft_metadata: FtMetadata = serde_json::from_slice(&call_result).map_err(|err| {
-        color_eyre::Report::msg(format!("Impossible to get FT metadata! Error: {}", err))
-    })?;
-    Ok(ft_metadata)
-}
+// async fn params_ft_metadata(
+//     config: crate::config::Config,
+//     ft_contract_account_id: crate::types::account_id::AccountId,
+//     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
+// ) -> color_eyre::eyre::Result<FtMetadata> {
+//     let query_view_ft_metadata_response = network_config
+//         .get_network_config(config.clone())
+//         .json_rpc_client()
+//         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+//             block_reference: network_config.get_block_ref(),
+//             request: near_primitives::views::QueryRequest::CallFunction {
+//                 account_id: ft_contract_account_id.clone().into(),
+//                 method_name: "ft_metadata".to_string(),
+//                 args: near_primitives::types::FunctionArgs::from(vec![]),
+//             },
+//         })
+//         .await
+//         .map_err(|err| {
+//             color_eyre::Report::msg(format!("Failed to fetch query for view method: {:?}", err))
+//         })?;
+//     let call_result =
+//         if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
+//             query_view_ft_metadata_response.kind
+//         {
+//             result.result
+//         } else {
+//             return Err(color_eyre::Report::msg("Error call result".to_string()));
+//         };
+//     let ft_metadata: FtMetadata = serde_json::from_slice(&call_result).map_err(|err| {
+//         color_eyre::Report::msg(format!("Impossible to get FT metadata! Error: {}", err))
+//     })?;
+//     Ok(ft_metadata)
+// }

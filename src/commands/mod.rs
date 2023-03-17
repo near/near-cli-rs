@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod account;
 mod config;
-// mod contract;
+mod contract;
 mod tokens;
 mod transaction;
 
@@ -21,11 +21,11 @@ pub enum TopLevelCommand {
     ))]
     /// Use this for token actions: send or view balances of NEAR, FT, or NFT
     Tokens(self::tokens::TokensCommands),
-    // #[strum_discriminants(strum(
-    //     message = "contract    - Manage smart-contracts: deploy code, call functions"
-    // ))]
-    // /// Use this for contract actions: call function, deploy, download wasm, inspect storage
-    // Contract(self::contract::ContractCommands),
+    #[strum_discriminants(strum(
+        message = "contract    - Manage smart-contracts: deploy code, call functions"
+    ))]
+    /// Use this for contract actions: call function, deploy, download wasm, inspect storage
+    Contract(self::contract::ContractCommands),
     #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
     /// Use this to construct transactions or view a transaction status.
     Transaction(self::transaction::TransactionCommands),
@@ -41,7 +41,7 @@ impl TopLevelCommand {
         match self {
             Self::Tokens(tokens_commands) => tokens_commands.process(config).await,
             Self::Account(account_commands) => account_commands.process(config).await,
-            // Self::Contract(contract_commands) => contract_commands.process(config).await,
+            Self::Contract(contract_commands) => contract_commands.process(config).await,
             Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
             Self::Config(config_commands) => config_commands.process(config).await,
         }
