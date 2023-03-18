@@ -133,15 +133,7 @@ impl interactive_clap::FromCli for Submit {
                 interactive_clap::ResultFromCli::Ok(cli_submit) => {
                     optional_clap_variant = Some(cli_submit)
                 }
-                interactive_clap::ResultFromCli::Back => {
-                    return interactive_clap::ResultFromCli::Back
-                }
-                interactive_clap::ResultFromCli::Cancel(optional_cli_submit) => {
-                    return interactive_clap::ResultFromCli::Cancel(optional_cli_submit)
-                }
-                interactive_clap::ResultFromCli::Err(optional_cli_submit, err) => {
-                    return interactive_clap::ResultFromCli::Err(optional_cli_submit, err)
-                }
+                result => return result,
             }
         }
 
