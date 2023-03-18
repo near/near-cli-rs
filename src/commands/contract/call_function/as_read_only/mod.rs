@@ -32,7 +32,6 @@ impl CallFunctionViewContext {
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             move |network_config, block_reference| {
-                println!("*********** network: {} ", network_config.network_name);
                 let args = super::call_function_args_type::function_args(
                     function_args.clone(),
                     function_args_type.clone(),
