@@ -39,20 +39,6 @@ impl GenerateKeypairContext {
     }
 }
 
-impl From<GenerateKeypairContext> for super::super::SponsorServiceContext {
-    fn from(item: GenerateKeypairContext) -> Self {
-        Self {
-            config: item.config,
-            new_account_id: item.new_account_id,
-            public_key: item.public_key,
-            on_after_getting_network_callback: std::sync::Arc::new(|_network_config, _message| {
-                Ok(())
-            }),
-            on_before_creating_account_callback: item.on_before_creating_account_callback,
-        }
-    }
-}
-
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = GenerateKeypairContext)]
 #[interactive_clap(output_context = super::super::SponsorServiceContext)]

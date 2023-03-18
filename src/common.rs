@@ -941,14 +941,12 @@ fn print_value_successful_transaction(
                 gas: _,
                 deposit: _,
             } => {
-                if method_name != "ft_transfer".to_string() {
-                    println!(
-                        "The \"{}\" call to <{}> on behalf of <{}> succeeded.",
-                        method_name,
-                        transaction_info.transaction.receiver_id,
-                        transaction_info.transaction.signer_id,
-                    );
-                }
+                println!(
+                    "The \"{}\" call to <{}> on behalf of <{}> succeeded.",
+                    method_name,
+                    transaction_info.transaction.receiver_id,
+                    transaction_info.transaction.signer_id,
+                );
             }
             near_primitives::views::ActionView::Transfer { deposit } => {
                 println!(
@@ -1008,7 +1006,7 @@ pub fn rpc_transaction_error(
                     println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
-                    let err_invalid_transaction = crate::common::handler_invalid_tx_error(context.clone());
+                    let err_invalid_transaction = crate::common::handler_invalid_tx_error(context);
                     return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("{}", err_invalid_transaction));
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
@@ -1049,8 +1047,8 @@ pub fn rpc_transaction_error(
     Ok(())
 }
 
-pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
-    match action_error.kind {
+pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
+    match &action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
             println!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id)
         }
@@ -1106,7 +1104,7 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             println!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(amount)
+                crate::common::NearBalance::from_yoctonear(amount.clone())
             )
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -1124,8 +1122,8 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
             println!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(balance),
-                crate::common::NearBalance::from_yoctonear(stake)
+                crate::common::NearBalance::from_yoctonear(balance.clone()),
+                crate::common::NearBalance::from_yoctonear(stake.clone())
             )
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -1135,8 +1133,8 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
         } => {
             println!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                crate::common::NearBalance::from_yoctonear(stake),
-                crate::common::NearBalance::from_yoctonear(minimum_stake)
+                crate::common::NearBalance::from_yoctonear(stake.clone()),
+                crate::common::NearBalance::from_yoctonear(minimum_stake.clone())
             )
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -1162,7 +1160,7 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
 }
 
 pub fn handler_invalid_tx_error(
-    invalid_tx_error: near_primitives::errors::InvalidTxError,
+    invalid_tx_error: &near_primitives::errors::InvalidTxError,
 ) -> String {
     match invalid_tx_error {
         near_primitives::errors::InvalidTxError::InvalidAccessKeyError(invalid_access_key_error) => {
@@ -1183,8 +1181,8 @@ pub fn handler_invalid_tx_error(
                     format!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        crate::common::NearBalance::from_yoctonear(allowance),
-                        crate::common::NearBalance::from_yoctonear(cost)
+                        crate::common::NearBalance::from_yoctonear(allowance.clone()),
+                        crate::common::NearBalance::from_yoctonear(cost.clone())
                     )
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -1213,14 +1211,14 @@ pub fn handler_invalid_tx_error(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             format!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(balance),
-                crate::common::NearBalance::from_yoctonear(cost)
+                crate::common::NearBalance::from_yoctonear(balance.clone()),
+                crate::common::NearBalance::from_yoctonear(cost.clone())
             )
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             format!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(amount)
+                crate::common::NearBalance::from_yoctonear(amount.clone())
             )
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
@@ -1281,7 +1279,7 @@ pub fn handler_invalid_tx_error(
     }
 }
 
-pub fn print_transaction_error(tx_execution_error: near_primitives::errors::TxExecutionError) {
+pub fn print_transaction_error(tx_execution_error: &near_primitives::errors::TxExecutionError) {
     println!("Failed transaction");
     match tx_execution_error {
         near_primitives::errors::TxExecutionError::ActionError(action_error) => {
@@ -1294,8 +1292,8 @@ pub fn print_transaction_error(tx_execution_error: near_primitives::errors::TxEx
 }
 
 pub fn print_transaction_status(
-    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
-    network_config: crate::config::NetworkConfig,
+    transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
+    network_config: &crate::config::NetworkConfig,
 ) -> crate::CliResult {
     println!("-------------- Logs ----------------");
     for receipt in transaction_info.receipts_outcome.iter() {
@@ -1307,7 +1305,7 @@ pub fn print_transaction_status(
         };
     }
     println!("------------------------------------");
-    match transaction_info.status {
+    match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {

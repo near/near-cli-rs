@@ -88,40 +88,41 @@ impl interactive_clap::FromCli for Submit {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let mut storage_message = String::new();
-
-        match optional_clap_variant {
-            Some(CliSubmit::Create) => {
-                match (context.on_after_getting_network_callback)(
-                    &context.network_config,
-                    &mut storage_message,
-                ) {
-                    Ok(_) => (),
-                    Err(report) => {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                };
-                match (context.on_before_creating_account_callback)(
-                    &context.network_config,
-                    &context.new_account_id,
-                    &context.public_key,
-                ) {
-                    Ok(_) => (),
-                    Err(report) => {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                };
-                println!("{storage_message}");
-                interactive_clap::ResultFromCli::Ok(CliSubmit::Create)
-            }
+        let clap_variant = match optional_clap_variant {
+            Some(CliSubmit::Create) => interactive_clap::ResultFromCli::Ok(CliSubmit::Create),
             None => Self::choose_variant(context.clone()),
-        }
+        };
+
+        if let interactive_clap::ResultFromCli::Ok(_) = &clap_variant {
+            let mut storage_message = String::new();
+            match (context.on_after_getting_network_callback)(
+                &context.network_config,
+                &mut storage_message,
+            ) {
+                Ok(_) => (),
+                Err(report) => {
+                    return interactive_clap::ResultFromCli::Err(
+                        optional_clap_variant,
+                        color_eyre::Report::msg(report),
+                    )
+                }
+            };
+            match (context.on_before_creating_account_callback)(
+                &context.network_config,
+                &context.new_account_id,
+                &context.public_key,
+            ) {
+                Ok(_) => (),
+                Err(report) => {
+                    return interactive_clap::ResultFromCli::Err(
+                        optional_clap_variant,
+                        color_eyre::Report::msg(report),
+                    )
+                }
+            };
+            println!("{storage_message}");
+        };
+        clap_variant
     }
 }
 

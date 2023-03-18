@@ -82,8 +82,8 @@ impl NewAccountContext {
                                 }
                                 _ => {
                                     crate::common::print_transaction_status(
-                                        account_creation_transaction,
-                                        network_config.clone(),
+                                        &account_creation_transaction,
+                                        network_config,
                                     )?;
                                 }
                             }

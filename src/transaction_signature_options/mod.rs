@@ -186,7 +186,7 @@ impl interactive_clap::FromCli for Submit {
                         },
                     };
                 };
-                match (context.on_after_sending_transaction_callback)(
+                match crate::common::print_transaction_status(
                     &transaction_info,
                     &context.network_config,
                 ) {
@@ -198,9 +198,9 @@ impl interactive_clap::FromCli for Submit {
                         )
                     }
                 };
-                match crate::common::print_transaction_status(
-                    transaction_info,
-                    context.network_config,
+                match (context.on_after_sending_transaction_callback)(
+                    &transaction_info,
+                    &context.network_config,
                 ) {
                     Ok(_) => (),
                     Err(report) => {
