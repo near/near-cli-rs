@@ -46,9 +46,9 @@ impl NetworkViewAtBlockArgs {
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = NetworkViewAtBlockArgsContext)]
+#[interactive_clap(input_context = NetworkViewAtBlockArgsContext)]
+#[interactive_clap(output_context = ViewAtBlockContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-#[interactive_clap(skip_default_from_cli)]
 /// Сhoose block for view
 pub enum ViewAtBlock {
     #[strum_discriminants(strum(
@@ -68,157 +68,92 @@ pub enum ViewAtBlock {
     AtBlockHash(BlockIdHash),
 }
 
-impl interactive_clap::FromCli for ViewAtBlock {
-    type FromCliContext = NetworkViewAtBlockArgsContext;
-    type FromCliError = color_eyre::eyre::Error;
-    fn from_cli(
-        mut optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    >
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let network_config = &context.network_config.clone();
+#[derive(Clone)]
+pub struct ViewAtBlockContext(NetworkViewAtBlockArgsContext);
 
-        if optional_clap_variant.is_none() {
-            match Self::choose_variant(context.clone()) {
-                interactive_clap::ResultFromCli::Ok(cli_args) => {
-                    optional_clap_variant = Some(cli_args)
-                }
-                result => return result,
-            }
-        }
+impl ViewAtBlockContext {
+    pub fn from_previous_context(
+        previous_context: NetworkViewAtBlockArgsContext,
+        scope: &<ViewAtBlock as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        if let ViewAtBlockDiscriminants::Now = scope {
+            let block_reference = Finality::Final.into();
 
-        match optional_clap_variant {
-            Some(CliViewAtBlock::Now) => {
-                let block_reference = Finality::Final.into();
-
-                match (context.on_after_getting_block_reference_callback)(
-                    &network_config,
-                    &block_reference,
-                ) {
-                    Ok(_) => (),
-                    Err(err) => {
-                        return interactive_clap::ResultFromCli::Err(Some(CliViewAtBlock::Now), err)
-                    }
-                };
-                interactive_clap::ResultFromCli::Ok(CliViewAtBlock::Now)
-            }
-            Some(CliViewAtBlock::AtBlockHeight(inner_cli_args)) => {
-                let cli_inner_args = <AtBlockHeight as interactive_clap::FromCli>::from_cli(
-                    Some(inner_cli_args.clone()),
-                    context.clone().into(),
-                );
-                match cli_inner_args {
-                    interactive_clap::ResultFromCli::Ok(cli_args) => {
-                        let block_id_height = cli_args.block_id_height.expect("Unexpected error");
-                        let block_reference =
-                            BlockReference::BlockId(BlockId::Height(block_id_height));
-
-                        match (context.on_after_getting_block_reference_callback)(
-                            &network_config,
-                            &block_reference,
-                        ) {
-                            Ok(_) => (),
-                            Err(err) => {
-                                return interactive_clap::ResultFromCli::Err(
-                                    Some(CliViewAtBlock::AtBlockHeight(cli_args)),
-                                    err,
-                                )
-                            }
-                        };
-                        interactive_clap::ResultFromCli::Ok(CliViewAtBlock::AtBlockHeight(cli_args))
-                    }
-                    interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
-                    interactive_clap::ResultFromCli::Cancel(Some(cli_args)) => {
-                        interactive_clap::ResultFromCli::Cancel(Some(
-                            CliViewAtBlock::AtBlockHeight(cli_args),
-                        ))
-                    }
-                    interactive_clap::ResultFromCli::Cancel(None) => {
-                        interactive_clap::ResultFromCli::Cancel(None)
-                    }
-                    interactive_clap::ResultFromCli::Err(Some(cli_args), err) => {
-                        interactive_clap::ResultFromCli::Err(
-                            Some(CliViewAtBlock::AtBlockHeight(cli_args)),
-                            err,
-                        )
-                    }
-                    interactive_clap::ResultFromCli::Err(None, err) => {
-                        interactive_clap::ResultFromCli::Err(None, err)
-                    }
-                }
-            }
-            Some(CliViewAtBlock::AtBlockHash(inner_cli_args)) => {
-                let cli_inner_args = <BlockIdHash as interactive_clap::FromCli>::from_cli(
-                    Some(inner_cli_args.clone()),
-                    context.clone().into(),
-                );
-                match cli_inner_args {
-                    interactive_clap::ResultFromCli::Ok(cli_args) => {
-                        let block_id_hash =
-                            cli_args.block_id_hash.clone().expect("Unexpected error");
-                        let block_reference = BlockReference::BlockId(BlockId::Hash(
-                            near_primitives::hash::CryptoHash::from_str(block_id_hash.as_str())
-                                .unwrap(),
-                        ));
-
-                        match (context.on_after_getting_block_reference_callback)(
-                            &network_config,
-                            &block_reference,
-                        ) {
-                            Ok(_) => (),
-                            Err(err) => {
-                                return interactive_clap::ResultFromCli::Err(
-                                    Some(CliViewAtBlock::AtBlockHash(cli_args)),
-                                    err,
-                                )
-                            }
-                        };
-                        interactive_clap::ResultFromCli::Ok(CliViewAtBlock::AtBlockHash(cli_args))
-                    }
-                    interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
-                    interactive_clap::ResultFromCli::Cancel(Some(cli_args)) => {
-                        interactive_clap::ResultFromCli::Cancel(Some(CliViewAtBlock::AtBlockHash(
-                            cli_args,
-                        )))
-                    }
-                    interactive_clap::ResultFromCli::Cancel(None) => {
-                        interactive_clap::ResultFromCli::Cancel(None)
-                    }
-                    interactive_clap::ResultFromCli::Err(Some(cli_args), err) => {
-                        interactive_clap::ResultFromCli::Err(
-                            Some(CliViewAtBlock::AtBlockHash(cli_args)),
-                            err,
-                        )
-                    }
-                    interactive_clap::ResultFromCli::Err(None, err) => {
-                        interactive_clap::ResultFromCli::Err(None, err)
-                    }
-                }
-            }
-            None => unreachable!("Unexpected error"),
-        }
+            (previous_context.on_after_getting_block_reference_callback)(
+                &previous_context.network_config,
+                &block_reference,
+            )?;
+        };
+        Ok(Self(NetworkViewAtBlockArgsContext {
+            network_config: previous_context.network_config,
+            on_after_getting_block_reference_callback: previous_context
+                .on_after_getting_block_reference_callback,
+        }))
     }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = NetworkViewAtBlockArgsContext)]
-// #[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(input_context = ViewAtBlockContext)]
+#[interactive_clap(output_context = AtBlockHeightContext)]
 pub struct AtBlockHeight {
     /// Type the block ID height
     block_id_height: near_primitives::types::BlockHeight,
 }
 
+#[derive(Clone)]
+pub struct AtBlockHeightContext(ViewAtBlockContext);
+
+impl AtBlockHeightContext {
+    pub fn from_previous_context(
+        previous_context: ViewAtBlockContext,
+        scope: &<AtBlockHeight as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let block_reference = BlockReference::BlockId(BlockId::Height(scope.block_id_height));
+
+        (previous_context.0.on_after_getting_block_reference_callback)(
+            &previous_context.0.network_config,
+            &block_reference,
+        )?;
+        Ok(Self(ViewAtBlockContext(NetworkViewAtBlockArgsContext {
+            network_config: previous_context.0.network_config,
+            on_after_getting_block_reference_callback: previous_context
+                .0
+                .on_after_getting_block_reference_callback,
+        })))
+    }
+}
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = NetworkViewAtBlockArgsContext)]
-// #[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(input_context = ViewAtBlockContext)]
+#[interactive_clap(output_context = BlockIdHashContext)]
 pub struct BlockIdHash {
     /// Type the block ID hash
     block_id_hash: String,
+}
+
+#[derive(Clone)]
+pub struct BlockIdHashContext(ViewAtBlockContext);
+
+impl BlockIdHashContext {
+    pub fn from_previous_context(
+        previous_context: ViewAtBlockContext,
+        scope: &<BlockIdHash as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let block_reference = BlockReference::BlockId(BlockId::Hash(
+            near_primitives::hash::CryptoHash::from_str(&scope.block_id_hash).unwrap(),
+        ));
+
+        (previous_context.0.on_after_getting_block_reference_callback)(
+            &previous_context.0.network_config,
+            &block_reference,
+        )?;
+        Ok(Self(ViewAtBlockContext(NetworkViewAtBlockArgsContext {
+            network_config: previous_context.0.network_config,
+            on_after_getting_block_reference_callback: previous_context
+                .0
+                .on_after_getting_block_reference_callback,
+        })))
+    }
 }
 
 pub type OnAfterGettingBlockReferenceCallback =
