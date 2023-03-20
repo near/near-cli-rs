@@ -2,6 +2,15 @@ use near_primitives::types::{BlockId, BlockReference, Finality};
 use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+pub type OnAfterGettingBlockReferenceCallback =
+    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig, &BlockReference) -> crate::CliResult>;
+
+#[derive(Clone)]
+pub struct ArgsForViewContext {
+    pub config: crate::config::Config,
+    pub on_after_getting_block_reference_callback: OnAfterGettingBlockReferenceCallback,
+}
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = ArgsForViewContext)]
 #[interactive_clap(output_context = NetworkViewAtBlockArgsContext)]
@@ -46,8 +55,7 @@ impl NetworkViewAtBlockArgs {
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = NetworkViewAtBlockArgsContext)]
-#[interactive_clap(output_context = ViewAtBlockContext)]
+#[interactive_clap(context = NetworkViewAtBlockArgsContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Сhoose block for view
 pub enum ViewAtBlock {
@@ -55,7 +63,7 @@ pub enum ViewAtBlock {
         message = "now               - View properties in the final block"
     ))]
     /// View properties in the final block
-    Now,
+    Now(Now),
     #[strum_discriminants(strum(
         message = "at-block-height   - View properties in a height-selected block"
     ))]
@@ -68,32 +76,31 @@ pub enum ViewAtBlock {
     AtBlockHash(BlockIdHash),
 }
 
-#[derive(Clone)]
-pub struct ViewAtBlockContext(NetworkViewAtBlockArgsContext);
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = NetworkViewAtBlockArgsContext)]
+#[interactive_clap(output_context = NowContext)]
+pub struct Now;
 
-impl ViewAtBlockContext {
+#[derive(Clone)]
+pub struct NowContext;
+
+impl NowContext {
     pub fn from_previous_context(
         previous_context: NetworkViewAtBlockArgsContext,
-        scope: &<ViewAtBlock as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<Now as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        if let ViewAtBlockDiscriminants::Now = scope {
-            let block_reference = Finality::Final.into();
+        let block_reference = Finality::Final.into();
 
-            (previous_context.on_after_getting_block_reference_callback)(
-                &previous_context.network_config,
-                &block_reference,
-            )?;
-        };
-        Ok(Self(NetworkViewAtBlockArgsContext {
-            network_config: previous_context.network_config,
-            on_after_getting_block_reference_callback: previous_context
-                .on_after_getting_block_reference_callback,
-        }))
+        (previous_context.on_after_getting_block_reference_callback)(
+            &previous_context.network_config,
+            &block_reference,
+        )?;
+        Ok(Self)
     }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = ViewAtBlockContext)]
+#[interactive_clap(input_context = NetworkViewAtBlockArgsContext)]
 #[interactive_clap(output_context = AtBlockHeightContext)]
 pub struct AtBlockHeight {
     /// Type the block ID height
@@ -105,13 +112,13 @@ pub struct AtBlockHeightContext;
 
 impl AtBlockHeightContext {
     pub fn from_previous_context(
-        previous_context: ViewAtBlockContext,
+        previous_context: NetworkViewAtBlockArgsContext,
         scope: &<AtBlockHeight as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let block_reference = BlockReference::BlockId(BlockId::Height(scope.block_id_height));
 
-        (previous_context.0.on_after_getting_block_reference_callback)(
-            &previous_context.0.network_config,
+        (previous_context.on_after_getting_block_reference_callback)(
+            &previous_context.network_config,
             &block_reference,
         )?;
         Ok(Self)
@@ -119,7 +126,7 @@ impl AtBlockHeightContext {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = ViewAtBlockContext)]
+#[interactive_clap(input_context = NetworkViewAtBlockArgsContext)]
 #[interactive_clap(output_context = BlockIdHashContext)]
 pub struct BlockIdHash {
     /// Type the block ID hash
@@ -131,26 +138,17 @@ pub struct BlockIdHashContext;
 
 impl BlockIdHashContext {
     pub fn from_previous_context(
-        previous_context: ViewAtBlockContext,
+        previous_context: NetworkViewAtBlockArgsContext,
         scope: &<BlockIdHash as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let block_reference = BlockReference::BlockId(BlockId::Hash(
             near_primitives::hash::CryptoHash::from_str(&scope.block_id_hash).unwrap(),
         ));
 
-        (previous_context.0.on_after_getting_block_reference_callback)(
-            &previous_context.0.network_config,
+        (previous_context.on_after_getting_block_reference_callback)(
+            &previous_context.network_config,
             &block_reference,
         )?;
         Ok(Self)
     }
-}
-
-pub type OnAfterGettingBlockReferenceCallback =
-    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig, &BlockReference) -> crate::CliResult>;
-
-#[derive(Clone)]
-pub struct ArgsForViewContext {
-    pub config: crate::config::Config,
-    pub on_after_getting_block_reference_callback: OnAfterGettingBlockReferenceCallback,
 }
