@@ -11,7 +11,7 @@ pub struct AccessTypeContext {
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::AddKeyCommandContext)]
-#[interactive_clap(output_context = AccessTypeContext)]
+#[interactive_clap(output_context = FullAccessTypeContext)]
 pub struct FullAccessType {
     #[interactive_clap(subcommand)]
     pub access_key_mode: super::AccessKeyMode,

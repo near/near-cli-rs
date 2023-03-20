@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
-#[interactive_clap(output_context = super::SubmitContext)]
+#[interactive_clap(output_context = SignAccessKeyFileContext)]
 pub struct SignAccessKeyFile {
     /// What is the location of the account access key file (path/to/access-key-file.json)?
     file_path: crate::types::path_buf::PathBuf,

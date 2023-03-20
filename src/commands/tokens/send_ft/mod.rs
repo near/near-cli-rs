@@ -5,7 +5,7 @@ use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
-#[interactive_clap(output_context = crate::commands::ActionContext)]
+#[interactive_clap(output_context = SendFtCommandContext)]
 pub struct SendFtCommand {
     /// What is the ft-contract account ID?
     ft_contract_account_id: crate::types::account_id::AccountId,

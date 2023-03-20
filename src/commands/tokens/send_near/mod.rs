@@ -2,7 +2,7 @@ use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
-#[interactive_clap(output_context = crate::commands::ActionContext)]
+#[interactive_clap(output_context = SendNearCommandContext)]
 pub struct SendNearCommand {
     ///What is the receiver account ID?
     receiver_account_id: crate::types::account_id::AccountId,

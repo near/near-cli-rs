@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::GenerateKeypairContext)]
-#[interactive_clap(output_context = crate::commands::ActionContext)]
+#[interactive_clap(output_context = SaveKeypairToKeychainContext)]
 pub struct SaveKeypairToKeychain {
     #[interactive_clap(named_arg)]
     /// Select network

@@ -2,7 +2,7 @@ use std::io::Write;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = super::SaveImplicitAccountContext)]
+#[interactive_clap(output_context = SaveWithUseAutoGenerationContext)]
 pub struct SaveWithUseAutoGeneration {
     #[interactive_clap(named_arg)]
     /// Specify a folder to save the implicit account file

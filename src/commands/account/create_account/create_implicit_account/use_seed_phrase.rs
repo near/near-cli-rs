@@ -5,7 +5,7 @@ use inquire::Text;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = super::SaveImplicitAccountContext)]
+#[interactive_clap(output_context = SaveWithSeedPhraseContext)]
 pub struct SaveWithSeedPhrase {
     /// Enter the seed-phrase for this account
     master_seed_phrase: String,

@@ -101,7 +101,7 @@ pub struct AtBlockHeight {
 }
 
 #[derive(Clone)]
-pub struct AtBlockHeightContext(ViewAtBlockContext);
+pub struct AtBlockHeightContext;
 
 impl AtBlockHeightContext {
     pub fn from_previous_context(
@@ -114,12 +114,7 @@ impl AtBlockHeightContext {
             &previous_context.0.network_config,
             &block_reference,
         )?;
-        Ok(Self(ViewAtBlockContext(NetworkViewAtBlockArgsContext {
-            network_config: previous_context.0.network_config,
-            on_after_getting_block_reference_callback: previous_context
-                .0
-                .on_after_getting_block_reference_callback,
-        })))
+        Ok(Self)
     }
 }
 
@@ -132,7 +127,7 @@ pub struct BlockIdHash {
 }
 
 #[derive(Clone)]
-pub struct BlockIdHashContext(ViewAtBlockContext);
+pub struct BlockIdHashContext;
 
 impl BlockIdHashContext {
     pub fn from_previous_context(
@@ -147,12 +142,7 @@ impl BlockIdHashContext {
             &previous_context.0.network_config,
             &block_reference,
         )?;
-        Ok(Self(ViewAtBlockContext(NetworkViewAtBlockArgsContext {
-            network_config: previous_context.0.network_config,
-            on_after_getting_block_reference_callback: previous_context
-                .0
-                .on_after_getting_block_reference_callback,
-        })))
+        Ok(Self)
     }
 }
 

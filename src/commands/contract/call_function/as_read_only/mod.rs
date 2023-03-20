@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = crate::network_view_at_block::ArgsForViewContext)]
+#[interactive_clap(output_context = CallFunctionViewContext)]
 pub struct CallFunctionView {
     /// What is the account ID?
     account_id: crate::types::account_id::AccountId,

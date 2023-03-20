@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]
-#[interactive_clap(output_context = crate::commands::ActionContext)]
+#[interactive_clap(output_context = AddAccessWithSeedPhraseActionContext)]
 pub struct AddAccessWithSeedPhraseAction {
     /// Enter the seed-phrase for this sub-account
     master_seed_phrase: String,

@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::NewAccountContext)]
-#[interactive_clap(output_context = super::super::SponsorServiceContext)]
+#[interactive_clap(output_context = AddAccessWithSeedPhraseActionContext)]
 pub struct AddAccessWithSeedPhraseAction {
     /// Enter the seed-phrase for this account
     master_seed_phrase: String,

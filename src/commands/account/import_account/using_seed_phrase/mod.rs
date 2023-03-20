@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = crate::network::NetworkContext)]
+#[interactive_clap(output_context = LoginFromSeedPhraseContext)]
 pub struct LoginFromSeedPhrase {
     /// Enter the seed-phrase for this account
     master_seed_phrase: String,

@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = crate::network::NetworkContext)]
+#[interactive_clap(output_context = LoginFromPrivateKeyContext)]
 pub struct LoginFromPrivateKey {
     /// Enter your private (secret) key
     private_key: crate::types::secret_key::SecretKey,

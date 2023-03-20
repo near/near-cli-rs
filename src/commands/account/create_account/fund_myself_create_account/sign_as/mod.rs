@@ -6,7 +6,7 @@ use inquire::{CustomType, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::AccountPropertiesContext)]
-#[interactive_clap(output_context = crate::commands::ActionContext)]
+#[interactive_clap(output_context = SignerAccountIdContext)]
 pub struct SignerAccountId {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the signer account ID?

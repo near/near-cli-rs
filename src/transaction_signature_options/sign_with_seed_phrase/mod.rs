@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
-#[interactive_clap(output_context = super::SubmitContext)]
+#[interactive_clap(output_context = SignSeedPhraseContext)]
 pub struct SignSeedPhrase {
     /// Enter the seed-phrase for this account
     master_seed_phrase: String,

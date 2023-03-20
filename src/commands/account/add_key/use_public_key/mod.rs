@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]
-#[interactive_clap(output_context = crate::commands::ActionContext)]
+#[interactive_clap(output_context = AddAccessKeyActionContext)]
 pub struct AddAccessKeyAction {
     /// Enter the public key for this account
     public_key: crate::types::public_key::PublicKey,

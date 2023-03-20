@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = crate::commands::ActionContext)]
+#[interactive_clap(output_context = DeleteKeyCommandContext)]
 pub struct DeleteKeyCommand {
     /// Which account should You delete the access key for?
     owner_account_id: crate::types::account_id::AccountId,

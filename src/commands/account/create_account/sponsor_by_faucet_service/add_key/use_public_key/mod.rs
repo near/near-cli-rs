@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::NewAccountContext)]
-#[interactive_clap(output_context = super::super::SponsorServiceContext)]
+#[interactive_clap(output_context = AddPublicKeyActionContext)]
 pub struct AddPublicKeyAction {
     /// Enter the public key for this account
     public_key: crate::types::public_key::PublicKey,

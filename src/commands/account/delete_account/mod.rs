@@ -29,7 +29,7 @@ impl DeleteAccountContext {
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = DeleteAccountContext)]
-#[interactive_clap(output_context = crate::commands::ActionContext)]
+#[interactive_clap(output_context = BeneficiaryAccountContext)]
 pub struct BeneficiaryAccount {
     /// Specify a beneficiary
     beneficiary_account_id: crate::types::account_id::AccountId,

@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = crate::network::NetworkContext)]
+#[interactive_clap(output_context = TransactionInfoContext)]
 pub struct TransactionInfo {
     /// Enter the hash of the transaction you need to view
     transaction_hash: String,

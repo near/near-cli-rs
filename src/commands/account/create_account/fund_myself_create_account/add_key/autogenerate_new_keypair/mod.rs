@@ -53,7 +53,7 @@ impl From<GenerateKeypairContext> for super::super::AccountPropertiesContext {
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = GenerateKeypairContext)]
-#[interactive_clap(output_context = super::super::AccountPropertiesContext)]
+#[interactive_clap(output_context = SaveModeContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Save an access key for this account
 pub enum SaveMode {
