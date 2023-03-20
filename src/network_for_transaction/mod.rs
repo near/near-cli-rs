@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::ActionContext)]
-#[interactive_clap(output_context = crate::commands::TransactionContext)]
+#[interactive_clap(output_context = NetworkForTransactionArgsContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct NetworkForTransactionArgs {
     /// What is the name of the network

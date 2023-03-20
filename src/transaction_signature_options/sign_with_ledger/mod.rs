@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
-#[interactive_clap(output_context = super::SubmitContext)]
+#[interactive_clap(output_context = SignLedgerContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignLedger {
     #[interactive_clap(long)]
@@ -209,14 +209,13 @@ impl interactive_clap::FromCli for SignLedger {
             nonce,
             block_hash: block_hash.clone(),
         };
-        let new_context =
+        let output_context =
             match SignLedgerContext::from_previous_context(context.clone(), &new_context_scope) {
                 Ok(new_context) => new_context,
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
-        let output_context = super::SubmitContext::from(new_context);
 
-        match super::Submit::from_cli(clap_variant.submit.take(), output_context) {
+        match super::Submit::from_cli(clap_variant.submit.take(), output_context.into()) {
             interactive_clap::ResultFromCli::Ok(submit) => {
                 clap_variant.submit = Some(submit);
                 interactive_clap::ResultFromCli::Ok(clap_variant)

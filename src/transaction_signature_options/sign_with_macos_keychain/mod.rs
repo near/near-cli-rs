@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
-#[interactive_clap(output_context = super::SubmitContext)]
+#[interactive_clap(output_context = SignMacosKeychainContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignMacosKeychain {
     #[interactive_clap(long)]
@@ -209,16 +209,15 @@ impl interactive_clap::FromCli for SignMacosKeychain {
 
         let new_context_scope =
             InteractiveClapContextScopeForSignMacosKeychain { nonce, block_hash };
-        let new_context = match SignMacosKeychainContext::from_previous_context(
+        let output_context = match SignMacosKeychainContext::from_previous_context(
             context.clone(),
             &new_context_scope,
         ) {
             Ok(new_context) => new_context,
             Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
         };
-        let output_context = super::SubmitContext::from(new_context);
 
-        match super::Submit::from_cli(clap_variant.submit.take(), output_context) {
+        match super::Submit::from_cli(clap_variant.submit.take(), output_context.into()) {
             interactive_clap::ResultFromCli::Ok(cli_submit) => {
                 clap_variant.submit = Some(cli_submit);
                 interactive_clap::ResultFromCli::Ok(clap_variant)
