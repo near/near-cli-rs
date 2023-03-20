@@ -4,23 +4,23 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 #[derive(Debug, EnumDiscriminants, Clone, clap::ValueEnum)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-///How do you want to pass the function call arguments?
+/// How do you want to pass the function call arguments?
 pub enum FunctionArgsType {
     #[strum_discriminants(strum(
         message = "json-args    - Valid JSON arguments (e.g. {\"token_id\": \"42\"})"
     ))]
-    ///Valid JSON arguments (e.g. {"token_id": "42"})
+    /// Valid JSON arguments (e.g. {"token_id": "42"})
     JsonArgs,
     #[strum_discriminants(strum(message = "text-args    - Arbitrary text arguments"))]
-    ///Arbitrary text arguments
+    /// Arbitrary text arguments
     TextArgs,
     #[strum_discriminants(strum(message = "base64-args  - Base64-encoded string (e.g. e30=)"))]
-    ///Base64-encoded string (e.g. e30=)
+    /// Base64-encoded string (e.g. e30=)
     Base64Args,
     #[strum_discriminants(strum(
         message = "file-args    - Read from file (e.g. reusable JSON or binary data)"
     ))]
-    ///Read from file (e.g. reusable JSON or binary data)
+    /// Read from file (e.g. reusable JSON or binary data)
     FileArgs,
 }
 

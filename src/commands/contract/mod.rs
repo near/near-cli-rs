@@ -38,9 +38,7 @@ pub enum ContractActions {
 impl ContractActions {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         match self {
-            Self::CallFunction(call_function_commands) => {
-                call_function_commands.process(config).await
-            }
+            Self::CallFunction(_) => Ok(()),
             // Self::Deploy(contract) => contract.process(config).await,
             // Self::DownloadWasm(download_contract) => download_contract.process(config).await,
         }
