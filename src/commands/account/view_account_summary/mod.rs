@@ -9,6 +9,7 @@ pub struct ViewAccountSummary {
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
 }
 
+#[derive(Clone)]
 pub struct ViewAccountSummaryContext(crate::network_view_at_block::ArgsForViewContext);
 
 impl ViewAccountSummaryContext {
