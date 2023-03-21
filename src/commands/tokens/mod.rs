@@ -5,7 +5,7 @@ mod send_near;
 mod send_nft;
 mod view_ft_balance;
 mod view_near_balance;
-// mod view_nft_assets;
+mod view_nft_assets;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -35,14 +35,6 @@ impl TokensCommandsContext {
     }
 }
 
-impl TokensCommands {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        self.tokens_actions
-            .process(config, self.owner_account_id.clone().into())
-            .await
-    }
-}
-
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = TokensCommandsContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -67,30 +59,11 @@ pub enum TokensActions {
     /// View the balance of Near tokens
     ViewNearBalance(self::view_near_balance::ViewNearBalance),
     #[strum_discriminants(strum(message = "view-ft-balance   - View the balance of FT tokens"))]
-    ///View the balance of FT tokens
+    /// View the balance of FT tokens
     ViewFtBalance(self::view_ft_balance::ViewFtBalance),
-    // #[strum_discriminants(strum(message = "view-nft-assets   - View the balance of NFT tokens"))]
-    // ///View the balance of NFT tokens
-    // ViewNftAssets(self::view_nft_assets::ViewNftAssets),
-}
-
-impl TokensActions {
-    async fn process(
-        &self,
-        config: crate::config::Config,
-        owner_account_id: near_primitives::types::AccountId,
-    ) -> crate::CliResult {
-        match self {
-            Self::SendNear(_) => Ok(()),
-            Self::ViewNearBalance(_) => Ok(()),
-            Self::SendFt(_) => Ok(()),
-            Self::SendNft(_) => Ok(()),
-            Self::ViewFtBalance(_) => Ok(()),
-            // Self::ViewNftAssets(view_nft_assets) => {
-            //     view_nft_assets.process(config, owner_account_id).await
-            // }
-        }
-    }
+    #[strum_discriminants(strum(message = "view-nft-assets   - View the balance of NFT tokens"))]
+    /// View the balance of NFT tokens
+    ViewNftAssets(self::view_nft_assets::ViewNftAssets),
 }
 
 #[derive(serde::Deserialize)]

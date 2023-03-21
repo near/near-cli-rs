@@ -39,7 +39,7 @@ pub enum TopLevelCommand {
 impl TopLevelCommand {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         match self {
-            Self::Tokens(tokens_commands) => tokens_commands.process(config).await,
+            Self::Tokens(_) => Ok(()),
             Self::Account(_) => Ok(()),
             Self::Contract(_) => Ok(()),
             Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
