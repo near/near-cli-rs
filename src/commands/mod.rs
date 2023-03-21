@@ -41,7 +41,7 @@ impl TopLevelCommand {
         match self {
             Self::Tokens(tokens_commands) => tokens_commands.process(config).await,
             Self::Account(account_commands) => account_commands.process(config).await,
-            Self::Contract(contract_commands) => contract_commands.process(config).await,
+            Self::Contract(_) => Ok(()),
             Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
             Self::Config(config_commands) => config_commands.process(config).await,
         }
