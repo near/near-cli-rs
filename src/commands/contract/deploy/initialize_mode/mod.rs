@@ -3,9 +3,9 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 mod call_function_type;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = super::ContractFileContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-///Select the need for initialization
+/// Select the need for initialization
 pub enum InitializeMode {
     /// Add an initialize
     #[strum_discriminants(strum(message = "with-init-call     - Add an initialize"))]
@@ -15,53 +15,53 @@ pub enum InitializeMode {
     WithoutInitCall(NoInitialize),
 }
 
-impl InitializeMode {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        match self {
-            InitializeMode::WithInitCall(call_function_action) => {
-                call_function_action
-                    .process(config, prepopulated_unsigned_transaction)
-                    .await
-            }
-            InitializeMode::WithoutInitCall(no_initialize) => {
-                no_initialize
-                    .process(config, prepopulated_unsigned_transaction)
-                    .await
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = super::ContractFileContext)]
+#[interactive_clap(output_context = NoInitializeContext)]
 pub struct NoInitialize {
     #[interactive_clap(named_arg)]
-    ///Select network
+    /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-impl NoInitialize {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        match crate::transaction_signature_options::sign_with(
-            self.network_config.clone(),
-            prepopulated_unsigned_transaction,
-            config.clone(),
-        )
-        .await?
-        {
-            Some(transaction_info) => crate::common::print_transaction_status(
-                transaction_info,
-                self.network_config.get_network_config(config),
+#[derive(Debug, Clone)]
+pub struct NoInitializeContext(super::ContractFileContext);
+
+impl NoInitializeContext {
+    pub fn from_previous_context(
+        previous_context: super::ContractFileContext,
+        _scope: &<NoInitialize as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self(super::ContractFileContext {
+            config: previous_context.config,
+            receiver_account_id: previous_context.receiver_account_id,
+            signer_account_id: previous_context.signer_account_id,
+            code: previous_context.code,
+        }))
+    }
+}
+
+impl From<NoInitializeContext> for crate::commands::ActionContext {
+    fn from(item: NoInitializeContext) -> Self {
+        Self {
+            config: item.0.config,
+            signer_account_id: item.0.signer_account_id,
+            receiver_account_id: item.0.receiver_account_id,
+            actions: vec![near_primitives::transaction::Action::DeployContract(
+                near_primitives::transaction::DeployContractAction { code: item.0.code },
+            )],
+            on_before_signing_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            None => Ok(()),
+            on_after_getting_network_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+            ),
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                |_signed_transaction, _network_config, _message| Ok(()),
+            ),
+            on_after_sending_transaction_callback: std::sync::Arc::new(
+                |_outcome_view, _network_config| Ok(()),
+            ),
         }
     }
 }
