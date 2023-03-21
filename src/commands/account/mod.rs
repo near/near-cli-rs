@@ -6,7 +6,7 @@ mod delete_account;
 mod delete_key;
 mod import_account;
 // mod list_keys;
-// mod view_account_summary;
+mod view_account_summary;
 
 pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
 
@@ -28,11 +28,11 @@ impl AccountCommands {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// What do you want to do with an account?
 pub enum AccountActions {
-    // #[strum_discriminants(strum(
-    //     message = "view-account-summary    - View properties for an account"
-    // ))]
-    // /// View properties for an account
-    // ViewAccountSummary(self::view_account_summary::ViewAccountSummary),
+    #[strum_discriminants(strum(
+        message = "view-account-summary    - View properties for an account"
+    ))]
+    /// View properties for an account
+    ViewAccountSummary(self::view_account_summary::ViewAccountSummary),
     #[strum_discriminants(strum(
         message = "import-account          - Import existing account (a.k.a. \"sign in\")"
     ))]
@@ -64,9 +64,7 @@ pub enum AccountActions {
 impl AccountActions {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         match self {
-            // Self::ViewAccountSummary(view_account_command) => {
-            //     view_account_command.process(config).await
-            // }
+            Self::ViewAccountSummary(view_account_command) => Ok(()),
             // Self::ListKeys(view_list_keys) => view_list_keys.process(config).await,
             Self::DeleteAccount(_) => Ok(()),
             Self::CreateAccount(_) => Ok(()),
