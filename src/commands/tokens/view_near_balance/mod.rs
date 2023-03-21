@@ -1,24 +1,44 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = super::TokensCommandsContext)]
+#[interactive_clap(output_context = ViewNearBalanceContext)]
 pub struct ViewNearBalance {
     #[interactive_clap(named_arg)]
-    ///Select network
+    /// Select network
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
 }
 
-impl ViewNearBalance {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        owner_account_id: near_primitives::types::AccountId,
-    ) -> crate::CliResult {
-        let account_transfer_allowance = crate::common::get_account_transfer_allowance(
-            self.network_config.get_network_config(config),
-            owner_account_id,
-            self.network_config.get_block_ref(),
-        )
-        .await?;
+#[derive(Clone)]
+pub struct ViewNearBalanceContext(crate::network_view_at_block::ArgsForViewContext);
+
+impl ViewNearBalanceContext {
+    pub fn from_previous_context(
+        previous_context: super::TokensCommandsContext,
+        _scope: &<ViewNearBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let owner_account_id = previous_context.owner_account_id;
+
+        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+            move |network_config, block_reference| {
+            let account_transfer_allowance = tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(crate::common::get_account_transfer_allowance(
+                    network_config.clone(),
+                    owner_account_id.clone(),
+                    block_reference.clone(),
+                    )
+                )?;
         println! {"{}", &account_transfer_allowance};
         Ok(())
+        }});
+        Ok(Self(crate::network_view_at_block::ArgsForViewContext {
+            config: previous_context.config,
+            on_after_getting_block_reference_callback,
+        }))
+    }
+}
+
+impl From<ViewNearBalanceContext> for crate::network_view_at_block::ArgsForViewContext {
+    fn from(item: ViewNearBalanceContext) -> Self {
+        item.0
     }
 }

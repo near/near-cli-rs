@@ -4,7 +4,7 @@ mod send_ft;
 mod send_near;
 mod send_nft;
 mod view_ft_balance;
-// mod view_near_balance;
+mod view_near_balance;
 // mod view_nft_assets;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -63,9 +63,9 @@ pub enum TokensActions {
     ))]
     /// The transfer is carried out in NFT tokens
     SendNft(self::send_nft::SendNftCommand),
-    // #[strum_discriminants(strum(message = "view-near-balance - View the balance of Near tokens"))]
-    // ///View the balance of Near tokens
-    // ViewNearBalance(self::view_near_balance::ViewNearBalance),
+    #[strum_discriminants(strum(message = "view-near-balance - View the balance of Near tokens"))]
+    /// View the balance of Near tokens
+    ViewNearBalance(self::view_near_balance::ViewNearBalance),
     #[strum_discriminants(strum(message = "view-ft-balance   - View the balance of FT tokens"))]
     ///View the balance of FT tokens
     ViewFtBalance(self::view_ft_balance::ViewFtBalance),
@@ -82,9 +82,7 @@ impl TokensActions {
     ) -> crate::CliResult {
         match self {
             Self::SendNear(_) => Ok(()),
-            // Self::ViewNearBalance(view_near_balance) => {
-            //     view_near_balance.process(config, owner_account_id).await
-            // }
+            Self::ViewNearBalance(_) => Ok(()),
             Self::SendFt(_) => Ok(()),
             Self::SendNft(_) => Ok(()),
             Self::ViewFtBalance(_) => Ok(()),
