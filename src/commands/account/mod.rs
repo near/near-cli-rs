@@ -5,7 +5,7 @@ pub mod create_account;
 mod delete_account;
 mod delete_key;
 mod import_account;
-// mod list_keys;
+mod list_keys;
 mod view_account_summary;
 
 pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
@@ -15,12 +15,6 @@ pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
 pub struct AccountCommands {
     #[interactive_clap(subcommand)]
     account_actions: AccountActions,
-}
-
-impl AccountCommands {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        self.account_actions.process(config).await
-    }
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
@@ -44,11 +38,11 @@ pub enum AccountActions {
     #[strum_discriminants(strum(message = "delete-account          - Delete an account"))]
     /// Delete an account
     DeleteAccount(self::delete_account::DeleteAccount),
-    // #[strum_discriminants(strum(
-    //     message = "list-keys               - View a list of access keys of an account"
-    // ))]
-    // /// View a list of access keys of an account
-    // ListKeys(self::list_keys::ViewListKeys),
+    #[strum_discriminants(strum(
+        message = "list-keys               - View a list of access keys of an account"
+    ))]
+    /// View a list of access keys of an account
+    ListKeys(self::list_keys::ViewListKeys),
     #[strum_discriminants(strum(
         message = "add-key                 - Add an access key to an account"
     ))]
@@ -59,18 +53,4 @@ pub enum AccountActions {
     ))]
     /// Delete an access key from an account
     DeleteKey(self::delete_key::DeleteKeyCommand),
-}
-
-impl AccountActions {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        match self {
-            Self::ViewAccountSummary(view_account_command) => Ok(()),
-            // Self::ListKeys(view_list_keys) => view_list_keys.process(config).await,
-            Self::DeleteAccount(_) => Ok(()),
-            Self::CreateAccount(_) => Ok(()),
-            Self::AddKey(_) => Ok(()),
-            Self::DeleteKey(_) => Ok(()),
-            Self::ImportAccount(_) => Ok(()),
-        }
-    }
 }

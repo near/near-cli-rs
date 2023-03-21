@@ -40,7 +40,7 @@ impl TopLevelCommand {
     pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
         match self {
             Self::Tokens(tokens_commands) => tokens_commands.process(config).await,
-            Self::Account(account_commands) => account_commands.process(config).await,
+            Self::Account(_) => Ok(()),
             Self::Contract(_) => Ok(()),
             Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
             Self::Config(config_commands) => config_commands.process(config).await,
