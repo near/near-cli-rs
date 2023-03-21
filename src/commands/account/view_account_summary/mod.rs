@@ -21,66 +21,62 @@ impl ViewAccountSummaryContext {
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             move |network_config, block_reference| {
+                let resp = tokio::runtime::Runtime::new()
+                    .unwrap()
+                    .block_on(
+                        network_config
+                    .json_rpc_client()
+                    .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                        block_reference: block_reference.clone(),
+                        request: near_primitives::views::QueryRequest::ViewAccount {
+                            account_id: account_id.clone().into(),
+                        },
+                    }))
+                    .map_err(|err| {
+                        color_eyre::Report::msg(format!(
+                            "Failed to fetch query for view account: {:?}",
+                            err
+                        ))
+                    })?;
 
+                let account_view = match resp.kind {
+                    near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(view) => view,
+                    _ => return Err(color_eyre::Report::msg("Error call result")),
+                };
 
                 let resp = tokio::runtime::Runtime::new()
                 .unwrap()
                 .block_on(
                     network_config
-                .json_rpc_client()
-                .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                    block_reference: block_reference.clone(),
-                    request: near_primitives::views::QueryRequest::ViewAccount {
-                        account_id: account_id.clone().into(),
-                    },
-                })
-            )
-                .map_err(|err| {
-                    color_eyre::Report::msg(format!(
-                        "Failed to fetch query for view account: {:?}",
-                        err
-                    ))
-                })?;
+                    .json_rpc_client()
+                    .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                        block_reference: near_primitives::types::BlockId::Hash(resp.block_hash).into(),
+                        request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                            account_id: account_id.clone().into(),
+                        },
+                    }))
+                    .map_err(|err| {
+                        color_eyre::Report::msg(format!(
+                            "Failed to fetch query for view key list: {:?}",
+                            err
+                        ))
+                    })?;
 
-            let account_view = match resp.kind {
-                near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(view) => view,
-                _ => return Err(color_eyre::Report::msg("Error call result")),
-            };
+                let access_keys = match resp.kind {
+                    near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(result) => {
+                        result.keys
+                    }
+                    _ => return Err(color_eyre::Report::msg("Error call result".to_string())),
+                };
 
-            let resp = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(
-                network_config
-                .json_rpc_client()
-                .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                    block_reference: near_primitives::types::BlockId::Hash(resp.block_hash).into(),
-                    request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                        account_id: account_id.clone().into(),
-                    },
-                })
-            )
-                .map_err(|err| {
-                    color_eyre::Report::msg(format!(
-                        "Failed to fetch query for view key list: {:?}",
-                        err
-                    ))
-                })?;
-
-            let access_keys = match resp.kind {
-                near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(result) => {
-                    result.keys
-                }
-                _ => return Err(color_eyre::Report::msg("Error call result".to_string())),
-            };
-
-            crate::common::display_account_info(
-                &resp.block_hash,
-                &resp.block_height,
-                &account_id,
-                &account_view,
-                &access_keys,
-            );
-            Ok(())
+                crate::common::display_account_info(
+                    &resp.block_hash,
+                    &resp.block_height,
+                    &account_id,
+                    &account_view,
+                    &access_keys,
+                );
+                Ok(())
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
