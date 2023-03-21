@@ -220,10 +220,10 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
             receiver_account_id: item.receiver_account_id,
             actions: vec![near_primitives::transaction::Action::FunctionCall(
                 near_primitives::transaction::FunctionCallAction {
-                    method_name: item.function_name.clone(),
+                    method_name: item.function_name,
                     args: item.function_args,
-                    gas: item.gas.clone().inner,
-                    deposit: item.deposit.clone().to_yoctonear(),
+                    gas: item.gas.inner,
+                    deposit: item.deposit.to_yoctonear(),
                 },
             )],
             on_before_signing_callback: std::sync::Arc::new(
