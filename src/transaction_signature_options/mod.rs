@@ -1,6 +1,8 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
+use near_crypto::{InMemorySigner, Signer};
 use near_primitives::borsh::BorshSerialize;
 use near_primitives::delegate_action::{DelegateAction, NonDelegateAction, SignedDelegateAction};
+use near_primitives::signable_message::{SignableMessage, SignableMessageType};
 use near_primitives::types::{BlockId, BlockReference};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
@@ -231,7 +233,10 @@ impl Submit {
                     max_block_height,
                     public_key,
                 };
-                let signature = signed_transaction.signature.clone();
+                // create a new signature here signing the delegate action + discriminant
+                let signable = SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
+                // TODO E0277 the trait `near_crypto::Signer` is not implemented for `near_crypto::Signature`
+                let signature = signable.sign(&signed_transaction.signature.clone());
                 let signed_delegate_action = SignedDelegateAction{
                     delegate_action,
                     signature,
@@ -240,7 +245,7 @@ impl Submit {
                 let client = reqwest::Client::new();
                 let payload = signed_delegate_action.try_to_vec().unwrap();  // serialize signed_delegate_action using borsh
                 let json_payload = serde_json::to_vec(&payload).unwrap();
-                println!("Sending transaction to relayer {:?}", json_payload);
+                println!("Sending SignedDelegateAction to relayer {:?}", payload);
                 let relayer_response = client.post(relayer)
                     .header("Content-Type", "application/json")
                     .body(json_payload)
