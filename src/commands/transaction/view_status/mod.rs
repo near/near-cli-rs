@@ -5,7 +5,7 @@ use std::str::FromStr;
 #[interactive_clap(output_context = TransactionInfoContext)]
 pub struct TransactionInfo {
     /// Enter the hash of the transaction you need to view
-    transaction_hash: String,
+    transaction_hash: crate::types::crypto_hash::CryptoHash,
     /// What is the signer account ID?
     signer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -34,7 +34,7 @@ impl TransactionInfoContext {
                             .json_rpc_client()
                             .call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
                                 transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
-                                    hash: near_primitives::hash::CryptoHash::from_str(&transaction_hash).unwrap(),
+                                    hash: transaction_hash.clone().into(),
                                     account_id: signer_account_id.clone().into()
                                 }
                             }))

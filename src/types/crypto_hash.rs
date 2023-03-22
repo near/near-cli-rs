@@ -1,4 +1,4 @@
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct CryptoHash(pub near_primitives::hash::CryptoHash);
 
 impl From<CryptoHash> for near_primitives::hash::CryptoHash {
@@ -14,11 +14,11 @@ impl std::fmt::Display for CryptoHash {
 }
 
 impl std::str::FromStr for CryptoHash {
-    type Err = Box<dyn std::error::Error>;
+    type Err = color_eyre::eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let crypto_hash =
-            near_primitives::hash::CryptoHash::from_str(s).map_err(|err| err.to_string())?;
+        let crypto_hash = near_primitives::hash::CryptoHash::from_str(s)
+            .map_err(color_eyre::eyre::Report::msg)?;
         Ok(Self(crypto_hash))
     }
 }
