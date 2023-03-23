@@ -1,3 +1,4 @@
+use near_crypto::InMemorySigner;
 use near_primitives::borsh::BorshSerialize;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -74,12 +75,13 @@ impl SignPrivateKey {
         network_config: crate::config::NetworkConfig,
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         let signer_secret_key: near_crypto::SecretKey = self.signer_private_key.clone().into();
+        let unsigned_tx_copy = prepopulated_unsigned_transaction.clone();
         let online_signer_access_key_response = network_config
             .json_rpc_client()
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
                 request: near_primitives::views::QueryRequest::ViewAccessKey {
-                    account_id: prepopulated_unsigned_transaction.signer_id.clone(),
+                    account_id: unsigned_tx_copy.signer_id.clone(),
                     public_key: self.signer_public_key.clone().into(),
                 },
             })
@@ -120,16 +122,20 @@ impl SignPrivateKey {
         println!("Signed transaction:\n");
         crate::common::print_transaction(signed_transaction.transaction.clone());
         println!();
+        let signer = Some(InMemorySigner::from_secret_key(
+            unsigned_tx_copy.signer_id.clone(),
+            signer_secret_key.clone()
+        ));
         match self.submit.clone() {
             None => {
                 let submit = super::Submit::choose_submit();
                 submit
-                    .process(network_config, signed_transaction, serialize_to_base64)
+                    .process(network_config, signed_transaction, serialize_to_base64, signer)
                     .await
             }
             Some(submit) => {
                 submit
-                    .process(network_config, signed_transaction, serialize_to_base64)
+                    .process(network_config, signed_transaction, serialize_to_base64, signer)
                     .await
             }
         }

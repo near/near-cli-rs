@@ -151,16 +151,17 @@ impl SignLedger {
                 .expect("Transaction is not expected to fail on serialization"),
         );
         println!("Your transaction was signed successfully.");
+        let signer = None;
         match &self.submit {
             None => {
                 let submit = super::Submit::choose_submit();
                 submit
-                    .process(network_config, signed_transaction, serialize_to_base64)
+                    .process(network_config, signed_transaction, serialize_to_base64, signer)
                     .await
             }
             Some(submit) => {
                 submit
-                    .process(network_config, signed_transaction, serialize_to_base64)
+                    .process(network_config, signed_transaction, serialize_to_base64, signer)
                     .await
             }
         }

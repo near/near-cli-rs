@@ -1,5 +1,5 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use near_crypto::{InMemorySigner, Signer};
+use near_crypto::InMemorySigner;
 use near_primitives::borsh::BorshSerialize;
 use near_primitives::delegate_action::{DelegateAction, NonDelegateAction, SignedDelegateAction};
 use near_primitives::signable_message::{SignableMessage, SignableMessageType};
@@ -167,6 +167,7 @@ impl Submit {
         network_config: crate::config::NetworkConfig,
         signed_transaction: near_primitives::transaction::SignedTransaction,
         serialize_to_base64: String,
+        signer: Option<InMemorySigner>
     ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
         match self {
             Submit::Send => {
@@ -236,7 +237,11 @@ impl Submit {
                 // create a new signature here signing the delegate action + discriminant
                 let signable = SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
                 // TODO E0277 the trait `near_crypto::Signer` is not implemented for `near_crypto::Signature`
-                let signature = signable.sign(&signed_transaction.signature.clone());
+                if signer.is_none() {
+                    println!("You can't use a relayer with a ledger - not supported");
+                    return Ok(None);
+                }
+                let signature = signable.sign(&signer.unwrap());
                 let signed_delegate_action = SignedDelegateAction{
                     delegate_action,
                     signature,
