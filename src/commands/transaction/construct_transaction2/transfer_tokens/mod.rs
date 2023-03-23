@@ -1,4 +1,5 @@
 use inquire::CustomType;
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::ConstructTransactionActionContext)]
@@ -8,7 +9,7 @@ pub struct SendNearCommand {
     /// Enter an amount to transfer
     amount_in_near: crate::common::NearBalance,
     #[interactive_clap(subcommand)]
-    next_action: super::super::construct_transaction2::NextAction,
+    next_action: NextAction,
 }
 
 #[derive(Clone)]
@@ -50,4 +51,14 @@ impl SendNearCommand {
                 .prompt()?;
         Ok(Some(input_amount))
     }
+}
+
+#[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = super::super::ConstructTransactionActionContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Select an action that you want to add to the action:
+pub enum NextAction {
+    #[strum_discriminants(strum(message = "skip         - Skip adding a new action"))]
+    /// Go to transaction signing
+    Skip(super::SkipAction),
 }

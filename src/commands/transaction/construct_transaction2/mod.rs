@@ -1,5 +1,4 @@
 use interactive_clap::FromCli;
-
 use interactive_clap::ToCliArgs;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
@@ -51,7 +50,7 @@ pub enum ActionSubcommand {
     // ///Specify data to stake NEAR Tokens
     // StakeNearTokens(self::stake_near_tokens::StakeNearTokensAction),
     #[strum_discriminants(strum(message = "create-subaccount    - Create a new sub-account"))]
-    /// Specify data to create a sub-account
+    ///Specify data to create a sub-account
     CreateSubaccount(self::create_subaccount::CreateSubAccountAction),
     // #[strum_discriminants(strum(message = "delete-account       - Delete an account"))]
     // ///Specify data to delete an account

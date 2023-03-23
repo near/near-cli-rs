@@ -1,3 +1,5 @@
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::access_key_type::AccessKeyPermissionContext)]
 #[interactive_clap(output_context = AddAccessKeyActionContext)]
@@ -5,7 +7,7 @@ pub struct AddAccessKeyAction {
     /// Enter the public key for this account
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(subcommand)]
-    next_action: super::super::super::construct_transaction2::NextAction,
+    next_action: NextAction,
 }
 
 #[derive(Clone)]
@@ -43,4 +45,14 @@ impl From<AddAccessKeyActionContext> for super::super::super::ConstructTransacti
     fn from(item: AddAccessKeyActionContext) -> Self {
         item.0
     }
+}
+
+#[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = super::super::super::ConstructTransactionActionContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Select an action that you want to add to the action:
+pub enum NextAction {
+    #[strum_discriminants(strum(message = "skip         - Skip adding a new action"))]
+    /// Go to transaction signing
+    Skip(super::super::SkipAction),
 }

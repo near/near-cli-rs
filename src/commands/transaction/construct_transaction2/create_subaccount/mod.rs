@@ -1,9 +1,11 @@
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::ConstructTransactionActionContext)]
 #[interactive_clap(output_context = CreateSubAccountActionContext)]
 pub struct CreateSubAccountAction {
     #[interactive_clap(subcommand)]
-    next_action: super::super::construct_transaction2::NextAction,
+    next_action: NextAction,
 }
 
 #[derive(Clone)]
@@ -12,7 +14,7 @@ pub struct CreateSubAccountActionContext(super::super::ConstructTransactionActio
 impl CreateSubAccountActionContext {
     pub fn from_previous_context(
         previous_context: super::super::ConstructTransactionActionContext,
-        scope: &<CreateSubAccountAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<CreateSubAccountAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let action = near_primitives::transaction::Action::CreateAccount(
             near_primitives::transaction::CreateAccountAction {},
@@ -32,4 +34,14 @@ impl From<CreateSubAccountActionContext> for super::super::ConstructTransactionA
     fn from(item: CreateSubAccountActionContext) -> Self {
         item.0
     }
+}
+
+#[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = super::super::ConstructTransactionActionContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Select an action that you want to add to the action:
+pub enum NextAction {
+    #[strum_discriminants(strum(message = "skip         - Skip adding a new action"))]
+    /// Go to transaction signing
+    Skip(super::SkipAction),
 }
