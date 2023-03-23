@@ -1,4 +1,3 @@
-use async_recursion::async_recursion;
 use inquire::CustomType;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 

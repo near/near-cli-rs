@@ -1,4 +1,3 @@
-use async_recursion::async_recursion;
 use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]

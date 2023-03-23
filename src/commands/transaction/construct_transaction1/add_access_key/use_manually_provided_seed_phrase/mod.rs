@@ -1,31 +1,35 @@
-use async_recursion::async_recursion;
 use std::str::FromStr;
 
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = super::access_key_type::AccessKeyPermissionContext)]
+#[interactive_clap(output_context = AddAccessWithSeedPhraseActionContext)]
 pub struct AddAccessWithSeedPhraseAction {
-    ///Enter the seed_phrase for this sub-account
+    /// Enter the seed_phrase for this sub-account
     master_seed_phrase: String,
     #[interactive_clap(subcommand)]
-    next_action: super::super::BoxNextAction,
+    next_action: NextAction,
 }
 
-impl AddAccessWithSeedPhraseAction {
-    #[async_recursion(?Send)]
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        mut prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        permission: near_primitives::account::AccessKeyPermission,
-    ) -> crate::CliResult {
+#[derive(Clone)]
+pub struct AddAccessWithSeedPhraseActionContext(
+    super::super::super::ConstructTransactionActionContext,
+);
+
+impl AddAccessWithSeedPhraseActionContext {
+    pub fn from_previous_context(
+        previous_context: super::access_key_type::AccessKeyPermissionContext,
+        scope: &<AddAccessWithSeedPhraseAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
         let seed_phrase_hd_path_default = slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
         let public_key = crate::common::get_public_key_from_seed_phrase(
             seed_phrase_hd_path_default,
-            &self.master_seed_phrase,
+            &scope.master_seed_phrase,
         )?;
         let access_key = near_primitives::account::AccessKey {
             nonce: 0,
-            permission,
+            permission: previous_context.access_key_permission,
         };
         let action = near_primitives::transaction::Action::AddKey(
             near_primitives::transaction::AddKeyAction {
@@ -33,18 +37,33 @@ impl AddAccessWithSeedPhraseAction {
                 access_key,
             },
         );
-        prepopulated_unsigned_transaction.actions.push(action);
-        match *self.next_action.clone().inner {
-            super::super::NextAction::AddAction(select_action) => {
-                select_action
-                    .process(config, prepopulated_unsigned_transaction)
-                    .await
-            }
-            super::super::NextAction::Skip(skip_action) => {
-                skip_action
-                    .process(config, prepopulated_unsigned_transaction)
-                    .await
-            }
-        }
+        let mut actions = previous_context.actions;
+        actions.push(action);
+        Ok(Self(
+            super::super::super::ConstructTransactionActionContext {
+                config: previous_context.config,
+                signer_account_id: previous_context.signer_account_id,
+                receiver_account_id: previous_context.receiver_account_id,
+                actions,
+            },
+        ))
     }
+}
+
+impl From<AddAccessWithSeedPhraseActionContext>
+    for super::super::super::ConstructTransactionActionContext
+{
+    fn from(item: AddAccessWithSeedPhraseActionContext) -> Self {
+        item.0
+    }
+}
+
+#[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = super::super::super::ConstructTransactionActionContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Select an action that you want to add to the action:
+pub enum NextAction {
+    #[strum_discriminants(strum(message = "skip         - Skip adding a new action"))]
+    /// Go to transaction signing
+    Skip(super::super::SkipAction),
 }

@@ -2,7 +2,7 @@ use interactive_clap::FromCli;
 use interactive_clap::ToCliArgs;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-// mod add_access_key;
+mod add_access_key;
 // mod call_function;
 mod create_subaccount;
 // mod delete_access_key;
@@ -55,11 +55,11 @@ pub enum ActionSubcommand {
     // #[strum_discriminants(strum(message = "delete-account       - Delete an account"))]
     // ///Specify data to delete an account
     // DeleteAccount(self::delete_account::DeleteAccountAction),
-    // #[strum_discriminants(strum(
-    //     message = "add-key              - Add an access key to an account"
-    // ))]
-    // ///Specify the data to add an access key to the account
-    // AddKey(self::add_access_key::AddKeyCommand),
+    #[strum_discriminants(strum(
+        message = "add-key              - Add an access key to an account"
+    ))]
+    ///Specify the data to add an access key to the account
+    AddKey(self::add_access_key::AddKeyCommand),
     // #[strum_discriminants(strum(
     //     message = "delete-key           - Delete an access key from an account"
     // ))]
@@ -94,11 +94,7 @@ impl ActionSubcommand {
             //         .process(config, prepopulated_unsigned_transaction)
             //         .await
             // }
-            // ActionSubcommand::AddKey(args_add_key_command) => {
-            //     args_add_key_command
-            //         .process(config, prepopulated_unsigned_transaction)
-            //         .await
-            // }
+            ActionSubcommand::AddKey(_) => Ok(()),
             // ActionSubcommand::DeleteKey(args_delete_access_key) => {
             //     args_delete_access_key
             //         .process(config, prepopulated_unsigned_transaction)
