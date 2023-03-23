@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 // mod add_access_key;
 // mod call_function;
-// mod create_subaccount;
+mod create_subaccount;
 // mod delete_access_key;
 // mod delete_account;
 // mod deploy_contract;
@@ -49,9 +49,9 @@ pub enum ActionSubcommand {
     // #[strum_discriminants(strum(message = "stake-near-tokens    - Stake NEAR Tokens"))]
     // ///Specify data to stake NEAR Tokens
     // StakeNearTokens(self::stake_near_tokens::StakeNearTokensAction),
-    // #[strum_discriminants(strum(message = "create-subaccount    - Create a new sub-account"))]
-    // ///Specify data to create a sub-account
-    // CreateSubaccount(self::create_subaccount::CreateSubAccountAction),
+    #[strum_discriminants(strum(message = "create-subaccount    - Create a new sub-account"))]
+    ///Specify data to create a sub-account
+    CreateSubaccount(self::create_subaccount::CreateSubAccountAction),
     // #[strum_discriminants(strum(message = "delete-account       - Delete an account"))]
     // ///Specify data to delete an account
     // DeleteAccount(self::delete_account::DeleteAccountAction),
@@ -88,11 +88,7 @@ impl ActionSubcommand {
             //         .process(config, prepopulated_unsigned_transaction)
             //         .await
             // }
-            // ActionSubcommand::CreateSubaccount(args_create_account) => {
-            //     args_create_account
-            //         .process(config, prepopulated_unsigned_transaction)
-            //         .await
-            // }
+            ActionSubcommand::CreateSubaccount(_) => Ok(()),
             // ActionSubcommand::DeleteAccount(args_delete_account) => {
             //     args_delete_account
             //         .process(config, prepopulated_unsigned_transaction)
