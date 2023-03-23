@@ -236,7 +236,6 @@ impl Submit {
                 };
                 // create a new signature here signing the delegate action + discriminant
                 let signable = SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
-                // TODO E0277 the trait `near_crypto::Signer` is not implemented for `near_crypto::Signature`
                 if signer.is_none() {
                     println!("You can't use a relayer with a ledger - not supported");
                     return Ok(None);
