@@ -41,7 +41,7 @@ pub enum ActionSubcommand {
         message = "send-near            - The transfer is carried out in NEAR tokens"
     ))]
     /// Specify data for transfer tokens
-    SendNear(self::transfer_tokens::SendNearCommand),
+    Transfer(self::transfer_tokens::TransferCommand),
     // #[strum_discriminants(strum(
     //     message = "call-function        - Execute function (contract method)"
     // ))]
@@ -52,7 +52,7 @@ pub enum ActionSubcommand {
     // StakeNearTokens(self::stake_near_tokens::StakeNearTokensAction),
     #[strum_discriminants(strum(message = "create-subaccount    - Create a new sub-account"))]
     /// Specify data to create a sub-account
-    CreateSubaccount(self::create_subaccount::CreateSubAccountAction),
+    CreateAccount(self::create_subaccount::CreateAccountAction),
     // #[strum_discriminants(strum(message = "delete-account       - Delete an account"))]
     // ///Specify data to delete an account
     // DeleteAccount(self::delete_account::DeleteAccountAction),
@@ -78,7 +78,7 @@ impl ActionSubcommand {
         prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> crate::CliResult {
         match self {
-            ActionSubcommand::SendNear(_) => Ok(()),
+            ActionSubcommand::Transfer(_) => Ok(()),
             // ActionSubcommand::CallFunction(args_function) => {
             //     args_function
             //         .process(config, prepopulated_unsigned_transaction)
@@ -89,7 +89,7 @@ impl ActionSubcommand {
             //         .process(config, prepopulated_unsigned_transaction)
             //         .await
             // }
-            ActionSubcommand::CreateSubaccount(_) => Ok(()),
+            ActionSubcommand::CreateAccount(_) => Ok(()),
             // ActionSubcommand::DeleteAccount(args_delete_account) => {
             //     args_delete_account
             //         .process(config, prepopulated_unsigned_transaction)

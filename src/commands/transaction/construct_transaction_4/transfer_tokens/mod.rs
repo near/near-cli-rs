@@ -2,8 +2,8 @@ use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::ConstructTransactionActionContext)]
-#[interactive_clap(output_context = SendNearCommandContext)]
-pub struct SendNearCommand {
+#[interactive_clap(output_context = TransferCommandContext)]
+pub struct TransferCommand {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter an amount to transfer
     amount_in_near: crate::common::NearBalance,
@@ -12,12 +12,12 @@ pub struct SendNearCommand {
 }
 
 #[derive(Clone)]
-pub struct SendNearCommandContext(super::super::ConstructTransactionActionContext);
+pub struct TransferCommandContext(super::super::ConstructTransactionActionContext);
 
-impl SendNearCommandContext {
+impl TransferCommandContext {
     pub fn from_previous_context(
         previous_context: super::super::ConstructTransactionActionContext,
-        scope: &<SendNearCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<TransferCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let action = near_primitives::transaction::Action::Transfer(
             near_primitives::transaction::TransferAction {
@@ -35,13 +35,13 @@ impl SendNearCommandContext {
     }
 }
 
-impl From<SendNearCommandContext> for super::super::ConstructTransactionActionContext {
-    fn from(item: SendNearCommandContext) -> Self {
+impl From<TransferCommandContext> for super::super::ConstructTransactionActionContext {
+    fn from(item: TransferCommandContext) -> Self {
         item.0
     }
 }
 
-impl SendNearCommand {
+impl TransferCommand {
     fn input_amount_in_near(
         _context: &super::super::ConstructTransactionActionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {

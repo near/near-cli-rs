@@ -1,18 +1,18 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::ConstructTransactionActionContext)]
-#[interactive_clap(output_context = CreateSubAccountActionContext)]
-pub struct CreateSubAccountAction {
+#[interactive_clap(output_context = CreateAccountContext)]
+pub struct CreateAccountAction {
     #[interactive_clap(subcommand)]
     next_action: super::super::construct_transaction_2::NextAction,
 }
 
 #[derive(Clone)]
-pub struct CreateSubAccountActionContext(super::super::ConstructTransactionActionContext);
+pub struct CreateAccountContext(super::super::ConstructTransactionActionContext);
 
-impl CreateSubAccountActionContext {
+impl CreateAccountContext {
     pub fn from_previous_context(
         previous_context: super::super::ConstructTransactionActionContext,
-        scope: &<CreateSubAccountAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<CreateAccountAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let action = near_primitives::transaction::Action::CreateAccount(
             near_primitives::transaction::CreateAccountAction {},
@@ -28,8 +28,8 @@ impl CreateSubAccountActionContext {
     }
 }
 
-impl From<CreateSubAccountActionContext> for super::super::ConstructTransactionActionContext {
-    fn from(item: CreateSubAccountActionContext) -> Self {
+impl From<CreateAccountContext> for super::super::ConstructTransactionActionContext {
+    fn from(item: CreateAccountContext) -> Self {
         item.0
     }
 }
