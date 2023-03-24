@@ -6,7 +6,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 mod add_access_key;
 mod call_function;
 mod create_subaccount;
-// mod delete_access_key;
+mod delete_access_key;
 mod delete_account;
 // mod deploy_contract;
 mod stake_near_tokens;
@@ -61,11 +61,11 @@ pub enum ActionSubcommand {
     ))]
     /// Specify the data to add an access key to the account
     AddKey(self::add_access_key::AddKeyCommand),
-    // #[strum_discriminants(strum(
-    //     message = "delete-key           - Delete an access key from an account"
-    // ))]
-    // ///Specify the data to delete the access key to the account
-    // DeleteKey(self::delete_access_key::DeleteKeyCommand),
+    #[strum_discriminants(strum(
+        message = "delete-key           - Delete an access key from an account"
+    ))]
+    /// Specify the data to delete the access key to the account
+    DeleteKey(self::delete_access_key::DeleteKeyAction),
     // #[strum_discriminants(strum(message = "deploy               - Add a new contract code"))]
     // ///Specify the details to deploy the contract code
     // Deploy(self::deploy_contract::Contract),
@@ -84,11 +84,7 @@ impl ActionSubcommand {
             ActionSubcommand::CreateAccount(_) => Ok(()),
             ActionSubcommand::DeleteAccount(_) => Ok(()),
             ActionSubcommand::AddKey(_) => Ok(()),
-            // ActionSubcommand::DeleteKey(args_delete_access_key) => {
-            //     args_delete_access_key
-            //         .process(config, prepopulated_unsigned_transaction)
-            //         .await
-            // }
+            ActionSubcommand::DeleteKey(_) => Ok(()),
             // ActionSubcommand::Deploy(args_contract_file) => {
             //     args_contract_file
             //         .process(config, prepopulated_unsigned_transaction)
