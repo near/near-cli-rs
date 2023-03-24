@@ -1,39 +1,39 @@
-use async_recursion::async_recursion;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = super::super::ConstructTransactionActionContext)]
+#[interactive_clap(output_context = DeleteAccountActionContext)]
 pub struct DeleteAccountAction {
     #[interactive_clap(long)]
-    ///Enter the beneficiary ID to delete this account ID
+    /// Enter the beneficiary ID to delete this account ID
     beneficiary_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
-    next_action: super::BoxNextAction,
+    next_action: super::super::construct_transaction_3::NextAction,
 }
 
-impl DeleteAccountAction {
-    #[async_recursion(?Send)]
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        let beneficiary_id: near_primitives::types::AccountId = self.beneficiary_id.clone().into();
+#[derive(Clone)]
+pub struct DeleteAccountActionContext(super::super::ConstructTransactionActionContext);
+
+impl DeleteAccountActionContext {
+    pub fn from_previous_context(
+        previous_context: super::super::ConstructTransactionActionContext,
+        scope: &<DeleteAccountAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let beneficiary_id: near_primitives::types::AccountId = scope.beneficiary_id.clone().into();
         let action = near_primitives::transaction::Action::DeleteAccount(
             near_primitives::transaction::DeleteAccountAction { beneficiary_id },
         );
-        let mut actions = prepopulated_unsigned_transaction.actions.clone();
+        let mut actions = previous_context.actions;
         actions.push(action);
-        let unsigned_transaction = near_primitives::transaction::Transaction {
+        Ok(Self(super::super::ConstructTransactionActionContext {
+            config: previous_context.config,
+            signer_account_id: previous_context.signer_account_id,
+            receiver_account_id: previous_context.receiver_account_id,
             actions,
-            ..prepopulated_unsigned_transaction
-        };
-        match *self.next_action.clone().inner {
-            super::NextAction::AddAction(select_action) => {
-                select_action.process(config, unsigned_transaction).await
-            }
-            super::NextAction::Skip(skip_action) => {
-                skip_action.process(config, unsigned_transaction).await
-            }
-        }
+        }))
+    }
+}
+
+impl From<DeleteAccountActionContext> for super::super::ConstructTransactionActionContext {
+    fn from(item: DeleteAccountActionContext) -> Self {
+        item.0
     }
 }

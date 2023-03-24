@@ -7,7 +7,7 @@ mod add_access_key;
 mod call_function;
 mod create_subaccount;
 // mod delete_access_key;
-// mod delete_account;
+mod delete_account;
 // mod deploy_contract;
 mod stake_near_tokens;
 mod transfer_tokens;
@@ -53,13 +53,13 @@ pub enum ActionSubcommand {
     #[strum_discriminants(strum(message = "create-subaccount    - Create a new sub-account"))]
     /// Specify data to create a sub-account
     CreateAccount(self::create_subaccount::CreateAccountAction),
-    // #[strum_discriminants(strum(message = "delete-account       - Delete an account"))]
-    // ///Specify data to delete an account
-    // DeleteAccount(self::delete_account::DeleteAccountAction),
+    #[strum_discriminants(strum(message = "delete-account       - Delete an account"))]
+    /// Specify data to delete an account
+    DeleteAccount(self::delete_account::DeleteAccountAction),
     #[strum_discriminants(strum(
         message = "add-key              - Add an access key to an account"
     ))]
-    ///Specify the data to add an access key to the account
+    /// Specify the data to add an access key to the account
     AddKey(self::add_access_key::AddKeyCommand),
     // #[strum_discriminants(strum(
     //     message = "delete-key           - Delete an access key from an account"
@@ -82,11 +82,7 @@ impl ActionSubcommand {
             ActionSubcommand::FunctionCall(_) => Ok(()),
             ActionSubcommand::Stake(_) => Ok(()),
             ActionSubcommand::CreateAccount(_) => Ok(()),
-            // ActionSubcommand::DeleteAccount(args_delete_account) => {
-            //     args_delete_account
-            //         .process(config, prepopulated_unsigned_transaction)
-            //         .await
-            // }
+            ActionSubcommand::DeleteAccount(_) => Ok(()),
             ActionSubcommand::AddKey(_) => Ok(()),
             // ActionSubcommand::DeleteKey(args_delete_access_key) => {
             //     args_delete_access_key
