@@ -3,7 +3,7 @@ use interactive_clap::ToCliArgs;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod add_access_key;
-// mod call_function;
+mod call_function;
 mod create_subaccount;
 // mod delete_access_key;
 // mod delete_account;
@@ -41,11 +41,11 @@ pub enum ActionSubcommand {
     ))]
     /// Specify data for transfer tokens
     Transfer(self::transfer_tokens::TransferCommand),
-    // #[strum_discriminants(strum(
-    //     message = "call-function        - Execute function (contract method)"
-    // ))]
-    // ///Specify data to call the function
-    // CallFunction(self::call_function::CallFunctionAction),
+    #[strum_discriminants(strum(
+        message = "call-function        - Execute function (contract method)"
+    ))]
+    /// Specify data to call the function
+    FunctionCall(self::call_function::FunctionCallAction),
     // #[strum_discriminants(strum(message = "stake-near-tokens    - Stake NEAR Tokens"))]
     // ///Specify data to stake NEAR Tokens
     // StakeNearTokens(self::stake_near_tokens::StakeNearTokensAction),
@@ -78,16 +78,8 @@ impl ActionSubcommand {
     ) -> crate::CliResult {
         match self {
             ActionSubcommand::Transfer(_) => Ok(()),
-            // ActionSubcommand::CallFunction(args_function) => {
-            //     args_function
-            //         .process(config, prepopulated_unsigned_transaction)
-            //         .await
-            // }
-            // ActionSubcommand::StakeNearTokens(args_stake) => {
-            //     args_stake
-            //         .process(config, prepopulated_unsigned_transaction)
-            //         .await
-            // }
+            ActionSubcommand::FunctionCall(_) => Ok(()),
+            // ActionSubcommand::StakeNearTokens(args_stake) => Ok(()),
             ActionSubcommand::CreateAccount(_) => Ok(()),
             // ActionSubcommand::DeleteAccount(args_delete_account) => {
             //     args_delete_account

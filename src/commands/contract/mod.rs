@@ -1,6 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod call_function;
+pub mod call_function;
 mod deploy;
 mod download_wasm;
 
