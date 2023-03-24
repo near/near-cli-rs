@@ -1,5 +1,6 @@
-use inquire::Text;
 use std::str::FromStr;
+
+use inquire::Text;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -17,7 +18,7 @@ pub struct CallFunctionProperties {
     function_args: String,
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
-    prepaid_gas: super::as_transaction::PrepaidGas,
+    prepaid_gas: PrepaidGas,
 }
 
 #[derive(Debug, Clone)]
