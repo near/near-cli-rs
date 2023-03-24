@@ -224,7 +224,7 @@ impl Submit {
                     .iter()
                     .map(|a| NonDelegateAction::try_from(a.clone()).unwrap())
                     .collect();
-                let nonce = signed_transaction.transaction.nonce.clone();
+                let nonce = signed_transaction.transaction.nonce.clone() + 1;
                 let public_key = signed_transaction.transaction.public_key.clone();
                 let delegate_action = DelegateAction{
                     sender_id,
