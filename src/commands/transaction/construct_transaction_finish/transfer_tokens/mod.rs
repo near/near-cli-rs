@@ -3,8 +3,8 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::ConstructTransactionActionContext)]
-#[interactive_clap(output_context = TransferCommandContext)]
-pub struct TransferCommand {
+#[interactive_clap(output_context = TransferActionContext)]
+pub struct TransferAction {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter an amount to transfer
     amount_in_near: crate::common::NearBalance,
@@ -13,12 +13,12 @@ pub struct TransferCommand {
 }
 
 #[derive(Clone)]
-pub struct TransferCommandContext(super::super::ConstructTransactionActionContext);
+pub struct TransferActionContext(super::super::ConstructTransactionActionContext);
 
-impl TransferCommandContext {
+impl TransferActionContext {
     pub fn from_previous_context(
         previous_context: super::super::ConstructTransactionActionContext,
-        scope: &<TransferCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<TransferAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let action = near_primitives::transaction::Action::Transfer(
             near_primitives::transaction::TransferAction {
@@ -36,13 +36,13 @@ impl TransferCommandContext {
     }
 }
 
-impl From<TransferCommandContext> for super::super::ConstructTransactionActionContext {
-    fn from(item: TransferCommandContext) -> Self {
+impl From<TransferActionContext> for super::super::ConstructTransactionActionContext {
+    fn from(item: TransferActionContext) -> Self {
         item.0
     }
 }
 
-impl TransferCommand {
+impl TransferAction {
     fn input_amount_in_near(
         _context: &super::super::ConstructTransactionActionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {

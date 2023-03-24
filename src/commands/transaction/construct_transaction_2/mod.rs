@@ -41,7 +41,7 @@ pub enum ActionSubcommand {
         message = "send-near            - The transfer is carried out in NEAR tokens"
     ))]
     /// Specify data for transfer tokens
-    Transfer(self::transfer_tokens::TransferCommand),
+    Transfer(self::transfer_tokens::TransferAction),
     #[strum_discriminants(strum(
         message = "call-function        - Execute function (contract method)"
     ))]
