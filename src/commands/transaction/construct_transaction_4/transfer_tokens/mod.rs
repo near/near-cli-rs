@@ -8,7 +8,7 @@ pub struct SendNearCommand {
     /// Enter an amount to transfer
     amount_in_near: crate::common::NearBalance,
     #[interactive_clap(subcommand)]
-    next_action: super::super::construct_transaction2::NextAction,
+    next_action: super::super::construct_transaction_finish::NextAction,
 }
 
 #[derive(Clone)]

@@ -1,28 +1,37 @@
+use std::str::FromStr;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::access_key_type::AccessKeyPermissionContext)]
-#[interactive_clap(output_context = AddAccessKeyActionContext)]
-pub struct AddAccessKeyAction {
-    /// Enter the public key for this account
-    public_key: crate::types::public_key::PublicKey,
+#[interactive_clap(output_context = AddAccessWithSeedPhraseActionContext)]
+pub struct AddAccessWithSeedPhraseAction {
+    /// Enter the seed_phrase for this sub-account
+    master_seed_phrase: String,
     #[interactive_clap(subcommand)]
-    next_action: super::super::super::construct_transaction_1::NextAction,
+    next_action: super::super::super::construct_transaction_3::NextAction,
 }
 
 #[derive(Clone)]
-pub struct AddAccessKeyActionContext(super::super::super::ConstructTransactionActionContext);
+pub struct AddAccessWithSeedPhraseActionContext(
+    super::super::super::ConstructTransactionActionContext,
+);
 
-impl AddAccessKeyActionContext {
+impl AddAccessWithSeedPhraseActionContext {
     pub fn from_previous_context(
         previous_context: super::access_key_type::AccessKeyPermissionContext,
-        scope: &<AddAccessKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<AddAccessWithSeedPhraseAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let seed_phrase_hd_path_default = slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
+        let public_key = crate::common::get_public_key_from_seed_phrase(
+            seed_phrase_hd_path_default,
+            &scope.master_seed_phrase,
+        )?;
         let access_key = near_primitives::account::AccessKey {
             nonce: 0,
             permission: previous_context.access_key_permission,
         };
         let action = near_primitives::transaction::Action::AddKey(
             near_primitives::transaction::AddKeyAction {
-                public_key: scope.public_key.clone().into(),
+                public_key,
                 access_key,
             },
         );
@@ -39,8 +48,10 @@ impl AddAccessKeyActionContext {
     }
 }
 
-impl From<AddAccessKeyActionContext> for super::super::super::ConstructTransactionActionContext {
-    fn from(item: AddAccessKeyActionContext) -> Self {
+impl From<AddAccessWithSeedPhraseActionContext>
+    for super::super::super::ConstructTransactionActionContext
+{
+    fn from(item: AddAccessWithSeedPhraseActionContext) -> Self {
         item.0
     }
 }

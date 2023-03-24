@@ -7,7 +7,7 @@ pub struct AddAccessWithSeedPhraseAction {
     /// Enter the seed_phrase for this sub-account
     master_seed_phrase: String,
     #[interactive_clap(subcommand)]
-    next_action: super::super::super::construct_transaction2::NextAction,
+    next_action: super::super::super::construct_transaction_finish::NextAction,
 }
 
 #[derive(Clone)]

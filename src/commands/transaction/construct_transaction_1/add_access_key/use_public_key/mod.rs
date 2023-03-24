@@ -5,7 +5,7 @@ pub struct AddAccessKeyAction {
     /// Enter the public key for this account
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(subcommand)]
-    next_action: super::super::super::construct_transaction2::NextAction,
+    next_action: super::super::super::construct_transaction_2::NextAction,
 }
 
 #[derive(Clone)]

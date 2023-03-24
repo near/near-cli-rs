@@ -1,8 +1,11 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod construct_transaction;
-mod construct_transaction1;
-mod construct_transaction2;
+mod construct_transaction_1;
+mod construct_transaction_2;
+mod construct_transaction_3;
+mod construct_transaction_4;
+mod construct_transaction_finish;
 mod view_status;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]

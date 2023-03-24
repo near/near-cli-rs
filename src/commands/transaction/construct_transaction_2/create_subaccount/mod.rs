@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = CreateSubAccountActionContext)]
 pub struct CreateSubAccountAction {
     #[interactive_clap(subcommand)]
-    next_action: super::super::construct_transaction2::NextAction,
+    next_action: super::super::construct_transaction_3::NextAction,
 }
 
 #[derive(Clone)]
