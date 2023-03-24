@@ -60,7 +60,7 @@ pub enum ActionSubcommand {
         message = "add-key              - Add an access key to an account"
     ))]
     /// Specify the data to add an access key to the account
-    AddKey(self::add_access_key::AddKeyCommand),
+    AddKey(self::add_access_key::AddKeyAction),
     #[strum_discriminants(strum(
         message = "delete-key           - Delete an access key from an account"
     ))]
@@ -69,29 +69,6 @@ pub enum ActionSubcommand {
     // #[strum_discriminants(strum(message = "deploy               - Add a new contract code"))]
     // ///Specify the details to deploy the contract code
     // Deploy(self::deploy_contract::Contract),
-}
-
-impl ActionSubcommand {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        match self {
-            ActionSubcommand::Transfer(_) => Ok(()),
-            ActionSubcommand::FunctionCall(_) => Ok(()),
-            ActionSubcommand::Stake(_) => Ok(()),
-            ActionSubcommand::CreateAccount(_) => Ok(()),
-            ActionSubcommand::DeleteAccount(_) => Ok(()),
-            ActionSubcommand::AddKey(_) => Ok(()),
-            ActionSubcommand::DeleteKey(_) => Ok(()),
-            // ActionSubcommand::Deploy(args_contract_file) => {
-            //     args_contract_file
-            //         .process(config, prepopulated_unsigned_transaction)
-            //         .await
-            // }
-        }
-    }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]

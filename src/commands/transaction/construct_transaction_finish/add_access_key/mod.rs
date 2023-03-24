@@ -6,7 +6,7 @@ mod use_public_key;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = super::super::ConstructTransactionActionContext)]
-pub struct AddKeyCommand {
+pub struct AddKeyAction {
     #[interactive_clap(subcommand)]
     permission: AccessKeyPermission,
 }
