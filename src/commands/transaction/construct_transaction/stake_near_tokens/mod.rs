@@ -1,39 +1,40 @@
-use async_recursion::async_recursion;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
-pub struct StakeNearTokensAction {
+#[interactive_clap(input_context = super::super::ConstructTransactionActionContext)]
+#[interactive_clap(output_context = StakeActionContext)]
+pub struct StakeAction {
     stake_amount: crate::common::NearBalance,
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(subcommand)]
-    next_action: super::BoxNextAction,
+    next_action: super::super::construct_transaction_1::NextAction,
 }
 
-impl StakeNearTokensAction {
-    #[async_recursion(?Send)]
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        mut prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
+#[derive(Clone)]
+pub struct StakeActionContext(super::super::ConstructTransactionActionContext);
+
+impl StakeActionContext {
+    pub fn from_previous_context(
+        previous_context: super::super::ConstructTransactionActionContext,
+        scope: &<StakeAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
         let action = near_primitives::transaction::Action::Stake(
             near_primitives::transaction::StakeAction {
-                stake: self.stake_amount.to_yoctonear(),
-                public_key: self.public_key.clone().into(),
+                stake: scope.stake_amount.to_yoctonear(),
+                public_key: scope.public_key.clone().into(),
             },
         );
-        prepopulated_unsigned_transaction.actions.push(action);
-        match *self.next_action.clone().inner {
-            super::NextAction::AddAction(select_action) => {
-                select_action
-                    .process(config, prepopulated_unsigned_transaction)
-                    .await
-            }
-            super::NextAction::Skip(skip_action) => {
-                skip_action
-                    .process(config, prepopulated_unsigned_transaction)
-                    .await
-            }
-        }
+        let mut actions = previous_context.actions;
+        actions.push(action);
+        Ok(Self(super::super::ConstructTransactionActionContext {
+            config: previous_context.config,
+            signer_account_id: previous_context.signer_account_id,
+            receiver_account_id: previous_context.receiver_account_id,
+            actions,
+        }))
+    }
+}
+
+impl From<StakeActionContext> for super::super::ConstructTransactionActionContext {
+    fn from(item: StakeActionContext) -> Self {
+        item.0
     }
 }

@@ -8,7 +8,7 @@ mod create_subaccount;
 // mod delete_access_key;
 // mod delete_account;
 // mod deploy_contract;
-// mod stake_near_tokens;
+mod stake_near_tokens;
 mod transfer_tokens;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
@@ -46,9 +46,9 @@ pub enum ActionSubcommand {
     ))]
     /// Specify data to call the function
     FunctionCall(self::call_function::FunctionCallAction),
-    // #[strum_discriminants(strum(message = "stake-near-tokens    - Stake NEAR Tokens"))]
-    // ///Specify data to stake NEAR Tokens
-    // StakeNearTokens(self::stake_near_tokens::StakeNearTokensAction),
+    #[strum_discriminants(strum(message = "stake-near-tokens    - Stake NEAR Tokens"))]
+    /// Specify data to stake NEAR Tokens
+    Stake(self::stake_near_tokens::StakeAction),
     #[strum_discriminants(strum(message = "create-subaccount    - Create a new sub-account"))]
     ///Specify data to create a sub-account
     CreateAccount(self::create_subaccount::CreateAccountAction),
@@ -79,7 +79,7 @@ impl ActionSubcommand {
         match self {
             ActionSubcommand::Transfer(_) => Ok(()),
             ActionSubcommand::FunctionCall(_) => Ok(()),
-            // ActionSubcommand::StakeNearTokens(args_stake) => Ok(()),
+            ActionSubcommand::Stake(_) => Ok(()),
             ActionSubcommand::CreateAccount(_) => Ok(()),
             // ActionSubcommand::DeleteAccount(args_delete_account) => {
             //     args_delete_account
