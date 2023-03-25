@@ -25,7 +25,7 @@ pub struct FullAccessTypeContext(AccessKeyPermissionContext);
 impl FullAccessTypeContext {
     pub fn from_previous_context(
         previous_context: super::super::super::ConstructTransactionActionContext,
-        scope: &<FullAccessType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<FullAccessType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(AccessKeyPermissionContext {
             config: previous_context.config,

@@ -1,6 +1,3 @@
-use interactive_clap::FromCli;
-
-use interactive_clap::ToCliArgs;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod add_access_key;
@@ -99,7 +96,7 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
             signer_account_id: item.0.signer_account_id,
             receiver_account_id: item.0.receiver_account_id,
             actions: item.0.actions,
-            on_after_getting_network_callback: std::sync::Arc::new(|_actions, network_config| {
+            on_after_getting_network_callback: std::sync::Arc::new(|_actions, _network_config| {
                 Ok(())
             }),
             on_before_signing_callback: std::sync::Arc::new(

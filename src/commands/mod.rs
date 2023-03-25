@@ -1,4 +1,3 @@
-// use near_primitives::transaction;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod account;
@@ -42,7 +41,7 @@ impl TopLevelCommand {
             Self::Tokens(_) => Ok(()),
             Self::Account(_) => Ok(()),
             Self::Contract(_) => Ok(()),
-            Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
+            Self::Transaction(_) => Ok(()),
             Self::Config(config_commands) => config_commands.process(config).await,
         }
     }
