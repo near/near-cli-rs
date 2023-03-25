@@ -8,7 +8,7 @@ mod call_function;
 mod create_subaccount;
 mod delete_access_key;
 mod delete_account;
-// mod deploy_contract;
+mod deploy_contract;
 mod stake_near_tokens;
 mod transfer_tokens;
 
@@ -64,11 +64,11 @@ pub enum ActionSubcommand {
     #[strum_discriminants(strum(
         message = "delete-key           - Delete an access key from an account"
     ))]
-    ///Specify the data to delete the access key to the account
+    /// Specify the data to delete the access key to the account
     DeleteKey(self::delete_access_key::DeleteKeyAction),
-    // #[strum_discriminants(strum(message = "deploy               - Add a new contract code"))]
-    // ///Specify the details to deploy the contract code
-    // Deploy(self::deploy_contract::Contract),
+    #[strum_discriminants(strum(message = "deploy               - Add a new contract code"))]
+    /// Specify the details to deploy the contract code
+    DeployContract(self::deploy_contract::DeployContractAction),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
