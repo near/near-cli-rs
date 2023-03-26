@@ -55,22 +55,6 @@ pub enum SignWith {
 //         crate::common::print_unsigned_transaction(new_context.transaction.clone().into());
 //         println!();
 
-pub async fn sign_with(
-    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
-    _prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    _config: crate::config::Config,
-) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-    match network_config.get_sign_option() {
-        #[cfg(target_os = "macos")]
-        SignWith::SignWithMacosKeychain(_) => Ok(None),
-        SignWith::SignWithKeychain(_) => Ok(None),
-        #[cfg(feature = "ledger")]
-        SignWith::SignWithLedger(_) => Ok(None),
-        SignWith::SignWithPlaintextPrivateKey(_) => Ok(None),
-        SignWith::SignWithAccessKeyFile(_) => Ok(None),
-        SignWith::SignWithSeedPhrase(_) => Ok(None),
-    }
-}
 //-----------------------------------------------------------------------------------
 //---- these functions are used for offline mode ----
 // pub fn input_access_key_nonce(public_key: &str) -> color_eyre::eyre::Result<u64> {

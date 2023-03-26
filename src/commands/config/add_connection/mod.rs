@@ -53,7 +53,7 @@ impl AddNetworkConnectionContext {
                     .clone()
                     .map(|linkdrop_account_id| linkdrop_account_id.into()),
                 faucet_url: scope.faucet_url.clone().map(|faucet_url| faucet_url.into()),
-            }
+            },
         );
         println!();
         crate::common::write_config_toml(config)?;
