@@ -1,11 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-// mod construct_transaction;
-// mod construct_transaction_1;
-mod construct_transaction_2;
-mod construct_transaction_3;
-mod construct_transaction_4;
-mod construct_transaction_finish;
+mod construct_transaction;
 mod view_status;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -27,39 +22,5 @@ pub enum TransactionActions {
         message = "construct-transaction  - Construct a new transaction"
     ))]
     /// Construct a new transaction
-    ConstructTransaction(TransactionAccounts),
-}
-
-#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = ConstructTransactionActionContext)]
-pub struct TransactionAccounts {
-    /// What is the sender account ID?
-    sender_account_id: crate::types::account_id::AccountId,
-    /// What is the receiver account ID?
-    receiver_account_id: crate::types::account_id::AccountId,
-    #[interactive_clap(subcommand)]
-    next_actions: self::construct_transaction_2::NextAction,
-}
-
-#[derive(Clone)]
-pub struct ConstructTransactionActionContext {
-    pub config: crate::config::Config,
-    pub signer_account_id: near_primitives::types::AccountId,
-    pub receiver_account_id: near_primitives::types::AccountId,
-    pub actions: Vec<near_primitives::transaction::Action>,
-}
-
-impl ConstructTransactionActionContext {
-    pub fn from_previous_context(
-        previous_context: crate::GlobalContext,
-        scope: &<TransactionAccounts as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> color_eyre::eyre::Result<Self> {
-        Ok(Self {
-            config: previous_context.0,
-            signer_account_id: scope.sender_account_id.clone().into(),
-            receiver_account_id: scope.receiver_account_id.clone().into(),
-            actions: vec![],
-        })
-    }
+    ConstructTransaction(self::construct_transaction::ConstructTransaction),
 }
