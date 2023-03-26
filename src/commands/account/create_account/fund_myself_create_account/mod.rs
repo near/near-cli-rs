@@ -141,7 +141,7 @@ fn find_network_where_account_exist(
     context: &crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
 ) -> Option<crate::config::NetworkConfig> {
-    for network in context.0.networks.iter() {
+    for network in context.0.network_connection.iter() {
         if tokio::runtime::Runtime::new()
             .unwrap()
             .block_on(crate::common::get_account_state(

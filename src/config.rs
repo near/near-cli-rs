@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub credentials_home_dir: std::path::PathBuf,
-    pub networks: linked_hash_map::LinkedHashMap<String, NetworkConfig>,
+    pub network_connection: linked_hash_map::LinkedHashMap<String, NetworkConfig>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -14,7 +14,6 @@ pub struct NetworkConfig {
     // https://github.com/near/near-cli-rs/issues/116
     pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
     pub faucet_url: Option<url::Url>,
-    pub near_social_account_id: Option<near_primitives::types::AccountId>,
 }
 
 impl Default for Config {
@@ -23,8 +22,8 @@ impl Default for Config {
         let mut credentials_home_dir = std::path::PathBuf::from(&home_dir);
         credentials_home_dir.push(".near-credentials");
 
-        let mut networks = linked_hash_map::LinkedHashMap::new();
-        networks.insert(
+        let mut network_connection = linked_hash_map::LinkedHashMap::new();
+        network_connection.insert(
             "mainnet".to_string(),
             NetworkConfig {
                 network_name: "mainnet".to_string(),
@@ -36,10 +35,9 @@ impl Default for Config {
                 rpc_api_key: None,
                 linkdrop_account_id: Some("near".parse().unwrap()),
                 faucet_url: None,
-                near_social_account_id: Some("social.near".parse().unwrap()),
             },
         );
-        networks.insert(
+        network_connection.insert(
             "testnet".to_string(),
             NetworkConfig {
                 network_name: "testnet".to_string(),
@@ -51,10 +49,9 @@ impl Default for Config {
                 rpc_api_key: None,
                 linkdrop_account_id: Some("testnet".parse().unwrap()),
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
-                near_social_account_id: Some("v1.social08.testnet".parse().unwrap()),
             },
         );
-        networks.insert(
+        network_connection.insert(
             "shardnet".to_string(),
             NetworkConfig {
                 network_name: "shardnet".to_string(),
@@ -66,12 +63,11 @@ impl Default for Config {
                 rpc_api_key: None,
                 linkdrop_account_id: Some("shardnet".parse().unwrap()),
                 faucet_url: None,
-                near_social_account_id: None,
             },
         );
         Self {
             credentials_home_dir,
-            networks,
+            network_connection,
         }
     }
 }

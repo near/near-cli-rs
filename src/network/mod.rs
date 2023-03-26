@@ -38,8 +38,8 @@ impl interactive_clap::FromCli for Network {
             };
         };
         let network_name = clap_variant.network_name.clone().expect("Unexpected error");
-        let networks = context.config.networks.clone();
-        let network_config = networks
+        let network_connection = context.config.network_connection.clone();
+        let network_config = network_connection
             .get(&network_name)
             .expect("Failed to get network config!")
             .clone();

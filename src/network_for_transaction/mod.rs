@@ -35,8 +35,8 @@ impl NetworkForTransactionArgsContext {
             block_hash: Default::default(),
             actions: previous_context.actions.clone(),
         };
-        let networks = previous_context.config.networks.clone();
-        let network_config = networks
+        let network_connection = previous_context.config.network_connection.clone();
+        let network_config = network_connection
             .get(&scope.network_name)
             .expect("Failed to get network config!")
             .clone();
@@ -154,7 +154,7 @@ impl NetworkForTransactionArgs {
         &self,
         config: crate::config::Config,
     ) -> crate::config::NetworkConfig {
-        let network_config = config.networks;
+        let network_config = config.network_connection;
         network_config
             .get(self.network_name.as_str())
             .expect("Impossible to get network name!")

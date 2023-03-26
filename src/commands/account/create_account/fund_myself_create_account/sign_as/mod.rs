@@ -217,7 +217,7 @@ fn is_account_exist(
     context: &super::AccountPropertiesContext,
     account_id: near_primitives::types::AccountId,
 ) -> bool {
-    for network in context.config.networks.iter() {
+    for network in context.config.network_connection.iter() {
         if tokio::runtime::Runtime::new()
             .unwrap()
             .block_on(crate::common::get_account_state(

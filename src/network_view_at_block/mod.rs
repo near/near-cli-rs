@@ -33,8 +33,8 @@ impl NetworkViewAtBlockArgsContext {
         previous_context: ArgsForViewContext,
         scope: &<NetworkViewAtBlockArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let networks = previous_context.config.networks.clone();
-        let network_config = networks
+        let network_connection = previous_context.config.network_connection.clone();
+        let network_config = network_connection
             .get(&scope.network_name)
             .expect("Failed to get network config!")
             .clone();

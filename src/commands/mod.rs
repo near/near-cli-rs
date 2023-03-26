@@ -35,18 +35,6 @@ pub enum TopLevelCommand {
     Config(self::config::ConfigCommands),
 }
 
-impl TopLevelCommand {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        match self {
-            Self::Tokens(_) => Ok(()),
-            Self::Account(_) => Ok(()),
-            Self::Contract(_) => Ok(()),
-            Self::Transaction(_) => Ok(()),
-            Self::Config(config_commands) => config_commands.process(config).await,
-        }
-    }
-}
-
 pub type OnBeforeSigningCallback = std::sync::Arc<
     dyn Fn(
         &mut near_primitives::transaction::Transaction,

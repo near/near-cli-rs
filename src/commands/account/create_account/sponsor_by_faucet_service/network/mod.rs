@@ -25,7 +25,7 @@ impl NetworkContext {
         previous_context: super::SponsorServiceContext,
         scope: &<Network as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let networks = previous_context.config.networks.clone();
+        let networks = previous_context.config.network_connection.clone();
         let network_config = networks
             .get(&scope.network_name)
             .expect("Failed to get network config!")
