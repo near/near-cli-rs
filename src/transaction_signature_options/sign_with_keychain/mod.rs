@@ -220,14 +220,14 @@ impl interactive_clap::FromCli for SignKeychain {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let nonce = clap_variant.nonce.take();
+        let nonce = clap_variant.nonce.clone();
         if clap_variant.block_hash.is_none() {
             clap_variant.block_hash = match Self::input_block_hash(&context) {
                 Ok(optional_block_hash) => optional_block_hash,
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let block_hash = clap_variant.block_hash.take();
+        let block_hash = clap_variant.block_hash.clone();
 
         let new_context_scope = InteractiveClapContextScopeForSignKeychain { nonce, block_hash };
         let output_context =
