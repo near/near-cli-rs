@@ -49,17 +49,12 @@ impl NewAccountContext {
                     data.insert("newAccountId", new_account_id.to_string());
                     data.insert("newAccountPublicKey", public_key.to_string());
 
-                    let client = reqwest::Client::new();
-                    match tokio::runtime::Runtime::new()
-                        .unwrap()
-                        .block_on(client.post(faucet_service_url.clone()).json(&data).send())
-                    {
+                    let client = reqwest::blocking::Client::new();
+                    match client.post(faucet_service_url.clone()).json(&data).send() {
                         Ok(response) => {
-                            let account_creation_transaction = tokio::runtime::Runtime::new()
-                            .unwrap()
-                            .block_on(response
+                            let account_creation_transaction = response
                                 .json::<near_jsonrpc_client::methods::tx::RpcTransactionStatusResponse>(
-                                ))?;
+                                )?;
                             match account_creation_transaction.status {
                                 near_primitives::views::FinalExecutionStatus::SuccessValue(
                                     ref value,
