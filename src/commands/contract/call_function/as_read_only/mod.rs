@@ -1,3 +1,6 @@
+use crate::common::CallResult;
+use crate::common::JsonRpcClientExt;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = CallFunctionViewContext)]
@@ -27,7 +30,7 @@ impl CallFunctionViewContext {
     ) -> color_eyre::eyre::Result<Self> {
         let function_args = scope.function_args.clone();
         let function_args_type = scope.function_args_type.clone();
-        let account_id = scope.account_id.clone();
+        let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
         let function_name = scope.function_name.clone();
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
@@ -36,46 +39,17 @@ impl CallFunctionViewContext {
                     function_args.clone(),
                     function_args_type.clone(),
                 )?;
-                let query_view_method_response = tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(
-                    network_config
-                    .json_rpc_client()
-                    .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                        block_reference: block_reference.clone(),
-                        request: near_primitives::views::QueryRequest::CallFunction {
-                            account_id: account_id.clone().into(),
-                            method_name: function_name.clone(),
-                            args: near_primitives::types::FunctionArgs::from(args),
-                        },
-                    }))
 
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!("Failed to fetch query for view method: {:?}", err))
-                    })?;
-                let call_result =
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
-                        query_view_method_response.kind
-                    {
-                        result
-                    } else {
-                        return Err(color_eyre::Report::msg("Error call result".to_string()));
-                    };
-
-                let serde_call_result = if call_result.result.is_empty() {
-                    serde_json::Value::Null
-                } else {
-                    serde_json::from_slice(&call_result.result)
-                        .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?
-                };
-                println!("--------------");
-                if call_result.logs.is_empty() {
-                    println!("No logs")
-                } else {
-                    println!("Logs:");
-                    println!("  {}", call_result.logs.join("\n  "));
-                }
-                println!("--------------");
+                let call_result = network_config
+                .json_rpc_client()
+                .blocking_call_view_function(
+                    &account_id,
+                    &function_name,
+                    args,
+                    block_reference.clone(),
+                )?;
+                call_result.print_logs();
+                let serde_call_result: serde_json::Value = call_result.parse_result_from_json()?;
                 println!("Result:");
                 println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
                 println!("--------------");
@@ -101,54 +75,4 @@ impl CallFunctionView {
     ) -> color_eyre::eyre::Result<Option<super::call_function_args_type::FunctionArgsType>> {
         super::call_function_args_type::input_function_args_type()
     }
-
-    // pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-    //     let args = super::call_function_args_type::function_args(
-    //         self.function_args.clone(),
-    //         self.function_args_type.clone(),
-    //     )?;
-    //     let query_view_method_response = self
-    //         .network_config
-    //         .get_network_config(config)
-    //         .json_rpc_client()
-    //         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-    //             block_reference: self.network_config.get_block_ref(),
-    //             request: near_primitives::views::QueryRequest::CallFunction {
-    //                 account_id: self.account_id.clone().into(),
-    //                 method_name: self.function_name.clone(),
-    //                 args: near_primitives::types::FunctionArgs::from(args),
-    //             },
-    //         })
-    //         .await
-    //         .map_err(|err| {
-    //             color_eyre::Report::msg(format!("Failed to fetch query for view method: {:?}", err))
-    //         })?;
-    //     let call_result =
-    //         if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
-    //             query_view_method_response.kind
-    //         {
-    //             result
-    //         } else {
-    //             return Err(color_eyre::Report::msg("Error call result".to_string()));
-    //         };
-
-    //     let serde_call_result = if call_result.result.is_empty() {
-    //         serde_json::Value::Null
-    //     } else {
-    //         serde_json::from_slice(&call_result.result)
-    //             .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?
-    //     };
-    //     println!("--------------");
-    //     if call_result.logs.is_empty() {
-    //         println!("No logs")
-    //     } else {
-    //         println!("Logs:");
-    //         println!("  {}", call_result.logs.join("\n  "));
-    //     }
-    //     println!("--------------");
-    //     println!("Result:");
-    //     println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
-    //     println!("--------------");
-    //     Ok(())
-    // }
 }

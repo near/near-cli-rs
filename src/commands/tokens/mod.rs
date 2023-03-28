@@ -1,5 +1,8 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+use crate::common::CallResult;
+use crate::common::JsonRpcClientExt;
+
 mod send_ft;
 mod send_near;
 mod send_nft;
@@ -72,35 +75,19 @@ pub struct FtMetadata {
     decimals: u64,
 }
 
-pub async fn params_ft_metadata(
+pub fn params_ft_metadata(
     ft_contract_account_id: near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<FtMetadata> {
-    let query_view_ft_metadata_response = network_config
+    let ft_metadata: FtMetadata = network_config
         .json_rpc_client()
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+        .blocking_call_view_function(
+            &ft_contract_account_id,
+            "ft_metadata",
+            vec![],
             block_reference,
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: ft_contract_account_id.clone().into(),
-                method_name: "ft_metadata".to_string(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
-        .await
-        .map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to fetch query for view method: {:?}", err))
-        })?;
-    let call_result =
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
-            query_view_ft_metadata_response.kind
-        {
-            result.result
-        } else {
-            return Err(color_eyre::Report::msg("Error call result".to_string()));
-        };
-    let ft_metadata: FtMetadata = serde_json::from_slice(&call_result).map_err(|err| {
-        color_eyre::Report::msg(format!("Impossible to get FT metadata! Error: {}", err))
-    })?;
+        )?
+        .parse_result_from_json()?;
     Ok(ft_metadata)
 }

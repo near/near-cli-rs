@@ -1,5 +1,8 @@
 use serde_json::json;
 
+use crate::common::CallResult;
+use crate::common::JsonRpcClientExt;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
 #[interactive_clap(output_context = ViewNftAssetsContext)]
@@ -25,42 +28,21 @@ impl ViewNftAssetsContext {
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             move |network_config, block_reference| {
-                let method_name = "nft_tokens_for_owner".to_string();
                 let args = json!({
-                    "account_id": owner_account_id.to_string(),
-                })
-                .to_string()
-                .into_bytes();
-                let query_view_method_response = tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(
-                    network_config
+                        "account_id": owner_account_id.to_string(),
+                    })
+                    .to_string()
+                    .into_bytes();
+                let call_result = network_config
                     .json_rpc_client()
-                    .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                        block_reference: block_reference.clone(),
-                        request: near_primitives::views::QueryRequest::CallFunction {
-                            account_id: nft_contract_account_id.clone(),
-                            method_name,
-                            args: near_primitives::types::FunctionArgs::from(args),
-                        },
-                    }))
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!("Failed to fetch query for view method: {:?}", err))
-                    })?;
-                let call_result =
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
-                        query_view_method_response.kind
-                    {
-                        result.result
-                    } else {
-                        return Err(color_eyre::Report::msg("Error call result".to_string()));
-                    };
-                let serde_call_result = if call_result.is_empty() {
-                    serde_json::Value::Null
-                } else {
-                    serde_json::from_slice(&call_result)
-                        .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?
-                };
+                    .blocking_call_view_function(
+                        &nft_contract_account_id,
+                        "nft_tokens_for_owner",
+                        args,
+                        block_reference.clone(),
+                    )?;
+                call_result.print_logs();
+                let serde_call_result: serde_json::Value = call_result.parse_result_from_json()?;
 
                 println!("\n{} account has NFT tokens:", owner_account_id);
                 println!("{}", serde_json::to_string_pretty(&serde_call_result)?);

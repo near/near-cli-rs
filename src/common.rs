@@ -1645,31 +1645,20 @@ pub impl near_jsonrpc_client::JsonRpcClient {
 
     /// A helper function to make a view-funcation call using JSON encoding for the function
     /// arguments and function return value.
-    fn blocking_call_view_function<O>(
+    fn blocking_call_view_function(
         &self,
         account_id: &near_primitives::types::AccountId,
         method_name: &str,
         args: Vec<u8>,
         block_reference: near_primitives::types::BlockReference,
-    ) -> Result<O, color_eyre::eyre::Error>
-    where
-        // I: serde::Serialize,
-        O: for<'de> serde::Deserialize<'de>,
-    {
+    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
         let query_view_method_response = self
             .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference,
                 request: near_primitives::views::QueryRequest::CallFunction {
                     account_id: account_id.clone(),
                     method_name: method_name.to_owned(),
-                    args: near_primitives::types::FunctionArgs::from(
-                        // serde_json::to_string(args)
-                        //     .wrap_err(
-                        //         "Internal error: could not serialize view-function input args",
-                        //     )?
-                        //     .into_bytes(),
-                        args
-                    ),
+                    args: near_primitives::types::FunctionArgs::from(args),
                 },
             })
             .wrap_err("Failed to make a view-function call")?;
@@ -1677,17 +1666,38 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
             query_view_method_response.kind
         {
-            Ok(serde_json::from_slice(&result.result).wrap_err_with(|| {
-                format!(
-                    "Failed to parse view-function call return value: {}",
-                    String::from_utf8_lossy(&result.result)
-                )
-            })?)
+            Ok(result)
         } else {
             color_eyre::eyre::bail!(
                 "Internal error: Received unexpected query kind in response to a view-function query call",
             );
         }
+    }
+}
+
+#[easy_ext::ext(CallResult)]
+pub impl near_primitives::views::CallResult {
+    fn parse_result_from_json<T>(&self) -> Result<T, color_eyre::eyre::Error>
+    where
+        T: for<'de> serde::Deserialize<'de>,
+    {
+        Ok(serde_json::from_slice(&self.result).wrap_err_with(|| {
+            format!(
+                "Failed to parse view-function call return value: {}",
+                String::from_utf8_lossy(&self.result)
+            )
+        })?)
+    }
+
+    fn print_logs(&self) {
+        println!("--------------");
+        if self.logs.is_empty() {
+            println!("No logs")
+        } else {
+            println!("Logs:");
+            println!("  {}", self.logs.join("\n  "));
+        }
+        println!("--------------");
     }
 }
 
