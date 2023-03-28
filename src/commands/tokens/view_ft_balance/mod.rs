@@ -1,5 +1,7 @@
 use serde_json::json;
 
+use crate::common::JsonRpcClientExt;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
 #[interactive_clap(output_context = ViewFtBalanceContext)]
@@ -34,43 +36,69 @@ impl ViewFtBalanceContext {
                         )
                     )?;
 
-                let method_name = "ft_balance_of".to_string();
+                // let method_name = "ft_balance_of".to_string();
                 let args = json!({
                     "account_id": owner_account_id.to_string(),
                     })
                     .to_string()
                     .into_bytes();
-                let query_view_method_response = tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(
-                    network_config
+                let amount: String = network_config
                     .json_rpc_client()
-                    .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                        block_reference: block_reference.clone(),
-                        request: near_primitives::views::QueryRequest::CallFunction {
-                            account_id: ft_contract_account_id.clone(),
-                            method_name,
-                            args: near_primitives::types::FunctionArgs::from(args),
-                        },
-                    }))
+                    .blocking_call_view_function(
+                        &ft_contract_account_id,
+                        "ft_balance_of",
+                        // &json!({ "account_id": owner_account_id }),
+                        args,
+                        block_reference.clone(),
+                    )
                     .map_err(|err| {
                         color_eyre::Report::msg(format!("Failed to fetch query for view method: {:?}", err))
                     })?;
-                let call_result =
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
-                        query_view_method_response.kind
-                    {
-                        result.result
-                    } else {
-                        return Err(color_eyre::Report::msg("Error call result".to_string()));
-                    };
-                let serde_call_result = if call_result.is_empty() {
-                    serde_json::Value::Null
-                } else {
-                    serde_json::from_slice(&call_result)
-                        .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?
-                };
-                let amount: String = serde_json::from_value(serde_call_result).unwrap();
+
+
+
+                    
+                // let query_view_method_response = tokio::runtime::Runtime::new()
+                // .unwrap()
+                // .block_on(
+                //     network_config
+                //     .json_rpc_client()
+                //     .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                //         block_reference: block_reference.clone(),
+                //         request: near_primitives::views::QueryRequest::CallFunction {
+                //             account_id: ft_contract_account_id.clone(),
+                //             method_name,
+                //             args: near_primitives::types::FunctionArgs::from(args),
+                //         },
+                //     }))
+                //     .map_err(|err| {
+                //         color_eyre::Report::msg(format!("Failed to fetch query for view method: {:?}", err))
+                //     })?;
+                // let call_result =
+                //     if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
+                //         query_view_method_response.kind
+                //     {
+                //         result.result
+                //     } else {
+                //         return Err(color_eyre::Report::msg("Error call result".to_string()));
+                //     };
+                // let serde_call_result = if call_result.is_empty() {
+                //     serde_json::Value::Null
+                // } else {
+                //     serde_json::from_slice(&call_result)
+                //         .map_err(|err| color_eyre::Report::msg(format!("serde json: {:?}", err)))?
+                // };
+                // let amount: String = serde_json::from_value(serde_call_result).unwrap();
+
+
+        
+
+
+
+
+
+
+
                 let amount = amount.parse::<u128>().unwrap();
                 let amount_fmt = {
                     if amount == 0 {

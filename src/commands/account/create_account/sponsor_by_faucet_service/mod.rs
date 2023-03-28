@@ -36,8 +36,6 @@ impl NewAccountContext {
         let on_before_creating_account_callback: self::network::OnBeforeCreatingAccountCallback =
             std::sync::Arc::new({
                 move |network_config, new_account_id, public_key| {
-                    println!("Creating new account ...");
-
                     let faucet_service_url = match &network_config.faucet_url {
                         Some(url) => url,
                         None => return Err(color_eyre::Report::msg(format!(

@@ -311,7 +311,7 @@ In order to create an account, in the terminal command line type:
     autogenerate-new-keypair \
     save-to-keychain \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -342,7 +342,7 @@ In order to execute this command, in the terminal command line type:
     create-account sponsor-by-faucet-service test_fro1.testnet \
     use-manually-provided-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -368,9 +368,9 @@ In order to execute this command, in the terminal command line type:
 ```txt
 ./near-cli account \
     create-account sponsor-by-faucet-service test_fro2.testnet \
-    use-manually-provided-public-key ed25519:5qHMs34xnfkfWwnEk62qP7ykbcv8osbx3gvE4Cto4t3g \
+    use-manually-provided-public-key ed25519:HVPgAsZkZ7cwLZDqK313XJsDyqAvgBxrATcD7VacA8KE \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -398,7 +398,7 @@ In order to execute this command, in the terminal command line type:
     create-account sponsor-by-faucet-service test_fro3.testnet \
     use-ledger \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>

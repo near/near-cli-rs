@@ -2,6 +2,7 @@ use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 use std::str::FromStr;
 
+use color_eyre::eyre::WrapErr;
 use prettytable::Table;
 
 use near_primitives::{
@@ -1625,6 +1626,68 @@ pub fn input_network_name(
             | inquire::error::InquireError::OperationInterrupted,
         ) => Ok(None),
         Err(err) => Err(err.into()),
+    }
+}
+
+#[easy_ext::ext(JsonRpcClientExt)]
+pub impl near_jsonrpc_client::JsonRpcClient {
+    fn blocking_call<M>(
+        &self,
+        method: M,
+    ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
+    where
+        M: near_jsonrpc_client::methods::RpcMethod,
+    {
+        tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(self.call(method))
+    }
+
+    /// A helper function to make a view-funcation call using JSON encoding for the function
+    /// arguments and function return value.
+    fn blocking_call_view_function<O>(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        method_name: &str,
+        args: Vec<u8>,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<O, color_eyre::eyre::Error>
+    where
+        // I: serde::Serialize,
+        O: for<'de> serde::Deserialize<'de>,
+    {
+        let query_view_method_response = self
+            .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference,
+                request: near_primitives::views::QueryRequest::CallFunction {
+                    account_id: account_id.clone(),
+                    method_name: method_name.to_owned(),
+                    args: near_primitives::types::FunctionArgs::from(
+                        // serde_json::to_string(args)
+                        //     .wrap_err(
+                        //         "Internal error: could not serialize view-function input args",
+                        //     )?
+                        //     .into_bytes(),
+                        args
+                    ),
+                },
+            })
+            .wrap_err("Failed to make a view-function call")?;
+
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
+            query_view_method_response.kind
+        {
+            Ok(serde_json::from_slice(&result.result).wrap_err_with(|| {
+                format!(
+                    "Failed to parse view-function call return value: {}",
+                    String::from_utf8_lossy(&result.result)
+                )
+            })?)
+        } else {
+            color_eyre::eyre::bail!(
+                "Internal error: Received unexpected query kind in response to a view-function query call",
+            );
+        }
     }
 }
 

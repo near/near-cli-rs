@@ -310,7 +310,7 @@ The data for the access key is saved in macOS Keychain
     autogenerate-new-keypair \
     save-to-keychain \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
@@ -341,7 +341,7 @@ https://explorer.testnet.near.org/transactions/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgR
     create-account sponsor-by-faucet-service test_fro1.testnet \
     use-manually-provided-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
@@ -367,9 +367,9 @@ https://explorer.testnet.near.org/transactions/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUA
 ```txt
 ./near-cli account \
     create-account sponsor-by-faucet-service test_fro2.testnet \
-    use-manually-provided-public-key ed25519:5qHMs34xnfkfWwnEk62qP7ykbcv8osbx3gvE4Cto4t3g \
+    use-manually-provided-public-key ed25519:HVPgAsZkZ7cwLZDqK313XJsDyqAvgBxrATcD7VacA8KE \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
@@ -397,7 +397,7 @@ https://explorer.testnet.near.org/transactions/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5
     create-account sponsor-by-faucet-service test_fro3.testnet \
     use-ledger \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
