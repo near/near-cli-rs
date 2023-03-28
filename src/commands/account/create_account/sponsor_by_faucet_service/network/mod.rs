@@ -66,63 +66,35 @@ impl Network {
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = NetworkContext)]
+#[interactive_clap(input_context = NetworkContext)]
+#[interactive_clap(output_context = SubmitContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-#[interactive_clap(skip_default_from_cli)]
 /// How would you like to proceed
 pub enum Submit {
     #[strum_discriminants(strum(message = "create      - Create a new account"))]
     Create,
 }
 
-impl interactive_clap::FromCli for Submit {
-    type FromCliContext = NetworkContext;
-    type FromCliError = color_eyre::eyre::Error;
-    fn from_cli(
-        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    >
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let clap_variant = match optional_clap_variant {
-            Some(CliSubmit::Create) => interactive_clap::ResultFromCli::Ok(CliSubmit::Create),
-            None => Self::choose_variant(context.clone()),
-        };
+#[derive(Clone)]
+pub struct SubmitContext;
 
-        if let interactive_clap::ResultFromCli::Ok(_) = &clap_variant {
-            let mut storage_message = String::new();
-            match (context.on_after_getting_network_callback)(
-                &context.network_config,
-                &mut storage_message,
-            ) {
-                Ok(_) => (),
-                Err(report) => {
-                    return interactive_clap::ResultFromCli::Err(
-                        optional_clap_variant,
-                        color_eyre::Report::msg(report),
-                    )
-                }
-            };
-            match (context.on_before_creating_account_callback)(
-                &context.network_config,
-                &context.new_account_id,
-                &context.public_key,
-            ) {
-                Ok(_) => (),
-                Err(report) => {
-                    return interactive_clap::ResultFromCli::Err(
-                        optional_clap_variant,
-                        color_eyre::Report::msg(report),
-                    )
-                }
-            };
-            println!("{storage_message}");
-        };
-        clap_variant
+impl SubmitContext {
+    pub fn from_previous_context(
+        previous_context: NetworkContext,
+        _scope: &<Submit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let mut storage_message = String::new();
+        (previous_context.on_after_getting_network_callback)(
+            &previous_context.network_config,
+            &mut storage_message,
+        )?;
+        println!("{storage_message}\n");
+        (previous_context.on_before_creating_account_callback)(
+            &previous_context.network_config,
+            &previous_context.new_account_id,
+            &previous_context.public_key,
+        )?;
+        Ok(Self)
     }
 }
 
