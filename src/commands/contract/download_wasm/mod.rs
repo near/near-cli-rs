@@ -1,5 +1,7 @@
-use inquire::Text;
 use std::io::Write;
+
+use color_eyre::eyre::Context;
+use inquire::Text;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -35,10 +37,10 @@ impl ContractAccountContext {
 #[interactive_clap(output_context = DownloadContractContext)]
 pub struct DownloadContract {
     #[interactive_clap(skip_default_input_arg)]
-    ///Where to download the contract file?
+    /// Where to download the contract file?
     folder_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(named_arg)]
-    ///Select network
+    /// Select network
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
 }
 
@@ -68,11 +70,11 @@ impl DownloadContractContext {
                     },
                 })
             )
-                .map_err(|err| {
-                    color_eyre::Report::msg(format!(
-                        "Failed to fetch query for view contract: {:?}",
-                        err
-                    ))
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to fetch query ViewCode for <{}>",
+                        &account_id
+                    )
                 })?;
             let call_access_view =
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
@@ -88,10 +90,10 @@ impl DownloadContractContext {
                 format!("contract_{}.wasm", account_id.as_str().replace('.', "_")).into();
             file_path.push(file_name);
             std::fs::File::create(&file_path)
-                .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
+                .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
                 .write(&call_access_view.code)
-                .map_err(|err| {
-                    color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
+                .wrap_err_with(|| {
+                    format!("Failed to write to file: {:?}", &file_path)
                 })?;
             println!("\nThe file {:?} was downloaded successfully", &file_path);
 

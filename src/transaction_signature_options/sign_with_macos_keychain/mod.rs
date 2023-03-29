@@ -35,10 +35,8 @@ impl SignMacosKeychainContext {
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
-        let keychain =
-            security_framework::os::macos::keychain::SecKeychain::default().map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err))
-            })?;
+        let keychain = security_framework::os::macos::keychain::SecKeychain::default()
+            .wrap_err("Failed to open keychain")?;
 
         let access_key_list = network_config
             .json_rpc_client()
@@ -46,11 +44,11 @@ impl SignMacosKeychainContext {
                 &previous_context.transaction.signer_id,
                 near_primitives::types::Finality::Final.into(),
             )
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to fetch access key list for {}: {:?}",
-                    previous_context.transaction.signer_id, err
-                ))
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to fetch access key list for {}",
+                    previous_context.transaction.signer_id
+                )
             })?
             .access_key_list_view()?;
 
@@ -85,8 +83,8 @@ impl SignMacosKeychainContext {
                 ))
             })?;
 
-        let account_json: super::AccountKeyPair = serde_json::from_slice(password.as_ref())
-            .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {:?}", err)))?;
+        let account_json: super::AccountKeyPair =
+            serde_json::from_slice(password.as_ref()).wrap_err("Error reading data")?;
 
         let rpc_query_response = network_config
             .json_rpc_client()

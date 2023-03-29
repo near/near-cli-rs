@@ -30,11 +30,10 @@ impl SignAccessKeyFileContext {
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
-        let data = std::fs::read_to_string(&scope.file_path).map_err(|err| {
-            color_eyre::Report::msg(format!("Access key file not found! Error: {}", err))
-        })?;
+        let data =
+            std::fs::read_to_string(&scope.file_path).wrap_err("Access key file not found!")?;
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
-            .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
+            .wrap_err_with(|| format!("Error reading data from file: {:?}", &scope.file_path))?;
 
         let rpc_query_response = network_config
             .json_rpc_client()

@@ -1,3 +1,5 @@
+use color_eyre::eyre::Context;
+
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::GenerateKeypairContext)]
 #[interactive_clap(output_context = SaveKeypairToKeychainContext)]
@@ -56,11 +58,11 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                         &item.key_pair_properties.public_key_str,
                         &item.signer_account_id,
                     )
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!(
+                    .wrap_err_with(|| {
+                        format!(
                             "Failed to save a file with access key: {}",
-                            err
-                        ))
+                            &item.key_pair_properties.public_key_str
+                        )
                     })?;
                     Ok(())
                 },

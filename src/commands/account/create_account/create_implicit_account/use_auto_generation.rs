@@ -1,5 +1,7 @@
 use std::io::Write;
 
+use color_eyre::eyre::Context;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = SaveWithUseAutoGenerationContext)]
@@ -38,13 +40,9 @@ impl SaveWithUseAutoGenerationContext {
                     std::fs::create_dir_all(&file_path)?;
                     file_path.push(file_name);
                     std::fs::File::create(&file_path)
-                        .map_err(|err| {
-                            color_eyre::Report::msg(format!("Failed to create file: {:?}", err))
-                        })?
+                        .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
                         .write(buf.as_bytes())
-                        .map_err(|err| {
-                            color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
-                        })?;
+                        .wrap_err_with(|| format!("Failed to write to file: {:?}", folder_path))?;
                     println!("\nThe file {:?} was saved successfully", &file_path);
 
                     Ok(())

@@ -1,6 +1,7 @@
-use inquire::{CustomType, Select};
 use std::{str::FromStr, vec};
 
+use color_eyre::eyre::Context;
+use inquire::{CustomType, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod using_private_key;
@@ -123,11 +124,11 @@ fn save_access_key(
                 public_key_str,
                 &account_id,
             )
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to save the access key to the keychain: {}",
-                    err
-                ))
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to save the access key <{}> to the keychain",
+                    public_key_str
+                )
             })?;
             println!("{}", storage_message);
             return Ok(());
@@ -140,9 +141,7 @@ fn save_access_key(
         public_key_str,
         &account_id,
     )
-    .map_err(|err| {
-        color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
-    })?;
+    .wrap_err_with(|| format!("Failed to save a file with access key: {}", public_key_str))?;
     println!("{}", storage_message);
     Ok(())
 }

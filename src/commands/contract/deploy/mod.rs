@@ -1,3 +1,5 @@
+use color_eyre::eyre::Context;
+
 mod initialize_mode;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -54,12 +56,11 @@ impl ContractFileContext {
         previous_context: ContractContext,
         scope: &<ContractFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let code = std::fs::read(&scope.file_path).map_err(|err| {
-            color_eyre::Report::msg(format!(
-                "Failed to open or read the file: {:?}.\nError: {:?}",
-                &scope.file_path.0.clone(),
-                err
-            ))
+        let code = std::fs::read(&scope.file_path).wrap_err_with(|| {
+            format!(
+                "Failed to open or read the file: {:?}.",
+                &scope.file_path.0,
+            )
         })?;
         Ok(Self {
             config: previous_context.config,

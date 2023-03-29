@@ -1,5 +1,7 @@
-use inquire::Select;
 use std::str::FromStr;
+
+use color_eyre::eyre::Context;
+use inquire::Select;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 #[derive(Debug, EnumDiscriminants, Clone, clap::ValueEnum)]
@@ -80,9 +82,8 @@ pub fn function_args(
 ) -> color_eyre::eyre::Result<Vec<u8>> {
     match function_args_type {
         super::call_function_args_type::FunctionArgsType::JsonArgs => {
-            let data_json = serde_json::Value::from_str(&args).map_err(|err| {
-                color_eyre::Report::msg(format!("Data not in JSON format! Error: {}", err))
-            })?;
+            let data_json =
+                serde_json::Value::from_str(&args).wrap_err("Data not in JSON format!")?;
             Ok(data_json.to_string().into_bytes())
         }
         super::call_function_args_type::FunctionArgsType::TextArgs => Ok(args.into_bytes()),
@@ -91,9 +92,8 @@ pub fn function_args(
         }
         super::call_function_args_type::FunctionArgsType::FileArgs => {
             let data_path = std::path::PathBuf::from(args);
-            let data = std::fs::read(data_path).map_err(|err| {
-                color_eyre::Report::msg(format!("Data file access not found! Error: {}", err))
-            })?;
+            let data = std::fs::read(&data_path)
+                .wrap_err_with(|| format!("Access to data file <{:?}> not found!", &data_path))?;
             Ok(data)
         }
     }

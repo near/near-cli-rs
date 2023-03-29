@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::str::FromStr;
 
+use color_eyre::eyre::Context;
 use inquire::Text;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -49,13 +50,9 @@ impl SaveWithSeedPhraseContext {
                     std::fs::create_dir_all(&file_path)?;
                     file_path.push(file_name);
                     std::fs::File::create(&file_path)
-                        .map_err(|err| {
-                            color_eyre::Report::msg(format!("Failed to create file: {:?}", err))
-                        })?
+                        .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
                         .write(buf.as_bytes())
-                        .map_err(|err| {
-                            color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
-                        })?;
+                        .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
                     println!("\nThe file {:?} was saved successfully", &file_path);
 
                     Ok(())

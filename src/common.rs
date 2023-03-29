@@ -409,7 +409,7 @@ pub async fn get_account_transfer_allowance(
             },
         )
         .await
-        .map_err(|err| color_eyre::Report::msg(format!("RpcError: {:?}", err)))?
+        .wrap_err("RpcError")?
         .runtime_config
         .storage_amount_per_byte;
 
@@ -1321,7 +1321,7 @@ pub fn save_access_key_to_macos_keychain(
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
     let keychain = security_framework::os::macos::keychain::SecKeychain::default()
-        .map_err(|err| color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err)))?;
+        .wrap_err("Failed to open keychain")?;
     let service_name = std::borrow::Cow::Owned(format!(
         "near-{}-{}",
         network_config.network_name, account_id
@@ -1332,9 +1332,7 @@ pub fn save_access_key_to_macos_keychain(
             &format!("{}:{}", account_id, public_key_str),
             key_pair_properties_buf.as_bytes(),
         )
-        .map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to save password to keychain: {:?}", err))
-        })?;
+        .wrap_err("Failed to save password to keychain")?;
     Ok("The data for the access key is saved in macOS Keychain".to_string())
 }
 
@@ -1360,11 +1358,9 @@ pub fn save_access_key_to_keychain(
         )
     } else {
         std::fs::File::create(&path_with_key_name)
-            .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
+            .wrap_err_with(|| format!("Failed to create file: {:?}", path_with_key_name))?
             .write(key_pair_properties_buf.as_bytes())
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
-            })?;
+            .wrap_err_with(|| format!("Failed to write to file: {:?}", path_with_key_name))?;
         format!(
             "The data for the access key is saved in a file {}",
             &path_with_key_name.display()
@@ -1383,11 +1379,9 @@ pub fn save_access_key_to_keychain(
         ))
     } else {
         std::fs::File::create(&path_with_account_name)
-            .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
+            .wrap_err_with(|| format!("Failed to create file: {:?}", path_with_account_name))?
             .write(key_pair_properties_buf.as_bytes())
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
-            })?;
+            .wrap_err_with(|| format!("Failed to write to file: {:?}", path_with_account_name))?;
         Ok(format!(
             "{}\nThe data for the access key is saved in a file {}",
             message_1,
@@ -1417,9 +1411,9 @@ pub fn write_config_toml(config: crate::config::Config) -> CliResult {
     let mut path_config_toml = dirs::config_dir().expect("Impossible to get your config dir!");
     path_config_toml.push("near-cli/config.toml");
     std::fs::File::create(&path_config_toml)
-        .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
+        .wrap_err_with(|| format!("Failed to create file: {:?}", path_config_toml))?
         .write(config_toml.as_bytes())
-        .map_err(|err| color_eyre::Report::msg(format!("Failed to write to file: {:?}", err)))?;
+        .wrap_err_with(|| format!("Failed to write to file: {:?}", path_config_toml))?;
     println!(
         "Configuration data is stored in a file {:?}",
         &path_config_toml

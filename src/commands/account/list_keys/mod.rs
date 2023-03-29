@@ -1,3 +1,5 @@
+use color_eyre::eyre::Context;
+
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
 
@@ -30,11 +32,11 @@ impl ViewListKeysContext {
                         &account_id,
                         block_reference.clone(),
                     )
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to fetch access key list for {}: {:?}",
-                            &account_id, err
-                        ))
+                    .wrap_err_with(|| {
+                        format!(
+                            "Failed to fetch query AccessKeyList for {}",
+                            &account_id
+                        )
                     })?
                     .access_key_list_view()?;
 

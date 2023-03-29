@@ -1,3 +1,5 @@
+use color_eyre::eyre::Context;
+
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
 
@@ -27,11 +29,11 @@ impl ViewAccountSummaryContext {
                 let rpc_query_response = network_config
                     .json_rpc_client()
                     .blocking_call_view_account(&account_id.clone(), block_reference.clone())
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to fetch query for view account: {:?}",
-                            err
-                        ))
+                    .wrap_err_with(|| {
+                        format!(
+                            "Failed to fetch query ViewAccount for <{}>",
+                            &account_id
+                        )
                     })?;
                 let account_view = rpc_query_response.account_view()?;
 
@@ -41,11 +43,11 @@ impl ViewAccountSummaryContext {
                         &account_id,
                         block_reference.clone(),
                     )
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to fetch access key list for {}: {:?}",
-                            &account_id, err
-                        ))
+                    .wrap_err_with(|| {
+                        format!(
+                            "Failed to fetch ViewAccessKeyList for {}",
+                            &account_id
+                        )
                     })?
                     .access_key_list_view()?;
 

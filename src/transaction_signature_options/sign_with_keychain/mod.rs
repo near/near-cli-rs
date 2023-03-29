@@ -54,11 +54,11 @@ impl SignKeychainContext {
                         &previous_context.transaction.signer_id,
                         near_primitives::types::Finality::Final.into(),
                     )
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to fetch access key list for {}: {:?}",
-                            previous_context.transaction.signer_id, err
-                        ))
+                    .wrap_err_with(|| {
+                        format!(
+                            "Failed to fetch access KeyList for {}",
+                            previous_context.transaction.signer_id
+                        )
                     })?
                     .access_key_list_view()?;
                 let mut path =
@@ -78,9 +78,7 @@ impl SignKeychainContext {
                     };
                     let dir = path
                         .read_dir()
-                        .map_err(|err| {
-                            color_eyre::Report::msg(format!("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain. {}", err))
-                        })?;
+                        .wrap_err("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.")?;
                     for entry in dir {
                         if let Ok(entry) = entry {
                             if entry
@@ -104,11 +102,9 @@ impl SignKeychainContext {
                 data_path
             }
         };
-        let data = std::fs::read_to_string(data_path).map_err(|err| {
-            color_eyre::Report::msg(format!("Access key file not found! Error: {}", err))
-        })?;
+        let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
-            .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
+            .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
 
         let rpc_query_response = network_config
             .json_rpc_client()

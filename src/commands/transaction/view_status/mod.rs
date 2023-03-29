@@ -1,3 +1,5 @@
+use color_eyre::eyre::Context;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = TransactionInfoContext)]
@@ -36,13 +38,7 @@ impl TransactionInfoContext {
                                     account_id: signer_account_id.clone().into()
                                 }
                             }))
-                            .map_err(|err| {
-                                color_eyre::Report::msg(format!(
-                                    "Failed to fetch query for view transaction: {:?}",
-                                    err
-                                ))
-                            }
-                        )?;
+                            .wrap_err("Failed to fetch query for view transaction")?;
                     println!("Transaction status: {:#?}", query_view_transaction_status);
                     Ok(())
                 }
