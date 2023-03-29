@@ -1501,7 +1501,7 @@ fn path_directories() -> Vec<std::path::PathBuf> {
 pub fn display_account_info(
     viewed_at_block_hash: &CryptoHash,
     viewed_at_block_height: &near_primitives::types::BlockHeight,
-    account_id: &crate::types::account_id::AccountId,
+    account_id: &near_primitives::types::AccountId,
     account_view: &near_primitives::views::AccountView,
     access_keys: &[near_primitives::views::AccessKeyInfoView],
 ) {
@@ -1680,6 +1680,24 @@ pub impl near_jsonrpc_client::JsonRpcClient {
             },
         })
     }
+
+    fn blocking_call_view_access_key_list(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    > {
+        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                account_id: account_id.clone(),
+            },
+        })
+    }
 }
 
 #[easy_ext::ext(RpcQueryResponseExt)]
@@ -1693,6 +1711,21 @@ pub impl near_jsonrpc_primitives::types::query::RpcQueryResponse {
         } else {
             color_eyre::eyre::bail!(
                 "Internal error: Received unexpected query kind in response to a View Access Key query call",
+            );
+        }
+    }
+
+    fn access_key_list_view(
+        &self,
+    ) -> color_eyre::eyre::Result<near_primitives::views::AccessKeyList> {
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
+            access_key_list,
+        ) = &self.kind
+        {
+            Ok(access_key_list.clone())
+        } else {
+            color_eyre::eyre::bail!(
+                "Internal error: Received unexpected query kind in response to a View Access Key List query call",
             );
         }
     }

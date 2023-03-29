@@ -48,31 +48,19 @@ impl SignKeychainContext {
             if path.exists() {
                 path
             } else {
-                let query_view_method_response = tokio::runtime::Runtime::new()
-                    .unwrap()
-                    .block_on(network_config.json_rpc_client().call(
-                        near_jsonrpc_client::methods::query::RpcQueryRequest {
-                            block_reference: near_primitives::types::Finality::Final.into(),
-                            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                                account_id: previous_context.transaction.signer_id.clone(),
-                            },
-                        },
-                    ))
+                let access_key_list = network_config
+                    .json_rpc_client()
+                    .blocking_call_view_access_key_list(
+                        &previous_context.transaction.signer_id,
+                        near_primitives::types::Finality::Final.into(),
+                    )
                     .map_err(|err| {
                         color_eyre::Report::msg(format!(
-                            "Failed to fetch query for view key list: {:?}",
-                            err
+                            "Failed to fetch access key list for {}: {:?}",
+                            previous_context.transaction.signer_id, err
                         ))
-                    })?;
-                let access_key_list =
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
-                        result,
-                    ) = query_view_method_response.kind
-                    {
-                        result
-                    } else {
-                        return Err(color_eyre::Report::msg("Error call result".to_string()));
-                    };
+                    })?
+                    .access_key_list_view()?;
                 let mut path =
                     std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
                 path.push(dir_name);
