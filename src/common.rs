@@ -1514,7 +1514,7 @@ pub fn display_account_info(
     ]);
 
     let contract_status = if account_view.code_hash == CryptoHash::default() {
-        format!("No contract code")
+        "No contract code".to_string()
     } else {
         hex::encode(account_view.code_hash.as_ref())
     };
@@ -1524,7 +1524,7 @@ pub fn display_account_info(
     ]);
 
     let access_keys_summary = if access_keys.is_empty() {
-        format!("Account is locked (no access keys)")
+        "Account is locked (no access keys)".to_string()
     } else {
         let full_access_keys_count = access_keys
             .iter()

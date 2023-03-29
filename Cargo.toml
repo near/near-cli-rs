@@ -1,6 +1,6 @@
 [package]
 name = "near-cli-rs"
-version = "0.2.1"
+version = "0.2.3"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
@@ -47,6 +47,8 @@ open = "2"
 shell-words = "1.0.0"
 cargo-util = "0.1.1"
 
+semver = { version = "1.0.4", optional = true }
+
 color-eyre = "0.6"
 thiserror = "1"
 
@@ -68,6 +70,12 @@ interactive-clap = { git = "https://github.com/FroVolod/interactive-clap", rev="
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.7.0"
 
+[target.'cfg(target_os = "windows")'.dependencies]
+self_update = { version = "0.36.0", features = ["archive-zip", "compression-zip-deflate"], optional = true }
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+self_update = { version = "0.36.0", features = ["archive-tar", "compression-flate2"], optional = true }
+
 [features]
 default = ["ledger"]
 ledger = ["near-ledger"]
+self-update = ["self_update", "semver"]

@@ -28,6 +28,11 @@ fn main() -> CliResult {
 
     color_eyre::install()?;
 
+    #[cfg(feature = "self-update")]
+    let handle = std::thread::spawn(|| -> color_eyre::eyre::Result<String> {
+        crate::commands::extensions::self_update::SelfUpdateCommand::get_latest_version()
+    });
+
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
         Err(error) => {

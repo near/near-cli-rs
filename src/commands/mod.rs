@@ -6,6 +6,9 @@ mod contract;
 mod tokens;
 mod transaction;
 
+#[cfg(feature = "self-update")]
+pub mod extensions;
+
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -33,6 +36,10 @@ pub enum TopLevelCommand {
     ))]
     /// Use this to manage connections in a configuration file (config.toml).
     Config(self::config::ConfigCommands),
+    #[cfg(feature = "self-update")]
+    #[strum_discriminants(strum(message = "extension   - Manage near-cli-rs extensions"))]
+    /// Use this to manage near-cli-rs extensions
+    Extensions(self::extensions::ExtensionsCommands),
 }
 
 pub type OnBeforeSigningCallback = std::sync::Arc<
