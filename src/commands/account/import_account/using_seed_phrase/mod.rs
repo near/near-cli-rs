@@ -36,15 +36,13 @@ impl LoginFromSeedPhraseContext {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 move |network_config| {
-                    tokio::runtime::Runtime::new()
-                        .unwrap()
-                        .block_on(super::login(
-                            network_config.clone(),
-                            config.credentials_home_dir.clone(),
-                            &key_pair_properties_buf,
-                            &key_pair_properties.public_key_str,
-                            &error_message,
-                        ))
+                    super::login(
+                        network_config.clone(),
+                        config.credentials_home_dir.clone(),
+                        &key_pair_properties_buf,
+                        &key_pair_properties.public_key_str,
+                        &error_message,
+                    )
                 }
             });
 

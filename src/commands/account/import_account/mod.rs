@@ -36,7 +36,7 @@ pub enum ImportAccountActions {
     UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
 }
 
-pub async fn login(
+pub fn login(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties_buf: &str,
@@ -53,7 +53,6 @@ pub async fn login(
             public_key.clone(),
             network_config.clone(),
         )
-        .await
         .is_err()
         {
             println!("{}", error_message);

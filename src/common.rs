@@ -427,7 +427,7 @@ pub async fn get_account_transfer_allowance(
     })
 }
 
-pub async fn verify_account_access_key(
+pub fn verify_account_access_key(
     account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
     network_config: crate::config::NetworkConfig,
@@ -438,15 +438,11 @@ pub async fn verify_account_access_key(
     loop {
         match network_config
             .json_rpc_client()
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewAccessKey {
-                    account_id: account_id.clone(),
-                    public_key: public_key.clone(),
-                },
-            })
-            .await
-        {
+            .blocking_call_view_access_key(
+                &account_id,
+                &public_key,
+                near_primitives::types::Finality::Final.into(),
+            ) {
             Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =
                     rpc_query_response.kind
@@ -1662,11 +1658,50 @@ pub impl near_jsonrpc_client::JsonRpcClient {
                 },
             })
             .wrap_err("Failed to make a view-function call")?;
+        query_view_method_response.call_result()
+    }
 
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
-            query_view_method_response.kind
+    fn blocking_call_view_access_key(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        public_key: &near_crypto::PublicKey,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    > {
+        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewAccessKey {
+                account_id: account_id.clone(),
+                public_key: public_key.clone(),
+            },
+        })
+    }
+}
+
+#[easy_ext::ext(RpcQueryResponseExt)]
+pub impl near_jsonrpc_primitives::types::query::RpcQueryResponse {
+    fn access_key_view(&self) -> color_eyre::eyre::Result<near_primitives::views::AccessKeyView> {
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
+            access_key_view,
+        ) = &self.kind
         {
-            Ok(result)
+            Ok(access_key_view.clone())
+        } else {
+            color_eyre::eyre::bail!(
+                "Internal error: Received unexpected query kind in response to a View Access Key query call",
+            );
+        }
+    }
+
+    fn call_result(&self) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
+            &self.kind
+        {
+            Ok(result.clone())
         } else {
             color_eyre::eyre::bail!(
                 "Internal error: Received unexpected query kind in response to a view-function query call",
@@ -1675,7 +1710,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
     }
 }
 
-#[easy_ext::ext(CallResult)]
+#[easy_ext::ext(CallResultExt)]
 pub impl near_primitives::views::CallResult {
     fn parse_result_from_json<T>(&self) -> Result<T, color_eyre::eyre::Error>
     where

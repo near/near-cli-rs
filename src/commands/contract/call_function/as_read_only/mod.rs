@@ -1,4 +1,4 @@
-use crate::common::CallResult;
+use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]

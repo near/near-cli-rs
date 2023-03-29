@@ -1,6 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::CallResult;
+use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
 
 mod send_ft;

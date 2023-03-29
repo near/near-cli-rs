@@ -1,3 +1,8 @@
+use color_eyre::eyre::WrapErr;
+
+use crate::common::JsonRpcClientExt;
+use crate::common::RpcQueryResponseExt;
+
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
 #[interactive_clap(output_context = SignAccessKeyFileContext)]
@@ -31,17 +36,13 @@ impl SignAccessKeyFileContext {
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
             .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
 
-        let online_signer_access_key_response = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(network_config.json_rpc_client().call(
-                near_jsonrpc_client::methods::query::RpcQueryRequest {
-                    block_reference: near_primitives::types::Finality::Final.into(),
-                    request: near_primitives::views::QueryRequest::ViewAccessKey {
-                        account_id: previous_context.transaction.signer_id.clone(),
-                        public_key: account_json.public_key.clone(),
-                    },
-                },
-            ))
+        let rpc_query_response = network_config
+            .json_rpc_client()
+            .blocking_call_view_access_key(
+                &previous_context.transaction.signer_id,
+                &account_json.public_key,
+                near_primitives::types::Finality::Final.into(),
+            )
             .map_err(|err| {
                 println!("\nYour transaction was not successfully signed.\n");
                 color_eyre::Report::msg(format!(
@@ -49,19 +50,14 @@ impl SignAccessKeyFileContext {
                     err
                 ))
             })?;
-        let current_nonce =
-            if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
-                online_signer_access_key,
-            ) = online_signer_access_key_response.kind
-            {
-                online_signer_access_key.nonce
-            } else {
-                return Err(color_eyre::Report::msg("Error current_nonce".to_string()));
-            };
+        let current_nonce = rpc_query_response
+            .access_key_view()
+            .wrap_err("Error current_nonce")?
+            .nonce;
 
         let mut unsigned_transaction = near_primitives::transaction::Transaction {
             public_key: account_json.public_key.clone(),
-            block_hash: online_signer_access_key_response.block_hash,
+            block_hash: rpc_query_response.block_hash,
             nonce: current_nonce + 1,
             ..previous_context.transaction.clone()
         };
