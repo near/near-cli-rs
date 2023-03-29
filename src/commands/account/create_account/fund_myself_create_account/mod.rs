@@ -142,14 +142,12 @@ fn find_network_where_account_exist(
     new_account_id: near_primitives::types::AccountId,
 ) -> Option<crate::config::NetworkConfig> {
     for network in context.0.network_connection.iter() {
-        if tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(crate::common::get_account_state(
-                network.1.clone(),
-                new_account_id.clone(),
-                near_primitives::types::Finality::Final.into(),
-            ))
-            .is_ok()
+        if crate::common::get_account_state(
+            network.1.clone(),
+            new_account_id.clone(),
+            near_primitives::types::Finality::Final.into(),
+        )
+        .is_ok()
         {
             return Some(network.1.clone());
         }

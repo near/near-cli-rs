@@ -387,7 +387,7 @@ pub async fn get_account_transfer_allowance(
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
     let account_view = if let Ok(account_view) =
-        get_account_state(network_config.clone(), account_id.clone(), block_reference).await
+        get_account_state(network_config.clone(), account_id.clone(), block_reference)
     {
         account_view
     } else {
@@ -489,7 +489,7 @@ pub fn verify_account_access_key(
     }
 }
 
-pub async fn get_account_state(
+pub fn get_account_state(
     network_config: crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
@@ -500,13 +500,7 @@ pub async fn get_account_state(
     loop {
         let query_view_method_response = network_config
             .json_rpc_client()
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: block_reference.clone(),
-                request: near_primitives::views::QueryRequest::ViewAccount {
-                    account_id: account_id.clone(),
-                },
-            })
-            .await;
+            .blocking_call_view_account(&account_id.clone(), block_reference.clone());
         match query_view_method_response {
             Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
@@ -1698,6 +1692,24 @@ pub impl near_jsonrpc_client::JsonRpcClient {
             },
         })
     }
+
+    fn blocking_call_view_account(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    > {
+        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewAccount {
+                account_id: account_id.clone(),
+            },
+        })
+    }
 }
 
 #[easy_ext::ext(RpcQueryResponseExt)]
@@ -1726,6 +1738,18 @@ pub impl near_jsonrpc_primitives::types::query::RpcQueryResponse {
         } else {
             color_eyre::eyre::bail!(
                 "Internal error: Received unexpected query kind in response to a View Access Key List query call",
+            );
+        }
+    }
+
+    fn account_view(&self) -> color_eyre::eyre::Result<near_primitives::views::AccountView> {
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(account_view) =
+            &self.kind
+        {
+            Ok(account_view.clone())
+        } else {
+            color_eyre::eyre::bail!(
+                "Internal error: Received unexpected query kind in response to a View Account query call",
             );
         }
     }

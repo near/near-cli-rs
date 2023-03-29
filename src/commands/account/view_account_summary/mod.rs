@@ -24,28 +24,16 @@ impl ViewAccountSummaryContext {
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             move |network_config, block_reference| {
-                let resp = tokio::runtime::Runtime::new()
-                    .unwrap()
-                    .block_on(
-                        network_config
+                let rpc_query_response = network_config
                     .json_rpc_client()
-                    .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                        block_reference: block_reference.clone(),
-                        request: near_primitives::views::QueryRequest::ViewAccount {
-                            account_id: account_id.clone().into(),
-                        },
-                    }))
+                    .blocking_call_view_account(&account_id.clone(), block_reference.clone())
                     .map_err(|err| {
                         color_eyre::Report::msg(format!(
                             "Failed to fetch query for view account: {:?}",
                             err
                         ))
                     })?;
-
-                let account_view = match resp.kind {
-                    near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(view) => view,
-                    _ => return Err(color_eyre::Report::msg("Error call result")),
-                };
+                let account_view = rpc_query_response.account_view()?;
 
                 let access_key_list = network_config
                     .json_rpc_client()
@@ -62,8 +50,8 @@ impl ViewAccountSummaryContext {
                     .access_key_list_view()?;
 
                 crate::common::display_account_info(
-                    &resp.block_hash,
-                    &resp.block_height,
+                    &rpc_query_response.block_hash,
+                    &rpc_query_response.block_height,
                     &account_id,
                     &account_view,
                     &access_key_list.keys,

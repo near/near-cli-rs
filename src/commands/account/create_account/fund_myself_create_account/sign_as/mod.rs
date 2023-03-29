@@ -54,9 +54,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 let signer_account_id = item.signer_account_id.clone();
 
                 move |prepopulated_unsigned_transaction, network_config| {
-                    tokio::runtime::Runtime::new().unwrap().block_on(
-                        validate_signer_account_id(&network_config, &signer_account_id.clone()),
-                    )?;
+                    validate_signer_account_id(&network_config, &signer_account_id.clone())?;
 
                     if new_account_id.as_str().chars().count()
                         < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
@@ -67,9 +65,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             new_account_id, new_account_id.as_str().chars().count()
                         ));
                     }
-                    tokio::runtime::Runtime::new()
-                        .unwrap()
-                        .block_on(validate_new_account_id(&network_config, &new_account_id))?;
+                    validate_new_account_id(&network_config, &new_account_id)?;
 
                     let (actions, receiver_id) = if new_account_id
                         .is_sub_account_of(&signer_account_id)
@@ -218,14 +214,12 @@ fn is_account_exist(
     account_id: near_primitives::types::AccountId,
 ) -> bool {
     for network in context.config.network_connection.iter() {
-        if tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(crate::common::get_account_state(
-                network.1.clone(),
-                account_id.clone(),
-                near_primitives::types::Finality::Final.into(),
-            ))
-            .is_ok()
+        if crate::common::get_account_state(
+            network.1.clone(),
+            account_id.clone(),
+            near_primitives::types::Finality::Final.into(),
+        )
+        .is_ok()
         {
             return true;
         }
@@ -233,7 +227,7 @@ fn is_account_exist(
     false
 }
 
-async fn validate_signer_account_id(
+fn validate_signer_account_id(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> crate::CliResult {
@@ -241,9 +235,7 @@ async fn validate_signer_account_id(
         network_config.clone(),
         account_id.clone(),
         near_primitives::types::Finality::Final.into(),
-    )
-    .await
-    {
+    ) {
         Ok(_) => Ok(()),
         Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
@@ -261,7 +253,7 @@ async fn validate_signer_account_id(
     }
 }
 
-async fn validate_new_account_id(
+fn validate_new_account_id(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> crate::CliResult {
@@ -270,7 +262,6 @@ async fn validate_new_account_id(
         account_id.clone(),
         near_primitives::types::Finality::Final.into(),
     )
-    .await
     {
         Ok(_) => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
