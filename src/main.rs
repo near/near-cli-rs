@@ -30,7 +30,7 @@ fn main() -> CliResult {
 
     #[cfg(feature = "self-update")]
     let handle = std::thread::spawn(|| -> color_eyre::eyre::Result<String> {
-        crate::commands::extensions::self_update::SelfUpdateCommand::get_latest_version()
+        crate::commands::extensions::self_update::get_latest_version()
     });
 
     let cli = match Cmd::try_parse() {
@@ -113,14 +113,15 @@ fn main() -> CliResult {
         if !matches!(
             cli_cmd,
             CliCmd {
-                top_level: crate::commands::TopLevelCommand::Extensions(
-                    crate::commands::extensions::ExtensionsCommands {
-                        extensions_actions:
-                            crate::commands::extensions::ExtensionsActions::SelfUpdate(
-                                crate::commands::extensions::self_update::SelfUpdateCommand,
-                            ),
+                top_level: Some(crate::commands::CliTopLevelCommand::Extensions(
+                    crate::commands::extensions::CliExtensionsCommands {
+                        extensions_actions: Some(
+                            crate::commands::extensions::CliExtensionsActions::SelfUpdate(
+                                crate::commands::extensions::self_update::CliSelfUpdateCommand {},
+                            )
+                        ),
                     },
-                ),
+                )),
             }
         ) {
             if let Ok(Ok(result)) = handle.join() {
