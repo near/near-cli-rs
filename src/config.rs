@@ -51,20 +51,6 @@ impl Default for Config {
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
             },
         );
-        network_connection.insert(
-            "shardnet".to_string(),
-            NetworkConfig {
-                network_name: "shardnet".to_string(),
-                rpc_url: "https://rpc.shardnet.near.org".parse().unwrap(),
-                wallet_url: "https://wallet.shardnet.near.org".parse().unwrap(),
-                explorer_transaction_url: "https://explorer.shardnet.near.org/transactions/"
-                    .parse()
-                    .unwrap(),
-                rpc_api_key: None,
-                linkdrop_account_id: Some("shardnet".parse().unwrap()),
-                faucet_url: None,
-            },
-        );
         Self {
             credentials_home_dir,
             network_connection,
