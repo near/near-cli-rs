@@ -106,13 +106,6 @@ impl SignLedgerContext {
             unsigned_transaction,
         );
 
-        for action in signed_transaction.transaction.actions.iter() {
-            if let near_primitives::transaction::Action::FunctionCall(_) = action {
-                println!("\nSigned transaction:\n");
-                crate::common::print_transaction(signed_transaction.transaction.clone());
-            }
-        }
-
         println!("\nYour transaction was signed successfully.");
         println!("Public key: {}", scope.signer_public_key);
         println!("Signature: {}", signature);

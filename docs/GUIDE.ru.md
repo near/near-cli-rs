@@ -1150,9 +1150,10 @@ https://explorer.testnet.near.org/transactions/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUC
     deploy \
     262.volodymyr.testnet \
     use-file /Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm \
-    with-init-call increment {} \
-        --prepaid-gas '1 TGas' \
-        --attached-deposit '0 NEAR' \
+    with-init-call increment \
+    json-args {} \
+    prepaid-gas '1 TGas' \
+    attached-deposit '0 NEAR' \
     network-config testnet \
     sign-with-keychain \
     send
@@ -1457,7 +1458,7 @@ linkdrop_account_id = "testnet"
         --explorer-transaction-url https://explorer.testnet.near.org/transactions/ \
         --rpc-api-key 'c0a25b3c-39c2-4f62-a621-50e208b88e64' \
         --linkdrop-account-id testnet \
-        --faucet_url https://helper.nearprotocol.com/account
+        --faucet-url https://helper.nearprotocol.com/account
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>

@@ -375,7 +375,7 @@ impl AccountTransferAllowance {
     }
 }
 
-pub async fn get_account_transfer_allowance(
+pub fn get_account_transfer_allowance(
     network_config: crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
@@ -393,16 +393,15 @@ pub async fn get_account_transfer_allowance(
             pessimistic_transaction_fee: NearBalance::from_yoctonear(0),
         });
     };
-    let storage_amount_per_byte = network_config
-        .json_rpc_client()
-        .call(
+    let storage_amount_per_byte = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(network_config.json_rpc_client().call(
             near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
                 block_reference: near_primitives::types::BlockReference::Finality(
                     near_primitives::types::Finality::Final,
                 ),
             },
-        )
-        .await
+        ))
         .wrap_err("RpcError")?
         .runtime_config
         .storage_amount_per_byte;
@@ -691,114 +690,6 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         secret_keypair_str,
     };
     Ok(key_pair_properties)
-}
-
-pub fn print_transaction(transaction: near_primitives::transaction::Transaction) {
-    println!("{:<13} {}", "signer_id:", &transaction.signer_id);
-    println!("{:<13} {}", "public_key:", &transaction.public_key);
-    println!("{:<13} {}", "nonce:", &transaction.nonce);
-    println!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
-    println!("{:<13} {}", "block_hash:", &transaction.block_hash);
-    println!("actions:");
-    let actions = transaction.actions.clone();
-    for action in actions {
-        match action {
-            near_primitives::transaction::Action::CreateAccount(_) => {
-                println!(
-                    "{:>5} {:<20} {}",
-                    "--", "create account:", &transaction.receiver_id
-                )
-            }
-            near_primitives::transaction::Action::DeployContract(_) => {
-                println!("{:>5} {:<20}", "--", "deploy contract")
-            }
-            near_primitives::transaction::Action::FunctionCall(function_call_action) => {
-                println!("{:>5} {:<20}", "--", "function call:");
-                println!(
-                    "{:>18} {:<13} {}",
-                    "", "method name:", &function_call_action.method_name
-                );
-                println!(
-                    "{:>18} {:<13} {}",
-                    "",
-                    "args:",
-                    serde_json::to_string_pretty(
-                        &serde_json::from_slice::<serde_json::Value>(&function_call_action.args)
-                            .unwrap_or_default()
-                    )
-                    .unwrap_or_else(|_| "".to_string())
-                    .replace('\n', "\n                                 ")
-                );
-                println!(
-                    "{:>18} {:<13} {}",
-                    "",
-                    "gas:",
-                    crate::common::NearGas {
-                        inner: function_call_action.gas
-                    }
-                );
-                println!(
-                    "{:>18} {:<13} {}",
-                    "",
-                    "deposit:",
-                    crate::common::NearBalance::from_yoctonear(function_call_action.deposit)
-                );
-            }
-            near_primitives::transaction::Action::Transfer(transfer_action) => {
-                println!(
-                    "{:>5} {:<20} {}",
-                    "--",
-                    "transfer deposit:",
-                    crate::common::NearBalance::from_yoctonear(transfer_action.deposit)
-                );
-            }
-            near_primitives::transaction::Action::Stake(stake_action) => {
-                println!("{:>5} {:<20}", "--", "stake:");
-                println!(
-                    "{:>18} {:<13} {}",
-                    "", "public key:", &stake_action.public_key
-                );
-                println!(
-                    "{:>18} {:<13} {}",
-                    "",
-                    "stake:",
-                    crate::common::NearBalance::from_yoctonear(stake_action.stake)
-                );
-            }
-            near_primitives::transaction::Action::AddKey(add_key_action) => {
-                println!("{:>5} {:<20}", "--", "add access key:");
-                println!(
-                    "{:>18} {:<13} {}",
-                    "", "public key:", &add_key_action.public_key
-                );
-                println!(
-                    "{:>18} {:<13} {}",
-                    "", "nonce:", &add_key_action.access_key.nonce
-                );
-                println!(
-                    "{:>18} {:<13} {:?}",
-                    "", "permission:", &add_key_action.access_key.permission
-                );
-            }
-            near_primitives::transaction::Action::DeleteKey(delete_key_action) => {
-                println!("{:>5} {:<20}", "--", "delete access key:");
-                println!(
-                    "{:>18} {:<13} {}",
-                    "", "public key:", &delete_key_action.public_key
-                );
-            }
-            near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
-                println!(
-                    "{:>5} {:<20} {}",
-                    "--", "delete account:", &transaction.receiver_id
-                );
-                println!(
-                    "{:>5} {:<20} {}",
-                    "", "beneficiary id:", &delete_account_action.beneficiary_id
-                );
-            }
-        }
-    }
 }
 
 pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Transaction) {

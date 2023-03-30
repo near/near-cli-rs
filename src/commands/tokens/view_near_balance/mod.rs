@@ -19,14 +19,11 @@ impl ViewNearBalanceContext {
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             move |network_config, block_reference| {
-            let account_transfer_allowance = tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(crate::common::get_account_transfer_allowance(
-                    network_config.clone(),
-                    owner_account_id.clone(),
-                    block_reference.clone(),
-                    )
-                )?;
+            let account_transfer_allowance = crate::common::get_account_transfer_allowance(
+                network_config.clone(),
+                owner_account_id.clone(),
+                block_reference.clone(),
+            )?;
         println! {"{}", &account_transfer_allowance};
         Ok(())
         }});

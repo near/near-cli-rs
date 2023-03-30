@@ -1149,9 +1149,10 @@ In order to add a new contract, in the terminal command line type:
     deploy \
     262.volodymyr.testnet \
     use-file /Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm \
-    with-init-call increment {} \
-        --prepaid-gas '1 TGas' \
-        --attached-deposit '0 NEAR' \
+    with-init-call increment \
+    json-args {} \
+    prepaid-gas '1 TGas' \
+    attached-deposit '0 NEAR' \
     network-config testnet \
     sign-with-keychain \
     send
