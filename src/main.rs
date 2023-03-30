@@ -78,6 +78,54 @@ fn main() -> CliResult {
         }
     };
 
+    #[cfg(feature = "self-update")]
+    {
+        if !matches!(
+            cli,
+            CliCmd {
+                top_level: crate::commands::TopLevelCommand::Extensions(
+                    crate::commands::extensions::ExtensionsCommands {
+                        extensions_actions:
+                            crate::commands::extensions::ExtensionsActions::SelfUpdate(
+                                crate::commands::extensions::self_update::SelfUpdateCommand,
+                            ),
+                    },
+                ),
+            }
+        ) {
+            if let Ok(Ok(result)) = handle.join() {
+                let current_version = semver::Version::parse(self_update::cargo_crate_version!())
+                    .map_err(|err| {
+                    color_eyre::Report::msg(format!(
+                        "Failed to parse current version of near-cli-rs as Version: {:?}",
+                        err
+                    ))
+                })?;
+
+                let latest_version = semver::Version::parse(result.as_str()).map_err(|err| {
+                    color_eyre::Report::msg(format!(
+                        "Failed to parse latest version of near-cli-rs as Version: {:?}",
+                        err
+                    ))
+                })?;
+
+                if current_version < latest_version {
+                    println!(
+                        "\nNEAR-CLI-RS has a new update available \x1b[2m{}\x1b[0m →  \x1b[32m{}\x1b[0m",
+                        current_version.to_string(),
+                        latest_version.to_string()
+                    );
+
+                    println!(
+                        "To update NEAR-CLI-RS use: {} {}",
+                        std::env::args().next().as_deref().unwrap_or("./near_cli"),
+                        shell_words::join(cli.to_cli_args())
+                    );
+                }
+            }
+        }
+    };
+
     loop {
         match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli.clone()), (config.clone(),)) {
             interactive_clap::ResultFromCli::Ok(cli_cmd)
