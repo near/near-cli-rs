@@ -78,10 +78,40 @@ fn main() -> CliResult {
         }
     };
 
+    #[allow(unused_variables)]
+    let cli_cmd = loop {
+        match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli.clone()), (config.clone(),)) {
+            interactive_clap::ResultFromCli::Ok(cli_cmd)
+            | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
+                println!(
+                    "Your console command:\n{} {}",
+                    std::env::args().next().as_deref().unwrap_or("./near_cli"),
+                    shell_words::join(&cli_cmd.to_cli_args())
+                );
+                break cli_cmd;
+            }
+            interactive_clap::ResultFromCli::Cancel(None) => {
+                println!("Goodbye!");
+                return Ok(());
+            }
+            interactive_clap::ResultFromCli::Back => {}
+            interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
+                if let Some(cli_cmd) = optional_cli_cmd {
+                    println!(
+                        "Your console command:\n{} {}",
+                        std::env::args().next().as_deref().unwrap_or("./near_cli"),
+                        shell_words::join(&cli_cmd.to_cli_args())
+                    );
+                }
+                return Err(err);
+            }
+        }
+    };
+
     #[cfg(feature = "self-update")]
     {
         if !matches!(
-            cli,
+            cli_cmd,
             CliCmd {
                 top_level: crate::commands::TopLevelCommand::Extensions(
                     crate::commands::extensions::ExtensionsCommands {
@@ -119,39 +149,11 @@ fn main() -> CliResult {
                     println!(
                         "To update NEAR-CLI-RS use: {} {}",
                         std::env::args().next().as_deref().unwrap_or("./near_cli"),
-                        shell_words::join(cli.to_cli_args())
+                        shell_words::join(cli_cmd.to_cli_args())
                     );
                 }
             }
         }
     };
-
-    loop {
-        match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli.clone()), (config.clone(),)) {
-            interactive_clap::ResultFromCli::Ok(cli_cmd)
-            | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
-                println!(
-                    "Your console command:\n{} {}",
-                    std::env::args().next().as_deref().unwrap_or("./near_cli"),
-                    shell_words::join(&cli_cmd.to_cli_args())
-                );
-                return Ok(());
-            }
-            interactive_clap::ResultFromCli::Cancel(None) => {
-                println!("Goodbye!");
-                return Ok(());
-            }
-            interactive_clap::ResultFromCli::Back => {}
-            interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
-                if let Some(cli_cmd) = optional_cli_cmd {
-                    println!(
-                        "Your console command:\n{} {}",
-                        std::env::args().next().as_deref().unwrap_or("./near_cli"),
-                        shell_words::join(&cli_cmd.to_cli_args())
-                    );
-                }
-                return Err(err);
-            }
-        }
-    }
+    Ok(())
 }
