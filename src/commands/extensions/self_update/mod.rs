@@ -16,16 +16,6 @@ impl SelfUpdateCommandContext {
         _previous_context: crate::GlobalContext,
         _scope: &<SelfUpdateCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(process())?;
-
-        Ok(Self)
-    }
-}
-
-pub async fn process() -> crate::CliResult {
-    tokio::task::spawn_blocking(move || -> crate::CliResult {
         self_update::backends::github::Update::configure()
             .repo_owner("near")
             .repo_name("near-cli-rs")
@@ -49,10 +39,8 @@ pub async fn process() -> crate::CliResult {
             .map_err(|err| {
                 color_eyre::Report::msg(format!("Failed to update near-cli-rs: {:?}", err))
             })?;
-
-        Ok(())
-    })
-    .await?
+        Ok(Self)
+    }
 }
 
 pub fn get_latest_version() -> color_eyre::eyre::Result<String> {
