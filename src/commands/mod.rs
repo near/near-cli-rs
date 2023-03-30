@@ -1,3 +1,4 @@
+#![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod account;

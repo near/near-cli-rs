@@ -69,7 +69,7 @@ impl interactive_clap::FromCli for SaveToFolder {
 
         match (context.on_after_getting_folder_path_callback)(&folder_path.into()) {
             Ok(_) => interactive_clap::ResultFromCli::Ok(clap_variant),
-            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            Err(err) => interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
         }
     }
 }

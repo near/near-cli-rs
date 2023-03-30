@@ -46,7 +46,7 @@ impl interactive_clap::FromCli for Network {
 
         match (context.on_after_getting_network_callback)(&network_config) {
             Ok(_) => interactive_clap::ResultFromCli::Ok(clap_variant),
-            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            Err(err) => interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
         }
     }
 }

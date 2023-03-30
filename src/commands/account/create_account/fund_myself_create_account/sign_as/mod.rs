@@ -54,7 +54,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 let signer_account_id = item.signer_account_id.clone();
 
                 move |prepopulated_unsigned_transaction, network_config| {
-                    validate_signer_account_id(&network_config, &signer_account_id.clone())?;
+                    validate_signer_account_id(network_config, &signer_account_id.clone())?;
 
                     if new_account_id.as_str().chars().count()
                         < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
@@ -65,7 +65,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             new_account_id, new_account_id.as_str().chars().count()
                         ));
                     }
-                    validate_new_account_id(&network_config, &new_account_id)?;
+                    validate_new_account_id(network_config, &new_account_id)?;
 
                     let (actions, receiver_id) = if new_account_id
                         .is_sub_account_of(&signer_account_id)
@@ -169,13 +169,13 @@ impl SignerAccountId {
             .clone()
             .get_parent_account_id_from_sub_account();
         if !parent_account_id.0.is_top_level() {
-            if is_account_exist(&context, parent_account_id.clone().into()) {
+            if is_account_exist(context, parent_account_id.clone().into()) {
                 Ok(Some(parent_account_id))
             } else {
-                Self::input_account_id(&context)
+                Self::input_account_id(context)
             }
         } else {
-            Self::input_account_id(&context)
+            Self::input_account_id(context)
         }
     }
 

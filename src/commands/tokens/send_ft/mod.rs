@@ -44,7 +44,7 @@ impl SendFtCommandContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
-            signer_account_id: previous_context.owner_account_id.into(),
+            signer_account_id: previous_context.owner_account_id,
             ft_contract_account_id: scope.ft_contract_account_id.clone().into(),
             receiver_account_id: scope.receiver_account_id.clone().into(),
             amount: scope.amount,
@@ -64,7 +64,7 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
         .to_string()
         .into_bytes();
         let sender = item.signer_account_id.clone();
-        let amount = item.amount.clone();
+        let amount = item.amount;
         let contract = item.ft_contract_account_id.clone();
         let receiver = item.receiver_account_id.clone();
 
@@ -87,8 +87,8 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
                 near_primitives::transaction::FunctionCallAction {
                     method_name,
                     args,
-                    gas: item.gas.clone().inner,
-                    deposit: item.deposit.clone().to_yoctonear(),
+                    gas: item.gas.inner,
+                    deposit: item.deposit.to_yoctonear(),
                 },
             )],
             on_before_signing_callback: std::sync::Arc::new(

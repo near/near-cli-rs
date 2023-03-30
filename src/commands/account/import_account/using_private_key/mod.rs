@@ -35,7 +35,7 @@ impl LoginFromPrivateKeyContext {
                         config.credentials_home_dir.clone(),
                         &key_pair_properties_buf,
                         &public_key.to_string(),
-                        &error_message,
+                        error_message,
                     )
                 }
             });

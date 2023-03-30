@@ -17,6 +17,7 @@ pub struct SignLedger {
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
+    #[allow(dead_code)]
     #[interactive_clap(skip)]
     signer_public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(long)]
@@ -192,7 +193,7 @@ impl interactive_clap::FromCli for SignLedger {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let nonce = clap_variant.nonce.clone();
+        let nonce = clap_variant.nonce;
         if clap_variant.block_hash.is_none() {
             clap_variant.block_hash = match Self::input_block_hash(&context) {
                 Ok(optional_block_hash) => optional_block_hash,
@@ -202,13 +203,13 @@ impl interactive_clap::FromCli for SignLedger {
         let block_hash = clap_variant.block_hash.clone();
 
         let new_context_scope = InteractiveClapContextScopeForSignLedger {
-            signer_public_key: signer_public_key.clone(),
-            seed_phrase_hd_path: seed_phrase_hd_path.clone(),
+            signer_public_key,
+            seed_phrase_hd_path,
             nonce,
-            block_hash: block_hash.clone(),
+            block_hash,
         };
         let output_context =
-            match SignLedgerContext::from_previous_context(context.clone(), &new_context_scope) {
+            match SignLedgerContext::from_previous_context(context, &new_context_scope) {
                 Ok(new_context) => new_context,
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };

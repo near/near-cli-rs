@@ -192,7 +192,7 @@ impl interactive_clap::FromCli for SignKeychain {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
 
         if clap_variant.nonce.is_none() {
             clap_variant.nonce = match Self::input_nonce(&context) {
@@ -200,7 +200,7 @@ impl interactive_clap::FromCli for SignKeychain {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let nonce = clap_variant.nonce.clone();
+        let nonce = clap_variant.nonce;
         if clap_variant.block_hash.is_none() {
             clap_variant.block_hash = match Self::input_block_hash(&context) {
                 Ok(optional_block_hash) => optional_block_hash,
@@ -211,7 +211,7 @@ impl interactive_clap::FromCli for SignKeychain {
 
         let new_context_scope = InteractiveClapContextScopeForSignKeychain { nonce, block_hash };
         let output_context =
-            match SignKeychainContext::from_previous_context(context.clone(), &new_context_scope) {
+            match SignKeychainContext::from_previous_context(context, &new_context_scope) {
                 Ok(new_context) => new_context,
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };

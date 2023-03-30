@@ -41,7 +41,7 @@ impl LoginFromSeedPhraseContext {
                         config.credentials_home_dir.clone(),
                         &key_pair_properties_buf,
                         &key_pair_properties.public_key_str,
-                        &error_message,
+                        error_message,
                     )
                 }
             });

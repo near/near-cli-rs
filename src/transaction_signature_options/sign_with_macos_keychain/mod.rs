@@ -172,7 +172,7 @@ impl interactive_clap::FromCli for SignMacosKeychain {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
 
         if clap_variant.nonce.is_none() {
             clap_variant.nonce = match Self::input_nonce(&context) {
@@ -180,7 +180,7 @@ impl interactive_clap::FromCli for SignMacosKeychain {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let nonce = clap_variant.nonce.clone();
+        let nonce = clap_variant.nonce;
         if clap_variant.block_hash.is_none() {
             clap_variant.block_hash = match Self::input_block_hash(&context) {
                 Ok(optional_block_hash) => optional_block_hash,
@@ -191,13 +191,11 @@ impl interactive_clap::FromCli for SignMacosKeychain {
 
         let new_context_scope =
             InteractiveClapContextScopeForSignMacosKeychain { nonce, block_hash };
-        let output_context = match SignMacosKeychainContext::from_previous_context(
-            context.clone(),
-            &new_context_scope,
-        ) {
-            Ok(new_context) => new_context,
-            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-        };
+        let output_context =
+            match SignMacosKeychainContext::from_previous_context(context, &new_context_scope) {
+                Ok(new_context) => new_context,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
 
         match super::Submit::from_cli(clap_variant.submit.take(), output_context.into()) {
             interactive_clap::ResultFromCli::Ok(cli_submit) => {

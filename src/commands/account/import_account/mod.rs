@@ -1,3 +1,4 @@
+#![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use std::{str::FromStr, vec};
 
 use color_eyre::eyre::Context;
@@ -24,17 +25,17 @@ pub enum ImportAccountActions {
         message = "using-web-wallet          - Import existing account using NEAR Wallet (a.k.a. \"sign in\")"
     ))]
     /// Import existing account using NEAR Wallet (a.k.a. "sign in")
-    UsingWebWallet(self::using_web_wallet::LoginFromWebWallet),
+    WebWallet(self::using_web_wallet::LoginFromWebWallet),
     #[strum_discriminants(strum(
         message = "using-seed-phrase         - Import existing account using a seed phrase"
     ))]
     /// Import existing account using a seed phrase
-    UsingSeedPhrase(self::using_seed_phrase::LoginFromSeedPhrase),
+    SeedPhrase(self::using_seed_phrase::LoginFromSeedPhrase),
     #[strum_discriminants(strum(
         message = "using-private-key         - Import existing account using a private key"
     ))]
     /// Import existing account using a private key
-    UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
+    PrivateKey(self::using_private_key::LoginFromPrivateKey),
 }
 
 pub fn login(

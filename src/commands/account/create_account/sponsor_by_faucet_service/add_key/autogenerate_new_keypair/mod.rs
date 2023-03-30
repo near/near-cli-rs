@@ -71,7 +71,7 @@ impl SaveModeContext {
         previous_context: GenerateKeypairContext,
         scope: &<SaveMode as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let scope = scope.clone();
+        let scope = *scope;
 
         let on_after_getting_network_callback: super::super::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({

@@ -1095,7 +1095,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             println!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(amount.clone())
+                crate::common::NearBalance::from_yoctonear(*amount)
             )
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -1113,8 +1113,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
             println!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(balance.clone()),
-                crate::common::NearBalance::from_yoctonear(stake.clone())
+                crate::common::NearBalance::from_yoctonear(*balance),
+                crate::common::NearBalance::from_yoctonear(*stake)
             )
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -1124,8 +1124,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
         } => {
             println!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                crate::common::NearBalance::from_yoctonear(stake.clone()),
-                crate::common::NearBalance::from_yoctonear(minimum_stake.clone())
+                crate::common::NearBalance::from_yoctonear(*stake),
+                crate::common::NearBalance::from_yoctonear(*minimum_stake)
             )
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -1172,8 +1172,8 @@ pub fn handler_invalid_tx_error(
                     format!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        crate::common::NearBalance::from_yoctonear(allowance.clone()),
-                        crate::common::NearBalance::from_yoctonear(cost.clone())
+                        crate::common::NearBalance::from_yoctonear(*allowance),
+                        crate::common::NearBalance::from_yoctonear(*cost)
                     )
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -1202,14 +1202,14 @@ pub fn handler_invalid_tx_error(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             format!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(balance.clone()),
-                crate::common::NearBalance::from_yoctonear(cost.clone())
+                crate::common::NearBalance::from_yoctonear(*balance),
+                crate::common::NearBalance::from_yoctonear(*cost)
             )
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             format!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(amount.clone())
+                crate::common::NearBalance::from_yoctonear(*amount)
             )
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
@@ -1767,12 +1767,12 @@ pub impl near_primitives::views::CallResult {
     where
         T: for<'de> serde::Deserialize<'de>,
     {
-        Ok(serde_json::from_slice(&self.result).wrap_err_with(|| {
+        serde_json::from_slice(&self.result).wrap_err_with(|| {
             format!(
                 "Failed to parse view-function call return value: {}",
                 String::from_utf8_lossy(&self.result)
             )
-        })?)
+        })
     }
 
     fn print_logs(&self) {

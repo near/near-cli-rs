@@ -29,7 +29,7 @@ impl SendNearCommandContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
-            signer_account_id: previous_context.owner_account_id.into(),
+            signer_account_id: previous_context.owner_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
             amount_in_near: scope.amount_in_near.clone(),
         })

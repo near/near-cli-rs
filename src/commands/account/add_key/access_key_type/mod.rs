@@ -155,13 +155,11 @@ impl interactive_clap::FromCli for FunctionCallType {
             receiver_account_id,
             method_names,
         };
-        let new_context = match FunctionCallTypeContext::from_previous_context(
-            context.clone(),
-            &new_context_scope,
-        ) {
-            Ok(new_context) => new_context,
-            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-        };
+        let new_context =
+            match FunctionCallTypeContext::from_previous_context(context, &new_context_scope) {
+                Ok(new_context) => new_context,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
         let output_context = AccessTypeContext::from(new_context);
 
         match super::AccessKeyMode::from_cli(clap_variant.access_key_mode.take(), output_context) {

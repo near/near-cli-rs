@@ -30,7 +30,7 @@ impl ViewFtBalanceContext {
             move |network_config, block_reference| {
                 let super::FtMetadata { decimals, symbol } = super::params_ft_metadata(
                     ft_contract_account_id.clone(),
-                    &network_config,
+                    network_config,
                     block_reference.clone(),
                 )?;
                 let args = json!({

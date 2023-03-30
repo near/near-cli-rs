@@ -21,7 +21,7 @@ impl TransactionInfoContext {
         previous_context: crate::GlobalContext,
         scope: &<TransactionInfo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let transaction_hash = scope.transaction_hash.clone();
+        let transaction_hash = scope.transaction_hash;
         let signer_account_id = scope.signer_account_id.clone();
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
@@ -34,7 +34,7 @@ impl TransactionInfoContext {
                             .json_rpc_client()
                             .call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
                                 transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
-                                    hash: transaction_hash.clone().into(),
+                                    hash: transaction_hash.into(),
                                     account_id: signer_account_id.clone().into()
                                 }
                             }))

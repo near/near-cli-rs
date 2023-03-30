@@ -158,7 +158,7 @@ impl interactive_clap::FromCli for SignPrivateKey {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let nonce = clap_variant.nonce.clone();
+        let nonce = clap_variant.nonce;
         if clap_variant.block_hash.is_none() {
             clap_variant.block_hash = match Self::input_block_hash(&context) {
                 Ok(optional_block_hash) => optional_block_hash,
@@ -171,11 +171,10 @@ impl interactive_clap::FromCli for SignPrivateKey {
             signer_public_key,
             signer_private_key,
             nonce,
-            block_hash: block_hash.clone(),
+            block_hash,
         };
         let output_context =
-            match SignPrivateKeyContext::from_previous_context(context.clone(), &new_context_scope)
-            {
+            match SignPrivateKeyContext::from_previous_context(context, &new_context_scope) {
                 Ok(new_context) => new_context,
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };

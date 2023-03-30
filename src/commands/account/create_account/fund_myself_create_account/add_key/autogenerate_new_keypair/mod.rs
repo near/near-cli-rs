@@ -83,7 +83,7 @@ impl SaveModeContext {
         previous_context: GenerateKeypairContext,
         scope: &<SaveMode as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let scope = scope.clone();
+        let scope = *scope;
 
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
             std::sync::Arc::new({
@@ -101,7 +101,7 @@ impl SaveModeContext {
                                 network_config.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
-                                &new_account_id.to_string(),
+                                new_account_id.as_ref(),
                             )?;
                         }
                         SaveModeDiscriminants::SaveToKeychain => {
@@ -112,7 +112,7 @@ impl SaveModeContext {
                                 credentials_home_dir.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
-                                &new_account_id.to_string(),
+                                new_account_id.as_ref(),
                             )?;
                         }
                         SaveModeDiscriminants::PrintToTerminal => {

@@ -46,7 +46,7 @@ impl From<AddAccessWithSeedPhraseActionContext> for crate::commands::ActionConte
             receiver_account_id: item.signer_account_id,
             actions: vec![near_primitives::transaction::Action::AddKey(
                 near_primitives::transaction::AddKeyAction {
-                    public_key: item.public_key.into(),
+                    public_key: item.public_key,
                     access_key: near_primitives::account::AccessKey {
                         nonce: 0,
                         permission: item.permission,

@@ -93,9 +93,8 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
         }
         let network_name = clap_variant.network_name.clone().expect("Unexpected error");
 
-        let new_context_scope = InteractiveClapContextScopeForNetworkForTransactionArgs {
-            network_name: network_name.clone(),
-        };
+        let new_context_scope =
+            InteractiveClapContextScopeForNetworkForTransactionArgs { network_name };
         let mut new_context = match NetworkForTransactionArgsContext::from_previous_context(
             context.clone(),
             &new_context_scope,
@@ -121,13 +120,13 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
 
         println!("\nUnsigned transaction:\n"); // XXX remove!
         crate::common::print_unsigned_transaction(
-            new_context.prepopulated_unsigned_transaction.clone().into(),
+            new_context.prepopulated_unsigned_transaction.clone(),
         );
         println!();
 
         match <crate::transaction_signature_options::SignWith as interactive_clap::FromCli>::from_cli(
                 clap_variant.transaction_signature_options.take(),
-                new_context.clone().into(),
+                new_context.into(),
             ) {
                 interactive_clap::ResultFromCli::Ok(cli_sign_with) | interactive_clap::ResultFromCli::Cancel(Some(cli_sign_with)) => {
                     clap_variant.transaction_signature_options = Some(cli_sign_with);

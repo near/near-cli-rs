@@ -19,7 +19,6 @@ impl SaveWithUseAutoGenerationContext {
         previous_context: crate::GlobalContext,
         _scope: &<SaveWithUseAutoGeneration as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let previous_context = previous_context.clone();
         let on_after_getting_folder_path_callback: super::OnAfterGettingFolderPathCallback =
             std::sync::Arc::new({
                 move |folder_path| {

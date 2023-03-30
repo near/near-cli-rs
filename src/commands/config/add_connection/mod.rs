@@ -160,7 +160,7 @@ impl interactive_clap::FromCli for AddNetworkConnection {
             faucet_url,
         };
         if let Err(err) =
-            AddNetworkConnectionContext::from_previous_context(context.clone(), &new_context_scope)
+            AddNetworkConnectionContext::from_previous_context(context, &new_context_scope)
         {
             return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
         };

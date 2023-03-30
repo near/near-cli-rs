@@ -44,7 +44,7 @@ impl SendNftCommandContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
-            signer_account_id: previous_context.owner_account_id.into(),
+            signer_account_id: previous_context.owner_account_id,
             nft_contract_account_id: scope.nft_contract_account_id.clone().into(),
             receiver_account_id: scope.receiver_account_id.clone().into(),
             token_id: scope.token_id.clone(),
@@ -59,7 +59,7 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
         let method_name = "nft_transfer".to_string();
         let args = json!({
             "receiver_id": item.receiver_account_id.to_string(),
-            "token_id": item.token_id.to_string()
+            "token_id": item.token_id
         })
         .to_string()
         .into_bytes();
@@ -87,8 +87,8 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                 near_primitives::transaction::FunctionCallAction {
                     method_name,
                     args,
-                    gas: item.gas.clone().inner,
-                    deposit: item.deposit.clone().to_yoctonear(),
+                    gas: item.gas.inner,
+                    deposit: item.deposit.to_yoctonear(),
                 },
             )],
             on_before_signing_callback: std::sync::Arc::new(
