@@ -2,6 +2,7 @@ use inquire::Text;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod use_auto_generation;
+#[cfg(feature = "ledger")]
 mod use_ledger;
 mod use_seed_phrase;
 

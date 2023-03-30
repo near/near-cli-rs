@@ -96,10 +96,7 @@ impl From<FunctionCallTypeContext> for AccessTypeContext {
             signer_account_id: item.signer_account_id,
             permission: near_primitives::account::AccessKeyPermission::FunctionCall(
                 near_primitives::account::FunctionCallPermission {
-                    allowance: item
-                        .allowance
-                        // .clone()
-                        .map(|allowance| allowance.to_yoctonear()),
+                    allowance: item.allowance.map(|allowance| allowance.to_yoctonear()),
                     receiver_id: item.receiver_account_id.to_string(),
                     method_names: item.method_names.into(),
                 },

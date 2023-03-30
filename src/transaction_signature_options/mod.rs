@@ -50,11 +50,6 @@ pub enum SignWith {
     SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
 }
 
-// from_cli ...
-//         println!("\nUnsigned transaction:\n");
-//         crate::common::print_unsigned_transaction(new_context.transaction.clone().into());
-//         println!();
-
 //-----------------------------------------------------------------------------------
 //---- these functions are used for offline mode ----
 // pub fn input_access_key_nonce(public_key: &str) -> color_eyre::eyre::Result<u64> {

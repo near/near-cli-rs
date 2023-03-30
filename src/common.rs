@@ -807,7 +807,7 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
     }
 }
 
-pub fn print_unsigned_transaction(transaction: near_primitives::transaction::Transaction) {
+pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Transaction) {
     println!("{:<13} {}", "signer_id:", &transaction.signer_id);
     println!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
     println!("actions:");

@@ -118,10 +118,8 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
             return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
         }
 
-        println!("\nUnsigned transaction:\n"); // XXX remove!
-        crate::common::print_unsigned_transaction(
-            new_context.prepopulated_unsigned_transaction.clone(),
-        );
+        println!("\nUnsigned transaction:\n");
+        crate::common::print_unsigned_transaction(&new_context.prepopulated_unsigned_transaction);
         println!();
 
         match <crate::transaction_signature_options::SignWith as interactive_clap::FromCli>::from_cli(
