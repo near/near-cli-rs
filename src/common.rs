@@ -1285,12 +1285,24 @@ pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {
             write_config_toml(crate::config::Config::default())?;
         };
         let config_toml = std::fs::read_to_string(path_config_toml)?;
-        Ok(toml::from_str(&config_toml)?)
+        let toml_result = toml::from_str(&config_toml);
+        match toml_result {
+            Ok(_) => Ok(toml_result?),
+            Err(err) => {
+                let mut path_config_toml =
+                    dirs::config_dir().expect("Impossible to get your config dir!");
+                path_config_toml.push("near-cli/config.toml");
+                println!("WARNING! An error occurred while parsing the configuration file at {path_config_toml:?}:\nError: {err}");
+                println!("The default configuration printed below will be used instead:\n");
+                let config_toml_default = toml::to_string(&crate::config::Config::default())?;
+                println!("{config_toml_default}");
+                Ok(crate::config::Config::default())
+            }
+        }
     } else {
         Ok(crate::config::Config::default())
     }
 }
-
 pub fn write_config_toml(config: crate::config::Config) -> CliResult {
     let config_toml = toml::to_string(&config)?;
     let mut path_config_toml = dirs::config_dir().expect("Impossible to get your config dir!");
