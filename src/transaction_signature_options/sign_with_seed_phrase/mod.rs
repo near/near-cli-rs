@@ -1,8 +1,13 @@
 use std::str::FromStr;
 
+use color_eyre::eyre::WrapErr;
+
+use crate::common::JsonRpcClientExt;
+use crate::common::RpcQueryResponseExt;
+
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(input_context = crate::commands::TransactionContext)]
+#[interactive_clap(output_context = SignSeedPhraseContext)]
 pub struct SignSeedPhrase {
     /// Enter the seed-phrase for this account
     master_seed_phrase: String,
@@ -10,77 +15,104 @@ pub struct SignSeedPhrase {
     #[interactive_clap(skip_default_input_arg)]
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     #[interactive_clap(subcommand)]
-    submit: Option<super::Submit>,
+    submit: super::Submit,
 }
 
-impl interactive_clap::FromCli for SignSeedPhrase {
-    type FromCliContext = crate::GlobalContext;
-    type FromCliError = color_eyre::eyre::Error;
+#[derive(Clone)]
+pub struct SignSeedPhraseContext {
+    network_config: crate::config::NetworkConfig,
+    signed_transaction: near_primitives::transaction::SignedTransaction,
+    on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
+    on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+}
 
-    fn from_cli(
-        optional_clap_variant: Option<<SignSeedPhrase as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let master_seed_phrase: String = match optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.master_seed_phrase.as_ref())
-        {
-            Some(master_seed_phrase) => master_seed_phrase.clone(),
-            None => Self::input_master_seed_phrase(&context)?,
+impl SignSeedPhraseContext {
+    pub fn from_previous_context(
+        previous_context: crate::commands::TransactionContext,
+        scope: &<SignSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let network_config = previous_context.network_config.clone();
+
+        let key_pair_properties = crate::common::get_key_pair_properties_from_seed_phrase(
+            scope.seed_phrase_hd_path.clone(),
+            scope.master_seed_phrase.clone(),
+        )?;
+
+        let signer_secret_key: near_crypto::SecretKey =
+            near_crypto::SecretKey::from_str(&key_pair_properties.secret_keypair_str)?;
+        let signer_public_key =
+            near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
+
+        let rpc_query_response = network_config
+            .json_rpc_client()
+            .blocking_call_view_access_key(
+                &previous_context.transaction.signer_id,
+                &signer_public_key,
+                near_primitives::types::Finality::Final.into(),
+            )
+            .map_err(|err| {
+                println!("\nYour transaction was not successfully signed.\n");
+                color_eyre::Report::msg(format!(
+                    "Failed to fetch public key information for nonce: {:?}",
+                    err
+                ))
+            })?;
+        let current_nonce = rpc_query_response
+            .access_key_view()
+            .wrap_err("Error current_nonce")?
+            .nonce;
+
+        let mut unsigned_transaction = near_primitives::transaction::Transaction {
+            public_key: signer_public_key.clone(),
+            block_hash: rpc_query_response.block_hash,
+            nonce: current_nonce + 1,
+            ..previous_context.transaction.clone()
         };
-        let seed_phrase_hd_path: crate::types::slip10::BIP32Path = match optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.seed_phrase_hd_path.as_ref())
-        {
-            Some(seed_phrase_hd_path) => seed_phrase_hd_path.clone(),
-            None => Self::input_seed_phrase_hd_path(&context)?,
-        };
-        let submit: Option<super::Submit> =
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
-        Ok(Some(Self {
-            master_seed_phrase,
-            seed_phrase_hd_path,
-            submit,
-        }))
+
+        (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
+
+        let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+            signature.clone(),
+            unsigned_transaction,
+        );
+
+        println!("\nYour transaction was signed successfully.");
+        println!("Public key: {}", signer_public_key);
+        println!("Signature: {}", signature);
+
+        Ok(Self {
+            network_config: previous_context.network_config,
+            signed_transaction,
+            on_before_sending_transaction_callback: previous_context
+                .on_before_sending_transaction_callback,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
+        })
+    }
+}
+
+impl From<SignSeedPhraseContext> for super::SubmitContext {
+    fn from(item: SignSeedPhraseContext) -> Self {
+        Self {
+            network_config: item.network_config,
+            signed_transaction: item.signed_transaction,
+            on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
+            on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+        }
     }
 }
 
 impl SignSeedPhrase {
     fn input_seed_phrase_hd_path(
-        _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<crate::types::slip10::BIP32Path> {
-        Ok(
+        _context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
+        Ok(Some(
             inquire::CustomType::new("Enter seed phrase HD Path [if not sure, keep the default]")
                 .with_default(crate::types::slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap())
                 .prompt()?,
-        )
-    }
-
-    pub async fn process(
-        &self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_config: crate::config::NetworkConfig,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        let key_pair_properties = crate::common::get_key_pair_properties_from_seed_phrase(
-            self.seed_phrase_hd_path.clone(),
-            self.master_seed_phrase.clone(),
-        )?;
-        let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
-            signer_public_key: crate::types::public_key::PublicKey::from_str(
-                &key_pair_properties.public_key_str,
-            )?,
-            signer_private_key: crate::types::secret_key::SecretKey::from_str(
-                &key_pair_properties.secret_keypair_str,
-            )?,
-            nonce: None,
-            block_hash: None,
-            submit: self.submit.clone(),
-        };
-        sign_with_private_key
-            .process(prepopulated_unsigned_transaction, network_config)
-            .await
+        ))
     }
 }

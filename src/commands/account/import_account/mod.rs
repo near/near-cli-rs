@@ -1,6 +1,8 @@
-use inquire::{CustomType, Select};
+#![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use std::{str::FromStr, vec};
 
+use color_eyre::eyre::Context;
+use inquire::{CustomType, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod using_private_key;
@@ -14,12 +16,6 @@ pub struct ImportAccountCommand {
     import_account_actions: ImportAccountActions,
 }
 
-impl ImportAccountCommand {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        self.import_account_actions.process(config).await
-    }
-}
-
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -29,30 +25,20 @@ pub enum ImportAccountActions {
         message = "using-web-wallet          - Import existing account using NEAR Wallet (a.k.a. \"sign in\")"
     ))]
     /// Import existing account using NEAR Wallet (a.k.a. "sign in")
-    UsingWebWallet(self::using_web_wallet::LoginFromWebWallet),
+    WebWallet(self::using_web_wallet::LoginFromWebWallet),
     #[strum_discriminants(strum(
         message = "using-seed-phrase         - Import existing account using a seed phrase"
     ))]
     /// Import existing account using a seed phrase
-    UsingSeedPhrase(self::using_seed_phrase::LoginFromSeedPhrase),
+    SeedPhrase(self::using_seed_phrase::LoginFromSeedPhrase),
     #[strum_discriminants(strum(
         message = "using-private-key         - Import existing account using a private key"
     ))]
     /// Import existing account using a private key
-    UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
+    PrivateKey(self::using_private_key::LoginFromPrivateKey),
 }
 
-impl ImportAccountActions {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        match self {
-            Self::UsingWebWallet(login) => login.process(config).await,
-            Self::UsingSeedPhrase(login) => login.process(config).await,
-            Self::UsingPrivateKey(login) => login.process(config).await,
-        }
-    }
-}
-
-pub async fn login(
+pub fn login(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties_buf: &str,
@@ -69,7 +55,6 @@ pub async fn login(
             public_key.clone(),
             network_config.clone(),
         )
-        .await
         .is_err()
         {
             println!("{}", error_message);
@@ -140,11 +125,11 @@ fn save_access_key(
                 public_key_str,
                 &account_id,
             )
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to save the access key to the keychain: {}",
-                    err
-                ))
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to save the access key <{}> to the keychain",
+                    public_key_str
+                )
             })?;
             println!("{}", storage_message);
             return Ok(());
@@ -157,9 +142,7 @@ fn save_access_key(
         public_key_str,
         &account_id,
     )
-    .map_err(|err| {
-        color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
-    })?;
+    .wrap_err_with(|| format!("Failed to save a file with access key: {}", public_key_str))?;
     println!("{}", storage_message);
     Ok(())
 }

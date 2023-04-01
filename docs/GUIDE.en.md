@@ -311,7 +311,7 @@ In order to create an account, in the terminal command line type:
     autogenerate-new-keypair \
     save-to-keychain \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -342,7 +342,7 @@ In order to execute this command, in the terminal command line type:
     create-account sponsor-by-faucet-service test_fro1.testnet \
     use-manually-provided-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -368,9 +368,9 @@ In order to execute this command, in the terminal command line type:
 ```txt
 ./near-cli account \
     create-account sponsor-by-faucet-service test_fro2.testnet \
-    use-manually-provided-public-key ed25519:5qHMs34xnfkfWwnEk62qP7ykbcv8osbx3gvE4Cto4t3g \
+    use-manually-provided-public-key ed25519:HVPgAsZkZ7cwLZDqK313XJsDyqAvgBxrATcD7VacA8KE \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -398,7 +398,7 @@ In order to execute this command, in the terminal command line type:
     create-account sponsor-by-faucet-service test_fro3.testnet \
     use-ledger \
     network-config testnet \
-    send
+    create
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -1149,9 +1149,10 @@ In order to add a new contract, in the terminal command line type:
     deploy \
     262.volodymyr.testnet \
     use-file /Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm \
-    with-init-call increment {} \
-        --prepaid-gas '1 TGas' \
-        --attached-deposit '0 NEAR' \
+    with-init-call increment \
+    json-args {} \
+    prepaid-gas '1 TGas' \
+    attached-deposit '0 NEAR' \
     network-config testnet \
     sign-with-keychain \
     send

@@ -1,6 +1,7 @@
+#![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod account;
+pub mod account;
 mod config;
 mod contract;
 mod tokens;
@@ -42,16 +43,41 @@ pub enum TopLevelCommand {
     Extensions(self::extensions::ExtensionsCommands),
 }
 
-impl TopLevelCommand {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        match self {
-            Self::Tokens(tokens_commands) => tokens_commands.process(config).await,
-            Self::Account(account_commands) => account_commands.process(config).await,
-            Self::Contract(contract_commands) => contract_commands.process(config).await,
-            Self::Transaction(transaction_commands) => transaction_commands.process(config).await,
-            Self::Config(config_commands) => config_commands.process(config).await,
-            #[cfg(feature = "self-update")]
-            Self::Extensions(extensions_commands) => extensions_commands.process().await,
-        }
-    }
+pub type OnBeforeSigningCallback = std::sync::Arc<
+    dyn Fn(
+        &mut near_primitives::transaction::Transaction,
+        &crate::config::NetworkConfig,
+    ) -> crate::CliResult,
+>;
+pub type OnAfterGettingNetworkCallback = std::sync::Arc<
+    dyn Fn(
+        &mut near_primitives::transaction::Transaction,
+        &crate::config::NetworkConfig,
+    ) -> crate::CliResult,
+>;
+
+#[derive(Clone)]
+pub struct ActionContext {
+    pub config: crate::config::Config,
+    pub signer_account_id: near_primitives::types::AccountId,
+    pub receiver_account_id: near_primitives::types::AccountId,
+    pub actions: Vec<near_primitives::transaction::Action>,
+    pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
+    pub on_before_signing_callback: OnBeforeSigningCallback,
+    pub on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
+    pub on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+}
+
+#[derive(Clone)]
+pub struct TransactionContext {
+    pub config: crate::config::Config,
+    pub network_config: crate::config::NetworkConfig,
+    pub transaction: near_primitives::transaction::Transaction,
+    pub on_before_signing_callback: OnBeforeSigningCallback,
+    pub on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
+    pub on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }

@@ -1,6 +1,6 @@
-use inquire::{CustomType, Select};
+use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
@@ -12,7 +12,7 @@ pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = crate::commands::TransactionContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Select a tool for signing the transaction
 pub enum SignWith {
@@ -50,73 +50,6 @@ pub enum SignWith {
     SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
 }
 
-pub fn input_signer_public_key() -> color_eyre::eyre::Result<crate::types::public_key::PublicKey> {
-    Ok(CustomType::new("Enter sender (signer) public key").prompt()?)
-}
-
-pub fn input_signer_private_key() -> color_eyre::eyre::Result<crate::types::secret_key::SecretKey> {
-    Ok(CustomType::new("Enter sender (signer) private (secret) key").prompt()?)
-}
-
-pub async fn sign_with(
-    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
-    prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    config: crate::config::Config,
-) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-    match network_config.get_sign_option() {
-        #[cfg(target_os = "macos")]
-        SignWith::SignWithMacosKeychain(sign_macos_keychain) => {
-            sign_macos_keychain
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config),
-                )
-                .await
-        }
-        SignWith::SignWithKeychain(sign_keychain) => {
-            sign_keychain
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config.clone()),
-                    config.credentials_home_dir,
-                )
-                .await
-        }
-        #[cfg(feature = "ledger")]
-        SignWith::SignWithLedger(sign_ledger) => {
-            sign_ledger
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config),
-                )
-                .await
-        }
-        SignWith::SignWithPlaintextPrivateKey(sign_private_key) => {
-            sign_private_key
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config),
-                )
-                .await
-        }
-        SignWith::SignWithAccessKeyFile(sign_access_key_file) => {
-            sign_access_key_file
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config),
-                )
-                .await
-        }
-        SignWith::SignWithSeedPhrase(sign_seed_phrase) => {
-            sign_seed_phrase
-                .process(
-                    prepopulated_unsigned_transaction,
-                    network_config.get_network_config(config),
-                )
-                .await
-        }
-    }
-}
 //-----------------------------------------------------------------------------------
 //---- these functions are used for offline mode ----
 // pub fn input_access_key_nonce(public_key: &str) -> color_eyre::eyre::Result<u64> {
@@ -145,8 +78,11 @@ pub async fn sign_with(
 // }
 //-----------------------------------------------------------------------------------
 
-#[derive(Debug, EnumDiscriminants, Clone, clap::Parser, interactive_clap::ToCliArgs)]
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = SubmitContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[interactive_clap(skip_default_from_cli)]
+/// How would you like to proceed
 pub enum Submit {
     #[strum_discriminants(strum(message = "send      - Send the transaction to the network"))]
     Send,
@@ -156,62 +92,124 @@ pub enum Submit {
     Display,
 }
 
-impl interactive_clap::ToCli for Submit {
-    type CliVariant = Submit;
-}
+impl interactive_clap::FromCli for Submit {
+    type FromCliContext = SubmitContext;
+    type FromCliError = color_eyre::eyre::Error;
+    fn from_cli(
+        mut optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        let mut storage_message = String::new();
 
-impl std::fmt::Display for SubmitDiscriminants {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Send => write!(f, "send"),
-            Self::Display => write!(f, "display"),
+        if optional_clap_variant.is_none() {
+            match Self::choose_variant(context.clone()) {
+                interactive_clap::ResultFromCli::Ok(cli_submit) => {
+                    optional_clap_variant = Some(cli_submit)
+                }
+                result => return result,
+            }
         }
-    }
-}
 
-impl Submit {
-    pub fn choose_submit() -> Self {
-        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
-        let select_submit = Select::new("How would you like to proceed", variants)
-            .prompt()
-            .unwrap_or(SubmitDiscriminants::Display);
-        match select_submit {
-            SubmitDiscriminants::Send => Submit::Send,
-            SubmitDiscriminants::Display => Submit::Display,
-        }
-    }
+        match optional_clap_variant {
+            Some(CliSubmit::Send) => {
+                match (context.on_before_sending_transaction_callback)(
+                    &context.signed_transaction,
+                    &context.network_config,
+                    &mut storage_message,
+                ) {
+                    Ok(_) => (),
+                    Err(report) => {
+                        return interactive_clap::ResultFromCli::Err(
+                            optional_clap_variant,
+                            color_eyre::Report::msg(report),
+                        )
+                    }
+                };
 
-    pub async fn process(
-        &self,
-        network_config: crate::config::NetworkConfig,
-        signed_transaction: near_primitives::transaction::SignedTransaction,
-        serialize_to_base64: String,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        match self {
-            Submit::Send => {
                 println!("Transaction sent ...");
                 let transaction_info = loop {
-                    let transaction_info_result = network_config.json_rpc_client()
-                        .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction: signed_transaction.clone()})
-                        .await;
+                    let transaction_info_result = tokio::runtime::Runtime::new()
+                            .unwrap()
+                            .block_on(context.network_config.json_rpc_client()
+                                .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction: context.signed_transaction.clone()})
+                                )
+                            ;
                     match transaction_info_result {
                         Ok(response) => {
                             break response;
                         }
                         Err(err) => match crate::common::rpc_transaction_error(err) {
-                            Ok(_) => {
-                                tokio::time::sleep(std::time::Duration::from_millis(100)).await
+                            Ok(_) => tokio::runtime::Runtime::new().unwrap().block_on(
+                                tokio::time::sleep(std::time::Duration::from_millis(100)),
+                            ),
+                            Err(report) => {
+                                return interactive_clap::ResultFromCli::Err(
+                                    optional_clap_variant,
+                                    color_eyre::Report::msg(report),
+                                )
                             }
-                            Err(report) => return color_eyre::eyre::Result::Err(report),
                         },
                     };
                 };
-                Ok(Some(transaction_info))
+                match crate::common::print_transaction_status(
+                    &transaction_info,
+                    &context.network_config,
+                ) {
+                    Ok(_) => (),
+                    Err(report) => {
+                        return interactive_clap::ResultFromCli::Err(
+                            optional_clap_variant,
+                            color_eyre::Report::msg(report),
+                        )
+                    }
+                };
+                match (context.on_after_sending_transaction_callback)(
+                    &transaction_info,
+                    &context.network_config,
+                ) {
+                    Ok(_) => (),
+                    Err(report) => {
+                        return interactive_clap::ResultFromCli::Err(
+                            optional_clap_variant,
+                            color_eyre::Report::msg(report),
+                        )
+                    }
+                };
+                println!("{storage_message}");
+                interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
             }
-            Submit::Display => {
-                println!("\nSerialize_to_base64:\n{}", &serialize_to_base64);
-                Ok(None)
+            Some(CliSubmit::Display) => {
+                match (context.on_before_sending_transaction_callback)(
+                    &context.signed_transaction,
+                    &context.network_config,
+                    &mut storage_message,
+                ) {
+                    Ok(_) => (),
+                    Err(report) => {
+                        return interactive_clap::ResultFromCli::Err(
+                            optional_clap_variant,
+                            color_eyre::Report::msg(report),
+                        )
+                    }
+                };
+                let base64_transaction = near_primitives::serialize::to_base64(
+                    context
+                        .signed_transaction
+                        .try_to_vec()
+                        .expect("Transaction is not expected to fail on serialization"),
+                );
+                println!("\nSerialize_to_base64:\n{}", &base64_transaction);
+
+                println!("{storage_message}");
+                interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
             }
+            None => unreachable!("Unexpected error"),
         }
     }
 }
@@ -220,4 +218,27 @@ impl Submit {
 pub struct AccountKeyPair {
     pub public_key: near_crypto::PublicKey,
     pub private_key: near_crypto::SecretKey,
+}
+
+pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
+    dyn Fn(
+        &near_primitives::transaction::SignedTransaction,
+        &crate::config::NetworkConfig,
+        &mut String,
+    ) -> crate::CliResult,
+>;
+
+pub type OnAfterSendingTransactionCallback = std::sync::Arc<
+    dyn Fn(
+        &near_primitives::views::FinalExecutionOutcomeView,
+        &crate::config::NetworkConfig,
+    ) -> crate::CliResult,
+>;
+
+#[derive(Clone)]
+pub struct SubmitContext {
+    pub network_config: crate::config::NetworkConfig,
+    pub signed_transaction: near_primitives::transaction::SignedTransaction,
+    pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
+    pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
 }

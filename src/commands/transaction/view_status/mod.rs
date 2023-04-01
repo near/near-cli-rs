@@ -1,34 +1,58 @@
-use std::str::FromStr;
+use color_eyre::eyre::Context;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = TransactionInfoContext)]
 pub struct TransactionInfo {
-    ///Enter the hash of the transaction you need to view
-    transaction_hash: String,
-    ///What is the signer account ID?
+    /// Enter the hash of the transaction you need to view
+    transaction_hash: crate::types::crypto_hash::CryptoHash,
+    /// What is the signer account ID?
     signer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    ///Select network
+    /// Select network
     network_config: crate::network::Network,
 }
 
-impl TransactionInfo {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let query_view_transaction_status = self.network_config.get_network_config(config).json_rpc_client()
-            .call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
-                transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
-                    hash: near_primitives::hash::CryptoHash::from_str(&self.transaction_hash).unwrap(),
-                    account_id: self.signer_account_id.clone().into()
+#[derive(Clone)]
+pub struct TransactionInfoContext(crate::network::NetworkContext);
+
+impl TransactionInfoContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<TransactionInfo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let transaction_hash = scope.transaction_hash;
+        let signer_account_id = scope.signer_account_id.clone();
+
+        let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new({
+                move |network_config| {
+                    let query_view_transaction_status = tokio::runtime::Runtime::new()
+                        .unwrap()
+                        .block_on(
+                            network_config
+                            .json_rpc_client()
+                            .call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
+                                transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
+                                    hash: transaction_hash.into(),
+                                    account_id: signer_account_id.clone().into()
+                                }
+                            }))
+                            .wrap_err("Failed to fetch query for view transaction")?;
+                    println!("Transaction status: {:#?}", query_view_transaction_status);
+                    Ok(())
                 }
-            })
-            .await
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to fetch query for view transaction: {:?}",
-                    err
-                ))
-            })?;
-        println!("Transaction status: {:#?}", query_view_transaction_status);
-        Ok(())
+            });
+
+        Ok(Self(crate::network::NetworkContext {
+            config: previous_context.0,
+            on_after_getting_network_callback,
+        }))
+    }
+}
+
+impl From<TransactionInfoContext> for crate::network::NetworkContext {
+    fn from(item: TransactionInfoContext) -> Self {
+        item.0
     }
 }

@@ -1,93 +1,70 @@
 extern crate dirs;
 
+use color_eyre::eyre::WrapErr;
+
+use crate::common::JsonRpcClientExt;
+use crate::common::RpcQueryResponseExt;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = crate::commands::TransactionContext)]
+#[interactive_clap(output_context = SignMacosKeychainContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignKeychain {
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     nonce: Option<u64>,
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     block_hash: Option<String>,
     #[interactive_clap(subcommand)]
-    submit: Option<super::Submit>,
+    submit: super::Submit,
 }
 
-impl interactive_clap::FromCli for SignKeychain {
-    type FromCliContext = crate::GlobalContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        optional_clap_variant: Option<<SignKeychain as interactive_clap::ToCli>::CliVariant>,
-        _context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let nonce: Option<u64> = optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.nonce);
-        let block_hash: Option<String> = optional_clap_variant
-            .as_ref()
-            .and_then(|clap_variant| clap_variant.block_hash.clone());
-        let submit: Option<super::Submit> =
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
-        Ok(Some(Self {
-            nonce,
-            block_hash,
-            submit,
-        }))
-    }
+#[derive(Clone)]
+pub struct SignKeychainContext {
+    network_config: crate::config::NetworkConfig,
+    signed_transaction: near_primitives::transaction::SignedTransaction,
+    on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
+    on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }
 
-impl SignKeychain {
-    pub async fn process(
-        &self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_config: crate::config::NetworkConfig,
-        credentials_home_dir: std::path::PathBuf,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        let file_name = format!("{}.json", prepopulated_unsigned_transaction.signer_id);
-        let mut path = std::path::PathBuf::from(&credentials_home_dir);
+impl SignKeychainContext {
+    pub fn from_previous_context(
+        previous_context: crate::commands::TransactionContext,
+        _scope: &<SignKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let network_config = previous_context.network_config.clone();
+
+        let file_name = format!("{}.json", &previous_context.transaction.signer_id);
+        let mut path = std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
 
         let data_path: std::path::PathBuf = {
-            let dir_name = network_config.network_name.as_str();
-            path.push(dir_name);
+            let dir_name = network_config.network_name.clone();
+            path.push(&dir_name);
             path.push(file_name);
 
             if path.exists() {
                 path
             } else {
-                let query_view_method_response = network_config
+                let access_key_list = network_config
                     .json_rpc_client()
-                    .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                        block_reference: near_primitives::types::Finality::Final.into(),
-                        request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                            account_id: prepopulated_unsigned_transaction.signer_id.clone(),
-                        },
-                    })
-                    .await
-                    .map_err(|err| {
-                        color_eyre::Report::msg(format!(
-                            "Failed to fetch query for view key list: {:?}",
-                            err
-                        ))
-                    })?;
-                let access_key_list =
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
-                        result,
-                    ) = query_view_method_response.kind
-                    {
-                        result
-                    } else {
-                        return Err(color_eyre::Report::msg("Error call result".to_string()));
-                    };
-                let mut path = std::path::PathBuf::from(&credentials_home_dir);
+                    .blocking_call_view_access_key_list(
+                        &previous_context.transaction.signer_id,
+                        near_primitives::types::Finality::Final.into(),
+                    )
+                    .wrap_err_with(|| {
+                        format!(
+                            "Failed to fetch access KeyList for {}",
+                            previous_context.transaction.signer_id
+                        )
+                    })?
+                    .access_key_list_view()?;
+                let mut path =
+                    std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
                 path.push(dir_name);
-                path.push(&prepopulated_unsigned_transaction.signer_id.to_string());
+                path.push(&previous_context.transaction.signer_id.to_string());
                 let mut data_path = std::path::PathBuf::new();
                 'outer: for access_key in access_key_list.keys {
                     let account_public_key = access_key.public_key.to_string();
@@ -100,10 +77,8 @@ impl SignKeychain {
                         } => false,
                     };
                     let dir = path
-                            .read_dir()
-                            .map_err(|err| {
-                                color_eyre::Report::msg(format!("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain. {}", err))
-                            })?;
+                        .read_dir()
+                        .wrap_err("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.")?;
                     for entry in dir {
                         if let Ok(entry) = entry {
                             if entry
@@ -120,27 +95,144 @@ impl SignKeychain {
                             }
                         } else {
                             return Err(color_eyre::Report::msg(
-                                    "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.".to_string()));
+                        "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.".to_string()));
                         };
                     }
                 }
                 data_path
             }
         };
-        let data = std::fs::read_to_string(data_path).map_err(|err| {
-            color_eyre::Report::msg(format!("Access key file not found! Error: {}", err))
-        })?;
+        let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
-            .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
-        let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
-            signer_public_key: crate::types::public_key::PublicKey(account_json.public_key),
-            signer_private_key: crate::types::secret_key::SecretKey(account_json.private_key),
-            nonce: self.nonce,
-            block_hash: self.block_hash.clone(),
-            submit: self.submit.clone(),
+            .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
+
+        let rpc_query_response = network_config
+            .json_rpc_client()
+            .blocking_call_view_access_key(
+                &previous_context.transaction.signer_id,
+                &account_json.public_key,
+                near_primitives::types::Finality::Final.into(),
+            )
+            .map_err(|err| {
+                println!("\nYour transaction was not successfully signed.\n");
+                color_eyre::Report::msg(format!(
+                    "Failed to fetch public key information for nonce: {:?}",
+                    err
+                ))
+            })?;
+        let current_nonce = rpc_query_response
+            .access_key_view()
+            .wrap_err("Error current_nonce")?
+            .nonce;
+
+        let mut unsigned_transaction = near_primitives::transaction::Transaction {
+            public_key: account_json.public_key.clone(),
+            block_hash: rpc_query_response.block_hash,
+            nonce: current_nonce + 1,
+            ..previous_context.transaction.clone()
         };
-        sign_with_private_key
-            .process(prepopulated_unsigned_transaction, network_config)
-            .await
+
+        (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
+
+        let signature = account_json
+            .private_key
+            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+            signature.clone(),
+            unsigned_transaction,
+        );
+
+        println!("\nYour transaction was signed successfully.");
+        println!("Public key: {}", account_json.public_key);
+        println!("Signature: {}", signature);
+
+        Ok(Self {
+            network_config: previous_context.network_config,
+            signed_transaction,
+            on_before_sending_transaction_callback: previous_context
+                .on_before_sending_transaction_callback,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
+        })
+    }
+}
+
+impl From<SignKeychainContext> for super::SubmitContext {
+    fn from(item: SignKeychainContext) -> Self {
+        Self {
+            network_config: item.network_config,
+            signed_transaction: item.signed_transaction,
+            on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
+            on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+        }
+    }
+}
+
+impl interactive_clap::FromCli for SignKeychain {
+    type FromCliContext = crate::commands::TransactionContext;
+    type FromCliError = color_eyre::eyre::Error;
+    fn from_cli(
+        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+
+        if clap_variant.nonce.is_none() {
+            clap_variant.nonce = match Self::input_nonce(&context) {
+                Ok(optional_nonce) => optional_nonce,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let nonce = clap_variant.nonce;
+        if clap_variant.block_hash.is_none() {
+            clap_variant.block_hash = match Self::input_block_hash(&context) {
+                Ok(optional_block_hash) => optional_block_hash,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let block_hash = clap_variant.block_hash.clone();
+
+        let new_context_scope = InteractiveClapContextScopeForSignKeychain { nonce, block_hash };
+        let output_context =
+            match SignKeychainContext::from_previous_context(context, &new_context_scope) {
+                Ok(new_context) => new_context,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+
+        match super::Submit::from_cli(clap_variant.submit.take(), output_context.into()) {
+            interactive_clap::ResultFromCli::Ok(cli_submit) => {
+                clap_variant.submit = Some(cli_submit);
+                interactive_clap::ResultFromCli::Ok(clap_variant)
+            }
+            interactive_clap::ResultFromCli::Cancel(optional_cli_submit) => {
+                clap_variant.submit = optional_cli_submit;
+                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
+            }
+            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
+            interactive_clap::ResultFromCli::Err(optional_cli_submit, err) => {
+                clap_variant.submit = optional_cli_submit;
+                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+            }
+        }
+    }
+}
+
+impl SignKeychain {
+    pub fn input_nonce(
+        _context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<u64>> {
+        Ok(None)
+    }
+
+    pub fn input_block_hash(
+        _context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        Ok(None)
     }
 }

@@ -1,7 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod add_key;
-mod create_account;
+pub mod create_account;
 mod delete_account;
 mod delete_key;
 mod import_account;
@@ -15,12 +15,6 @@ pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
 pub struct AccountCommands {
     #[interactive_clap(subcommand)]
     account_actions: AccountActions,
-}
-
-impl AccountCommands {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        self.account_actions.process(config).await
-    }
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
@@ -59,22 +53,4 @@ pub enum AccountActions {
     ))]
     /// Delete an access key from an account
     DeleteKey(self::delete_key::DeleteKeyCommand),
-}
-
-impl AccountActions {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        match self {
-            Self::ViewAccountSummary(view_account_command) => {
-                view_account_command.process(config).await
-            }
-            Self::ListKeys(view_list_keys) => view_list_keys.process(config).await,
-            Self::DeleteAccount(delete_account) => delete_account.process(config).await,
-            Self::CreateAccount(account) => account.process(config).await,
-            Self::AddKey(add_key_command) => add_key_command.process(config).await,
-            Self::DeleteKey(delete_key_command) => delete_key_command.process(config).await,
-            Self::ImportAccount(import_account_command) => {
-                import_account_command.process(config).await
-            }
-        }
-    }
 }

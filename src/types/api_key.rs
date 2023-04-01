@@ -9,7 +9,7 @@ impl From<ApiKey> for near_jsonrpc_client::auth::ApiKey {
 
 impl std::fmt::Display for ApiKey {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        self.0.fmt(f)
+        write!(f, "{}", self.0.as_str())
     }
 }
 

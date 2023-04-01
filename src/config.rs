@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub credentials_home_dir: std::path::PathBuf,
-    pub networks: linked_hash_map::LinkedHashMap<String, NetworkConfig>,
+    pub network_connection: linked_hash_map::LinkedHashMap<String, NetworkConfig>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -22,14 +22,14 @@ impl Default for Config {
         let mut credentials_home_dir = std::path::PathBuf::from(&home_dir);
         credentials_home_dir.push(".near-credentials");
 
-        let mut networks = linked_hash_map::LinkedHashMap::new();
-        networks.insert(
+        let mut network_connection = linked_hash_map::LinkedHashMap::new();
+        network_connection.insert(
             "mainnet".to_string(),
             NetworkConfig {
                 network_name: "mainnet".to_string(),
                 rpc_url: "https://archival-rpc.mainnet.near.org".parse().unwrap(),
-                wallet_url: "https://wallet.mainnet.near.org".parse().unwrap(),
-                explorer_transaction_url: "https://explorer.mainnet.near.org/transactions/"
+                wallet_url: "https://wallet.near.org".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.near.org/transactions/"
                     .parse()
                     .unwrap(),
                 rpc_api_key: None,
@@ -37,7 +37,7 @@ impl Default for Config {
                 faucet_url: None,
             },
         );
-        networks.insert(
+        network_connection.insert(
             "testnet".to_string(),
             NetworkConfig {
                 network_name: "testnet".to_string(),
@@ -51,23 +51,9 @@ impl Default for Config {
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
             },
         );
-        networks.insert(
-            "shardnet".to_string(),
-            NetworkConfig {
-                network_name: "shardnet".to_string(),
-                rpc_url: "https://rpc.shardnet.near.org".parse().unwrap(),
-                wallet_url: "https://wallet.shardnet.near.org".parse().unwrap(),
-                explorer_transaction_url: "https://explorer.shardnet.near.org/transactions/"
-                    .parse()
-                    .unwrap(),
-                rpc_api_key: None,
-                linkdrop_account_id: Some("shardnet".parse().unwrap()),
-                faucet_url: None,
-            },
-        );
         Self {
             credentials_home_dir,
-            networks,
+            network_connection,
         }
     }
 }

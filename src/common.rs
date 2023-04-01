@@ -2,6 +2,7 @@ use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 use std::str::FromStr;
 
+use color_eyre::eyre::WrapErr;
 use prettytable::Table;
 
 use near_primitives::{
@@ -374,13 +375,13 @@ impl AccountTransferAllowance {
     }
 }
 
-pub async fn get_account_transfer_allowance(
+pub fn get_account_transfer_allowance(
     network_config: crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
     let account_view = if let Ok(account_view) =
-        get_account_state(network_config.clone(), account_id.clone(), block_reference).await
+        get_account_state(network_config.clone(), account_id.clone(), block_reference)
     {
         account_view
     } else {
@@ -392,17 +393,16 @@ pub async fn get_account_transfer_allowance(
             pessimistic_transaction_fee: NearBalance::from_yoctonear(0),
         });
     };
-    let storage_amount_per_byte = network_config
-        .json_rpc_client()
-        .call(
+    let storage_amount_per_byte = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(network_config.json_rpc_client().call(
             near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
                 block_reference: near_primitives::types::BlockReference::Finality(
                     near_primitives::types::Finality::Final,
                 ),
             },
-        )
-        .await
-        .map_err(|err| color_eyre::Report::msg(format!("RpcError: {:?}", err)))?
+        ))
+        .wrap_err("RpcError")?
         .runtime_config
         .storage_amount_per_byte;
 
@@ -420,7 +420,7 @@ pub async fn get_account_transfer_allowance(
     })
 }
 
-pub async fn verify_account_access_key(
+pub fn verify_account_access_key(
     account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
     network_config: crate::config::NetworkConfig,
@@ -431,15 +431,11 @@ pub async fn verify_account_access_key(
     loop {
         match network_config
             .json_rpc_client()
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewAccessKey {
-                    account_id: account_id.clone(),
-                    public_key: public_key.clone(),
-                },
-            })
-            .await
-        {
+            .blocking_call_view_access_key(
+                &account_id,
+                &public_key,
+                near_primitives::types::Finality::Final.into(),
+            ) {
             Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =
                     rpc_query_response.kind
@@ -486,7 +482,7 @@ pub async fn verify_account_access_key(
     }
 }
 
-pub async fn get_account_state(
+pub fn get_account_state(
     network_config: crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
@@ -497,13 +493,7 @@ pub async fn get_account_state(
     loop {
         let query_view_method_response = network_config
             .json_rpc_client()
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: block_reference.clone(),
-                request: near_primitives::views::QueryRequest::ViewAccount {
-                    account_id: account_id.clone(),
-                },
-            })
-            .await;
+            .blocking_call_view_account(&account_id.clone(), block_reference.clone());
         match query_view_method_response {
             Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
@@ -648,7 +638,7 @@ pub fn get_public_key_from_seed_phrase(
     Ok(near_crypto::PublicKey::from_str(&public_key_str)?)
 }
 
-pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
+pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     let generate_keypair: crate::utils_command::generate_keypair_subcommand::CliGenerateKeypair =
         crate::utils_command::generate_keypair_subcommand::CliGenerateKeypair::default();
     let (master_seed_phrase, master_seed) =
@@ -702,12 +692,9 @@ pub async fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     Ok(key_pair_properties)
 }
 
-pub fn print_transaction(transaction: near_primitives::transaction::Transaction) {
+pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Transaction) {
     println!("{:<13} {}", "signer_id:", &transaction.signer_id);
-    println!("{:<13} {}", "public_key:", &transaction.public_key);
-    println!("{:<13} {}", "nonce:", &transaction.nonce);
     println!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
-    println!("{:<13} {}", "block_hash:", &transaction.block_hash);
     println!("actions:");
     let actions = transaction.actions.clone();
     for action in actions {
@@ -728,8 +715,15 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
                     "", "method name:", &function_call_action.method_name
                 );
                 println!(
-                    "{:>18} {:<13} {:?}",
-                    "", "args:", &function_call_action.args
+                    "{:>18} {:<13} {}",
+                    "",
+                    "args:",
+                    serde_json::to_string_pretty(
+                        &serde_json::from_slice::<serde_json::Value>(&function_call_action.args)
+                            .unwrap_or_default()
+                    )
+                    .unwrap_or_else(|_| "".to_string())
+                    .replace('\n', "\n                                 ")
                 );
                 println!(
                     "{:>18} {:<13} {}",
@@ -740,7 +734,7 @@ pub fn print_transaction(transaction: near_primitives::transaction::Transaction)
                     }
                 );
                 println!(
-                    "{:>18} {:<13} {}",
+                    "{:>18} {:<13} {}   Attention! This deposit may change after signing the transaction",
                     "",
                     "deposit:",
                     crate::common::NearBalance::from_yoctonear(function_call_action.deposit)
@@ -888,7 +882,7 @@ pub fn rpc_transaction_error(
                     println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
-                    let err_invalid_transaction = crate::common::handler_invalid_tx_error(context.clone());
+                    let err_invalid_transaction = crate::common::handler_invalid_tx_error(context);
                     return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("{}", err_invalid_transaction));
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
@@ -929,8 +923,8 @@ pub fn rpc_transaction_error(
     Ok(())
 }
 
-pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
-    match action_error.kind {
+pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
+    match &action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
             println!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id)
         }
@@ -986,7 +980,7 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             println!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(amount)
+                crate::common::NearBalance::from_yoctonear(*amount)
             )
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -1004,8 +998,8 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
             println!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(balance),
-                crate::common::NearBalance::from_yoctonear(stake)
+                crate::common::NearBalance::from_yoctonear(*balance),
+                crate::common::NearBalance::from_yoctonear(*stake)
             )
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -1015,8 +1009,8 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
         } => {
             println!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                crate::common::NearBalance::from_yoctonear(stake),
-                crate::common::NearBalance::from_yoctonear(minimum_stake)
+                crate::common::NearBalance::from_yoctonear(*stake),
+                crate::common::NearBalance::from_yoctonear(*minimum_stake)
             )
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -1042,7 +1036,7 @@ pub fn print_action_error(action_error: near_primitives::errors::ActionError) {
 }
 
 pub fn handler_invalid_tx_error(
-    invalid_tx_error: near_primitives::errors::InvalidTxError,
+    invalid_tx_error: &near_primitives::errors::InvalidTxError,
 ) -> String {
     match invalid_tx_error {
         near_primitives::errors::InvalidTxError::InvalidAccessKeyError(invalid_access_key_error) => {
@@ -1063,8 +1057,8 @@ pub fn handler_invalid_tx_error(
                     format!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        crate::common::NearBalance::from_yoctonear(allowance),
-                        crate::common::NearBalance::from_yoctonear(cost)
+                        crate::common::NearBalance::from_yoctonear(*allowance),
+                        crate::common::NearBalance::from_yoctonear(*cost)
                     )
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -1093,14 +1087,14 @@ pub fn handler_invalid_tx_error(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             format!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(balance),
-                crate::common::NearBalance::from_yoctonear(cost)
+                crate::common::NearBalance::from_yoctonear(*balance),
+                crate::common::NearBalance::from_yoctonear(*cost)
             )
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             format!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(amount)
+                crate::common::NearBalance::from_yoctonear(*amount)
             )
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
@@ -1161,7 +1155,7 @@ pub fn handler_invalid_tx_error(
     }
 }
 
-pub fn print_transaction_error(tx_execution_error: near_primitives::errors::TxExecutionError) {
+pub fn print_transaction_error(tx_execution_error: &near_primitives::errors::TxExecutionError) {
     println!("Failed transaction");
     match tx_execution_error {
         near_primitives::errors::TxExecutionError::ActionError(action_error) => {
@@ -1174,8 +1168,8 @@ pub fn print_transaction_error(tx_execution_error: near_primitives::errors::TxEx
 }
 
 pub fn print_transaction_status(
-    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
-    network_config: crate::config::NetworkConfig,
+    transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
+    network_config: &crate::config::NetworkConfig,
 ) -> crate::CliResult {
     println!("-------------- Logs ----------------");
     for receipt in transaction_info.receipts_outcome.iter() {
@@ -1187,7 +1181,7 @@ pub fn print_transaction_status(
         };
     }
     println!("------------------------------------");
-    match transaction_info.status {
+    match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
@@ -1212,7 +1206,7 @@ pub fn save_access_key_to_macos_keychain(
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
     let keychain = security_framework::os::macos::keychain::SecKeychain::default()
-        .map_err(|err| color_eyre::Report::msg(format!("Failed to open keychain: {:?}", err)))?;
+        .wrap_err("Failed to open keychain")?;
     let service_name = std::borrow::Cow::Owned(format!(
         "near-{}-{}",
         network_config.network_name, account_id
@@ -1223,9 +1217,7 @@ pub fn save_access_key_to_macos_keychain(
             &format!("{}:{}", account_id, public_key_str),
             key_pair_properties_buf.as_bytes(),
         )
-        .map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to save password to keychain: {:?}", err))
-        })?;
+        .wrap_err("Failed to save password to keychain")?;
     Ok("The data for the access key is saved in macOS Keychain".to_string())
 }
 
@@ -1251,11 +1243,9 @@ pub fn save_access_key_to_keychain(
         )
     } else {
         std::fs::File::create(&path_with_key_name)
-            .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
+            .wrap_err_with(|| format!("Failed to create file: {:?}", path_with_key_name))?
             .write(key_pair_properties_buf.as_bytes())
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
-            })?;
+            .wrap_err_with(|| format!("Failed to write to file: {:?}", path_with_key_name))?;
         format!(
             "The data for the access key is saved in a file {}",
             &path_with_key_name.display()
@@ -1274,11 +1264,9 @@ pub fn save_access_key_to_keychain(
         ))
     } else {
         std::fs::File::create(&path_with_account_name)
-            .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
+            .wrap_err_with(|| format!("Failed to create file: {:?}", path_with_account_name))?
             .write(key_pair_properties_buf.as_bytes())
-            .map_err(|err| {
-                color_eyre::Report::msg(format!("Failed to write to file: {:?}", err))
-            })?;
+            .wrap_err_with(|| format!("Failed to write to file: {:?}", path_with_account_name))?;
         Ok(format!(
             "{}\nThe data for the access key is saved in a file {}",
             message_1,
@@ -1296,25 +1284,27 @@ pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {
         if !path_config_toml.is_file() {
             write_config_toml(crate::config::Config::default())?;
         };
-        let config_toml = std::fs::read_to_string(path_config_toml)?;
-        Ok(toml::from_str(&config_toml)?)
+        let config_toml = std::fs::read_to_string(&path_config_toml)?;
+        toml::from_str(&config_toml).or_else(|err| {
+            println!("Warning: `near` CLI configuration file stored at {path_config_toml:?} could not be parsed due to: {err}");
+            println!("Note: The default configuration printed below will be used instead:\n");
+            let default_config = crate::config::Config::default();
+            println!("{}", toml::to_string(&default_config)?);
+            Ok(default_config)
+        })
     } else {
         Ok(crate::config::Config::default())
     }
 }
-
 pub fn write_config_toml(config: crate::config::Config) -> CliResult {
     let config_toml = toml::to_string(&config)?;
     let mut path_config_toml = dirs::config_dir().expect("Impossible to get your config dir!");
     path_config_toml.push("near-cli/config.toml");
     std::fs::File::create(&path_config_toml)
-        .map_err(|err| color_eyre::Report::msg(format!("Failed to create file: {:?}", err)))?
+        .wrap_err_with(|| format!("Failed to create file: {path_config_toml:?}"))?
         .write(config_toml.as_bytes())
-        .map_err(|err| color_eyre::Report::msg(format!("Failed to write to file: {:?}", err)))?;
-    println!(
-        "Configuration data is stored in a file {:?}",
-        &path_config_toml
-    );
+        .wrap_err_with(|| format!("Failed to write to file: {path_config_toml:?}"))?;
+    println!("Note: `near` CLI configuration is stored in {path_config_toml:?}");
     Ok(())
 }
 
@@ -1386,7 +1376,7 @@ fn path_directories() -> Vec<std::path::PathBuf> {
 pub fn display_account_info(
     viewed_at_block_hash: &CryptoHash,
     viewed_at_block_height: &near_primitives::types::BlockHeight,
-    account_id: &crate::types::account_id::AccountId,
+    account_id: &near_primitives::types::AccountId,
     account_view: &near_primitives::views::AccountView,
     access_keys: &[near_primitives::views::AccessKeyInfoView],
 ) {
@@ -1495,10 +1485,193 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
     table.printstd();
 }
 
-pub fn input_network_name(context: &crate::GlobalContext) -> color_eyre::eyre::Result<String> {
-    let variants = context.0.networks.keys().collect::<Vec<_>>();
-    let select_submit = Select::new("What is the name of the network?", variants).prompt()?;
-    Ok(select_submit.clone())
+pub fn input_network_name(
+    context: &crate::GlobalContext,
+) -> color_eyre::eyre::Result<Option<String>> {
+    let variants = context.0.network_connection.keys().collect::<Vec<_>>();
+    let select_submit = Select::new("What is the name of the network?", variants).prompt();
+    match select_submit {
+        Ok(value) => Ok(Some(value.clone())),
+        Err(
+            inquire::error::InquireError::OperationCanceled
+            | inquire::error::InquireError::OperationInterrupted,
+        ) => Ok(None),
+        Err(err) => Err(err.into()),
+    }
+}
+
+#[easy_ext::ext(JsonRpcClientExt)]
+pub impl near_jsonrpc_client::JsonRpcClient {
+    fn blocking_call<M>(
+        &self,
+        method: M,
+    ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
+    where
+        M: near_jsonrpc_client::methods::RpcMethod,
+    {
+        tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(self.call(method))
+    }
+
+    /// A helper function to make a view-funcation call using JSON encoding for the function
+    /// arguments and function return value.
+    fn blocking_call_view_function(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        method_name: &str,
+        args: Vec<u8>,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
+        let query_view_method_response = self
+            .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference,
+                request: near_primitives::views::QueryRequest::CallFunction {
+                    account_id: account_id.clone(),
+                    method_name: method_name.to_owned(),
+                    args: near_primitives::types::FunctionArgs::from(args),
+                },
+            })
+            .wrap_err("Failed to make a view-function call")?;
+        query_view_method_response.call_result()
+    }
+
+    fn blocking_call_view_access_key(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        public_key: &near_crypto::PublicKey,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    > {
+        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewAccessKey {
+                account_id: account_id.clone(),
+                public_key: public_key.clone(),
+            },
+        })
+    }
+
+    fn blocking_call_view_access_key_list(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    > {
+        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                account_id: account_id.clone(),
+            },
+        })
+    }
+
+    fn blocking_call_view_account(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    > {
+        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewAccount {
+                account_id: account_id.clone(),
+            },
+        })
+    }
+}
+
+#[easy_ext::ext(RpcQueryResponseExt)]
+pub impl near_jsonrpc_primitives::types::query::RpcQueryResponse {
+    fn access_key_view(&self) -> color_eyre::eyre::Result<near_primitives::views::AccessKeyView> {
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
+            access_key_view,
+        ) = &self.kind
+        {
+            Ok(access_key_view.clone())
+        } else {
+            color_eyre::eyre::bail!(
+                "Internal error: Received unexpected query kind in response to a View Access Key query call",
+            );
+        }
+    }
+
+    fn access_key_list_view(
+        &self,
+    ) -> color_eyre::eyre::Result<near_primitives::views::AccessKeyList> {
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
+            access_key_list,
+        ) = &self.kind
+        {
+            Ok(access_key_list.clone())
+        } else {
+            color_eyre::eyre::bail!(
+                "Internal error: Received unexpected query kind in response to a View Access Key List query call",
+            );
+        }
+    }
+
+    fn account_view(&self) -> color_eyre::eyre::Result<near_primitives::views::AccountView> {
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(account_view) =
+            &self.kind
+        {
+            Ok(account_view.clone())
+        } else {
+            color_eyre::eyre::bail!(
+                "Internal error: Received unexpected query kind in response to a View Account query call",
+            );
+        }
+    }
+
+    fn call_result(&self) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
+            &self.kind
+        {
+            Ok(result.clone())
+        } else {
+            color_eyre::eyre::bail!(
+                "Internal error: Received unexpected query kind in response to a view-function query call",
+            );
+        }
+    }
+}
+
+#[easy_ext::ext(CallResultExt)]
+pub impl near_primitives::views::CallResult {
+    fn parse_result_from_json<T>(&self) -> Result<T, color_eyre::eyre::Error>
+    where
+        T: for<'de> serde::Deserialize<'de>,
+    {
+        serde_json::from_slice(&self.result).wrap_err_with(|| {
+            format!(
+                "Failed to parse view-function call return value: {}",
+                String::from_utf8_lossy(&self.result)
+            )
+        })
+    }
+
+    fn print_logs(&self) {
+        println!("--------------");
+        if self.logs.is_empty() {
+            println!("No logs")
+        } else {
+            println!("Logs:");
+            println!("  {}", self.logs.join("\n  "));
+        }
+        println!("--------------");
+    }
 }
 
 #[cfg(test)]

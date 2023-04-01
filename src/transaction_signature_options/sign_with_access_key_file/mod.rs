@@ -1,57 +1,98 @@
+use color_eyre::eyre::WrapErr;
+
+use crate::common::JsonRpcClientExt;
+use crate::common::RpcQueryResponseExt;
+
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(input_context = crate::commands::TransactionContext)]
+#[interactive_clap(output_context = SignAccessKeyFileContext)]
 pub struct SignAccessKeyFile {
     /// What is the location of the account access key file (path/to/access-key-file.json)?
     file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(subcommand)]
-    submit: Option<super::Submit>,
+    submit: super::Submit,
 }
 
-impl interactive_clap::FromCli for SignAccessKeyFile {
-    type FromCliContext = crate::GlobalContext;
-    type FromCliError = color_eyre::eyre::Error;
+#[derive(Clone)]
+pub struct SignAccessKeyFileContext {
+    network_config: crate::config::NetworkConfig,
+    signed_transaction: near_primitives::transaction::SignedTransaction,
+    on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
+    on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+}
 
-    fn from_cli(
-        optional_clap_variant: Option<<SignAccessKeyFile as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let file_path: crate::types::path_buf::PathBuf = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.file_path)
-        {
-            Some(cli_file_path) => cli_file_path,
-            None => Self::input_file_path(&context)?,
+impl SignAccessKeyFileContext {
+    pub fn from_previous_context(
+        previous_context: crate::commands::TransactionContext,
+        scope: &<SignAccessKeyFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let network_config = previous_context.network_config.clone();
+
+        let data =
+            std::fs::read_to_string(&scope.file_path).wrap_err("Access key file not found!")?;
+        let account_json: super::AccountKeyPair = serde_json::from_str(&data)
+            .wrap_err_with(|| format!("Error reading data from file: {:?}", &scope.file_path))?;
+
+        let rpc_query_response = network_config
+            .json_rpc_client()
+            .blocking_call_view_access_key(
+                &previous_context.transaction.signer_id,
+                &account_json.public_key,
+                near_primitives::types::Finality::Final.into(),
+            )
+            .map_err(|err| {
+                println!("\nYour transaction was not successfully signed.\n");
+                color_eyre::Report::msg(format!(
+                    "Failed to fetch public key information for nonce: {:?}",
+                    err
+                ))
+            })?;
+        let current_nonce = rpc_query_response
+            .access_key_view()
+            .wrap_err("Error current_nonce")?
+            .nonce;
+
+        let mut unsigned_transaction = near_primitives::transaction::Transaction {
+            public_key: account_json.public_key.clone(),
+            block_hash: rpc_query_response.block_hash,
+            nonce: current_nonce + 1,
+            ..previous_context.transaction.clone()
         };
-        let submit: Option<super::Submit> =
-            optional_clap_variant.and_then(|clap_variant| clap_variant.submit);
-        Ok(Some(Self { file_path, submit }))
+
+        (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
+
+        let signature = account_json
+            .private_key
+            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+            signature.clone(),
+            unsigned_transaction,
+        );
+
+        println!("\nYour transaction was signed successfully.");
+        println!("Public key: {}", account_json.public_key);
+        println!("Signature: {}", signature);
+
+        Ok(Self {
+            network_config: previous_context.network_config,
+            signed_transaction,
+            on_before_sending_transaction_callback: previous_context
+                .on_before_sending_transaction_callback,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
+        })
     }
 }
 
-impl SignAccessKeyFile {
-    pub async fn process(
-        &self,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-        network_config: crate::config::NetworkConfig,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
-        let data = std::fs::read_to_string(&self.file_path).map_err(|err| {
-            color_eyre::Report::msg(format!("Access key file not found! Error: {}", err))
-        })?;
-        let account_json: super::AccountKeyPair = serde_json::from_str(&data)
-            .map_err(|err| color_eyre::Report::msg(format!("Error reading data: {}", err)))?;
-        let sign_with_private_key = super::sign_with_private_key::SignPrivateKey {
-            signer_public_key: crate::types::public_key::PublicKey(account_json.public_key),
-            signer_private_key: crate::types::secret_key::SecretKey(account_json.private_key),
-            nonce: None,
-            block_hash: None,
-            submit: self.submit.clone(),
-        };
-        sign_with_private_key
-            .process(prepopulated_unsigned_transaction, network_config)
-            .await
+impl From<SignAccessKeyFileContext> for super::SubmitContext {
+    fn from(item: SignAccessKeyFileContext) -> Self {
+        Self {
+            network_config: item.network_config,
+            signed_transaction: item.signed_transaction,
+            on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
+            on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+        }
     }
 }

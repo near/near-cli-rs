@@ -1,26 +1,21 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::account::create_account::CreateAccountContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(input_context = super::super::NewAccountContext)]
+#[interactive_clap(output_context = AddAccessWithLedgerContext)]
 pub struct AddAccessWithLedger {
-    #[interactive_clap(skip)]
-    public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(named_arg)]
-    ///What is the signer account ID?
+    /// What is the signer account ID?
     sign_as: super::super::sign_as::SignerAccountId,
 }
 
-impl interactive_clap::FromCli for AddAccessWithLedger {
-    type FromCliContext = crate::commands::account::create_account::CreateAccountContext;
-    type FromCliError = color_eyre::eyre::Error;
+#[derive(Clone)]
+pub struct AddAccessWithLedgerContext(super::super::AccountPropertiesContext);
 
-    fn from_cli(
-        optional_clap_variant: Option<<AddAccessWithLedger as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let seed_phrase_hd_path = crate::transaction_signature_options::sign_with_ledger::SignLedger::input_seed_phrase_hd_path();
+impl AddAccessWithLedgerContext {
+    pub fn from_previous_context(
+        previous_context: super::super::NewAccountContext,
+        _scope: &<AddAccessWithLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let seed_phrase_hd_path = crate::transaction_signature_options::sign_with_ledger::SignLedger::input_seed_phrase_hd_path()?.unwrap();
         println!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path
@@ -33,45 +28,28 @@ impl interactive_clap::FromCli for AddAccessWithLedger {
                 ))
             },
         )?;
-        let public_key: crate::types::public_key::PublicKey = near_crypto::PublicKey::ED25519(
-            near_crypto::ED25519PublicKey::from(public_key.to_bytes()),
-        )
-        .into();
-        let sign_as = super::super::sign_as::SignerAccountId::from_cli(
-            optional_clap_variant.and_then(|clap_variant| {
-                clap_variant.sign_as.map(
-                    |ClapNamedArgSignerAccountIdForAddAccessWithLedger::SignAs(cli_signer)| {
-                        cli_signer
-                    },
-                )
-            }),
-            context,
-        )?;
-        let sign_as = if let Some(value) = sign_as {
-            value
-        } else {
-            return Ok(None);
-        };
-        Ok(Some(Self {
+        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+            public_key.to_bytes(),
+        ));
+
+        let account_properties = super::super::AccountProperties {
+            new_account_id: previous_context.new_account_id,
+            initial_balance: previous_context.initial_balance,
             public_key,
-            sign_as,
+        };
+
+        Ok(Self(super::super::AccountPropertiesContext {
+            config: previous_context.config,
+            account_properties,
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                |_signed_transaction, _network_config, _message| Ok(()),
+            ),
         }))
     }
 }
 
-impl AddAccessWithLedger {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        account_properties: super::super::super::AccountProperties,
-    ) -> crate::CliResult {
-        let account_properties = super::super::super::AccountProperties {
-            public_key: self.public_key.clone().into(),
-            ..account_properties
-        };
-        let storage_properties = None;
-        self.sign_as
-            .process(config, account_properties, storage_properties)
-            .await
+impl From<AddAccessWithLedgerContext> for super::super::AccountPropertiesContext {
+    fn from(item: AddAccessWithLedgerContext) -> Self {
+        item.0
     }
 }

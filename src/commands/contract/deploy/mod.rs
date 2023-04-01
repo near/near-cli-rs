@@ -1,57 +1,69 @@
+use color_eyre::eyre::Context;
+
 mod initialize_mode;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = ContractContext)]
 pub struct Contract {
-    ///What is the contract account ID?
+    /// What is the contract account ID?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    ///Specify a path to wasm file
+    /// Specify a path to wasm file
     use_file: ContractFile,
 }
 
-impl Contract {
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        self.use_file
-            .process(config, self.account_id.clone().into())
-            .await
+#[derive(Debug, Clone)]
+pub struct ContractContext {
+    config: crate::config::Config,
+    receiver_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_primitives::types::AccountId,
+}
+
+impl ContractContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<Contract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            config: previous_context.0,
+            receiver_account_id: scope.account_id.clone().into(),
+            signer_account_id: scope.account_id.clone().into(),
+        })
     }
 }
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = ContractContext)]
+#[interactive_clap(output_context = ContractFileContext)]
 pub struct ContractFile {
-    ///What is a file location of the contract?
+    /// What is a file location of the contract?
     pub file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(subcommand)]
     initialize: self::initialize_mode::InitializeMode,
 }
 
-impl ContractFile {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        account_id: near_primitives::types::AccountId,
-    ) -> crate::CliResult {
-        let code = std::fs::read(&self.file_path).map_err(|err| {
-            color_eyre::Report::msg(format!(
-                "Failed to open or read the file: {:?}.\nError: {:?}",
-                &self.file_path.0.clone(),
-                err
-            ))
+#[derive(Debug, Clone)]
+pub struct ContractFileContext {
+    config: crate::config::Config,
+    receiver_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_primitives::types::AccountId,
+    code: Vec<u8>,
+}
+
+impl ContractFileContext {
+    pub fn from_previous_context(
+        previous_context: ContractContext,
+        scope: &<ContractFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let code = std::fs::read(&scope.file_path).wrap_err_with(|| {
+            format!("Failed to open or read the file: {:?}.", &scope.file_path.0,)
         })?;
-        let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: account_id.clone(),
-            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-            nonce: 0,
-            receiver_id: account_id,
-            block_hash: Default::default(),
-            actions: vec![near_primitives::transaction::Action::DeployContract(
-                near_primitives::transaction::DeployContractAction { code },
-            )],
-        };
-        self.initialize
-            .process(config, prepopulated_unsigned_transaction)
-            .await
+        Ok(Self {
+            config: previous_context.config,
+            receiver_account_id: previous_context.receiver_account_id,
+            signer_account_id: previous_context.signer_account_id,
+            code,
+        })
     }
 }

@@ -1,41 +1,59 @@
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = super::GenerateKeypairContext)]
+#[interactive_clap(output_context = SaveKeypairToMacosKeychainContext)]
 pub struct SaveKeypairToMacosKeychain {
     #[interactive_clap(named_arg)]
-    ///Select network
+    /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-impl SaveKeypairToMacosKeychain {
-    pub async fn process(
-        &self,
-        config: crate::config::Config,
-        key_pair_properties: crate::common::KeyPairProperties,
-        prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
-    ) -> crate::CliResult {
-        let network_config = self.network_config.get_network_config(config.clone());
-        let key_pair_properties_buf = serde_json::to_string(&key_pair_properties)?;
-        crate::common::save_access_key_to_macos_keychain(
-            network_config,
-            &key_pair_properties_buf,
-            &key_pair_properties.public_key_str,
-            &prepopulated_unsigned_transaction.receiver_id,
-        )
-        .map_err(|err| {
-            color_eyre::Report::msg(format!("Failed to save a file with access key: {}", err))
-        })?;
-        match crate::transaction_signature_options::sign_with(
-            self.network_config.clone(),
-            prepopulated_unsigned_transaction,
-            config.clone(),
-        )
-        .await?
-        {
-            Some(transaction_info) => crate::common::print_transaction_status(
-                transaction_info,
-                self.network_config.get_network_config(config),
+#[derive(Debug, Clone)]
+pub struct SaveKeypairToMacosKeychainContext(super::GenerateKeypairContext);
+
+impl SaveKeypairToMacosKeychainContext {
+    pub fn from_previous_context(
+        previous_context: super::GenerateKeypairContext,
+        _scope: &<SaveKeypairToMacosKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self(previous_context))
+    }
+}
+
+impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext {
+    fn from(item: SaveKeypairToMacosKeychainContext) -> Self {
+        Self {
+            config: item.0.config,
+            signer_account_id: item.0.signer_account_id.clone(),
+            receiver_account_id: item.0.signer_account_id.clone(),
+            actions: vec![near_primitives::transaction::Action::AddKey(
+                near_primitives::transaction::AddKeyAction {
+                    public_key: item.0.public_key,
+                    access_key: near_primitives::account::AccessKey {
+                        nonce: 0,
+                        permission: item.0.permission,
+                    },
+                },
+            )],
+            on_after_getting_network_callback: std::sync::Arc::new(
+                move |_actions, network_config| {
+                    crate::common::save_access_key_to_macos_keychain(
+                        network_config.clone(),
+                        &serde_json::to_string(&item.0.key_pair_properties)?,
+                        &item.0.key_pair_properties.public_key_str,
+                        &item.0.signer_account_id,
+                    )?;
+                    Ok(())
+                },
             ),
-            None => Ok(()),
+            on_before_signing_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+            ),
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                |_signed_transaction, _network_config, _message| Ok(()),
+            ),
+            on_after_sending_transaction_callback: std::sync::Arc::new(
+                |_outcome_view, _network_config| Ok(()),
+            ),
         }
     }
 }

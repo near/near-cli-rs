@@ -1,62 +1,50 @@
-use inquire::{CustomType, Select, Text};
 use std::str::FromStr;
+
+use inquire::{CustomType, Select, Text};
 
 use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
 
 mod add_key;
 mod sign_as;
 
-#[derive(Debug, Clone)]
-pub struct StorageProperties {
-    pub key_pair_properties: crate::common::KeyPairProperties,
-    pub storage: self::add_key::autogenerate_new_keypair::SaveModeDiscriminants,
-}
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = CreateAccountContext)]
+#[interactive_clap(output_context = NewAccountContext)]
 pub struct NewAccount {
     #[interactive_clap(skip_default_input_arg)]
-    ///What is the new account ID?
+    /// What is the new account ID?
     new_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
-    ///Enter the amount for the account
+    /// Enter the amount for the account
     initial_balance: crate::common::NearBalance,
     #[interactive_clap(subcommand)]
     access_key_mode: add_key::AccessKeyMode,
 }
 
 #[derive(Debug, Clone)]
-struct NewAccountContext {
+pub struct NewAccountContext {
     config: crate::config::Config,
     new_account_id: crate::types::account_id::AccountId,
+    initial_balance: crate::common::NearBalance,
 }
 
 impl NewAccountContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
         scope: &<NewAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Self {
-        Self {
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
             config: previous_context.0,
             new_account_id: scope.new_account_id.clone(),
-        }
-    }
-}
-
-impl From<NewAccountContext> for crate::commands::account::create_account::CreateAccountContext {
-    fn from(item: NewAccountContext) -> Self {
-        Self {
-            config: item.config,
-            new_account_id: item.new_account_id,
-        }
+            initial_balance: scope.initial_balance.clone(),
+        })
     }
 }
 
 impl NewAccount {
     pub fn input_new_account_id(
         context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         let new_account_id: crate::types::account_id::AccountId =
             CustomType::new("What is the new account ID?").prompt()?;
 
@@ -130,33 +118,22 @@ impl NewAccount {
         } else {
             new_account_id
         };
-        Ok(account_id)
+        Ok(Some(account_id))
     }
 
     fn input_initial_balance(
         _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<crate::common::NearBalance> {
+    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         println!();
         match crate::common::NearBalance::from_str(&Text::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear).")
             .with_initial_value("0.1 NEAR")
             .prompt()?
             ) {
-                Ok(initial_balance) => Ok(initial_balance),
+                Ok(initial_balance) => Ok(Some(initial_balance)),
                 Err(err) => Err(color_eyre::Report::msg(
                     err,
                 ))
             }
-    }
-
-    pub async fn process(&self, config: crate::config::Config) -> crate::CliResult {
-        let account_properties = super::AccountProperties {
-            new_account_id: self.new_account_id.clone().into(),
-            initial_balance: self.initial_balance.clone(),
-            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-        };
-        self.access_key_mode
-            .process(config, account_properties)
-            .await
     }
 }
 
@@ -164,15 +141,13 @@ fn find_network_where_account_exist(
     context: &crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
 ) -> Option<crate::config::NetworkConfig> {
-    for network in context.0.networks.iter() {
-        if tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(crate::common::get_account_state(
-                network.1.clone(),
-                new_account_id.clone(),
-                near_primitives::types::Finality::Final.into(),
-            ))
-            .is_ok()
+    for network in context.0.network_connection.iter() {
+        if crate::common::get_account_state(
+            network.1.clone(),
+            new_account_id.clone(),
+            near_primitives::types::Finality::Final.into(),
+        )
+        .is_ok()
         {
             return Some(network.1.clone());
         }
@@ -194,4 +169,19 @@ fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
     )
     .prompt()?;
     Ok(select_choose_input == ConfirmOptions::Yes)
+}
+
+#[derive(Clone)]
+pub struct AccountPropertiesContext {
+    pub config: crate::config::Config,
+    pub account_properties: AccountProperties,
+    pub on_before_sending_transaction_callback:
+        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
+}
+
+#[derive(Debug, Clone)]
+pub struct AccountProperties {
+    pub new_account_id: crate::types::account_id::AccountId,
+    pub public_key: near_crypto::PublicKey,
+    pub initial_balance: crate::common::NearBalance,
 }

@@ -1,24 +1,36 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = DeleteNetworkConnectionContext)]
 pub struct DeleteNetworkConnection {
-    ///What is the network connection name?
+    /// What is the network connection name?
     #[interactive_clap(skip_default_input_arg)]
     connection_name: String,
 }
 
-impl DeleteNetworkConnection {
-    fn input_connection_name(context: &crate::GlobalContext) -> color_eyre::eyre::Result<String> {
-        crate::common::input_network_name(context)
-    }
+#[derive(Clone)]
+pub struct DeleteNetworkConnectionContext;
 
-    pub async fn process(&self, mut config: crate::config::Config) -> crate::CliResult {
-        config.networks.remove(&self.connection_name);
+impl DeleteNetworkConnectionContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<DeleteNetworkConnection as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let mut config = previous_context.0;
+        config.network_connection.remove(&scope.connection_name);
         println!();
         crate::common::write_config_toml(config)?;
         println!(
             "Network connection \"{}\" was successfully removed from config.toml",
-            &self.connection_name
+            &scope.connection_name
         );
-        Ok(())
+        Ok(Self)
+    }
+}
+
+impl DeleteNetworkConnection {
+    fn input_connection_name(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        crate::common::input_network_name(context)
     }
 }
