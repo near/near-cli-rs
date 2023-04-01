@@ -1284,21 +1284,14 @@ pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {
         if !path_config_toml.is_file() {
             write_config_toml(crate::config::Config::default())?;
         };
-        let config_toml = std::fs::read_to_string(path_config_toml)?;
-        let toml_result = toml::from_str(&config_toml);
-        match toml_result {
-            Ok(_) => Ok(toml_result?),
-            Err(err) => {
-                let mut path_config_toml =
-                    dirs::config_dir().expect("Impossible to get your config dir!");
-                path_config_toml.push("near-cli/config.toml");
-                println!("WARNING! An error occurred while parsing the configuration file at {path_config_toml:?}:\nError: {err}");
-                println!("The default configuration printed below will be used instead:\n");
-                let config_toml_default = toml::to_string(&crate::config::Config::default())?;
-                println!("{config_toml_default}");
-                Ok(crate::config::Config::default())
-            }
-        }
+        let config_toml = std::fs::read_to_string(&path_config_toml)?;
+        toml::from_str(&config_toml).or_else(|err| {
+            println!("Warning: `near` CLI configuration file stored at {path_config_toml:?} could not be parsed due to: {err}");
+            println!("Note: The default configuration printed below will be used instead:\n");
+            let default_config = crate::config::Config::default();
+            println!("{}", toml::to_string(&default_config)?);
+            Ok(default_config)
+        })
     } else {
         Ok(crate::config::Config::default())
     }
@@ -1308,13 +1301,10 @@ pub fn write_config_toml(config: crate::config::Config) -> CliResult {
     let mut path_config_toml = dirs::config_dir().expect("Impossible to get your config dir!");
     path_config_toml.push("near-cli/config.toml");
     std::fs::File::create(&path_config_toml)
-        .wrap_err_with(|| format!("Failed to create file: {:?}", path_config_toml))?
+        .wrap_err_with(|| format!("Failed to create file: {path_config_toml:?}"))?
         .write(config_toml.as_bytes())
-        .wrap_err_with(|| format!("Failed to write to file: {:?}", path_config_toml))?;
-    println!(
-        "Configuration data is stored in a file {:?}",
-        &path_config_toml
-    );
+        .wrap_err_with(|| format!("Failed to write to file: {path_config_toml:?}"))?;
+    println!("Note: `near` CLI configuration is stored in {path_config_toml:?}");
     Ok(())
 }
 
