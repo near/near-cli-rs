@@ -1,6 +1,6 @@
 [package]
 name = "near-cli-rs"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
@@ -62,10 +62,8 @@ near-primitives = "0.15"
 near-jsonrpc-client = "0.4.0"
 near-jsonrpc-primitives = "0.15"
 
-interactive-clap-derive = { git = "https://github.com/FroVolod/interactive-clap", rev="ae415d6e606eb2c4c847f2a13e5239b284a2d918" }
-interactive-clap = { git = "https://github.com/FroVolod/interactive-clap", rev="ae415d6e606eb2c4c847f2a13e5239b284a2d918" }
-# interactive-clap = "0.1.0"
-# interactive-clap-derive = "0.1.0"
+interactive-clap = "0.2.0"
+interactive-clap-derive = "0.2.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.7.0"
