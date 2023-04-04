@@ -1,8 +1,8 @@
 # NEAR CLI
 
-near-cli is your **human-friendly** companion that helps to interact with [NEAR Protocol](https://near.org) from command line.
+near CLI is your **human-friendly** companion that helps to interact with [NEAR Protocol](https://near.org) from command line.
 
-Just run `near-cli` and let it guide you through!
+Just run `near` and let it guide you through!
 
 <p>
   <img src="docs/media/create-account.svg" alt="" width="1200">
@@ -10,7 +10,7 @@ Just run `near-cli` and let it guide you through!
 
 ## Install
 
-Download pre-compiled version of near-cli for your OS from the [Releases page](https://github.com/near/near-cli-rs/releases/) or install it with `cargo` if you have [Rust](https://rustup.rs) installed on your computer:
+Download pre-compiled version of `near` CLI for your OS from the [Releases page](https://github.com/near/near-cli-rs/releases/) or install it with `cargo` if you have [Rust](https://rustup.rs) installed on your computer:
 
 ```bash
 $ cargo install near-cli-rs
@@ -19,7 +19,7 @@ $ cargo install near-cli-rs
 Here is the expected output when you run it:
 
 ```bash
-$ near-cli
+$ near
 
 ?  What are you up to? (select one of the options with the up-down arrows on your keyboard and press Enter)
 > account     - Manage accounts

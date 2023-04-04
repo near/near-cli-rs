@@ -3,6 +3,8 @@ use std::io::Write;
 use color_eyre::eyre::Context;
 use inquire::Text;
 
+use crate::common::JsonRpcClientExt;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractAccountContext)]
@@ -57,47 +59,35 @@ impl DownloadContractContext {
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             move |network_config, block_reference| {
+                let query_view_method_response = network_config
+                    .json_rpc_client()
+                    .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                        block_reference: block_reference.clone(),
+                        request: near_primitives::views::QueryRequest::ViewCode {
+                            account_id: account_id.clone(),
+                        },
+                    })
+                    .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}>", &account_id))?;
+                let call_access_view =
+                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
+                        query_view_method_response.kind
+                    {
+                        result
+                    } else {
+                        return Err(color_eyre::Report::msg("Error call result".to_string()));
+                    };
+                std::fs::create_dir_all(&folder_path)?;
+                let file_name = format!("contract_{}.wasm", account_id.as_str().replace('.', "_"));
+                let file_path = folder_path.join(file_name);
+                std::fs::File::create(&file_path)
+                    .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
+                    .write(&call_access_view.code)
+                    .wrap_err_with(|| {
+                        format!("Failed to write to file: {:?}", &file_path)
+                    })?;
+                println!("\nThe file {:?} was downloaded successfully", &file_path);
 
-                let query_view_method_response = tokio::runtime::Runtime::new()
-                    .unwrap()
-                    .block_on(
-                 network_config
-                .json_rpc_client()
-                .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                    block_reference: block_reference.clone(),
-                    request: near_primitives::views::QueryRequest::ViewCode {
-                        account_id: account_id.clone(),
-                    },
-                })
-            )
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch query ViewCode for <{}>",
-                        &account_id
-                    )
-                })?;
-            let call_access_view =
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-                    query_view_method_response.kind
-                {
-                    result
-                } else {
-                    return Err(color_eyre::Report::msg("Error call result".to_string()));
-                };
-            let mut file_path = folder_path.clone();
-            std::fs::create_dir_all(&file_path)?;
-            let file_name: std::path::PathBuf =
-                format!("contract_{}.wasm", account_id.as_str().replace('.', "_")).into();
-            file_path.push(file_name);
-            std::fs::File::create(&file_path)
-                .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
-                .write(&call_access_view.code)
-                .wrap_err_with(|| {
-                    format!("Failed to write to file: {:?}", &file_path)
-                })?;
-            println!("\nThe file {:?} was downloaded successfully", &file_path);
-
-            Ok(())
+                Ok(())
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {

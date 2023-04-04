@@ -13,7 +13,7 @@ pub struct ConfigCommands {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// What do you want to do with a near-cli config?
+/// What do you want to do with a near CLI config?
 pub enum ConfigActions {
     #[strum_discriminants(strum(
         message = "show-connections       - Show a list of network connections"
