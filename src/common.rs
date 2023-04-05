@@ -1277,9 +1277,7 @@ pub fn save_access_key_to_keychain(
 
 pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {
     if let Some(mut path_config_toml) = dirs::config_dir() {
-        path_config_toml.push("near-cli");
-        std::fs::create_dir_all(&path_config_toml)?;
-        path_config_toml.push("config.toml");
+        path_config_toml.extend(&["near-cli", "config.toml"]);
 
         if !path_config_toml.is_file() {
             write_config_toml(crate::config::Config::default())?;
@@ -1299,7 +1297,9 @@ pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {
 pub fn write_config_toml(config: crate::config::Config) -> CliResult {
     let config_toml = toml::to_string(&config)?;
     let mut path_config_toml = dirs::config_dir().expect("Impossible to get your config dir!");
-    path_config_toml.push("near-cli/config.toml");
+    path_config_toml.push("near-cli");
+    std::fs::create_dir_all(&path_config_toml)?;
+    path_config_toml.push("config.toml");
     std::fs::File::create(&path_config_toml)
         .wrap_err_with(|| format!("Failed to create file: {path_config_toml:?}"))?
         .write(config_toml.as_bytes())
@@ -1322,7 +1322,7 @@ pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
     if is_top_level_command_known {
         error.exit()
     }
-    let subcommand_exe = format!("near-cli-{}{}", subcommand, std::env::consts::EXE_SUFFIX);
+    let subcommand_exe = format!("near-{}{}", subcommand, std::env::consts::EXE_SUFFIX);
 
     let path = path_directories()
         .iter()

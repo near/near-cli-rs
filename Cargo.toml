@@ -1,17 +1,17 @@
 [package]
 name = "near-cli-rs"
-version = "0.2.4"
+version = "0.3.0-rc.1"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
 homepage = "https://near.cli.rs"
 repository = "https://github.com/near/near-cli-rs"
-description = "near-cli-rs is your human-friendly companion that helps to interact with NEAR Protocol from command line."
+description = "human-friendly console utility that helps to interact with NEAR Protocol from command line."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "near-cli"
+name = "near"
 path = "src/main.rs"
 
 [dependencies]
@@ -23,7 +23,6 @@ smart-default = "0.6.0"
 derive_more = "0.99.9"
 easy-ext = "1"
 
-async-recursion = "0.3.2"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 tokio = { version = "1.0", features = [ "rt-multi-thread" ] }
 futures = "0.3"
@@ -77,3 +76,21 @@ self_update = { version = "0.36.0", features = ["archive-tar", "compression-flat
 default = ["ledger"]
 ledger = ["near-ledger"]
 self-update = ["self_update", "semver"]
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.0.5"
+# The preferred Rust toolchain to use in CI (rustup toolchain syntax)
+rust-toolchain-version = "1.67.1"
+# CI backends to support (see 'cargo dist generate-ci')
+ci = ["github"]
+# The installers to generate for each app
+installers = ["shell", "powershell"]
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["x86_64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "aarch64-apple-darwin"]

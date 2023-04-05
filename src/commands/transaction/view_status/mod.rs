@@ -1,5 +1,7 @@
 use color_eyre::eyre::Context;
 
+use crate::common::JsonRpcClientExt;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = TransactionInfoContext)]
@@ -27,18 +29,15 @@ impl TransactionInfoContext {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 move |network_config| {
-                    let query_view_transaction_status = tokio::runtime::Runtime::new()
-                        .unwrap()
-                        .block_on(
-                            network_config
-                            .json_rpc_client()
-                            .call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
-                                transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
-                                    hash: transaction_hash.into(),
-                                    account_id: signer_account_id.clone().into()
-                                }
-                            }))
-                            .wrap_err("Failed to fetch query for view transaction")?;
+                    let query_view_transaction_status = network_config
+                        .json_rpc_client()
+                        .blocking_call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
+                            transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
+                                hash: transaction_hash.into(),
+                                account_id: signer_account_id.clone().into()
+                            }
+                        })
+                        .wrap_err("Failed to fetch query for view transaction")?;
                     println!("Transaction status: {:#?}", query_view_transaction_status);
                     Ok(())
                 }

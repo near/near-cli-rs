@@ -1,7 +1,7 @@
 #[cfg(windows)]
-const BIN_NAME: &str = "near-cli.exe";
+const BIN_NAME: &str = "near.exe";
 #[cfg(not(windows))]
-const BIN_NAME: &str = "near-cli";
+const BIN_NAME: &str = "near";
 
 use color_eyre::eyre::WrapErr;
 
@@ -23,7 +23,7 @@ impl SelfUpdateCommandContext {
             .repo_name("near-cli-rs")
             .bin_path_in_archive(
                 format!(
-                    "near-cli-{}-{}/{}",
+                    "near-{}-{}/{}",
                     get_latest_version()?,
                     self_update::get_target(),
                     BIN_NAME
@@ -36,7 +36,7 @@ impl SelfUpdateCommandContext {
             .build()
             .wrap_err("Failed to build self_update")?
             .update()
-            .wrap_err("Failed to update near-cli-rs")?;
+            .wrap_err("Failed to update near CLI")?;
         Ok(Self)
     }
 }
@@ -45,7 +45,7 @@ pub fn get_latest_version() -> color_eyre::eyre::Result<String> {
     Ok(self_update::backends::github::Update::configure()
         .repo_owner("near")
         .repo_name("near-cli-rs")
-        .bin_name("near-cli")
+        .bin_name("near")
         .current_version(self_update::cargo_crate_version!())
         .build()
         .wrap_err("Failed to build self_update")?

@@ -1,0 +1,192 @@
+name: ci
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  # schedule:
+  # - cron: '00 01 * * *'
+jobs:
+  tests:
+    name: tests
+    env:
+      # For some builds, we use cross to test on 32-bit and big-endian
+      # systems.
+      CARGO: cargo
+      # When CARGO is set to CROSS, this is set to `--target matrix.target`.
+      TARGET_FLAGS: ""
+      # When CARGO is set to CROSS, TARGET_DIR includes matrix.target.
+      TARGET_DIR: ./target
+      # For some builds, we disable ledger support
+      FEATURES_FLAGS: "--features self-update"
+      # Emit backtraces on panics.
+      RUST_BACKTRACE: 1
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - build: linux-x86_64
+          os: ubuntu-20.04
+          target: x86_64-unknown-linux-gnu
+        - build: linux-x86_64-musl
+          os: ubuntu-20.04
+          target: x86_64-unknown-linux-musl
+        - build: linux-aarch64-musl
+          os: ubuntu-20.04
+          target: aarch64-unknown-linux-musl
+        - build: macos-x86_64
+          os: macos-latest
+          target: x86_64-apple-darwin
+        - build: macos-aarch64
+          os: macos-latest
+          target: aarch64-apple-darwin
+        - build: win64-msvc
+          os: windows-2019
+          target: x86_64-pc-windows-msvc
+        - build: win32-msvc
+          os: windows-2019
+          target: i686-pc-windows-msvc
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      run: rustup update stable && rustup default stable && rustup target add ${{ matrix.target }}
+
+    - name: Use Cross
+      if: matrix.os == 'ubuntu-20.04'
+      run: |
+        cargo install cross
+        echo "CARGO=cross" >> $GITHUB_ENV
+        if [ -d "./cross/${{ matrix.target }}" ]; then
+          docker build --tag "cross:${{ matrix.target }}" "./cross/${{ matrix.target }}"
+        fi
+ 
+    - name: Setup target flags
+      run: |
+        echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+        echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+
+    - name: Disable Ledger support for platforms that don't have udev
+      if: matrix.target == 'x86_64-unknown-linux-musl' || matrix.target == 'aarch64-unknown-linux-musl'
+      run: |
+        echo "FEATURES_FLAGS=${{ env.FEATURES_FLAGS }} --no-default-features" >> $GITHUB_ENV
+
+    - name: Show command used for Cargo
+      run: |
+        echo "cargo command is: ${{ env.CARGO }}"
+        echo "target flag is: ${{ env.TARGET_FLAGS }}"
+    
+    - name: Build near-cli-rs crate
+      run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
+
+    - name: Run tests
+      if: matrix.build != 'macos-aarch64'
+      run: ${{ env.CARGO }} test --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
+    
+    - name: View account summary for 'fro_volod.testnet'
+      if: matrix.build != 'linux-aarch64-musl' && matrix.build != 'macos-aarch64'
+      run: |
+        ${{ env.TARGET_DIR }}/debug/near account view-account-summary fro_volod.testnet network-config testnet now
+    
+    - name: Transfer NEAR Tokens
+      if: matrix.build != 'linux-aarch64-musl' && matrix.build != 'macos-aarch64'
+      run: |
+        ${{ env.TARGET_DIR }}/debug/near tokens volodymyr.testnet send-near fro_volod.testnet '0.1 NEAR' network-config testnet sign-with-plaintext-private-key --signer-public-key ed25519:Ebx7NiwqupsshnUsEZCzgm84SQqi8LZWJx7ermrr14JF --signer-private-key ed25519:2qM8v3nF4opam1frweMmD5h4PM3H6jtxfuAE77rpEuUx2rSGj64AzDf9xPKG76bgAs5L1oecV93etPy6xKjds2YB display
+
+  codestyle:
+    name: Code Style (fmt + clippy)
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        profile: minimal
+        components: rustfmt
+    - name: Check formatting
+      run: |
+        cargo fmt --all -- --check
+    - name: Install libudev-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install --assume-yes libudev-dev
+    - name: Check lints (cargo clippy)
+      uses: actions-rs/clippy-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        args: --all-features
+
+  publish:
+    runs-on: ubuntu-20.04
+    needs: [tests, codestyle]
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        # fetch tags for cargo ws publish
+        # might be a simple `fetch-tags: true` option soon, see https://github.com/actions/checkout/pull/579
+        fetch-depth: 0
+
+    - name: Setup
+      run: |
+        git config user.name github-actions
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        cargo install --git https://github.com/miraclx/cargo-workspaces --rev b2d49b9e575e29fd2395352e4d0df47def025039 cargo-workspaces
+        export GIT_PREVIOUS_TAG=$(git describe --tags --abbrev=0)
+        echo "GIT_PREVIOUS_TAG=${GIT_PREVIOUS_TAG}" >> $GITHUB_ENV
+        echo "[ pre run] current latest git tag is \"${GIT_PREVIOUS_TAG}\""
+
+    - name: Publish to crates.io and tag the commit
+      id: tag-and-publish
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      run: |
+        cargo ws publish --all --yes --exact --force '*' \
+          --skip-published --no-git-commit --allow-dirty \
+          --tag-existing --tag-prefix '' \
+          --tag-msg 'crates.io snapshot' --tag-msg $'%{\n - %n: https://crates.io/crates/%n/%v}' \
+          --no-individual-tags --no-git-push
+        export GIT_LATEST_TAG=$(git describe --tags --abbrev=0)
+        echo "GIT_LATEST_TAG=${GIT_LATEST_TAG}" >> $GITHUB_ENV
+        echo "[post run] current latest git tag is \"${GIT_LATEST_TAG}\""
+        echo "::set-output name=tagged::$( [[ "$GIT_LATEST_TAG" == "$GIT_PREVIOUS_TAG" ]] && echo 0 || echo 1 )"
+
+        # returning multi-line outputs gets truncated to include only the first line
+        # we have to escape the newline chars, runner auto unescapes them later
+        # https://github.community/t/set-output-truncates-multiline-strings/16852/3
+        GIT_TAG_MESSAGE="$(git tag -l --format='%(body)' ${GIT_LATEST_TAG})"
+        GIT_TAG_MESSAGE="${GIT_TAG_MESSAGE//'%'/'%25'}"
+        GIT_TAG_MESSAGE="${GIT_TAG_MESSAGE//$'\n'/'%0A'}"
+        GIT_TAG_MESSAGE="${GIT_TAG_MESSAGE//$'\r'/'%0D'}"
+        echo "::set-output name=git_tag_message::${GIT_TAG_MESSAGE}"
+
+    - name: Push tags to GitHub (if any)
+      if: steps.tag-and-publish.outputs.tagged == 1
+      run: git push --tags
+
+    - name: Extract release notes
+      if: steps.tag-and-publish.outputs.tagged == 1
+      id: extract-release-notes
+      uses: ffurrer2/extract-release-notes@c24866884b7a0d2fd2095be2e406b6f260479da8
+
+    - name: Create release
+      if: steps.tag-and-publish.outputs.tagged == 1
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.GIT_LATEST_TAG }}
+        release_name: ${{ env.GIT_LATEST_TAG }}
+        body: |
+          ${{ steps.extract-release-notes.outputs.release_notes }}
+
+          #### Crate Links
+
+          ${{ steps.tag-and-publish.outputs.git_tag_message }}

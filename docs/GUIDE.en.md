@@ -1,7 +1,7 @@
 ## User Guide
 
-This guide is intended to give a detailed description of _near-cli_ and an
-overview of its capabilities. This guide assumes that _near-cli_ is
+This guide is intended to give a detailed description of _near CLI_ and an
+overview of its capabilities. This guide assumes that _near CLI_ is
 [installed](README.md#installation)
 and that readers have passing familiarity with using command line tools. This
 also assumes a Unix-like system, although most commands are probably easily
@@ -11,16 +11,16 @@ Before proceeding to the description of specific commands, it is necessary to co
 
 1. Sign transaction
 
-    _near-cli_ offers several ways to sign the created transaction. Let's take a closer look at each.
+    _near CLI_ offers several ways to sign the created transaction. Let's take a closer look at each.
 
     - _sign-with-macos-keychain - Sign the transaction with a key saved in macOS keychain_
 
-        The operating system _MacOS_ has its own application _[Keychain Access](https://support.apple.com/guide/keychain-access/welcome/mac)_, with the help of which _near-cli_ will independently find access keys and sign the created transaction.
+        The operating system _MacOS_ has its own application _[Keychain Access](https://support.apple.com/guide/keychain-access/welcome/mac)_, with the help of which _near CLI_ will independently find access keys and sign the created transaction.
 
 
     - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
 
-        _near-cli_ will independently find access keys and sign the created transaction.  
+        _near CLI_ will independently find access keys and sign the created transaction.  
         Directory with access keys defined in [config](#config---manage-connections-in-a-configuration-file).
         The access keys must be in the _public-key.json_ file located in _/Users/user/.near-credentials/network-name/user-name/_  
         For example, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
@@ -37,17 +37,17 @@ Before proceeding to the description of specific commands, it is necessary to co
 
     - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
 
-        When choosing this signature option, _near-cli_ will ask the user to enter access keys:
+        When choosing this signature option, _near CLI_ will ask the user to enter access keys:
         - "public_key":"ed25519:Ebx7...",
         - "private_key":"ed25519:2qM8..."
 
     - _sign-with-access-key-file - Sign the transaction using the account access key file (access-key-file.json)_
 
-        When choosing this signature option, _near-cli_ will ask the user to enter the path to a file that contains information about account access keys.
+        When choosing this signature option, _near CLI_ will ask the user to enter the path to a file that contains information about account access keys.
 
     - _sign-with-seed-phrase - Sign the transaction using the seed phrase_
 
-        When choosing this signature option, _near-cli_ will ask the user to enter the mnemonic phrase associated with the account.
+        When choosing this signature option, _near CLI_ will ask the user to enter the mnemonic phrase associated with the account.
 
 2. Actions with a signed transaction
 
@@ -90,7 +90,7 @@ View account details ([View properties for an account](#view-account-summary---v
 To view an account summary for the last block, in the terminal command line type:
 
 ```txt
-./near-cli account \
+near account \
     view-account-summary fro_volod.testnet \
     network-config testnet \
     now
@@ -132,7 +132,7 @@ Number of access keys: 14
 
 To view an account summary for a specific block, you can specify the height of that block. To do this, at the terminal command line, type:
 ```txt
-./near-cli account \
+near account \
     view-account-summary fro_volod.testnet \
     network-config testnet \
     at-block-height 73069245
@@ -172,7 +172,7 @@ Number of access keys: 12
 
 To view an account summary for a specific block, you can specify the hash of that block. To do this, at the terminal command line, type:
 ```txt
-./near-cli account \
+near account \
     view-account-summary fro_volod.testnet \
     network-config testnet \
     at-block-hash HCUJq3vQ3ztyCZAhmRmHR3cwSDcoE4zEbaWkhAjFuxUY
@@ -218,7 +218,7 @@ Number of access keys: 12
 
 To authorize the user, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     import-account \
     using-web-wallet \
     network-config testnet
@@ -242,7 +242,7 @@ The data for the access key is saved in macOS Keychain
 
 To authorize the user, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     import-account \
     using-seed-phrase 'rapid cover napkin accuse junk drill sick tooth poem patch evil fan' \
         --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''' \
@@ -266,7 +266,7 @@ The data for the access key is saved in macOS Keychain
 
 To authorize the user, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     import-account \
     using-private-key ed25519:5YhAaEe3G4VtiBavJMvpzPPmknfsTauzVjwK1ZjPVw2MFM6zFyUv4tSiSfCbCn78mEnMifE6iX5qbhFsWEwErcC2 \
     network-config testnet
@@ -306,7 +306,7 @@ Access keys to the created account can be added in several ways:
 
 In order to create an account, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account sponsor-by-faucet-service test_fro.testnet \
     autogenerate-new-keypair \
     save-to-keychain \
@@ -338,7 +338,7 @@ https://explorer.testnet.near.org/transactions/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgR
 This command adds a previously known mnemonic phrase to the account.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account sponsor-by-faucet-service test_fro1.testnet \
     use-manually-provided-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
     network-config testnet \
@@ -366,7 +366,7 @@ https://explorer.testnet.near.org/transactions/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUA
 This command adds a pre-known public access key to the account.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account sponsor-by-faucet-service test_fro2.testnet \
     use-manually-provided-public-key ed25519:HVPgAsZkZ7cwLZDqK313XJsDyqAvgBxrATcD7VacA8KE \
     network-config testnet \
@@ -394,7 +394,7 @@ https://explorer.testnet.near.org/transactions/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5
 This command adds access keys to an account using a ledger.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account sponsor-by-faucet-service test_fro3.testnet \
     use-ledger \
     network-config testnet \
@@ -430,7 +430,7 @@ Access keys to the created account can be added in several ways:
 
 In order to create a sub-account, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account fund-myself new.fro_volod.testnet '1 NEAR' \
     autogenerate-new-keypair \
     save-to-keychain \
@@ -462,7 +462,7 @@ The data for the access key is saved in a file "/Users/frovolod/.near-credential
 
 In order to create a "short name" account, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account fund-myself new7.testnet '0.1 NEAR' \
     autogenerate-new-keypair \
     save-to-keychain \
@@ -497,7 +497,7 @@ The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already ex
 This command adds a previously known mnemonic phrase to the account.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account fund-myself seed.volodymyr.testnet '0.1 NEAR' \
     use-manually-provided-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
     sign-as volodymyr.testnet \
@@ -528,7 +528,7 @@ https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZb
 This command adds a pre-known public access key to the account.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account fund-myself pk.volodymyr.testnet '0.1 NEAR' \
     use-manually-provided-public-key ed25519:6jm8hWUgwoEeGmpdEyk9zrCqtXM8kHhvg8M236ZaGusS \
     sign-as volodymyr.testnet \
@@ -559,7 +559,7 @@ https://explorer.testnet.near.org/transactions/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2t
 This command adds access keys to an account using a ledger.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account fund-myself ledger1.volodymyr.testnet '0.1 NEAR' \
     use-ledger \
     sign-as volodymyr.testnet \
@@ -596,7 +596,7 @@ https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqAD
 This command automatically generates access keys and saves them to a file named _implicit-account-id_.
 In order to execute this command, in the terminal command line type: 
 ```txt
-./near-cli account \
+near account \
     create-account \
     fund-later \
     use-auto-generation \
@@ -621,7 +621,7 @@ The file "/Users/frovolod/.near-credentials/implicit/1573066d3fa7a2d56357aa5ddbc
 This command generates access keys using the ledger and saves them in a file named _implicit-account-id_.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account \
     fund-later \
     use-ledger \
@@ -646,7 +646,7 @@ The file "/Users/frovolod/.near-credentials/implicit/ledger/739c872c3057cd5d812c
 This command generates access keys using a mnemonic phrase and saves them in a file named _implicit-account-id_.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     create-account \
     fund-later \
     use-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
@@ -672,7 +672,7 @@ The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa
 This command is designed to delete the current account. It is important to remember that all tokens of the deleted account will be transferred to the "_beneficiary_" account.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     delete-account 2.fro_volod.testnet \
     beneficiary volodymyr.testnet \
     network-config testnet \
@@ -705,7 +705,7 @@ Examples of the use of these parameters are discussed in the ([View properties f
 
 To view the list of access keys, type the following in the terminal command line:
 ```txt
-./near-cli account \
+near account \
     list-keys fro_volod.testnet \
     network-config testnet \
     now
@@ -746,7 +746,7 @@ Let's execute the command to add a new pair of access keys to the account with t
   - the transaction will be signed automatically (if there is a file with access keys)
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     add-key fro_volod.testnet \
     grant-full-access \
     use-manually-provided-public-key ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 \
@@ -779,7 +779,7 @@ Let's change our parameters to add access keys:
   - the transaction will be signed with key pair
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     add-key fro_volod.testnet \
     grant-function-call-access \
         --allowance '1 NEAR' \
@@ -816,7 +816,7 @@ https://explorer.testnet.near.org/transactions/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvn
 
 In order to remove access keys, in the terminal command line type:
 ```txt
-./near-cli account \
+near account \
     delete-key fro_volod.testnet \
     ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 \
     network-config testnet \
@@ -855,7 +855,7 @@ https://explorer.testnet.near.org/transactions/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2
 This command is used to transfer tokens between accounts. Please note that the amount of tokens forwarded is indicated together with the dimensional unit (this is NEAR or yoctoNEAR).
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     send-near volodymyr.testnet 0.1NEAR \
     network-config testnet \
@@ -886,7 +886,7 @@ https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWe
 This command is used to transfer FT tokens between accounts. Please note that the amount of tokens forwarded is indicated together in dimensionless units.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     send-ft usdn.testnet volodymyr.testnet 10000000000000000000 \
         --prepaid-gas 100.000TeraGas \
@@ -919,7 +919,7 @@ https://explorer.testnet.near.org/transactions/5a7YmANdpimiqUm6WC6n4dd91b6A9PafN
 This command is used to transfer NFT tokens between accounts.
 In order to execute this command, in the terminal command line type:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     send-nft paras-token-v2.testnet volodymyr.testnet 1604:4 \
         --prepaid-gas 100.000TeraGas \
@@ -954,7 +954,7 @@ Examples of the use of these parameters are discussed in the ([View properties f
 
 To view the amount in NEAR tokens on the account, type the following in the terminal command line:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     view-near-balance \
     network-config testnet \
@@ -981,7 +981,7 @@ Examples of the use of these parameters are discussed in the ([View properties f
 
 To view funds in FT tokens on the account, type the following in the terminal command line:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     view-ft-balance usdn.testnet \
     network-config testnet \
@@ -1008,7 +1008,7 @@ Examples of the use of these parameters are discussed in the ([View properties f
 
 To view funds in NFT tokens on the account, type the following in the terminal command line:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     view-nft-assets paras-token-v2.testnet \
     network-config testnet \
@@ -1067,7 +1067,7 @@ Examples of the use of these parameters are discussed in the ([View properties f
 
 To run this command, type the following in the terminal command line:
 ```txt
-./near-cli contract \
+near contract \
     call-function \
     as-read-only zavodil.poolv1.near get_accounts \
     json-args '{"from_index": 0, "limit": 3}' \
@@ -1111,7 +1111,7 @@ To run this command, type the following in the terminal command line:
 
 To run this command, type the following in the terminal command line:
 ```txt
-./near-cli contract \
+near contract \
     call-function \
     as-transaction turbo.volodymyr.testnet rate \
     json-args '{"other_user":"volodymyr.testnet", "vote":5}' \
@@ -1145,7 +1145,7 @@ https://explorer.testnet.near.org/transactions/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUC
 
 In order to add a new contract, in the terminal command line type:
 ```txt
-./near-cli contract \
+near contract \
     deploy \
     262.volodymyr.testnet \
     use-file /Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm \
@@ -1185,7 +1185,7 @@ Examples of the use of these parameters are discussed in the ([View properties f
 In order to get the contract file, type the following in the terminal command line:
 
 ```txt
-./near-cli contract \
+near contract \
     download-wasm 262.volodymyr.testnet \
     to-folder /Users/frovolod/Downloads \
     network-config testnet \
@@ -1213,7 +1213,7 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 
 To view the status of the desired transaction, type its hash in the terminal command line:
 ```txt
-./near-cli transaction \
+near transaction \
     view-status GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank \
     volodymyr.testnet \
     network-config testnet
@@ -1405,7 +1405,7 @@ To do this, we will use the transaction constructor:
 
 To view the data of the configuration file (_config.toml_), you can use the interactive mode or type in the terminal command line:
 ```txt
-./near-cli config show-connections
+near config show-connections
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -1448,7 +1448,7 @@ linkdrop_account_id = "testnet"
 
 To add network details to the configuration file (_config.toml_), you can use interactive mode or type in the terminal command line:
 ```txt
-./near-cli config \
+near config \
     add-connection \
         --network-name pagoda-testnet \
         --connection-name pagoda-testnet \
@@ -1478,7 +1478,7 @@ Network connection "pagoda-testnet" was successfully added to config.toml
 
 To remove the network from the configuration file (_config.toml_), you can use interactive mode or type in the terminal command line:
 ```txt
-./near-cli config delete-connection pagoda-testnet
+near config delete-connection pagoda-testnet
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>

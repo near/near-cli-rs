@@ -1,7 +1,7 @@
 ## Инструкция
 
-Это руководство предназначено для того, чтобы дать подробное описание утилиты _near-cli_ и
-обзор её возможностей. Предполагается, что утилита _near-cli_
+Это руководство предназначено для того, чтобы дать подробное описание утилиты _near CLI_ и
+обзор её возможностей. Предполагается, что утилита _near CLI_
 [установлена](README.ru.md#installation)
 и пользователи знакомы с использованием инструментов командной строки. Также предполагается Unix-подобная система, хотя большинство команд, вероятно, легко
 переводимы в любую среду оболочки командной строки.
@@ -10,15 +10,15 @@
 
 1. Подпись транзакции
 
-   _near-cli_ предполагает несколько способов подписи созданной транзакции. Рассмотрим подробнее каждый.
+   _near CLI_ предполагает несколько способов подписи созданной транзакции. Рассмотрим подробнее каждый.
 
     - _sign-with-macos-keychain - Sign the transaction with a key saved in macOS keychain_
 
-        Операционная система _MacOS_ имеет собственное приложение _[Keychain Access](https://support.apple.com/ru-ru/guide/keychain-access/welcome/mac)_, с помощью которого _near-cli_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
+        Операционная система _MacOS_ имеет собственное приложение _[Keychain Access](https://support.apple.com/ru-ru/guide/keychain-access/welcome/mac)_, с помощью которого _near CLI_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
 
     - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
 
-        _near-cli_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
+        _near CLI_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
         Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).  
         Ключи доступа должны находиться в файле _публичный-ключ.json_, расположенном в _/Users/user/.near-credentials/имя-сети/имя-пользователя/_.  
         Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
@@ -35,17 +35,17 @@
 
     - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
 
-        При выборе этого варианта подписи _near-cli_ попросит пользователя ввести ключи доступа:
+        При выборе этого варианта подписи _near CLI_ попросит пользователя ввести ключи доступа:
         - "public_key":"ed25519:Ebx7...",
         - "private_key":"ed25519:2qM8..."
 
     - _sign-with-access-key-file - Sign the transaction using the account access key file (access-key-file.json)_
 
-        При выборе этого варианта подписи _near-cli_ попросит пользователя ввести путь к файлу, в котором находится информация о ключах доступа к аккаунту.
+        При выборе этого варианта подписи _near CLI_ попросит пользователя ввести путь к файлу, в котором находится информация о ключах доступа к аккаунту.
 
     - _sign-with-seed-phrase - Sign the transaction using the seed phrase_
 
-        При выборе этого варианта подписи _near-cli_ попросит пользователя ввести мнемоническую фразу, связанную с аккаунтом.
+        При выборе этого варианта подписи _near CLI_ попросит пользователя ввести мнемоническую фразу, связанную с аккаунтом.
 
 2. Действия с подписанной транзакцией
 
@@ -88,7 +88,7 @@
 Для просмотра сведений об аккаунте на последнем блоке необходимо ввести в командной строке терминала:
 
 ```txt
-./near-cli account \
+near account \
     view-account-summary fro_volod.testnet \
     network-config testnet \
     now
@@ -130,7 +130,7 @@ Number of access keys: 14
 
 Для просмотра сведений об аккаунте на конктретном блоке можно указать высоту данного блока. Для этого нужно ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     view-account-summary fro_volod.testnet \
     network-config testnet \
     at-block-height 73069245
@@ -170,7 +170,7 @@ Number of access keys: 12
 
 Для просмотра сведений об аккаунте необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     view-account-summary fro_volod.testnet \
     network-config testnet \
     at-block-hash HCUJq3vQ3ztyCZAhmRmHR3cwSDcoE4zEbaWkhAjFuxUY
@@ -217,7 +217,7 @@ Number of access keys: 12
 
 Для авторизации пользователя необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     import-account \
     using-web-wallet \
     network-config testnet
@@ -241,7 +241,7 @@ The data for the access key is saved in macOS Keychain
 
 Для авторизации пользователя необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     import-account \
     using-seed-phrase 'rapid cover napkin accuse junk drill sick tooth poem patch evil fan' \
         --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''' \
@@ -265,7 +265,7 @@ The data for the access key is saved in macOS Keychain
 
 Для авторизации пользователя необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     import-account \
     using-private-key ed25519:5YhAaEe3G4VtiBavJMvpzPPmknfsTauzVjwK1ZjPVw2MFM6zFyUv4tSiSfCbCn78mEnMifE6iX5qbhFsWEwErcC2 \
     network-config testnet
@@ -305,7 +305,7 @@ The data for the access key is saved in macOS Keychain
 
 Для создания аккаунта необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account sponsor-by-faucet-service test_fro.testnet \
     autogenerate-new-keypair \
     save-to-keychain \
@@ -337,7 +337,7 @@ https://explorer.testnet.near.org/transactions/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgR
 Данная команда добавляет аккаунту заранее известную мнемоническую фразу.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account sponsor-by-faucet-service test_fro1.testnet \
     use-manually-provided-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
     network-config testnet \
@@ -365,7 +365,7 @@ https://explorer.testnet.near.org/transactions/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUA
 Данная команда добавляет аккаунту заранее известный публичный ключ доступа.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account sponsor-by-faucet-service test_fro2.testnet \
     use-manually-provided-public-key ed25519:HVPgAsZkZ7cwLZDqK313XJsDyqAvgBxrATcD7VacA8KE \
     network-config testnet \
@@ -393,7 +393,7 @@ https://explorer.testnet.near.org/transactions/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5
 Данная команда с помощью леджера добавляет ключи доступа аккаунту.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account sponsor-by-faucet-service test_fro3.testnet \
     use-ledger \
     network-config testnet \
@@ -429,7 +429,7 @@ https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTb
 
 Для создания суб-аккаунта необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account fund-myself new.fro_volod.testnet '1 NEAR' \
     autogenerate-new-keypair \
     save-to-keychain \
@@ -461,7 +461,7 @@ The data for the access key is saved in a file "/Users/frovolod/.near-credential
 
 Для создания аккаунта с коротким именем необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account fund-myself new7.testnet '0.1 NEAR' \
     autogenerate-new-keypair \
     save-to-keychain \
@@ -496,7 +496,7 @@ The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already ex
 Данная команда добавляет аккаунту заранее известную мнемоническую фразу.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account fund-myself seed.volodymyr.testnet '0.1 NEAR' \
     use-manually-provided-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
     sign-as volodymyr.testnet \
@@ -527,7 +527,7 @@ https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZb
 Данная команда добавляет аккаунту заранее известный публичный ключ доступа.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account fund-myself pk.volodymyr.testnet '0.1 NEAR' \
     use-manually-provided-public-key ed25519:6jm8hWUgwoEeGmpdEyk9zrCqtXM8kHhvg8M236ZaGusS \
     sign-as volodymyr.testnet \
@@ -558,7 +558,7 @@ https://explorer.testnet.near.org/transactions/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2t
 Данная команда с помощью леджера добавляет ключи доступа аккаунту.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account fund-myself ledger1.volodymyr.testnet '0.1 NEAR' \
     use-ledger \
     sign-as volodymyr.testnet \
@@ -595,7 +595,7 @@ https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqAD
 Данная команда автоматически генерирует ключи доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account \
     fund-later \
     use-auto-generation \
@@ -620,7 +620,7 @@ The file "/Users/frovolod/.near-credentials/implicit/1573066d3fa7a2d56357aa5ddbc
 Данная команда с помощью леджера генерирует ключи доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account \
     fund-later \
     use-ledger \
@@ -645,7 +645,7 @@ The file "/Users/frovolod/.near-credentials/implicit/ledger/739c872c3057cd5d812c
 Данная команда с помощью мнемонической фразы генерирует ключи доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     create-account \
     fund-later \
     use-seed-phrase 'start vote foot cereal link cabin fantasy universe hero drama bird fiction' \
@@ -671,7 +671,7 @@ The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa
 Данная команда предназначена для удаления текущего аккаунта. Важно помнить, что все средства удаляемого аккаунта перейдут на счет "_beneficiary_".
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     delete-account 2.fro_volod.testnet \
     beneficiary volodymyr.testnet \
     network-config testnet \
@@ -704,7 +704,7 @@ https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MG
 
 Для просмотра списка ключей доступа необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     list-keys fro_volod.testnet \
     network-config testnet \
     now
@@ -746,7 +746,7 @@ Number of access keys: 14
 
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     add-key fro_volod.testnet \
     grant-full-access \
     use-manually-provided-public-key ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 \
@@ -780,7 +780,7 @@ https://explorer.testnet.near.org/transactions/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jS
 
 Для этого введем следующую команду:
 ```txt
-./near-cli account \
+near account \
     add-key fro_volod.testnet \
     grant-function-call-access \
         --allowance '1 NEAR' \
@@ -817,7 +817,7 @@ https://explorer.testnet.near.org/transactions/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvn
 
 Для удаления ключей доступа необходимо ввести в командной строке терминала:
 ```txt
-./near-cli account \
+near account \
     delete-key fro_volod.testnet \
     ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 \
     network-config testnet \
@@ -856,7 +856,7 @@ https://explorer.testnet.near.org/transactions/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2
 Данная команда служит для перевода средств NEAR токенах между аккаунтами. Обратите внимание, что количество пересылаемых токенов указывается совместно с размерной единицей (это NEAR либо yoctoNEAR).
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     send-near volodymyr.testnet 0.1NEAR \
     network-config testnet \
@@ -887,7 +887,7 @@ https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWe
 Данная команда служит для перевода средств в FT токенах между аккаунтами. Обратите внимание, что количество пересылаемых токенов указывается в безразмерных единицах.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     send-ft usdn.testnet volodymyr.testnet 10000000000000000000 \
         --prepaid-gas 100.000TeraGas \
@@ -920,7 +920,7 @@ https://explorer.testnet.near.org/transactions/5a7YmANdpimiqUm6WC6n4dd91b6A9PafN
 Данная команда служит для перевода средств в NFT токенах между аккаунтами.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     send-nft paras-token-v2.testnet volodymyr.testnet 1604:4 \
         --prepaid-gas 100.000TeraGas \
@@ -955,7 +955,7 @@ https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7
 
 Для просмотра средств в NEAR токенах на счету аккаунта необходимо ввести в командной строке терминала:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     view-near-balance \
     network-config testnet \
@@ -982,7 +982,7 @@ fro_volod.testnet account has 169.589001320890476999999994 NEAR available for tr
 
 Для просмотра средств в FT токенах на счету аккаунта необходимо ввести в командной строке терминала:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     view-ft-balance usdn.testnet \
     network-config testnet \
@@ -1009,7 +1009,7 @@ fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usd
 
 Для просмотра средств в NFT токенах на счету аккаунта необходимо ввести в командной строке терминала:
 ```txt
-./near-cli tokens \
+near tokens \
     fro_volod.testnet \
     view-nft-assets paras-token-v2.testnet \
     network-config testnet \
@@ -1068,7 +1068,7 @@ fro_volod.testnet account has NFT tokens:
 
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli contract \
+near contract \
     call-function \
     as-read-only zavodil.poolv1.near get_accounts \
     json-args '{"from_index": 0, "limit": 3}' \
@@ -1112,7 +1112,7 @@ fro_volod.testnet account has NFT tokens:
 
 Для выполнения этой команды необходимо ввести в командной строке терминала:
 ```txt
-./near-cli contract \
+near contract \
     call-function \
     as-transaction turbo.volodymyr.testnet rate \
     json-args '{"other_user":"volodymyr.testnet", "vote":5}' \
@@ -1146,7 +1146,7 @@ https://explorer.testnet.near.org/transactions/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUC
 
 Для добавления нового контракта необходимо ввести в командной строке терминала:
 ```txt
-./near-cli contract \
+near contract \
     deploy \
     262.volodymyr.testnet \
     use-file /Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm \
@@ -1186,7 +1186,7 @@ https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7
 Для получения файла контракта необходимо ввести в командной строке терминала:
 
 ```txt
-./near-cli contract \
+near contract \
     download-wasm 262.volodymyr.testnet \
     to-folder /Users/frovolod/Downloads \
     network-config testnet \
@@ -1214,7 +1214,7 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 
 Для просмотра статуса желаемой транзакции необходимо ввести в командной строке терминала её хэш:
 ```txt
-./near-cli transaction \
+near transaction \
     view-status GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank \
     volodymyr.testnet \
     network-config testnet
@@ -1406,7 +1406,7 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 
 Для просмотра данных конфигурационного файла (_config.toml_) можно воспользоваться интерактивным режимом либо ввести в командной строке терминала:
 ```txt
-./near-cli config show-connections
+near config show-connections
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
@@ -1449,7 +1449,7 @@ linkdrop_account_id = "testnet"
 
 Для добавления данных о сети в конфигурационный файл (_config.toml_) можно воспользоваться интерактивным режимом либо ввести в командной строке терминала:
 ```txt
-./near-cli config \
+near config \
     add-connection \
         --network-name pagoda-testnet \
         --connection-name pagoda-testnet \
@@ -1479,7 +1479,7 @@ Network connection "pagoda-testnet" was successfully added to config.toml
 
 Для удаления сети из конфигурационного файла (_config.toml_) можно воспользоваться интерактивным режимом либо ввести в командной строке терминала:
 ```txt
-./near-cli config delete-connection pagoda-testnet
+near config delete-connection pagoda-testnet
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>

@@ -38,8 +38,8 @@ pub enum TopLevelCommand {
     /// Use this to manage connections in a configuration file (config.toml).
     Config(self::config::ConfigCommands),
     #[cfg(feature = "self-update")]
-    #[strum_discriminants(strum(message = "extension   - Manage near-cli-rs extensions"))]
-    /// Use this to manage near-cli-rs extensions
+    #[strum_discriminants(strum(message = "extension   - Manage near CLI and extensions"))]
+    /// Use this to manage near CLI and extensions
     Extensions(self::extensions::ExtensionsCommands),
 }
 

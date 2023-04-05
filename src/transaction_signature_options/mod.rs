@@ -2,6 +2,8 @@ use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+use crate::common::JsonRpcClientExt;
+
 pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
@@ -134,20 +136,18 @@ impl interactive_clap::FromCli for Submit {
 
                 println!("Transaction sent ...");
                 let transaction_info = loop {
-                    let transaction_info_result = tokio::runtime::Runtime::new()
-                            .unwrap()
-                            .block_on(context.network_config.json_rpc_client()
-                                .call(near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{signed_transaction: context.signed_transaction.clone()})
-                                )
-                            ;
+                    let transaction_info_result = context.network_config.json_rpc_client()
+                        .blocking_call(
+                            near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{
+                                signed_transaction: context.signed_transaction.clone()
+                            }
+                        );
                     match transaction_info_result {
                         Ok(response) => {
                             break response;
                         }
                         Err(err) => match crate::common::rpc_transaction_error(err) {
-                            Ok(_) => tokio::runtime::Runtime::new().unwrap().block_on(
-                                tokio::time::sleep(std::time::Duration::from_millis(100)),
-                            ),
+                            Ok(_) => std::thread::sleep(std::time::Duration::from_millis(100)),
                             Err(report) => {
                                 return interactive_clap::ResultFromCli::Err(
                                     optional_clap_variant,
