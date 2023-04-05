@@ -1522,7 +1522,7 @@ dependencies = [
 
 [[package]]
 name = "near-cli-rs"
-version = "0.3.0-rc.1"
+version = "0.3.0"
 dependencies = [
  "base64 0.13.1",
  "bip39",
