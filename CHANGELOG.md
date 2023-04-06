@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1](https://github.com/near/near-cli-rs/compare/v0.3.0...v0.3.1) - 2023-04-06
+
+### Other
+- make a git tag with Release-plz, so it triggers binary release pipeline (#170)
+
 ## [0.3.0] - 2023-04-06
 
 * Renamed `near-cli` binary to `near` as it has special handlers for the commands of near CLI JS, and can be used as a replacement to near CLI JS that will guide users on how to use the new commands when they type the old commands.
