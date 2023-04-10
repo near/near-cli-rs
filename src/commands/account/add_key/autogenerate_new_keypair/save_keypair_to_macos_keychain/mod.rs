@@ -34,9 +34,15 @@ impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext 
                     },
                 },
             )],
-            on_after_getting_network_callback: std::sync::Arc::new(
-                move |_actions, network_config| {
-                    crate::common::save_access_key_to_macos_keychain(
+            on_after_getting_network_callback: std::sync::Arc::new(|_actions, _network_config| {
+                Ok(())
+            }),
+            on_before_signing_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+            ),
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                move |_signed_transaction, network_config, storage_message| {
+                    *storage_message = crate::common::save_access_key_to_macos_keychain(
                         network_config.clone(),
                         &serde_json::to_string(&item.0.key_pair_properties)?,
                         &item.0.key_pair_properties.public_key_str,
@@ -44,12 +50,6 @@ impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext 
                     )?;
                     Ok(())
                 },
-            ),
-            on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
