@@ -127,6 +127,10 @@ impl NearBalance {
     pub fn to_yoctonear(&self) -> u128 {
         self.yoctonear_amount
     }
+
+    pub fn is_zero(&self) -> bool {
+        self == &Self::from_str("0 NEAR").unwrap()
+    }
 }
 
 impl std::fmt::Display for NearBalance {
