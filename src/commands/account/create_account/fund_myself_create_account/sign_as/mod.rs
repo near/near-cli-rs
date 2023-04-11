@@ -186,7 +186,7 @@ impl SignerAccountId {
             let signer_account_id: crate::types::account_id::AccountId =
                 CustomType::new("What is the signer account ID?").prompt()?;
             if !is_account_exist(context, signer_account_id.clone().into()) {
-                println!("\nThe account <{}> does not yet exist.", &signer_account_id);
+                eprintln!("\nThe account <{}> does not yet exist.", &signer_account_id);
                 #[derive(strum_macros::Display)]
                 enum ConfirmOptions {
                     #[strum(to_string = "Yes, I want to enter a new name for signer_account_id.")]

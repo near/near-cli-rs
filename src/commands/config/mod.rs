@@ -45,12 +45,12 @@ impl ShowConnectionsContext {
     ) -> color_eyre::eyre::Result<Self> {
         let mut path_config_toml = dirs::config_dir().expect("Impossible to get your config dir!");
         path_config_toml.push("near-cli/config.toml");
-        println!(
+        eprintln!(
             "\nConfiguration data is stored in a file {:?}",
             &path_config_toml
         );
         let config_toml = toml::to_string(&previous_context.0)?;
-        println!("{}", &config_toml);
+        eprintln!("{}", &config_toml);
         Ok(Self)
     }
 }

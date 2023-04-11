@@ -48,9 +48,9 @@ fn main() -> crate::common::CliResult {
                     Ok(js_cmd) => {
                         match js_cmd.rust_command_generation() {
                             Ok(vec_cmd) => {
-                                println!("The command you tried to run is deprecated in the new NEAR CLI, but we tried our best to match the old command with the new syntax, try it instead:");
-                                println!();
-                                println!(
+                                eprintln!("The command you tried to run is deprecated in the new NEAR CLI, but we tried our best to match the old command with the new syntax, try it instead:");
+                                eprintln!();
+                                eprintln!(
                                     "{}",
                                     shell_words::join(
                                         std::iter::once(near_cli_exec_path).chain(vec_cmd)
@@ -58,9 +58,9 @@ fn main() -> crate::common::CliResult {
                                 );
                             }
                             Err(err) => {
-                                println!("The command you tried to run is deprecated in the new NEAR CLI and there is no equivalent command in the new NEAR CLI.");
-                                println!();
-                                println!("{}", err);
+                                eprintln!("The command you tried to run is deprecated in the new NEAR CLI and there is no equivalent command in the new NEAR CLI.");
+                                eprintln!();
+                                eprintln!("{}", err);
                             }
                         }
                         std::process::exit(1);
@@ -94,7 +94,7 @@ fn main() -> crate::common::CliResult {
             Ok(Some(cli_cmd))
         }
         interactive_clap::ResultFromCli::Cancel(None) => {
-            println!("Goodbye!");
+            eprintln!("Goodbye!");
             Ok(None)
         }
         interactive_clap::ResultFromCli::Back => {
@@ -102,7 +102,7 @@ fn main() -> crate::common::CliResult {
         }
         interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
             if let Some(cli_cmd) = optional_cli_cmd {
-                println!(
+                eprintln!(
                     "Your console command:\n{}",
                     shell_words::join(
                         std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
@@ -137,8 +137,8 @@ fn main() -> crate::common::CliResult {
                 .wrap_err("Failed to parse latest version of `near` CLI")?;
 
             if current_version < latest_version {
-                println!();
-                println!(
+                eprintln!();
+                eprintln!(
                     "`near` CLI has a new update available \x1b[2m{current_version}\x1b[0m →  \x1b[32m{latest_version}\x1b[0m"
                 );
                 let self_update_cli_cmd = CliCmd {
@@ -152,7 +152,7 @@ fn main() -> crate::common::CliResult {
                             },
                         )),
                 };
-                println!(
+                eprintln!(
                     "To update `near` CLI use: {}",
                     shell_words::join(
                         std::iter::once(near_cli_exec_path)

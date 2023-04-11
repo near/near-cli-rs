@@ -191,7 +191,7 @@ impl FunctionCallType {
             No,
         }
 
-        println!();
+        eprintln!();
         let select_choose_input = Select::new(
             "Do You want to input a list of method names that can be used",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
@@ -218,7 +218,7 @@ impl FunctionCallType {
     pub fn input_allowance(
         _context: &super::AddKeyCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
-        println!();
+        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to input allowance for receiver ID")]

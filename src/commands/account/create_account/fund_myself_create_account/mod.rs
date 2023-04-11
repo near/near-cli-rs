@@ -69,7 +69,7 @@ impl NewAccount {
             loop {
                 let network = find_network_where_account_exist(context, account_id.clone().into());
                 if let Some(network_config) = network {
-                    println!(
+                    eprintln!(
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
                         &account_id, network_config.network_name
                     );
@@ -80,7 +80,7 @@ impl NewAccount {
                     < MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
                     && account_id.0.is_top_level()
                 {
-                    println!(
+                    eprintln!(
                         "\nAccount <{}> has <{}> character count. Only the registrar account can create new top level accounts that are shorter than {} characters. Read more about it in nomicon: https://nomicon.io/DataStructures/Account#top-level-accounts",
                         &account_id,
                         &account_id.0.as_str().chars().count(),
@@ -101,7 +101,7 @@ impl NewAccount {
                         )
                         .is_none()
                         {
-                            println!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
+                            eprintln!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
                             &parent_account_id, &account_id);
                             if !ask_if_different_account_id_wanted()? {
                                 break account_id;
@@ -124,7 +124,7 @@ impl NewAccount {
     fn input_initial_balance(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
-        println!();
+        eprintln!();
         match crate::common::NearBalance::from_str(&Text::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear).")
             .with_initial_value("0.1 NEAR")
             .prompt()?

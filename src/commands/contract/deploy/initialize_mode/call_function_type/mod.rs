@@ -105,7 +105,7 @@ impl PrepaidGas {
     fn input_gas(
         _context: &CallFunctionActionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
-        println!();
+        eprintln!();
         let gas: u64 = loop {
             match crate::common::NearGas::from_str(
                 &Text::new("Enter gas for function call")
@@ -118,7 +118,7 @@ impl PrepaidGas {
                     if gas <= 300000000000000 {
                         break gas;
                     } else {
-                        println!("You need to enter a value of no more than 300 TERAGAS")
+                        eprintln!("You need to enter a value of no more than 300 TERAGAS")
                     }
                 }
                 Err(err) => return Err(color_eyre::Report::msg(err)),
@@ -193,7 +193,7 @@ impl Deposit {
     fn input_deposit(
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
-        println!();
+        eprintln!();
         match crate::common::NearBalance::from_str(
             &Text::new(
                 "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear).",
