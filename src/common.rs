@@ -693,28 +693,28 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
 }
 
 pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Transaction) {
-    println!("{:<13} {}", "signer_id:", &transaction.signer_id);
-    println!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
-    println!("actions:");
+    eprintln!("{:<13} {}", "signer_id:", &transaction.signer_id);
+    eprintln!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
+    eprintln!("actions:");
     let actions = transaction.actions.clone();
     for action in actions {
         match action {
             near_primitives::transaction::Action::CreateAccount(_) => {
-                println!(
+                eprintln!(
                     "{:>5} {:<20} {}",
                     "--", "create account:", &transaction.receiver_id
                 )
             }
             near_primitives::transaction::Action::DeployContract(_) => {
-                println!("{:>5} {:<20}", "--", "deploy contract")
+                eprintln!("{:>5} {:<20}", "--", "deploy contract")
             }
             near_primitives::transaction::Action::FunctionCall(function_call_action) => {
-                println!("{:>5} {:<20}", "--", "function call:");
-                println!(
+                eprintln!("{:>5} {:<20}", "--", "function call:");
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "", "method name:", &function_call_action.method_name
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "",
                     "args:",
@@ -725,7 +725,7 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                     .unwrap_or_else(|_| "".to_string())
                     .replace('\n', "\n                                 ")
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "",
                     "gas:",
@@ -733,7 +733,7 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                         inner: function_call_action.gas
                     }
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {}   Attention! This deposit may change after signing the transaction",
                     "",
                     "deposit:",
@@ -741,7 +741,7 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                 );
             }
             near_primitives::transaction::Action::Transfer(transfer_action) => {
-                println!(
+                eprintln!(
                     "{:>5} {:<20} {}",
                     "--",
                     "transfer deposit:",
@@ -749,12 +749,12 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                 );
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
-                println!("{:>5} {:<20}", "--", "stake:");
-                println!(
+                eprintln!("{:>5} {:<20}", "--", "stake:");
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "", "public key:", &stake_action.public_key
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "",
                     "stake:",
@@ -762,33 +762,33 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                 );
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
-                println!("{:>5} {:<20}", "--", "add access key:");
-                println!(
+                eprintln!("{:>5} {:<20}", "--", "add access key:");
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "", "public key:", &add_key_action.public_key
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "", "nonce:", &add_key_action.access_key.nonce
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {:?}",
                     "", "permission:", &add_key_action.access_key.permission
                 );
             }
             near_primitives::transaction::Action::DeleteKey(delete_key_action) => {
-                println!("{:>5} {:<20}", "--", "delete access key:");
-                println!(
+                eprintln!("{:>5} {:<20}", "--", "delete access key:");
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "", "public key:", &delete_key_action.public_key
                 );
             }
             near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
-                println!(
+                eprintln!(
                     "{:>5} {:<20} {}",
                     "--", "delete account:", &transaction.receiver_id
                 );
-                println!(
+                eprintln!(
                     "{:>5} {:<20} {}",
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
                 );
