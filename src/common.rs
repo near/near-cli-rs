@@ -1187,12 +1187,10 @@ pub fn print_transaction_status(
             print_transaction_error(tx_execution_error)
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(res) => {
-            let result = String::from_utf8(res.clone())?;
             eprintln!("--- Result -------------------------");
-            if result.is_empty() {
-                eprintln!("Empty result");
-            } else {
-                eprintln!("{result}");
+            match serde_json::from_slice::<serde_json::Value>(&res) {
+                Ok(result) => println!("Result:\n{}", serde_json::to_string_pretty(&result)?),
+                Err(_) => eprintln!("Empty result")
             }
             eprintln!("------------------------------------\n");
             print_value_successful_transaction(transaction_info.clone())
