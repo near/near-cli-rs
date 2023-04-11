@@ -42,7 +42,6 @@ impl SignAccessKeyFileContext {
                 &account_json.public_key,
                 near_primitives::types::BlockReference::latest(),
             )
-
             .wrap_err(
                 "Cannot sign a transaction due to an error while fetching the most recent nonce value",
             )?;
