@@ -1186,11 +1186,18 @@ pub fn print_transaction_status(
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
             print_transaction_error(tx_execution_error)
         }
-        near_primitives::views::FinalExecutionStatus::SuccessValue(res) => {
+        near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
             eprintln!("--- Result -------------------------");
-            match serde_json::from_slice::<serde_json::Value>(&res) {
-                Ok(result) => println!("Result:\n{}", serde_json::to_string_pretty(&result)?),
-                Err(_) => eprintln!("Empty result")
+            if bytes_result.is_empty() {
+                eprintln!("Empty result");
+            } else if let Ok(json_result) =
+                serde_json::from_slice::<serde_json::Value>(&bytes_result)
+            {
+                println!("{}", serde_json::to_string_pretty(&json_result)?);
+            } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
+                println!("{string_result}");
+            } else {
+                eprintln!("The returned value is not printable (binary data)");
             }
             eprintln!("------------------------------------\n");
             print_value_successful_transaction(transaction_info.clone())

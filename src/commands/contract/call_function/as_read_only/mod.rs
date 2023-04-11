@@ -50,9 +50,14 @@ impl CallFunctionViewContext {
                 )?;
                 call_result.print_logs();
                 eprintln!("Result:");
-                match call_result.parse_result_from_json::<serde_json::Value>() {
-                    Ok(serde_call_result) => println!("Result:\n{}", serde_json::to_string_pretty(&serde_call_result)?),
-                    Err(_) => eprintln!("Empty result")
+                if call_result.result.is_empty() {
+                    eprintln!("Empty result");
+                } else if let Ok(json_result) = call_result.parse_result_from_json::<serde_json::Value>() {
+                    println!("{}", serde_json::to_string_pretty(&json_result)?);
+                } else if let Ok(string_result) = String::from_utf8(call_result.result) {
+                    println!("{string_result}");
+                } else {
+                    eprintln!("The returned value is not printable (binary data)");
                 }
                 eprintln!("--------------");
                 Ok(())
