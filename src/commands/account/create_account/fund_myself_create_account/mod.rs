@@ -145,7 +145,7 @@ fn find_network_where_account_exist(
         if crate::common::get_account_state(
             network.1.clone(),
             new_account_id.clone(),
-            near_primitives::types::Finality::Final.into(),
+            near_primitives::types::BlockReference::latest(),
         )
         .is_ok()
         {

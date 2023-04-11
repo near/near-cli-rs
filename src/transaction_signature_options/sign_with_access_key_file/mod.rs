@@ -40,15 +40,11 @@ impl SignAccessKeyFileContext {
             .blocking_call_view_access_key(
                 &previous_context.transaction.signer_id,
                 &account_json.public_key,
-                near_primitives::types::Finality::Final.into(),
+                near_primitives::types::BlockReference::latest(),
             )
-            .map_err(|err| {
-                println!("\nYour transaction was not successfully signed.\n");
-                color_eyre::Report::msg(format!(
-                    "Failed to fetch public key information for nonce: {:?}",
-                    err
-                ))
-            })?;
+            .wrap_err(
+                "Cannot sign a transaction due to an error while fetching the most recent nonce value",
+            )?;
         let current_nonce = rpc_query_response
             .access_key_view()
             .wrap_err("Error current_nonce")?
