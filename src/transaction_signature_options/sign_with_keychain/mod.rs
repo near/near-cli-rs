@@ -139,9 +139,9 @@ impl SignKeychainContext {
             unsigned_transaction,
         );
 
-        println!("\nYour transaction was signed successfully.");
-        println!("Public key: {}", account_json.public_key);
-        println!("Signature: {}", signature);
+        eprintln!("\nYour transaction was signed successfully.");
+        eprintln!("Public key: {}", account_json.public_key);
+        eprintln!("Signature: {}", signature);
 
         Ok(Self {
             network_config: previous_context.network_config,

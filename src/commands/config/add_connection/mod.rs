@@ -55,9 +55,9 @@ impl AddNetworkConnectionContext {
                 faucet_url: scope.faucet_url.clone().map(|faucet_url| faucet_url.into()),
             },
         );
-        println!();
+        eprintln!();
         crate::common::write_config_toml(config)?;
-        println!(
+        eprintln!(
             "Network connection \"{}\" was successfully added to config.toml",
             &scope.connection_name
         );
@@ -172,7 +172,7 @@ impl AddNetworkConnection {
     fn input_rpc_api_key(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
-        println!();
+        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, the RPC endpoint requires API key")]
@@ -197,7 +197,7 @@ impl AddNetworkConnection {
     fn input_linkdrop_account_id(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        println!();
+        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(
@@ -224,7 +224,7 @@ impl AddNetworkConnection {
     fn input_faucet_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        println!();
+        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the URL of the faucet")]

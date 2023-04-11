@@ -71,7 +71,7 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    println!(
+                    eprintln!(
                         "<{sender}> has successfully transferred {amount} FT ({contract}) to <{receiver}>.",
                     );
                 }
@@ -109,7 +109,7 @@ impl SendFtCommand {
     fn input_gas(
         _context: &super::TokensCommandsContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
-        println!();
+        eprintln!();
         let gas: u64 = loop {
             match crate::common::NearGas::from_str(
                 &Text::new("Enter gas for function call")
@@ -122,7 +122,7 @@ impl SendFtCommand {
                     if gas <= 300000000000000 {
                         break gas;
                     } else {
-                        println!("You need to enter a value of no more than 300 TERAGAS")
+                        eprintln!("You need to enter a value of no more than 300 TERAGAS")
                     }
                 }
                 Err(err) => return Err(color_eyre::Report::msg(err)),
@@ -134,7 +134,7 @@ impl SendFtCommand {
     fn input_deposit(
         _context: &super::TokensCommandsContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
-        println!();
+        eprintln!();
         match crate::common::NearBalance::from_str(
             &Text::new(
                 "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear).",

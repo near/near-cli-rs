@@ -55,7 +55,7 @@ pub enum SignWith {
 //-----------------------------------------------------------------------------------
 //---- these functions are used for offline mode ----
 // pub fn input_access_key_nonce(public_key: &str) -> color_eyre::eyre::Result<u64> {
-//     println!("Your public key: `{}`", public_key);
+//     eprintln!("Your public key: `{}`", public_key);
 //     Ok(Input::new()
 //         .with_prompt(
 //             "Enter transaction nonce for this public key (query the access key information with \
@@ -134,7 +134,7 @@ impl interactive_clap::FromCli for Submit {
                     }
                 };
 
-                println!("Transaction sent ...");
+                eprintln!("Transaction sent ...");
                 let transaction_info = loop {
                     let transaction_info_result = context.network_config.json_rpc_client()
                         .blocking_call(
@@ -181,7 +181,7 @@ impl interactive_clap::FromCli for Submit {
                         )
                     }
                 };
-                println!("{storage_message}");
+                eprintln!("{storage_message}");
                 interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
             }
             Some(CliSubmit::Display) => {
@@ -204,9 +204,9 @@ impl interactive_clap::FromCli for Submit {
                         .try_to_vec()
                         .expect("Transaction is not expected to fail on serialization"),
                 );
-                println!("\nSerialize_to_base64:\n{}", &base64_transaction);
+                eprintln!("\nSerialize_to_base64:\n{}", &base64_transaction);
 
-                println!("{storage_message}");
+                eprintln!("{storage_message}");
                 interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
             }
             None => unreachable!("Unexpected error"),

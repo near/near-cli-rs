@@ -28,7 +28,7 @@ impl LoginFromWebWalletContext {
                         .append_pair("public_key", &key_pair_properties.public_key_str);
                     // Use `success_url` once capture mode is implemented
                     //.append_pair("success_url", "http://127.0.0.1:8080");
-                    println!(
+                    eprintln!(
                         "If your browser doesn't automatically open, please visit this URL:\n {}\n",
                         &url.as_str()
                     );

@@ -38,7 +38,7 @@ impl TransactionInfoContext {
                             }
                         })
                         .wrap_err("Failed to fetch query for view transaction")?;
-                    println!("Transaction status: {:#?}", query_view_transaction_status);
+                    eprintln!("Transaction status: {:#?}", query_view_transaction_status);
                     Ok(())
                 }
             });

@@ -57,8 +57,8 @@ impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 move |_outcome_view, _network_config| {
-                    println!("\n--------------------  Access key info ------------------\n");
-                    println!(
+                    eprintln!("\n--------------------  Access key info ------------------\n");
+                    eprintln!(
                         "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
                         item.key_pair_properties.master_seed_phrase,
                         item.key_pair_properties.seed_phrase_hd_path,
@@ -66,7 +66,7 @@ impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
                         item.key_pair_properties.public_key_str,
                         item.key_pair_properties.secret_keypair_str,
                     );
-                    println!("\n--------------------------------------------------------");
+                    eprintln!("\n--------------------------------------------------------");
                     Ok(())
                 },
             ),

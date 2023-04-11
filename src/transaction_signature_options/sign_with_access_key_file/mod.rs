@@ -45,6 +45,7 @@ impl SignAccessKeyFileContext {
             .wrap_err(
                 "Cannot sign a transaction due to an error while fetching the most recent nonce value",
             )?;
+
         let current_nonce = rpc_query_response
             .access_key_view()
             .wrap_err("Error current_nonce")?
@@ -67,9 +68,9 @@ impl SignAccessKeyFileContext {
             unsigned_transaction,
         );
 
-        println!("\nYour transaction was signed successfully.");
-        println!("Public key: {}", account_json.public_key);
-        println!("Signature: {}", signature);
+        eprintln!("\nYour transaction was signed successfully.");
+        eprintln!("Public key: {}", account_json.public_key);
+        eprintln!("Signature: {}", signature);
 
         Ok(Self {
             network_config: previous_context.network_config,

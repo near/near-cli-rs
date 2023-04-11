@@ -23,7 +23,7 @@ impl SaveWithLedgerContext {
             std::sync::Arc::new({
                 move |folder_path| {
                     let seed_phrase_hd_path = crate::transaction_signature_options::sign_with_ledger::SignLedger::input_seed_phrase_hd_path()?.unwrap();
-                    println!(
+                    eprintln!(
                         "Please allow getting the PublicKey on Ledger device (HD Path: {})",
                         seed_phrase_hd_path
                     );
@@ -55,7 +55,7 @@ impl SaveWithLedgerContext {
                         .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
                         .write(buf.as_bytes())
                         .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
-                    println!("\nThe file {:?} was saved successfully", &file_path);
+                    eprintln!("\nThe file {:?} was saved successfully", &file_path);
 
                     Ok(())
                 }

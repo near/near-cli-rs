@@ -79,7 +79,7 @@ impl SaveToFolder {
     fn input_folder_path(
         context: &SaveImplicitAccountContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
-        println!();
+        eprintln!();
         let input_folder_path: String = Text::new("Where to save the implicit account file?")
             .with_initial_value(
                 format!(

@@ -127,6 +127,10 @@ impl NearBalance {
     pub fn to_yoctonear(&self) -> u128 {
         self.yoctonear_amount
     }
+
+    pub fn is_zero(&self) -> bool {
+        self == &Self::from_str("0 NEAR").unwrap()
+    }
 }
 
 impl std::fmt::Display for NearBalance {
@@ -459,7 +463,7 @@ pub fn verify_account_access_key(
                 return Err(err);
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
+                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
                     account_id, network_config.network_name
                 );
                 if !need_check_account() {
@@ -469,7 +473,7 @@ pub fn verify_account_access_key(
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
+                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
                     account_id, network_config.network_name
                 );
                 if !need_check_account() {
@@ -519,7 +523,7 @@ pub fn get_account_state(
                 return Err(err);
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                println!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
+                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
                     account_id, network_config.network_name
                 );
                 if !need_check_account() {
@@ -529,7 +533,7 @@ pub fn get_account_state(
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                println!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
+                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
                     account_id, network_config.network_name
                 );
                 if !need_check_account() {
@@ -691,28 +695,28 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
 }
 
 pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Transaction) {
-    println!("{:<13} {}", "signer_id:", &transaction.signer_id);
-    println!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
-    println!("actions:");
+    eprintln!("{:<13} {}", "signer_id:", &transaction.signer_id);
+    eprintln!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
+    eprintln!("actions:");
     let actions = transaction.actions.clone();
     for action in actions {
         match action {
             near_primitives::transaction::Action::CreateAccount(_) => {
-                println!(
+                eprintln!(
                     "{:>5} {:<20} {}",
                     "--", "create account:", &transaction.receiver_id
                 )
             }
             near_primitives::transaction::Action::DeployContract(_) => {
-                println!("{:>5} {:<20}", "--", "deploy contract")
+                eprintln!("{:>5} {:<20}", "--", "deploy contract")
             }
             near_primitives::transaction::Action::FunctionCall(function_call_action) => {
-                println!("{:>5} {:<20}", "--", "function call:");
-                println!(
+                eprintln!("{:>5} {:<20}", "--", "function call:");
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "", "method name:", &function_call_action.method_name
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "",
                     "args:",
@@ -723,7 +727,7 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                     .unwrap_or_else(|_| "".to_string())
                     .replace('\n', "\n                                 ")
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "",
                     "gas:",
@@ -731,15 +735,15 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                         inner: function_call_action.gas
                     }
                 );
-                println!(
-                    "{:>18} {:<13} {}   Attention! This deposit may change after signing the transaction",
+                eprintln!(
+                    "{:>18} {:<13} {}",
                     "",
                     "deposit:",
                     crate::common::NearBalance::from_yoctonear(function_call_action.deposit)
                 );
             }
             near_primitives::transaction::Action::Transfer(transfer_action) => {
-                println!(
+                eprintln!(
                     "{:>5} {:<20} {}",
                     "--",
                     "transfer deposit:",
@@ -747,12 +751,12 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                 );
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
-                println!("{:>5} {:<20}", "--", "stake:");
-                println!(
+                eprintln!("{:>5} {:<20}", "--", "stake:");
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "", "public key:", &stake_action.public_key
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "",
                     "stake:",
@@ -760,33 +764,33 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                 );
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
-                println!("{:>5} {:<20}", "--", "add access key:");
-                println!(
+                eprintln!("{:>5} {:<20}", "--", "add access key:");
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "", "public key:", &add_key_action.public_key
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "", "nonce:", &add_key_action.access_key.nonce
                 );
-                println!(
+                eprintln!(
                     "{:>18} {:<13} {:?}",
                     "", "permission:", &add_key_action.access_key.permission
                 );
             }
             near_primitives::transaction::Action::DeleteKey(delete_key_action) => {
-                println!("{:>5} {:<20}", "--", "delete access key:");
-                println!(
+                eprintln!("{:>5} {:<20}", "--", "delete access key:");
+                eprintln!(
                     "{:>18} {:<13} {}",
                     "", "public key:", &delete_key_action.public_key
                 );
             }
             near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
-                println!(
+                eprintln!(
                     "{:>5} {:<20} {}",
                     "--", "delete account:", &transaction.receiver_id
                 );
-                println!(
+                eprintln!(
                     "{:>5} {:<20} {}",
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
                 );
@@ -801,13 +805,13 @@ fn print_value_successful_transaction(
     for action in transaction_info.transaction.actions {
         match action {
             near_primitives::views::ActionView::CreateAccount => {
-                println!(
+                eprintln!(
                     "New account <{}> has been successfully created.",
                     transaction_info.transaction.receiver_id,
                 );
             }
             near_primitives::views::ActionView::DeployContract { code: _ } => {
-                println!("Contract code has been successfully deployed.",);
+                eprintln!("Contract code has been successfully deployed.",);
             }
             near_primitives::views::ActionView::FunctionCall {
                 method_name,
@@ -815,7 +819,7 @@ fn print_value_successful_transaction(
                 gas: _,
                 deposit: _,
             } => {
-                println!(
+                eprintln!(
                     "The \"{}\" call to <{}> on behalf of <{}> succeeded.",
                     method_name,
                     transaction_info.transaction.receiver_id,
@@ -823,7 +827,7 @@ fn print_value_successful_transaction(
                 );
             }
             near_primitives::views::ActionView::Transfer { deposit } => {
-                println!(
+                eprintln!(
                     "<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
                     crate::common::NearBalance::from_yoctonear(deposit),
@@ -834,7 +838,7 @@ fn print_value_successful_transaction(
                 stake,
                 public_key: _,
             } => {
-                println!(
+                eprintln!(
                     "Validator <{}> has successfully staked {}.",
                     transaction_info.transaction.signer_id,
                     crate::common::NearBalance::from_yoctonear(stake),
@@ -844,19 +848,19 @@ fn print_value_successful_transaction(
                 public_key,
                 access_key: _,
             } => {
-                println!(
+                eprintln!(
                     "Added access key = {} to {}.",
                     public_key, transaction_info.transaction.receiver_id,
                 );
             }
             near_primitives::views::ActionView::DeleteKey { public_key } => {
-                println!(
+                eprintln!(
                     "Access key <{}> for account <{}> has been successfully deleted.",
                     public_key, transaction_info.transaction.signer_id,
                 );
             }
             near_primitives::views::ActionView::DeleteAccount { beneficiary_id: _ } => {
-                println!(
+                eprintln!(
                     "Account <{}> has been successfully deleted.",
                     transaction_info.transaction.signer_id,
                 );
@@ -872,12 +876,12 @@ pub fn rpc_transaction_error(
 ) -> CliResult {
     match &err {
         near_jsonrpc_client::errors::JsonRpcError::TransportError(_rpc_transport_error) => {
-            println!("Transport error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+            eprintln!("Transport error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
         }
         near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::TimeoutError => {
-                    println!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+                    eprintln!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
                     let err_invalid_transaction = crate::common::handler_invalid_tx_error(context);
@@ -900,7 +904,7 @@ pub fn rpc_transaction_error(
                 return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Incompatible request with the server: {:#?}",  rpc_request_validation_error));
             }
             near_jsonrpc_client::errors::JsonRpcServerError::InternalError{ info } => {
-                println!("Internal server error: {}.\nPlease wait. The next try to send this transaction is happening right now ...", info.clone().unwrap_or_default());
+                eprintln!("Internal server error: {}.\nPlease wait. The next try to send this transaction is happening right now ...", info.clone().unwrap_or_default());
             }
             near_jsonrpc_client::errors::JsonRpcServerError::NonContextualError(rpc_error) => {
                 return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Unexpected response: {}", rpc_error));
@@ -910,7 +914,7 @@ pub fn rpc_transaction_error(
                     return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use."));
                 }
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TooManyRequests => {
-                    println!("JSON RPC server is currently busy.\nPlease wait. The next try to send this transaction is happening right now ...");
+                    eprintln!("JSON RPC server is currently busy.\nPlease wait. The next try to send this transaction is happening right now ...");
                 }
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
                     return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status));
@@ -924,10 +928,10 @@ pub fn rpc_transaction_error(
 pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
     match &action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
-            println!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id)
+            eprintln!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id)
         }
         near_primitives::errors::ActionErrorKind::AccountDoesNotExist { account_id } => {
-            println!(
+            eprintln!(
                 "Error: TX receiver ID <{}> doesn't exist (but action is not \"Create Account\").",
                 account_id
             )
@@ -937,25 +941,25 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
             registrar_account_id: _,
             predecessor_id: _,
         } => {
-            println!("Error: A top-level account ID can only be created by registrar.")
+            eprintln!("Error: A top-level account ID can only be created by registrar.")
         }
         near_primitives::errors::ActionErrorKind::CreateAccountNotAllowed {
             account_id,
             predecessor_id,
         } => {
-            println!("Error: A newly created account <{}> must be under a namespace of the creator account <{}>.", account_id, predecessor_id)
+            eprintln!("Error: A newly created account <{}> must be under a namespace of the creator account <{}>.", account_id, predecessor_id)
         }
         near_primitives::errors::ActionErrorKind::ActorNoPermission {
             account_id: _,
             actor_id: _,
         } => {
-            println!("Error: Administrative actions can be proceed only if sender=receiver or the first TX action is a \"Create Account\" action.")
+            eprintln!("Error: Administrative actions can be proceed only if sender=receiver or the first TX action is a \"Create Account\" action.")
         }
         near_primitives::errors::ActionErrorKind::DeleteKeyDoesNotExist {
             account_id,
             public_key,
         } => {
-            println!(
+            eprintln!(
                 "Error: Account <{}>  tries to remove an access key <{}> that doesn't exist.",
                 account_id, public_key
             )
@@ -964,25 +968,25 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
             account_id,
             public_key,
         } => {
-            println!(
+            eprintln!(
                 "Error: Public key <{}> is already used for an existing account ID <{}>.",
                 public_key, account_id
             )
         }
         near_primitives::errors::ActionErrorKind::DeleteAccountStaking { account_id } => {
-            println!(
+            eprintln!(
                 "Error: Account <{}> is staking and can not be deleted",
                 account_id
             )
         }
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
-            println!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
+            eprintln!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
                 crate::common::NearBalance::from_yoctonear(*amount)
             )
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
-            println!(
+            eprintln!(
                 "Error: Account <{}> is not yet staked, but tries to unstake.",
                 account_id
             )
@@ -993,7 +997,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
             locked: _,
             balance,
         } => {
-            println!(
+            eprintln!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
                 crate::common::NearBalance::from_yoctonear(*balance),
@@ -1005,27 +1009,27 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
             stake,
             minimum_stake,
         } => {
-            println!(
+            eprintln!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
                 crate::common::NearBalance::from_yoctonear(*stake),
                 crate::common::NearBalance::from_yoctonear(*minimum_stake)
             )
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
-            println!("Error: An error occurred during a `FunctionCall` Action, parameter is debug message.\n{:?}", function_call_error_ser)
+            eprintln!("Error: An error occurred during a `FunctionCall` Action, parameter is debug message.\n{:?}", function_call_error_ser)
         }
         near_primitives::errors::ActionErrorKind::NewReceiptValidationError(
             receipt_validation_error,
         ) => {
-            println!("Error: Error occurs when a new `ActionReceipt` created by the `FunctionCall` action fails.\n{:?}", receipt_validation_error)
+            eprintln!("Error: Error occurs when a new `ActionReceipt` created by the `FunctionCall` action fails.\n{:?}", receipt_validation_error)
         }
         near_primitives::errors::ActionErrorKind::OnlyImplicitAccountCreationAllowed {
             account_id: _,
         } => {
-            println!("Error: `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71")
+            eprintln!("Error: `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71")
         }
         near_primitives::errors::ActionErrorKind::DeleteAccountWithLargeState { account_id } => {
-            println!(
+            eprintln!(
                 "Error: Delete account <{}> whose state is large is temporarily banned.",
                 account_id
             )
@@ -1154,13 +1158,13 @@ pub fn handler_invalid_tx_error(
 }
 
 pub fn print_transaction_error(tx_execution_error: &near_primitives::errors::TxExecutionError) {
-    println!("Failed transaction");
+    eprintln!("Failed transaction");
     match tx_execution_error {
         near_primitives::errors::TxExecutionError::ActionError(action_error) => {
             print_action_error(action_error)
         }
         near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
-            println!("{}", handler_invalid_tx_error(invalid_tx_error))
+            eprintln!("{}", handler_invalid_tx_error(invalid_tx_error))
         }
     }
 }
@@ -1169,27 +1173,39 @@ pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
 ) -> crate::CliResult {
-    println!("-------------- Logs ----------------");
+    eprintln!("--- Logs ---------------------------");
     for receipt in transaction_info.receipts_outcome.iter() {
         if receipt.outcome.logs.is_empty() {
-            println!("Logs [{}]:   No logs", receipt.outcome.executor_id);
+            eprintln!("Logs [{}]:   No logs", receipt.outcome.executor_id);
         } else {
-            println!("Logs [{}]:", receipt.outcome.executor_id);
-            println!("  {}", receipt.outcome.logs.join("\n  "));
+            eprintln!("Logs [{}]:", receipt.outcome.executor_id);
+            eprintln!("  {}", receipt.outcome.logs.join("\n  "));
         };
     }
-    println!("------------------------------------");
     match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
             print_transaction_error(tx_execution_error)
         }
-        near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
+        near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
+            eprintln!("--- Result -------------------------");
+            if bytes_result.is_empty() {
+                eprintln!("Empty result");
+            } else if let Ok(json_result) =
+                serde_json::from_slice::<serde_json::Value>(&bytes_result)
+            {
+                println!("{}", serde_json::to_string_pretty(&json_result)?);
+            } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
+                println!("{string_result}");
+            } else {
+                eprintln!("The returned value is not printable (binary data)");
+            }
+            eprintln!("------------------------------------\n");
             print_value_successful_transaction(transaction_info.clone())
         }
     };
-    println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+    eprintln!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
         id=transaction_info.transaction_outcome.id,
         path=network_config.explorer_transaction_url
     );
@@ -1282,10 +1298,10 @@ pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {
         };
         let config_toml = std::fs::read_to_string(&path_config_toml)?;
         toml::from_str(&config_toml).or_else(|err| {
-            println!("Warning: `near` CLI configuration file stored at {path_config_toml:?} could not be parsed due to: {err}");
-            println!("Note: The default configuration printed below will be used instead:\n");
+            eprintln!("Warning: `near` CLI configuration file stored at {path_config_toml:?} could not be parsed due to: {err}");
+            eprintln!("Note: The default configuration printed below will be used instead:\n");
             let default_config = crate::config::Config::default();
-            println!("{}", toml::to_string(&default_config)?);
+            eprintln!("{}", toml::to_string(&default_config)?);
             Ok(default_config)
         })
     } else {
@@ -1302,7 +1318,7 @@ pub fn write_config_toml(config: crate::config::Config) -> CliResult {
         .wrap_err_with(|| format!("Failed to create file: {path_config_toml:?}"))?
         .write(config_toml.as_bytes())
         .wrap_err_with(|| format!("Failed to write to file: {path_config_toml:?}"))?;
-    println!("Note: `near` CLI configuration is stored in {path_config_toml:?}");
+    eprintln!("Note: `near` CLI configuration is stored in {path_config_toml:?}");
     Ok(())
 }
 
@@ -1661,14 +1677,14 @@ pub impl near_primitives::views::CallResult {
     }
 
     fn print_logs(&self) {
-        println!("--------------");
+        eprintln!("--------------");
         if self.logs.is_empty() {
-            println!("No logs")
+            eprintln!("No logs")
         } else {
-            println!("Logs:");
-            println!("  {}", self.logs.join("\n  "));
+            eprintln!("Logs:");
+            eprintln!("  {}", self.logs.join("\n  "));
         }
-        println!("--------------");
+        eprintln!("--------------");
     }
 }
 

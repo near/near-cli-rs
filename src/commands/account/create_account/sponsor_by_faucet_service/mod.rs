@@ -58,17 +58,17 @@ impl NewAccountContext {
                                     ref value,
                                 ) => {
                                     if value == b"false" {
-                                        println!(
+                                        eprintln!(
                                         "The new account <{}> could not be created successfully.",
                                         &new_account_id
                                     );
                                     } else {
-                                        println!(
+                                        eprintln!(
                                             "New account <{}> created successfully.",
                                             &new_account_id
                                         );
                                     }
-                                    println!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+                                    eprintln!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
                                         id=account_creation_transaction.transaction_outcome.id,
                                         path=network_config.explorer_transaction_url
                                     );

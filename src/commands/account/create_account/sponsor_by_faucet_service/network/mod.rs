@@ -31,20 +31,20 @@ impl NetworkContext {
             .expect("Failed to get network config!")
             .clone();
 
-        println!("\nYour transaction:");
-        println!("{:<13} {}", "signer_id:", &network_config.network_name);
-        println!("actions:");
-        println!(
+        eprintln!("\nYour transaction:");
+        eprintln!("{:<13} {}", "signer_id:", &network_config.network_name);
+        eprintln!("actions:");
+        eprintln!(
             "{:>5} {:<20} {}",
             "--", "create account:", &previous_context.new_account_id
         );
-        println!("{:>5} {:<20}", "--", "add access key:");
-        println!(
+        eprintln!("{:>5} {:<20}", "--", "add access key:");
+        eprintln!(
             "{:>18} {:<13} {}",
             "", "public key:", &previous_context.public_key
         );
-        println!("{:>18} {:<13} FullAccess", "", "permission:");
-        println!();
+        eprintln!("{:>18} {:<13} FullAccess", "", "permission:");
+        eprintln!();
 
         Ok(Self {
             new_account_id: previous_context.new_account_id,
@@ -88,7 +88,7 @@ impl SubmitContext {
             &previous_context.network_config,
             &mut storage_message,
         )?;
-        println!("{storage_message}\n");
+        eprintln!("{storage_message}\n");
         (previous_context.on_before_creating_account_callback)(
             &previous_context.network_config,
             &previous_context.new_account_id,

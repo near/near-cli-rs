@@ -104,8 +104,8 @@ impl SaveModeContext {
                             )?;
                         }
                         SaveModeDiscriminants::PrintToTerminal => {
-                            println!("\n--------------------  Access key info for account <{}> ------------------\n", &new_account_id_str);
-                            println!(
+                            eprintln!("\n--------------------  Access key info for account <{}> ------------------\n", &new_account_id_str);
+                            eprintln!(
                                 "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
                                 key_pair_properties.master_seed_phrase,
                                 key_pair_properties.seed_phrase_hd_path,
@@ -113,7 +113,7 @@ impl SaveModeContext {
                                 key_pair_properties.public_key_str,
                                 key_pair_properties.secret_keypair_str,
                             );
-                            println!("\n------------------------------------------------------------------------------------");
+                            eprintln!("\n------------------------------------------------------------------------------------");
                         }
                     }
                     Ok(())

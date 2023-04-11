@@ -174,7 +174,7 @@ impl interactive_clap::FromCli for FunctionCallType {
 impl FunctionCallType {
     pub fn input_method_names(
     ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
-        println!();
+        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to input a list of method names that can be used")]
@@ -209,7 +209,7 @@ impl FunctionCallType {
     }
 
     pub fn input_allowance() -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
-        println!();
+        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to input allowance for receiver ID")]

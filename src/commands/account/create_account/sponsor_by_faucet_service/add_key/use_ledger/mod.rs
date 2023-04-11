@@ -16,7 +16,7 @@ impl AddAccessWithLedgerContext {
         _scope: &<AddAccessWithLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let seed_phrase_hd_path = crate::transaction_signature_options::sign_with_ledger::SignLedger::input_seed_phrase_hd_path()?.unwrap();
-        println!(
+        eprintln!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path
         );

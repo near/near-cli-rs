@@ -25,17 +25,17 @@ pub enum ImportAccountActions {
         message = "using-web-wallet          - Import existing account using NEAR Wallet (a.k.a. \"sign in\")"
     ))]
     /// Import existing account using NEAR Wallet (a.k.a. "sign in")
-    WebWallet(self::using_web_wallet::LoginFromWebWallet),
+    UsingWebWallet(self::using_web_wallet::LoginFromWebWallet),
     #[strum_discriminants(strum(
         message = "using-seed-phrase         - Import existing account using a seed phrase"
     ))]
     /// Import existing account using a seed phrase
-    SeedPhrase(self::using_seed_phrase::LoginFromSeedPhrase),
+    UsingSeedPhrase(self::using_seed_phrase::LoginFromSeedPhrase),
     #[strum_discriminants(strum(
         message = "using-private-key         - Import existing account using a private key"
     ))]
     /// Import existing account using a private key
-    PrivateKey(self::using_private_key::LoginFromPrivateKey),
+    UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
 }
 
 pub fn login(
@@ -49,7 +49,7 @@ pub fn login(
 
     let account_id = loop {
         let account_id_from_cli = input_account_id()?;
-        println!();
+        eprintln!();
         if crate::common::verify_account_access_key(
             account_id_from_cli.clone(),
             public_key.clone(),
@@ -57,7 +57,7 @@ pub fn login(
         )
         .is_err()
         {
-            println!("{}", error_message);
+            eprintln!("{}", error_message);
 
             #[derive(strum_macros::Display)]
             enum ConfirmOptions {
@@ -131,7 +131,7 @@ fn save_access_key(
                     public_key_str
                 )
             })?;
-            println!("{}", storage_message);
+            eprintln!("{}", storage_message);
             return Ok(());
         }
     }
@@ -143,6 +143,6 @@ fn save_access_key(
         &account_id,
     )
     .wrap_err_with(|| format!("Failed to save a file with access key: {}", public_key_str))?;
-    println!("{}", storage_message);
+    eprintln!("{}", storage_message);
     Ok(())
 }

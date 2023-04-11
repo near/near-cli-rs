@@ -49,10 +49,17 @@ impl CallFunctionViewContext {
                     block_reference.clone(),
                 )?;
                 call_result.print_logs();
-                let serde_call_result: serde_json::Value = call_result.parse_result_from_json()?;
-                println!("Result:");
-                println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
-                println!("--------------");
+                eprintln!("Result:");
+                if call_result.result.is_empty() {
+                    eprintln!("Empty result");
+                } else if let Ok(json_result) = call_result.parse_result_from_json::<serde_json::Value>() {
+                    println!("{}", serde_json::to_string_pretty(&json_result)?);
+                } else if let Ok(string_result) = String::from_utf8(call_result.result) {
+                    println!("{string_result}");
+                } else {
+                    eprintln!("The returned value is not printable (binary data)");
+                }
+                eprintln!("--------------");
                 Ok(())
             }
         });

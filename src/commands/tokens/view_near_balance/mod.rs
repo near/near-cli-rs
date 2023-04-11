@@ -24,7 +24,7 @@ impl ViewNearBalanceContext {
                 owner_account_id.clone(),
                 block_reference.clone(),
             )?;
-        println! {"{}", &account_transfer_allowance};
+        eprintln! {"{}", &account_transfer_allowance};
         Ok(())
         }});
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {

@@ -64,7 +64,7 @@ impl ViewFtBalanceContext {
                     }
                 };
 
-                println!(
+                eprintln!(
                     "\n<{}> account has {}  (FT-contract: {})",
                     owner_account_id, amount_fmt, ft_contract_account_id
                 );

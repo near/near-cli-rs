@@ -85,7 +85,7 @@ impl DownloadContractContext {
                     .wrap_err_with(|| {
                         format!("Failed to write to file: {:?}", &file_path)
                     })?;
-                println!("\nThe file {:?} was downloaded successfully", &file_path);
+                eprintln!("\nThe file {:?} was downloaded successfully", &file_path);
 
                 Ok(())
             }
@@ -110,7 +110,7 @@ impl DownloadContract {
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
         let mut folder_path = std::path::PathBuf::from(&home_dir);
         folder_path.push("Downloads");
-        println!();
+        eprintln!();
         let input_folder_path = Text::new("Where to download the contract file?")
             .with_initial_value(&format!("{}", folder_path.to_string_lossy()))
             .prompt()?;

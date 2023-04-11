@@ -44,8 +44,8 @@ impl ViewNftAssetsContext {
                 call_result.print_logs();
                 let serde_call_result: serde_json::Value = call_result.parse_result_from_json()?;
 
-                println!("\n{} account has NFT tokens:", owner_account_id);
-                println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
+                eprintln!("\n{} account has NFT tokens:", owner_account_id);
+                eprintln!("{}", serde_json::to_string_pretty(&serde_call_result)?);
                 Ok(())
             }
         });

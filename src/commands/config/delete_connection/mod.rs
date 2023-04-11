@@ -17,9 +17,9 @@ impl DeleteNetworkConnectionContext {
     ) -> color_eyre::eyre::Result<Self> {
         let mut config = previous_context.0;
         config.network_connection.remove(&scope.connection_name);
-        println!();
+        eprintln!();
         crate::common::write_config_toml(config)?;
-        println!(
+        eprintln!(
             "Network connection \"{}\" was successfully removed from config.toml",
             &scope.connection_name
         );

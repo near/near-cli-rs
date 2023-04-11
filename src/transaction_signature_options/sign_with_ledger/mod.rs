@@ -75,7 +75,7 @@ impl SignLedgerContext {
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
-        println!(
+        eprintln!(
             "Confirm transaction signing on your Ledger device (HD Path: {})",
             seed_phrase_hd_path,
         );
@@ -102,9 +102,9 @@ impl SignLedgerContext {
             unsigned_transaction,
         );
 
-        println!("\nYour transaction was signed successfully.");
-        println!("Public key: {}", scope.signer_public_key);
-        println!("Signature: {}", signature);
+        eprintln!("\nYour transaction was signed successfully.");
+        eprintln!("Public key: {}", scope.signer_public_key);
+        eprintln!("Signature: {}", signature);
 
         Ok(Self {
             network_config: previous_context.network_config,
@@ -156,7 +156,7 @@ impl interactive_clap::FromCli for SignLedger {
             .clone()
             .expect("Unexpected error");
 
-        println!(
+        eprintln!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path
         );
