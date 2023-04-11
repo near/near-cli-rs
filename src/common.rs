@@ -1171,13 +1171,13 @@ pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
 ) -> crate::CliResult {
-    println!("--- Logs ---------------------------");
+    eprintln!("--- Logs ---------------------------");
     for receipt in transaction_info.receipts_outcome.iter() {
         if receipt.outcome.logs.is_empty() {
-            println!("Logs [{}]:   No logs", receipt.outcome.executor_id);
+            eprintln!("Logs [{}]:   No logs", receipt.outcome.executor_id);
         } else {
-            println!("Logs [{}]:", receipt.outcome.executor_id);
-            println!("  {}", receipt.outcome.logs.join("\n  "));
+            eprintln!("Logs [{}]:", receipt.outcome.executor_id);
+            eprintln!("  {}", receipt.outcome.logs.join("\n  "));
         };
     }
     match &transaction_info.status {
@@ -1188,13 +1188,13 @@ pub fn print_transaction_status(
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(res) => {
             let result = String::from_utf8(res.clone())?;
-            println!("--- Result -------------------------");
+            eprintln!("--- Result -------------------------");
             if result.is_empty() {
-                println!("Empty result");
+                eprintln!("Empty result");
             } else {
-                println!("{result}");
+                eprintln!("{result}");
             }
-            println!("------------------------------------\n");
+            eprintln!("------------------------------------\n");
             print_value_successful_transaction(transaction_info.clone())
         }
     };
@@ -1670,14 +1670,14 @@ pub impl near_primitives::views::CallResult {
     }
 
     fn print_logs(&self) {
-        println!("--------------");
+        eprintln!("--------------");
         if self.logs.is_empty() {
-            println!("No logs")
+            eprintln!("No logs")
         } else {
-            println!("Logs:");
-            println!("  {}", self.logs.join("\n  "));
+            eprintln!("Logs:");
+            eprintln!("  {}", self.logs.join("\n  "));
         }
-        println!("--------------");
+        eprintln!("--------------");
     }
 }
 

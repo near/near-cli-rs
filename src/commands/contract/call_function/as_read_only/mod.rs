@@ -50,9 +50,9 @@ impl CallFunctionViewContext {
                 )?;
                 call_result.print_logs();
                 let serde_call_result: serde_json::Value = call_result.parse_result_from_json()?;
-                println!("Result:");
-                println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
-                println!("--------------");
+                eprintln!("Result:");
+                eprintln!("{}", serde_json::to_string_pretty(&serde_call_result)?);
+                eprintln!("--------------");
                 Ok(())
             }
         });
