@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2](https://github.com/near/near-cli-rs/compare/v0.3.1...v0.3.2) - 2023-04-11
+
+### Added
+- Show contract function call result and make it usable in scripts by only writing the result to stdout, and everything else will be printed to stderr (#177)
+- Use optimisticly latest nonce for the access key instead of the final one to avoid errors running commands one after the other (#176)
+
+### Fixed
+- fixed printing about saving the access key (#173)
+
+### Other
+- Added GitHub Actions installation instructions
+
 ## [0.3.1](https://github.com/near/near-cli-rs/compare/v0.3.0...v0.3.1) - 2023-04-06
 
 ### Other
