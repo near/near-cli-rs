@@ -48,10 +48,16 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                     },
                 },
             )],
-            on_after_getting_network_callback: std::sync::Arc::new(
-                move |_actions, network_config| {
+            on_after_getting_network_callback: std::sync::Arc::new(|_actions, _network_config| {
+                Ok(())
+            }),
+            on_before_signing_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+            ),
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                move |_signed_transaction, network_config, storage_message| {
                     let key_pair_properties_buf = serde_json::to_string(&item.key_pair_properties)?;
-                    crate::common::save_access_key_to_keychain(
+                    *storage_message = crate::common::save_access_key_to_keychain(
                         network_config.clone(),
                         item.config.credentials_home_dir.clone(),
                         &key_pair_properties_buf,
@@ -66,12 +72,6 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                     })?;
                     Ok(())
                 },
-            ),
-            on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),

@@ -401,9 +401,7 @@ pub fn get_account_transfer_allowance(
         .unwrap()
         .block_on(network_config.json_rpc_client().call(
             near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
-                block_reference: near_primitives::types::BlockReference::Finality(
-                    near_primitives::types::Finality::Final,
-                ),
+                block_reference: near_primitives::types::Finality::Final.into(),
             },
         ))
         .wrap_err("RpcError")?
@@ -438,7 +436,7 @@ pub fn verify_account_access_key(
             .blocking_call_view_access_key(
                 &account_id,
                 &public_key,
-                near_primitives::types::Finality::Final.into(),
+                near_primitives::types::BlockReference::latest(),
             ) {
             Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =

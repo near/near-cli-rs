@@ -217,7 +217,7 @@ fn is_account_exist(
         if crate::common::get_account_state(
             network.1.clone(),
             account_id.clone(),
-            near_primitives::types::Finality::Final.into(),
+            near_primitives::types::BlockReference::latest(),
         )
         .is_ok()
         {
@@ -234,7 +234,7 @@ fn validate_signer_account_id(
     match crate::common::get_account_state(
         network_config.clone(),
         account_id.clone(),
-        near_primitives::types::Finality::Final.into(),
+        near_primitives::types::BlockReference::latest(),
     ) {
         Ok(_) => Ok(()),
         Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
@@ -260,7 +260,7 @@ fn validate_new_account_id(
     match crate::common::get_account_state(
         network_config.clone(),
         account_id.clone(),
-        near_primitives::types::Finality::Final.into(),
+        near_primitives::types::BlockReference::latest(),
     )
     {
         Ok(_) => {
