@@ -734,7 +734,7 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                     }
                 );
                 eprintln!(
-                    "{:>18} {:<13} {}   Attention! This deposit may change after signing the transaction",
+                    "{:>18} {:<13} {}",
                     "",
                     "deposit:",
                     crate::common::NearBalance::from_yoctonear(function_call_action.deposit)
