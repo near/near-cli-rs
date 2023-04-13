@@ -9,7 +9,7 @@ impl From<ApiKey> for near_jsonrpc_client::auth::ApiKey {
 
 impl std::fmt::Display for ApiKey {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.0.to_str().unwrap())
+        write!(f, "{}", self.0.to_str().map_err(|_| std::fmt::Error)?)
     }
 }
 
@@ -26,7 +26,11 @@ impl serde::ser::Serialize for ApiKey {
     where
         S: serde::ser::Serializer,
     {
-        serializer.serialize_str(self.0.to_str().unwrap())
+        serializer.serialize_str(
+            self.0
+                .to_str()
+                .map_err(|err| serde::ser::Error::custom(err))?,
+        )
     }
 }
 
