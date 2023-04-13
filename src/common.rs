@@ -795,6 +795,7 @@ pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Tr
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
                 );
             }
+            near_primitives::transaction::Action::Delegate(_) => todo!(),
         }
     }
 }
@@ -865,6 +866,10 @@ fn print_value_successful_transaction(
                     transaction_info.transaction.signer_id,
                 );
             }
+            near_primitives::views::ActionView::Delegate {
+                delegate_action,
+                signature,
+            } => todo!(),
         }
     }
 }
@@ -1034,6 +1039,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
                 account_id
             )
         }
+        _ => todo!(),
     }
 }
 
@@ -1149,6 +1155,9 @@ pub fn handler_invalid_tx_error(
                 near_primitives::errors::ActionsValidationError::FunctionCallZeroAttachedGas => {
                     "Error: The attached amount of gas in a FunctionCall action has to be a positive number.".to_string()
                 }
+                near_primitives::errors::ActionsValidationError::DelegateActionMustBeOnlyOne => todo!(),
+                near_primitives::errors::ActionsValidationError::DeleteActionMustBeFinal => todo!(),
+                near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => todo!(),
             }
         },
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
