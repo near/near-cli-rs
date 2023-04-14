@@ -7,7 +7,7 @@ const STORAGE_COST_PER_BYTE: u128 = 10u128.pow(19);
 #[interactive_clap(input_context = super::AccountStorageManagementContext)]
 #[interactive_clap(output_context = ContractAccountIdContext)]
 pub struct ContractAccountId {
-    /// What account balance do you want to view?
+    /// Which contract account ID do you want to view the balance?
     contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     /// Select network
