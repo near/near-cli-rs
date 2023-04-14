@@ -1,6 +1,8 @@
 use crate::common::{CallResultExt, JsonRpcClientExt};
 use color_eyre::eyre::WrapErr;
 
+const STORAGE_COST_PER_BYTE: u128 = 10u128.pow(19);
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::AccountStorageManagementContext)]
 #[interactive_clap(output_context = ContractAccountIdContext)]
@@ -45,10 +47,19 @@ impl ContractAccountIdContext {
                         .wrap_err_with(|| {
                             "Failed to parse return value of view function call for StorageBalance."
                         })?;
-
                     println!("storage balance for <{account_id}>:");
-                    println!(" {:<13} {:>33}", "available:", &storage_balance.available);
-                    println!(" {:<13} {:>33}", "total:", &storage_balance.total);
+                    println!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
+                        "available:",
+                        bytesize::ByteSize(u64::try_from(storage_balance.available / STORAGE_COST_PER_BYTE).unwrap()),
+                        crate::common::NearBalance::from_yoctonear(storage_balance.available),
+                        storage_balance.available
+                    );
+                    println!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
+                        "total:",
+                        bytesize::ByteSize(u64::try_from(storage_balance.total / STORAGE_COST_PER_BYTE).unwrap()),
+                        crate::common::NearBalance::from_yoctonear(storage_balance.total),
+                        storage_balance.total
+                    );
 
                     Ok(())
                 }
