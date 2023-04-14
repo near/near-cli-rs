@@ -1,5 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+mod storage_withdraw;
 mod view_storage_balance;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -46,8 +47,8 @@ pub enum StorageActions {
     /// Make a storage deposit for the account
     StorageDeposit,
     #[strum_discriminants(strum(
-        message = "storage-withdraw        - Withdraw storage for the account"
+        message = "storage-withdraw        - Withdraw a deposit from storage for an account ID"
     ))]
-    /// Withdraw storage for the account
-    StorageWithdraw,
+    /// Withdraw a deposit from storage for an account ID
+    StorageWithdraw(self::storage_withdraw::WithdrawArgs),
 }
