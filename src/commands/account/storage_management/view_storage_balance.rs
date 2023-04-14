@@ -47,14 +47,14 @@ impl ContractAccountIdContext {
                         .wrap_err_with(|| {
                             "Failed to parse return value of view function call for StorageBalance."
                         })?;
-                    println!("storage balance for <{account_id}>:");
-                    println!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
+                    eprintln!("storage balance for <{account_id}>:");
+                    eprintln!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
                         "available:",
                         bytesize::ByteSize(u64::try_from(storage_balance.available / STORAGE_COST_PER_BYTE).unwrap()),
                         crate::common::NearBalance::from_yoctonear(storage_balance.available),
                         storage_balance.available
                     );
-                    println!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
+                    eprintln!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
                         "total:",
                         bytesize::ByteSize(u64::try_from(storage_balance.total / STORAGE_COST_PER_BYTE).unwrap()),
                         crate::common::NearBalance::from_yoctonear(storage_balance.total),
