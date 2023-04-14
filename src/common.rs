@@ -1607,6 +1607,25 @@ pub impl near_jsonrpc_client::JsonRpcClient {
     }
 }
 
+use serde::de::{Deserialize, Deserializer};
+
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct StorageBalance {
+    #[serde(deserialize_with = "parse_u128_string")]
+    pub available: u128,
+    #[serde(deserialize_with = "parse_u128_string")]
+    pub total: u128,
+}
+
+fn parse_u128_string<'de, D>(deserializer: D) -> color_eyre::eyre::Result<u128, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    <std::string::String as Deserialize>::deserialize(deserializer)?
+        .parse::<u128>()
+        .map_err(serde::de::Error::custom)
+}
+
 #[easy_ext::ext(RpcQueryResponseExt)]
 pub impl near_jsonrpc_primitives::types::query::RpcQueryResponse {
     fn access_key_view(&self) -> color_eyre::eyre::Result<near_primitives::views::AccessKeyView> {
