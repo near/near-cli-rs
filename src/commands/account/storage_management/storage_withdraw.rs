@@ -21,12 +21,6 @@ impl WithdrawArgsContext {
         previous_context: super::AccountStorageManagementContext,
         scope: &<WithdrawArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let args = serde_json::json!({
-            "amount": scope.amount.to_yoctonear().to_string()
-        })
-        .to_string()
-        .into_bytes();
-
         let account_id = previous_context.account_id.clone();
         let amount = scope.amount.clone();
         let contract: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
@@ -49,7 +43,11 @@ impl WithdrawArgsContext {
             actions: vec![near_primitives::transaction::Action::FunctionCall(
                 near_primitives::transaction::FunctionCallAction {
                     method_name: "storage_withdraw".to_string(),
-                    args,
+                    args: serde_json::json!({
+                        "amount": scope.amount.to_yoctonear().to_string()
+                    })
+                    .to_string()
+                    .into_bytes(),
                     gas: crate::common::NearGas::from_str("300 TeraGas")
                         .unwrap()
                         .inner,

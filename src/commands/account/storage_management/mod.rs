@@ -1,5 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+mod storage_deposit;
 mod storage_withdraw;
 mod view_storage_balance;
 
@@ -40,15 +41,15 @@ pub enum StorageActions {
         message = "view-storage-balance    - View storage balance for an account"
     ))]
     /// View storage balance for an account
-    ViewStorageBalance(self::view_storage_balance::ContractAccountId),
+    ViewBalance(self::view_storage_balance::ContractAccountId),
     #[strum_discriminants(strum(
         message = "storage-deposit         - Make a storage deposit for the account"
     ))]
     /// Make a storage deposit for the account
-    StorageDeposit,
+    Deposit(self::storage_deposit::DepositArgs),
     #[strum_discriminants(strum(
         message = "storage-withdraw        - Withdraw a deposit from storage for an account ID"
     ))]
     /// Withdraw a deposit from storage for an account ID
-    StorageWithdraw(self::storage_withdraw::WithdrawArgs),
+    Withdraw(self::storage_withdraw::WithdrawArgs),
 }
