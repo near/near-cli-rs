@@ -57,6 +57,6 @@ pub enum AccountActions {
     #[strum_discriminants(strum(
         message = "manage-storage-deposit  - Storage management: deposit, withdrawal, balance review"
     ))]
-    /// Storage management for near-social: deposit, withdrawal, balance review
-    ManageStorageDeposit(self::storage_management::AccountStorageManagement),
+    /// Storage management for contract: deposit, withdrawal, balance review
+    ManageStorageDeposit(self::storage_management::Contract),
 }

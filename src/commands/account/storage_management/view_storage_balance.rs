@@ -4,11 +4,11 @@ use color_eyre::eyre::WrapErr;
 const STORAGE_COST_PER_BYTE: u128 = 10u128.pow(19);
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::AccountStorageManagementContext)]
+#[interactive_clap(input_context = super::ContractContext)]
 #[interactive_clap(output_context = ContractAccountIdContext)]
-pub struct ContractAccountId {
-    /// Which contract account ID do you want to view the balance?
-    contract_account_id: crate::types::account_id::AccountId,
+pub struct Account {
+    /// What is your account ID?
+    account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
@@ -19,13 +19,13 @@ pub struct ContractAccountIdContext(crate::network_view_at_block::ArgsForViewCon
 
 impl ContractAccountIdContext {
     pub fn from_previous_context(
-        previous_context: super::AccountStorageManagementContext,
-        scope: &<ContractAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        previous_context: super::ContractContext,
+        scope: &<Account as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback =
             std::sync::Arc::new({
-                let contract_account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
-                let account_id = previous_context.account_id;
+                let contract_account_id = previous_context.contract_account_id;
+                let account_id = scope.account_id.clone();
 
                 move |network_config, block_reference| {
                     let storage_balance = network_config
@@ -34,7 +34,7 @@ impl ContractAccountIdContext {
                             &contract_account_id,
                             "storage_balance_of",
                             serde_json::json!({
-                                "account_id": account_id,
+                                "account_id": account_id.to_string(),
                             })
                             .to_string()
                             .into_bytes(),
