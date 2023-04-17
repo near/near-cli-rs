@@ -169,7 +169,10 @@ impl SignerAccountId {
             .clone()
             .get_parent_account_id_from_sub_account();
         if !parent_account_id.0.is_top_level() {
-            if is_account_exist(context, parent_account_id.clone().into()) {
+            if crate::common::is_account_exist(
+                &context.config.network_connection,
+                parent_account_id.clone().into(),
+            ) {
                 Ok(Some(parent_account_id))
             } else {
                 Self::input_account_id(context)
@@ -185,7 +188,10 @@ impl SignerAccountId {
         loop {
             let signer_account_id: crate::types::account_id::AccountId =
                 CustomType::new("What is the signer account ID?").prompt()?;
-            if !is_account_exist(context, signer_account_id.clone().into()) {
+            if !crate::common::is_account_exist(
+                &context.config.network_connection,
+                signer_account_id.clone().into(),
+            ) {
                 eprintln!("\nThe account <{}> does not yet exist.", &signer_account_id);
                 #[derive(strum_macros::Display)]
                 enum ConfirmOptions {
@@ -207,24 +213,6 @@ impl SignerAccountId {
             }
         }
     }
-}
-
-fn is_account_exist(
-    context: &super::AccountPropertiesContext,
-    account_id: near_primitives::types::AccountId,
-) -> bool {
-    for network in context.config.network_connection.iter() {
-        if crate::common::get_account_state(
-            network.1.clone(),
-            account_id.clone(),
-            near_primitives::types::BlockReference::latest(),
-        )
-        .is_ok()
-        {
-            return true;
-        }
-    }
-    false
 }
 
 fn validate_signer_account_id(
