@@ -5,7 +5,7 @@ const STORAGE_COST_PER_BYTE: u128 = 10u128.pow(19);
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::ContractContext)]
-#[interactive_clap(output_context = ContractAccountIdContext)]
+#[interactive_clap(output_context = AccountContext)]
 pub struct Account {
     /// What is your account ID?
     account_id: crate::types::account_id::AccountId,
@@ -15,9 +15,9 @@ pub struct Account {
 }
 
 #[derive(Clone)]
-pub struct ContractAccountIdContext(crate::network_view_at_block::ArgsForViewContext);
+pub struct AccountContext(crate::network_view_at_block::ArgsForViewContext);
 
-impl ContractAccountIdContext {
+impl AccountContext {
     pub fn from_previous_context(
         previous_context: super::ContractContext,
         scope: &<Account as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -72,8 +72,8 @@ impl ContractAccountIdContext {
     }
 }
 
-impl From<ContractAccountIdContext> for crate::network_view_at_block::ArgsForViewContext {
-    fn from(item: ContractAccountIdContext) -> Self {
+impl From<AccountContext> for crate::network_view_at_block::ArgsForViewContext {
+    fn from(item: AccountContext) -> Self {
         item.0
     }
 }
