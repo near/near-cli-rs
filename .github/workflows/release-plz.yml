@@ -24,9 +24,7 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --assume-yes libudev-dev
       - name: Run release-plz
-        uses: MarcoIeni/release-plz-action@v0.4
-        with:
-          git_release: false
+        uses: MarcoIeni/release-plz-action@v0.5
         env:
           # https://marcoieni.github.io/release-plz/github-action.html#triggering-further-workflow-runs
           GITHUB_TOKEN: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
