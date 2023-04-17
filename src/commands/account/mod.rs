@@ -6,7 +6,7 @@ mod delete_account;
 mod delete_key;
 mod import_account;
 mod list_keys;
-mod storage_management;
+pub mod storage_management;
 mod view_account_summary;
 
 pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;

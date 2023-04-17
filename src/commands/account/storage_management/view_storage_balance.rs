@@ -24,10 +24,11 @@ impl AccountContext {
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback =
             std::sync::Arc::new({
-                let contract_account_id = previous_context.contract_account_id;
                 let account_id = scope.account_id.clone();
 
                 move |network_config, block_reference| {
+                    let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
+
                     let storage_balance = network_config
                         .json_rpc_client()
                         .blocking_call_view_function(

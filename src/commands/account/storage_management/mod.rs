@@ -14,10 +14,10 @@ pub struct Contract {
     storage_actions: StorageActions,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ContractContext {
     config: crate::config::Config,
-    contract_account_id: near_primitives::types::AccountId,
+    get_contract_account_id: GetContractAccountID,
 }
 
 impl ContractContext {
@@ -25,12 +25,21 @@ impl ContractContext {
         previous_context: crate::GlobalContext,
         scope: &<Contract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let contract = scope.contract_account_id.clone();
+        let get_contract_account_id: GetContractAccountID =
+            std::sync::Arc::new(move |_network_config| Ok(contract.clone().into()));
         Ok(Self {
             config: previous_context.0,
-            contract_account_id: scope.contract_account_id.clone().into(),
+            get_contract_account_id,
         })
     }
 }
+
+pub type GetContractAccountID = std::sync::Arc<
+    dyn Fn(
+        &crate::config::NetworkConfig,
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId>,
+>;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = ContractContext)]

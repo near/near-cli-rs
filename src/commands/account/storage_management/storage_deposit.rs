@@ -18,7 +18,7 @@ pub struct DepositArgs {
 #[derive(Clone)]
 pub struct DepositArgsContext {
     config: crate::config::Config,
-    contract_account_id: near_primitives::types::AccountId,
+    get_contract_account_id: super::GetContractAccountID,
     receiver_account_id: near_primitives::types::AccountId,
     deposit: crate::common::NearBalance,
 }
@@ -30,7 +30,7 @@ impl DepositArgsContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
-            contract_account_id: previous_context.contract_account_id,
+            get_contract_account_id: previous_context.get_contract_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
             deposit: scope.deposit.clone(),
         })
@@ -59,14 +59,24 @@ impl SignerAccountIdContext {
     ) -> color_eyre::eyre::Result<Self> {
         let signer_account_id = scope.signer_account_id.clone();
         let amount = previous_context.deposit.clone();
-        let contract = previous_context.contract_account_id.clone();
+        let deposit = previous_context.deposit.clone();
         let receiver = previous_context.receiver_account_id.clone();
+        let get_contract_account_id = previous_context.get_contract_account_id.clone();
+
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |prepolulated_unsinged_transaction, network_config| {
+                let contract_account_id = (get_contract_account_id)(network_config)?;
+                prepolulated_unsinged_transaction.receiver_id = contract_account_id;
+                Ok(())
+            });
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
-            move |outcome_view, _network_config| {
+            move |outcome_view, network_config| {
+                let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
+
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                     eprintln!(
-                        "<{signer_account_id}> has successfully added a deposit of {amount} to <{receiver}> on contract <{contract}>.",
+                        "<{signer_account_id}> has successfully added a deposit of {amount} to <{receiver}> on contract <{contract_account_id}>.",
                     );
                 }
                 Ok(())
@@ -74,29 +84,27 @@ impl SignerAccountIdContext {
         );
 
         Ok(Self(crate::commands::ActionContext {
-            config: previous_context.config,
+            config: previous_context.config.clone(),
             signer_account_id: scope.signer_account_id.clone().into(),
-            receiver_account_id: previous_context.contract_account_id,
+            receiver_account_id: previous_context.receiver_account_id.clone(), //contract_account_id,
             actions: vec![near_primitives::transaction::Action::FunctionCall(
                 near_primitives::transaction::FunctionCallAction {
                     method_name: "storage_deposit".to_string(),
                     args: serde_json::json!({
-                        "account_id": previous_context.receiver_account_id
+                        "account_id": &previous_context.receiver_account_id
                     })
                     .to_string()
                     .into_bytes(),
                     gas: crate::common::NearGas::from_str("300 TeraGas")
                         .unwrap()
                         .inner,
-                    deposit: previous_context.deposit.to_yoctonear(),
+                    deposit: deposit.to_yoctonear(),
                 },
             )],
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_after_getting_network_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
+            on_after_getting_network_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
