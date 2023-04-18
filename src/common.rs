@@ -1211,7 +1211,7 @@ pub fn print_transaction_status(
             if bytes_result.is_empty() {
                 eprintln!("Empty result");
             } else if let Ok(json_result) =
-                serde_json::from_slice::<serde_json::Value>(&bytes_result)
+                serde_json::from_slice::<serde_json::Value>(bytes_result)
             {
                 println!("{}", serde_json::to_string_pretty(&json_result)?);
             } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
