@@ -16,8 +16,8 @@ pub struct Contract {
 
 #[derive(Clone)]
 pub struct ContractContext {
-    config: crate::config::Config,
-    get_contract_account_id: GetContractAccountID,
+    pub config: crate::config::Config,
+    pub get_contract_account_id: GetContractAccountID,
 }
 
 impl ContractContext {
