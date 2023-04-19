@@ -148,29 +148,36 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let deposit = scope.deposit.clone();
+
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
+                prepopulated_unsigned_transaction.signer_id =
+                    previous_context.signer_account_id.clone();
+                prepopulated_unsigned_transaction.receiver_id =
+                    previous_context.receiver_account_id.clone();
+                prepopulated_unsigned_transaction.actions = vec![
+                    near_primitives::transaction::Action::DeployContract(
+                        near_primitives::transaction::DeployContractAction {
+                            code: previous_context.code.clone(),
+                        },
+                    ),
+                    near_primitives::transaction::Action::FunctionCall(
+                        near_primitives::transaction::FunctionCallAction {
+                            method_name: previous_context.function_name.clone(),
+                            args: previous_context.function_args.clone(),
+                            gas: previous_context.gas.inner,
+                            deposit: deposit.to_yoctonear(),
+                        },
+                    ),
+                ];
+                Ok(())
+            });
+
         Ok(Self(crate::commands::ActionContext {
             config: previous_context.config,
-            signer_account_id: previous_context.signer_account_id,
-            receiver_account_id: previous_context.receiver_account_id,
-            actions: vec![
-                near_primitives::transaction::Action::DeployContract(
-                    near_primitives::transaction::DeployContractAction {
-                        code: previous_context.code,
-                    },
-                ),
-                near_primitives::transaction::Action::FunctionCall(
-                    near_primitives::transaction::FunctionCallAction {
-                        method_name: previous_context.function_name,
-                        args: previous_context.function_args,
-                        gas: previous_context.gas.inner,
-                        deposit: scope.deposit.to_yoctonear(),
-                    },
-                ),
-            ],
+            on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_after_getting_network_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(

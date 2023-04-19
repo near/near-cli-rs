@@ -57,26 +57,42 @@ impl SignerAccountIdContext {
         previous_context: DepositArgsContext,
         scope: &<SignerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let signer = scope.signer_account_id.clone();
         let signer_account_id = scope.signer_account_id.clone();
-        let amount = previous_context.deposit.clone();
         let deposit = previous_context.deposit.clone();
-        let receiver = previous_context.receiver_account_id.clone();
+        let receiver_account_id = previous_context.receiver_account_id.clone();
         let get_contract_account_id = previous_context.get_contract_account_id.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |prepolulated_unsinged_transaction, network_config| {
-                let contract_account_id = (get_contract_account_id)(network_config)?;
-                prepolulated_unsinged_transaction.receiver_id = contract_account_id;
+            std::sync::Arc::new(move |prepopulated_unsigned_transaction, network_config| {
+                let contract_account_id = get_contract_account_id(network_config)?;
+                prepopulated_unsigned_transaction.signer_id = signer_account_id.clone().into();
+                prepopulated_unsigned_transaction.receiver_id = contract_account_id;
+                prepopulated_unsigned_transaction.actions =
+                    vec![near_primitives::transaction::Action::FunctionCall(
+                        near_primitives::transaction::FunctionCallAction {
+                            method_name: "storage_deposit".to_string(),
+                            args: serde_json::json!({
+                                "account_id": &previous_context.receiver_account_id.clone()
+                            })
+                            .to_string()
+                            .into_bytes(),
+                            gas: crate::common::NearGas::from_str("300 TeraGas")
+                                .unwrap()
+                                .inner,
+                            deposit: previous_context.deposit.to_yoctonear(),
+                        },
+                    )];
                 Ok(())
             });
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
             move |outcome_view, network_config| {
-                let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
+                        let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
 
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                     eprintln!(
-                        "<{signer_account_id}> has successfully added a deposit of {amount} to <{receiver}> on contract <{contract_account_id}>.",
+                        "<{signer}> has successfully added a deposit of {deposit} to <{receiver_account_id}> on contract <{contract_account_id}>.",
                     );
                 }
                 Ok(())
@@ -85,26 +101,10 @@ impl SignerAccountIdContext {
 
         Ok(Self(crate::commands::ActionContext {
             config: previous_context.config.clone(),
-            signer_account_id: scope.signer_account_id.clone().into(),
-            receiver_account_id: previous_context.receiver_account_id.clone(), //contract_account_id,
-            actions: vec![near_primitives::transaction::Action::FunctionCall(
-                near_primitives::transaction::FunctionCallAction {
-                    method_name: "storage_deposit".to_string(),
-                    args: serde_json::json!({
-                        "account_id": &previous_context.receiver_account_id
-                    })
-                    .to_string()
-                    .into_bytes(),
-                    gas: crate::common::NearGas::from_str("300 TeraGas")
-                        .unwrap()
-                        .inner,
-                    deposit: deposit.to_yoctonear(),
-                },
-            )],
+            on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_after_getting_network_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),

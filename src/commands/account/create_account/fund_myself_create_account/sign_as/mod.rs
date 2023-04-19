@@ -42,10 +42,7 @@ impl SignerAccountIdContext {
 
 impl From<SignerAccountIdContext> for crate::commands::ActionContext {
     fn from(item: SignerAccountIdContext) -> Self {
-        let receiver_account_id: near_primitives::types::AccountId =
-            item.account_properties.new_account_id.clone().into();
-        let signer_account_id: near_primitives::types::AccountId = item.signer_account_id.clone();
-        let config = item.config.clone();
+        let config = item.config;
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
@@ -54,7 +51,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 let signer_account_id = item.signer_account_id.clone();
 
                 move |prepopulated_unsigned_transaction, network_config| {
-                    validate_signer_account_id(network_config, &signer_account_id.clone())?;
+                    validate_signer_account_id(network_config, &signer_account_id)?;
 
                     if new_account_id.as_str().chars().count()
                         < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
@@ -136,17 +133,16 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             ));
                         }
                     };
+                    prepopulated_unsigned_transaction.signer_id = signer_account_id.clone();
                     prepopulated_unsigned_transaction.receiver_id = receiver_id;
                     prepopulated_unsigned_transaction.actions = actions;
+
                     Ok(())
                 }
             });
 
         Self {
             config,
-            signer_account_id,
-            receiver_account_id,
-            actions: vec![],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

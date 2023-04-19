@@ -28,12 +28,12 @@ impl NetworkForTransactionArgsContext {
         scope: &<NetworkForTransactionArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: previous_context.signer_account_id,
+            signer_id: "test.testnet".parse().unwrap(),
             public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
             nonce: 0,
-            receiver_id: previous_context.receiver_account_id,
+            receiver_id: "test.testnet".parse().unwrap(),
             block_hash: Default::default(),
-            actions: previous_context.actions,
+            actions: vec![],
         };
         let network_connection = previous_context.config.network_connection.clone();
         let network_config = network_connection

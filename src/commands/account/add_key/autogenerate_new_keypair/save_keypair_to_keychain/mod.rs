@@ -35,34 +35,35 @@ impl SaveKeypairToKeychainContext {
 
 impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
     fn from(item: SaveKeypairToKeychainContext) -> Self {
-        Self {
-            config: item.config.clone(),
-            signer_account_id: item.signer_account_id.clone(),
-            receiver_account_id: item.signer_account_id.clone(),
-            actions: vec![near_primitives::transaction::Action::AddKey(
-                near_primitives::transaction::AddKeyAction {
-                    public_key: item.public_key,
-                    access_key: near_primitives::account::AccessKey {
-                        nonce: 0,
-                        permission: item.permission,
-                    },
-                },
-            )],
-            on_after_getting_network_callback: std::sync::Arc::new(|_actions, _network_config| {
+        let signer_account_id = item.signer_account_id.clone();
+        let credentials_home_dir = item.config.credentials_home_dir.clone();
+
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
+                prepopulated_unsigned_transaction.signer_id = item.signer_account_id.clone();
+                prepopulated_unsigned_transaction.receiver_id = item.signer_account_id.clone();
+                prepopulated_unsigned_transaction.actions =
+                    vec![near_primitives::transaction::Action::AddKey(
+                        near_primitives::transaction::AddKeyAction {
+                            public_key: item.public_key.clone(),
+                            access_key: near_primitives::account::AccessKey {
+                                nonce: 0,
+                                permission: item.permission.clone(),
+                            },
+                        },
+                    )];
                 Ok(())
-            }),
-            on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
+            });
+        let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
+            std::sync::Arc::new(
                 move |_signed_transaction, network_config, storage_message| {
                     let key_pair_properties_buf = serde_json::to_string(&item.key_pair_properties)?;
                     *storage_message = crate::common::save_access_key_to_keychain(
                         network_config.clone(),
-                        item.config.credentials_home_dir.clone(),
+                        credentials_home_dir.clone(),
                         &key_pair_properties_buf,
                         &item.key_pair_properties.public_key_str,
-                        &item.signer_account_id,
+                        &signer_account_id,
                     )
                     .wrap_err_with(|| {
                         format!(
@@ -72,7 +73,15 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                     })?;
                     Ok(())
                 },
+            );
+
+        Self {
+            config: item.config,
+            on_after_getting_network_callback,
+            on_before_signing_callback: std::sync::Arc::new(
+                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
+            on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
             ),

@@ -33,19 +33,24 @@ impl DeleteKeyCommandContext {
 
 impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
     fn from(item: DeleteKeyCommandContext) -> Self {
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
+                prepopulated_unsigned_transaction.signer_id = item.owner_account_id.clone().into();
+                prepopulated_unsigned_transaction.receiver_id =
+                    item.owner_account_id.clone().into();
+                prepopulated_unsigned_transaction.actions =
+                    vec![near_primitives::transaction::Action::DeleteKey(
+                        near_primitives::transaction::DeleteKeyAction {
+                            public_key: item.public_key.clone().into(),
+                        },
+                    )];
+                Ok(())
+            });
+
         Self {
             config: item.config,
-            signer_account_id: item.owner_account_id.clone().into(),
-            receiver_account_id: item.owner_account_id.into(),
-            actions: vec![near_primitives::transaction::Action::DeleteKey(
-                near_primitives::transaction::DeleteKeyAction {
-                    public_key: item.public_key.into(),
-                },
-            )],
+            on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_after_getting_network_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(

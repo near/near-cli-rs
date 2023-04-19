@@ -56,23 +56,37 @@ impl SendFtCommandContext {
 
 impl From<SendFtCommandContext> for crate::commands::ActionContext {
     fn from(item: SendFtCommandContext) -> Self {
-        let method_name = "ft_transfer".to_string();
-        let args = json!({
-            "receiver_id": item.receiver_account_id.to_string(),
-            "amount": item.amount.to_string()
-        })
-        .to_string()
-        .into_bytes();
-        let sender = item.signer_account_id.clone();
+        let signer_account_id = item.signer_account_id.clone();
         let amount = item.amount;
-        let contract = item.ft_contract_account_id.clone();
-        let receiver = item.receiver_account_id.clone();
+        let ft_contract_account_id = item.ft_contract_account_id.clone();
+        let receiver_account_id = item.receiver_account_id.clone();
+
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
+                prepopulated_unsigned_transaction.signer_id = item.signer_account_id.clone();
+                prepopulated_unsigned_transaction.receiver_id = item.ft_contract_account_id.clone();
+                prepopulated_unsigned_transaction.actions =
+                    vec![near_primitives::transaction::Action::FunctionCall(
+                        near_primitives::transaction::FunctionCallAction {
+                            method_name: "ft_transfer".to_string(),
+                            args: json!({
+                                "receiver_id": item.receiver_account_id.to_string(),
+                                "amount": item.amount.to_string()
+                            })
+                            .to_string()
+                            .into_bytes(),
+                            gas: item.gas.inner,
+                            deposit: item.deposit.to_yoctonear(),
+                        },
+                    )];
+                Ok(())
+            });
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                     eprintln!(
-                        "<{sender}> has successfully transferred {amount} FT ({contract}) to <{receiver}>.",
+                        "<{signer_account_id}> has successfully transferred {amount} FT ({ft_contract_account_id}) to <{receiver_account_id}>.",
                     );
                 }
                 Ok(())
@@ -81,20 +95,8 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
 
         Self {
             config: item.config,
-            signer_account_id: item.signer_account_id,
-            receiver_account_id: item.ft_contract_account_id,
-            actions: vec![near_primitives::transaction::Action::FunctionCall(
-                near_primitives::transaction::FunctionCallAction {
-                    method_name,
-                    args,
-                    gas: item.gas.inner,
-                    deposit: item.deposit.to_yoctonear(),
-                },
-            )],
+            on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_after_getting_network_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(

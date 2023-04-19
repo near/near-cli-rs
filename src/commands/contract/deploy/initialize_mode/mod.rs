@@ -43,17 +43,23 @@ impl NoInitializeContext {
 
 impl From<NoInitializeContext> for crate::commands::ActionContext {
     fn from(item: NoInitializeContext) -> Self {
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
+                prepopulated_unsigned_transaction.signer_id = item.0.signer_account_id.clone();
+                prepopulated_unsigned_transaction.receiver_id = item.0.signer_account_id.clone();
+                prepopulated_unsigned_transaction.actions =
+                    vec![near_primitives::transaction::Action::DeployContract(
+                        near_primitives::transaction::DeployContractAction {
+                            code: item.0.code.clone(),
+                        },
+                    )];
+                Ok(())
+            });
+
         Self {
             config: item.0.config,
-            signer_account_id: item.0.signer_account_id,
-            receiver_account_id: item.0.receiver_account_id,
-            actions: vec![near_primitives::transaction::Action::DeployContract(
-                near_primitives::transaction::DeployContractAction { code: item.0.code },
-            )],
+            on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_after_getting_network_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
