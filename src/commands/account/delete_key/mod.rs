@@ -34,17 +34,16 @@ impl DeleteKeyCommandContext {
 impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
     fn from(item: DeleteKeyCommandContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
-                prepopulated_unsigned_transaction.signer_id = item.owner_account_id.clone().into();
-                prepopulated_unsigned_transaction.receiver_id =
-                    item.owner_account_id.clone().into();
-                prepopulated_unsigned_transaction.actions =
-                    vec![near_primitives::transaction::Action::DeleteKey(
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: item.owner_account_id.clone().into(),
+                    receiver_id: item.owner_account_id.clone().into(),
+                    actions: vec![near_primitives::transaction::Action::DeleteKey(
                         near_primitives::transaction::DeleteKeyAction {
                             public_key: item.public_key.clone().into(),
                         },
-                    )];
-                Ok(())
+                    )],
+                })
             });
 
         Self {

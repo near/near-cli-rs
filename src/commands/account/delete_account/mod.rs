@@ -61,18 +61,17 @@ impl BeneficiaryAccountContext {
 impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
     fn from(item: BeneficiaryAccountContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
-                prepopulated_unsigned_transaction.signer_id = item.account_id.clone();
-                prepopulated_unsigned_transaction.receiver_id = item.account_id.clone();
-                prepopulated_unsigned_transaction.actions =
-                    vec![near_primitives::transaction::Action::DeleteAccount(
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: item.account_id.clone(),
+                    receiver_id: item.account_id.clone(),
+                    actions: vec![near_primitives::transaction::Action::DeleteAccount(
                         near_primitives::transaction::DeleteAccountAction {
                             beneficiary_id: item.beneficiary_account_id.clone(),
                         },
-                    )];
-                Ok(())
+                    )],
+                })
             });
-
         Self {
             config: item.config,
             on_after_getting_network_callback,

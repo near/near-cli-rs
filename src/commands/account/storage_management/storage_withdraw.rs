@@ -51,17 +51,16 @@ impl SignerAccountIdContext {
         scope: &<SignerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let signer = scope.signer_account_id.clone();
-        let signer_account_id = scope.signer_account_id.clone();
+        let signer_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
         let amount = previous_context.amount.clone();
         let get_contract_account_id = previous_context.get_contract_account_id.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |prepopulated_unsigned_transaction, network_config| {
-                let contract_account_id = get_contract_account_id(network_config)?;
-                prepopulated_unsigned_transaction.signer_id = signer_account_id.clone().into();
-                prepopulated_unsigned_transaction.receiver_id = contract_account_id;
-                prepopulated_unsigned_transaction.actions =
-                    vec![near_primitives::transaction::Action::FunctionCall(
+            std::sync::Arc::new(move |network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: signer_id.clone(),
+                    receiver_id: get_contract_account_id(network_config)?,
+                    actions: vec![near_primitives::transaction::Action::FunctionCall(
                         near_primitives::transaction::FunctionCallAction {
                             method_name: "storage_withdraw".to_string(),
                             args: serde_json::json!({
@@ -76,8 +75,8 @@ impl SignerAccountIdContext {
                                 .unwrap()
                                 .to_yoctonear(),
                         },
-                    )];
-                Ok(())
+                    )],
+                })
             });
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(

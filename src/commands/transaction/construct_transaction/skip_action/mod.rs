@@ -22,13 +22,13 @@ impl SkipActionContext {
 impl From<SkipActionContext> for crate::commands::ActionContext {
     fn from(item: SkipActionContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
-                prepopulated_unsigned_transaction.signer_id = item.0.signer_account_id.clone();
-                prepopulated_unsigned_transaction.receiver_id = item.0.receiver_account_id.clone();
-                prepopulated_unsigned_transaction.actions = item.0.actions.clone();
-                Ok(())
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: item.0.signer_account_id.clone(),
+                    receiver_id: item.0.receiver_account_id.clone(),
+                    actions: item.0.actions.clone(),
+                })
             });
-
         Self {
             config: item.0.config,
             on_after_getting_network_callback,

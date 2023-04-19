@@ -151,29 +151,27 @@ impl DepositContext {
         let deposit = scope.deposit.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
-                prepopulated_unsigned_transaction.signer_id =
-                    previous_context.signer_account_id.clone();
-                prepopulated_unsigned_transaction.receiver_id =
-                    previous_context.receiver_account_id.clone();
-                prepopulated_unsigned_transaction.actions = vec![
-                    near_primitives::transaction::Action::DeployContract(
-                        near_primitives::transaction::DeployContractAction {
-                            code: previous_context.code.clone(),
-                        },
-                    ),
-                    near_primitives::transaction::Action::FunctionCall(
-                        near_primitives::transaction::FunctionCallAction {
-                            method_name: previous_context.function_name.clone(),
-                            args: previous_context.function_args.clone(),
-                            gas: previous_context.gas.inner,
-                            deposit: deposit.to_yoctonear(),
-                        },
-                    ),
-                ];
-                Ok(())
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: previous_context.signer_account_id.clone(),
+                    receiver_id: previous_context.receiver_account_id.clone(),
+                    actions: vec![
+                        near_primitives::transaction::Action::DeployContract(
+                            near_primitives::transaction::DeployContractAction {
+                                code: previous_context.code.clone(),
+                            },
+                        ),
+                        near_primitives::transaction::Action::FunctionCall(
+                            near_primitives::transaction::FunctionCallAction {
+                                method_name: previous_context.function_name.clone(),
+                                args: previous_context.function_args.clone(),
+                                gas: previous_context.gas.inner,
+                                deposit: deposit.to_yoctonear(),
+                            },
+                        ),
+                    ],
+                })
             });
-
         Ok(Self(crate::commands::ActionContext {
             config: previous_context.config,
             on_after_getting_network_callback,

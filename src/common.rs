@@ -712,7 +712,7 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     Ok(key_pair_properties)
 }
 
-pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Transaction) {
+pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTransaction) {
     eprintln!("{:<13} {}", "signer_id:", &transaction.signer_id);
     eprintln!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
     eprintln!("actions:");

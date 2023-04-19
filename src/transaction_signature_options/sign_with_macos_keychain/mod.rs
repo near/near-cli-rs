@@ -41,13 +41,13 @@ impl SignMacosKeychainContext {
         let access_key_list = network_config
             .json_rpc_client()
             .blocking_call_view_access_key_list(
-                &previous_context.transaction.signer_id,
+                &previous_context.prepopulated_transaction.signer_id,
                 near_primitives::types::Finality::Final.into(),
             )
             .wrap_err_with(|| {
                 format!(
                     "Failed to fetch access key list for {}",
-                    previous_context.transaction.signer_id
+                    previous_context.prepopulated_transaction.signer_id
                 )
             })?
             .access_key_list_view()?;
@@ -55,7 +55,7 @@ impl SignMacosKeychainContext {
         let service_name = std::borrow::Cow::Owned(format!(
             "near-{}-{}",
             network_config.network_name,
-            previous_context.transaction.signer_id.as_str()
+            previous_context.prepopulated_transaction.signer_id.as_str()
         ));
         let password = access_key_list
             .keys
@@ -71,7 +71,10 @@ impl SignMacosKeychainContext {
                 let (password, _) = keychain
                     .find_generic_password(
                         &service_name,
-                        &format!("{}:{}", previous_context.transaction.signer_id, public_key),
+                        &format!(
+                            "{}:{}",
+                            previous_context.prepopulated_transaction.signer_id, public_key
+                        ),
                     )
                     .ok()?;
                 Some(password)
@@ -79,7 +82,7 @@ impl SignMacosKeychainContext {
             .ok_or_else(|| {
                 color_eyre::eyre::eyre!(format!(
                     "There are no access keys for {} account in the macOS keychain.",
-                    previous_context.transaction.signer_id
+                    previous_context.prepopulated_transaction.signer_id
                 ))
             })?;
 
@@ -89,7 +92,7 @@ impl SignMacosKeychainContext {
         let rpc_query_response = network_config
             .json_rpc_client()
             .blocking_call_view_access_key(
-                &previous_context.transaction.signer_id,
+                &previous_context.prepopulated_transaction.signer_id,
                 &account_json.public_key,
                 near_primitives::types::BlockReference::latest(),
             )
@@ -105,7 +108,9 @@ impl SignMacosKeychainContext {
             public_key: account_json.public_key.clone(),
             block_hash: rpc_query_response.block_hash,
             nonce: current_nonce + 1,
-            ..previous_context.transaction.clone()
+            signer_id: previous_context.prepopulated_transaction.signer_id,
+            receiver_id: previous_context.prepopulated_transaction.receiver_id,
+            actions: previous_context.prepopulated_transaction.actions,
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;

@@ -34,11 +34,11 @@ impl AddAccessKeyActionContext {
 impl From<AddAccessKeyActionContext> for crate::commands::ActionContext {
     fn from(item: AddAccessKeyActionContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
-                prepopulated_unsigned_transaction.signer_id = item.signer_account_id.clone();
-                prepopulated_unsigned_transaction.receiver_id = item.signer_account_id.clone();
-                prepopulated_unsigned_transaction.actions =
-                    vec![near_primitives::transaction::Action::AddKey(
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: item.signer_account_id.clone(),
+                    receiver_id: item.signer_account_id.clone(),
+                    actions: vec![near_primitives::transaction::Action::AddKey(
                         near_primitives::transaction::AddKeyAction {
                             public_key: item.public_key.clone().into(),
                             access_key: near_primitives::account::AccessKey {
@@ -46,10 +46,9 @@ impl From<AddAccessKeyActionContext> for crate::commands::ActionContext {
                                 permission: item.permission.clone(),
                             },
                         },
-                    )];
-                Ok(())
+                    )],
+                })
             });
-
         Self {
             config: item.config,
             on_after_getting_network_callback,

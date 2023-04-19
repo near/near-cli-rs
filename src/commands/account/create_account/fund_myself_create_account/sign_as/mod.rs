@@ -48,10 +48,10 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
             std::sync::Arc::new({
                 let new_account_id: near_primitives::types::AccountId =
                     item.account_properties.new_account_id.clone().into();
-                let signer_account_id = item.signer_account_id.clone();
+                let signer_id = item.signer_account_id.clone();
 
-                move |prepopulated_unsigned_transaction, network_config| {
-                    validate_signer_account_id(network_config, &signer_account_id)?;
+                move |network_config| {
+                    validate_signer_account_id(network_config, &signer_id)?;
 
                     if new_account_id.as_str().chars().count()
                         < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
@@ -64,9 +64,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     }
                     validate_new_account_id(network_config, &new_account_id)?;
 
-                    let (actions, receiver_id) = if new_account_id
-                        .is_sub_account_of(&signer_account_id)
-                    {
+                    let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
                         (
                             vec![
                                 near_primitives::transaction::Action::CreateAccount(
@@ -121,7 +119,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             } else {
                                 return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                                     "\nSigner account <{}> does not have permission to create account <{}>.",
-                                    signer_account_id,
+                                    signer_id,
                                     new_account_id
                                 ));
                             }
@@ -133,11 +131,12 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             ));
                         }
                     };
-                    prepopulated_unsigned_transaction.signer_id = signer_account_id.clone();
-                    prepopulated_unsigned_transaction.receiver_id = receiver_id;
-                    prepopulated_unsigned_transaction.actions = actions;
 
-                    Ok(())
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_id.clone(),
+                        receiver_id,
+                        actions,
+                    })
                 }
             });
 

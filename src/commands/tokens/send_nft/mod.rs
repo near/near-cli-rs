@@ -62,11 +62,11 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
         let token_id = item.token_id.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |prepopulated_unsigned_transaction, _network_config| {
-                prepopulated_unsigned_transaction.signer_id = signer_account_id.clone();
-                prepopulated_unsigned_transaction.receiver_id = nft_contract_account_id.clone();
-                prepopulated_unsigned_transaction.actions =
-                    vec![near_primitives::transaction::Action::FunctionCall(
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: signer_account_id.clone(),
+                    receiver_id: nft_contract_account_id.clone(),
+                    actions: vec![near_primitives::transaction::Action::FunctionCall(
                         near_primitives::transaction::FunctionCallAction {
                             method_name: "nft_transfer".to_string(),
                             args: json!({
@@ -78,8 +78,8 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                             gas: item.gas.inner,
                             deposit: item.deposit.to_yoctonear(),
                         },
-                    )];
-                Ok(())
+                    )],
+                })
             });
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(

@@ -14,7 +14,7 @@ pub struct NetworkForTransactionArgs {
 pub struct NetworkForTransactionArgsContext {
     config: crate::config::Config,
     network_config: crate::config::NetworkConfig,
-    prepopulated_unsigned_transaction: near_primitives::transaction::Transaction,
+    prepopulated_transaction: crate::commands::PrepopulatedTransaction,
     on_before_signing_callback: crate::commands::OnBeforeSigningCallback,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
@@ -27,23 +27,17 @@ impl NetworkForTransactionArgsContext {
         previous_context: crate::commands::ActionContext,
         scope: &<NetworkForTransactionArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let prepopulated_unsigned_transaction = near_primitives::transaction::Transaction {
-            signer_id: "test.testnet".parse().unwrap(),
-            public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
-            nonce: 0,
-            receiver_id: "test.testnet".parse().unwrap(),
-            block_hash: Default::default(),
-            actions: vec![],
-        };
         let network_connection = previous_context.config.network_connection.clone();
         let network_config = network_connection
             .get(&scope.network_name)
             .expect("Failed to get network config!")
             .clone();
+        let prepopulated_transaction =
+            (previous_context.on_after_getting_network_callback)(&network_config)?;
         Ok(Self {
             config: previous_context.config,
             network_config,
-            prepopulated_unsigned_transaction,
+            prepopulated_transaction,
             on_before_signing_callback: previous_context.on_before_signing_callback,
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
@@ -58,7 +52,7 @@ impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionCont
         Self {
             config: item.config,
             network_config: item.network_config,
-            transaction: item.prepopulated_unsigned_transaction,
+            prepopulated_transaction: item.prepopulated_transaction,
             on_before_signing_callback: item.on_before_signing_callback,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
@@ -95,31 +89,20 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
 
         let new_context_scope =
             InteractiveClapContextScopeForNetworkForTransactionArgs { network_name };
-        let mut new_context = match NetworkForTransactionArgsContext::from_previous_context(
-            context.clone(),
+        let new_context = match NetworkForTransactionArgsContext::from_previous_context(
+            context,
             &new_context_scope,
         ) {
             Ok(new_context) => new_context,
             Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
         };
 
-        match (context.on_after_getting_network_callback)(
-            &mut new_context.prepopulated_unsigned_transaction,
-            &new_context.network_config,
-        ) {
-            Ok(_) => (),
-            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-        };
-        if new_context
-            .prepopulated_unsigned_transaction
-            .actions
-            .is_empty()
-        {
+        if new_context.prepopulated_transaction.actions.is_empty() {
             return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
         }
 
         eprintln!("\nUnsigned transaction:\n");
-        crate::common::print_unsigned_transaction(&new_context.prepopulated_unsigned_transaction);
+        crate::common::print_unsigned_transaction(&new_context.prepopulated_transaction);
         eprintln!();
 
         match <crate::transaction_signature_options::SignWith as interactive_clap::FromCli>::from_cli(
