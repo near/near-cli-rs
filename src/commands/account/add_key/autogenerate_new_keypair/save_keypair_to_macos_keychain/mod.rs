@@ -21,13 +21,11 @@ impl SaveKeypairToMacosKeychainContext {
 
 impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext {
     fn from(item: SaveKeypairToMacosKeychainContext) -> Self {
-        let signer_account_id = item.0.signer_account_id.clone();
-
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
                 Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: signer_account_id.clone(),
-                    receiver_id: signer_account_id.clone(),
+                    signer_id: item.0.signer_account_id.clone(),
+                    receiver_id: item.0.signer_account_id.clone(),
                     actions: vec![near_primitives::transaction::Action::AddKey(
                         near_primitives::transaction::AddKeyAction {
                             public_key: item.0.public_key.clone(),

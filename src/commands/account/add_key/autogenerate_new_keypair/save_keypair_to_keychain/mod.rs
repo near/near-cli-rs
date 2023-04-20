@@ -35,14 +35,13 @@ impl SaveKeypairToKeychainContext {
 
 impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
     fn from(item: SaveKeypairToKeychainContext) -> Self {
-        let signer_account_id = item.signer_account_id.clone();
         let credentials_home_dir = item.config.credentials_home_dir.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
                 Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: signer_account_id.clone(),
-                    receiver_id: signer_account_id.clone(),
+                    signer_id: item.signer_account_id.clone(),
+                    receiver_id: item.signer_account_id.clone(),
                     actions: vec![near_primitives::transaction::Action::AddKey(
                         near_primitives::transaction::AddKeyAction {
                             public_key: item.public_key.clone(),
