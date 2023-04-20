@@ -71,9 +71,7 @@ impl SignerAccountIdContext {
                             gas: crate::common::NearGas::from_str("300 TeraGas")
                                 .unwrap()
                                 .inner,
-                            deposit: crate::common::NearBalance::from_str("1 yoctoNear")
-                                .unwrap()
-                                .to_yoctonear(),
+                            deposit: crate::common::NearBalance::from_yoctonear(1).to_yoctonear(),
                         },
                     )],
                 })
