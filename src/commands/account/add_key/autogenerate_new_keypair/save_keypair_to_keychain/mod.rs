@@ -59,13 +59,12 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
             std::sync::Arc::new(
                 move |signed_transaction, network_config, storage_message| {
                     let key_pair_properties_buf = serde_json::to_string(&item.key_pair_properties)?;
-                    let signer_account_id = signed_transaction.transaction.signer_id.clone();
                     *storage_message = crate::common::save_access_key_to_keychain(
                         network_config.clone(),
                         credentials_home_dir.clone(),
                         &key_pair_properties_buf,
                         &item.key_pair_properties.public_key_str,
-                        &signer_account_id,
+                        &signed_transaction.transaction.signer_id,
                     )
                     .wrap_err_with(|| {
                         format!(

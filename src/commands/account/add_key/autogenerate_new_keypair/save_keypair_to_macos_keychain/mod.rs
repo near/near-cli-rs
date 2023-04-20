@@ -42,12 +42,11 @@ impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext 
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
             std::sync::Arc::new(
                 move |signed_transaction, network_config, storage_message| {
-                    let signer_account_id = signed_transaction.transaction.signer_id.clone();
                     *storage_message = crate::common::save_access_key_to_macos_keychain(
                         network_config.clone(),
                         &serde_json::to_string(&item.0.key_pair_properties)?,
                         &item.0.key_pair_properties.public_key_str,
-                        &signer_account_id,
+                        &signed_transaction.transaction.signer_id,
                     )?;
                     Ok(())
                 },
