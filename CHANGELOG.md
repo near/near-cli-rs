@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4](https://github.com/near/near-cli-rs/compare/v0.3.3...v0.3.4) - 2023-04-20
+
+### Other
+- Enable self-update on CI and NPM installer for binary releases (#183)
+- release v0.3.3 (#182)
+
 ## [0.3.3](https://github.com/near/near-cli-rs/compare/v0.3.2...v0.3.3) - 2023-04-20
 
 ### Added
