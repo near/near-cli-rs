@@ -14,6 +14,7 @@ pub struct ContractCommands {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[non_exhaustive]
 /// Сhoose action for account
 pub enum ContractActions {
     #[strum_discriminants(strum(

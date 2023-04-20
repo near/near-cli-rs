@@ -14,6 +14,7 @@ pub struct TransactionCommands {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[non_exhaustive]
 /// Сhoose action for transaction
 pub enum TransactionActions {
     #[strum_discriminants(strum(message = "view-status            - View a transaction status"))]

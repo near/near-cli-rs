@@ -21,6 +21,7 @@ pub struct AccountCommands {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[non_exhaustive]
 /// What do you want to do with an account?
 pub enum AccountActions {
     #[strum_discriminants(strum(
