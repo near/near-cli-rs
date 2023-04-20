@@ -41,6 +41,7 @@ impl TokensCommandsContext {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = TokensCommandsContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[non_exhaustive]
 /// Select actions with tokens
 pub enum TokensActions {
     #[strum_discriminants(strum(

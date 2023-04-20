@@ -13,6 +13,7 @@ pub struct ConfigCommands {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[non_exhaustive]
 /// What do you want to do with a near CLI config?
 pub enum ConfigActions {
     #[strum_discriminants(strum(
