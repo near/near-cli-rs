@@ -14,8 +14,8 @@ pub struct DeleteKeyCommand {
 #[derive(Debug, Clone)]
 pub struct DeleteKeyCommandContext {
     config: crate::config::Config,
-    owner_account_id: crate::types::account_id::AccountId,
-    public_key: crate::types::public_key::PublicKey,
+    owner_account_id: near_primitives::types::AccountId,
+    public_key: near_crypto::PublicKey,
 }
 
 impl DeleteKeyCommandContext {
@@ -25,8 +25,8 @@ impl DeleteKeyCommandContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.0,
-            owner_account_id: scope.owner_account_id.clone(),
-            public_key: scope.public_key.clone(),
+            owner_account_id: scope.owner_account_id.clone().into(),
+            public_key: scope.public_key.clone().into(),
         })
     }
 }
@@ -36,11 +36,11 @@ impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
                 Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: item.owner_account_id.clone().into(),
-                    receiver_id: item.owner_account_id.clone().into(),
+                    signer_id: item.owner_account_id.clone(),
+                    receiver_id: item.owner_account_id.clone(),
                     actions: vec![near_primitives::transaction::Action::DeleteKey(
                         near_primitives::transaction::DeleteKeyAction {
-                            public_key: item.public_key.clone().into(),
+                            public_key: item.public_key.clone(),
                         },
                     )],
                 })
