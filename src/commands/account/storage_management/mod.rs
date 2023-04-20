@@ -35,7 +35,7 @@ impl ContractContext {
     }
 }
 
-pub type GetContractAccountID = std::sync::Arc<
+pub type GetContractAccountId = std::sync::Arc<
     dyn Fn(
         &crate::config::NetworkConfig,
     ) -> color_eyre::eyre::Result<near_primitives::types::AccountId>,
