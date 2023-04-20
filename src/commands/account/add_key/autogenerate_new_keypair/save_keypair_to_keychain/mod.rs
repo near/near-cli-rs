@@ -41,8 +41,8 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
                 Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: item.signer_account_id.clone(),
-                    receiver_id: item.signer_account_id.clone(),
+                    signer_id: signer_account_id.clone(),
+                    receiver_id: signer_account_id.clone(),
                     actions: vec![near_primitives::transaction::Action::AddKey(
                         near_primitives::transaction::AddKeyAction {
                             public_key: item.public_key.clone(),
@@ -57,8 +57,9 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
 
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
             std::sync::Arc::new(
-                move |_signed_transaction, network_config, storage_message| {
+                move |signed_transaction, network_config, storage_message| {
                     let key_pair_properties_buf = serde_json::to_string(&item.key_pair_properties)?;
+                    let signer_account_id = signed_transaction.transaction.signer_id.clone();
                     *storage_message = crate::common::save_access_key_to_keychain(
                         network_config.clone(),
                         credentials_home_dir.clone(),
