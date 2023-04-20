@@ -56,23 +56,41 @@ impl SendNftCommandContext {
 
 impl From<SendNftCommandContext> for crate::commands::ActionContext {
     fn from(item: SendNftCommandContext) -> Self {
-        let method_name = "nft_transfer".to_string();
-        let args = json!({
-            "receiver_id": item.receiver_account_id.to_string(),
-            "token_id": item.token_id
-        })
-        .to_string()
-        .into_bytes();
-        let sender = item.signer_account_id.clone();
-        let id = item.token_id.clone();
-        let contract = item.nft_contract_account_id.clone();
-        let receiver = item.receiver_account_id.clone();
+        let signer_account_id = item.signer_account_id.clone();
+        let nft_contract_account_id = item.nft_contract_account_id.clone();
+        let receiver_account_id = item.receiver_account_id.clone();
+        let token_id = item.token_id.clone();
+
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: signer_account_id.clone(),
+                    receiver_id: nft_contract_account_id.clone(),
+                    actions: vec![near_primitives::transaction::Action::FunctionCall(
+                        near_primitives::transaction::FunctionCallAction {
+                            method_name: "nft_transfer".to_string(),
+                            args: json!({
+                                "receiver_id": receiver_account_id.to_string(),
+                                "token_id": token_id
+                            })
+                            .to_string()
+                            .into_bytes(),
+                            gas: item.gas.inner,
+                            deposit: item.deposit.to_yoctonear(),
+                        },
+                    )],
+                })
+            });
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                     eprintln!(
-                        "<{sender}> has successfully transferred NFT token_id=\"{id}\" to <{receiver}> on contract <{contract}>.",
+                        "<{}> has successfully transferred NFT token_id=\"{}\" to <{}> on contract <{}>.",
+                        item.signer_account_id,
+                        item.token_id,
+                        item.receiver_account_id,
+                        item.nft_contract_account_id,
                     );
                 }
                 Ok(())
@@ -81,20 +99,8 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
 
         Self {
             config: item.config,
-            signer_account_id: item.signer_account_id,
-            receiver_account_id: item.nft_contract_account_id,
-            actions: vec![near_primitives::transaction::Action::FunctionCall(
-                near_primitives::transaction::FunctionCallAction {
-                    method_name,
-                    args,
-                    gas: item.gas.inner,
-                    deposit: item.deposit.to_yoctonear(),
-                },
-            )],
+            on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_after_getting_network_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(

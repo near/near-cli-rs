@@ -37,7 +37,10 @@ impl SignKeychainContext {
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
-        let file_name = format!("{}.json", &previous_context.transaction.signer_id);
+        let file_name = format!(
+            "{}.json",
+            &previous_context.prepopulated_transaction.signer_id
+        );
         let mut path = std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
 
         let data_path: std::path::PathBuf = {
@@ -51,20 +54,25 @@ impl SignKeychainContext {
                 let access_key_list = network_config
                     .json_rpc_client()
                     .blocking_call_view_access_key_list(
-                        &previous_context.transaction.signer_id,
+                        &previous_context.prepopulated_transaction.signer_id,
                         near_primitives::types::Finality::Final.into(),
                     )
                     .wrap_err_with(|| {
                         format!(
                             "Failed to fetch access KeyList for {}",
-                            previous_context.transaction.signer_id
+                            previous_context.prepopulated_transaction.signer_id
                         )
                     })?
                     .access_key_list_view()?;
                 let mut path =
                     std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
                 path.push(dir_name);
-                path.push(&previous_context.transaction.signer_id.to_string());
+                path.push(
+                    &previous_context
+                        .prepopulated_transaction
+                        .signer_id
+                        .to_string(),
+                );
                 let mut data_path = std::path::PathBuf::new();
                 'outer: for access_key in access_key_list.keys {
                     let account_public_key = access_key.public_key.to_string();
@@ -110,7 +118,7 @@ impl SignKeychainContext {
         let rpc_query_response = network_config
             .json_rpc_client()
             .blocking_call_view_access_key(
-                &previous_context.transaction.signer_id,
+                &previous_context.prepopulated_transaction.signer_id,
                 &account_json.public_key,
                 near_primitives::types::BlockReference::latest(),
             )
@@ -126,7 +134,9 @@ impl SignKeychainContext {
             public_key: account_json.public_key.clone(),
             block_hash: rpc_query_response.block_hash,
             nonce: current_nonce + 1,
-            ..previous_context.transaction.clone()
+            signer_id: previous_context.prepopulated_transaction.signer_id,
+            receiver_id: previous_context.prepopulated_transaction.receiver_id,
+            actions: previous_context.prepopulated_transaction.actions,
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;

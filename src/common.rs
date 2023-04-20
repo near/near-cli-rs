@@ -484,6 +484,24 @@ pub fn verify_account_access_key(
     }
 }
 
+pub fn is_account_exist(
+    networks: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
+    account_id: near_primitives::types::AccountId,
+) -> bool {
+    for network in networks {
+        if get_account_state(
+            network.1.clone(),
+            account_id.clone(),
+            near_primitives::types::Finality::Final.into(),
+        )
+        .is_ok()
+        {
+            return true;
+        }
+    }
+    false
+}
+
 pub fn get_account_state(
     network_config: crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
@@ -694,7 +712,7 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     Ok(key_pair_properties)
 }
 
-pub fn print_unsigned_transaction(transaction: &near_primitives::transaction::Transaction) {
+pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTransaction) {
     eprintln!("{:<13} {}", "signer_id:", &transaction.signer_id);
     eprintln!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
     eprintln!("actions:");
@@ -1193,7 +1211,7 @@ pub fn print_transaction_status(
             if bytes_result.is_empty() {
                 eprintln!("Empty result");
             } else if let Ok(json_result) =
-                serde_json::from_slice::<serde_json::Value>(&bytes_result)
+                serde_json::from_slice::<serde_json::Value>(bytes_result)
             {
                 println!("{}", serde_json::to_string_pretty(&json_result)?);
             } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
@@ -1605,6 +1623,25 @@ pub impl near_jsonrpc_client::JsonRpcClient {
             },
         })
     }
+}
+
+use serde::de::{Deserialize, Deserializer};
+
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct StorageBalance {
+    #[serde(deserialize_with = "parse_u128_string")]
+    pub available: u128,
+    #[serde(deserialize_with = "parse_u128_string")]
+    pub total: u128,
+}
+
+fn parse_u128_string<'de, D>(deserializer: D) -> color_eyre::eyre::Result<u128, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    <std::string::String as Deserialize>::deserialize(deserializer)?
+        .parse::<u128>()
+        .map_err(serde::de::Error::custom)
 }
 
 #[easy_ext::ext(RpcQueryResponseExt)]

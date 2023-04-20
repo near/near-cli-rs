@@ -215,22 +215,25 @@ impl SignerAccountIdContext {
 
 impl From<SignerAccountIdContext> for crate::commands::ActionContext {
     fn from(item: SignerAccountIdContext) -> Self {
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: item.signer_account_id.clone(),
+                    receiver_id: item.receiver_account_id.clone(),
+                    actions: vec![near_primitives::transaction::Action::FunctionCall(
+                        near_primitives::transaction::FunctionCallAction {
+                            method_name: item.function_name.clone(),
+                            args: item.function_args.clone(),
+                            gas: item.gas.inner,
+                            deposit: item.deposit.to_yoctonear(),
+                        },
+                    )],
+                })
+            });
         Self {
             config: item.config,
-            signer_account_id: item.signer_account_id,
-            receiver_account_id: item.receiver_account_id,
-            actions: vec![near_primitives::transaction::Action::FunctionCall(
-                near_primitives::transaction::FunctionCallAction {
-                    method_name: item.function_name,
-                    args: item.function_args,
-                    gas: item.gas.inner,
-                    deposit: item.deposit.to_yoctonear(),
-                },
-            )],
+            on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_after_getting_network_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(

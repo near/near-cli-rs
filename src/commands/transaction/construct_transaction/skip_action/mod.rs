@@ -21,14 +21,17 @@ impl SkipActionContext {
 
 impl From<SkipActionContext> for crate::commands::ActionContext {
     fn from(item: SkipActionContext) -> Self {
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: item.0.signer_account_id.clone(),
+                    receiver_id: item.0.receiver_account_id.clone(),
+                    actions: item.0.actions.clone(),
+                })
+            });
         Self {
             config: item.0.config,
-            signer_account_id: item.0.signer_account_id,
-            receiver_account_id: item.0.receiver_account_id,
-            actions: item.0.actions,
-            on_after_getting_network_callback: std::sync::Arc::new(|_actions, _network_config| {
-                Ok(())
-            }),
+            on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),

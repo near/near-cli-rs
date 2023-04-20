@@ -46,7 +46,7 @@ impl SignPrivateKeyContext {
         let rpc_query_response = network_config
             .json_rpc_client()
             .blocking_call_view_access_key(
-                &previous_context.transaction.signer_id,
+                &previous_context.prepopulated_transaction.signer_id,
                 &public_key,
                 near_primitives::types::BlockReference::latest(),
             )
@@ -62,7 +62,9 @@ impl SignPrivateKeyContext {
             public_key: scope.signer_public_key.clone().into(),
             block_hash: rpc_query_response.block_hash,
             nonce: current_nonce + 1,
-            ..previous_context.transaction.clone()
+            signer_id: previous_context.prepopulated_transaction.signer_id,
+            receiver_id: previous_context.prepopulated_transaction.receiver_id,
+            actions: previous_context.prepopulated_transaction.actions,
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;

@@ -60,19 +60,22 @@ impl BeneficiaryAccountContext {
 
 impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
     fn from(item: BeneficiaryAccountContext) -> Self {
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: item.account_id.clone(),
+                    receiver_id: item.account_id.clone(),
+                    actions: vec![near_primitives::transaction::Action::DeleteAccount(
+                        near_primitives::transaction::DeleteAccountAction {
+                            beneficiary_id: item.beneficiary_account_id.clone(),
+                        },
+                    )],
+                })
+            });
         Self {
             config: item.config,
-            signer_account_id: item.account_id.clone(),
-            receiver_account_id: item.account_id,
-            actions: vec![near_primitives::transaction::Action::DeleteAccount(
-                near_primitives::transaction::DeleteAccountAction {
-                    beneficiary_id: item.beneficiary_account_id,
-                },
-            )],
+            on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_after_getting_network_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(

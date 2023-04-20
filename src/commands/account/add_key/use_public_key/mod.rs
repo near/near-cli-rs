@@ -33,22 +33,25 @@ impl AddAccessKeyActionContext {
 
 impl From<AddAccessKeyActionContext> for crate::commands::ActionContext {
     fn from(item: AddAccessKeyActionContext) -> Self {
+        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+            std::sync::Arc::new(move |_network_config| {
+                Ok(crate::commands::PrepopulatedTransaction {
+                    signer_id: item.signer_account_id.clone(),
+                    receiver_id: item.signer_account_id.clone(),
+                    actions: vec![near_primitives::transaction::Action::AddKey(
+                        near_primitives::transaction::AddKeyAction {
+                            public_key: item.public_key.clone().into(),
+                            access_key: near_primitives::account::AccessKey {
+                                nonce: 0,
+                                permission: item.permission.clone(),
+                            },
+                        },
+                    )],
+                })
+            });
         Self {
             config: item.config,
-            signer_account_id: item.signer_account_id.clone(),
-            receiver_account_id: item.signer_account_id,
-            actions: vec![near_primitives::transaction::Action::AddKey(
-                near_primitives::transaction::AddKeyAction {
-                    public_key: item.public_key.into(),
-                    access_key: near_primitives::account::AccessKey {
-                        nonce: 0,
-                        permission: item.permission,
-                    },
-                },
-            )],
-            on_after_getting_network_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
+            on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),

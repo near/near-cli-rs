@@ -42,19 +42,16 @@ impl SignerAccountIdContext {
 
 impl From<SignerAccountIdContext> for crate::commands::ActionContext {
     fn from(item: SignerAccountIdContext) -> Self {
-        let receiver_account_id: near_primitives::types::AccountId =
-            item.account_properties.new_account_id.clone().into();
-        let signer_account_id: near_primitives::types::AccountId = item.signer_account_id.clone();
-        let config = item.config.clone();
+        let config = item.config;
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let new_account_id: near_primitives::types::AccountId =
                     item.account_properties.new_account_id.clone().into();
-                let signer_account_id = item.signer_account_id.clone();
+                let signer_id = item.signer_account_id.clone();
 
-                move |prepopulated_unsigned_transaction, network_config| {
-                    validate_signer_account_id(network_config, &signer_account_id.clone())?;
+                move |network_config| {
+                    validate_signer_account_id(network_config, &signer_id)?;
 
                     if new_account_id.as_str().chars().count()
                         < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
@@ -67,9 +64,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     }
                     validate_new_account_id(network_config, &new_account_id)?;
 
-                    let (actions, receiver_id) = if new_account_id
-                        .is_sub_account_of(&signer_account_id)
-                    {
+                    let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
                         (
                             vec![
                                 near_primitives::transaction::Action::CreateAccount(
@@ -124,7 +119,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             } else {
                                 return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                                     "\nSigner account <{}> does not have permission to create account <{}>.",
-                                    signer_account_id,
+                                    signer_id,
                                     new_account_id
                                 ));
                             }
@@ -136,17 +131,17 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             ));
                         }
                     };
-                    prepopulated_unsigned_transaction.receiver_id = receiver_id;
-                    prepopulated_unsigned_transaction.actions = actions;
-                    Ok(())
+
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_id.clone(),
+                        receiver_id,
+                        actions,
+                    })
                 }
             });
 
         Self {
             config,
-            signer_account_id,
-            receiver_account_id,
-            actions: vec![],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
@@ -169,7 +164,10 @@ impl SignerAccountId {
             .clone()
             .get_parent_account_id_from_sub_account();
         if !parent_account_id.0.is_top_level() {
-            if is_account_exist(context, parent_account_id.clone().into()) {
+            if crate::common::is_account_exist(
+                &context.config.network_connection,
+                parent_account_id.clone().into(),
+            ) {
                 Ok(Some(parent_account_id))
             } else {
                 Self::input_account_id(context)
@@ -185,7 +183,10 @@ impl SignerAccountId {
         loop {
             let signer_account_id: crate::types::account_id::AccountId =
                 CustomType::new("What is the signer account ID?").prompt()?;
-            if !is_account_exist(context, signer_account_id.clone().into()) {
+            if !crate::common::is_account_exist(
+                &context.config.network_connection,
+                signer_account_id.clone().into(),
+            ) {
                 eprintln!("\nThe account <{}> does not yet exist.", &signer_account_id);
                 #[derive(strum_macros::Display)]
                 enum ConfirmOptions {
@@ -207,24 +208,6 @@ impl SignerAccountId {
             }
         }
     }
-}
-
-fn is_account_exist(
-    context: &super::AccountPropertiesContext,
-    account_id: near_primitives::types::AccountId,
-) -> bool {
-    for network in context.config.network_connection.iter() {
-        if crate::common::get_account_state(
-            network.1.clone(),
-            account_id.clone(),
-            near_primitives::types::BlockReference::latest(),
-        )
-        .is_ok()
-        {
-            return true;
-        }
-    }
-    false
 }
 
 fn validate_signer_account_id(

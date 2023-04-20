@@ -49,19 +49,21 @@ pub type OnBeforeSigningCallback = std::sync::Arc<
         &crate::config::NetworkConfig,
     ) -> crate::CliResult,
 >;
+
 pub type OnAfterGettingNetworkCallback = std::sync::Arc<
-    dyn Fn(
-        &mut near_primitives::transaction::Transaction,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
+    dyn Fn(&crate::config::NetworkConfig) -> color_eyre::eyre::Result<PrepopulatedTransaction>,
 >;
+
+#[derive(Debug, Clone)]
+pub struct PrepopulatedTransaction {
+    pub signer_id: near_primitives::types::AccountId,
+    pub receiver_id: near_primitives::types::AccountId,
+    pub actions: Vec<near_primitives::transaction::Action>,
+}
 
 #[derive(Clone)]
 pub struct ActionContext {
     pub config: crate::config::Config,
-    pub signer_account_id: near_primitives::types::AccountId,
-    pub receiver_account_id: near_primitives::types::AccountId,
-    pub actions: Vec<near_primitives::transaction::Action>,
     pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,
     pub on_before_sending_transaction_callback:
@@ -74,7 +76,7 @@ pub struct ActionContext {
 pub struct TransactionContext {
     pub config: crate::config::Config,
     pub network_config: crate::config::NetworkConfig,
-    pub transaction: near_primitives::transaction::Transaction,
+    pub prepopulated_transaction: PrepopulatedTransaction,
     pub on_before_signing_callback: OnBeforeSigningCallback,
     pub on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
