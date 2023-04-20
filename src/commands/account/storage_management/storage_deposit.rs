@@ -18,7 +18,7 @@ pub struct DepositArgs {
 #[derive(Clone)]
 pub struct DepositArgsContext {
     config: crate::config::Config,
-    get_contract_account_id: super::GetContractAccountID,
+    get_contract_account_id: super::GetContractAccountId,
     receiver_account_id: near_primitives::types::AccountId,
     deposit: crate::common::NearBalance,
 }

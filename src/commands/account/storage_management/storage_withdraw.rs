@@ -14,7 +14,7 @@ pub struct WithdrawArgs {
 #[derive(Clone)]
 pub struct WithdrawArgsContext {
     config: crate::config::Config,
-    get_contract_account_id: super::GetContractAccountID,
+    get_contract_account_id: super::GetContractAccountId,
     amount: crate::common::NearBalance,
 }
 

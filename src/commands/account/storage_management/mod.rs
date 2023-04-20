@@ -17,7 +17,7 @@ pub struct Contract {
 #[derive(Clone)]
 pub struct ContractContext {
     pub config: crate::config::Config,
-    pub get_contract_account_id: GetContractAccountID,
+    pub get_contract_account_id: GetContractAccountId,
 }
 
 impl ContractContext {
@@ -26,7 +26,7 @@ impl ContractContext {
         scope: &<Contract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let contract_account_id = scope.contract_account_id.clone();
-        let get_contract_account_id: GetContractAccountID =
+        let get_contract_account_id: GetContractAccountId =
             std::sync::Arc::new(move |_network_config| Ok(contract_account_id.clone().into()));
         Ok(Self {
             config: previous_context.0,
