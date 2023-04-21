@@ -193,6 +193,7 @@ dependencies = [
  "quote",
  "syn 2.0.15",
 <<<<<<< HEAD
+<<<<<<< HEAD
 ]
 
 [[package]]
@@ -217,6 +218,8 @@ dependencies = [
  "winapi",
 =======
 >>>>>>> added meta_transaction_relayer_url for config
+=======
+>>>>>>> c26c6fabbca1dcbc91a6c6d4c50196b7ae7b8e4c
 ]
 
 [[package]]
@@ -538,6 +541,7 @@ dependencies = [
  "quote",
  "syn 2.0.15",
 <<<<<<< HEAD
+<<<<<<< HEAD
 ]
 
 [[package]]
@@ -558,6 +562,8 @@ dependencies = [
  "os_str_bytes",
 =======
 >>>>>>> added meta_transaction_relayer_url for config
+=======
+>>>>>>> c26c6fabbca1dcbc91a6c6d4c50196b7ae7b8e4c
 ]
 
 [[package]]
@@ -867,6 +873,7 @@ dependencies = [
  "quote",
  "syn 2.0.15",
 <<<<<<< HEAD
+<<<<<<< HEAD
 ]
 
 [[package]]
@@ -891,6 +898,8 @@ dependencies = [
  "syn 1.0.109",
 =======
 >>>>>>> added meta_transaction_relayer_url for config
+=======
+>>>>>>> c26c6fabbca1dcbc91a6c6d4c50196b7ae7b8e4c
 ]
 
 [[package]]
@@ -1653,6 +1662,7 @@ dependencies = [
  "rustix",
  "windows-sys 0.48.0",
 <<<<<<< HEAD
+<<<<<<< HEAD
 ]
 
 [[package]]
@@ -1673,6 +1683,8 @@ dependencies = [
  "either",
 =======
 >>>>>>> added meta_transaction_relayer_url for config
+=======
+>>>>>>> c26c6fabbca1dcbc91a6c6d4c50196b7ae7b8e4c
 ]
 
 [[package]]
@@ -2063,6 +2075,7 @@ dependencies = [
 [[package]]
 name = "near-o11y"
 version = "0.16.1"
+<<<<<<< HEAD
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "445cbd86499dbabf68d34d95d9a45c680da5446e226f4982ce488fcf8556b23f"
 dependencies = [
@@ -2092,6 +2105,37 @@ version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4c030f28e8f988698145e7753b83bb54c05838c3afdd44835cc7c32c327ea1e"
 dependencies = [
+=======
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "445cbd86499dbabf68d34d95d9a45c680da5446e226f4982ce488fcf8556b23f"
+dependencies = [
+ "actix",
+ "atty",
+ "clap 3.2.23",
+ "near-crypto",
+ "near-primitives-core",
+ "once_cell",
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry-semantic-conventions",
+ "prometheus",
+ "serde",
+ "strum",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "near-primitives"
+version = "0.16.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4c030f28e8f988698145e7753b83bb54c05838c3afdd44835cc7c32c327ea1e"
+dependencies = [
+>>>>>>> c26c6fabbca1dcbc91a6c6d4c50196b7ae7b8e4c
  "arbitrary",
  "borsh",
  "bytesize",
