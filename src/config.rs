@@ -14,6 +14,7 @@ pub struct NetworkConfig {
     // https://github.com/near/near-cli-rs/issues/116
     pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
     pub faucet_url: Option<url::Url>,
+    pub meta_transaction_relayer_url: Option<url::Url>,
 }
 
 impl Default for Config {
@@ -35,6 +36,7 @@ impl Default for Config {
                 rpc_api_key: None,
                 linkdrop_account_id: Some("near".parse().unwrap()),
                 faucet_url: None,
+                meta_transaction_relayer_url: None,
             },
         );
         network_connection.insert(
@@ -49,6 +51,11 @@ impl Default for Config {
                 rpc_api_key: None,
                 linkdrop_account_id: Some("testnet".parse().unwrap()),
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
+                meta_transaction_relayer_url: Some(
+                    "https://relayer-sweat-testnet-7tk2cmmtcq-uc.a.run.app/relay"
+                        .parse()
+                        .unwrap(),
+                ),
             },
         );
         Self {
