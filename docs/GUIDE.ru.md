@@ -1414,34 +1414,21 @@ near config show-connections
 ```txt
 Configuration data is stored in a file "/Users/frovolod/Library/Application Support/near-cli/config.toml"
 credentials_home_dir = "/Users/frovolod/.near-credentials"
-[networks.mainnet]
+[network_connection.mainnet]
 network_name = "mainnet"
 rpc_url = "https://archival-rpc.mainnet.near.org/"
-wallet_url = "https://wallet.mainnet.near.org/"
-explorer_transaction_url = "https://explorer.mainnet.near.org/transactions/"
+wallet_url = "https://wallet.near.org/"
+explorer_transaction_url = "https://explorer.near.org/transactions/"
 linkdrop_account_id = "near"
 
-[networks.testnet]
+[network_connection.testnet]
 network_name = "testnet"
 rpc_url = "https://archival-rpc.testnet.near.org/"
 wallet_url = "https://wallet.testnet.near.org/"
 explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
 linkdrop_account_id = "testnet"
-
-[networks.shardnet]
-network_name = "shardnet"
-rpc_url = "https://rpc.shardnet.near.org/"
-wallet_url = "https://wallet.shardnet.near.org/"
-explorer_transaction_url = "https://explorer.shardnet.near.org/transactions/"
-linkdrop_account_id = "shardnet"
-
-[networks.pagoda-testnet]
-network_name = "pagoda-testnet"
-rpc_url = "https://near-testnet.api.pagoda.co/rpc/v1/"
-rpc_api_key = "x-api-key: c0a25b3c-39c2-4f62-a621-50e208b88e64"
-wallet_url = "https://wallet.testnet.near.org/"
-explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
-linkdrop_account_id = "testnet"
+faucet_url = "https://helper.nearprotocol.com/account"
+meta_transaction_relayer_url = "https://relayer-sweat-testnet-7tk2cmmtcq-uc.a.run.app/relay"
 ```
 </details>
 
@@ -1458,7 +1445,8 @@ near config \
         --explorer-transaction-url https://explorer.testnet.near.org/transactions/ \
         --rpc-api-key 'c0a25b3c-39c2-4f62-a621-50e208b88e64' \
         --linkdrop-account-id testnet \
-        --faucet-url https://helper.nearprotocol.com/account
+        --faucet-url https://helper.nearprotocol.com/account \
+        --meta-transaction-relayer-url https://relayer-sweat-testnet-7tk2cmmtcq-uc.a.run.app/relay
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>

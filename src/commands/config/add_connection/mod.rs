@@ -29,6 +29,9 @@ pub struct AddNetworkConnection {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     faucet_url: Option<crate::types::url::Url>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    meta_transaction_relayer_url: Option<crate::types::url::Url>,
 }
 
 #[derive(Clone)]
@@ -53,6 +56,10 @@ impl AddNetworkConnectionContext {
                     .clone()
                     .map(|linkdrop_account_id| linkdrop_account_id.into()),
                 faucet_url: scope.faucet_url.clone().map(|faucet_url| faucet_url.into()),
+                meta_transaction_relayer_url: scope
+                    .meta_transaction_relayer_url
+                    .clone()
+                    .map(|meta_transaction_relayer_url| meta_transaction_relayer_url.into()),
             },
         );
         eprintln!();
@@ -149,6 +156,18 @@ impl interactive_clap::FromCli for AddNetworkConnection {
             };
         };
         let faucet_url = clap_variant.faucet_url.clone();
+        if clap_variant.meta_transaction_relayer_url.is_none() {
+            clap_variant.meta_transaction_relayer_url =
+                match Self::input_meta_transaction_relayer_url(&context) {
+                    Ok(optional_meta_transaction_relayer_url) => {
+                        optional_meta_transaction_relayer_url
+                    }
+                    Err(err) => {
+                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+                    }
+                };
+        };
+        let meta_transaction_relayer_url = clap_variant.meta_transaction_relayer_url.clone();
         let new_context_scope = InteractiveClapContextScopeForAddNetworkConnection {
             network_name,
             connection_name,
@@ -158,6 +177,7 @@ impl interactive_clap::FromCli for AddNetworkConnection {
             rpc_api_key,
             linkdrop_account_id,
             faucet_url,
+            meta_transaction_relayer_url,
         };
         if let Err(err) =
             AddNetworkConnectionContext::from_previous_context(context, &new_context_scope)
@@ -241,6 +261,31 @@ impl AddNetworkConnection {
             let faucet_url: crate::types::url::Url =
                 CustomType::new("What is the faucet url?").prompt()?;
             Ok(Some(faucet_url))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_meta_transaction_relayer_url(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
+        eprintln!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter the URL of the relayer")]
+            Yes,
+            #[strum(to_string = "No, I don't want to enter the relayer URL")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the meta transaction relayer URL?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let meta_transaction_relayer_url: crate::types::url::Url =
+                CustomType::new("What is the relayer url?").prompt()?;
+            Ok(Some(meta_transaction_relayer_url))
         } else {
             Ok(None)
         }
