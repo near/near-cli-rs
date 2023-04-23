@@ -134,7 +134,9 @@ impl interactive_clap::FromCli for Submit {
                     }
                 };
 
+
                 eprintln!("Transaction sent ...");
+                println!("{:#?}", context.signed_transaction);
                 let transaction_info = loop {
                     let transaction_info_result = context.network_config.json_rpc_client()
                         .blocking_call(

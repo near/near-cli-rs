@@ -1,5 +1,7 @@
 extern crate dirs;
 
+use std::str::FromStr;
+
 use color_eyre::eyre::WrapErr;
 
 use crate::common::JsonRpcClientExt;
@@ -134,7 +136,7 @@ impl SignKeychainContext {
             public_key: account_json.public_key.clone(),
             block_hash: rpc_query_response.block_hash,
             nonce: current_nonce + 1,
-            signer_id: previous_context.prepopulated_transaction.signer_id,
+            signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             actions: previous_context.prepopulated_transaction.actions,
         };
@@ -148,7 +150,7 @@ impl SignKeychainContext {
             signature.clone(),
             unsigned_transaction.clone(),
         );
-        // =======================================================================================================================
+        // ============================================delegate action===========================================================================
         println!(
             "########### meta_transaction_relayer_url: {:?}",
             &network_config.meta_transaction_relayer_url
@@ -213,7 +215,65 @@ impl SignKeychainContext {
                 .body(json_payload)
                 .send()?;
             println!("############# relayer_response{:#?}", relayer_response);
+
+            // ==========================================Sign delegate action with test_fro.testnet===================================
+
+            let public_key = near_crypto::PublicKey::from_str(
+                "ed25519:CCwvhsp3Y3BfLbfYJQJqXJA2CaSP7CRjn1t7PyEtsjej",
+            )?;
+            let signer_id: near_primitives::types::AccountId = "test_fro.testnet".parse().unwrap();
+
+            let rpc_query_response = network_config
+            .json_rpc_client()
+            .blocking_call_view_access_key(
+                &signer_id,
+                &public_key,
+                near_primitives::types::BlockReference::latest(),
+            )
+            .wrap_err(
+                "Cannot sign a transaction due to an error while fetching the most recent nonce value",
+            )?;
+            let current_nonce = rpc_query_response
+                .access_key_view()
+                .wrap_err("Error current_nonce")?
+                .nonce;
+
+            let actions = vec![near_primitives::transaction::Action::Delegate(
+                signed_delegate_action,
+            )];
+
+            let unsigned_transaction = near_primitives::transaction::Transaction {
+                public_key,
+                block_hash: rpc_query_response.block_hash,
+                nonce: current_nonce + 1,
+                signer_id,
+                receiver_id: previous_context.prepopulated_transaction.signer_id,
+                actions,
+            };
+
+            let signature = account_json
+                .private_key
+                .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+            let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+                signature.clone(),
+                unsigned_transaction.clone(),
+            );
+
+
+            eprintln!("\nYour transaction (delegate) was signed successfully.");
+            eprintln!("{:#?}", signed_transaction);
+
+
+            return Ok(Self {
+                network_config: previous_context.network_config,
+                signed_transaction,
+                on_before_sending_transaction_callback: previous_context
+                    .on_before_sending_transaction_callback,
+                on_after_sending_transaction_callback: previous_context
+                    .on_after_sending_transaction_callback,
+            });
         }
+
         // =======================================================================================================================
         eprintln!("\nYour transaction was signed successfully.");
         eprintln!("Public key: {}", account_json.public_key);
