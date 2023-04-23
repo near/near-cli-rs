@@ -101,6 +101,17 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
             return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
         }
 
+        let non_delegate_action = near_primitives::delegate_action::NonDelegateAction::try_from(
+            new_context.prepopulated_transaction.actions[0].clone(),
+        );
+        match non_delegate_action {
+            Ok(non_delegate_action) => {
+                let action: near_primitives::transaction::Action = non_delegate_action.into();
+                println!("************ action: {:?}", action)
+            }
+            Err(_) => (),
+        }
+
         eprintln!("\nUnsigned transaction:\n");
         crate::common::print_unsigned_transaction(&new_context.prepopulated_transaction);
         eprintln!();

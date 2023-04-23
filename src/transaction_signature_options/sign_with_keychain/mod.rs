@@ -146,9 +146,75 @@ impl SignKeychainContext {
             .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
-            unsigned_transaction,
+            unsigned_transaction.clone(),
         );
+        // =======================================================================================================================
+        println!(
+            "########### meta_transaction_relayer_url: {:?}",
+            &network_config.meta_transaction_relayer_url
+        );
+        if let Some(meta_transaction_relayer_url) = &network_config.meta_transaction_relayer_url {
+            use near_crypto::InMemorySigner;
+            use near_primitives::borsh::BorshSerialize;
+            use near_primitives::signable_message::{SignableMessage, SignableMessageType};
+            use near_primitives::types::{BlockId, BlockReference};
 
+            println!("##################");
+            let unsigned_tx_copy = unsigned_transaction.clone();
+            let signer = Some(InMemorySigner::from_secret_key(
+                unsigned_tx_copy.signer_id.clone(),
+                account_json.private_key.clone(),
+            ));
+
+            let block_header = tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(network_config.json_rpc_client().call(
+                    near_jsonrpc_client::methods::block::RpcBlockRequest {
+                        block_reference: BlockReference::from(BlockId::Hash(
+                            unsigned_transaction.block_hash.clone(),
+                        )),
+                    },
+                ))?
+                .header;
+            let max_block_height = block_header.height + 100; // TODO is 100 blocks appropriate?
+
+            let actions = unsigned_transaction
+                .actions
+                .iter()
+                .map(|a| {
+                    near_primitives::delegate_action::NonDelegateAction::try_from(a.clone())
+                        .unwrap()
+                })
+                .collect();
+            let delegate_action = near_primitives::delegate_action::DelegateAction {
+                sender_id: unsigned_transaction.signer_id,
+                receiver_id: unsigned_transaction.receiver_id,
+                actions,
+                nonce: unsigned_transaction.nonce,
+                max_block_height,
+                public_key: unsigned_transaction.public_key,
+            };
+            // create a new signature here signing the delegate action + discriminant
+            let signable =
+                SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
+            let signature = signable.sign(&signer.unwrap());
+            let signed_delegate_action = near_primitives::delegate_action::SignedDelegateAction {
+                delegate_action,
+                signature,
+            };
+
+            let client = reqwest::blocking::Client::new();
+            let payload = signed_delegate_action.try_to_vec().unwrap(); // serialize signed_delegate_action using borsh
+            let json_payload = serde_json::to_vec(&payload).unwrap();
+            let relayer_response = client
+                .post(meta_transaction_relayer_url.clone())
+                // .json(&data)
+                .header("Content-Type", "application/json")
+                .body(json_payload)
+                .send()?;
+            println!("############# relayer_response{:#?}", relayer_response);
+        }
+        // =======================================================================================================================
         eprintln!("\nYour transaction was signed successfully.");
         eprintln!("Public key: {}", account_json.public_key);
         eprintln!("Signature: {}", signature);
