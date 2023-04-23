@@ -221,6 +221,7 @@ impl SignKeychainContext {
             let public_key = near_crypto::PublicKey::from_str(
                 "ed25519:CCwvhsp3Y3BfLbfYJQJqXJA2CaSP7CRjn1t7PyEtsjej",
             )?;
+            let secret_key = near_crypto::SecretKey::from_str("ed25519:3fLXqk4vjREgm7HhcobS1q6bf8ouCzqbAjHrZukscqatSDE3q9Rs8Cp8J7hv63bfXdQRgX7qaavKXAc77pmuMJod")?;
             let signer_id: near_primitives::types::AccountId = "test_fro.testnet".parse().unwrap();
 
             let rpc_query_response = network_config
@@ -251,8 +252,7 @@ impl SignKeychainContext {
                 actions,
             };
 
-            let signature = account_json
-                .private_key
+            let signature = secret_key
                 .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
             let signed_transaction = near_primitives::transaction::SignedTransaction::new(
                 signature.clone(),
