@@ -740,7 +740,12 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "args:",
                     serde_json::to_string_pretty(
                         &serde_json::from_slice::<serde_json::Value>(&function_call_action.args)
-                            .unwrap_or_default()
+                            .unwrap_or_else(|_| {
+                                serde_json::Value::String(format!(
+                                    "<non-printable data ({} bytes)>",
+                                    function_call_action.args.len()
+                                ))
+                            }),
                     )
                     .unwrap_or_else(|_| "".to_string())
                     .replace('\n', "\n                                 ")
