@@ -738,17 +738,19 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "args:",
-                    serde_json::to_string_pretty(
-                        &serde_json::from_slice::<serde_json::Value>(&function_call_action.args)
-                            .unwrap_or_else(|_| {
-                                serde_json::Value::String(format!(
-                                    "<non-printable data ({} bytes)>",
-                                    function_call_action.args.len()
-                                ))
-                            }),
-                    )
-                    .unwrap_or_else(|_| "".to_string())
-                    .replace('\n', "\n                                 ")
+                    match serde_json::from_slice::<serde_json::Value>(&function_call_action.args) {
+                        Ok(parsed_args) => {
+                            serde_json::to_string_pretty(&parsed_args)
+                                .unwrap_or_else(|_| "".to_string())
+                                .replace('\n', "\n                                 ")
+                        }
+                        Err(_) => {
+                            format!(
+                                "<non-printable data ({})>",
+                                bytesize::ByteSize(function_call_action.args.len() as u64)
+                            )
+                        }
+                    }
                 );
                 eprintln!(
                     "{:>18} {:<13} {}",
