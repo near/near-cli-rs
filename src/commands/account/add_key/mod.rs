@@ -4,6 +4,7 @@ mod access_key_type;
 mod autogenerate_new_keypair;
 mod use_manually_provided_seed_phrase;
 mod use_public_key;
+mod use_ledger;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -70,6 +71,9 @@ pub enum AccessKeyMode {
     #[strum_discriminants(strum(
         message = "use-manually-provided-public-key  - Use the provided public key manually"
     ))]
-    /// Use the provided public key manually
     UseManuallyProvidedPublicKey(self::use_public_key::AddAccessKeyAction),
+    #[strum_discriminants(strum(
+        message = "use-ledger                        - Use a ledger"
+    ))]
+    UseLedger(self::use_ledger::AddLedgerKeyAction)
 }
