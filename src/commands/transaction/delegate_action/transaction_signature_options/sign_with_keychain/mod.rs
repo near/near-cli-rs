@@ -1,11 +1,9 @@
 extern crate dirs;
 
 use near_primitives::borsh::BorshDeserialize;
-use std::str::FromStr;
 
 use color_eyre::eyre::WrapErr;
 
-use crate::commands::transaction::delegate_action;
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
 
@@ -122,98 +120,10 @@ impl SignKeychainContext {
         let serialize_from_base64 =
             near_primitives::serialize::from_base64(&previous_context.transaction_hash).unwrap();
 
-        println!("***{:?}", serialize_from_base64);
-
         let signed_delegate_action =
             near_primitives::delegate_action::SignedDelegateAction::try_from_slice(
                 &serialize_from_base64,
             )?;
-
-        println!("###{:#?}", signed_delegate_action);
-
-        // use near_crypto::InMemorySigner;
-        // use near_primitives::borsh::BorshSerialize;
-        // use near_primitives::signable_message::{SignableMessage, SignableMessageType};
-        // use near_primitives::types::{BlockId, BlockReference};
-
-        // println!("##################");
-        // let unsigned_tx_copy = unsigned_transaction.clone();
-        // let signer = Some(InMemorySigner::from_secret_key(
-        //     unsigned_tx_copy.signer_id.clone(),
-        //     account_json.private_key.clone(),
-        // ));
-
-        // let block_header = tokio::runtime::Runtime::new()
-        //     .unwrap()
-        //     .block_on(network_config.json_rpc_client().call(
-        //         near_jsonrpc_client::methods::block::RpcBlockRequest {
-        //             block_reference: BlockReference::from(BlockId::Hash(
-        //                 unsigned_transaction.block_hash.clone(),
-        //             )),
-        //         },
-        //     ))?
-        //     .header;
-        // let max_block_height = block_header.height + 100; // TODO is 100 blocks appropriate?
-
-        // let actions = unsigned_transaction
-        //     .actions
-        //     .iter()
-        //     .map(|a| {
-        //         near_primitives::delegate_action::NonDelegateAction::try_from(a.clone())
-        //             .unwrap()
-        //     })
-        //     .collect();
-        // let delegate_action = near_primitives::delegate_action::DelegateAction {
-        //     sender_id: unsigned_transaction.signer_id,
-        //     receiver_id: unsigned_transaction.receiver_id,
-        //     actions,
-        //     nonce: unsigned_transaction.nonce,
-        //     max_block_height,
-        //     public_key: unsigned_transaction.public_key,
-        // };
-
-        // create a new signature here signing the delegate action + discriminant
-        // let signable =
-        //     SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
-        // let signature = signable.sign(&signer.unwrap());
-        // let signed_delegate_action = near_primitives::delegate_action::SignedDelegateAction {
-        //     delegate_action,
-        //     signature,
-        // };
-
-        // let client = reqwest::blocking::Client::new();
-        // let payload = signed_delegate_action.try_to_vec().unwrap(); // serialize signed_delegate_action using borsh
-        // let json_payload = serde_json::to_vec(&payload).unwrap();
-        // let relayer_response = client
-        //     .post(meta_transaction_relayer_url.clone())
-        //     // .json(&data)
-        //     .header("Content-Type", "application/json")
-        //     .body(json_payload)
-        //     .send()?;
-        // println!("############# relayer_response{:#?}", relayer_response);
-
-        // ==========================================Sign delegate action with test_fro.testnet===================================
-
-        // let public_key = near_crypto::PublicKey::from_str(
-        //     "ed25519:BN2F9rQAt7vLoEf7gQzxj3N9w4dnV6PMLXifaZDzTBic",
-        // )?;
-        // let secret_key = near_crypto::SecretKey::from_str("ed25519:4rSfXd4HXX9wsb81WVSigrrnSe1eNg1GQCfJMXdSyKCprQHTc1cdm4Vdd7UDKMhTwm8cf3sBKTyf99EmkQe6g51W")?;
-        // let signer_id: near_primitives::types::AccountId = "fro_test7.testnet".parse().unwrap();
-
-        // let rpc_query_response = network_config
-        // .json_rpc_client()
-        // .blocking_call_view_access_key(
-        //     &signer_id,
-        //     &public_key,
-        //     near_primitives::types::BlockReference::latest(),
-        // )
-        // .wrap_err(
-        //     "Cannot sign a transaction due to an error while fetching the most recent nonce value",
-        // )?;
-        // let current_nonce = rpc_query_response
-        //     .access_key_view()
-        //     .wrap_err("Error current_nonce")?
-        //     .nonce;
 
         let actions = vec![near_primitives::transaction::Action::Delegate(
             signed_delegate_action.clone(),
@@ -237,7 +147,6 @@ impl SignKeychainContext {
         );
 
         eprintln!("\nYour transaction (delegate) was signed successfully.");
-        eprintln!("{:#?}", signed_transaction);
 
         Ok(Self(super::SubmitContext {
             network_config: previous_context.network_config,

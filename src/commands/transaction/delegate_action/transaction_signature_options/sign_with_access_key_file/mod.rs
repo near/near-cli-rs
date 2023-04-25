@@ -1,10 +1,12 @@
+use near_primitives::borsh::BorshDeserialize;
+
 use color_eyre::eyre::WrapErr;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(input_context = crate::commands::TransactionContext)]
+#[interactive_clap(input_context = super::super::network_for_transaction::NetworkForTransactionArgsContext)]
 #[interactive_clap(output_context = SignAccessKeyFileContext)]
 pub struct SignAccessKeyFile {
     /// What is the location of the account access key file (path/to/access-key-file.json)?
@@ -14,18 +16,11 @@ pub struct SignAccessKeyFile {
 }
 
 #[derive(Clone)]
-pub struct SignAccessKeyFileContext {
-    network_config: crate::config::NetworkConfig,
-    signed_transaction: near_primitives::transaction::SignedTransaction,
-    on_before_sending_transaction_callback:
-        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
-    on_after_sending_transaction_callback:
-        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
-}
+pub struct SignAccessKeyFileContext(super::SubmitContext);
 
 impl SignAccessKeyFileContext {
     pub fn from_previous_context(
-        previous_context: crate::commands::TransactionContext,
+        previous_context: super::super::network_for_transaction::NetworkForTransactionArgsContext,
         scope: &<SignAccessKeyFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
@@ -38,7 +33,7 @@ impl SignAccessKeyFileContext {
         let rpc_query_response = network_config
             .json_rpc_client()
             .blocking_call_view_access_key(
-                &previous_context.prepopulated_transaction.signer_id,
+                &previous_context.relayer_account_id,
                 &account_json.public_key,
                 near_primitives::types::BlockReference::latest(),
             )
@@ -51,16 +46,26 @@ impl SignAccessKeyFileContext {
             .wrap_err("Error current_nonce")?
             .nonce;
 
-        let mut unsigned_transaction = near_primitives::transaction::Transaction {
-            public_key: account_json.public_key.clone(),
+        let serialize_from_base64 =
+            near_primitives::serialize::from_base64(&previous_context.transaction_hash).unwrap();
+
+        let signed_delegate_action =
+            near_primitives::delegate_action::SignedDelegateAction::try_from_slice(
+                &serialize_from_base64,
+            )?;
+
+        let actions = vec![near_primitives::transaction::Action::Delegate(
+            signed_delegate_action.clone(),
+        )];
+
+        let unsigned_transaction = near_primitives::transaction::Transaction {
+            public_key: account_json.public_key,
             block_hash: rpc_query_response.block_hash,
             nonce: current_nonce + 1,
-            signer_id: previous_context.prepopulated_transaction.signer_id,
-            receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: previous_context.prepopulated_transaction.actions,
+            signer_id: previous_context.relayer_account_id,
+            receiver_id: signed_delegate_action.delegate_action.sender_id,
+            actions,
         };
-
-        (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
         let signature = account_json
             .private_key
@@ -70,28 +75,17 @@ impl SignAccessKeyFileContext {
             unsigned_transaction,
         );
 
-        eprintln!("\nYour transaction was signed successfully.");
-        eprintln!("Public key: {}", account_json.public_key);
-        eprintln!("Signature: {}", signature);
+        eprintln!("\nYour transaction (delegate) was signed successfully.");
 
-        Ok(Self {
+        Ok(Self(super::SubmitContext {
             network_config: previous_context.network_config,
             signed_transaction,
-            on_before_sending_transaction_callback: previous_context
-                .on_before_sending_transaction_callback,
-            on_after_sending_transaction_callback: previous_context
-                .on_after_sending_transaction_callback,
-        })
+        }))
     }
 }
 
 impl From<SignAccessKeyFileContext> for super::SubmitContext {
     fn from(item: SignAccessKeyFileContext) -> Self {
-        Self {
-            network_config: item.network_config,
-            signed_transaction: item.signed_transaction,
-            on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
-            on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
-        }
+        item.0
     }
 }
