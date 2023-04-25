@@ -124,17 +124,12 @@ impl SignKeychainContext {
 
         println!("***{:?}", serialize_from_base64);
 
-        let signed_transaction = near_primitives::transaction::SignedTransaction::try_from_slice(
-            &serialize_from_base64,
-        )?;
-        println!("==={:#?}", signed_transaction);
+        let signed_delegate_action =
+            near_primitives::delegate_action::SignedDelegateAction::try_from_slice(
+                &serialize_from_base64,
+            )?;
 
-        let signed_delegate_action: serde_json::Value =
-            serde_json::from_str(&previous_context.transaction_hash)?;
         println!("###{:#?}", signed_delegate_action);
-
-        let signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction =
-            serde_json::from_slice(&serialize_from_base64)?;
 
         // use near_crypto::InMemorySigner;
         // use near_primitives::borsh::BorshSerialize;

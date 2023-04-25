@@ -1,7 +1,5 @@
 extern crate dirs;
 
-use std::str::FromStr;
-
 use color_eyre::eyre::WrapErr;
 
 use crate::common::JsonRpcClientExt;
@@ -25,7 +23,7 @@ pub struct SignKeychain {
 #[derive(Clone)]
 pub struct SignKeychainContext {
     network_config: crate::config::NetworkConfig,
-    signed_transaction: near_primitives::transaction::SignedTransaction,
+    signed_transaction: super::SignedTransactionOrSignedDelegateAction,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
@@ -146,140 +144,23 @@ impl SignKeychainContext {
         let signature = account_json
             .private_key
             .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
-        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
-            signature.clone(),
-            unsigned_transaction.clone(),
-        );
-        // ============================================delegate action===========================================================================
-        println!(
-            "########### meta_transaction_relayer_url: {:?}",
-            &network_config.meta_transaction_relayer_url
-        );
-        if let Some(meta_transaction_relayer_url) = &network_config.meta_transaction_relayer_url {
-            use near_crypto::InMemorySigner;
-            use near_primitives::borsh::BorshSerialize;
-            use near_primitives::signable_message::{SignableMessage, SignableMessageType};
-            use near_primitives::types::{BlockId, BlockReference};
 
-            println!("##################");
-            let unsigned_tx_copy = unsigned_transaction.clone();
-            let signer = Some(InMemorySigner::from_secret_key(
-                unsigned_tx_copy.signer_id.clone(),
-                account_json.private_key.clone(),
-            ));
+        if let Some(_) = &network_config.meta_transaction_relayer_url {
+            let max_block_height = rpc_query_response.block_height + 1000; //XXX
 
-            let block_header = tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(network_config.json_rpc_client().call(
-                    near_jsonrpc_client::methods::block::RpcBlockRequest {
-                        block_reference: BlockReference::from(BlockId::Hash(
-                            unsigned_transaction.block_hash.clone(),
-                        )),
-                    },
-                ))?
-                .header;
-            let max_block_height = block_header.height + 1000;
-
-            let actions = unsigned_transaction
-                .actions
-                .iter()
-                .map(|a| {
-                    near_primitives::delegate_action::NonDelegateAction::try_from(a.clone())
-                        .unwrap()
-                })
-                .collect();
-            let delegate_action = near_primitives::delegate_action::DelegateAction {
-                sender_id: unsigned_transaction.signer_id,
-                receiver_id: unsigned_transaction.receiver_id,
-                actions,
-                nonce: unsigned_transaction.nonce,
+            let signed_delegate_action = super::get_signed_delegate_action(
+                unsigned_transaction,
+                account_json.private_key,
                 max_block_height,
-                public_key: unsigned_transaction.public_key,
-            };
-            // create a new signature here signing the delegate action + discriminant
-            let signable =
-                SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
-            let signature = signable.sign(&signer.unwrap());
-            let signed_delegate_action = near_primitives::delegate_action::SignedDelegateAction {
-                delegate_action,
-                signature,
-            };
-
-            let client = reqwest::blocking::Client::new();
-            let payload = signed_delegate_action.try_to_vec().unwrap(); // serialize signed_delegate_action using borsh
-            let json_payload = serde_json::to_vec(&payload).unwrap();
-            // let relayer_response = client
-            //     .post(meta_transaction_relayer_url.clone())
-            //     // .json(&data)
-            //     .header("Content-Type", "application/json")
-            //     .body(json_payload)
-            //     .send()?;
-            // println!("############# relayer_response{:#?}", relayer_response);
-
-            // ==========================================Sign delegate action with test_fro.testnet===================================
-
-            let base64_transaction = near_primitives::serialize::to_base64(
-                signed_delegate_action
-                    .try_to_vec()
-                    .expect("Transaction is not expected to fail on serialization"),
-            );
-
-            println!("{}", base64_transaction);
-
-            let serialize_from_base64 =
-                near_primitives::serialize::from_base64(&base64_transaction).unwrap();
-
-            let signed_delegate_action_new: near_primitives::delegate_action::SignedDelegateAction =
-                serde_json::from_slice(&serialize_from_base64)?;
-
-            println!("{:#?}", signed_delegate_action_new);
-
-            let public_key = near_crypto::PublicKey::from_str(
-                "ed25519:BN2F9rQAt7vLoEf7gQzxj3N9w4dnV6PMLXifaZDzTBic",
-            )?;
-            let secret_key = near_crypto::SecretKey::from_str("ed25519:4rSfXd4HXX9wsb81WVSigrrnSe1eNg1GQCfJMXdSyKCprQHTc1cdm4Vdd7UDKMhTwm8cf3sBKTyf99EmkQe6g51W")?;
-            let signer_id: near_primitives::types::AccountId = "fro_test7.testnet".parse().unwrap();
-
-            let rpc_query_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
-                &signer_id,
-                &public_key,
-                near_primitives::types::BlockReference::latest(),
-            )
-            .wrap_err(
-                "Cannot sign a transaction due to an error while fetching the most recent nonce value",
-            )?;
-            let current_nonce = rpc_query_response
-                .access_key_view()
-                .wrap_err("Error current_nonce")?
-                .nonce;
-
-            let actions = vec![near_primitives::transaction::Action::Delegate(
-                signed_delegate_action_new,
-            )];
-
-            let unsigned_transaction = near_primitives::transaction::Transaction {
-                public_key,
-                block_hash: rpc_query_response.block_hash,
-                nonce: current_nonce + 1,
-                signer_id,
-                receiver_id: previous_context.prepopulated_transaction.signer_id,
-                actions,
-            };
-
-            let signature = secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
-            let signed_transaction = near_primitives::transaction::SignedTransaction::new(
-                signature.clone(),
-                unsigned_transaction.clone(),
             );
 
             eprintln!("\nYour transaction (delegate) was signed successfully.");
-            eprintln!("{:#?}", signed_transaction);
+            eprintln!("Public key: {}", account_json.public_key);
+            eprintln!("Signature: {}", signature);
 
             return Ok(Self {
                 network_config: previous_context.network_config,
-                signed_transaction,
+                signed_transaction: signed_delegate_action.into(),
                 on_before_sending_transaction_callback: previous_context
                     .on_before_sending_transaction_callback,
                 on_after_sending_transaction_callback: previous_context
@@ -287,14 +168,18 @@ impl SignKeychainContext {
             });
         }
 
-        // =======================================================================================================================
+        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+            signature.clone(),
+            unsigned_transaction,
+        );
+
         eprintln!("\nYour transaction was signed successfully.");
         eprintln!("Public key: {}", account_json.public_key);
         eprintln!("Signature: {}", signature);
 
         Ok(Self {
             network_config: previous_context.network_config,
-            signed_transaction,
+            signed_transaction: signed_transaction.into(),
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context

@@ -100,8 +100,11 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
         if new_context.prepopulated_transaction.actions.is_empty() {
             return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
         }
-
-        eprintln!("\nUnsigned transaction:\n");
+        if let Some(_) = &new_context.network_config.meta_transaction_relayer_url {
+            eprintln!("\nUnsigned delegate action:\n");
+        } else {
+            eprintln!("\nUnsigned transaction:\n");
+        }
         crate::common::print_unsigned_transaction(&new_context.prepopulated_transaction);
         eprintln!();
 

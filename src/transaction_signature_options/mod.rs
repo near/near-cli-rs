@@ -120,96 +120,165 @@ impl interactive_clap::FromCli for Submit {
 
         match optional_clap_variant {
             Some(CliSubmit::Send) => {
-                match (context.on_before_sending_transaction_callback)(
-                    &context.signed_transaction,
-                    &context.network_config,
-                    &mut storage_message,
-                ) {
-                    Ok(_) => (),
-                    Err(report) => {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                };
-
-                eprintln!("Transaction sent ...");
-                println!("{:#?}", context.signed_transaction);
-                let transaction_info = loop {
-                    let transaction_info_result = context.network_config.json_rpc_client()
-                        .blocking_call(
-                            near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{
-                                signed_transaction: context.signed_transaction.clone()
-                            }
-                        );
-                    match transaction_info_result {
-                        Ok(response) => {
-                            break response;
-                        }
-                        Err(err) => match crate::common::rpc_transaction_error(err) {
-                            Ok(_) => std::thread::sleep(std::time::Duration::from_millis(100)),
+                match context.signed_transaction {
+                    SignedTransactionOrSignedDelegateAction::SignedTransaction(
+                        signed_transaction,
+                    ) => {
+                        match (context.on_before_sending_transaction_callback)(
+                            &signed_transaction,
+                            &context.network_config,
+                            &mut storage_message,
+                        ) {
+                            Ok(_) => (),
                             Err(report) => {
                                 return interactive_clap::ResultFromCli::Err(
                                     optional_clap_variant,
                                     color_eyre::Report::msg(report),
                                 )
                             }
-                        },
-                    };
-                };
-                match crate::common::print_transaction_status(
-                    &transaction_info,
-                    &context.network_config,
-                ) {
-                    Ok(_) => (),
-                    Err(report) => {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                };
-                match (context.on_after_sending_transaction_callback)(
-                    &transaction_info,
-                    &context.network_config,
-                ) {
-                    Ok(_) => (),
-                    Err(report) => {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                };
-                eprintln!("{storage_message}");
-                interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
-            }
-            Some(CliSubmit::Display) => {
-                match (context.on_before_sending_transaction_callback)(
-                    &context.signed_transaction,
-                    &context.network_config,
-                    &mut storage_message,
-                ) {
-                    Ok(_) => (),
-                    Err(report) => {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                };
-                let base64_transaction = near_primitives::serialize::to_base64(
-                    context
-                        .signed_transaction
-                        .try_to_vec()
-                        .expect("Transaction is not expected to fail on serialization"),
-                );
-                eprintln!("\nSerialize_to_base64:\n{}", &base64_transaction);
+                        };
 
-                eprintln!("{storage_message}");
-                interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
+                        eprintln!("Transaction sent ...");
+                        println!("{:#?}", signed_transaction);
+                        let transaction_info = loop {
+                            let transaction_info_result = context.network_config.json_rpc_client()
+                        .blocking_call(
+                            near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{
+                                signed_transaction: signed_transaction.clone()
+                            }
+                        );
+                            match transaction_info_result {
+                                Ok(response) => {
+                                    break response;
+                                }
+                                Err(err) => match crate::common::rpc_transaction_error(err) {
+                                    Ok(_) => {
+                                        std::thread::sleep(std::time::Duration::from_millis(100))
+                                    }
+                                    Err(report) => {
+                                        return interactive_clap::ResultFromCli::Err(
+                                            optional_clap_variant,
+                                            color_eyre::Report::msg(report),
+                                        )
+                                    }
+                                },
+                            };
+                        };
+                        match crate::common::print_transaction_status(
+                            &transaction_info,
+                            &context.network_config,
+                        ) {
+                            Ok(_) => (),
+                            Err(report) => {
+                                return interactive_clap::ResultFromCli::Err(
+                                    optional_clap_variant,
+                                    color_eyre::Report::msg(report),
+                                )
+                            }
+                        };
+                        match (context.on_after_sending_transaction_callback)(
+                            &transaction_info,
+                            &context.network_config,
+                        ) {
+                            Ok(_) => (),
+                            Err(report) => {
+                                return interactive_clap::ResultFromCli::Err(
+                                    optional_clap_variant,
+                                    color_eyre::Report::msg(report),
+                                )
+                            }
+                        };
+                        eprintln!("{storage_message}");
+                        interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
+                    }
+                    SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
+                        signed_delegate_action,
+                    ) => {
+                        let client = reqwest::blocking::Client::new();
+                        let payload = signed_delegate_action.try_to_vec().unwrap();
+                        let json_payload = serde_json::to_vec(&payload).unwrap();
+                        match client
+                            .post(
+                                context
+                                    .network_config
+                                    .meta_transaction_relayer_url
+                                    .expect("Unexpected error")
+                                    .clone(),
+                            )
+                            .header("Content-Type", "application/json")
+                            .body(json_payload)
+                            .send()
+                        {
+                            Ok(relayer_response) => {
+                                if relayer_response.status().is_success() {
+                                    let response_text = match relayer_response.text() {
+                                        Ok(text) => text,
+                                        Err(report) => {
+                                            return interactive_clap::ResultFromCli::Err(
+                                                optional_clap_variant,
+                                                color_eyre::Report::msg(report),
+                                            )
+                                        }
+                                    };
+                                    println!("Relayer Response text: {}", response_text);
+                                } else {
+                                    println!(
+                                        "Request failed with status code: {}",
+                                        relayer_response.status()
+                                    );
+                                }
+                            }
+                            Err(report) => {
+                                return interactive_clap::ResultFromCli::Err(
+                                    optional_clap_variant,
+                                    color_eyre::Report::msg(report),
+                                )
+                            }
+                        }
+                        eprintln!("{storage_message}");
+                        interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
+                    }
+                }
             }
+            Some(CliSubmit::Display) => match context.signed_transaction {
+                SignedTransactionOrSignedDelegateAction::SignedTransaction(signed_transaction) => {
+                    match (context.on_before_sending_transaction_callback)(
+                        &signed_transaction,
+                        &context.network_config,
+                        &mut storage_message,
+                    ) {
+                        Ok(_) => (),
+                        Err(report) => {
+                            return interactive_clap::ResultFromCli::Err(
+                                optional_clap_variant,
+                                color_eyre::Report::msg(report),
+                            )
+                        }
+                    };
+                    let base64_transaction = near_primitives::serialize::to_base64(
+                        signed_transaction
+                            .try_to_vec()
+                            .expect("Transaction is not expected to fail on serialization"),
+                    );
+                    eprintln!("\nSerialize_to_base64:\n{}", &base64_transaction);
+
+                    eprintln!("{storage_message}");
+                    interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
+                }
+                SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
+                    signed_delegate_action,
+                ) => {
+                    let base64_transaction = near_primitives::serialize::to_base64(
+                        signed_delegate_action
+                            .try_to_vec()
+                            .expect("Transaction is not expected to fail on serialization"),
+                    );
+                    eprintln!("\nSerialize_to_base64:\n{}", &base64_transaction);
+
+                    eprintln!("{storage_message}");
+                    interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
+                }
+            },
             None => unreachable!("Unexpected error"),
         }
     }
@@ -239,7 +308,67 @@ pub type OnAfterSendingTransactionCallback = std::sync::Arc<
 #[derive(Clone)]
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
-    pub signed_transaction: near_primitives::transaction::SignedTransaction,
+    pub signed_transaction: SignedTransactionOrSignedDelegateAction,
     pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum SignedTransactionOrSignedDelegateAction {
+    SignedTransaction(near_primitives::transaction::SignedTransaction),
+    SignedDelegateAction(near_primitives::delegate_action::SignedDelegateAction),
+}
+
+impl From<near_primitives::transaction::SignedTransaction>
+    for SignedTransactionOrSignedDelegateAction
+{
+    fn from(signed_transaction: near_primitives::transaction::SignedTransaction) -> Self {
+        Self::SignedTransaction(signed_transaction)
+    }
+}
+
+impl From<near_primitives::delegate_action::SignedDelegateAction>
+    for SignedTransactionOrSignedDelegateAction
+{
+    fn from(
+        signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,
+    ) -> Self {
+        Self::SignedDelegateAction(signed_delegate_action)
+    }
+}
+
+pub fn get_signed_delegate_action(
+    unsigned_transaction: near_primitives::transaction::Transaction,
+    private_key: near_crypto::SecretKey,
+    max_block_height: u64,
+) -> near_primitives::delegate_action::SignedDelegateAction {
+    use near_crypto::InMemorySigner;
+    use near_primitives::signable_message::{SignableMessage, SignableMessageType};
+
+    let signer = Some(InMemorySigner::from_secret_key(
+        unsigned_transaction.signer_id.clone(),
+        private_key.clone(),
+    ));
+
+    let actions = unsigned_transaction
+        .actions
+        .iter()
+        .map(|a| near_primitives::delegate_action::NonDelegateAction::try_from(a.clone()).unwrap())
+        .collect();
+    let delegate_action = near_primitives::delegate_action::DelegateAction {
+        sender_id: unsigned_transaction.signer_id,
+        receiver_id: unsigned_transaction.receiver_id,
+        actions,
+        nonce: unsigned_transaction.nonce,
+        max_block_height,
+        public_key: unsigned_transaction.public_key,
+    };
+
+    // create a new signature here signing the delegate action + discriminant
+    let signable = SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
+    let signature = signable.sign(&signer.unwrap());
+    near_primitives::delegate_action::SignedDelegateAction {
+        delegate_action,
+        signature: signature.clone(),
+    }
 }

@@ -27,7 +27,7 @@ pub struct SignPrivateKey {
 #[derive(Clone)]
 pub struct SignPrivateKeyContext {
     network_config: crate::config::NetworkConfig,
-    signed_transaction: near_primitives::transaction::SignedTransaction,
+    signed_transaction: super::SignedTransactionOrSignedDelegateAction,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
@@ -70,6 +70,30 @@ impl SignPrivateKeyContext {
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
         let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+
+        if let Some(_) = &network_config.meta_transaction_relayer_url {
+            let max_block_height = rpc_query_response.block_height + 1000; //XXX
+
+            let signed_delegate_action = super::get_signed_delegate_action(
+                unsigned_transaction,
+                signer_secret_key,
+                max_block_height,
+            );
+
+            eprintln!("\nYour transaction (delegate) was signed successfully.");
+            eprintln!("Public key: {}", public_key);
+            eprintln!("Signature: {}", signature);
+
+            return Ok(Self {
+                network_config: previous_context.network_config,
+                signed_transaction: signed_delegate_action.into(),
+                on_before_sending_transaction_callback: previous_context
+                    .on_before_sending_transaction_callback,
+                on_after_sending_transaction_callback: previous_context
+                    .on_after_sending_transaction_callback,
+            });
+        }
+
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
             unsigned_transaction,
@@ -81,7 +105,7 @@ impl SignPrivateKeyContext {
 
         Ok(Self {
             network_config: previous_context.network_config,
-            signed_transaction,
+            signed_transaction: signed_transaction.into(),
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
