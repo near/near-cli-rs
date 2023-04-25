@@ -71,9 +71,11 @@ pub enum AccessKeyMode {
     #[strum_discriminants(strum(
         message = "use-manually-provided-public-key  - Use the provided public key manually"
     ))]
+    /// Use the provided seed phrase manually
     UseManuallyProvidedPublicKey(self::use_public_key::AddAccessKeyAction),
     #[strum_discriminants(strum(
         message = "use-ledger                        - Use a ledger"
     ))]
+    /// Use the Ledger Hadware wallet
     UseLedger(self::use_ledger::AddLedgerKeyAction)
 }
