@@ -1,7 +1,3 @@
-use color_eyre::eyre::Context;
-
-use crate::common::JsonRpcClientExt;
-
 mod network_for_transaction;
 mod sign_as;
 mod transaction_signature_options;

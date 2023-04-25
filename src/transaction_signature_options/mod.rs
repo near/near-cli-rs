@@ -119,127 +119,121 @@ impl interactive_clap::FromCli for Submit {
         }
 
         match optional_clap_variant {
-            Some(CliSubmit::Send) => {
-                match context.signed_transaction {
-                    SignedTransactionOrSignedDelegateAction::SignedTransaction(
-                        signed_transaction,
-                    ) => {
-                        match (context.on_before_sending_transaction_callback)(
-                            &signed_transaction,
-                            &context.network_config,
-                            &mut storage_message,
-                        ) {
-                            Ok(_) => (),
-                            Err(report) => {
-                                return interactive_clap::ResultFromCli::Err(
-                                    optional_clap_variant,
-                                    color_eyre::Report::msg(report),
-                                )
-                            }
-                        };
+            Some(CliSubmit::Send) => match context.signed_transaction {
+                SignedTransactionOrSignedDelegateAction::SignedTransaction(signed_transaction) => {
+                    match (context.on_before_sending_transaction_callback)(
+                        &signed_transaction,
+                        &context.network_config,
+                        &mut storage_message,
+                    ) {
+                        Ok(_) => (),
+                        Err(report) => {
+                            return interactive_clap::ResultFromCli::Err(
+                                optional_clap_variant,
+                                color_eyre::Report::msg(report),
+                            )
+                        }
+                    };
 
-                        eprintln!("Transaction sent ...");
-                        println!("{:#?}", signed_transaction);
-                        let transaction_info = loop {
-                            let transaction_info_result = context.network_config.json_rpc_client()
+                    eprintln!("Transaction sent ...");
+                    println!("{:#?}", signed_transaction);
+                    let transaction_info = loop {
+                        let transaction_info_result = context.network_config.json_rpc_client()
                         .blocking_call(
                             near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{
                                 signed_transaction: signed_transaction.clone()
                             }
                         );
-                            match transaction_info_result {
-                                Ok(response) => {
-                                    break response;
+                        match transaction_info_result {
+                            Ok(response) => {
+                                break response;
+                            }
+                            Err(err) => match crate::common::rpc_transaction_error(err) {
+                                Ok(_) => std::thread::sleep(std::time::Duration::from_millis(100)),
+                                Err(report) => {
+                                    return interactive_clap::ResultFromCli::Err(
+                                        optional_clap_variant,
+                                        color_eyre::Report::msg(report),
+                                    )
                                 }
-                                Err(err) => match crate::common::rpc_transaction_error(err) {
-                                    Ok(_) => {
-                                        std::thread::sleep(std::time::Duration::from_millis(100))
-                                    }
+                            },
+                        };
+                    };
+                    match crate::common::print_transaction_status(
+                        &transaction_info,
+                        &context.network_config,
+                    ) {
+                        Ok(_) => (),
+                        Err(report) => {
+                            return interactive_clap::ResultFromCli::Err(
+                                optional_clap_variant,
+                                color_eyre::Report::msg(report),
+                            )
+                        }
+                    };
+                    match (context.on_after_sending_transaction_callback)(
+                        &transaction_info,
+                        &context.network_config,
+                    ) {
+                        Ok(_) => (),
+                        Err(report) => {
+                            return interactive_clap::ResultFromCli::Err(
+                                optional_clap_variant,
+                                color_eyre::Report::msg(report),
+                            )
+                        }
+                    };
+                    eprintln!("{storage_message}");
+                    interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
+                }
+                SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
+                    signed_delegate_action,
+                ) => {
+                    let client = reqwest::blocking::Client::new();
+                    let payload = signed_delegate_action.try_to_vec().unwrap();
+                    let json_payload = serde_json::to_vec(&payload).unwrap();
+                    match client
+                        .post(
+                            context
+                                .network_config
+                                .meta_transaction_relayer_url
+                                .expect("Unexpected error")
+                                .clone(),
+                        )
+                        .header("Content-Type", "application/json")
+                        .body(json_payload)
+                        .send()
+                    {
+                        Ok(relayer_response) => {
+                            if relayer_response.status().is_success() {
+                                let response_text = match relayer_response.text() {
+                                    Ok(text) => text,
                                     Err(report) => {
                                         return interactive_clap::ResultFromCli::Err(
                                             optional_clap_variant,
                                             color_eyre::Report::msg(report),
                                         )
                                     }
-                                },
-                            };
-                        };
-                        match crate::common::print_transaction_status(
-                            &transaction_info,
-                            &context.network_config,
-                        ) {
-                            Ok(_) => (),
-                            Err(report) => {
-                                return interactive_clap::ResultFromCli::Err(
-                                    optional_clap_variant,
-                                    color_eyre::Report::msg(report),
-                                )
-                            }
-                        };
-                        match (context.on_after_sending_transaction_callback)(
-                            &transaction_info,
-                            &context.network_config,
-                        ) {
-                            Ok(_) => (),
-                            Err(report) => {
-                                return interactive_clap::ResultFromCli::Err(
-                                    optional_clap_variant,
-                                    color_eyre::Report::msg(report),
-                                )
-                            }
-                        };
-                        eprintln!("{storage_message}");
-                        interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
-                    }
-                    SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
-                        signed_delegate_action,
-                    ) => {
-                        let client = reqwest::blocking::Client::new();
-                        let payload = signed_delegate_action.try_to_vec().unwrap();
-                        let json_payload = serde_json::to_vec(&payload).unwrap();
-                        match client
-                            .post(
-                                context
-                                    .network_config
-                                    .meta_transaction_relayer_url
-                                    .expect("Unexpected error")
-                                    .clone(),
-                            )
-                            .header("Content-Type", "application/json")
-                            .body(json_payload)
-                            .send()
-                        {
-                            Ok(relayer_response) => {
-                                if relayer_response.status().is_success() {
-                                    let response_text = match relayer_response.text() {
-                                        Ok(text) => text,
-                                        Err(report) => {
-                                            return interactive_clap::ResultFromCli::Err(
-                                                optional_clap_variant,
-                                                color_eyre::Report::msg(report),
-                                            )
-                                        }
-                                    };
-                                    println!("Relayer Response text: {}", response_text);
-                                } else {
-                                    println!(
-                                        "Request failed with status code: {}",
-                                        relayer_response.status()
-                                    );
-                                }
-                            }
-                            Err(report) => {
-                                return interactive_clap::ResultFromCli::Err(
-                                    optional_clap_variant,
-                                    color_eyre::Report::msg(report),
-                                )
+                                };
+                                println!("Relayer Response text: {}", response_text);
+                            } else {
+                                println!(
+                                    "Request failed with status code: {}",
+                                    relayer_response.status()
+                                );
                             }
                         }
-                        eprintln!("{storage_message}");
-                        interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
+                        Err(report) => {
+                            return interactive_clap::ResultFromCli::Err(
+                                optional_clap_variant,
+                                color_eyre::Report::msg(report),
+                            )
+                        }
                     }
+                    eprintln!("{storage_message}");
+                    interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
                 }
-            }
+            },
             Some(CliSubmit::Display) => match context.signed_transaction {
                 SignedTransactionOrSignedDelegateAction::SignedTransaction(signed_transaction) => {
                     match (context.on_before_sending_transaction_callback)(

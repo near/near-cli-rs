@@ -1,8 +1,3 @@
-use std::str::FromStr;
-
-use near_jsonrpc_client::methods::tx::TransactionInfo;
-use serde_json::json;
-
 use inquire::{CustomType, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
