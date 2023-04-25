@@ -4,52 +4,52 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::JsonRpcClientExt;
 
-pub mod sign_with_access_key_file;
+// pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
-#[cfg(feature = "ledger")]
-pub mod sign_with_ledger;
-#[cfg(target_os = "macos")]
-pub mod sign_with_macos_keychain;
-pub mod sign_with_private_key;
-pub mod sign_with_seed_phrase;
+// #[cfg(feature = "ledger")]
+// pub mod sign_with_ledger;
+// #[cfg(target_os = "macos")]
+// pub mod sign_with_macos_keychain;
+// pub mod sign_with_private_key;
+// pub mod sign_with_seed_phrase;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::commands::TransactionContext)]
+#[interactive_clap(context = super::network_for_transaction::NetworkForTransactionArgsContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Select a tool for signing the transaction
 pub enum SignWith {
-    #[cfg(target_os = "macos")]
-    #[strum_discriminants(strum(
-        message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain"
-    ))]
-    /// Sign the transaction with a key saved in macOS keychain
-    SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
+    // #[cfg(target_os = "macos")]
+    // #[strum_discriminants(strum(
+    //     message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain"
+    // ))]
+    // /// Sign the transaction with a key saved in macOS keychain
+    // SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
     #[strum_discriminants(strum(
         message = "sign-with-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
     ))]
     /// Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
-    #[cfg(feature = "ledger")]
-    #[strum_discriminants(strum(
-        message = "sign-with-ledger                 - Sign the transaction with Ledger Nano device"
-    ))]
-    /// Sign the transaction with Ledger Nano device
-    SignWithLedger(self::sign_with_ledger::SignLedger),
-    #[strum_discriminants(strum(
-        message = "sign-with-plaintext-private-key  - Sign the transaction with a plaintext private key"
-    ))]
-    /// Sign the transaction with a plaintext private key
-    SignWithPlaintextPrivateKey(self::sign_with_private_key::SignPrivateKey),
-    #[strum_discriminants(strum(
-        message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
-    ))]
-    /// Sign the transaction using the account access key file (access-key-file.json)
-    SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
-    #[strum_discriminants(strum(
-        message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
-    ))]
-    /// Sign the transaction using the seed phrase
-    SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
+    // #[cfg(feature = "ledger")]
+    // #[strum_discriminants(strum(
+    //     message = "sign-with-ledger                 - Sign the transaction with Ledger Nano device"
+    // ))]
+    // /// Sign the transaction with Ledger Nano device
+    // SignWithLedger(self::sign_with_ledger::SignLedger),
+    // #[strum_discriminants(strum(
+    //     message = "sign-with-plaintext-private-key  - Sign the transaction with a plaintext private key"
+    // ))]
+    // /// Sign the transaction with a plaintext private key
+    // SignWithPlaintextPrivateKey(self::sign_with_private_key::SignPrivateKey),
+    // #[strum_discriminants(strum(
+    //     message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
+    // ))]
+    // /// Sign the transaction using the account access key file (access-key-file.json)
+    // SignWithAccessKeyFile(self::sign_with_access_key_file::SignAccessKeyFile),
+    // #[strum_discriminants(strum(
+    //     message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
+    // ))]
+    // /// Sign the transaction using the seed phrase
+    // SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
 }
 
 //-----------------------------------------------------------------------------------
@@ -120,19 +120,19 @@ impl interactive_clap::FromCli for Submit {
 
         match optional_clap_variant {
             Some(CliSubmit::Send) => {
-                match (context.on_before_sending_transaction_callback)(
-                    &context.signed_transaction,
-                    &context.network_config,
-                    &mut storage_message,
-                ) {
-                    Ok(_) => (),
-                    Err(report) => {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                };
+                // match (context.on_before_sending_transaction_callback)(
+                //     &context.signed_transaction,
+                //     &context.network_config,
+                //     &mut storage_message,
+                // ) {
+                //     Ok(_) => (),
+                //     Err(report) => {
+                //         return interactive_clap::ResultFromCli::Err(
+                //             optional_clap_variant,
+                //             color_eyre::Report::msg(report),
+                //         )
+                //     }
+                // };
 
                 eprintln!("Transaction sent ...");
                 println!("{:#?}", context.signed_transaction);
@@ -170,35 +170,35 @@ impl interactive_clap::FromCli for Submit {
                         )
                     }
                 };
-                match (context.on_after_sending_transaction_callback)(
-                    &transaction_info,
-                    &context.network_config,
-                ) {
-                    Ok(_) => (),
-                    Err(report) => {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                };
+                // match (context.on_after_sending_transaction_callback)(
+                //     &transaction_info,
+                //     &context.network_config,
+                // ) {
+                //     Ok(_) => (),
+                //     Err(report) => {
+                //         return interactive_clap::ResultFromCli::Err(
+                //             optional_clap_variant,
+                //             color_eyre::Report::msg(report),
+                //         )
+                //     }
+                // };
                 eprintln!("{storage_message}");
                 interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
             }
             Some(CliSubmit::Display) => {
-                match (context.on_before_sending_transaction_callback)(
-                    &context.signed_transaction,
-                    &context.network_config,
-                    &mut storage_message,
-                ) {
-                    Ok(_) => (),
-                    Err(report) => {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                };
+                // match (context.on_before_sending_transaction_callback)(
+                //     &context.signed_transaction,
+                //     &context.network_config,
+                //     &mut storage_message,
+                // ) {
+                //     Ok(_) => (),
+                //     Err(report) => {
+                //         return interactive_clap::ResultFromCli::Err(
+                //             optional_clap_variant,
+                //             color_eyre::Report::msg(report),
+                //         )
+                //     }
+                // };
                 let base64_transaction = near_primitives::serialize::to_base64(
                     context
                         .signed_transaction
@@ -221,25 +221,8 @@ pub struct AccountKeyPair {
     pub private_key: near_crypto::SecretKey,
 }
 
-pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
-    dyn Fn(
-        &near_primitives::transaction::SignedTransaction,
-        &crate::config::NetworkConfig,
-        &mut String,
-    ) -> crate::CliResult,
->;
-
-pub type OnAfterSendingTransactionCallback = std::sync::Arc<
-    dyn Fn(
-        &near_primitives::views::FinalExecutionOutcomeView,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
->;
-
 #[derive(Clone)]
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
     pub signed_transaction: near_primitives::transaction::SignedTransaction,
-    pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
-    pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
 }

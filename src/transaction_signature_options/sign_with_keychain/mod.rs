@@ -178,7 +178,7 @@ impl SignKeychainContext {
                     },
                 ))?
                 .header;
-            let max_block_height = block_header.height + 100; // TODO is 100 blocks appropriate?
+            let max_block_height = block_header.height + 1000;
 
             let actions = unsigned_transaction
                 .actions
@@ -208,21 +208,37 @@ impl SignKeychainContext {
             let client = reqwest::blocking::Client::new();
             let payload = signed_delegate_action.try_to_vec().unwrap(); // serialize signed_delegate_action using borsh
             let json_payload = serde_json::to_vec(&payload).unwrap();
-            let relayer_response = client
-                .post(meta_transaction_relayer_url.clone())
-                // .json(&data)
-                .header("Content-Type", "application/json")
-                .body(json_payload)
-                .send()?;
-            println!("############# relayer_response{:#?}", relayer_response);
+            // let relayer_response = client
+            //     .post(meta_transaction_relayer_url.clone())
+            //     // .json(&data)
+            //     .header("Content-Type", "application/json")
+            //     .body(json_payload)
+            //     .send()?;
+            // println!("############# relayer_response{:#?}", relayer_response);
 
             // ==========================================Sign delegate action with test_fro.testnet===================================
 
+            let base64_transaction = near_primitives::serialize::to_base64(
+                signed_delegate_action
+                    .try_to_vec()
+                    .expect("Transaction is not expected to fail on serialization"),
+            );
+
+            println!("{}", base64_transaction);
+
+            let serialize_from_base64 =
+                near_primitives::serialize::from_base64(&base64_transaction).unwrap();
+
+            let signed_delegate_action_new: near_primitives::delegate_action::SignedDelegateAction =
+                serde_json::from_slice(&serialize_from_base64)?;
+
+            println!("{:#?}", signed_delegate_action_new);
+
             let public_key = near_crypto::PublicKey::from_str(
-                "ed25519:CCwvhsp3Y3BfLbfYJQJqXJA2CaSP7CRjn1t7PyEtsjej",
+                "ed25519:BN2F9rQAt7vLoEf7gQzxj3N9w4dnV6PMLXifaZDzTBic",
             )?;
-            let secret_key = near_crypto::SecretKey::from_str("ed25519:3fLXqk4vjREgm7HhcobS1q6bf8ouCzqbAjHrZukscqatSDE3q9Rs8Cp8J7hv63bfXdQRgX7qaavKXAc77pmuMJod")?;
-            let signer_id: near_primitives::types::AccountId = "test_fro.testnet".parse().unwrap();
+            let secret_key = near_crypto::SecretKey::from_str("ed25519:4rSfXd4HXX9wsb81WVSigrrnSe1eNg1GQCfJMXdSyKCprQHTc1cdm4Vdd7UDKMhTwm8cf3sBKTyf99EmkQe6g51W")?;
+            let signer_id: near_primitives::types::AccountId = "fro_test7.testnet".parse().unwrap();
 
             let rpc_query_response = network_config
             .json_rpc_client()
@@ -240,7 +256,7 @@ impl SignKeychainContext {
                 .nonce;
 
             let actions = vec![near_primitives::transaction::Action::Delegate(
-                signed_delegate_action,
+                signed_delegate_action_new,
             )];
 
             let unsigned_transaction = near_primitives::transaction::Transaction {
@@ -252,17 +268,14 @@ impl SignKeychainContext {
                 actions,
             };
 
-            let signature = secret_key
-                .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+            let signature = secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
             let signed_transaction = near_primitives::transaction::SignedTransaction::new(
                 signature.clone(),
                 unsigned_transaction.clone(),
             );
 
-
             eprintln!("\nYour transaction (delegate) was signed successfully.");
             eprintln!("{:#?}", signed_transaction);
-
 
             return Ok(Self {
                 network_config: previous_context.network_config,

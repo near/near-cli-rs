@@ -2,6 +2,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod construct_transaction;
+mod delegate_action;
 mod view_status;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -25,4 +26,9 @@ pub enum TransactionActions {
     ))]
     /// Construct a new transaction
     ConstructTransaction(self::construct_transaction::ConstructTransaction),
+    #[strum_discriminants(strum(
+        message = "send-delegate-transaction  - Sending by the relayer a signed delegate action"
+    ))]
+    /// Sending by the relayer a signed delegate action
+    SendDelegateAction(self::delegate_action::TransactionInfo),
 }
