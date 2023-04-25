@@ -2,9 +2,10 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod access_key_type;
 mod autogenerate_new_keypair;
+#[cfg(feature = "ledger")]
+mod use_ledger;
 mod use_manually_provided_seed_phrase;
 mod use_public_key;
-mod use_ledger;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -73,9 +74,7 @@ pub enum AccessKeyMode {
     ))]
     /// Use the provided public key manually
     UseManuallyProvidedPublicKey(self::use_public_key::AddAccessKeyAction),
-    #[strum_discriminants(strum(
-        message = "use-ledger                        - Use a ledger"
-    ))]
+    #[strum_discriminants(strum(message = "use-ledger                        - Use a ledger"))]
     /// Use the Ledger Hadware wallet
-    UseLedger(self::use_ledger::AddLedgerKeyAction)
+    UseLedger(self::use_ledger::AddLedgerKeyAction),
 }

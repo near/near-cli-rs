@@ -46,7 +46,6 @@ impl AddLedgerKeyActionContext {
     }
 }
 
-
 impl From<AddLedgerKeyActionContext> for crate::commands::ActionContext {
     fn from(item: AddLedgerKeyActionContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
