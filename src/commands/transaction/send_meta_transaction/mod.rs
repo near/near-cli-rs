@@ -5,7 +5,7 @@ mod transaction_signature_options;
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = TransactionInfoContext)]
-pub struct TransactionInfo {
+pub struct SendMetaTransaction {
     /// Enter the hash of the delegated action to send
     transaction_hash: String,
     #[interactive_clap(named_arg)]
@@ -22,7 +22,7 @@ pub struct TransactionInfoContext {
 impl TransactionInfoContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
-        scope: &<TransactionInfo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<SendMetaTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.0,

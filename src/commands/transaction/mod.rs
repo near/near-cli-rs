@@ -2,7 +2,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod construct_transaction;
-mod delegate_action;
+mod send_meta_transaction;
 mod view_status;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
