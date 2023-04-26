@@ -118,7 +118,7 @@ impl SignMacosKeychainContext {
             unsigned_transaction.clone(),
         );
 
-        eprintln!("\nYour transaction (delegate) was signed successfully.");
+        eprintln!("\nYour delegating action was signed successfully.");
 
         Ok(Self(super::SubmitContext {
             network_config: previous_context.network_config,

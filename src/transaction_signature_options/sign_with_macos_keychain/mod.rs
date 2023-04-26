@@ -128,7 +128,7 @@ impl SignMacosKeychainContext {
                 max_block_height,
             );
 
-            eprintln!("\nYour transaction (delegate) was signed successfully.");
+            eprintln!("\nYour delegating action was signed successfully.");
             eprintln!("Public key: {}", account_json.public_key);
             eprintln!("Signature: {}", signature);
 
