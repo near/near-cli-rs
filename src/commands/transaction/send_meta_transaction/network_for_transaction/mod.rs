@@ -12,7 +12,7 @@ pub struct NetworkForTransactionArgs {
 #[derive(Clone)]
 pub struct NetworkForTransactionArgsContext {
     pub config: crate::config::Config,
-    pub transaction_hash: String,
+    pub signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,
     pub relayer_account_id: near_primitives::types::AccountId,
     pub network_config: crate::config::NetworkConfig,
 }
@@ -29,7 +29,7 @@ impl NetworkForTransactionArgsContext {
             .clone();
         Ok(Self {
             config: previous_context.config,
-            transaction_hash: previous_context.transaction_hash,
+            signed_delegate_action: previous_context.signed_delegate_action,
             relayer_account_id: previous_context.relayer_account_id,
             network_config,
         })

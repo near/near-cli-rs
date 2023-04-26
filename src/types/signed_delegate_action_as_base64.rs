@@ -1,0 +1,29 @@
+use near_primitives::borsh::BorshDeserialize;
+
+#[derive(Debug, Clone)]
+pub struct SignedDelegateActionAsBase64 {
+    pub inner: near_primitives::delegate_action::SignedDelegateAction,
+}
+
+impl std::str::FromStr for SignedDelegateActionAsBase64 {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            inner: near_primitives::delegate_action::SignedDelegateAction::try_from_slice(
+                &near_primitives::serialize::from_base64(s)
+                    .map_err(|err| format!("base64 transaction sequence is invalid: {}", err))?,
+            )
+            .map_err(|err| format!("transaction could not be parsed: {}", err))?,
+        })
+    }
+}
+
+impl std::fmt::Display for SignedDelegateActionAsBase64 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.inner.delegate_action.get_nep461_hash())
+    }
+}
+
+impl interactive_clap::ToCli for SignedDelegateActionAsBase64 {
+    type CliVariant = SignedDelegateActionAsBase64;
+}

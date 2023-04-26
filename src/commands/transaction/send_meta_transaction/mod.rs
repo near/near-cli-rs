@@ -6,8 +6,9 @@ mod transaction_signature_options;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = TransactionInfoContext)]
 pub struct SendMetaTransaction {
-    /// Enter the hash of the delegated action to send
-    transaction_hash: String,
+    /// Enter a signed delegate action as base64-encoded string
+    signed_delegate_action:
+        crate::types::signed_delegate_action_as_base64::SignedDelegateActionAsBase64,
     #[interactive_clap(named_arg)]
     /// What is the relayer account ID?
     sign_as: self::sign_as::RelayerAccountId,
@@ -16,7 +17,7 @@ pub struct SendMetaTransaction {
 #[derive(Clone)]
 pub struct TransactionInfoContext {
     config: crate::config::Config,
-    transaction_hash: String,
+    signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,
 }
 
 impl TransactionInfoContext {
@@ -26,7 +27,7 @@ impl TransactionInfoContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.0,
-            transaction_hash: scope.transaction_hash.clone(),
+            signed_delegate_action: scope.signed_delegate_action.inner.clone(),
         })
     }
 }

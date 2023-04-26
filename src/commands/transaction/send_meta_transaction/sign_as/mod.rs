@@ -15,7 +15,7 @@ pub struct RelayerAccountId {
 #[derive(Clone)]
 pub struct RelayerAccountIdContext {
     pub config: crate::config::Config,
-    pub transaction_hash: String,
+    pub signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,
     pub relayer_account_id: near_primitives::types::AccountId,
 }
 
@@ -26,7 +26,7 @@ impl RelayerAccountIdContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
-            transaction_hash: previous_context.transaction_hash,
+            signed_delegate_action: previous_context.signed_delegate_action,
             relayer_account_id: scope.relayer_account_id.clone().into(),
         })
     }

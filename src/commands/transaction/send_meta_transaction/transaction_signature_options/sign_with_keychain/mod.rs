@@ -1,7 +1,5 @@
 extern crate dirs;
 
-use near_primitives::borsh::BorshDeserialize;
-
 use color_eyre::eyre::WrapErr;
 
 use crate::common::JsonRpcClientExt;
@@ -117,16 +115,8 @@ impl SignKeychainContext {
             .wrap_err("Error current_nonce")?
             .nonce;
 
-        let serialize_from_base64 =
-            near_primitives::serialize::from_base64(&previous_context.transaction_hash).unwrap();
-
-        let signed_delegate_action =
-            near_primitives::delegate_action::SignedDelegateAction::try_from_slice(
-                &serialize_from_base64,
-            )?;
-
         let actions = vec![near_primitives::transaction::Action::Delegate(
-            signed_delegate_action.clone(),
+            previous_context.signed_delegate_action.clone(),
         )];
 
         let unsigned_transaction = near_primitives::transaction::Transaction {
@@ -134,7 +124,10 @@ impl SignKeychainContext {
             block_hash: rpc_query_response.block_hash,
             nonce: current_nonce + 1,
             signer_id: previous_context.relayer_account_id,
-            receiver_id: signed_delegate_action.delegate_action.sender_id,
+            receiver_id: previous_context
+                .signed_delegate_action
+                .delegate_action
+                .sender_id,
             actions,
         };
 
