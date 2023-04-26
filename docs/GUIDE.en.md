@@ -1444,7 +1444,7 @@ To add network details to the configuration file (_config.toml_), you can use in
 ```txt
 near config \
     add-connection \
-        --network-name pagoda-testnet \
+        --network-name testnet \
         --connection-name pagoda-testnet \
         --rpc-url https://near-testnet.api.pagoda.co/rpc/v1/ \
         --wallet-url https://wallet.testnet.near.org/ \
@@ -1452,7 +1452,7 @@ near config \
         --rpc-api-key 'c0a25b3c-39c2-4f62-a621-50e208b88e64' \
         --linkdrop-account-id testnet \
         --faucet-url https://helper.nearprotocol.com/account \
-        --meta-transaction-relayer-url https://relayer-sweat-testnet-7tk2cmmtcq-uc.a.run.app/relay
+        --meta-transaction-relayer-url https://near-testnet.api.pagoda.co/relay
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
