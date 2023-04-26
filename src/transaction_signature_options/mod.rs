@@ -119,7 +119,7 @@ impl interactive_clap::FromCli for Submit {
         }
 
         match optional_clap_variant {
-            Some(CliSubmit::Send) => match context.signed_transaction {
+            Some(CliSubmit::Send) => match context.signed_transaction_or_signed_delegate_action {
                 SignedTransactionOrSignedDelegateAction::SignedTransaction(signed_transaction) => {
                     if let Err(report) = (context.on_before_sending_transaction_callback)(
                         &signed_transaction,
@@ -225,42 +225,44 @@ impl interactive_clap::FromCli for Submit {
                     interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
                 }
             },
-            Some(CliSubmit::Display) => match context.signed_transaction {
-                SignedTransactionOrSignedDelegateAction::SignedTransaction(signed_transaction) => {
-                    if let Err(report) = (context.on_before_sending_transaction_callback)(
-                        &signed_transaction,
-                        &context.network_config,
-                        &mut storage_message,
-                    ) {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
+            Some(CliSubmit::Display) => {
+                match context.signed_transaction_or_signed_delegate_action {
+                    SignedTransactionOrSignedDelegateAction::SignedTransaction(
+                        signed_transaction,
+                    ) => {
+                        if let Err(report) = (context.on_before_sending_transaction_callback)(
+                            &signed_transaction,
+                            &context.network_config,
+                            &mut storage_message,
+                        ) {
+                            return interactive_clap::ResultFromCli::Err(
+                                optional_clap_variant,
+                                color_eyre::Report::msg(report),
+                            );
+                        };
+                        let base64_transaction = near_primitives::serialize::to_base64(
+                            signed_transaction
+                                .try_to_vec()
+                                .expect("Transaction is not expected to fail on serialization"),
                         );
-                    };
-                    let base64_transaction = near_primitives::serialize::to_base64(
-                        signed_transaction
-                            .try_to_vec()
-                            .expect("Transaction is not expected to fail on serialization"),
-                    );
-                    eprintln!("\nSerialize_to_base64:\n{}", &base64_transaction);
-
-                    eprintln!("{storage_message}");
-                    interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
+                        eprintln!("\nSerialize_to_base64:\n{}", &base64_transaction);
+                        eprintln!("{storage_message}");
+                        interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
+                    }
+                    SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
+                        signed_delegate_action,
+                    ) => {
+                        let base64_transaction = near_primitives::serialize::to_base64(
+                            signed_delegate_action
+                                .try_to_vec()
+                                .expect("Transaction is not expected to fail on serialization"),
+                        );
+                        eprintln!("\nSerialize_to_base64:\n{}", &base64_transaction);
+                        eprintln!("{storage_message}");
+                        interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
+                    }
                 }
-                SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
-                    signed_delegate_action,
-                ) => {
-                    let base64_transaction = near_primitives::serialize::to_base64(
-                        signed_delegate_action
-                            .try_to_vec()
-                            .expect("Transaction is not expected to fail on serialization"),
-                    );
-                    eprintln!("\nSerialize_to_base64:\n{}", &base64_transaction);
-
-                    eprintln!("{storage_message}");
-                    interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
-                }
-            },
+            }
             None => unreachable!("Unexpected error"),
         }
     }
@@ -290,7 +292,7 @@ pub type OnAfterSendingTransactionCallback = std::sync::Arc<
 #[derive(Clone)]
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
-    pub signed_transaction: SignedTransactionOrSignedDelegateAction,
+    pub signed_transaction_or_signed_delegate_action: SignedTransactionOrSignedDelegateAction,
     pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
 }
