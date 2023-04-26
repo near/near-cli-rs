@@ -364,6 +364,6 @@ pub fn get_signed_delegate_action(
     let signature = signable.sign(&signer.unwrap());
     near_primitives::delegate_action::SignedDelegateAction {
         delegate_action,
-        signature: signature.clone(),
+        signature,
     }
 }
