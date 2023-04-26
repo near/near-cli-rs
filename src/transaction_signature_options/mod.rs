@@ -341,7 +341,7 @@ pub fn get_signed_delegate_action(
 
     let signer = Some(InMemorySigner::from_secret_key(
         unsigned_transaction.signer_id.clone(),
-        private_key.clone(),
+        private_key,
     ));
 
     let actions = unsigned_transaction
