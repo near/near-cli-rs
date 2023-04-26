@@ -27,8 +27,8 @@ pub enum TransactionActions {
     /// Construct a new transaction
     ConstructTransaction(self::construct_transaction::ConstructTransaction),
     #[strum_discriminants(strum(
-        message = "send-delegate-transaction  - Sending by the relayer a signed delegate action"
+        message = "send-meta-transaction  - Act as a relayer to send a signed delegate action (meta-transaction)"
     ))]
-    /// Sending by the relayer a signed delegate action
-    SendDelegateAction(self::delegate_action::TransactionInfo),
+    /// Act as a relayer to send a signed delegate action (meta-transaction)
+    SendMetaTransaction(self::send_meta_transaction::SendMetaTransaction),
 }
