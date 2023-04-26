@@ -346,9 +346,10 @@ pub fn get_signed_delegate_action(
 
     let actions = unsigned_transaction
         .actions
-        .iter()
-        .map(|a| near_primitives::delegate_action::NonDelegateAction::try_from(a.clone()).unwrap())
-        .collect();
+        .into_iter()
+        .map(near_primitives::delegate_action::NonDelegateAction::try_from)
+        .collect()
+        .unwrap();
     let delegate_action = near_primitives::delegate_action::DelegateAction {
         sender_id: unsigned_transaction.signer_id,
         receiver_id: unsigned_transaction.receiver_id,
