@@ -8,12 +8,19 @@ use crate::common::RpcQueryResponseExt;
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::super::network_for_transaction::NetworkForTransactionArgsContext)]
 #[interactive_clap(output_context = SignSeedPhraseContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct SignSeedPhrase {
     /// Enter the seed-phrase for this account
     master_seed_phrase: String,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    pub nonce: Option<u64>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    pub block_hash: Option<String>,
     #[interactive_clap(subcommand)]
     submit: super::Submit,
 }
@@ -89,7 +96,102 @@ impl From<SignSeedPhraseContext> for super::SubmitContext {
     }
 }
 
+impl interactive_clap::FromCli for SignSeedPhrase {
+    type FromCliContext = super::super::network_for_transaction::NetworkForTransactionArgsContext;
+    type FromCliError = color_eyre::eyre::Error;
+
+    fn from_cli(
+        optional_clap_variant: Option<<SignSeedPhrase as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+
+        if clap_variant.master_seed_phrase.is_none() {
+            clap_variant.master_seed_phrase = match Self::input_master_seed_phrase(&context) {
+                Ok(Some(master_seed_phrase)) => Some(master_seed_phrase),
+                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let master_seed_phrase = clap_variant
+            .master_seed_phrase
+            .clone()
+            .expect("Unexpected error");
+        if clap_variant.seed_phrase_hd_path.is_none() {
+            clap_variant.seed_phrase_hd_path = match Self::input_seed_phrase_hd_path(&context) {
+                Ok(Some(seed_phrase_hd_path)) => Some(seed_phrase_hd_path),
+                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let seed_phrase_hd_path = clap_variant
+            .seed_phrase_hd_path
+            .clone()
+            .expect("Unexpected error");
+        if clap_variant.nonce.is_none() {
+            clap_variant.nonce = match Self::input_nonce(&context) {
+                Ok(optional_nonce) => optional_nonce,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let nonce = clap_variant.nonce;
+        if clap_variant.block_hash.is_none() {
+            clap_variant.block_hash = match Self::input_block_hash(&context) {
+                Ok(optional_block_hash) => optional_block_hash,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let block_hash = clap_variant.block_hash.clone();
+
+        let new_context_scope = InteractiveClapContextScopeForSignSeedPhrase {
+            master_seed_phrase,
+            seed_phrase_hd_path,
+            nonce,
+            block_hash,
+        };
+        let output_context =
+            match SignSeedPhraseContext::from_previous_context(context, &new_context_scope) {
+                Ok(new_context) => new_context,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+
+        match super::Submit::from_cli(clap_variant.submit.take(), output_context.into()) {
+            interactive_clap::ResultFromCli::Ok(submit) => {
+                clap_variant.submit = Some(submit);
+                interactive_clap::ResultFromCli::Ok(clap_variant)
+            }
+            interactive_clap::ResultFromCli::Cancel(optional_submit) => {
+                clap_variant.submit = optional_submit;
+                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
+            }
+            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
+            interactive_clap::ResultFromCli::Err(optional_submit, err) => {
+                clap_variant.submit = optional_submit;
+                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+            }
+        }
+    }
+}
+
 impl SignSeedPhrase {
+    fn input_nonce(
+        _context: &super::super::network_for_transaction::NetworkForTransactionArgsContext,
+    ) -> color_eyre::eyre::Result<Option<u64>> {
+        Ok(None)
+    }
+
+    fn input_block_hash(
+        _context: &super::super::network_for_transaction::NetworkForTransactionArgsContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        Ok(None)
+    }
+
     fn input_seed_phrase_hd_path(
         _context: &super::super::network_for_transaction::NetworkForTransactionArgsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {

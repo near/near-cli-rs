@@ -20,6 +20,9 @@ pub struct SignPrivateKey {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     pub block_hash: Option<String>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    meta_transaction_valid_for: Option<u64>,
     #[interactive_clap(subcommand)]
     pub submit: super::Submit,
 }
@@ -72,7 +75,8 @@ impl SignPrivateKeyContext {
         let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
         if let Some(_) = &network_config.meta_transaction_relayer_url {
-            let max_block_height = rpc_query_response.block_height + 1000; //XXX
+            let max_block_height =
+                rpc_query_response.block_height + scope.meta_transaction_valid_for.unwrap_or(1000);
 
             let signed_delegate_action = super::get_signed_delegate_action(
                 unsigned_transaction,
@@ -178,12 +182,23 @@ impl interactive_clap::FromCli for SignPrivateKey {
             };
         }
         let block_hash = clap_variant.block_hash.clone();
+        if clap_variant.meta_transaction_valid_for.is_none() {
+            clap_variant.meta_transaction_valid_for =
+                match Self::input_meta_transaction_valid_for(&context) {
+                    Ok(meta_transaction_valid_for) => meta_transaction_valid_for,
+                    Err(err) => {
+                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+                    }
+                };
+        }
+        let meta_transaction_valid_for = clap_variant.meta_transaction_valid_for;
 
         let new_context_scope = InteractiveClapContextScopeForSignPrivateKey {
             signer_public_key,
             signer_private_key,
             nonce,
             block_hash,
+            meta_transaction_valid_for,
         };
         let output_context =
             match SignPrivateKeyContext::from_previous_context(context, &new_context_scope) {
@@ -210,15 +225,21 @@ impl interactive_clap::FromCli for SignPrivateKey {
 }
 
 impl SignPrivateKey {
-    pub fn input_nonce(
+    fn input_nonce(
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
         Ok(None)
     }
 
-    pub fn input_block_hash(
+    fn input_block_hash(
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         Ok(None)
+    }
+
+    fn input_meta_transaction_valid_for(
+        _context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<u64>> {
+        Ok(Some(1000))
     }
 }
