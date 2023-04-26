@@ -141,17 +141,14 @@ impl interactive_clap::FromCli for Submit {
                         },
                     };
                 };
-                match crate::common::print_transaction_status(
+                if let Err(report) = crate::common::print_transaction_status(
                     &transaction_info,
                     &context.network_config,
                 ) {
-                    Ok(_) => (),
-                    Err(report) => {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        )
-                    }
+                    return interactive_clap::ResultFromCli::Err(
+                        optional_clap_variant,
+                        color_eyre::Report::msg(report),
+                    );
                 };
                 interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
             }

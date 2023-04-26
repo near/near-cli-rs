@@ -121,18 +121,15 @@ impl interactive_clap::FromCli for Submit {
         match optional_clap_variant {
             Some(CliSubmit::Send) => match context.signed_transaction {
                 SignedTransactionOrSignedDelegateAction::SignedTransaction(signed_transaction) => {
-                    match (context.on_before_sending_transaction_callback)(
+                    if let Err(report) = (context.on_before_sending_transaction_callback)(
                         &signed_transaction,
                         &context.network_config,
                         &mut storage_message,
                     ) {
-                        Ok(_) => (),
-                        Err(report) => {
-                            return interactive_clap::ResultFromCli::Err(
-                                optional_clap_variant,
-                                color_eyre::Report::msg(report),
-                            )
-                        }
+                        return interactive_clap::ResultFromCli::Err(
+                            optional_clap_variant,
+                            color_eyre::Report::msg(report),
+                        );
                     };
 
                     eprintln!("Transaction sent ...");
@@ -159,29 +156,23 @@ impl interactive_clap::FromCli for Submit {
                             },
                         };
                     };
-                    match crate::common::print_transaction_status(
+                    if let Err(report) = crate::common::print_transaction_status(
                         &transaction_info,
                         &context.network_config,
                     ) {
-                        Ok(_) => (),
-                        Err(report) => {
-                            return interactive_clap::ResultFromCli::Err(
-                                optional_clap_variant,
-                                color_eyre::Report::msg(report),
-                            )
-                        }
+                        return interactive_clap::ResultFromCli::Err(
+                            optional_clap_variant,
+                            color_eyre::Report::msg(report),
+                        );
                     };
-                    match (context.on_after_sending_transaction_callback)(
+                    if let Err(report) = (context.on_after_sending_transaction_callback)(
                         &transaction_info,
                         &context.network_config,
                     ) {
-                        Ok(_) => (),
-                        Err(report) => {
-                            return interactive_clap::ResultFromCli::Err(
-                                optional_clap_variant,
-                                color_eyre::Report::msg(report),
-                            )
-                        }
+                        return interactive_clap::ResultFromCli::Err(
+                            optional_clap_variant,
+                            color_eyre::Report::msg(report),
+                        );
                     };
                     eprintln!("{storage_message}");
                     interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
@@ -236,18 +227,15 @@ impl interactive_clap::FromCli for Submit {
             },
             Some(CliSubmit::Display) => match context.signed_transaction {
                 SignedTransactionOrSignedDelegateAction::SignedTransaction(signed_transaction) => {
-                    match (context.on_before_sending_transaction_callback)(
+                    if let Err(report) = (context.on_before_sending_transaction_callback)(
                         &signed_transaction,
                         &context.network_config,
                         &mut storage_message,
                     ) {
-                        Ok(_) => (),
-                        Err(report) => {
-                            return interactive_clap::ResultFromCli::Err(
-                                optional_clap_variant,
-                                color_eyre::Report::msg(report),
-                            )
-                        }
+                        return interactive_clap::ResultFromCli::Err(
+                            optional_clap_variant,
+                            color_eyre::Report::msg(report),
+                        );
                     };
                     let base64_transaction = near_primitives::serialize::to_base64(
                         signed_transaction
@@ -336,22 +324,16 @@ pub fn get_signed_delegate_action(
     private_key: near_crypto::SecretKey,
     max_block_height: u64,
 ) -> near_primitives::delegate_action::SignedDelegateAction {
-    use near_crypto::InMemorySigner;
     use near_primitives::signable_message::{SignableMessage, SignableMessageType};
-
-    let signer = Some(InMemorySigner::from_secret_key(
-        unsigned_transaction.signer_id.clone(),
-        private_key,
-    ));
 
     let actions = unsigned_transaction
         .actions
         .into_iter()
         .map(near_primitives::delegate_action::NonDelegateAction::try_from)
-        .collect()
-        .unwrap();
+        .collect::<Result<_, _>>()
+        .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).");
     let delegate_action = near_primitives::delegate_action::DelegateAction {
-        sender_id: unsigned_transaction.signer_id,
+        sender_id: unsigned_transaction.signer_id.clone(),
         receiver_id: unsigned_transaction.receiver_id,
         actions,
         nonce: unsigned_transaction.nonce,
@@ -361,7 +343,9 @@ pub fn get_signed_delegate_action(
 
     // create a new signature here signing the delegate action + discriminant
     let signable = SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
-    let signature = signable.sign(&signer.unwrap());
+    let signer =
+        near_crypto::InMemorySigner::from_secret_key(unsigned_transaction.signer_id, private_key);
+    let signature = signable.sign(&signer);
     near_primitives::delegate_action::SignedDelegateAction {
         delegate_action,
         signature,
