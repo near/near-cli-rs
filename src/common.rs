@@ -6,7 +6,7 @@ use color_eyre::eyre::WrapErr;
 use prettytable::Table;
 
 use near_primitives::{
-    borsh::BorshDeserialize, hash::CryptoHash, types::BlockReference,
+    borsh::BorshDeserialize, borsh::BorshSerialize, hash::CryptoHash, types::BlockReference,
     views::AccessKeyPermissionView,
 };
 
@@ -59,7 +59,12 @@ impl std::str::FromStr for SignedTransactionAsBase64 {
 
 impl std::fmt::Display for SignedTransactionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner.get_hash())
+        let base64_signed_transaction = near_primitives::serialize::to_base64(
+            self.inner
+                .try_to_vec()
+                .expect("Transaction is not expected to fail on serialization"),
+        );
+        write!(f, "{}", base64_signed_transaction)
     }
 }
 

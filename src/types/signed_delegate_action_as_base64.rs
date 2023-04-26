@@ -1,4 +1,4 @@
-use near_primitives::borsh::BorshDeserialize;
+use near_primitives::borsh::{BorshDeserialize, BorshSerialize};
 
 #[derive(Debug, Clone)]
 pub struct SignedDelegateActionAsBase64 {
@@ -20,7 +20,12 @@ impl std::str::FromStr for SignedDelegateActionAsBase64 {
 
 impl std::fmt::Display for SignedDelegateActionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner.delegate_action.get_nep461_hash())
+        let base64_signed_delegate_action = near_primitives::serialize::to_base64(
+            self.inner
+                .try_to_vec()
+                .expect("Transaction is not expected to fail on serialization"),
+        );
+        write!(f, "{}", base64_signed_delegate_action)
     }
 }
 
