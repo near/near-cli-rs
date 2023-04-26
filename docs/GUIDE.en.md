@@ -1427,7 +1427,6 @@ wallet_url = "https://wallet.testnet.near.org/"
 explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
-meta_transaction_relayer_url = "https://relayer-sweat-testnet-7tk2cmmtcq-uc.a.run.app/relay"
 ```
 </details>
 
