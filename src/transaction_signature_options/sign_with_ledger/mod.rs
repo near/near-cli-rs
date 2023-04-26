@@ -35,7 +35,7 @@ pub struct SignLedger {
 #[derive(Clone)]
 pub struct SignLedgerContext {
     network_config: crate::config::NetworkConfig,
-    signed_transaction: super::SignedTransactionOrSignedDelegateAction,
+    signed_transaction_or_signed_delegate_action: super::SignedTransactionOrSignedDelegateAction,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
@@ -110,7 +110,7 @@ impl SignLedgerContext {
 
         Ok(Self {
             network_config: previous_context.network_config,
-            signed_transaction: signed_transaction.into(),
+            signed_transaction_or_signed_delegate_action: signed_transaction.into(),
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
@@ -123,7 +123,9 @@ impl From<SignLedgerContext> for super::SubmitContext {
     fn from(item: SignLedgerContext) -> Self {
         Self {
             network_config: item.network_config,
-            signed_transaction: item.signed_transaction.into(),
+            signed_transaction_or_signed_delegate_action: item
+                .signed_transaction_or_signed_delegate_action
+                .into(),
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }

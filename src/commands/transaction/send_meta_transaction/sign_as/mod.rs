@@ -1,7 +1,7 @@
 use inquire::{CustomType, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::TransactionInfoContext)]
+#[interactive_clap(input_context = super::SendMetaTransactionContext)]
 #[interactive_clap(output_context = RelayerAccountIdContext)]
 pub struct RelayerAccountId {
     #[interactive_clap(skip_default_input_arg)]
@@ -21,7 +21,7 @@ pub struct RelayerAccountIdContext {
 
 impl RelayerAccountIdContext {
     pub fn from_previous_context(
-        previous_context: super::TransactionInfoContext,
+        previous_context: super::SendMetaTransactionContext,
         scope: &<RelayerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
@@ -34,7 +34,7 @@ impl RelayerAccountIdContext {
 
 impl RelayerAccountId {
     fn input_relayer_account_id(
-        context: &super::TransactionInfoContext,
+        context: &super::SendMetaTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let relayer_account_id: crate::types::account_id::AccountId =

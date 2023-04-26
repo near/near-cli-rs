@@ -27,7 +27,7 @@ pub struct SignPrivateKey {
 #[derive(Clone)]
 pub struct SignPrivateKeyContext {
     network_config: crate::config::NetworkConfig,
-    signed_transaction: super::SignedTransactionOrSignedDelegateAction,
+    signed_transaction_or_signed_delegate_action: super::SignedTransactionOrSignedDelegateAction,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
@@ -86,7 +86,7 @@ impl SignPrivateKeyContext {
 
             return Ok(Self {
                 network_config: previous_context.network_config,
-                signed_transaction: signed_delegate_action.into(),
+                signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
                 on_before_sending_transaction_callback: previous_context
                     .on_before_sending_transaction_callback,
                 on_after_sending_transaction_callback: previous_context
@@ -105,7 +105,7 @@ impl SignPrivateKeyContext {
 
         Ok(Self {
             network_config: previous_context.network_config,
-            signed_transaction: signed_transaction.into(),
+            signed_transaction_or_signed_delegate_action: signed_transaction.into(),
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
@@ -118,7 +118,8 @@ impl From<SignPrivateKeyContext> for super::SubmitContext {
     fn from(item: SignPrivateKeyContext) -> Self {
         Self {
             network_config: item.network_config,
-            signed_transaction: item.signed_transaction,
+            signed_transaction_or_signed_delegate_action: item
+                .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }

@@ -4,7 +4,7 @@ mod transaction_signature_options;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = TransactionInfoContext)]
+#[interactive_clap(output_context = SendMetaTransactionContext)]
 pub struct SendMetaTransaction {
     /// Enter a signed delegate action as base64-encoded string
     signed_delegate_action:
@@ -15,12 +15,12 @@ pub struct SendMetaTransaction {
 }
 
 #[derive(Clone)]
-pub struct TransactionInfoContext {
+pub struct SendMetaTransactionContext {
     config: crate::config::Config,
     signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,
 }
 
-impl TransactionInfoContext {
+impl SendMetaTransactionContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
         scope: &<SendMetaTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
