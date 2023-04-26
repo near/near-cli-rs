@@ -1411,7 +1411,6 @@ near config show-connections
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Configuration data is stored in a file "/Users/frovolod/Library/Application Support/near-cli/config.toml"
 credentials_home_dir = "/Users/frovolod/.near-credentials"
 [network_connection.mainnet]
 network_name = "mainnet"
@@ -1427,6 +1426,15 @@ wallet_url = "https://wallet.testnet.near.org/"
 explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
+
+[network_connection.meta-testnet]
+network_name = "meta-testnet"
+rpc_url = "https://archival-rpc.testnet.near.org/"
+wallet_url = "https://wallet.testnet.near.org/"
+explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+linkdrop_account_id = "testnet"
+faucet_url = "https://helper.nearprotocol.com/account"
+meta_transaction_relayer_url = "https://relayer-sweat-testnet-7tk2cmmtcq-uc.a.run.app/relay"
 ```
 </details>
 
