@@ -74,6 +74,7 @@ pub enum AccessKeyMode {
     ))]
     /// Use the provided public key manually
     UseManuallyProvidedPublicKey(self::use_public_key::AddAccessKeyAction),
+    #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(message = "use-ledger                        - Use a ledger"))]
     /// Use the Ledger Hadware wallet
     UseLedger(self::use_ledger::AddLedgerKeyAction),
