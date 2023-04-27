@@ -21,23 +21,20 @@ impl RelayerAccountIdContext {
         previous_context: super::SendMetaTransactionContext,
         scope: &<RelayerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let signer_id: near_primitives::types::AccountId = scope.relayer_account_id.clone().into();
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: signer_id.clone(),
-                    receiver_id: previous_context
-                        .signed_delegate_action
-                        .delegate_action
-                        .sender_id
-                        .clone(),
-                    actions: previous_context
-                        .signed_delegate_action
-                        .delegate_action
-                        .actions
-                        .clone(),
-                })
-            });
+        std::sync::Arc::new(move |_network_config| {
+            let actions = previous_context.signed_delegate_action.delegate_action
+                .actions
+                .into_iter()
+                .map(crate::commands::ActionOrNonDelegateAction::from)
+                .collect();
+                
+            Ok(crate::commands::PrepopulatedTransaction {
+                signer_id: scope.relayer_account_id.clone().into(),
+                receiver_id: previous_context.signed_delegate_action.delegate_action.sender_id.clone(),
+                actions,
+            })
+        });
 
         Ok(Self(crate::commands::ActionContext {
             config: previous_context.config,
@@ -49,15 +46,9 @@ impl RelayerAccountIdContext {
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
-                |_outcome, _network_config| Ok(()), //XXX
+                |_outcome, _network_config| Ok(()) //XXX
             ),
         }))
-    }
-}
-
-impl From<RelayerAccountIdContext> for crate::commands::ActionContext {
-    fn from(item: RelayerAccountIdContext) -> Self {
-        item.0
     }
 }
 

@@ -65,16 +65,11 @@ impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.account_id.clone(),
                     receiver_id: item.account_id.clone(),
-                    actions: vec![
-                        near_primitives::delegate_action::NonDelegateAction::try_from(
-                            near_primitives::transaction::Action::DeleteAccount(
-                                near_primitives::transaction::DeleteAccountAction {
-                                    beneficiary_id: item.beneficiary_account_id.clone(),
-                                },
-                            ),
-                        )
-                        .unwrap(),
-                    ],
+                    actions: vec![near_primitives::transaction::Action::DeleteAccount(
+                        near_primitives::transaction::DeleteAccountAction {
+                            beneficiary_id: item.beneficiary_account_id.clone(),
+                        },
+                    ).into()],
                 })
             });
         Self {

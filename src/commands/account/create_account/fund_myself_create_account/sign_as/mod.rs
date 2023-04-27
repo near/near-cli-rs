@@ -65,20 +65,16 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     validate_new_account_id(network_config, &new_account_id)?;
 
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
-                        (
-                            vec![
-                                near_primitives::delegate_action::NonDelegateAction::try_from(
-                                    near_primitives::transaction::Action::CreateAccount(
+                        let actions: Vec<crate::commands::ActionOrNonDelegateAction> = vec![
+                                near_primitives::transaction::Action::CreateAccount(
                                     near_primitives::transaction::CreateAccountAction {},
-                                )).unwrap(),
-                                near_primitives::delegate_action::NonDelegateAction::try_from(
-                                    near_primitives::transaction::Action::Transfer(
+                                ).into(),
+                                near_primitives::transaction::Action::Transfer(
                                     near_primitives::transaction::TransferAction {
                                         deposit: item.account_properties.initial_balance.to_yoctonear(),
                                     },
-                                )).unwrap(),
-                                near_primitives::delegate_action::NonDelegateAction::try_from(
-                                    near_primitives::transaction::Action::AddKey(
+                                ).into(),
+                                near_primitives::transaction::Action::AddKey(
                                     near_primitives::transaction::AddKeyAction {
                                         public_key: item.account_properties.public_key.clone(),
                                         access_key: near_primitives::account::AccessKey {
@@ -87,8 +83,10 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                                 near_primitives::account::AccessKeyPermission::FullAccess,
                                         },
                                     },
-                                )).unwrap(),
-                            ],
+                                ).into(),
+                            ];
+                        (
+                            actions,
                             new_account_id.clone(),
                         )
                     } else {
@@ -103,22 +101,21 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             if new_account_id.is_sub_account_of(linkdrop_account_id)
                                 || new_account_id.is_top_level()
                             {
+                                let actions: Vec<crate::commands::ActionOrNonDelegateAction> = vec![near_primitives::transaction::Action::FunctionCall(
+                                        near_primitives::transaction::FunctionCallAction {
+                                            method_name: "create_account".to_string(),
+                                            args,
+                                            gas: crate::common::NearGas::from_str("30 TeraGas")
+                                                .unwrap()
+                                                .inner,
+                                            deposit: item
+                                                .account_properties
+                                                .initial_balance
+                                                .to_yoctonear(),
+                                        },
+                                    ).into()];
                                 (
-                                    vec![
-                                        near_primitives::delegate_action::NonDelegateAction::try_from(
-                                            near_primitives::transaction::Action::FunctionCall(
-                                            near_primitives::transaction::FunctionCallAction {
-                                                method_name: "create_account".to_string(),
-                                                args,
-                                                gas: crate::common::NearGas::from_str("30 TeraGas")
-                                                    .unwrap()
-                                                    .inner,
-                                                deposit: item
-                                                    .account_properties
-                                                    .initial_balance
-                                                    .to_yoctonear(),
-                                            },
-                                        )).unwrap()],
+                                    actions,
                                     linkdrop_account_id.clone(),
                                 )
                             } else {

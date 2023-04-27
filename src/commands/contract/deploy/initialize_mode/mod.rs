@@ -48,16 +48,11 @@ impl From<NoInitializeContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.0.signer_account_id.clone(),
                     receiver_id: item.0.receiver_account_id.clone(),
-                    actions: vec![
-                        near_primitives::delegate_action::NonDelegateAction::try_from(
-                            near_primitives::transaction::Action::DeployContract(
-                                near_primitives::transaction::DeployContractAction {
-                                    code: item.0.code.clone(),
-                                },
-                            ),
-                        )
-                        .unwrap(),
-                    ],
+                    actions: vec![near_primitives::transaction::Action::DeployContract(
+                        near_primitives::transaction::DeployContractAction {
+                            code: item.0.code.clone(),
+                        },
+                    ).into()],
                 })
             });
         Self {
