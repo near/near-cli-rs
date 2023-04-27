@@ -52,7 +52,7 @@ impl From<NoInitializeContext> for crate::commands::ActionContext {
                         near_primitives::transaction::DeployContractAction {
                             code: item.0.code.clone(),
                         },
-                    )],
+                    ).into()],
                 })
             });
         Self {

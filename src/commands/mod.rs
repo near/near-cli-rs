@@ -59,7 +59,25 @@ pub type OnAfterGettingNetworkCallback = std::sync::Arc<
 pub struct PrepopulatedTransaction {
     pub signer_id: near_primitives::types::AccountId,
     pub receiver_id: near_primitives::types::AccountId,
-    pub actions: Vec<near_primitives::transaction::Action>,
+    pub actions: Vec<ActionOrNonDelegateAction>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum ActionOrNonDelegateAction {
+    Action(near_primitives::transaction::Action),
+    NonDelegateAction(near_primitives::delegate_action::NonDelegateAction),
+}
+
+impl From<near_primitives::transaction::Action> for ActionOrNonDelegateAction {
+    fn from(action: near_primitives::transaction::Action) -> Self {
+        Self::Action(action)
+    }
+}
+
+impl From<near_primitives::delegate_action::NonDelegateAction> for ActionOrNonDelegateAction {
+    fn from(non_delegate_action: near_primitives::delegate_action::NonDelegateAction) -> Self {
+        Self::NonDelegateAction(non_delegate_action)
+    }
 }
 
 #[derive(Clone)]
