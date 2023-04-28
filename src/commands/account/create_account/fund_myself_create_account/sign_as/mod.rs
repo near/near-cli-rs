@@ -67,15 +67,18 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
                         (
                             vec![
-                                near_primitives::transaction::Action::CreateAccount(
+                                near_primitives::delegate_action::NonDelegateAction::try_from(
+                                    near_primitives::transaction::Action::CreateAccount(
                                     near_primitives::transaction::CreateAccountAction {},
-                                ),
-                                near_primitives::transaction::Action::Transfer(
+                                )).unwrap(),
+                                near_primitives::delegate_action::NonDelegateAction::try_from(
+                                    near_primitives::transaction::Action::Transfer(
                                     near_primitives::transaction::TransferAction {
                                         deposit: item.account_properties.initial_balance.to_yoctonear(),
                                     },
-                                ),
-                                near_primitives::transaction::Action::AddKey(
+                                )).unwrap(),
+                                near_primitives::delegate_action::NonDelegateAction::try_from(
+                                    near_primitives::transaction::Action::AddKey(
                                     near_primitives::transaction::AddKeyAction {
                                         public_key: item.account_properties.public_key.clone(),
                                         access_key: near_primitives::account::AccessKey {
@@ -84,7 +87,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                                 near_primitives::account::AccessKeyPermission::FullAccess,
                                         },
                                     },
-                                ),
+                                )).unwrap(),
                             ],
                             new_account_id.clone(),
                         )
@@ -101,19 +104,21 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                 || new_account_id.is_top_level()
                             {
                                 (
-                                    vec![near_primitives::transaction::Action::FunctionCall(
-                                        near_primitives::transaction::FunctionCallAction {
-                                            method_name: "create_account".to_string(),
-                                            args,
-                                            gas: crate::common::NearGas::from_str("30 TeraGas")
-                                                .unwrap()
-                                                .inner,
-                                            deposit: item
-                                                .account_properties
-                                                .initial_balance
-                                                .to_yoctonear(),
-                                        },
-                                    )],
+                                    vec![
+                                        near_primitives::delegate_action::NonDelegateAction::try_from(
+                                            near_primitives::transaction::Action::FunctionCall(
+                                            near_primitives::transaction::FunctionCallAction {
+                                                method_name: "create_account".to_string(),
+                                                args,
+                                                gas: crate::common::NearGas::from_str("30 TeraGas")
+                                                    .unwrap()
+                                                    .inner,
+                                                deposit: item
+                                                    .account_properties
+                                                    .initial_balance
+                                                    .to_yoctonear(),
+                                            },
+                                        )).unwrap()],
                                     linkdrop_account_id.clone(),
                                 )
                             } else {

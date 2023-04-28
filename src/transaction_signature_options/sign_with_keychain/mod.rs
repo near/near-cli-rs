@@ -132,32 +132,46 @@ impl SignKeychainContext {
             .access_key_view()
             .wrap_err("Error current_nonce")?
             .nonce;
+        let max_block_height =
+            rpc_query_response.block_height + scope.meta_transaction_valid_for.unwrap_or(1000);
 
-        let mut unsigned_transaction = near_primitives::transaction::Transaction {
+        let mut delegate_action = near_primitives::delegate_action::DelegateAction {
             public_key: account_json.public_key.clone(),
-            block_hash: rpc_query_response.block_hash,
+            max_block_height,
             nonce: current_nonce + 1,
-            signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
+            sender_id: previous_context.prepopulated_transaction.signer_id.clone(),
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             actions: previous_context.prepopulated_transaction.actions,
         };
 
-        (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
+        (previous_context.on_before_signing_callback)(&mut delegate_action, &network_config)?;
 
         let signature = account_json
             .private_key
-            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+            .sign(delegate_action.get_hash_and_size().0.as_ref());
 
         if let Some(_) = &network_config.meta_transaction_relayer_url {
-            let max_block_height =
-                rpc_query_response.block_height + scope.meta_transaction_valid_for.unwrap_or(1000);
+            use near_primitives::signable_message::{SignableMessage, SignableMessageType};
+            // let max_block_height =
+            //     rpc_query_response.block_height + scope.meta_transaction_valid_for.unwrap_or(1000);
 
-            let signed_delegate_action = super::get_signed_delegate_action(
-                unsigned_transaction,
+            // let signed_delegate_action = super::get_signed_delegate_action(
+            //     delegate_action,
+            //     account_json.private_key,
+            //     max_block_height,
+            // );
+            // create a new signature here signing the delegate action + discriminant
+            let signable =
+                SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
+            let signer = near_crypto::InMemorySigner::from_secret_key(
+                previous_context.prepopulated_transaction.signer_id,
                 account_json.private_key,
-                max_block_height,
             );
-
+            let signature = signable.sign(&signer);
+            let signed_delegate_action = near_primitives::delegate_action::SignedDelegateAction {
+                delegate_action,
+                signature,
+            };
             eprintln!("\nYour delegating action was signed successfully.");
             eprintln!("Public key: {}", account_json.public_key);
             eprintln!("Signature: {}", signature);
@@ -174,7 +188,7 @@ impl SignKeychainContext {
 
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
-            unsigned_transaction,
+            delegate_action,
         );
 
         eprintln!("\nYour transaction was signed successfully.");

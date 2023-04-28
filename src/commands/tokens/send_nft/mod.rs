@@ -66,19 +66,24 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: signer_account_id.clone(),
                     receiver_id: nft_contract_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::FunctionCall(
-                        near_primitives::transaction::FunctionCallAction {
-                            method_name: "nft_transfer".to_string(),
-                            args: json!({
-                                "receiver_id": receiver_account_id.to_string(),
-                                "token_id": token_id
-                            })
-                            .to_string()
-                            .into_bytes(),
-                            gas: item.gas.inner,
-                            deposit: item.deposit.to_yoctonear(),
-                        },
-                    )],
+                    actions: vec![
+                        near_primitives::delegate_action::NonDelegateAction::try_from(
+                            near_primitives::transaction::Action::FunctionCall(
+                                near_primitives::transaction::FunctionCallAction {
+                                    method_name: "nft_transfer".to_string(),
+                                    args: json!({
+                                        "receiver_id": receiver_account_id.to_string(),
+                                        "token_id": token_id
+                                    })
+                                    .to_string()
+                                    .into_bytes(),
+                                    gas: item.gas.inner,
+                                    deposit: item.deposit.to_yoctonear(),
+                                },
+                            ),
+                        )
+                        .unwrap(),
+                    ],
                 })
             });
 

@@ -46,7 +46,7 @@ pub enum TopLevelCommand {
 
 pub type OnBeforeSigningCallback = std::sync::Arc<
     dyn Fn(
-        &mut near_primitives::transaction::Transaction,
+        &mut near_primitives::delegate_action::DelegateAction,
         &crate::config::NetworkConfig,
     ) -> crate::CliResult,
 >;
@@ -59,7 +59,7 @@ pub type OnAfterGettingNetworkCallback = std::sync::Arc<
 pub struct PrepopulatedTransaction {
     pub signer_id: near_primitives::types::AccountId,
     pub receiver_id: near_primitives::types::AccountId,
-    pub actions: Vec<near_primitives::transaction::Action>,
+    pub actions: Vec<near_primitives::delegate_action::NonDelegateAction>,
 }
 
 #[derive(Clone)]

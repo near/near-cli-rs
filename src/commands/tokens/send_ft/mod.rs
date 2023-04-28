@@ -66,19 +66,24 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.signer_account_id.clone(),
                     receiver_id: item.ft_contract_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::FunctionCall(
-                        near_primitives::transaction::FunctionCallAction {
-                            method_name: "ft_transfer".to_string(),
-                            args: json!({
-                                "receiver_id": item.receiver_account_id.to_string(),
-                                "amount": item.amount.to_string()
-                            })
-                            .to_string()
-                            .into_bytes(),
-                            gas: item.gas.inner,
-                            deposit: item.deposit.to_yoctonear(),
-                        },
-                    )],
+                    actions: vec![
+                        near_primitives::delegate_action::NonDelegateAction::try_from(
+                            near_primitives::transaction::Action::FunctionCall(
+                                near_primitives::transaction::FunctionCallAction {
+                                    method_name: "ft_transfer".to_string(),
+                                    args: json!({
+                                        "receiver_id": item.receiver_account_id.to_string(),
+                                        "amount": item.amount.to_string()
+                                    })
+                                    .to_string()
+                                    .into_bytes(),
+                                    gas: item.gas.inner,
+                                    deposit: item.deposit.to_yoctonear(),
+                                },
+                            ),
+                        )
+                        .unwrap(),
+                    ],
                 })
             });
 

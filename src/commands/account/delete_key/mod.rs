@@ -38,11 +38,16 @@ impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.owner_account_id.clone(),
                     receiver_id: item.owner_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::DeleteKey(
-                        near_primitives::transaction::DeleteKeyAction {
-                            public_key: item.public_key.clone(),
-                        },
-                    )],
+                    actions: vec![
+                        near_primitives::delegate_action::NonDelegateAction::try_from(
+                            near_primitives::transaction::Action::DeleteKey(
+                                near_primitives::transaction::DeleteKeyAction {
+                                    public_key: item.public_key.clone(),
+                                },
+                            ),
+                        )
+                        .unwrap(),
+                    ],
                 })
             });
 

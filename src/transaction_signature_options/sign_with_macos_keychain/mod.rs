@@ -113,7 +113,12 @@ impl SignMacosKeychainContext {
             nonce: current_nonce + 1,
             signer_id: previous_context.prepopulated_transaction.signer_id,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: previous_context.prepopulated_transaction.actions,
+            actions: previous_context
+                .prepopulated_transaction
+                .actions
+                .into_iter()
+                .map(near_primitives::transaction::Action::from)
+                .collect(),
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;

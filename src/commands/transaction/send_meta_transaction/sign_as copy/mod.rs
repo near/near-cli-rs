@@ -1,5 +1,4 @@
 use inquire::{CustomType, Select};
-use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendMetaTransactionContext)]
@@ -10,54 +9,26 @@ pub struct RelayerAccountId {
     relayer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     /// Select network
-    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+    network_config: super::network_for_transaction::NetworkForTransactionArgs,
 }
 
 #[derive(Clone)]
-pub struct RelayerAccountIdContext(crate::commands::ActionContext);
+pub struct RelayerAccountIdContext {
+    pub config: crate::config::Config,
+    pub signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,
+    pub relayer_account_id: near_primitives::types::AccountId,
+}
 
 impl RelayerAccountIdContext {
     pub fn from_previous_context(
         previous_context: super::SendMetaTransactionContext,
         scope: &<RelayerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let signer_id: near_primitives::types::AccountId = scope.relayer_account_id.clone().into();
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: signer_id.clone(),
-                    receiver_id: previous_context
-                        .signed_delegate_action
-                        .delegate_action
-                        .sender_id
-                        .clone(),
-                    actions: previous_context
-                        .signed_delegate_action
-                        .delegate_action
-                        .actions
-                        .clone(),
-                })
-            });
-
-        Ok(Self(crate::commands::ActionContext {
+        Ok(Self {
             config: previous_context.config,
-            on_after_getting_network_callback,
-            on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
-            ),
-            on_after_sending_transaction_callback: std::sync::Arc::new(
-                |_outcome, _network_config| Ok(()), //XXX
-            ),
-        }))
-    }
-}
-
-impl From<RelayerAccountIdContext> for crate::commands::ActionContext {
-    fn from(item: RelayerAccountIdContext) -> Self {
-        item.0
+            signed_delegate_action: previous_context.signed_delegate_action,
+            relayer_account_id: scope.relayer_account_id.clone().into(),
+        })
     }
 }
 

@@ -26,15 +26,20 @@ impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext 
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.0.signer_account_id.clone(),
                     receiver_id: item.0.signer_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::AddKey(
-                        near_primitives::transaction::AddKeyAction {
-                            public_key: item.0.public_key.clone(),
-                            access_key: near_primitives::account::AccessKey {
-                                nonce: 0,
-                                permission: item.0.permission.clone(),
-                            },
-                        },
-                    )],
+                    actions: vec![
+                        near_primitives::delegate_action::NonDelegateAction::try_from(
+                            near_primitives::transaction::Action::AddKey(
+                                near_primitives::transaction::AddKeyAction {
+                                    public_key: item.0.public_key.clone(),
+                                    access_key: near_primitives::account::AccessKey {
+                                        nonce: 0,
+                                        permission: item.0.permission.clone(),
+                                    },
+                                },
+                            ),
+                        )
+                        .unwrap(),
+                    ],
                 })
             });
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =

@@ -721,7 +721,11 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
     eprintln!("{:<13} {}", "signer_id:", &transaction.signer_id);
     eprintln!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
     eprintln!("actions:");
-    let actions = transaction.actions.clone();
+    let actions = transaction
+        .actions
+        .clone()
+        .into_iter()
+        .map(near_primitives::transaction::Action::from);
     for action in actions {
         match action {
             near_primitives::transaction::Action::CreateAccount(_) => {
