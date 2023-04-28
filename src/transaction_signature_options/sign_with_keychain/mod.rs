@@ -140,15 +140,11 @@ impl SignKeychainContext {
             max_block_height,
             nonce: current_nonce + 1,
             sender_id: previous_context.prepopulated_transaction.signer_id.clone(),
-            receiver_id: previous_context.prepopulated_transaction.receiver_id,
+            receiver_id: previous_context.prepopulated_transaction.receiver_id.clone(),
             actions: previous_context.prepopulated_transaction.actions,
         };
 
         (previous_context.on_before_signing_callback)(&mut delegate_action, &network_config)?;
-
-        let signature = account_json
-            .private_key
-            .sign(delegate_action.get_hash_and_size().0.as_ref());
 
         if let Some(_) = &network_config.meta_transaction_relayer_url {
             use near_primitives::signable_message::{SignableMessage, SignableMessageType};
@@ -170,7 +166,7 @@ impl SignKeychainContext {
             let signature = signable.sign(&signer);
             let signed_delegate_action = near_primitives::delegate_action::SignedDelegateAction {
                 delegate_action,
-                signature,
+                signature: signature.clone(),
             };
             eprintln!("\nYour delegating action was signed successfully.");
             eprintln!("Public key: {}", account_json.public_key);
@@ -185,10 +181,22 @@ impl SignKeychainContext {
                     .on_after_sending_transaction_callback,
             });
         }
+        let unsigned_transaction = near_primitives::transaction::Transaction {
+            public_key: account_json.public_key.clone(),
+            block_hash: rpc_query_response.block_hash,
+            nonce: current_nonce + 1,
+            signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
+            receiver_id: previous_context.prepopulated_transaction.receiver_id,
+            actions: delegate_action.get_actions(),
+        };
+
+        let signature = account_json
+            .private_key
+            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
-            delegate_action,
+            unsigned_transaction,
         );
 
         eprintln!("\nYour transaction was signed successfully.");
