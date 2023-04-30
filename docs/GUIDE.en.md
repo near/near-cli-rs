@@ -1427,14 +1427,15 @@ explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
 
-[network_connection.meta-testnet]
-network_name = "meta-testnet"
-rpc_url = "https://archival-rpc.testnet.near.org/"
+[network_connection.pagoda-testnet]
+network_name = "testnet"
+rpc_url = "https://near-testnet.api.pagoda.co/rpc/v1/"
+rpc_api_key = "c0a25b3c-39c2-4f62-a621-50e208b88e64"
 wallet_url = "https://wallet.testnet.near.org/"
 explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
-meta_transaction_relayer_url = "https://relayer-sweat-testnet-7tk2cmmtcq-uc.a.run.app/relay"
+meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
 ```
 </details>
 
