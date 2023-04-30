@@ -69,7 +69,8 @@ impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
                         near_primitives::transaction::DeleteAccountAction {
                             beneficiary_id: item.beneficiary_account_id.clone(),
                         },
-                    ).into()],
+                    )
+                    .into()],
                 })
             });
         Self {

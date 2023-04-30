@@ -85,10 +85,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                     },
                                 ).into(),
                             ];
-                        (
-                            actions,
-                            new_account_id.clone(),
-                        )
+                        (actions, new_account_id.clone())
                     } else {
                         let args = json!({
                             "new_account_id": new_account_id.clone().to_string(),
@@ -101,7 +98,8 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             if new_account_id.is_sub_account_of(linkdrop_account_id)
                                 || new_account_id.is_top_level()
                             {
-                                let actions: Vec<crate::commands::ActionOrNonDelegateAction> = vec![near_primitives::transaction::Action::FunctionCall(
+                                let actions: Vec<crate::commands::ActionOrNonDelegateAction> =
+                                    vec![near_primitives::transaction::Action::FunctionCall(
                                         near_primitives::transaction::FunctionCallAction {
                                             method_name: "create_account".to_string(),
                                             args,
@@ -113,11 +111,9 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                                 .initial_balance
                                                 .to_yoctonear(),
                                         },
-                                    ).into()];
-                                (
-                                    actions,
-                                    linkdrop_account_id.clone(),
-                                )
+                                    )
+                                    .into()];
+                                (actions, linkdrop_account_id.clone())
                             } else {
                                 return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                                     "\nSigner account <{}> does not have permission to create account <{}>.",

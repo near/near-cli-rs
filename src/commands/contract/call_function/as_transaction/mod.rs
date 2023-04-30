@@ -227,7 +227,8 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             gas: item.gas.inner,
                             deposit: item.deposit.to_yoctonear(),
                         },
-                    ).into()],
+                    )
+                    .into()],
                 })
             });
         Self {
