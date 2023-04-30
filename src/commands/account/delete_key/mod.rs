@@ -42,7 +42,8 @@ impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
                         near_primitives::transaction::DeleteKeyAction {
                             public_key: item.public_key.clone(),
                         },
-                    ).into()],
+                    )
+                    .into()],
                 })
             });
 

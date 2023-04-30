@@ -47,7 +47,8 @@ impl From<SendNearCommandContext> for crate::commands::ActionContext {
                         near_primitives::transaction::TransferAction {
                             deposit: item.amount_in_near.to_yoctonear(),
                         },
-                    ).into()],
+                    )
+                    .into()],
                 })
             });
         Self {

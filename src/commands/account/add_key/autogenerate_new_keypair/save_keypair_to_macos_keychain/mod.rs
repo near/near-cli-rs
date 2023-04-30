@@ -34,7 +34,8 @@ impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext 
                                 permission: item.0.permission.clone(),
                             },
                         },
-                    ).into()],
+                    )
+                    .into()],
                 })
             });
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
