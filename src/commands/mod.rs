@@ -46,7 +46,7 @@ pub enum TopLevelCommand {
 
 pub type OnBeforeSigningCallback = std::sync::Arc<
     dyn Fn(
-        &mut near_primitives::delegate_action::DelegateAction,
+        &mut near_primitives::transaction::Transaction,
         &crate::config::NetworkConfig,
     ) -> crate::CliResult,
 >;

@@ -132,45 +132,40 @@ impl SignKeychainContext {
             .access_key_view()
             .wrap_err("Error current_nonce")?
             .nonce;
-        let max_block_height =
-            rpc_query_response.block_height + scope.meta_transaction_valid_for.unwrap_or(1000);
 
-        let mut delegate_action = near_primitives::delegate_action::DelegateAction {
+        let mut unsigned_transaction = near_primitives::transaction::Transaction {
             public_key: account_json.public_key.clone(),
-            max_block_height,
+            block_hash: rpc_query_response.block_hash,
             nonce: current_nonce + 1,
-            sender_id: previous_context.prepopulated_transaction.signer_id.clone(),
-            receiver_id: previous_context.prepopulated_transaction.receiver_id.clone(),
-            actions: previous_context.prepopulated_transaction.actions,
+            signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
+            receiver_id: previous_context.prepopulated_transaction.receiver_id,
+            actions: previous_context
+                .prepopulated_transaction
+                .actions
+                .into_iter()
+                .map(
+                    |action_or_non_delegate_action| match action_or_non_delegate_action {
+                        crate::commands::ActionOrNonDelegateAction::Action(action) => action,
+                        crate::commands::ActionOrNonDelegateAction::NonDelegateAction(
+                            non_delegate_action,
+                        ) => near_primitives::transaction::Action::from(non_delegate_action),
+                    },
+                )
+                .collect(),
         };
 
-        (previous_context.on_before_signing_callback)(&mut delegate_action, &network_config)?;
+        (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
-        if let Some(_) = &network_config.meta_transaction_relayer_url {
-            use near_primitives::signable_message::{SignableMessage, SignableMessageType};
-            // let max_block_height =
-            //     rpc_query_response.block_height + scope.meta_transaction_valid_for.unwrap_or(1000);
+        if network_config.meta_transaction_relayer_url.is_some() {
+            let max_block_height =
+                rpc_query_response.block_height + scope.meta_transaction_valid_for.unwrap_or(1000);
 
-            // let signed_delegate_action = super::get_signed_delegate_action(
-            //     delegate_action,
-            //     account_json.private_key,
-            //     max_block_height,
-            // );
-            // create a new signature here signing the delegate action + discriminant
-            let signable =
-                SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
-            let signer = near_crypto::InMemorySigner::from_secret_key(
-                previous_context.prepopulated_transaction.signer_id,
+            let signed_delegate_action = super::get_signed_delegate_action(
+                unsigned_transaction,
+                &account_json.public_key,
                 account_json.private_key,
+                max_block_height,
             );
-            let signature = signable.sign(&signer);
-            let signed_delegate_action = near_primitives::delegate_action::SignedDelegateAction {
-                delegate_action,
-                signature: signature.clone(),
-            };
-            eprintln!("\nYour delegating action was signed successfully.");
-            eprintln!("Public key: {}", account_json.public_key);
-            eprintln!("Signature: {}", signature);
 
             return Ok(Self {
                 network_config: previous_context.network_config,
@@ -181,14 +176,6 @@ impl SignKeychainContext {
                     .on_after_sending_transaction_callback,
             });
         }
-        let unsigned_transaction = near_primitives::transaction::Transaction {
-            public_key: account_json.public_key.clone(),
-            block_hash: rpc_query_response.block_hash,
-            nonce: current_nonce + 1,
-            signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
-            receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: delegate_action.get_actions(),
-        };
 
         let signature = account_json
             .private_key

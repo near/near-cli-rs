@@ -26,13 +26,13 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.0.signer_account_id.clone(),
                     receiver_id: item.0.receiver_account_id.clone(),
-                    actions: item.0
+                    actions: item
+                        .0
                         .actions
                         .clone()
                         .into_iter()
-                        .map(near_primitives::delegate_action::NonDelegateAction::try_from)
-                        .collect::<Result<_, _>>()
-                        .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again)."),
+                        .map(crate::commands::ActionOrNonDelegateAction::from)
+                        .collect(),
                 })
             });
         Self {

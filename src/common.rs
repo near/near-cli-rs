@@ -725,7 +725,15 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
         .actions
         .clone()
         .into_iter()
-        .map(near_primitives::transaction::Action::from);
+        .map(
+            |action_or_non_delegate_action| match action_or_non_delegate_action {
+                crate::commands::ActionOrNonDelegateAction::Action(action) => action,
+                crate::commands::ActionOrNonDelegateAction::NonDelegateAction(
+                    non_delegate_action,
+                ) => near_primitives::transaction::Action::from(non_delegate_action),
+            },
+        );
+
     for action in actions {
         match action {
             near_primitives::transaction::Action::CreateAccount(_) => {
