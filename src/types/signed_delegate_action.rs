@@ -11,9 +11,9 @@ impl std::str::FromStr for SignedDelegateActionAsBase64 {
         Ok(Self {
             inner: near_primitives::delegate_action::SignedDelegateAction::try_from_slice(
                 &near_primitives::serialize::from_base64(s)
-                    .map_err(|err| format!("base64 transaction sequence is invalid: {}", err))?,
+                .map_err(|err| format!("parsing of signed delegate action failed due to base64 sequence being invalid: {}", err))?,
             )
-            .map_err(|err| format!("transaction could not be parsed: {}", err))?,
+            .map_err(|err| format!("delegate action could not be deserialized from borsh: {}", err))?,
         })
     }
 }
@@ -23,7 +23,7 @@ impl std::fmt::Display for SignedDelegateActionAsBase64 {
         let base64_signed_delegate_action = near_primitives::serialize::to_base64(
             self.inner
                 .try_to_vec()
-                .expect("Transaction is not expected to fail on serialization"),
+                .expect("Signed Delegate Action serialization to borsh is not expected to fail"),
         );
         write!(f, "{}", base64_signed_delegate_action)
     }
