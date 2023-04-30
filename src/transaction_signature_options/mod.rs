@@ -239,24 +239,24 @@ impl interactive_clap::FromCli for Submit {
                                 color_eyre::Report::msg(report),
                             );
                         };
-                        let base64_transaction = near_primitives::serialize::to_base64(
-                            signed_transaction
-                                .try_to_vec()
-                                .expect("Transaction is not expected to fail on serialization"),
+                        eprintln!(
+                            "\nSigned transaction (serialized to base64):\n{}",
+                            crate::types::signed_transaction::SignedTransactionAsBase64::from(
+                                signed_transaction
+                            )
                         );
-                        eprintln!("\nSerialize_to_base64:\n{}", &base64_transaction);
                         eprintln!("{storage_message}");
                         interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
                     }
                     SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                         signed_delegate_action,
                     ) => {
-                        let base64_transaction = near_primitives::serialize::to_base64(
-                            signed_delegate_action
-                                .try_to_vec()
-                                .expect("Transaction is not expected to fail on serialization"),
+                        eprintln!(
+                            "\nSigned delegate action (serialized to base64):\n{}",
+                            crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
+                                signed_delegate_action
+                            )
                         );
-                        eprintln!("\nSerialize_to_base64:\n{}", &base64_transaction);
                         eprintln!("{storage_message}");
                         interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
                     }

@@ -32,3 +32,9 @@ impl std::fmt::Display for SignedDelegateActionAsBase64 {
 impl interactive_clap::ToCli for SignedDelegateActionAsBase64 {
     type CliVariant = SignedDelegateActionAsBase64;
 }
+
+impl From<near_primitives::delegate_action::SignedDelegateAction> for SignedDelegateActionAsBase64 {
+    fn from(value: near_primitives::delegate_action::SignedDelegateAction) -> Self {
+        Self { inner: value }
+    }
+}
