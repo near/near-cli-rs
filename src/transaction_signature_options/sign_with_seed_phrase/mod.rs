@@ -80,7 +80,14 @@ impl SignSeedPhraseContext {
                 .prepopulated_transaction
                 .actions
                 .into_iter()
-                .map(near_primitives::transaction::Action::from)
+                .map(
+                    |action_or_non_delegate_action| match action_or_non_delegate_action {
+                        crate::commands::ActionOrNonDelegateAction::Action(action) => action,
+                        crate::commands::ActionOrNonDelegateAction::NonDelegateAction(
+                            non_delegate_action,
+                        ) => near_primitives::transaction::Action::from(non_delegate_action),
+                    },
+                )
                 .collect(),
         };
 
@@ -88,19 +95,16 @@ impl SignSeedPhraseContext {
 
         let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
-        if let Some(_) = &network_config.meta_transaction_relayer_url {
+        if network_config.meta_transaction_relayer_url.is_some() {
             let max_block_height =
                 rpc_query_response.block_height + scope.meta_transaction_valid_for.unwrap_or(1000);
 
             let signed_delegate_action = super::get_signed_delegate_action(
                 unsigned_transaction,
+                &signer_public_key,
                 signer_secret_key,
                 max_block_height,
             );
-
-            eprintln!("\nYour delegating action was signed successfully.");
-            eprintln!("Public key: {}", signer_public_key);
-            eprintln!("Signature: {}", signature);
 
             return Ok(Self {
                 network_config: previous_context.network_config,

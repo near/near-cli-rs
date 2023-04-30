@@ -68,25 +68,21 @@ impl SignerAccountIdContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: signer_id.clone(),
                     receiver_id: get_contract_account_id(network_config)?,
-                    actions: vec![
-                        near_primitives::delegate_action::NonDelegateAction::try_from(
-                            near_primitives::transaction::Action::FunctionCall(
-                                near_primitives::transaction::FunctionCallAction {
-                                    method_name: "storage_deposit".to_string(),
-                                    args: serde_json::json!({
-                                        "account_id": &previous_context.receiver_account_id.clone()
-                                    })
-                                    .to_string()
-                                    .into_bytes(),
-                                    gas: crate::common::NearGas::from_str("50 TeraGas")
-                                        .unwrap()
-                                        .inner,
-                                    deposit: previous_context.deposit.to_yoctonear(),
-                                },
-                            ),
-                        )
-                        .unwrap(),
-                    ],
+                    actions: vec![near_primitives::transaction::Action::FunctionCall(
+                        near_primitives::transaction::FunctionCallAction {
+                            method_name: "storage_deposit".to_string(),
+                            args: serde_json::json!({
+                                "account_id": &previous_context.receiver_account_id.clone()
+                            })
+                            .to_string()
+                            .into_bytes(),
+                            gas: crate::common::NearGas::from_str("50 TeraGas")
+                                .unwrap()
+                                .inner,
+                            deposit: previous_context.deposit.to_yoctonear(),
+                        },
+                    )
+                    .into()],
                 })
             });
 

@@ -76,7 +76,14 @@ impl SignLedgerContext {
                 .prepopulated_transaction
                 .actions
                 .into_iter()
-                .map(near_primitives::transaction::Action::from)
+                .map(
+                    |action_or_non_delegate_action| match action_or_non_delegate_action {
+                        crate::commands::ActionOrNonDelegateAction::Action(action) => action,
+                        crate::commands::ActionOrNonDelegateAction::NonDelegateAction(
+                            non_delegate_action,
+                        ) => near_primitives::transaction::Action::from(non_delegate_action),
+                    },
+                )
                 .collect(),
         };
 
@@ -129,8 +136,7 @@ impl From<SignLedgerContext> for super::SubmitContext {
         Self {
             network_config: item.network_config,
             signed_transaction_or_signed_delegate_action: item
-                .signed_transaction_or_signed_delegate_action
-                .into(),
+                .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }

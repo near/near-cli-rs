@@ -220,19 +220,15 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.signer_account_id.clone(),
                     receiver_id: item.receiver_account_id.clone(),
-                    actions: vec![
-                        near_primitives::delegate_action::NonDelegateAction::try_from(
-                            near_primitives::transaction::Action::FunctionCall(
-                                near_primitives::transaction::FunctionCallAction {
-                                    method_name: item.function_name.clone(),
-                                    args: item.function_args.clone(),
-                                    gas: item.gas.inner,
-                                    deposit: item.deposit.to_yoctonear(),
-                                },
-                            ),
-                        )
-                        .unwrap(),
-                    ],
+                    actions: vec![near_primitives::transaction::Action::FunctionCall(
+                        near_primitives::transaction::FunctionCallAction {
+                            method_name: item.function_name.clone(),
+                            args: item.function_args.clone(),
+                            gas: item.gas.inner,
+                            deposit: item.deposit.to_yoctonear(),
+                        },
+                    )
+                    .into()],
                 })
             });
         Self {

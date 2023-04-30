@@ -42,20 +42,16 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.signer_account_id.clone(),
                     receiver_id: item.signer_account_id.clone(),
-                    actions: vec![
-                        near_primitives::delegate_action::NonDelegateAction::try_from(
-                            near_primitives::transaction::Action::AddKey(
-                                near_primitives::transaction::AddKeyAction {
-                                    public_key: item.public_key.clone(),
-                                    access_key: near_primitives::account::AccessKey {
-                                        nonce: 0,
-                                        permission: item.permission.clone(),
-                                    },
-                                },
-                            ),
-                        )
-                        .unwrap(),
-                    ],
+                    actions: vec![near_primitives::transaction::Action::AddKey(
+                        near_primitives::transaction::AddKeyAction {
+                            public_key: item.public_key.clone(),
+                            access_key: near_primitives::account::AccessKey {
+                                nonce: 0,
+                                permission: item.permission.clone(),
+                            },
+                        },
+                    )
+                    .into()],
                 })
             });
 

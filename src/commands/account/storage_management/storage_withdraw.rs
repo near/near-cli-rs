@@ -61,7 +61,6 @@ impl SignerAccountIdContext {
                     signer_id: signer_id.clone(),
                     receiver_id: get_contract_account_id(network_config)?,
                     actions: vec![
-                        near_primitives::delegate_action::NonDelegateAction::try_from(
                         near_primitives::transaction::Action::FunctionCall(
                         near_primitives::transaction::FunctionCallAction {
                             method_name: "storage_withdraw".to_string(),
@@ -75,7 +74,8 @@ impl SignerAccountIdContext {
                                 .inner,
                             deposit: crate::common::NearBalance::from_yoctonear(1).to_yoctonear(),
                         },
-                    )).unwrap()],
+                    )
+                    .into()],
                 })
             });
 

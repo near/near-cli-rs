@@ -1,5 +1,4 @@
 use inquire::{CustomType, Select};
-use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendMetaTransactionContext)]
@@ -22,8 +21,19 @@ impl RelayerAccountIdContext {
         scope: &<RelayerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let signer_id: near_primitives::types::AccountId = scope.relayer_account_id.clone().into();
+        let signed_delegate_action = previous_context.signed_delegate_action.clone();
+
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
+                let actions = previous_context
+                    .signed_delegate_action
+                    .delegate_action
+                    .actions
+                    .clone()
+                    .into_iter()
+                    .map(crate::commands::ActionOrNonDelegateAction::from)
+                    .collect();
+
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: signer_id.clone(),
                     receiver_id: previous_context
@@ -31,20 +41,26 @@ impl RelayerAccountIdContext {
                         .delegate_action
                         .sender_id
                         .clone(),
-                    actions: previous_context
-                        .signed_delegate_action
-                        .delegate_action
-                        .actions
-                        .clone(),
+                    actions,
                 })
+            });
+
+        let on_before_signing_callback: crate::commands::OnBeforeSigningCallback =
+            std::sync::Arc::new({
+                move |prepopulated_unsigned_transaction, _network_config| {
+                    prepopulated_unsigned_transaction.actions =
+                        vec![near_primitives::transaction::Action::Delegate(
+                            signed_delegate_action.clone(),
+                        )
+                        .into()];
+                    Ok(())
+                }
             });
 
         Ok(Self(crate::commands::ActionContext {
             config: previous_context.config,
             on_after_getting_network_callback,
-            on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
+            on_before_signing_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
