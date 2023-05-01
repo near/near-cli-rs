@@ -874,8 +874,13 @@ fn print_value_successful_transaction(
             }
             near_primitives::views::ActionView::Delegate {
                 delegate_action,
-                signature,
-            } => todo!(),
+                signature: _,
+            } => {
+                eprintln!(
+                    "Actions delegated for <{}> completed successfully.",
+                    delegate_action.sender_id,
+                );
+            }
         }
     }
 }
