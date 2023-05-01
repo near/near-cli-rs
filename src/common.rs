@@ -1073,7 +1073,33 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
                 account_id
             )
         }
-        _ => todo!(),
+        near_primitives::errors::ActionErrorKind::DelegateActionInvalidSignature => {
+            println!("Error: Invalid Signature on DelegateAction")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionSenderDoesNotMatchTxReceiver {
+            sender_id,
+            receiver_id,
+        } => {
+            println!("Error: Delegate Action sender {sender_id} does not match transaction receiver {receiver_id}")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionExpired => {
+            println!("Error: DelegateAction Expired")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionAccessKeyError(_0) => {
+            println!("Error: The given public key doesn't exist for the sender")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionInvalidNonce {
+            delegate_nonce,
+            ak_nonce,
+        } => {
+            println!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} ak_nonce: {ak_nonce}")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionNonceTooLarge {
+            delegate_nonce,
+            upper_bound,
+        } => {
+            println!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}")
+        }
     }
 }
 
@@ -1189,9 +1215,12 @@ pub fn handler_invalid_tx_error(
                 near_primitives::errors::ActionsValidationError::FunctionCallZeroAttachedGas => {
                     "Error: The attached amount of gas in a FunctionCall action has to be a positive number.".to_string()
                 }
-                near_primitives::errors::ActionsValidationError::DelegateActionMustBeOnlyOne => todo!(),
-                near_primitives::errors::ActionsValidationError::DeleteActionMustBeFinal => todo!(),
-                near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => todo!(),
+                near_primitives::errors::ActionsValidationError::DelegateActionMustBeOnlyOne => {
+                    "Error: DelegateActionMustBeOnlyOne".to_string()
+                }
+                near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => {
+                    format!("Error: Protocol Feature {} is unsupported in version {}", protocol_feature, version)
+                }
             }
         },
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
