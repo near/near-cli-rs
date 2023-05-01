@@ -59,24 +59,26 @@ pub type OnAfterGettingNetworkCallback = std::sync::Arc<
 pub struct PrepopulatedTransaction {
     pub signer_id: near_primitives::types::AccountId,
     pub receiver_id: near_primitives::types::AccountId,
-    pub actions: Vec<ActionOrNonDelegateAction>,
+    pub actions: Vec<ActionOrSignedDelegateAction>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub enum ActionOrNonDelegateAction {
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub enum ActionOrSignedDelegateAction {
     Action(near_primitives::transaction::Action),
-    NonDelegateAction(near_primitives::delegate_action::NonDelegateAction),
+    SignedDelegateAction(near_primitives::delegate_action::SignedDelegateAction),
 }
 
-impl From<near_primitives::transaction::Action> for ActionOrNonDelegateAction {
+impl From<near_primitives::transaction::Action> for ActionOrSignedDelegateAction {
     fn from(action: near_primitives::transaction::Action) -> Self {
         Self::Action(action)
     }
 }
 
-impl From<near_primitives::delegate_action::NonDelegateAction> for ActionOrNonDelegateAction {
-    fn from(non_delegate_action: near_primitives::delegate_action::NonDelegateAction) -> Self {
-        Self::NonDelegateAction(non_delegate_action)
+impl From<near_primitives::delegate_action::SignedDelegateAction> for ActionOrSignedDelegateAction {
+    fn from(
+        signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,
+    ) -> Self {
+        Self::SignedDelegateAction(signed_delegate_action)
     }
 }
 

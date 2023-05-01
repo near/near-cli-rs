@@ -31,7 +31,7 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
                         .actions
                         .clone()
                         .into_iter()
-                        .map(crate::commands::ActionOrNonDelegateAction::from)
+                        .map(crate::commands::ActionOrSignedDelegateAction::from)
                         .collect(),
                 })
             });

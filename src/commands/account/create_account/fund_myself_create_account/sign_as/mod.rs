@@ -65,7 +65,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     validate_new_account_id(network_config, &new_account_id)?;
 
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
-                        let actions: Vec<crate::commands::ActionOrNonDelegateAction> = vec![
+                        let actions: Vec<crate::commands::ActionOrSignedDelegateAction> = vec![
                                 near_primitives::transaction::Action::CreateAccount(
                                     near_primitives::transaction::CreateAccountAction {},
                                 ).into(),
@@ -98,7 +98,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             if new_account_id.is_sub_account_of(linkdrop_account_id)
                                 || new_account_id.is_top_level()
                             {
-                                let actions: Vec<crate::commands::ActionOrNonDelegateAction> =
+                                let actions: Vec<crate::commands::ActionOrSignedDelegateAction> =
                                     vec![near_primitives::transaction::Action::FunctionCall(
                                         near_primitives::transaction::FunctionCallAction {
                                             method_name: "create_account".to_string(),

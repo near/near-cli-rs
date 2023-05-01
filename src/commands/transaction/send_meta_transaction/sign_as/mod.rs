@@ -25,14 +25,7 @@ impl RelayerAccountIdContext {
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
-                let actions = previous_context
-                    .signed_delegate_action
-                    .delegate_action
-                    .actions
-                    .clone()
-                    .into_iter()
-                    .map(crate::commands::ActionOrNonDelegateAction::from)
-                    .collect();
+                let actions = vec![previous_context.signed_delegate_action.clone().into()];
 
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: signer_id.clone(),
