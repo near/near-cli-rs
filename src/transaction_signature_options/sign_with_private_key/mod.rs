@@ -75,8 +75,10 @@ impl SignPrivateKeyContext {
         let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
         if network_config.meta_transaction_relayer_url.is_some() {
-            let max_block_height =
-                rpc_query_response.block_height + scope.meta_transaction_valid_for.unwrap_or(1000);
+            let max_block_height = rpc_query_response.block_height
+                + scope
+                    .meta_transaction_valid_for
+                    .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
 
             let signed_delegate_action = super::get_signed_delegate_action(
                 unsigned_transaction,
@@ -237,6 +239,6 @@ impl SignPrivateKey {
     fn input_meta_transaction_valid_for(
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
-        Ok(Some(1000))
+        Ok(None)
     }
 }

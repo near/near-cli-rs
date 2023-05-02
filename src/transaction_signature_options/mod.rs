@@ -13,6 +13,8 @@ pub mod sign_with_macos_keychain;
 pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
 
+pub const META_TRANSACTION_VALID_FOR_DEFAULT: u64 = 1000;
+
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::commands::TransactionContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
