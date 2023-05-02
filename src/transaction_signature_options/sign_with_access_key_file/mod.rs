@@ -224,6 +224,6 @@ impl SignAccessKeyFile {
     fn input_meta_transaction_valid_for(
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
-        Ok(Some(1000))
+        Ok(None)
     }
 }
