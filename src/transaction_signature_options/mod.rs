@@ -1,4 +1,3 @@
-use near_primitives::borsh::BorshSerialize;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
@@ -182,8 +181,11 @@ impl interactive_clap::FromCli for Submit {
                     signed_delegate_action,
                 ) => {
                     let client = reqwest::blocking::Client::new();
-                    let payload = signed_delegate_action.try_to_vec().unwrap();
-                    let json_payload = serde_json::to_vec(&payload).unwrap();
+                    let json_payload = serde_json::json!({
+                        "signed_delegate_action": crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
+                            signed_delegate_action
+                        ).to_string()
+                    });
                     match client
                         .post(
                             context
@@ -191,8 +193,7 @@ impl interactive_clap::FromCli for Submit {
                                 .meta_transaction_relayer_url
                                 .expect("Internal error: Meta-transaction relayer URL must be Some() at this point"),
                         )
-                        .header("Content-Type", "application/json")
-                        .body(json_payload)
+                        .json(&json_payload)
                         .send()
                     {
                         Ok(relayer_response) => {
