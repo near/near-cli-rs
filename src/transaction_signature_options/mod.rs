@@ -189,7 +189,7 @@ impl interactive_clap::FromCli for Submit {
                             context
                                 .network_config
                                 .meta_transaction_relayer_url
-                                .expect("Unexpected error"),
+                                .expect("Internal error: Meta-transaction relayer URL must be Some() at this point"),
                         )
                         .header("Content-Type", "application/json")
                         .body(json_payload)
