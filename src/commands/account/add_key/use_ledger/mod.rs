@@ -61,7 +61,8 @@ impl From<AddLedgerKeyActionContext> for crate::commands::ActionContext {
                                 permission: item.permission.clone(),
                             },
                         },
-                    )],
+                    )
+                    .into()],
                 })
             });
         Self {
