@@ -692,11 +692,10 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
     eprintln!("{:<13} {}", "signer_id:", &transaction.signer_id);
     eprintln!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
     if transaction.actions.iter().any(|action| {
-        if let crate::commands::ActionOrSignedDelegateAction::SignedDelegateAction(_) = action {
-            true
-        } else {
-            false
-        }
+        matches!(
+            action,
+            crate::commands::ActionOrSignedDelegateAction::SignedDelegateAction(_)
+        )
     }) {
         eprintln!("signed delegate action:");
     } else {
