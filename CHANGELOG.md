@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0](https://github.com/near/near-cli-rs/compare/v0.3.5...v0.4.0) - 2023-05-02
+
+### Added
+- Meta-Transactions support (#189)
+- Support for adding key from Ledger hardware wallet (#188)
+
+### Fixed
+- fixed call function with non-JSON arguments being incorrectly displayed as `null` (#187)
+- pass right token to release-plz action (#185)
+
 ## [0.3.5](https://github.com/near/near-cli-rs/compare/v0.3.4...v0.3.5) - 2023-04-21
 
 ### Fixed
