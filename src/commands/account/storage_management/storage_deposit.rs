@@ -81,8 +81,7 @@ impl SignerAccountIdContext {
                                 .inner,
                             deposit: previous_context.deposit.to_yoctonear(),
                         },
-                    )
-                    .into()],
+                    )],
                 })
             });
 

@@ -65,15 +65,15 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     validate_new_account_id(network_config, &new_account_id)?;
 
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
-                        let actions: Vec<crate::commands::ActionOrSignedDelegateAction> = vec![
+                        let actions = vec![
                                 near_primitives::transaction::Action::CreateAccount(
                                     near_primitives::transaction::CreateAccountAction {},
-                                ).into(),
+                                ),
                                 near_primitives::transaction::Action::Transfer(
                                     near_primitives::transaction::TransferAction {
                                         deposit: item.account_properties.initial_balance.to_yoctonear(),
                                     },
-                                ).into(),
+                                ),
                                 near_primitives::transaction::Action::AddKey(
                                     near_primitives::transaction::AddKeyAction {
                                         public_key: item.account_properties.public_key.clone(),
@@ -83,7 +83,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                                 near_primitives::account::AccessKeyPermission::FullAccess,
                                         },
                                     },
-                                ).into(),
+                                ),
                             ];
                         (actions, new_account_id.clone())
                     } else {
@@ -98,7 +98,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             if new_account_id.is_sub_account_of(linkdrop_account_id)
                                 || new_account_id.is_top_level()
                             {
-                                let actions: Vec<crate::commands::ActionOrSignedDelegateAction> =
+                                let actions =
                                     vec![near_primitives::transaction::Action::FunctionCall(
                                         near_primitives::transaction::FunctionCallAction {
                                             method_name: "create_account".to_string(),
@@ -111,8 +111,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                                 .initial_balance
                                                 .to_yoctonear(),
                                         },
-                                    )
-                                    .into()];
+                                    )];
                                 (actions, linkdrop_account_id.clone())
                             } else {
                                 return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(

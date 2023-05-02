@@ -53,8 +53,7 @@ impl From<AddAccessWithSeedPhraseActionContext> for crate::commands::ActionConte
                                 permission: item.permission.clone(),
                             },
                         },
-                    )
-                    .into()],
+                    )],
                 })
             });
         Self {

@@ -73,8 +73,7 @@ impl SignerAccountIdContext {
                                 .inner,
                             deposit: crate::common::NearBalance::from_yoctonear(1).to_yoctonear(),
                         },
-                    )
-                    .into()],
+                    )],
                 })
             });
 

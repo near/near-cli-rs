@@ -113,19 +113,7 @@ impl SignMacosKeychainContext {
             nonce: current_nonce + 1,
             signer_id: previous_context.prepopulated_transaction.signer_id,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: previous_context
-                .prepopulated_transaction
-                .actions
-                .into_iter()
-                .map(
-                    |action_or_signed_delegate_action| match action_or_signed_delegate_action {
-                        crate::commands::ActionOrSignedDelegateAction::Action(action) => action,
-                        crate::commands::ActionOrSignedDelegateAction::SignedDelegateAction(
-                            signed_delegate_action,
-                        ) => near_primitives::transaction::Action::from(signed_delegate_action),
-                    },
-                )
-                .collect(),
+            actions: previous_context.prepopulated_transaction.actions,
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;

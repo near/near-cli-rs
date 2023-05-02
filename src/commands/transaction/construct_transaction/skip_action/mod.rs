@@ -26,13 +26,7 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.0.signer_account_id.clone(),
                     receiver_id: item.0.receiver_account_id.clone(),
-                    actions: item
-                        .0
-                        .actions
-                        .clone()
-                        .into_iter()
-                        .map(crate::commands::ActionOrSignedDelegateAction::from)
-                        .collect(),
+                    actions: item.0.actions.clone(),
                 })
             });
         Self {

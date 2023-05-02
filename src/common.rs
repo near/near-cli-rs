@@ -691,31 +691,17 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
 pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTransaction) {
     eprintln!("{:<13} {}", "signer_id:", &transaction.signer_id);
     eprintln!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
-    if transaction.actions.iter().any(|action| {
-        matches!(
-            action,
-            crate::commands::ActionOrSignedDelegateAction::SignedDelegateAction(_)
-        )
-    }) {
+    if transaction
+        .actions
+        .iter()
+        .any(|action| matches!(action, near_primitives::transaction::Action::Delegate(_)))
+    {
         eprintln!("signed delegate action:");
     } else {
         eprintln!("actions:");
     };
 
-    let actions = transaction
-        .actions
-        .clone()
-        .into_iter()
-        .map(
-            |action_or_signed_delegate_action| match action_or_signed_delegate_action {
-                crate::commands::ActionOrSignedDelegateAction::Action(action) => action,
-                crate::commands::ActionOrSignedDelegateAction::SignedDelegateAction(
-                    signed_delegate_action,
-                ) => near_primitives::transaction::Action::from(signed_delegate_action),
-            },
-        );
-
-    for action in actions {
+    for action in &transaction.actions {
         match action {
             near_primitives::transaction::Action::CreateAccount(_) => {
                 eprintln!(
@@ -822,12 +808,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                 let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                     signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
                     receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
-                    actions: signed_delegate_action
-                        .delegate_action
-                        .get_actions()
-                        .into_iter()
-                        .map(crate::commands::ActionOrSignedDelegateAction::from)
-                        .collect(),
+                    actions: signed_delegate_action.delegate_action.get_actions(),
                 };
                 print_unsigned_transaction(&prepopulated_transaction);
             }
