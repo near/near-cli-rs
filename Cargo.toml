@@ -1,6 +1,6 @@
 [package]
 name = "near-cli-rs"
-version = "0.3.3"
+version = "0.3.5"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
@@ -47,6 +47,7 @@ shell-words = "1.0.0"
 cargo-util = "0.1.1"
 
 semver = { version = "1.0.4", optional = true }
+self_update = { version = "0.36.0", features = ["archive-tar", "compression-flate2"], optional = true }
 
 color-eyre = "0.6"
 thiserror = "1"
@@ -67,13 +68,8 @@ interactive-clap-derive = "0.2.0"
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.7.0"
 
-[target.'cfg(target_os = "windows")'.dependencies]
-self_update = { version = "0.36.0", features = ["archive-zip", "compression-zip-deflate"], optional = true }
-[target.'cfg(not(target_os = "windows"))'.dependencies]
-self_update = { version = "0.36.0", features = ["archive-tar", "compression-flate2"], optional = true }
-
 [features]
-default = ["ledger"]
+default = ["ledger", "self-update"]
 ledger = ["near-ledger"]
 self-update = ["self_update", "semver"]
 
@@ -87,10 +83,13 @@ lto = "thin"
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
 cargo-dist-version = "0.0.5"
 # The preferred Rust toolchain to use in CI (rustup toolchain syntax)
-rust-toolchain-version = "1.67.1"
+rust-toolchain-version = "1.68.2"
 # CI backends to support (see 'cargo dist generate-ci')
 ci = ["github"]
 # The installers to generate for each app
-installers = ["shell", "powershell"]
+installers = ["shell", "powershell", "npm"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = ["x86_64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "aarch64-apple-darwin"]
+# Format to use for tarballs/zips -- .tar.gz is currently required for the npm installer
+windows-archive = ".tar.gz"
+unix-archive = ".tar.gz"
