@@ -350,6 +350,7 @@ pub fn get_signed_delegate_action(
     let signature = signable.sign(&signer);
 
     eprintln!("\nYour delegating action was signed successfully.");
+    eprintln!("Note that the signed transaction is valid until block {max_block_height}. You can change the validity of a transaction by setting a flag in the command: --meta-transaction-valid-for 2000");
     eprintln!("Public key: {}", public_key);
     eprintln!("Signature: {}", signature);
 

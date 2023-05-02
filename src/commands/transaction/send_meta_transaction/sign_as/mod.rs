@@ -58,7 +58,7 @@ impl RelayerAccountIdContext {
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
-                |_outcome, _network_config| Ok(()), //XXX
+                |_outcome, _network_config| Ok(()),
             ),
         }))
     }
