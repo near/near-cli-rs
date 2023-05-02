@@ -2,8 +2,8 @@ use inquire::Text;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod use_auto_generation;
-// #[cfg(feature = "ledger")]
-// mod use_ledger;
+#[cfg(feature = "ledger")]
+mod use_ledger;
 mod use_seed_phrase;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -23,12 +23,12 @@ pub enum Mode {
     ))]
     /// Use auto-generation to create an implicit account
     UseAutoGeneration(self::use_auto_generation::SaveWithUseAutoGeneration),
-    // #[cfg(feature = "ledger")]
-    // #[strum_discriminants(strum(
-    //     message = "use-ledger           - Use ledger to create an implicit account"
-    // ))]
-    // /// Use ledger to create an implicit account
-    // UseLedger(self::use_ledger::SaveWithLedger),
+    #[cfg(feature = "ledger")]
+    #[strum_discriminants(strum(
+        message = "use-ledger           - Use ledger to create an implicit account"
+    ))]
+    /// Use ledger to create an implicit account
+    UseLedger(self::use_ledger::SaveWithLedger),
     #[strum_discriminants(strum(
         message = "use-seed-phrase      - Use seed phrase to create an implicit account"
     ))]
