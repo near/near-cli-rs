@@ -65,8 +65,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     validate_new_account_id(network_config, &new_account_id)?;
 
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
-                        (
-                            vec![
+                        (vec![
                                 near_primitives::transaction::Action::CreateAccount(
                                     near_primitives::transaction::CreateAccountAction {},
                                 ),
@@ -86,8 +85,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                     },
                                 ),
                             ],
-                            new_account_id.clone(),
-                        )
+                        new_account_id.clone())
                     } else {
                         let args = json!({
                             "new_account_id": new_account_id.clone().to_string(),

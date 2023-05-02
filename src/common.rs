@@ -40,30 +40,6 @@ impl std::fmt::Display for OutputFormat {
 }
 
 #[derive(Debug, Clone)]
-pub struct SignedTransactionAsBase64 {
-    pub inner: near_primitives::transaction::SignedTransaction,
-}
-
-impl std::str::FromStr for SignedTransactionAsBase64 {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            inner: near_primitives::transaction::SignedTransaction::try_from_slice(
-                &near_primitives::serialize::from_base64(s)
-                    .map_err(|err| format!("base64 transaction sequence is invalid: {}", err))?,
-            )
-            .map_err(|err| format!("transaction could not be parsed: {}", err))?,
-        })
-    }
-}
-
-impl std::fmt::Display for SignedTransactionAsBase64 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner.get_hash())
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct TransactionAsBase64 {
     pub inner: near_primitives::transaction::Transaction,
 }
@@ -715,9 +691,17 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
 pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTransaction) {
     eprintln!("{:<13} {}", "signer_id:", &transaction.signer_id);
     eprintln!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
-    eprintln!("actions:");
-    let actions = transaction.actions.clone();
-    for action in actions {
+    if transaction
+        .actions
+        .iter()
+        .any(|action| matches!(action, near_primitives::transaction::Action::Delegate(_)))
+    {
+        eprintln!("signed delegate action:");
+    } else {
+        eprintln!("actions:");
+    };
+
+    for action in &transaction.actions {
         match action {
             near_primitives::transaction::Action::CreateAccount(_) => {
                 eprintln!(
@@ -820,6 +804,14 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
                 );
             }
+            near_primitives::transaction::Action::Delegate(signed_delegate_action) => {
+                let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
+                    signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
+                    receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
+                    actions: signed_delegate_action.delegate_action.get_actions(),
+                };
+                print_unsigned_transaction(&prepopulated_transaction);
+            }
         }
     }
 }
@@ -888,6 +880,15 @@ fn print_value_successful_transaction(
                 eprintln!(
                     "Account <{}> has been successfully deleted.",
                     transaction_info.transaction.signer_id,
+                );
+            }
+            near_primitives::views::ActionView::Delegate {
+                delegate_action,
+                signature: _,
+            } => {
+                eprintln!(
+                    "Actions delegated for <{}> completed successfully.",
+                    delegate_action.sender_id,
                 );
             }
         }
@@ -1059,6 +1060,33 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
                 account_id
             )
         }
+        near_primitives::errors::ActionErrorKind::DelegateActionInvalidSignature => {
+            println!("Error: Invalid Signature on DelegateAction")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionSenderDoesNotMatchTxReceiver {
+            sender_id,
+            receiver_id,
+        } => {
+            println!("Error: Delegate Action sender {sender_id} does not match transaction receiver {receiver_id}")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionExpired => {
+            println!("Error: DelegateAction Expired")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionAccessKeyError(_) => {
+            println!("Error: The given public key doesn't exist for the sender")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionInvalidNonce {
+            delegate_nonce,
+            ak_nonce,
+        } => {
+            println!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} ak_nonce: {ak_nonce}")
+        }
+        near_primitives::errors::ActionErrorKind::DelegateActionNonceTooLarge {
+            delegate_nonce,
+            upper_bound,
+        } => {
+            println!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}")
+        }
     }
 }
 
@@ -1173,6 +1201,12 @@ pub fn handler_invalid_tx_error(
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallZeroAttachedGas => {
                     "Error: The attached amount of gas in a FunctionCall action has to be a positive number.".to_string()
+                }
+                near_primitives::errors::ActionsValidationError::DelegateActionMustBeOnlyOne => {
+                    "Error: DelegateActionMustBeOnlyOne".to_string()
+                }
+                near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => {
+                    format!("Error: Protocol Feature {} is unsupported in version {}", protocol_feature, version)
                 }
             }
         },

@@ -5,6 +5,7 @@ pub mod path_buf;
 pub mod public_key;
 pub mod secret_key;
 pub mod signature;
+pub mod signed_delegate_action;
 pub mod signed_transaction;
 pub mod slip10;
 pub mod transaction;

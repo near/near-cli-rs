@@ -7,7 +7,7 @@ use crate::common::RpcQueryResponseExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
-#[interactive_clap(output_context = SignMacosKeychainContext)]
+#[interactive_clap(output_context = SignKeychainContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignKeychain {
     #[interactive_clap(long)]
@@ -16,6 +16,9 @@ pub struct SignKeychain {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     block_hash: Option<String>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    meta_transaction_valid_for: Option<u64>,
     #[interactive_clap(subcommand)]
     submit: super::Submit,
 }
@@ -23,7 +26,7 @@ pub struct SignKeychain {
 #[derive(Clone)]
 pub struct SignKeychainContext {
     network_config: crate::config::NetworkConfig,
-    signed_transaction: near_primitives::transaction::SignedTransaction,
+    signed_transaction_or_signed_delegate_action: super::SignedTransactionOrSignedDelegateAction,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
@@ -33,7 +36,7 @@ pub struct SignKeychainContext {
 impl SignKeychainContext {
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
-        _scope: &<SignKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<SignKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
@@ -134,16 +137,40 @@ impl SignKeychainContext {
             public_key: account_json.public_key.clone(),
             block_hash: rpc_query_response.block_hash,
             nonce: current_nonce + 1,
-            signer_id: previous_context.prepopulated_transaction.signer_id,
+            signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             actions: previous_context.prepopulated_transaction.actions,
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
+        if network_config.meta_transaction_relayer_url.is_some() {
+            let max_block_height = rpc_query_response.block_height
+                + scope
+                    .meta_transaction_valid_for
+                    .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
+
+            let signed_delegate_action = super::get_signed_delegate_action(
+                unsigned_transaction,
+                &account_json.public_key,
+                account_json.private_key,
+                max_block_height,
+            );
+
+            return Ok(Self {
+                network_config: previous_context.network_config,
+                signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
+                on_before_sending_transaction_callback: previous_context
+                    .on_before_sending_transaction_callback,
+                on_after_sending_transaction_callback: previous_context
+                    .on_after_sending_transaction_callback,
+            });
+        }
+
         let signature = account_json
             .private_key
             .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
             unsigned_transaction,
@@ -155,7 +182,7 @@ impl SignKeychainContext {
 
         Ok(Self {
             network_config: previous_context.network_config,
-            signed_transaction,
+            signed_transaction_or_signed_delegate_action: signed_transaction.into(),
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
@@ -168,7 +195,8 @@ impl From<SignKeychainContext> for super::SubmitContext {
     fn from(item: SignKeychainContext) -> Self {
         Self {
             network_config: item.network_config,
-            signed_transaction: item.signed_transaction,
+            signed_transaction_or_signed_delegate_action: item
+                .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }
@@ -204,8 +232,22 @@ impl interactive_clap::FromCli for SignKeychain {
             };
         }
         let block_hash = clap_variant.block_hash.clone();
+        if clap_variant.meta_transaction_valid_for.is_none() {
+            clap_variant.meta_transaction_valid_for =
+                match Self::input_meta_transaction_valid_for(&context) {
+                    Ok(meta_transaction_valid_for) => meta_transaction_valid_for,
+                    Err(err) => {
+                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+                    }
+                };
+        }
+        let meta_transaction_valid_for = clap_variant.meta_transaction_valid_for;
 
-        let new_context_scope = InteractiveClapContextScopeForSignKeychain { nonce, block_hash };
+        let new_context_scope = InteractiveClapContextScopeForSignKeychain {
+            nonce,
+            block_hash,
+            meta_transaction_valid_for,
+        };
         let output_context =
             match SignKeychainContext::from_previous_context(context, &new_context_scope) {
                 Ok(new_context) => new_context,
@@ -231,15 +273,21 @@ impl interactive_clap::FromCli for SignKeychain {
 }
 
 impl SignKeychain {
-    pub fn input_nonce(
+    fn input_nonce(
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
         Ok(None)
     }
 
-    pub fn input_block_hash(
+    fn input_block_hash(
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
+        Ok(None)
+    }
+
+    fn input_meta_transaction_valid_for(
+        _context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<u64>> {
         Ok(None)
     }
 }
