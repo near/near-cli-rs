@@ -44,8 +44,7 @@ impl RelayerAccountIdContext {
                     prepopulated_unsigned_transaction.actions =
                         vec![near_primitives::transaction::Action::Delegate(
                             signed_delegate_action.clone(),
-                        )
-                        .into()];
+                        )];
                     Ok(())
                 }
             });

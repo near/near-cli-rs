@@ -1091,7 +1091,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
         near_primitives::errors::ActionErrorKind::DelegateActionExpired => {
             println!("Error: DelegateAction Expired")
         }
-        near_primitives::errors::ActionErrorKind::DelegateActionAccessKeyError(_0) => {
+        near_primitives::errors::ActionErrorKind::DelegateActionAccessKeyError(_) => {
             println!("Error: The given public key doesn't exist for the sender")
         }
         near_primitives::errors::ActionErrorKind::DelegateActionInvalidNonce {

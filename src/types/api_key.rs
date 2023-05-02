@@ -26,11 +26,7 @@ impl serde::ser::Serialize for ApiKey {
     where
         S: serde::ser::Serializer,
     {
-        serializer.serialize_str(
-            self.0
-                .to_str()
-                .map_err(|err| serde::ser::Error::custom(err))?,
-        )
+        serializer.serialize_str(self.0.to_str().map_err(serde::ser::Error::custom)?)
     }
 }
 

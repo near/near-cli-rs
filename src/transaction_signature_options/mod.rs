@@ -187,8 +187,7 @@ impl interactive_clap::FromCli for Submit {
                             context
                                 .network_config
                                 .meta_transaction_relayer_url
-                                .expect("Unexpected error")
-                                .clone(),
+                                .expect("Unexpected error"),
                         )
                         .header("Content-Type", "application/json")
                         .body(json_payload)
