@@ -49,7 +49,12 @@
 
 2. Действия с подписанной транзакцией
 
-   Подписанную транзакцию можно либо немедленно отправить на выполнение:
+    _near CLI_ поддерживает мета-транзакции, описанные в спецификации [NEP-366](https://near.github.io/nearcore/architecture/how/meta-tx.html#meta-transactions). Для её создания достаточно указать _network_, поддерживающую мета-транзакции. Узнать о такой поддержке можно в [конфигурационном файле](#show-connections---Show-a-list-of-network-connections). За возможность поддержки мета-транзакции отвечает поле *meta_transaction_relayer_url*. Например:  
+    ```txt
+    meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
+    ```
+
+    Подписанную транзакцию / мета-транзакцию можно либо немедленно отправить на выполнение:
 
    - _send - Send the transaction to the network_
 
@@ -1209,6 +1214,7 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 
 - [view-status](#view-status---View-a-transaction-status)
 - [construct-transaction](#construct-transaction---Construct-a-new-transaction)
+- [send-meta-transaction](#send-meta-transaction---Act-as-a-relayer-to-send-a-signed-delegate-action-meta-transaction)
 
 #### view-status - View a transaction status
 
@@ -1393,6 +1399,22 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 <details><summary>Construct a new transaction (демонстрация работы команды)</summary>
 <a href="https://asciinema.org/a/WNbxN1GB861q2sBbiKbQyVl3S?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/WNbxN1GB861q2sBbiKbQyVl3S.png" width="836"/>
+</a>
+</details>
+
+#### send-meta-transaction - Act as a relayer to send a signed delegate action (meta-transaction)
+  
+Рассмотрим предыдущий пример, применив возможности мета-транзакции:
+1. Создать транзакцию.
+2. Указать _network_ с поддержкой мета-транзакции.
+3. Подписать транзакцию своими ключами доступа.
+4. Вывести транзакцию на экран в формате base64 и передать её ретранслятору для отправки.
+
+Отправить делегированную транзакцию:
+
+<details><summary>Демонстрация работы команды в интерактивном режиме</summary>
+<a href="https://asciinema.org/a/79Pwj2KxIHJgxC0CFrRTgfNcs?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/79Pwj2KxIHJgxC0CFrRTgfNcs.png" width="836"/>
 </a>
 </details>
 

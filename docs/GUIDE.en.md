@@ -51,7 +51,12 @@ Before proceeding to the description of specific commands, it is necessary to co
 
 2. Actions with a signed transaction
 
-   A signed transaction can be sent for immediate execution:
+   _near CLI_ support for meta transactions as specified in [NEP-366](https://near.github.io/nearcore/architecture/how/meta-tx.html#meta-transactions). To create it, you just need to specify a _network_ that supports meta transactions. You can find out about such support in [config](#show-connections---Show-a-list-of-network-connections). The *meta_transaction_relayer_url* field is responsible for the ability to support meta transactions. For example:  
+   ```txt
+   meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
+   ```
+   
+   A signed transaction / meta transactions can be sent for immediate execution:
 
    - _send - Send the transaction to the network_
 
@@ -1208,6 +1213,7 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 
 - [view-status](#view-status---View-a-transaction-status)
 - [construct-transaction](#construct-transaction---Construct-a-new-transaction)
+- [send-meta-transaction](#send-meta-transaction---Act-as-a-relayer-to-send-a-signed-delegate-action-meta-transaction)
 
 #### view-status - View a transaction status
 
@@ -1392,6 +1398,22 @@ To do this, we will use the transaction constructor:
 <details><summary>Demonstration of the command in interactive mode</summary>
 <a href="https://asciinema.org/a/WNbxN1GB861q2sBbiKbQyVl3S?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/WNbxN1GB861q2sBbiKbQyVl3S.png" width="836"/>
+</a>
+</details>
+
+#### send-meta-transaction - Act as a relayer to send a signed delegate action (meta-transaction)
+  
+Consider the previous example using the meta-transaction features:
+1. Create a transaction.
+2. Specify a _network_ that supports meta-transactions.
+3. Sign the transaction with your access keys.
+4. Display the transaction on the screen in base64 format and transfer it to the relay for sending.
+
+Send signed delegated transaction:
+
+<details><summary>Demonstration of the command in interactive mode</summary>
+<a href="https://asciinema.org/a/79Pwj2KxIHJgxC0CFrRTgfNcs?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/79Pwj2KxIHJgxC0CFrRTgfNcs.png" width="836"/>
 </a>
 </details>
 
