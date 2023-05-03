@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1](https://github.com/near/near-cli-rs/compare/v0.4.0...v0.4.1) - 2023-05-03
+
+### Other
+- Added a guide on `send-meta-transaction` (#192)
+
 ## [0.4.0](https://github.com/near/near-cli-rs/compare/v0.3.5...v0.4.0) - 2023-05-02
 
 ### Added
