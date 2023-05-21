@@ -17,7 +17,7 @@ pub const META_TRANSACTION_VALID_FOR_DEFAULT: u64 = 1000;
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::commands::TransactionContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// Select a tool for signing the transaction
+/// Select a tool for signing the transaction:
 pub enum SignWith {
     #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
@@ -85,7 +85,7 @@ pub enum SignWith {
 #[interactive_clap(context = SubmitContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[interactive_clap(skip_default_from_cli)]
-/// How would you like to proceed
+/// How would you like to proceed?
 pub enum Submit {
     #[strum_discriminants(strum(message = "send      - Send the transaction to the network"))]
     Send,

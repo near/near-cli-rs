@@ -13,7 +13,7 @@ pub struct CallFunctionAction {
     /// How do you want to pass the function call arguments?
     function_args_type:
         super::super::super::call_function::call_function_args_type::FunctionArgsType,
-    /// Enter the arguments to this function or the path to the arguments file
+    /// Enter the arguments to this function or the path to the arguments file:
     function_args: String,
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
@@ -66,7 +66,7 @@ impl CallFunctionAction {
 #[interactive_clap(output_context = PrepaidGasContext)]
 pub struct PrepaidGas {
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter gas for function call
+    /// Enter gas for function call:
     gas: crate::common::NearGas,
     #[interactive_clap(named_arg)]
     /// Enter deposit for a function call
@@ -108,7 +108,7 @@ impl PrepaidGas {
         eprintln!();
         let gas: u64 = loop {
             match crate::common::NearGas::from_str(
-                &Text::new("Enter gas for function call")
+                &Text::new("Enter gas for function call:")
                     .with_initial_value("100 TeraGas")
                     .prompt()?,
             ) {
@@ -133,7 +133,7 @@ impl PrepaidGas {
 #[interactive_clap(output_context = DepositContext)]
 pub struct Deposit {
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter deposit for a function call
+    /// Enter deposit for a function call:
     deposit: crate::common::NearBalance,
     #[interactive_clap(named_arg)]
     /// Select network
@@ -201,7 +201,7 @@ impl Deposit {
         eprintln!();
         match crate::common::NearBalance::from_str(
             &Text::new(
-                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear).",
+                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
             )
             .with_initial_value("0 NEAR")
             .prompt()?,

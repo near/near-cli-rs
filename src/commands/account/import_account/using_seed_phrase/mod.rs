@@ -5,7 +5,7 @@ use std::str::FromStr;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = LoginFromSeedPhraseContext)]
 pub struct LoginFromSeedPhrase {
-    /// Enter the seed-phrase for this account
+    /// Enter the seed-phrase for this account:
     master_seed_phrase: String,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
@@ -65,7 +65,7 @@ impl LoginFromSeedPhrase {
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
         Ok(Some(
             crate::types::slip10::BIP32Path::from_str(
-                &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default)")
+                &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
                     .with_initial_value("m/44'/397'/0'")
                     .prompt()
                     .unwrap(),

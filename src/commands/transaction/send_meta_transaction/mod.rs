@@ -4,7 +4,7 @@ mod sign_as;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = SendMetaTransactionContext)]
 pub struct SendMetaTransaction {
-    /// Enter a signed delegate action as base64-encoded string
+    /// Enter a signed delegate action as base64-encoded string:
     signed_delegate_action: crate::types::signed_delegate_action::SignedDelegateActionAsBase64,
     #[interactive_clap(named_arg)]
     /// What is the relayer account ID?

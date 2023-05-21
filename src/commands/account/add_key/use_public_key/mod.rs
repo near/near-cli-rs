@@ -2,7 +2,7 @@
 #[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]
 #[interactive_clap(output_context = AddAccessKeyActionContext)]
 pub struct AddAccessKeyAction {
-    /// Enter the public key for this account
+    /// Enter the public key for this account:
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(named_arg)]
     /// Select network

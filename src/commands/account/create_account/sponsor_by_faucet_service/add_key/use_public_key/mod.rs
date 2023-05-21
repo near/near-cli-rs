@@ -2,7 +2,7 @@
 #[interactive_clap(input_context = super::super::NewAccountContext)]
 #[interactive_clap(output_context = AddPublicKeyActionContext)]
 pub struct AddPublicKeyAction {
-    /// Enter the public key for this account
+    /// Enter the public key for this account:
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(named_arg)]
     /// Select network

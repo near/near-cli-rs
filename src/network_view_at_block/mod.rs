@@ -15,7 +15,7 @@ pub struct ArgsForViewContext {
 #[interactive_clap(input_context = ArgsForViewContext)]
 #[interactive_clap(output_context = NetworkViewAtBlockArgsContext)]
 pub struct NetworkViewAtBlockArgs {
-    /// What is the name of the network
+    /// What is the name of the network?
     #[interactive_clap(skip_default_input_arg)]
     network_name: String,
     #[interactive_clap(subcommand)]
@@ -57,7 +57,7 @@ impl NetworkViewAtBlockArgs {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = NetworkViewAtBlockArgsContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// Сhoose block for view
+/// Сhoose block for view:
 pub enum ViewAtBlock {
     #[strum_discriminants(strum(
         message = "now               - View properties in the final block"
@@ -103,7 +103,7 @@ impl NowContext {
 #[interactive_clap(input_context = NetworkViewAtBlockArgsContext)]
 #[interactive_clap(output_context = AtBlockHeightContext)]
 pub struct AtBlockHeight {
-    /// Type the block ID height
+    /// Type the block ID height:
     block_id_height: near_primitives::types::BlockHeight,
 }
 
@@ -129,7 +129,7 @@ impl AtBlockHeightContext {
 #[interactive_clap(input_context = NetworkViewAtBlockArgsContext)]
 #[interactive_clap(output_context = BlockIdHashContext)]
 pub struct BlockIdHash {
-    /// Type the block ID hash
+    /// Type the block ID hash:
     block_id_hash: String,
 }
 

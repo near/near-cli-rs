@@ -1508,9 +1508,9 @@ dependencies = [
 
 [[package]]
 name = "inquire"
-version = "0.5.3"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3a94f0659efe59329832ba0452d3ec753145fc1fb12a8e1d60de4ccf99f5364"
+checksum = "c33e7c1ddeb15c9abcbfef6029d8e29f69b52b6d6c891031b88ed91b5065803b"
 dependencies = [
  "bitflags",
  "crossterm",
@@ -1533,9 +1533,9 @@ dependencies = [
 
 [[package]]
 name = "interactive-clap"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "299108168993b4bfcc553a2b07d6a57395bf7f97dcdc69f73d0be890d7c96eb6"
+checksum = "509d9e713266154a28bcd600c238fc5b12de98711cb50d17957c46679659b71b"
 dependencies = [
  "interactive-clap-derive",
  "strum",
@@ -1544,9 +1544,9 @@ dependencies = [
 
 [[package]]
 name = "interactive-clap-derive"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8247820d637edb039a63caf635f705e4e05d2afea1f666e81cc099850e2a64d"
+checksum = "e9cacaf732ed37897d24425d7ce762b40e9d8154d3c20635a78b1cf189da7245"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",

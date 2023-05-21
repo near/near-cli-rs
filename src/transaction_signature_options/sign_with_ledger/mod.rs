@@ -229,7 +229,7 @@ impl SignLedger {
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
         Ok(Some(
             crate::types::slip10::BIP32Path::from_str(
-                &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default)")
+                &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
                     .with_initial_value("44'/397'/0'/0'/1'")
                     .prompt()
                     .unwrap(),

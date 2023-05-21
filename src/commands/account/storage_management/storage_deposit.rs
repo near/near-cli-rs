@@ -8,7 +8,7 @@ use inquire::{CustomType, Select};
 pub struct DepositArgs {
     /// Which account ID do you want to add a deposit to?
     receiver_account_id: crate::types::account_id::AccountId,
-    /// Enter the amount to deposit into the storage (example: 10NEAR or 0.5near or 10000yoctonear)
+    /// Enter the amount to deposit into the storage (example: 10NEAR or 0.5near or 10000yoctonear):
     deposit: crate::common::NearBalance,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?
@@ -124,7 +124,7 @@ impl SignerAccountId {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let signer_account_id: crate::types::account_id::AccountId =
-                CustomType::new(" What is the signer account ID?")
+                CustomType::new("What is the signer account ID?")
                     .with_default(context.receiver_account_id.clone().into())
                     .prompt()?;
             if !crate::common::is_account_exist(

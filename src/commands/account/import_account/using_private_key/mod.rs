@@ -2,7 +2,7 @@
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = LoginFromPrivateKeyContext)]
 pub struct LoginFromPrivateKey {
-    /// Enter your private (secret) key
+    /// Enter your private (secret) key:
     private_key: crate::types::secret_key::SecretKey,
     #[interactive_clap(named_arg)]
     /// Select network

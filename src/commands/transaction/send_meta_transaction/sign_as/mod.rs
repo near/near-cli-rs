@@ -75,7 +75,7 @@ impl RelayerAccountId {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let relayer_account_id: crate::types::account_id::AccountId =
-                CustomType::new(" What is the relayer account ID?").prompt()?;
+                CustomType::new("What is the relayer account ID?").prompt()?;
             if !crate::common::is_account_exist(
                 &context.config.network_connection,
                 relayer_account_id.clone().into(),

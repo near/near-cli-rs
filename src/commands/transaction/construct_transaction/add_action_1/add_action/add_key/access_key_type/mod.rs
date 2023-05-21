@@ -53,7 +53,7 @@ pub struct FunctionCallType {
     #[interactive_clap(skip_default_input_arg)]
     allowance: Option<crate::common::NearBalance>,
     #[interactive_clap(long)]
-    /// Enter a receiver to use by this access key to pay for function call gas and transaction fees.
+    /// Enter a receiver to use by this access key to pay for function call gas and transaction fees:
     receiver_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_from_cli_arg)]
@@ -185,13 +185,13 @@ impl FunctionCallType {
             No,
         }
         let select_choose_input = Select::new(
-            "Do You want to input a list of method names that can be used",
+            "Do You want to input a list of method names that can be used?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let mut input_method_names =
-                    Text::new("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key.")
+                    Text::new("Enter a comma-separated list of method names that will be allowed to be called in a transaction signed by this access key:")
                         .prompt()?;
             if input_method_names.contains('\"') {
                 input_method_names.clear()
@@ -218,13 +218,13 @@ impl FunctionCallType {
             No,
         }
         let select_choose_input = Select::new(
-            "Do You want to input an allowance for receiver ID",
+            "Do You want to input an allowance for receiver ID?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let allowance_near_balance: crate::common::NearBalance =
-                    CustomType::new("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees. (example: 10NEAR or 0.5near or 10000yoctonear)")
+                    CustomType::new("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
                         .prompt()?;
             Ok(Some(allowance_near_balance))
         } else {

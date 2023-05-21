@@ -11,15 +11,15 @@ pub struct SendFtCommand {
     ft_contract_account_id: crate::types::account_id::AccountId,
     /// What is the receiver account ID?
     receiver_account_id: crate::types::account_id::AccountId,
-    /// Enter an amount FT to transfer
+    /// Enter an amount FT to transfer:
     amount: u128,
     #[interactive_clap(long = "prepaid-gas")]
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter gas for function call
+    /// Enter gas for function call:
     gas: crate::common::NearGas,
     #[interactive_clap(long = "attached-deposit")]
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter deposit for a function call
+    /// Enter deposit for a function call:
     deposit: crate::common::NearBalance,
     #[interactive_clap(named_arg)]
     /// Select network
@@ -114,7 +114,7 @@ impl SendFtCommand {
         eprintln!();
         let gas: u64 = loop {
             match crate::common::NearGas::from_str(
-                &Text::new("Enter gas for function call")
+                &Text::new("Enter gas for function call:")
                     .with_initial_value("100 TeraGas")
                     .prompt()?,
             ) {
@@ -139,7 +139,7 @@ impl SendFtCommand {
         eprintln!();
         match crate::common::NearBalance::from_str(
             &Text::new(
-                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear).",
+                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
             )
             .with_initial_value("1 yoctoNEAR")
             .prompt()?,

@@ -16,7 +16,7 @@ pub struct TransactionCommands {
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[non_exhaustive]
-/// Сhoose action for transaction
+/// Сhoose action for transaction:
 pub enum TransactionActions {
     #[strum_discriminants(strum(message = "view-status            - View a transaction status"))]
     /// Execute function (contract method)

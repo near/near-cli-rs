@@ -14,7 +14,7 @@ pub struct CallFunctionCommands {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// Сhoose action for account
+/// Сhoose action for account:
 pub enum CallFunctionActions {
     #[strum_discriminants(strum(message = "as-read-only    - Calling a view method"))]
     /// Calling a view method

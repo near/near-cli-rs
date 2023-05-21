@@ -2,7 +2,7 @@
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
 #[interactive_clap(output_context = DeleteKeyActionContext)]
 pub struct DeleteKeyAction {
-    /// Enter the public key You wish to delete
+    /// Enter the public key You wish to delete:
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_2::NextAction,

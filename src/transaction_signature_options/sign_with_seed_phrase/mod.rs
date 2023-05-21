@@ -10,7 +10,7 @@ use crate::common::RpcQueryResponseExt;
 #[interactive_clap(output_context = SignSeedPhraseContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignSeedPhrase {
-    /// Enter the seed-phrase for this account
+    /// Enter the seed-phrase for this account:
     master_seed_phrase: String,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
@@ -254,7 +254,7 @@ impl SignSeedPhrase {
         _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
         Ok(Some(
-            inquire::CustomType::new("Enter seed phrase HD Path [if not sure, keep the default]")
+            inquire::CustomType::new("Enter seed phrase HD Path (if not sure, keep the default):")
                 .with_default(crate::types::slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap())
                 .prompt()?,
         ))

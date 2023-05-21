@@ -15,7 +15,7 @@ pub struct NewAccount {
     /// What is the new account ID?
     new_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter the amount for the account
+    /// Enter the amount for the account:
     initial_balance: crate::common::NearBalance,
     #[interactive_clap(subcommand)]
     access_key_mode: add_key::AccessKeyMode,
@@ -125,7 +125,7 @@ impl NewAccount {
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
         eprintln!();
-        match crate::common::NearBalance::from_str(&Text::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear).")
+        match crate::common::NearBalance::from_str(&Text::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
             .with_initial_value("0.1 NEAR")
             .prompt()?
             ) {
