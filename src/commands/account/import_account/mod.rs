@@ -89,7 +89,7 @@ pub fn login(
 }
 
 fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-    Ok(CustomType::new("Enter account ID").prompt()?)
+    Ok(CustomType::new("Enter account ID:").prompt()?)
 }
 
 fn save_access_key(

@@ -98,7 +98,7 @@ impl PrepaidGas {
         eprintln!();
         let gas: u64 = loop {
             match crate::common::NearGas::from_str(
-                &Text::new("Enter gas for function call")
+                &Text::new("Enter gas for function call:")
                     .with_initial_value("100 TeraGas")
                     .prompt()?,
             ) {
@@ -163,7 +163,7 @@ impl Deposit {
         eprintln!();
         match crate::common::NearBalance::from_str(
             &Text::new(
-                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear).",
+                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
             )
             .with_initial_value("0 NEAR")
             .prompt()?,
