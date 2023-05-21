@@ -6,7 +6,7 @@ use crate::common::JsonRpcClientExt;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = TransactionInfoContext)]
 pub struct TransactionInfo {
-    /// Enter the hash of the transaction you need to view
+    /// Enter the hash of the transaction you need to view:
     transaction_hash: crate::types::crypto_hash::CryptoHash,
     /// What is the signer account ID?
     signer_account_id: crate::types::account_id::AccountId,

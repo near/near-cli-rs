@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = super::ContractFileContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// Select the need for initialization
+/// Select the need for initialization:
 pub enum InitializeMode {
     /// Add an initialize
     #[strum_discriminants(strum(message = "with-init-call     - Add an initialize"))]

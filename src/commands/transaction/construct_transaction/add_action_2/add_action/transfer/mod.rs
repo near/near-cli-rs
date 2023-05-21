@@ -5,7 +5,7 @@ use inquire::CustomType;
 #[interactive_clap(output_context = TransferActionContext)]
 pub struct TransferAction {
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter an amount to transfer
+    /// Enter an amount to transfer:
     amount_in_near: crate::common::NearBalance,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_3::NextAction,

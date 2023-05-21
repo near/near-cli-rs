@@ -9,7 +9,7 @@ mod use_public_key;
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = super::NewAccountContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// Add an access key for this account
+/// Add an access key for this account:
 pub enum AccessKeyMode {
     #[strum_discriminants(strum(
         message = "autogenerate-new-keypair          - Automatically generate a key pair"

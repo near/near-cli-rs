@@ -2,7 +2,7 @@
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = DeleteAccountContext)]
 pub struct DeleteAccount {
-    /// What Account ID to be deleted
+    /// What Account ID to be deleted?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     /// Enter the beneficiary ID to delete this account ID
@@ -31,7 +31,7 @@ impl DeleteAccountContext {
 #[interactive_clap(input_context = DeleteAccountContext)]
 #[interactive_clap(output_context = BeneficiaryAccountContext)]
 pub struct BeneficiaryAccount {
-    /// Specify a beneficiary
+    /// Specify a beneficiary:
     beneficiary_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     /// Select network

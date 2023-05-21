@@ -8,7 +8,7 @@ use inquire::Text;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = SaveWithSeedPhraseContext)]
 pub struct SaveWithSeedPhrase {
-    /// Enter the seed-phrase for this account
+    /// Enter the seed-phrase for this account:
     master_seed_phrase: String,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]

@@ -4,7 +4,7 @@ use std::str::FromStr;
 #[interactive_clap(input_context = super::super::NewAccountContext)]
 #[interactive_clap(output_context = AddAccessWithSeedPhraseActionContext)]
 pub struct AddAccessWithSeedPhraseAction {
-    /// Enter the seed-phrase for this sub-account
+    /// Enter the seed-phrase for this sub-account:
     master_seed_phrase: String,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?

@@ -43,7 +43,7 @@ impl GenerateKeypairContext {
 #[interactive_clap(input_context = GenerateKeypairContext)]
 #[interactive_clap(output_context = SaveModeContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// Save an access key for this account
+/// Save an access key for this account:
 pub enum SaveMode {
     #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(

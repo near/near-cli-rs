@@ -10,7 +10,7 @@ use crate::common::RpcQueryResponseExt;
 #[interactive_clap(output_context = SignSeedPhraseContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignSeedPhrase {
-    /// Enter the seed-phrase for this account
+    /// Enter the seed-phrase for this account:
     master_seed_phrase: String,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]

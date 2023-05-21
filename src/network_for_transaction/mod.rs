@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = NetworkForTransactionArgsContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct NetworkForTransactionArgs {
-    /// What is the name of the network
+    /// What is the name of the network?
     #[interactive_clap(skip_default_input_arg)]
     network_name: String,
     #[interactive_clap(subcommand)]

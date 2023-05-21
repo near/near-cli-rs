@@ -15,7 +15,7 @@ pub struct NewAccount {
     /// What is the new account ID?
     new_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter the amount for the account
+    /// Enter the amount for the account:
     initial_balance: crate::common::NearBalance,
     #[interactive_clap(subcommand)]
     access_key_mode: add_key::AccessKeyMode,

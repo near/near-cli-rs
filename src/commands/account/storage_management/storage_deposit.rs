@@ -8,7 +8,7 @@ use inquire::{CustomType, Select};
 pub struct DepositArgs {
     /// Which account ID do you want to add a deposit to?
     receiver_account_id: crate::types::account_id::AccountId,
-    /// Enter the amount to deposit into the storage (example: 10NEAR or 0.5near or 10000yoctonear)
+    /// Enter the amount to deposit into the storage (example: 10NEAR or 0.5near or 10000yoctonear):
     deposit: crate::common::NearBalance,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?

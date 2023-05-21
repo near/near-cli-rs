@@ -2,7 +2,7 @@
 #[interactive_clap(context = NetworkContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct Network {
-    /// What is the name of the network
+    /// What is the name of the network?
     #[interactive_clap(skip_default_input_arg)]
     network_name: String,
 }

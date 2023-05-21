@@ -16,7 +16,7 @@ pub struct ImplicitAccount {
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// Choose a mode to create an implicit account
+/// Choose a mode to create an implicit account:
 pub enum Mode {
     #[strum_discriminants(strum(
         message = "use-auto-generation  - Use auto-generation to create an implicit account"

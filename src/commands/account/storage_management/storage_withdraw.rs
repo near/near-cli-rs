@@ -4,7 +4,7 @@ use std::str::FromStr;
 #[interactive_clap(input_context = super::ContractContext)]
 #[interactive_clap(output_context = WithdrawArgsContext)]
 pub struct WithdrawArgs {
-    /// Enter the amount to withdraw from the storage (example: 10NEAR or 0.5near or 10000yoctonear)
+    /// Enter the amount to withdraw from the storage (example: 10NEAR or 0.5near or 10000yoctonear):
     amount: crate::common::NearBalance,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?

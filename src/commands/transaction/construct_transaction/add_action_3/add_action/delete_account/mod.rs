@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = DeleteAccountActionContext)]
 pub struct DeleteAccountAction {
     #[interactive_clap(long)]
-    /// Enter the beneficiary ID to delete this account ID
+    /// Enter the beneficiary ID to delete this account ID:
     beneficiary_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_last::NextAction,

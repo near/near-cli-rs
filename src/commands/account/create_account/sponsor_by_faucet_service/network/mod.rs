@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 #[interactive_clap(input_context = super::SponsorServiceContext)]
 #[interactive_clap(output_context = NetworkContext)]
 pub struct Network {
-    /// What is the name of the network
+    /// What is the name of the network?
     #[interactive_clap(skip_default_input_arg)]
     network_name: String,
     #[interactive_clap(subcommand)]
@@ -69,7 +69,7 @@ impl Network {
 #[interactive_clap(input_context = NetworkContext)]
 #[interactive_clap(output_context = SubmitContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// How would you like to proceed
+/// How would you like to proceed?
 pub enum Submit {
     #[strum_discriminants(strum(message = "create      - Create a new account"))]
     Create,

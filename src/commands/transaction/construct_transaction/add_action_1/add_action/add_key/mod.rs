@@ -14,7 +14,7 @@ pub struct AddKeyAction {
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = super::super::super::ConstructTransactionContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// Select a permission that you want to add to the access key
+/// Select a permission that you want to add to the access key:
 pub enum AccessKeyPermission {
     #[strum_discriminants(strum(
         message = "grant-full-access           - A permission with full access"
@@ -31,7 +31,7 @@ pub enum AccessKeyPermission {
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = self::access_key_type::AccessKeyPermissionContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// Add an access key for this account
+/// Add an access key for this account:
 pub enum AccessKeyMode {
     #[strum_discriminants(strum(
         message = "use-manually-provided-seed-prase  - Use the provided seed phrase manually"

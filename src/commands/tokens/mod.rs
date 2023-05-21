@@ -42,7 +42,7 @@ impl TokensCommandsContext {
 #[interactive_clap(context = TokensCommandsContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[non_exhaustive]
-/// Select actions with tokens
+/// Select actions with tokens:
 pub enum TokensActions {
     #[strum_discriminants(strum(
         message = "send-near         - The transfer is carried out in NEAR tokens"

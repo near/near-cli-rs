@@ -7,7 +7,7 @@ pub struct SendNearCommand {
     ///What is the receiver account ID?
     receiver_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
-    ///Enter an amount to transfer
+    ///Enter an amount to transfer:
     amount_in_near: crate::common::NearBalance,
     #[interactive_clap(named_arg)]
     ///Select network
