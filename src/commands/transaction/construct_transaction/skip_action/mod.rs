@@ -32,6 +32,9 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
         Self {
             config: item.0.config,
             on_after_getting_network_callback,
+            on_refine_prepopulated_transaction_callback: std::sync::Arc::new(
+                |_prepared_transaction, _network_config| Ok(()),
+            ),
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),

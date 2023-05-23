@@ -44,6 +44,10 @@ pub enum TopLevelCommand {
     Extensions(self::extensions::ExtensionsCommands),
 }
 
+pub type OnRefinePrepopulatedTransactionCallback = std::sync::Arc<
+    dyn Fn(&mut PrepopulatedTransaction, &crate::config::NetworkConfig) -> crate::CliResult,
+>;
+
 pub type OnBeforeSigningCallback = std::sync::Arc<
     dyn Fn(
         &mut near_primitives::transaction::Transaction,
@@ -66,6 +70,8 @@ pub struct PrepopulatedTransaction {
 pub struct ActionContext {
     pub config: crate::config::Config,
     pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
+    pub on_refine_prepopulated_transaction_callback:
+        OnRefinePrepopulatedTransactionCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,
     pub on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,

@@ -32,8 +32,12 @@ impl NetworkForTransactionArgsContext {
             .get(&scope.network_name)
             .expect("Failed to get network config!")
             .clone();
-        let prepopulated_transaction =
+        let mut prepopulated_transaction =
             (previous_context.on_after_getting_network_callback)(&network_config)?;
+        (previous_context.on_refine_prepopulated_transaction_callback)(
+            &mut prepopulated_transaction,
+            &network_config,
+        )?;
         Ok(Self {
             config: previous_context.config,
             network_config,

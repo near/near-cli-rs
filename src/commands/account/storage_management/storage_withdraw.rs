@@ -92,6 +92,9 @@ impl SignerAccountIdContext {
         Ok(Self(crate::commands::ActionContext {
             config: previous_context.config,
             on_after_getting_network_callback,
+            on_refine_prepopulated_transaction_callback: std::sync::Arc::new(
+                |_prepolulated_transaction, _network_config| Ok(()),
+            ),
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),

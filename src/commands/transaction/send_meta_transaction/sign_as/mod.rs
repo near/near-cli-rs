@@ -52,6 +52,9 @@ impl RelayerAccountIdContext {
         Ok(Self(crate::commands::ActionContext {
             config: previous_context.config,
             on_after_getting_network_callback,
+            on_refine_prepopulated_transaction_callback: std::sync::Arc::new(
+                |_prepared_transaction, _network_config| Ok(()),
+            ),
             on_before_signing_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
