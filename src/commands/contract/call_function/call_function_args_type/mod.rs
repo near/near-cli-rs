@@ -88,7 +88,8 @@ pub fn function_args(
         }
         super::call_function_args_type::FunctionArgsType::TextArgs => Ok(args.into_bytes()),
         super::call_function_args_type::FunctionArgsType::Base64Args => {
-            Ok(base64::decode(args.as_bytes())?)
+            Ok(near_primitives::serialize::from_base64(&args)
+                .map_err(|_| color_eyre::eyre::eyre!("Data cannot be decoded with base64"))?)
         }
         super::call_function_args_type::FunctionArgsType::FileArgs => {
             let data_path = std::path::PathBuf::from(args);

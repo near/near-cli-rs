@@ -19,7 +19,7 @@ clap = { version = "4.0.18", features = ["derive"] }
 inquire = "0.6"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
-smart-default = "0.6.0"
+smart-default = "0.7.1"
 derive_more = "0.99.9"
 easy-ext = "1"
 
@@ -29,21 +29,20 @@ futures = "0.3"
 # Ad-hoc fix for compilation errors (rustls is used instead of openssl to ease the deployment avoiding the system dependency on openssl)
 openssl = { version = "0.10", features = [ "vendored" ] }
 
-base64 = "0.13"
-bip39 = { version = "1.0.0", features = [ "rand" ] }
-bs58 = "0.4"
+bip39 = { version = "2.0.0", features = [ "rand" ] }
+bs58 = "0.5"
 ed25519-dalek = { version = "1" }
 hex = "0.4.2"
 linked-hash-map = { version = "0.5", features = ["serde_impl"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
-toml = "0.5.9"
-dirs = "4.0"
-shellexpand = "2.1.0"
+toml = "0.7"
+dirs = "5"
+shellexpand = "3"
 slip10 = "0.4.3"
 url = { version = "2", features = ["serde"] }
-open = "2"
-shell-words = "1.0.0"
+open = "4"
+shell-words = "1"
 cargo-util = "0.1.1"
 
 semver = { version = "1.0.4", optional = true }
