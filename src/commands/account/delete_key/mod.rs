@@ -6,8 +6,6 @@ mod use_publickeylist_type;
 pub struct DeleteKeyCommand {
     /// Which account should you delete the access key for?
     owner_account_id: crate::types::account_id::AccountId,
-    #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     /// Enter the public keys you wish to delete (separated by comma):
     public_keys: self::use_publickeylist_type::PublicKeyList,
     #[interactive_clap(named_arg)]
@@ -34,8 +32,7 @@ impl DeleteKeyCommandContext {
                 .public_keys
                 .clone()
                 .0
-                .iter()
-                .cloned()
+                .into_iter()
                 .map(Into::into)
                 .collect(),
         })
