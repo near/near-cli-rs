@@ -1,11 +1,15 @@
+mod use_publickeylist_type;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = DeleteKeyCommandContext)]
 pub struct DeleteKeyCommand {
-    /// Which account should You delete the access key for?
+    /// Which account should you delete the access key for?
     owner_account_id: crate::types::account_id::AccountId,
-    /// Enter the public key You wish to delete:
-    public_key: crate::types::public_key::PublicKey,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_from_cli_arg)]
+    /// Enter the public keys you wish to delete (separated by comma):
+    public_keys: self::use_publickeylist_type::PublicKeyList,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -15,7 +19,7 @@ pub struct DeleteKeyCommand {
 pub struct DeleteKeyCommandContext {
     config: crate::config::Config,
     owner_account_id: near_primitives::types::AccountId,
-    public_key: near_crypto::PublicKey,
+    public_keys: Vec<near_crypto::PublicKey>,
 }
 
 impl DeleteKeyCommandContext {
@@ -26,23 +30,37 @@ impl DeleteKeyCommandContext {
         Ok(Self {
             config: previous_context.0,
             owner_account_id: scope.owner_account_id.clone().into(),
-            public_key: scope.public_key.clone().into(),
+            public_keys: scope
+                .public_keys
+                .clone()
+                .0
+                .iter()
+                .cloned()
+                .map(Into::into)
+                .collect(),
         })
     }
 }
 
 impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
     fn from(item: DeleteKeyCommandContext) -> Self {
+        let public_keys_clone = std::sync::Arc::new(item.public_keys.clone());
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.owner_account_id.clone(),
                     receiver_id: item.owner_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::DeleteKey(
-                        near_primitives::transaction::DeleteKeyAction {
-                            public_key: item.public_key.clone(),
-                        },
-                    )],
+                    actions: public_keys_clone
+                        .clone()
+                        .iter()
+                        .map(|public_key| {
+                            near_primitives::transaction::Action::DeleteKey(
+                                near_primitives::transaction::DeleteKeyAction {
+                                    public_key: public_key.clone(),
+                                },
+                            )
+                        })
+                        .collect(),
                 })
             });
 
