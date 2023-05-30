@@ -520,19 +520,19 @@ pub fn get_account_state(
                 eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
                     account_id, network_config.network_name
                 );
-                if !need_check_account() {
+                // if !need_check_account() {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
                         err,
                     ));
-                }
+                // }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
                 eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
                     account_id, network_config.network_name
                 );
-                if !need_check_account() {
+                // if !need_check_account() {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
-                }
+                // }
             }
         }
     }
