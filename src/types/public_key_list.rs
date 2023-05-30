@@ -1,7 +1,8 @@
 use interactive_clap::ToCli;
 
 #[derive(Debug, Clone)]
-pub struct PublicKeyList(pub Vec<near_crypto::PublicKey>);
+pub struct PublicKeyList(Vec<near_crypto::PublicKey>);
+
 impl std::fmt::Display for PublicKeyList {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let keys: Vec<String> = self.0.iter().map(|key| key.to_string()).collect();

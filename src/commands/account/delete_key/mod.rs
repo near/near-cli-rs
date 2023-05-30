@@ -26,20 +26,20 @@ impl DeleteKeyCommandContext {
         Ok(Self {
             config: previous_context.0,
             owner_account_id: scope.owner_account_id.clone().into(),
-            public_keys: scope.public_keys.clone().0,
+            public_keys: scope.public_keys.clone().into(),
         })
     }
 }
 
 impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
     fn from(item: DeleteKeyCommandContext) -> Self {
-        let public_keys = item.public_keys.clone();
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.owner_account_id.clone(),
                     receiver_id: item.owner_account_id.clone(),
-                    actions: public_keys
+                    actions: item
+                        .public_keys
                         .clone()
                         .into_iter()
                         .map(|public_key| {
