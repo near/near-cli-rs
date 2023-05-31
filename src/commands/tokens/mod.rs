@@ -23,6 +23,7 @@ pub struct TokensCommands {
 #[derive(Debug, Clone)]
 pub struct TokensCommandsContext {
     config: crate::config::Config,
+    offline: bool,
     owner_account_id: near_primitives::types::AccountId,
 }
 
@@ -33,6 +34,7 @@ impl TokensCommandsContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
+            offline: previous_context.offline,
             owner_account_id: scope.owner_account_id.clone().into(),
         })
     }

@@ -521,9 +521,9 @@ pub fn get_account_state(
                     account_id, network_config.network_name
                 );
                 // if !need_check_account() {
-                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
-                        err,
-                    ));
+                return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
+                    err,
+                ));
                 // }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
@@ -531,7 +531,7 @@ pub fn get_account_state(
                     account_id, network_config.network_name
                 );
                 // if !need_check_account() {
-                    return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
+                return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
                 // }
             }
         }
