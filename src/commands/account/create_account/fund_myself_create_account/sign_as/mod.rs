@@ -177,39 +177,39 @@ impl SignerAccountId {
     }
 }
 
-fn validate_signer_account_id(
-    network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
-) -> crate::CliResult {
-    match crate::common::get_account_state(
-        network_config.clone(),
-        account_id.clone(),
-        near_primitives::types::BlockReference::latest(),
-    ) {
-        Ok(_) => Ok(()),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                    requested_account_id,
-                    ..
-                },
-            ),
-        )) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Signer account <{}> does not currently exist on network <{}>.",
-            requested_account_id,
-            network_config.network_name
-        )),
-        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
-            near_jsonrpc_client::errors::RpcTransportError::SendError(_),
-        )) => {
-            for _ in 1..3 {
-                println!("******************* account: {}", account_id);
-            }
-            Ok(())
-        }
-        Err(err) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string())),
-    }
-}
+// fn validate_signer_account_id(
+//     network_config: &crate::config::NetworkConfig,
+//     account_id: &near_primitives::types::AccountId,
+// ) -> crate::CliResult {
+//     match crate::common::get_account_state(
+//         network_config.clone(),
+//         account_id.clone(),
+//         near_primitives::types::BlockReference::latest(),
+//     ) {
+//         Ok(_) => Ok(()),
+//         Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+//             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+//                 near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+//                     requested_account_id,
+//                     ..
+//                 },
+//             ),
+//         )) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+//             "Signer account <{}> does not currently exist on network <{}>.",
+//             requested_account_id,
+//             network_config.network_name
+//         )),
+//         Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
+//             near_jsonrpc_client::errors::RpcTransportError::SendError(_),
+//         )) => {
+//             for _ in 1..3 {
+//                 println!("******************* account: {}", account_id);
+//             }
+//             Ok(())
+//         }
+//         Err(err) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string())),
+//     }
+// }
 
 fn validate_new_account_id(
     network_config: &crate::config::NetworkConfig,
@@ -225,7 +225,8 @@ fn validate_new_account_id(
             near_jsonrpc_client::errors::RpcTransportError::SendError(_),
         )) = account_state
         {
-            println!("******************");
+            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            std::thread::sleep(std::time::Duration::from_millis(100))
         } else {
             match account_state {
                 Ok(_) => {
@@ -250,5 +251,6 @@ fn validate_new_account_id(
             }
         }
     }
+    eprintln!("\nTransport error.\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.");
     Ok(())
 }

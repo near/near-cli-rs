@@ -3,6 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::JsonRpcClientExt;
 
+pub mod sign_offline;
 pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
@@ -21,12 +22,12 @@ pub const META_TRANSACTION_VALID_FOR_DEFAULT: u64 = 1000;
 pub enum SignWith {
     #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
-        message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain"
+        message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain (Online only!)"
     ))]
     /// Sign the transaction with a key saved in macOS keychain
     SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
     #[strum_discriminants(strum(
-        message = "sign-with-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
+        message = "sign-with-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI) (Online only!)"
     ))]
     /// Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
@@ -51,6 +52,11 @@ pub enum SignWith {
     ))]
     /// Sign the transaction using the seed phrase
     SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
+    #[strum_discriminants(strum(
+        message = "sign-later                       - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)"
+    ))]
+    /// Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)
+    SignLater,
 }
 
 //-----------------------------------------------------------------------------------
