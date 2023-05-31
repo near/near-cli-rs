@@ -1,4 +1,5 @@
 use color_eyre::eyre::WrapErr;
+use inquire::CustomType;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -15,7 +16,10 @@ pub struct SignAccessKeyFile {
     pub nonce: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    pub block_hash: Option<String>,
+    pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    pub block_height: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     meta_transaction_valid_for: Option<u64>,
@@ -26,6 +30,7 @@ pub struct SignAccessKeyFile {
 #[derive(Clone)]
 pub struct SignAccessKeyFileContext {
     network_config: crate::config::NetworkConfig,
+    offline: bool,
     signed_transaction_or_signed_delegate_action: super::SignedTransactionOrSignedDelegateAction,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
@@ -45,7 +50,14 @@ impl SignAccessKeyFileContext {
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
             .wrap_err_with(|| format!("Error reading data from file: {:?}", &scope.file_path))?;
 
-        let rpc_query_response = network_config
+        let (nonce, block_hash, block_height) = if previous_context.offline {
+            (
+                scope.nonce.unwrap(),
+                scope.block_hash.unwrap().0,
+                scope.block_height.unwrap(),
+            )
+        } else {
+            let rpc_query_response = network_config
             .json_rpc_client()
             .blocking_call_view_access_key(
                 &previous_context.prepopulated_transaction.signer_id,
@@ -56,15 +68,21 @@ impl SignAccessKeyFileContext {
                 "Cannot sign a transaction due to an error while fetching the most recent nonce value",
             )?;
 
-        let current_nonce = rpc_query_response
-            .access_key_view()
-            .wrap_err("Error current_nonce")?
-            .nonce;
+            (
+                rpc_query_response
+                    .access_key_view()
+                    .wrap_err("Error current_nonce")?
+                    .nonce
+                    + 1,
+                rpc_query_response.block_hash,
+                rpc_query_response.block_height,
+            )
+        };
 
         let mut unsigned_transaction = near_primitives::transaction::Transaction {
             public_key: account_json.public_key.clone(),
-            block_hash: rpc_query_response.block_hash,
-            nonce: current_nonce + 1,
+            block_hash,
+            nonce,
             signer_id: previous_context.prepopulated_transaction.signer_id,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             actions: previous_context.prepopulated_transaction.actions,
@@ -77,7 +95,7 @@ impl SignAccessKeyFileContext {
             .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
         if network_config.meta_transaction_relayer_url.is_some() {
-            let max_block_height = rpc_query_response.block_height
+            let max_block_height = block_height
                 + scope
                     .meta_transaction_valid_for
                     .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
@@ -91,6 +109,7 @@ impl SignAccessKeyFileContext {
 
             return Ok(Self {
                 network_config: previous_context.network_config,
+                offline: previous_context.offline,
                 signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
                 on_before_sending_transaction_callback: previous_context
                     .on_before_sending_transaction_callback,
@@ -110,6 +129,7 @@ impl SignAccessKeyFileContext {
 
         Ok(Self {
             network_config: previous_context.network_config,
+            offline: previous_context.offline,
             signed_transaction_or_signed_delegate_action: signed_transaction.into(),
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
@@ -123,6 +143,7 @@ impl From<SignAccessKeyFileContext> for super::SubmitContext {
     fn from(item: SignAccessKeyFileContext) -> Self {
         Self {
             network_config: item.network_config,
+            offline: item.offline,
             signed_transaction_or_signed_delegate_action: item
                 .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
@@ -168,7 +189,14 @@ impl interactive_clap::FromCli for SignAccessKeyFile {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let block_hash = clap_variant.block_hash.clone();
+        let block_hash = clap_variant.block_hash;
+        if clap_variant.block_height.is_none() {
+            clap_variant.block_height = match Self::input_block_height(&context) {
+                Ok(optional_block_height) => optional_block_height,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let block_height = clap_variant.block_height;
         if clap_variant.meta_transaction_valid_for.is_none() {
             clap_variant.meta_transaction_valid_for =
                 match Self::input_meta_transaction_valid_for(&context) {
@@ -184,6 +212,7 @@ impl interactive_clap::FromCli for SignAccessKeyFile {
             file_path,
             nonce,
             block_hash,
+            block_height,
             meta_transaction_valid_for,
         };
         let output_context =
@@ -212,14 +241,38 @@ impl interactive_clap::FromCli for SignAccessKeyFile {
 
 impl SignAccessKeyFile {
     fn input_nonce(
-        _context: &crate::commands::TransactionContext,
+        context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
+        if context.offline {
+            return Ok(Some(
+                CustomType::<u64>::new("Enter a nonce for the access key:").prompt()?,
+            ));
+        }
         Ok(None)
     }
 
     fn input_block_hash(
-        _context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<String>> {
+        context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
+        if context.offline {
+            return Ok(Some(
+                CustomType::<crate::types::crypto_hash::CryptoHash>::new(
+                    "Enter recent block hash:",
+                )
+                .prompt()?,
+            ));
+        }
+        Ok(None)
+    }
+
+    fn input_block_height(
+        context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<u64>> {
+        if context.offline {
+            return Ok(Some(
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
+            ));
+        }
         Ok(None)
     }
 
