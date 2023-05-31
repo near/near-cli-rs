@@ -32,7 +32,7 @@ impl TokensCommandsContext {
         scope: &<TokensCommands as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            config: previous_context.config,
             owner_account_id: scope.owner_account_id.clone().into(),
         })
     }

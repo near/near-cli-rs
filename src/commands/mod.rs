@@ -1,11 +1,11 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-pub mod account;
-mod config;
-mod contract;
+// pub mod account;
+// mod config;
+// mod contract;
 mod tokens;
-mod transaction;
+// mod transaction;
 
 #[cfg(feature = "self-update")]
 pub mod extensions;
@@ -17,27 +17,27 @@ pub mod extensions;
 #[non_exhaustive]
 /// What are you up to? (select one of the options with the up-down arrows on your keyboard and press Enter)
 pub enum TopLevelCommand {
-    #[strum_discriminants(strum(message = "account     - Manage accounts"))]
-    /// View account summary, create subaccount, delete account, list keys, add key, delete key, import account
-    Account(self::account::AccountCommands),
+    // #[strum_discriminants(strum(message = "account     - Manage accounts"))]
+    // /// View account summary, create subaccount, delete account, list keys, add key, delete key, import account
+    // Account(self::account::AccountCommands),
     #[strum_discriminants(strum(
         message = "tokens      - Manage token assets such as NEAR, FT, NFT"
     ))]
     /// Use this for token actions: send or view balances of NEAR, FT, or NFT
     Tokens(self::tokens::TokensCommands),
-    #[strum_discriminants(strum(
-        message = "contract    - Manage smart-contracts: deploy code, call functions"
-    ))]
-    /// Use this for contract actions: call function, deploy, download wasm, inspect storage
-    Contract(self::contract::ContractCommands),
-    #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
-    /// Use this to construct transactions or view a transaction status.
-    Transaction(self::transaction::TransactionCommands),
-    #[strum_discriminants(strum(
-        message = "config      - Manage connections in a configuration file (config.toml)"
-    ))]
-    /// Use this to manage connections in a configuration file (config.toml).
-    Config(self::config::ConfigCommands),
+    // #[strum_discriminants(strum(
+    //     message = "contract    - Manage smart-contracts: deploy code, call functions"
+    // ))]
+    // /// Use this for contract actions: call function, deploy, download wasm, inspect storage
+    // Contract(self::contract::ContractCommands),
+    // #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
+    // /// Use this to construct transactions or view a transaction status.
+    // Transaction(self::transaction::TransactionCommands),
+    // #[strum_discriminants(strum(
+    //     message = "config      - Manage connections in a configuration file (config.toml)"
+    // ))]
+    // /// Use this to manage connections in a configuration file (config.toml).
+    // Config(self::config::ConfigCommands),
     #[cfg(feature = "self-update")]
     #[strum_discriminants(strum(message = "extension   - Manage near CLI and extensions"))]
     /// Use this to manage near CLI and extensions

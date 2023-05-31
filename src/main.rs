@@ -26,11 +26,11 @@ pub struct GlobalContext {
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = CmdContext)]
-#[interactive_clap(skip_default_from_cli)]
+// #[interactive_clap(skip_default_from_cli)]
 pub struct Cmd {
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_input_arg)]
-    offline: Option<crate::types::bool::Bool>,
+    // #[interactive_clap(skip_default_input_arg)]
+    offline: crate::types::bool::Bool,
     #[interactive_clap(subcommand)]
     top_level: crate::commands::TopLevelCommand,
 }
@@ -48,7 +48,7 @@ impl CmdContext {
             offline: scope
                 .offline
                 .clone()
-                .unwrap_or_else(|| crate::types::bool::Bool(false))
+                // .unwrap_or_else(|| crate::types::bool::Bool(false))
                 .into(),
         }))
     }
@@ -60,60 +60,60 @@ impl From<CmdContext> for crate::GlobalContext {
     }
 }
 
-impl interactive_clap::FromCli for Cmd {
-    type FromCliContext = crate::GlobalContext;
-    type FromCliError = color_eyre::eyre::Error;
+// impl interactive_clap::FromCli for Cmd {
+//     type FromCliContext = crate::GlobalContext;
+//     type FromCliError = color_eyre::eyre::Error;
 
-    fn from_cli(
-        optional_clap_variant: Option<<Cmd as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    >
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+//     fn from_cli(
+//         optional_clap_variant: Option<<Cmd as interactive_clap::ToCli>::CliVariant>,
+//         context: Self::FromCliContext,
+//     ) -> interactive_clap::ResultFromCli<
+//         <Self as interactive_clap::ToCli>::CliVariant,
+//         Self::FromCliError,
+//     >
+//     where
+//         Self: Sized + interactive_clap::ToCli,
+//     {
+//         let mut clap_variant = optional_clap_variant.unwrap_or_default();
 
-        if clap_variant.offline.is_none() {
-            clap_variant.offline = match Self::input_offline(&context) {
-                Ok(optional_offline) => optional_offline,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let offline = clap_variant.offline.clone();
+//         if clap_variant.offline.is_none() {
+//             clap_variant.offline = match Self::input_offline(&context) {
+//                 Ok(optional_offline) => optional_offline,
+//                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+//             };
+//         }
+//         let offline = clap_variant.offline.clone();
 
-        let new_context_scope = InteractiveClapContextScopeForCmd {
-            offline,
-        };
-        let output_context = match CmdContext::from_previous_context(context, &new_context_scope) {
-            Ok(new_context) => new_context,
-            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-        };
+//         let new_context_scope = InteractiveClapContextScopeForCmd {
+//             offline,
+//         };
+//         let output_context = match CmdContext::from_previous_context(context, &new_context_scope) {
+//             Ok(new_context) => new_context,
+//             Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+//         };
 
-        match crate::commands::TopLevelCommand::from_cli(clap_variant.top_level.take(), output_context.into()) {
-            interactive_clap::ResultFromCli::Ok(cli_top_level) | interactive_clap::ResultFromCli::Cancel(Some(cli_top_level)) => {
-                clap_variant.top_level = Some(cli_top_level);
-                interactive_clap::ResultFromCli::Ok(clap_variant)
-            }
-            interactive_clap::ResultFromCli::Cancel(_) => interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
-            interactive_clap::ResultFromCli::Err(optional_cli_top_level, err) => {
-                clap_variant.top_level = optional_cli_top_level;
-                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-            }
-    }
-    }
-}
+//         match crate::commands::TopLevelCommand::from_cli(clap_variant.top_level.take(), output_context.into()) {
+//             interactive_clap::ResultFromCli::Ok(cli_top_level) | interactive_clap::ResultFromCli::Cancel(Some(cli_top_level)) => {
+//                 clap_variant.top_level = Some(cli_top_level);
+//                 interactive_clap::ResultFromCli::Ok(clap_variant)
+//             }
+//             interactive_clap::ResultFromCli::Cancel(_) => interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+//             interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
+//             interactive_clap::ResultFromCli::Err(optional_cli_top_level, err) => {
+//                 clap_variant.top_level = optional_cli_top_level;
+//                 interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+//             }
+//     }
+//     }
+// }
 
-impl Cmd {
-    fn input_offline(
-        _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::bool::Bool>> {
-        Ok(None)
-    }
-}
+// impl Cmd {
+//     fn input_offline(
+//         _context: &crate::GlobalContext,
+//     ) -> color_eyre::eyre::Result<Option<crate::types::bool::Bool>> {
+//         Ok(None)
+//     }
+// }
 
 fn main() -> crate::common::CliResult {
     let config = crate::common::get_config_toml()?;

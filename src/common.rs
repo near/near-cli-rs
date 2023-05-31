@@ -1561,7 +1561,7 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
 pub fn input_network_name(
     context: &crate::GlobalContext,
 ) -> color_eyre::eyre::Result<Option<String>> {
-    let variants = context.0.network_connection.keys().collect::<Vec<_>>();
+    let variants = context.config.network_connection.keys().collect::<Vec<_>>();
     let select_submit = Select::new("What is the name of the network?", variants).prompt();
     match select_submit {
         Ok(value) => Ok(Some(value.clone())),
