@@ -1,6 +1,7 @@
 extern crate dirs;
 
 use color_eyre::eyre::WrapErr;
+use inquire::{CustomType, Text};
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -26,6 +27,7 @@ pub struct SignKeychain {
 #[derive(Clone)]
 pub struct SignKeychainContext {
     network_config: crate::config::NetworkConfig,
+    offline: bool,
     signed_transaction_or_signed_delegate_action: super::SignedTransactionOrSignedDelegateAction,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
@@ -159,6 +161,7 @@ impl SignKeychainContext {
 
             return Ok(Self {
                 network_config: previous_context.network_config,
+                offline: previous_context.offline,
                 signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
                 on_before_sending_transaction_callback: previous_context
                     .on_before_sending_transaction_callback,
@@ -182,6 +185,7 @@ impl SignKeychainContext {
 
         Ok(Self {
             network_config: previous_context.network_config,
+            offline: previous_context.offline,
             signed_transaction_or_signed_delegate_action: signed_transaction.into(),
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
@@ -195,6 +199,7 @@ impl From<SignKeychainContext> for super::SubmitContext {
     fn from(item: SignKeychainContext) -> Self {
         Self {
             network_config: item.network_config,
+            offline: item.offline,
             signed_transaction_or_signed_delegate_action: item
                 .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
@@ -274,14 +279,22 @@ impl interactive_clap::FromCli for SignKeychain {
 
 impl SignKeychain {
     fn input_nonce(
-        _context: &crate::commands::TransactionContext,
+        context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
+        if context.offline {
+            return Ok(Some(
+                CustomType::<u64>::new("Enter a nonce for the access key:").prompt()?,
+            ));
+        }
         Ok(None)
     }
 
     fn input_block_hash(
-        _context: &crate::commands::TransactionContext,
+        context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
+        if context.offline {
+            return Ok(Some(Text::new("Enter recent block hash:").prompt()?));
+        }
         Ok(None)
     }
 
