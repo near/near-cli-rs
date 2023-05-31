@@ -13,6 +13,7 @@ pub struct NetworkForTransactionArgs {
 #[derive(Clone)]
 pub struct NetworkForTransactionArgsContext {
     config: crate::config::Config,
+    offline: bool,
     network_config: crate::config::NetworkConfig,
     prepopulated_transaction: crate::commands::PrepopulatedTransaction,
     on_before_signing_callback: crate::commands::OnBeforeSigningCallback,
@@ -36,6 +37,7 @@ impl NetworkForTransactionArgsContext {
             (previous_context.on_after_getting_network_callback)(&network_config)?;
         Ok(Self {
             config: previous_context.config,
+            offline: previous_context.offline,
             network_config,
             prepopulated_transaction,
             on_before_signing_callback: previous_context.on_before_signing_callback,
@@ -51,6 +53,7 @@ impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionCont
     fn from(item: NetworkForTransactionArgsContext) -> Self {
         Self {
             config: item.config,
+            offline: item.offline,
             network_config: item.network_config,
             prepopulated_transaction: item.prepopulated_transaction,
             on_before_signing_callback: item.on_before_signing_callback,
@@ -134,7 +137,10 @@ impl NetworkForTransactionArgs {
     fn input_network_name(
         context: &crate::commands::ActionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&crate::GlobalContext{config: context.config.clone(), offline: false})
+        crate::common::input_network_name(&crate::GlobalContext {
+            config: context.config.clone(),
+            offline: context.offline,
+        })
     }
 
     pub fn get_network_config(
