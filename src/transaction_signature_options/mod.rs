@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::JsonRpcClientExt;
 
-pub mod sign_offline;
+pub mod sign_later;
 pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
@@ -56,7 +56,7 @@ pub enum SignWith {
         message = "sign-later                       - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)"
     ))]
     /// Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)
-    SignLater,
+    SignLater(self::sign_later::Display),
 }
 
 //-----------------------------------------------------------------------------------
