@@ -1,7 +1,9 @@
 extern crate dirs;
 
+use std::str::FromStr;
+
 use color_eyre::eyre::WrapErr;
-use inquire::{CustomType, Text};
+use inquire::{CustomType, Select};
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -11,12 +13,18 @@ use crate::common::RpcQueryResponseExt;
 #[interactive_clap(output_context = SignKeychainContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignKeychain {
+    #[allow(dead_code)]
+    #[interactive_clap(skip)]
+    signer_public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     nonce: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    block_hash: Option<String>,
+    pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    pub block_height: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     meta_transaction_valid_for: Option<u64>,
@@ -51,94 +59,121 @@ impl SignKeychainContext {
         let data_path: std::path::PathBuf = {
             let dir_name = network_config.network_name.clone();
             path.push(&dir_name);
-            path.push(file_name);
 
-            if path.exists() {
-                path
-            } else {
-                let access_key_list = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_access_key_list(
-                        &previous_context.prepopulated_transaction.signer_id,
-                        near_primitives::types::Finality::Final.into(),
-                    )
-                    .wrap_err_with(|| {
-                        format!(
-                            "Failed to fetch access KeyList for {}",
-                            previous_context.prepopulated_transaction.signer_id
-                        )
-                    })?
-                    .access_key_list_view()?;
-                let mut path =
-                    std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
-                path.push(dir_name);
+            if previous_context.offline {
                 path.push(
-                    &previous_context
+                    previous_context
                         .prepopulated_transaction
                         .signer_id
                         .to_string(),
                 );
-                let mut data_path = std::path::PathBuf::new();
-                'outer: for access_key in access_key_list.keys {
-                    let account_public_key = access_key.public_key.to_string();
-                    let is_full_access_key: bool = match &access_key.access_key.permission {
-                        near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                        near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                            allowance: _,
-                            receiver_id: _,
-                            method_names: _,
-                        } => false,
-                    };
-                    let dir = path
+                path.push(&format!(
+                    "{}.json",
+                    scope.signer_public_key.to_string().replace(':', "_")
+                ));
+                path
+            } else {
+                path.push(file_name);
+                if path.exists() {
+                    path
+                } else {
+                    let access_key_list = network_config
+                        .json_rpc_client()
+                        .blocking_call_view_access_key_list(
+                            &previous_context.prepopulated_transaction.signer_id,
+                            near_primitives::types::Finality::Final.into(),
+                        )
+                        .wrap_err_with(|| {
+                            format!(
+                                "Failed to fetch access KeyList for {}",
+                                previous_context.prepopulated_transaction.signer_id
+                            )
+                        })?
+                        .access_key_list_view()?;
+                    let mut path =
+                        std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
+                    path.push(dir_name);
+                    path.push(
+                        &previous_context
+                            .prepopulated_transaction
+                            .signer_id
+                            .to_string(),
+                    );
+                    let mut data_path = std::path::PathBuf::new();
+                    'outer: for access_key in access_key_list.keys {
+                        let account_public_key = access_key.public_key.to_string();
+                        let is_full_access_key: bool = match &access_key.access_key.permission {
+                            near_primitives::views::AccessKeyPermissionView::FullAccess => true,
+                            near_primitives::views::AccessKeyPermissionView::FunctionCall {
+                                allowance: _,
+                                receiver_id: _,
+                                method_names: _,
+                            } => false,
+                        };
+                        let dir = path
                         .read_dir()
                         .wrap_err("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.")?;
-                    for entry in dir {
-                        if let Ok(entry) = entry {
-                            if entry
-                                .path()
-                                .file_stem()
-                                .unwrap()
-                                .to_str()
-                                .unwrap()
-                                .contains(account_public_key.rsplit(':').next().unwrap())
-                                && is_full_access_key
-                            {
-                                data_path.push(entry.path());
-                                break 'outer;
-                            }
-                        } else {
-                            return Err(color_eyre::Report::msg(
+                        for entry in dir {
+                            if let Ok(entry) = entry {
+                                if entry
+                                    .path()
+                                    .file_stem()
+                                    .unwrap()
+                                    .to_str()
+                                    .unwrap()
+                                    .contains(account_public_key.rsplit(':').next().unwrap())
+                                    && is_full_access_key
+                                {
+                                    data_path.push(entry.path());
+                                    break 'outer;
+                                }
+                            } else {
+                                return Err(color_eyre::Report::msg(
                                 "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain."
                             ));
-                        };
+                            };
+                        }
                     }
+                    data_path
                 }
-                data_path
             }
         };
         let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
             .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
 
-        let rpc_query_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
-                &previous_context.prepopulated_transaction.signer_id,
-                &account_json.public_key,
-                near_primitives::types::BlockReference::latest(),
+        let (nonce, block_hash, block_height) = if previous_context.offline {
+            (
+                scope.nonce.unwrap(),
+                scope.block_hash.unwrap().0,
+                scope.block_height.unwrap(),
             )
-            .wrap_err(
-                "Cannot sign a transaction due to an error while fetching the most recent nonce value",
-            )?;
-        let current_nonce = rpc_query_response
-            .access_key_view()
-            .wrap_err("Error current_nonce")?
-            .nonce;
+        } else {
+            let rpc_query_response = network_config
+                .json_rpc_client()
+                .blocking_call_view_access_key(
+                    &previous_context.prepopulated_transaction.signer_id,
+                    &account_json.public_key,
+                    near_primitives::types::BlockReference::latest()
+                )
+                .wrap_err(
+                    "Cannot sign a transaction due to an error while fetching the most recent nonce value",
+                )?;
+            (
+                rpc_query_response
+                    .access_key_view()
+                    .wrap_err("Error current_nonce")?
+                    .nonce
+                    + 1,
+                rpc_query_response.block_hash,
+                rpc_query_response.block_height,
+            )
+        };
 
         let mut unsigned_transaction = near_primitives::transaction::Transaction {
             public_key: account_json.public_key.clone(),
-            block_hash: rpc_query_response.block_hash,
-            nonce: current_nonce + 1,
+            block_hash,
+            nonce,
             signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             actions: previous_context.prepopulated_transaction.actions,
@@ -147,7 +182,7 @@ impl SignKeychainContext {
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
         if network_config.meta_transaction_relayer_url.is_some() {
-            let max_block_height = rpc_query_response.block_height
+            let max_block_height = block_height
                 + scope
                     .meta_transaction_valid_for
                     .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
@@ -223,6 +258,60 @@ impl interactive_clap::FromCli for SignKeychain {
     {
         let mut clap_variant = optional_clap_variant.unwrap_or_default();
 
+        let signer_public_key: crate::types::public_key::PublicKey = if context.offline {
+            let network_config = context.network_config.clone();
+
+            let mut path = std::path::PathBuf::from(&context.config.credentials_home_dir);
+
+            let dir_name = network_config.network_name;
+            path.push(&dir_name);
+
+            path.push(context.prepopulated_transaction.signer_id.to_string());
+
+            let signer_dir = match path.read_dir() {
+                Ok(dir) => dir,
+                Err(err) => {
+                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
+                }
+            };
+
+            let key_list = signer_dir
+                .filter_map(|entry| {
+                    if let Ok(entry) = entry {
+                        if let Ok(file_name_str) = entry.file_name().into_string() {
+                            if file_name_str.starts_with("ed25519_") {
+                                let public_key_str =
+                                    file_name_str.replace(".json", "").replace('_', ":");
+                                Some(public_key_str)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            let selected_input = match Select::new("Choose public_key:", key_list).prompt() {
+                Ok(selected) => selected,
+                Err(err) => {
+                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
+                }
+            };
+
+            match crate::types::public_key::PublicKey::from_str(&selected_input) {
+                Ok(public_key) => public_key,
+                Err(err) => {
+                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
+                }
+            }
+        } else {
+            near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519).into()
+        };
+
         if clap_variant.nonce.is_none() {
             clap_variant.nonce = match Self::input_nonce(&context) {
                 Ok(optional_nonce) => optional_nonce,
@@ -236,7 +325,14 @@ impl interactive_clap::FromCli for SignKeychain {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let block_hash = clap_variant.block_hash.clone();
+        let block_hash = clap_variant.block_hash;
+        if clap_variant.block_height.is_none() {
+            clap_variant.block_height = match Self::input_block_height(&context) {
+                Ok(optional_block_height) => optional_block_height,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let block_height = clap_variant.block_height;
         if clap_variant.meta_transaction_valid_for.is_none() {
             clap_variant.meta_transaction_valid_for =
                 match Self::input_meta_transaction_valid_for(&context) {
@@ -249,8 +345,10 @@ impl interactive_clap::FromCli for SignKeychain {
         let meta_transaction_valid_for = clap_variant.meta_transaction_valid_for;
 
         let new_context_scope = InteractiveClapContextScopeForSignKeychain {
+            signer_public_key,
             nonce,
             block_hash,
+            block_height,
             meta_transaction_valid_for,
         };
         let output_context =
@@ -291,9 +389,25 @@ impl SignKeychain {
 
     fn input_block_hash(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<String>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
         if context.offline {
-            return Ok(Some(Text::new("Enter recent block hash:").prompt()?));
+            return Ok(Some(
+                CustomType::<crate::types::crypto_hash::CryptoHash>::new(
+                    "Enter recent block hash:",
+                )
+                .prompt()?,
+            ));
+        }
+        Ok(None)
+    }
+
+    fn input_block_height(
+        context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<u64>> {
+        if context.offline {
+            return Ok(Some(
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
+            ));
         }
         Ok(None)
     }

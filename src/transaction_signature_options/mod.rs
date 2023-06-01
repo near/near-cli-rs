@@ -27,7 +27,7 @@ pub enum SignWith {
     /// Sign the transaction with a key saved in macOS keychain
     SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
     #[strum_discriminants(strum(
-        message = "sign-with-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI) (Online only!)"
+        message = "sign-with-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
     ))]
     /// Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
