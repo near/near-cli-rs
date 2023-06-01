@@ -276,23 +276,10 @@ impl interactive_clap::FromCli for SignKeychain {
             };
 
             let key_list = signer_dir
-                .filter_map(|entry| {
-                    if let Ok(entry) = entry {
-                        if let Ok(file_name_str) = entry.file_name().into_string() {
-                            if file_name_str.starts_with("ed25519_") {
-                                let public_key_str =
-                                    file_name_str.replace(".json", "").replace('_', ":");
-                                Some(public_key_str)
-                            } else {
-                                None
-                            }
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|entry| entry.ok())
+                .filter_map(|entry| entry.file_name().into_string().ok())
+                .filter(|file_name_str| file_name_str.starts_with("ed25519_"))
+                .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
                 .collect::<Vec<_>>();
 
             let selected_input = match Select::new("Choose public_key:", key_list).prompt() {
