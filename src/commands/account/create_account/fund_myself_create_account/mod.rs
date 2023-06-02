@@ -73,13 +73,13 @@ impl NewAccount {
                 .prompt()?;
         let account_id = if let ConfirmOptions::Yes { mut account_id } = select_choose_input {
             loop {
-                let network = find_network_where_account_exist(context, account_id.clone().into());
+                let network = crate::common::find_network_where_account_exist(context, account_id.clone().into());
                 if let Some(network_config) = network {
                     eprintln!(
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
                         &account_id, network_config.network_name
                     );
-                    if !ask_if_different_account_id_wanted()? {
+                    if !crate::common::ask_if_different_account_id_wanted()? {
                         break account_id;
                     };
                 } else if account_id.0.as_str().chars().count()
@@ -92,7 +92,7 @@ impl NewAccount {
                         &account_id.0.as_str().chars().count(),
                         MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH,
                     );
-                    if !ask_if_different_account_id_wanted()? {
+                    if !crate::common::ask_if_different_account_id_wanted()? {
                         break account_id;
                     };
                 } else {
@@ -101,7 +101,7 @@ impl NewAccount {
                     if !near_primitives::types::AccountId::from(parent_account_id.clone())
                         .is_top_level()
                     {
-                        if find_network_where_account_exist(
+                        if crate::common::find_network_where_account_exist(
                             context,
                             parent_account_id.clone().into(),
                         )
@@ -109,7 +109,7 @@ impl NewAccount {
                         {
                             eprintln!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
                                 &parent_account_id, &account_id);
-                            if !ask_if_different_account_id_wanted()? {
+                            if !crate::common::ask_if_different_account_id_wanted()? {
                                 break account_id;
                             };
                         } else {
@@ -141,40 +141,6 @@ impl NewAccount {
                 ))
             }
     }
-}
-
-fn find_network_where_account_exist(
-    context: &crate::GlobalContext,
-    new_account_id: near_primitives::types::AccountId,
-) -> Option<crate::config::NetworkConfig> {
-    for (_, network_config) in context.config.network_connection.iter() {
-        if crate::common::get_account_state(
-            network_config.clone(),
-            new_account_id.clone(),
-            near_primitives::types::BlockReference::latest(),
-        )
-        .is_ok()
-        {
-            return Some(network_config.clone());
-        }
-    }
-    None
-}
-
-fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
-    #[derive(strum_macros::Display, PartialEq)]
-    enum ConfirmOptions {
-        #[strum(to_string = "Yes, I want to enter a new name for account ID.")]
-        Yes,
-        #[strum(to_string = "No, I want to keep using this name for account ID.")]
-        No,
-    }
-    let select_choose_input = Select::new(
-        "Do you want to enter a different name for the new account ID?",
-        vec![ConfirmOptions::Yes, ConfirmOptions::No],
-    )
-    .prompt()?;
-    Ok(select_choose_input == ConfirmOptions::Yes)
 }
 
 #[derive(Clone)]

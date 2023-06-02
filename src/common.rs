@@ -451,6 +451,40 @@ pub fn is_account_exist(
     false
 }
 
+pub fn find_network_where_account_exist(
+    context: &crate::GlobalContext,
+    new_account_id: near_primitives::types::AccountId,
+) -> Option<crate::config::NetworkConfig> {
+    for (_, network_config) in context.config.network_connection.iter() {
+        if crate::common::get_account_state(
+            network_config.clone(),
+            new_account_id.clone(),
+            near_primitives::types::BlockReference::latest(),
+        )
+        .is_ok()
+        {
+            return Some(network_config.clone());
+        }
+    }
+    None
+}
+
+pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
+    #[derive(strum_macros::Display, PartialEq)]
+    enum ConfirmOptions {
+        #[strum(to_string = "Yes, I want to enter a new name for account ID.")]
+        Yes,
+        #[strum(to_string = "No, I want to keep using this name for account ID.")]
+        No,
+    }
+    let select_choose_input = Select::new(
+        "Do you want to enter a different name for the new account ID?",
+        vec![ConfirmOptions::Yes, ConfirmOptions::No],
+    )
+    .prompt()?;
+    Ok(select_choose_input == ConfirmOptions::Yes)
+}
+
 pub fn get_account_state(
     network_config: crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
