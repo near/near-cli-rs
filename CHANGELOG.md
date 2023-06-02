@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3](https://github.com/near/near-cli-rs/compare/v0.4.2...v0.4.3) - 2023-06-02
+
+### Added
+- New command to send a signed transaction [potentially constructed offline] ([#206](https://github.com/near/near-cli-rs/pull/206))
+- Extended access-key deletion with an option to delete multiple keys in a single transaction ([#207](https://github.com/near/near-cli-rs/pull/207))
+
+### Other
+- Updated dependencies to the most recent versions
+
 ## [0.4.2](https://github.com/near/near-cli-rs/compare/v0.4.1...v0.4.2) - 2023-05-26
 
 ### Added
