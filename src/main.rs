@@ -4,33 +4,27 @@ use clap::Parser;
 use color_eyre::eyre::WrapErr;
 use interactive_clap::ToCliArgs;
 
-mod commands;
-mod common;
-mod config;
-mod js_command_match;
-mod network;
-mod network_for_transaction;
-mod network_view_at_block;
-mod transaction_signature_options;
-mod types;
-mod utils_command;
+pub use near_cli_rs::commands;
+pub use near_cli_rs::common;
+pub use near_cli_rs::config;
+pub use near_cli_rs::js_command_match;
+pub use near_cli_rs::network;
+pub use near_cli_rs::network_for_transaction;
+pub use near_cli_rs::network_view_at_block;
+pub use near_cli_rs::transaction_signature_options;
+pub use near_cli_rs::types;
+pub use near_cli_rs::utils_command;
 
 pub use common::CliResult;
-
-#[derive(Clone)]
-pub struct GlobalContext {
-    pub config: crate::config::Config,
-    pub offline: bool,
-}
+pub use near_cli_rs::GlobalContext;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = CmdContext)]
-#[interactive_clap(skip_default_from_cli)]
 pub struct Cmd {
+    /// Offline mode
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_input_arg)]
-    offline: Option<crate::types::bool::Bool>,
+    offline: bool,
     #[interactive_clap(subcommand)]
     top_level: crate::commands::TopLevelCommand,
 }
@@ -45,11 +39,7 @@ impl CmdContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(crate::GlobalContext {
             config: previous_context.config,
-            offline: scope
-                .offline
-                .clone()
-                .unwrap_or(crate::types::bool::Bool(false))
-                .into(),
+            offline: scope.offline,
         }))
     }
 }
@@ -57,65 +47,6 @@ impl CmdContext {
 impl From<CmdContext> for crate::GlobalContext {
     fn from(item: CmdContext) -> Self {
         item.0
-    }
-}
-
-impl interactive_clap::FromCli for Cmd {
-    type FromCliContext = crate::GlobalContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        optional_clap_variant: Option<<Cmd as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    >
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
-
-        if clap_variant.offline.is_none() {
-            clap_variant.offline = match Self::input_offline(&context) {
-                Ok(optional_offline) => optional_offline,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let offline = clap_variant.offline.clone();
-
-        let new_context_scope = InteractiveClapContextScopeForCmd { offline };
-        let output_context = match CmdContext::from_previous_context(context, &new_context_scope) {
-            Ok(new_context) => new_context,
-            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-        };
-
-        match crate::commands::TopLevelCommand::from_cli(
-            clap_variant.top_level.take(),
-            output_context.into(),
-        ) {
-            interactive_clap::ResultFromCli::Ok(cli_top_level)
-            | interactive_clap::ResultFromCli::Cancel(Some(cli_top_level)) => {
-                clap_variant.top_level = Some(cli_top_level);
-                interactive_clap::ResultFromCli::Ok(clap_variant)
-            }
-            interactive_clap::ResultFromCli::Cancel(_) => {
-                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
-            }
-            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
-            interactive_clap::ResultFromCli::Err(optional_cli_top_level, err) => {
-                clap_variant.top_level = optional_cli_top_level;
-                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-            }
-        }
-    }
-}
-
-impl Cmd {
-    fn input_offline(
-        _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::bool::Bool>> {
-        Ok(None)
     }
 }
 
@@ -216,7 +147,7 @@ fn main() -> crate::common::CliResult {
     if !matches!(
         cli_cmd,
         Ok(Some(CliCmd {
-            offline: None,
+            offline: _,
             top_level: Some(crate::commands::CliTopLevelCommand::Extensions(
                 crate::commands::extensions::CliExtensionsCommands {
                     extensions_actions: Some(
@@ -241,7 +172,7 @@ fn main() -> crate::common::CliResult {
                     "`near` CLI has a new update available \x1b[2m{current_version}\x1b[0m →  \x1b[32m{latest_version}\x1b[0m"
                 );
                 let self_update_cli_cmd = CliCmd {
-                    offline: None,
+                    offline: false,
                     top_level:
                         Some(crate::commands::CliTopLevelCommand::Extensions(
                             crate::commands::extensions::CliExtensionsCommands {
