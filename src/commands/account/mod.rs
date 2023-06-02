@@ -6,7 +6,7 @@ mod delete_account;
 mod delete_key;
 mod import_account;
 mod list_keys;
-// pub mod storage_management;
+pub mod storage_management;
 mod view_account_summary;
 
 pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
@@ -55,9 +55,9 @@ pub enum AccountActions {
     ))]
     /// Delete an access key from an account
     DeleteKey(self::delete_key::DeleteKeyCommand),
-    // #[strum_discriminants(strum(
-    //     message = "manage-storage-deposit  - Storage management: deposit, withdrawal, balance review"
-    // ))]
-    // /// Storage management for contract: deposit, withdrawal, balance review
-    // ManageStorageDeposit(self::storage_management::Contract),
+    #[strum_discriminants(strum(
+        message = "manage-storage-deposit  - Storage management: deposit, withdrawal, balance review"
+    ))]
+    /// Storage management for contract: deposit, withdrawal, balance review
+    ManageStorageDeposit(self::storage_management::Contract),
 }
