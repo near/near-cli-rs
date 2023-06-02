@@ -1,7 +1,7 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-// pub mod account;
+pub mod account;
 // mod config;
 // mod contract;
 mod tokens;
@@ -17,9 +17,9 @@ pub mod extensions;
 #[non_exhaustive]
 /// What are you up to? (select one of the options with the up-down arrows on your keyboard and press Enter)
 pub enum TopLevelCommand {
-    // #[strum_discriminants(strum(message = "account     - Manage accounts"))]
-    // /// View account summary, create subaccount, delete account, list keys, add key, delete key, import account
-    // Account(self::account::AccountCommands),
+    #[strum_discriminants(strum(message = "account     - Manage accounts"))]
+    /// View account summary, create subaccount, delete account, list keys, add key, delete key, import account
+    Account(self::account::AccountCommands),
     #[strum_discriminants(strum(
         message = "tokens      - Manage token assets such as NEAR, FT, NFT"
     ))]

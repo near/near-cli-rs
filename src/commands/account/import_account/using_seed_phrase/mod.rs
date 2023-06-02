@@ -23,7 +23,7 @@ impl LoginFromSeedPhraseContext {
         previous_context: crate::GlobalContext,
         scope: &<LoginFromSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let config = previous_context.0.clone();
+        let config = previous_context.config.clone();
         let seed_phrase_hd_path = scope.seed_phrase_hd_path.clone();
         let master_seed_phrase = scope.master_seed_phrase.clone();
         let key_pair_properties = crate::common::get_key_pair_properties_from_seed_phrase(
@@ -47,7 +47,7 @@ impl LoginFromSeedPhraseContext {
             });
 
         Ok(Self(crate::network::NetworkContext {
-            config: previous_context.0,
+            config: previous_context.config,
             on_after_getting_network_callback,
         }))
     }
