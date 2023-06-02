@@ -48,7 +48,7 @@ impl CmdContext {
             offline: scope
                 .offline
                 .clone()
-                .unwrap_or_else(|| crate::types::bool::Bool(false))
+                .unwrap_or(crate::types::bool::Bool(false))
                 .into(),
         }))
     }

@@ -13,6 +13,6 @@ pub mod utils_command;
 
 #[derive(Clone)]
 pub struct GlobalContext {
-    config: crate::config::Config,
-    offline: bool,
+    pub config: crate::config::Config,
+    pub offline: bool,
 }
