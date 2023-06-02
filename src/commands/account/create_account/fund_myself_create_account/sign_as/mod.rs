@@ -1,8 +1,7 @@
 use std::str::FromStr;
 
+use inquire::CustomType;
 use serde_json::json;
-
-use inquire::{CustomType, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::AccountPropertiesContext)]
@@ -19,6 +18,7 @@ pub struct SignerAccountId {
 #[derive(Clone)]
 pub struct SignerAccountIdContext {
     config: crate::config::Config,
+    offline: bool,
     account_properties: super::AccountProperties,
     signer_account_id: near_primitives::types::AccountId,
     on_before_sending_transaction_callback:
@@ -32,6 +32,7 @@ impl SignerAccountIdContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
+            offline: previous_context.offline,
             account_properties: previous_context.account_properties,
             signer_account_id: scope.signer_account_id.clone().into(),
             on_before_sending_transaction_callback: previous_context
@@ -51,8 +52,6 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 let signer_id = item.signer_account_id.clone();
 
                 move |network_config| {
-                    // validate_signer_account_id(network_config, &signer_id)?;
-
                     if new_account_id.as_str().chars().count()
                         < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
                         && new_account_id.is_top_level()
@@ -62,8 +61,9 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             new_account_id, new_account_id.as_str().chars().count()
                         ));
                     }
-                    validate_new_account_id(network_config, &new_account_id)?;
-
+                    if !item.offline {
+                        validate_new_account_id(network_config, &new_account_id)?;
+                    }
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
                         (vec![
                                 near_primitives::transaction::Action::CreateAccount(
@@ -140,6 +140,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
 
         Self {
             config,
+            offline: item.offline,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
@@ -176,40 +177,6 @@ impl SignerAccountId {
         Ok(Some(signer_account_id))
     }
 }
-
-// fn validate_signer_account_id(
-//     network_config: &crate::config::NetworkConfig,
-//     account_id: &near_primitives::types::AccountId,
-// ) -> crate::CliResult {
-//     match crate::common::get_account_state(
-//         network_config.clone(),
-//         account_id.clone(),
-//         near_primitives::types::BlockReference::latest(),
-//     ) {
-//         Ok(_) => Ok(()),
-//         Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-//             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-//                 near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-//                     requested_account_id,
-//                     ..
-//                 },
-//             ),
-//         )) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-//             "Signer account <{}> does not currently exist on network <{}>.",
-//             requested_account_id,
-//             network_config.network_name
-//         )),
-//         Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
-//             near_jsonrpc_client::errors::RpcTransportError::SendError(_),
-//         )) => {
-//             for _ in 1..3 {
-//                 println!("******************* account: {}", account_id);
-//             }
-//             Ok(())
-//         }
-//         Err(err) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string())),
-//     }
-// }
 
 fn validate_new_account_id(
     network_config: &crate::config::NetworkConfig,

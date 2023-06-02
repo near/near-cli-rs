@@ -24,6 +24,7 @@ pub struct NewAccount {
 #[derive(Debug, Clone)]
 pub struct NewAccountContext {
     config: crate::config::Config,
+    offline: bool,
     new_account_id: crate::types::account_id::AccountId,
     initial_balance: crate::common::NearBalance,
 }
@@ -34,7 +35,8 @@ impl NewAccountContext {
         scope: &<NewAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            config: previous_context.config,
+            offline: previous_context.offline,
             new_account_id: scope.new_account_id.clone(),
             initial_balance: scope.initial_balance.clone(),
         })
@@ -47,6 +49,10 @@ impl NewAccount {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         let new_account_id: crate::types::account_id::AccountId =
             CustomType::new("What is the new account ID?").prompt()?;
+
+        if context.offline {
+            return Ok(Some(new_account_id));
+        }
 
         #[derive(derive_more::Display)]
         enum ConfirmOptions {
@@ -62,8 +68,8 @@ impl NewAccount {
         }
         let select_choose_input =
             Select::new("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?",
-            vec![ConfirmOptions::Yes{account_id: new_account_id.clone()}, ConfirmOptions::No],
-        )
+                vec![ConfirmOptions::Yes{account_id: new_account_id.clone()}, ConfirmOptions::No],
+                )
                 .prompt()?;
         let account_id = if let ConfirmOptions::Yes { mut account_id } = select_choose_input {
             loop {
@@ -102,7 +108,7 @@ impl NewAccount {
                         .is_none()
                         {
                             eprintln!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
-                            &parent_account_id, &account_id);
+                                &parent_account_id, &account_id);
                             if !ask_if_different_account_id_wanted()? {
                                 break account_id;
                             };
@@ -141,15 +147,15 @@ fn find_network_where_account_exist(
     context: &crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
 ) -> Option<crate::config::NetworkConfig> {
-    for network in context.0.network_connection.iter() {
+    for (_, network_config) in context.config.network_connection.iter() {
         if crate::common::get_account_state(
-            network.1.clone(),
+            network_config.clone(),
             new_account_id.clone(),
             near_primitives::types::BlockReference::latest(),
         )
         .is_ok()
         {
-            return Some(network.1.clone());
+            return Some(network_config.clone());
         }
     }
     None
@@ -174,6 +180,7 @@ fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
 #[derive(Clone)]
 pub struct AccountPropertiesContext {
     pub config: crate::config::Config,
+    pub offline: bool,
     pub account_properties: AccountProperties,
     pub on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,

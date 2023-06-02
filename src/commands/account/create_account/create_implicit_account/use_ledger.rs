@@ -61,7 +61,7 @@ impl SaveWithLedgerContext {
                 }
             });
         Ok(Self(super::SaveImplicitAccountContext {
-            config: previous_context.0,
+            config: previous_context.config,
             on_after_getting_folder_path_callback,
         }))
     }

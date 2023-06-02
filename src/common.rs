@@ -5,11 +5,7 @@ use std::str::FromStr;
 use color_eyre::eyre::WrapErr;
 use prettytable::Table;
 
-use near_primitives::{
-    hash::CryptoHash,
-    types::BlockReference,
-    views::AccessKeyPermissionView,
-};
+use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
@@ -497,19 +493,19 @@ pub fn get_account_state(
                 eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
                     account_id, network_config.network_name
                 );
-                // if !need_check_account() {
-                return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
-                    err,
-                ));
-                // }
+                if !need_check_account() {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
+                        err,
+                    ));
+                }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
                 eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
                     account_id, network_config.network_name
                 );
-                // if !need_check_account() {
-                return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
-                // }
+                if !need_check_account() {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
+                }
             }
         }
     }

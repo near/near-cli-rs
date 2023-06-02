@@ -13,6 +13,7 @@ pub struct GenerateKeypair {
 #[derive(Debug, Clone)]
 pub struct GenerateKeypairContext {
     config: crate::config::Config,
+    offline: bool,
     account_properties: super::super::AccountProperties,
     key_pair_properties: crate::common::KeyPairProperties,
 }
@@ -33,6 +34,7 @@ impl GenerateKeypairContext {
 
         Ok(Self {
             config: previous_context.config,
+            offline: previous_context.offline,
             account_properties,
             key_pair_properties,
         })
@@ -43,6 +45,7 @@ impl From<GenerateKeypairContext> for super::super::AccountPropertiesContext {
     fn from(item: GenerateKeypairContext) -> Self {
         Self {
             config: item.config,
+            offline: item.offline,
             account_properties: item.account_properties,
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
@@ -134,6 +137,7 @@ impl SaveModeContext {
 
         Ok(Self(super::super::AccountPropertiesContext {
             config: previous_context.config,
+            offline: previous_context.offline,
             account_properties: previous_context.account_properties,
             on_before_sending_transaction_callback,
         }))
