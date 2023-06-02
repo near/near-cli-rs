@@ -51,6 +51,7 @@ impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext 
             );
         Self {
             config: item.0.config,
+            offline: item.0.offline,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

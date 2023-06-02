@@ -5,6 +5,7 @@ use inquire::{CustomType, Select, Text};
 #[derive(Debug, Clone)]
 pub struct AccessTypeContext {
     pub config: crate::config::Config,
+    pub offline: bool,
     pub signer_account_id: near_primitives::types::AccountId,
     pub permission: near_primitives::account::AccessKeyPermission,
 }
@@ -20,6 +21,7 @@ pub struct FullAccessType {
 #[derive(Debug, Clone)]
 pub struct FullAccessTypeContext {
     config: crate::config::Config,
+    offline: bool,
     signer_account_id: near_primitives::types::AccountId,
     permission: near_primitives::account::AccessKeyPermission,
 }
@@ -31,6 +33,7 @@ impl FullAccessTypeContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
+            offline: previous_context.offline,
             signer_account_id: previous_context.owner_account_id.into(),
             permission: near_primitives::account::AccessKeyPermission::FullAccess,
         })
@@ -41,6 +44,7 @@ impl From<FullAccessTypeContext> for AccessTypeContext {
     fn from(item: FullAccessTypeContext) -> Self {
         Self {
             config: item.config,
+            offline: item.offline,
             signer_account_id: item.signer_account_id,
             permission: item.permission,
         }
@@ -68,6 +72,7 @@ pub struct FunctionCallType {
 #[derive(Debug, Clone)]
 pub struct FunctionCallTypeContext {
     config: crate::config::Config,
+    offline: bool,
     signer_account_id: near_primitives::types::AccountId,
     allowance: Option<crate::common::NearBalance>,
     receiver_account_id: crate::types::account_id::AccountId,
@@ -81,6 +86,7 @@ impl FunctionCallTypeContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
+            offline: previous_context.offline,
             signer_account_id: previous_context.owner_account_id.into(),
             allowance: scope.allowance.clone(),
             receiver_account_id: scope.receiver_account_id.clone(),
@@ -93,6 +99,7 @@ impl From<FunctionCallTypeContext> for AccessTypeContext {
     fn from(item: FunctionCallTypeContext) -> Self {
         Self {
             config: item.config,
+            offline: item.offline,
             signer_account_id: item.signer_account_id,
             permission: near_primitives::account::AccessKeyPermission::FunctionCall(
                 near_primitives::account::FunctionCallPermission {

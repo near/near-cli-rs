@@ -14,6 +14,7 @@ pub struct AddAccessWithSeedPhraseAction {
 #[derive(Debug, Clone)]
 pub struct AddAccessWithSeedPhraseActionContext {
     config: crate::config::Config,
+    offline: bool,
     signer_account_id: near_primitives::types::AccountId,
     permission: near_primitives::account::AccessKeyPermission,
     public_key: near_crypto::PublicKey,
@@ -31,6 +32,7 @@ impl AddAccessWithSeedPhraseActionContext {
         )?;
         Ok(Self {
             config: previous_context.config,
+            offline: previous_context.offline,
             signer_account_id: previous_context.signer_account_id,
             permission: previous_context.permission,
             public_key,
@@ -58,6 +60,7 @@ impl From<AddAccessWithSeedPhraseActionContext> for crate::commands::ActionConte
             });
         Self {
             config: item.config,
+            offline: item.offline,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

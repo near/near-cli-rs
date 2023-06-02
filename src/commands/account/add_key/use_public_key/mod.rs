@@ -12,6 +12,7 @@ pub struct AddAccessKeyAction {
 #[derive(Debug, Clone)]
 pub struct AddAccessKeyActionContext {
     config: crate::config::Config,
+    offline: bool,
     signer_account_id: near_primitives::types::AccountId,
     permission: near_primitives::account::AccessKeyPermission,
     public_key: crate::types::public_key::PublicKey,
@@ -24,6 +25,7 @@ impl AddAccessKeyActionContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             config: previous_context.config,
+            offline: previous_context.offline,
             signer_account_id: previous_context.signer_account_id,
             permission: previous_context.permission,
             public_key: scope.public_key.clone(),
@@ -51,6 +53,7 @@ impl From<AddAccessKeyActionContext> for crate::commands::ActionContext {
             });
         Self {
             config: item.config,
+            offline: item.offline,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

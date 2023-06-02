@@ -1,6 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-// mod add_key;
+mod add_key;
 pub mod create_account;
 mod delete_account;
 // mod delete_key;
@@ -45,11 +45,11 @@ pub enum AccountActions {
     ))]
     /// View a list of access keys of an account
     ListKeys(self::list_keys::ViewListKeys),
-    // #[strum_discriminants(strum(
-    //     message = "add-key                 - Add an access key to an account"
-    // ))]
-    // /// Add an access key to an account
-    // AddKey(self::add_key::AddKeyCommand),
+    #[strum_discriminants(strum(
+        message = "add-key                 - Add an access key to an account"
+    ))]
+    /// Add an access key to an account
+    AddKey(self::add_key::AddKeyCommand),
     // #[strum_discriminants(strum(
     //     message = "delete-key              - Delete an access key from an account"
     // ))]

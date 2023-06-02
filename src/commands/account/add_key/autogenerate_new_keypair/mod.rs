@@ -17,6 +17,7 @@ pub struct GenerateKeypair {
 #[derive(Debug, Clone)]
 pub struct GenerateKeypairContext {
     config: crate::config::Config,
+    offline: bool,
     signer_account_id: near_primitives::types::AccountId,
     permission: near_primitives::account::AccessKeyPermission,
     key_pair_properties: crate::common::KeyPairProperties,
@@ -33,6 +34,7 @@ impl GenerateKeypairContext {
         let public_key = near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
         Ok(Self {
             config: previous_context.config,
+            offline: previous_context.offline,
             signer_account_id: previous_context.signer_account_id,
             permission: previous_context.permission,
             key_pair_properties,

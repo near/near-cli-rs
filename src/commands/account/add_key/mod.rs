@@ -20,6 +20,7 @@ pub struct AddKeyCommand {
 #[derive(Debug, Clone)]
 pub struct AddKeyCommandContext {
     config: crate::config::Config,
+    offline: bool,
     owner_account_id: crate::types::account_id::AccountId,
 }
 
@@ -29,7 +30,8 @@ impl AddKeyCommandContext {
         scope: &<AddKeyCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            config: previous_context.config,
+            offline: previous_context.offline,
             owner_account_id: scope.owner_account_id.clone(),
         })
     }
