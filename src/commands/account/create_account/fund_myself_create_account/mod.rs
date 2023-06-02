@@ -73,7 +73,10 @@ impl NewAccount {
                 .prompt()?;
         let account_id = if let ConfirmOptions::Yes { mut account_id } = select_choose_input {
             loop {
-                let network = crate::common::find_network_where_account_exist(context, account_id.clone().into());
+                let network = crate::common::find_network_where_account_exist(
+                    context,
+                    account_id.clone().into(),
+                );
                 if let Some(network_config) = network {
                     eprintln!(
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
