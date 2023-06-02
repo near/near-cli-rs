@@ -5,7 +5,7 @@ pub mod create_account;
 mod delete_account;
 // mod delete_key;
 mod import_account;
-// mod list_keys;
+mod list_keys;
 // pub mod storage_management;
 mod view_account_summary;
 
@@ -40,11 +40,11 @@ pub enum AccountActions {
     #[strum_discriminants(strum(message = "delete-account          - Delete an account"))]
     /// Delete an account
     DeleteAccount(self::delete_account::DeleteAccount),
-    // #[strum_discriminants(strum(
-    //     message = "list-keys               - View a list of access keys of an account"
-    // ))]
-    // /// View a list of access keys of an account
-    // ListKeys(self::list_keys::ViewListKeys),
+    #[strum_discriminants(strum(
+        message = "list-keys               - View a list of access keys of an account"
+    ))]
+    /// View a list of access keys of an account
+    ListKeys(self::list_keys::ViewListKeys),
     // #[strum_discriminants(strum(
     //     message = "add-key                 - Add an access key to an account"
     // ))]
