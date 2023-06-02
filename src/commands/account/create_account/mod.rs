@@ -46,9 +46,9 @@ impl CoverCostsCreateAccountContext {
         match scope {
             CoverCostsCreateAccountDiscriminants::SponsorByFaucetService => {
                 if previous_context.offline {
-                    return Err(color_eyre::Report::msg(
+                    Err(color_eyre::Report::msg(
                         "Error: Creating an account with a faucet sponsor is not possible offline.",
-                    ));
+                    ))
                 } else {
                     Ok(Self(previous_context))
                 }
