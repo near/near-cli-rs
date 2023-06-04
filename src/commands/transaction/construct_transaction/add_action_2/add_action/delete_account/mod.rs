@@ -65,8 +65,8 @@ impl DeleteAccountAction {
             No,
         }
         let select_choose_input =
-            Select::new("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?",
-                vec![ConfirmOptions::Yes{account_id: beneficiary_account_id.clone()}, ConfirmOptions::No],
+            Select::new("\nDo you want to check the existence of the specified account so that you don't lose tokens?",
+        vec![ConfirmOptions::Yes{account_id: beneficiary_account_id.clone()}, ConfirmOptions::No],
                 )
                 .prompt()?;
         let account_id = if let ConfirmOptions::Yes { mut account_id } = select_choose_input {

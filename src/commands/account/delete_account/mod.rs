@@ -115,7 +115,7 @@ impl BeneficiaryAccount {
             No,
         }
         let select_choose_input =
-            Select::new("\nDo you want to check the existence of the specified account so that you don’t lose tokens?",
+            Select::new("\nDo you want to check the existence of the specified account so that you don't lose tokens?",
                 vec![ConfirmOptions::Yes{account_id: beneficiary_account_id.clone()}, ConfirmOptions::No],
                 )
                 .prompt()?;
