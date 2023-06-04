@@ -13,9 +13,9 @@ use crate::common::RpcQueryResponseExt;
 #[interactive_clap(output_context = SignKeychainContext)]
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignKeychain {
-    #[allow(dead_code)]
-    #[interactive_clap(skip)]
-    signer_public_key: crate::types::public_key::PublicKey,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    signer_public_key: Option<crate::types::public_key::PublicKey>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     nonce: Option<u64>,
@@ -70,7 +70,14 @@ impl SignKeychainContext {
                 );
                 path.push(&format!(
                     "{}.json",
-                    scope.signer_public_key.to_string().replace(':', "_")
+                    scope
+                        .signer_public_key
+                        .clone()
+                        .wrap_err(
+                            "Signer public key is required to sign a transaction in offline mode"
+                        )?
+                        .to_string()
+                        .replace(':', "_")
                 ));
                 path
             } else {
@@ -267,49 +274,13 @@ impl interactive_clap::FromCli for SignKeychain {
     {
         let mut clap_variant = optional_clap_variant.unwrap_or_default();
 
-        let signer_public_key: crate::types::public_key::PublicKey =
-            if context.global_context.offline {
-                let network_config = context.network_config.clone();
-
-                let mut path =
-                    std::path::PathBuf::from(&context.global_context.config.credentials_home_dir);
-
-                let dir_name = network_config.network_name;
-                path.push(&dir_name);
-
-                path.push(context.prepopulated_transaction.signer_id.to_string());
-
-                let signer_dir = match path.read_dir() {
-                    Ok(dir) => dir,
-                    Err(err) => {
-                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
-                    }
-                };
-
-                let key_list = signer_dir
-                    .filter_map(|entry| entry.ok())
-                    .filter_map(|entry| entry.file_name().into_string().ok())
-                    .filter(|file_name_str| file_name_str.starts_with("ed25519_"))
-                    .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
-                    .collect::<Vec<_>>();
-
-                let selected_input = match Select::new("Choose public_key:", key_list).prompt() {
-                    Ok(selected) => selected,
-                    Err(err) => {
-                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
-                    }
-                };
-
-                match crate::types::public_key::PublicKey::from_str(&selected_input) {
-                    Ok(public_key) => public_key,
-                    Err(err) => {
-                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
-                    }
-                }
-            } else {
-                near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519).into()
+        if clap_variant.signer_public_key.is_none() {
+            clap_variant.signer_public_key = match Self::input_signer_public_key(&context) {
+                Ok(optional_signer_public_key) => optional_signer_public_key,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
-
+        }
+        let signer_public_key = clap_variant.signer_public_key.clone();
         if clap_variant.nonce.is_none() {
             clap_variant.nonce = match Self::input_nonce(&context) {
                 Ok(optional_nonce) => optional_nonce,
@@ -374,6 +345,38 @@ impl interactive_clap::FromCli for SignKeychain {
 }
 
 impl SignKeychain {
+    fn input_signer_public_key(
+        context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKey>> {
+        if context.global_context.offline {
+            let network_config = context.network_config.clone();
+
+            let mut path =
+                std::path::PathBuf::from(&context.global_context.config.credentials_home_dir);
+
+            let dir_name = network_config.network_name;
+            path.push(&dir_name);
+
+            path.push(context.prepopulated_transaction.signer_id.to_string());
+
+            let signer_dir = path.read_dir()?;
+
+            let key_list = signer_dir
+                .filter_map(|entry| entry.ok())
+                .filter_map(|entry| entry.file_name().into_string().ok())
+                .filter(|file_name_str| file_name_str.starts_with("ed25519_"))
+                .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
+                .collect::<Vec<_>>();
+
+            let selected_input = Select::new("Choose public_key:", key_list).prompt()?;
+
+            return Ok(Some(crate::types::public_key::PublicKey::from_str(
+                &selected_input,
+            )?));
+        }
+        Ok(None)
+    }
+
     fn input_nonce(
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
