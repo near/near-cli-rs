@@ -22,7 +22,7 @@ pub const META_TRANSACTION_VALID_FOR_DEFAULT: u64 = 1000;
 pub enum SignWith {
     #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
-        message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain (Online only!)"
+        message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain"
     ))]
     /// Sign the transaction with a key saved in macOS keychain
     SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
