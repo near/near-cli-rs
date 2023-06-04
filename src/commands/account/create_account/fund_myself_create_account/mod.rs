@@ -21,7 +21,7 @@ pub struct NewAccount {
     access_key_mode: add_key::AccessKeyMode,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct NewAccountContext {
     global_context: crate::GlobalContext,
     new_account_id: crate::types::account_id::AccountId,

@@ -7,7 +7,7 @@ pub struct DeleteNetworkConnection {
     connection_name: String,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DeleteNetworkConnectionContext;
 
 impl DeleteNetworkConnectionContext {

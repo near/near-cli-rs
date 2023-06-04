@@ -36,7 +36,7 @@ pub enum ConfigActions {
 #[interactive_clap(output_context = ShowConnectionsContext)]
 pub struct ShowConnections;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ShowConnectionsContext;
 
 impl ShowConnectionsContext {

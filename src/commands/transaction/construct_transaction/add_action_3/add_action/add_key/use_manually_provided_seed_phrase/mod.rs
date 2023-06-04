@@ -10,7 +10,7 @@ pub struct AddAccessWithSeedPhraseAction {
     next_action: super::super::super::super::add_action_last::NextAction,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AddAccessWithSeedPhraseActionContext(
     super::super::super::super::ConstructTransactionContext,
 );

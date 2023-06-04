@@ -17,7 +17,7 @@ pub struct AddKeyCommand {
     permission: AccessKeyPermission,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AddKeyCommandContext {
     global_context: crate::GlobalContext,
     owner_account_id: crate::types::account_id::AccountId,

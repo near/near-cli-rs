@@ -21,7 +21,7 @@ pub struct CallFunctionProperties {
     prepaid_gas: PrepaidGas,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct CallFunctionPropertiesContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
@@ -67,7 +67,7 @@ pub struct PrepaidGas {
     attached_deposit: Deposit,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
@@ -130,7 +130,7 @@ pub struct Deposit {
     sign_as: SignerAccountId,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DepositContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
@@ -185,7 +185,7 @@ pub struct SignerAccountId {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SignerAccountIdContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,

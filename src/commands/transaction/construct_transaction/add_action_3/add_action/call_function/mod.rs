@@ -20,7 +20,7 @@ pub struct FunctionCallAction {
     prepaid_gas: PrepaidGas,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FunctionCallActionContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
@@ -74,7 +74,7 @@ pub struct PrepaidGas {
     attached_deposit: Deposit,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
@@ -140,7 +140,7 @@ pub struct Deposit {
     next_action: super::super::super::add_action_last::NextAction,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DepositContext(super::super::super::ConstructTransactionContext);
 
 impl DepositContext {

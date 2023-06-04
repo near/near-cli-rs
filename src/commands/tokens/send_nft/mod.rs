@@ -26,7 +26,7 @@ pub struct SendNftCommand {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SendNftCommandContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,

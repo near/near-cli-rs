@@ -34,7 +34,7 @@ pub struct AddNetworkConnection {
     meta_transaction_relayer_url: Option<crate::types::url::Url>,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AddNetworkConnectionContext;
 
 impl AddNetworkConnectionContext {

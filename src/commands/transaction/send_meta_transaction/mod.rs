@@ -11,7 +11,7 @@ pub struct SendMetaTransaction {
     sign_as: self::sign_as::RelayerAccountId,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SendMetaTransactionContext {
     global_context: crate::GlobalContext,
     signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,

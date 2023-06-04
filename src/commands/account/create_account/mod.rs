@@ -35,7 +35,7 @@ pub enum CoverCostsCreateAccount {
     FundLater(self::create_implicit_account::ImplicitAccount),
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct CoverCostsCreateAccountContext(crate::GlobalContext);
 
 impl CoverCostsCreateAccountContext {

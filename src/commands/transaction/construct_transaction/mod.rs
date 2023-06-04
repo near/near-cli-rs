@@ -16,7 +16,7 @@ pub struct ConstructTransaction {
     next_actions: self::add_action_1::NextAction,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ConstructTransactionContext {
     pub global_context: crate::GlobalContext,
     pub signer_account_id: near_primitives::types::AccountId,

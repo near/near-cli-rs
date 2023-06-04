@@ -8,7 +8,7 @@ pub struct TransferAction {
     next_action: super::super::super::add_action_3::NextAction,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TransferActionContext(super::super::super::ConstructTransactionContext);
 
 impl TransferActionContext {

@@ -16,7 +16,7 @@ pub struct ContractAccount {
     to_folder: DownloadContract,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ContractAccountContext {
     global_context: crate::GlobalContext,
     account_id: near_primitives::types::AccountId,

@@ -7,7 +7,7 @@ pub struct AddLedgerKeyAction {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AddLedgerKeyActionContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,

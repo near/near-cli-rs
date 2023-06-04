@@ -5,7 +5,7 @@ use color_eyre::eyre::WrapErr;
 use interactive_clap::ToCliArgs;
 
 pub use near_cli_rs::commands;
-pub use near_cli_rs::common;
+pub use near_cli_rs::common::{self, CliResult};
 pub use near_cli_rs::config;
 pub use near_cli_rs::js_command_match;
 pub use near_cli_rs::network;
@@ -15,13 +15,14 @@ pub use near_cli_rs::transaction_signature_options;
 pub use near_cli_rs::types;
 pub use near_cli_rs::utils_command;
 
-pub use common::CliResult;
 pub use near_cli_rs::GlobalContext;
 
+type ConfigContext = (crate::config::Config,);
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(input_context = ConfigContext)]
 #[interactive_clap(output_context = CmdContext)]
-pub struct Cmd {
+struct Cmd {
     /// Offline mode
     #[interactive_clap(long)]
     offline: bool,
@@ -29,16 +30,16 @@ pub struct Cmd {
     top_level: crate::commands::TopLevelCommand,
 }
 
-#[derive(Clone)]
-pub struct CmdContext(crate::GlobalContext);
+#[derive(Debug, Clone)]
+struct CmdContext(crate::GlobalContext);
 
 impl CmdContext {
-    pub fn from_previous_context(
-        previous_context: crate::GlobalContext,
+    fn from_previous_context(
+        previous_context: ConfigContext,
         scope: &<Cmd as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(crate::GlobalContext {
-            config: previous_context.config,
+            config: previous_context.0,
             offline: scope.offline,
         }))
     }
@@ -107,11 +108,7 @@ fn main() -> crate::common::CliResult {
         }
     };
 
-    let context = crate::GlobalContext {
-        config,
-        offline: false,
-    };
-    let cli_cmd = match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli), context) {
+    let cli_cmd = match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli), (config,)) {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
         | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
             eprintln!(

@@ -75,7 +75,7 @@ pub enum Submit {
     Create,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SubmitContext;
 
 impl SubmitContext {

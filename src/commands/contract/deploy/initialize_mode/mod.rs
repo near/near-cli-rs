@@ -24,7 +24,7 @@ pub struct NoInitialize {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct NoInitializeContext(super::ContractFileContext);
 
 impl NoInitializeContext {

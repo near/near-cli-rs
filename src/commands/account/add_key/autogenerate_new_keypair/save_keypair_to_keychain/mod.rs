@@ -9,7 +9,7 @@ pub struct SaveKeypairToKeychain {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SaveKeypairToKeychainContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,

@@ -13,7 +13,7 @@ pub struct Display {
     block_hash: crate::types::crypto_hash::CryptoHash,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DisplayContext;
 
 impl DisplayContext {

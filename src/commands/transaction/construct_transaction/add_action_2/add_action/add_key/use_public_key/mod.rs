@@ -8,7 +8,7 @@ pub struct AddAccessKeyAction {
     next_action: super::super::super::super::add_action_3::NextAction,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AddAccessKeyActionContext(super::super::super::super::ConstructTransactionContext);
 
 impl AddAccessKeyActionContext {

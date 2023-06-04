@@ -11,7 +11,7 @@ pub struct SignedTransaction {
     network_config: self::network::Network,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SignedTransactionContext {
     config: crate::config::Config,
     signed_transaction: near_primitives::transaction::SignedTransaction,

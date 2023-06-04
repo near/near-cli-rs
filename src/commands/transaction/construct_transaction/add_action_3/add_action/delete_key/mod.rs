@@ -8,7 +8,7 @@ pub struct DeleteKeyAction {
     next_action: super::super::super::add_action_last::NextAction,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DeleteKeyActionContext(super::super::super::ConstructTransactionContext);
 
 impl DeleteKeyActionContext {

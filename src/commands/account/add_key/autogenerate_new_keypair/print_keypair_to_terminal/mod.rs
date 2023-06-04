@@ -7,7 +7,7 @@ pub struct PrintKeypairToTerminal {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct PrintKeypairToTerminalContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,

@@ -11,7 +11,7 @@ pub mod transaction_signature_options;
 pub mod types;
 pub mod utils_command;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct GlobalContext {
     pub config: crate::config::Config,
     pub offline: bool,

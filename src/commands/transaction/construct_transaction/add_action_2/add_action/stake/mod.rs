@@ -8,7 +8,7 @@ pub struct StakeAction {
     next_action: super::super::super::add_action_3::NextAction,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct StakeActionContext(super::super::super::ConstructTransactionContext);
 
 impl StakeActionContext {

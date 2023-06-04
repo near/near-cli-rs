@@ -7,7 +7,7 @@ pub struct SkipAction {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SkipActionContext(super::ConstructTransactionContext);
 
 impl SkipActionContext {

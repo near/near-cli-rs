@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use inquire::{CustomType, Select, Text};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AccessKeyPermissionContext {
     pub global_context: crate::GlobalContext,
     pub signer_account_id: near_primitives::types::AccountId,
@@ -19,7 +19,7 @@ pub struct FullAccessType {
     access_key_mode: super::AccessKeyMode,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FullAccessTypeContext(AccessKeyPermissionContext);
 
 impl FullAccessTypeContext {
@@ -63,7 +63,7 @@ pub struct FunctionCallType {
     access_key_mode: super::AccessKeyMode,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FunctionCallTypeContext(AccessKeyPermissionContext);
 
 impl FunctionCallTypeContext {

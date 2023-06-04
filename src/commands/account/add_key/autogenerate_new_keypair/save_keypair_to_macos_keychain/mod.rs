@@ -7,7 +7,7 @@ pub struct SaveKeypairToMacosKeychain {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SaveKeypairToMacosKeychainContext(super::GenerateKeypairContext);
 
 impl SaveKeypairToMacosKeychainContext {

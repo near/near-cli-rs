@@ -11,7 +11,7 @@ pub struct DeleteAccount {
     beneficiary: BeneficiaryAccount,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DeleteAccountContext {
     global_context: crate::GlobalContext,
     account_id: near_primitives::types::AccountId,
@@ -41,7 +41,7 @@ pub struct BeneficiaryAccount {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct BeneficiaryAccountContext {
     global_context: crate::GlobalContext,
     account_id: near_primitives::types::AccountId,

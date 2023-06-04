@@ -20,7 +20,7 @@ pub struct CallFunctionAction {
     prepaid_gas: PrepaidGas,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct CallFunctionActionContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
@@ -73,7 +73,7 @@ pub struct PrepaidGas {
     attached_deposit: Deposit,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,

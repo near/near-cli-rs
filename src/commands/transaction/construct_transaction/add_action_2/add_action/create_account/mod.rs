@@ -6,7 +6,7 @@ pub struct CreateAccountAction {
     next_action: super::super::super::add_action_3::NextAction,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct CreateAccountActionContext(super::super::super::ConstructTransactionContext);
 
 impl CreateAccountActionContext {

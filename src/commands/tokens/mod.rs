@@ -20,7 +20,7 @@ pub struct TokensCommands {
     tokens_actions: TokensActions,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TokensCommandsContext {
     global_context: crate::GlobalContext,
     owner_account_id: near_primitives::types::AccountId,

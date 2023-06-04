@@ -20,7 +20,7 @@ pub struct ContractFile {
     initialize: self::initialize_mode::InitializeMode,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ContractFileContext(super::super::super::ConstructTransactionContext);
 
 impl ContractFileContext {

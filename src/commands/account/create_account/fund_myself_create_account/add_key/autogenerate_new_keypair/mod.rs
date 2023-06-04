@@ -10,7 +10,7 @@ pub struct GenerateKeypair {
     save_mode: SaveMode,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct GenerateKeypairContext {
     global_context: crate::GlobalContext,
     account_properties: super::super::AccountProperties,

@@ -13,7 +13,7 @@ pub struct Contract {
     use_file: ContractFile,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ContractContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
@@ -43,7 +43,7 @@ pub struct ContractFile {
     initialize: self::initialize_mode::InitializeMode,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ContractFileContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,

@@ -12,7 +12,7 @@ pub struct Network {
     pub submit: Submit,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct NetworkContext {
     signed_transaction: near_primitives::transaction::SignedTransaction,
     network_config: crate::config::NetworkConfig,
@@ -54,7 +54,7 @@ pub enum Submit {
     Send,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SubmitContext;
 
 impl SubmitContext {

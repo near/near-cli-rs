@@ -11,7 +11,7 @@ pub struct DeleteKeyCommand {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DeleteKeyCommandContext {
     global_context: crate::GlobalContext,
     owner_account_id: near_primitives::types::AccountId,
