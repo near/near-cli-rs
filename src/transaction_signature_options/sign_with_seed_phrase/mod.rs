@@ -24,7 +24,7 @@ pub struct SignSeedPhrase {
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    pub block_height: Option<u64>,
+    pub block_height: Option<near_primitives::types::BlockHeight>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     meta_transaction_valid_for: Option<u64>,
@@ -289,10 +289,13 @@ impl SignSeedPhrase {
 
     fn input_block_height(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<u64>> {
+    ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<u64>::new("Enter recent block height:").prompt()?,
+                CustomType::<near_primitives::types::BlockHeight>::new(
+                    "Enter recent block height:",
+                )
+                .prompt()?,
             ));
         }
         Ok(None)
