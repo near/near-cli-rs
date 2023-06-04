@@ -144,7 +144,6 @@ fn main() -> crate::common::CliResult {
     if !matches!(
         cli_cmd,
         Ok(Some(CliCmd {
-            ..
             top_level: Some(crate::commands::CliTopLevelCommand::Extensions(
                 crate::commands::extensions::CliExtensionsCommands {
                     extensions_actions: Some(
@@ -154,6 +153,7 @@ fn main() -> crate::common::CliResult {
                     ),
                 },
             )),
+            ..
         }))
     ) {
         if let Ok(Ok(latest_version)) = handle.join() {
