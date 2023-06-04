@@ -144,7 +144,7 @@ fn main() -> crate::common::CliResult {
     if !matches!(
         cli_cmd,
         Ok(Some(CliCmd {
-            offline: _,
+            ..
             top_level: Some(crate::commands::CliTopLevelCommand::Extensions(
                 crate::commands::extensions::CliExtensionsCommands {
                     extensions_actions: Some(
