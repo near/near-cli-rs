@@ -23,7 +23,7 @@ impl SignedTransactionContext {
         scope: &<SignedTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            config: previous_context.config,
             signed_transaction: scope.signed_action.inner.clone(),
         })
     }

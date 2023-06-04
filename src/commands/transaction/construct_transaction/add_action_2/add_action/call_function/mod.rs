@@ -20,9 +20,9 @@ pub struct FunctionCallAction {
     prepaid_gas: PrepaidGas,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct FunctionCallActionContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
     actions: Vec<near_primitives::transaction::Action>,
@@ -41,7 +41,7 @@ impl FunctionCallActionContext {
                 scope.function_args_type.clone(),
             )?;
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions: previous_context.actions,
@@ -74,9 +74,9 @@ pub struct PrepaidGas {
     attached_deposit: Deposit,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct PrepaidGasContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
     actions: Vec<near_primitives::transaction::Action>,
@@ -91,7 +91,7 @@ impl PrepaidGasContext {
         scope: &<PrepaidGas as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions: previous_context.actions,
@@ -159,7 +159,7 @@ impl DepositContext {
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions,

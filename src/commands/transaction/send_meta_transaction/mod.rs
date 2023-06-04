@@ -13,7 +13,7 @@ pub struct SendMetaTransaction {
 
 #[derive(Clone)]
 pub struct SendMetaTransactionContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,
 }
 
@@ -23,7 +23,7 @@ impl SendMetaTransactionContext {
         scope: &<SendMetaTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            global_context: previous_context,
             signed_delegate_action: scope.signed_delegate_action.inner.clone(),
         })
     }

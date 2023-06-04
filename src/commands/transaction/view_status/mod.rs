@@ -44,7 +44,7 @@ impl TransactionInfoContext {
             });
 
         Ok(Self(crate::network::NetworkContext {
-            config: previous_context.0,
+            config: previous_context.config,
             on_after_getting_network_callback,
         }))
     }

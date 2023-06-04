@@ -39,7 +39,7 @@ impl AddAccessWithSeedPhraseActionContext {
         actions.push(action);
         Ok(Self(
             super::super::super::super::ConstructTransactionContext {
-                config: previous_context.config,
+                global_context: previous_context.global_context,
                 signer_account_id: previous_context.signer_account_id,
                 receiver_account_id: previous_context.receiver_account_id,
                 actions,

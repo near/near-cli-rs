@@ -30,7 +30,7 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
                 })
             });
         Self {
-            config: item.0.config,
+            global_context: item.0.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

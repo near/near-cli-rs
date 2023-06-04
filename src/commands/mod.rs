@@ -5,7 +5,7 @@ pub mod account;
 mod config;
 mod contract;
 mod tokens;
-// mod transaction;
+mod transaction;
 
 #[cfg(feature = "self-update")]
 pub mod extensions;
@@ -30,9 +30,9 @@ pub enum TopLevelCommand {
     ))]
     /// Use this for contract actions: call function, deploy, download wasm, inspect storage
     Contract(self::contract::ContractCommands),
-    // #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
-    // /// Use this to construct transactions or view a transaction status.
-    // Transaction(self::transaction::TransactionCommands),
+    #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
+    /// Use this to construct transactions or view a transaction status.
+    Transaction(self::transaction::TransactionCommands),
     #[strum_discriminants(strum(
         message = "config      - Manage connections in a configuration file (config.toml)"
     ))]
