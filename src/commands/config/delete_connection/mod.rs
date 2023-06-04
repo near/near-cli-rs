@@ -15,7 +15,7 @@ impl DeleteNetworkConnectionContext {
         previous_context: crate::GlobalContext,
         scope: &<DeleteNetworkConnection as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let mut config = previous_context.0;
+        let mut config = previous_context.config;
         config.network_connection.remove(&scope.connection_name);
         eprintln!();
         crate::common::write_config_toml(config)?;
@@ -31,6 +31,6 @@ impl DeleteNetworkConnection {
     fn input_connection_name(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(context)
+        crate::common::input_network_name(&context.config)
     }
 }
