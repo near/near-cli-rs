@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use color_eyre::eyre::WrapErr;
+use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
 
 use crate::common::JsonRpcClientExt;
@@ -62,9 +62,16 @@ impl SignSeedPhraseContext {
 
         let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (
-                scope.nonce.unwrap(),
-                scope.block_hash.unwrap().0,
-                scope.block_height.unwrap(),
+                scope
+                    .nonce
+                    .wrap_err("Nonce is required to sign a transaction in offline mode")?,
+                scope
+                    .block_hash
+                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                    .0,
+                scope
+                    .block_height
+                    .wrap_err("Block Height is required to sign a transaction in offline mode")?,
             )
         } else {
             let rpc_query_response = network_config
