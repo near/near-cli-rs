@@ -21,9 +21,9 @@ pub struct CallFunctionProperties {
     prepaid_gas: PrepaidGas,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct CallFunctionPropertiesContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     function_name: String,
     function_args: Vec<u8>,
@@ -39,7 +39,7 @@ impl CallFunctionPropertiesContext {
             scope.function_args_type.clone(),
         )?;
         Ok(Self {
-            config: previous_context.0,
+            global_context: previous_context,
             receiver_account_id: scope.contract_account_id.clone().into(),
             function_name: scope.function_name.clone(),
             function_args,
@@ -67,9 +67,9 @@ pub struct PrepaidGas {
     attached_deposit: Deposit,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct PrepaidGasContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     function_name: String,
     function_args: Vec<u8>,
@@ -82,7 +82,7 @@ impl PrepaidGasContext {
         scope: &<PrepaidGas as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
@@ -130,9 +130,9 @@ pub struct Deposit {
     sign_as: SignerAccountId,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct DepositContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     function_name: String,
     function_args: Vec<u8>,
@@ -146,7 +146,7 @@ impl DepositContext {
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
@@ -187,7 +187,7 @@ pub struct SignerAccountId {
 
 #[derive(Clone)]
 pub struct SignerAccountIdContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     function_name: String,
     function_args: Vec<u8>,
@@ -202,7 +202,7 @@ impl SignerAccountIdContext {
         scope: &<SignerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
@@ -231,7 +231,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 })
             });
         Self {
-            config: item.config,
+            global_context: item.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

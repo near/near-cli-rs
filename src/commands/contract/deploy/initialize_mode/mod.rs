@@ -24,7 +24,7 @@ pub struct NoInitialize {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct NoInitializeContext(super::ContractFileContext);
 
 impl NoInitializeContext {
@@ -33,7 +33,7 @@ impl NoInitializeContext {
         _scope: &<NoInitialize as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(super::ContractFileContext {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
             code: previous_context.code,
@@ -56,7 +56,7 @@ impl From<NoInitializeContext> for crate::commands::ActionContext {
                 })
             });
         Self {
-            config: item.0.config,
+            global_context: item.0.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

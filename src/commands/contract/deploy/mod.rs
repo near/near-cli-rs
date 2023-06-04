@@ -13,9 +13,9 @@ pub struct Contract {
     use_file: ContractFile,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ContractContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     signer_account_id: near_primitives::types::AccountId,
 }
@@ -26,7 +26,7 @@ impl ContractContext {
         scope: &<Contract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            global_context: previous_context,
             receiver_account_id: scope.account_id.clone().into(),
             signer_account_id: scope.account_id.clone().into(),
         })
@@ -43,9 +43,9 @@ pub struct ContractFile {
     initialize: self::initialize_mode::InitializeMode,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ContractFileContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     signer_account_id: near_primitives::types::AccountId,
     code: Vec<u8>,
@@ -60,7 +60,7 @@ impl ContractFileContext {
             format!("Failed to open or read the file: {:?}.", &scope.file_path.0,)
         })?;
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
             code,
