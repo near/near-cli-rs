@@ -35,7 +35,7 @@ pub struct SignSeedPhrase {
 #[derive(Clone)]
 pub struct SignSeedPhraseContext {
     network_config: crate::config::NetworkConfig,
-    offline: bool,
+    global_context: crate::GlobalContext,
     signed_transaction_or_signed_delegate_action: super::SignedTransactionOrSignedDelegateAction,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
@@ -60,7 +60,7 @@ impl SignSeedPhraseContext {
         let signer_public_key =
             near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
 
-        let (nonce, block_hash, block_height) = if previous_context.offline {
+        let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (
                 scope.nonce.unwrap(),
                 scope.block_hash.unwrap().0,
@@ -116,7 +116,7 @@ impl SignSeedPhraseContext {
 
             return Ok(Self {
                 network_config: previous_context.network_config,
-                offline: previous_context.offline,
+                global_context: previous_context.global_context,
                 signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
                 on_before_sending_transaction_callback: previous_context
                     .on_before_sending_transaction_callback,
@@ -136,7 +136,7 @@ impl SignSeedPhraseContext {
 
         Ok(Self {
             network_config: previous_context.network_config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             signed_transaction_or_signed_delegate_action: signed_transaction.into(),
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
@@ -150,7 +150,7 @@ impl From<SignSeedPhraseContext> for super::SubmitContext {
     fn from(item: SignSeedPhraseContext) -> Self {
         Self {
             network_config: item.network_config,
-            offline: item.offline,
+            global_context: item.global_context,
             signed_transaction_or_signed_delegate_action: item
                 .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
@@ -265,7 +265,7 @@ impl SignSeedPhrase {
     fn input_nonce(
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
-        if context.offline {
+        if context.global_context.offline {
             return Ok(Some(
                 CustomType::<u64>::new("Enter a nonce for the access key:").prompt()?,
             ));
@@ -276,7 +276,7 @@ impl SignSeedPhrase {
     fn input_block_hash(
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
-        if context.offline {
+        if context.global_context.offline {
             return Ok(Some(
                 CustomType::<crate::types::crypto_hash::CryptoHash>::new(
                     "Enter recent block hash:",
@@ -290,7 +290,7 @@ impl SignSeedPhrase {
     fn input_block_height(
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
-        if context.offline {
+        if context.global_context.offline {
             return Ok(Some(
                 CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));

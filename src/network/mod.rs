@@ -53,9 +53,6 @@ impl interactive_clap::FromCli for Network {
 
 impl Network {
     fn input_network_name(context: &NetworkContext) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&crate::GlobalContext {
-            config: context.config.clone(),
-            offline: false,
-        })
+        crate::common::input_network_name(&context.config)
     }
 }

@@ -21,10 +21,9 @@ pub struct NewAccount {
     access_key_mode: add_key::AccessKeyMode,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct NewAccountContext {
-    config: crate::config::Config,
-    offline: bool,
+    global_context: crate::GlobalContext,
     new_account_id: crate::types::account_id::AccountId,
     initial_balance: crate::common::NearBalance,
 }
@@ -35,8 +34,7 @@ impl NewAccountContext {
         scope: &<NewAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context,
             new_account_id: scope.new_account_id.clone(),
             initial_balance: scope.initial_balance.clone(),
         })
@@ -148,8 +146,7 @@ impl NewAccount {
 
 #[derive(Clone)]
 pub struct AccountPropertiesContext {
-    pub config: crate::config::Config,
-    pub offline: bool,
+    pub global_context: crate::GlobalContext,
     pub account_properties: AccountProperties,
     pub on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,

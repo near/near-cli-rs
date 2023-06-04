@@ -18,8 +18,7 @@ pub struct DepositArgs {
 
 #[derive(Clone)]
 pub struct DepositArgsContext {
-    config: crate::config::Config,
-    offline: bool,
+    global_context: crate::GlobalContext,
     get_contract_account_id: super::GetContractAccountId,
     receiver_account_id: near_primitives::types::AccountId,
     deposit: crate::common::NearBalance,
@@ -31,8 +30,7 @@ impl DepositArgsContext {
         scope: &<DepositArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
             deposit: scope.deposit.clone(),
@@ -47,13 +45,13 @@ impl DepositArgs {
         let mut receiver_account_id: crate::types::account_id::AccountId =
             CustomType::new("Which account ID do you want to add a deposit to?").prompt()?;
 
-        if context.offline {
+        if context.global_context.offline {
             return Ok(Some(receiver_account_id));
         }
 
         loop {
             if !crate::common::is_account_exist(
-                &context.config.network_connection,
+                &context.global_context.config.network_connection,
                 receiver_account_id.clone().into(),
             ) {
                 eprintln!("\nThe account <{receiver_account_id}> does not yet exist.");
@@ -144,8 +142,7 @@ impl SignerAccountIdContext {
         );
 
         Ok(Self(crate::commands::ActionContext {
-            config: previous_context.config.clone(),
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

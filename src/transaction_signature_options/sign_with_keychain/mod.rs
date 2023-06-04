@@ -35,7 +35,7 @@ pub struct SignKeychain {
 #[derive(Clone)]
 pub struct SignKeychainContext {
     network_config: crate::config::NetworkConfig,
-    offline: bool,
+    global_context: crate::GlobalContext,
     signed_transaction_or_signed_delegate_action: super::SignedTransactionOrSignedDelegateAction,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
@@ -54,13 +54,14 @@ impl SignKeychainContext {
             "{}.json",
             &previous_context.prepopulated_transaction.signer_id
         );
-        let mut path = std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
+        let mut path =
+            std::path::PathBuf::from(&previous_context.global_context.config.credentials_home_dir);
 
         let data_path: std::path::PathBuf = {
             let dir_name = network_config.network_name.clone();
             path.push(&dir_name);
 
-            if previous_context.offline {
+            if previous_context.global_context.offline {
                 path.push(
                     previous_context
                         .prepopulated_transaction
@@ -90,8 +91,9 @@ impl SignKeychainContext {
                             )
                         })?
                         .access_key_list_view()?;
-                    let mut path =
-                        std::path::PathBuf::from(&previous_context.config.credentials_home_dir);
+                    let mut path = std::path::PathBuf::from(
+                        &previous_context.global_context.config.credentials_home_dir,
+                    );
                     path.push(dir_name);
                     path.push(
                         &previous_context
@@ -142,7 +144,7 @@ impl SignKeychainContext {
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
             .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
 
-        let (nonce, block_hash, block_height) = if previous_context.offline {
+        let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (
                 scope.nonce.unwrap(),
                 scope.block_hash.unwrap().0,
@@ -196,7 +198,7 @@ impl SignKeychainContext {
 
             return Ok(Self {
                 network_config: previous_context.network_config,
-                offline: previous_context.offline,
+                global_context: previous_context.global_context,
                 signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
                 on_before_sending_transaction_callback: previous_context
                     .on_before_sending_transaction_callback,
@@ -220,7 +222,7 @@ impl SignKeychainContext {
 
         Ok(Self {
             network_config: previous_context.network_config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             signed_transaction_or_signed_delegate_action: signed_transaction.into(),
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
@@ -234,7 +236,7 @@ impl From<SignKeychainContext> for super::SubmitContext {
     fn from(item: SignKeychainContext) -> Self {
         Self {
             network_config: item.network_config,
-            offline: item.offline,
+            global_context: item.global_context,
             signed_transaction_or_signed_delegate_action: item
                 .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
@@ -258,46 +260,48 @@ impl interactive_clap::FromCli for SignKeychain {
     {
         let mut clap_variant = optional_clap_variant.unwrap_or_default();
 
-        let signer_public_key: crate::types::public_key::PublicKey = if context.offline {
-            let network_config = context.network_config.clone();
+        let signer_public_key: crate::types::public_key::PublicKey =
+            if context.global_context.offline {
+                let network_config = context.network_config.clone();
 
-            let mut path = std::path::PathBuf::from(&context.config.credentials_home_dir);
+                let mut path =
+                    std::path::PathBuf::from(&context.global_context.config.credentials_home_dir);
 
-            let dir_name = network_config.network_name;
-            path.push(&dir_name);
+                let dir_name = network_config.network_name;
+                path.push(&dir_name);
 
-            path.push(context.prepopulated_transaction.signer_id.to_string());
+                path.push(context.prepopulated_transaction.signer_id.to_string());
 
-            let signer_dir = match path.read_dir() {
-                Ok(dir) => dir,
-                Err(err) => {
-                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
+                let signer_dir = match path.read_dir() {
+                    Ok(dir) => dir,
+                    Err(err) => {
+                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
+                    }
+                };
+
+                let key_list = signer_dir
+                    .filter_map(|entry| entry.ok())
+                    .filter_map(|entry| entry.file_name().into_string().ok())
+                    .filter(|file_name_str| file_name_str.starts_with("ed25519_"))
+                    .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
+                    .collect::<Vec<_>>();
+
+                let selected_input = match Select::new("Choose public_key:", key_list).prompt() {
+                    Ok(selected) => selected,
+                    Err(err) => {
+                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
+                    }
+                };
+
+                match crate::types::public_key::PublicKey::from_str(&selected_input) {
+                    Ok(public_key) => public_key,
+                    Err(err) => {
+                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
+                    }
                 }
+            } else {
+                near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519).into()
             };
-
-            let key_list = signer_dir
-                .filter_map(|entry| entry.ok())
-                .filter_map(|entry| entry.file_name().into_string().ok())
-                .filter(|file_name_str| file_name_str.starts_with("ed25519_"))
-                .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
-                .collect::<Vec<_>>();
-
-            let selected_input = match Select::new("Choose public_key:", key_list).prompt() {
-                Ok(selected) => selected,
-                Err(err) => {
-                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
-                }
-            };
-
-            match crate::types::public_key::PublicKey::from_str(&selected_input) {
-                Ok(public_key) => public_key,
-                Err(err) => {
-                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err.into())
-                }
-            }
-        } else {
-            near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519).into()
-        };
 
         if clap_variant.nonce.is_none() {
             clap_variant.nonce = match Self::input_nonce(&context) {
@@ -366,7 +370,7 @@ impl SignKeychain {
     fn input_nonce(
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
-        if context.offline {
+        if context.global_context.offline {
             return Ok(Some(
                 CustomType::<u64>::new("Enter a nonce for the access key:").prompt()?,
             ));
@@ -377,7 +381,7 @@ impl SignKeychain {
     fn input_block_hash(
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
-        if context.offline {
+        if context.global_context.offline {
             return Ok(Some(
                 CustomType::<crate::types::crypto_hash::CryptoHash>::new(
                     "Enter recent block hash:",
@@ -391,7 +395,7 @@ impl SignKeychain {
     fn input_block_height(
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
-        if context.offline {
+        if context.global_context.offline {
             return Ok(Some(
                 CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));

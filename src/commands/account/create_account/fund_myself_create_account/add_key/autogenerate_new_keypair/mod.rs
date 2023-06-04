@@ -10,10 +10,9 @@ pub struct GenerateKeypair {
     save_mode: SaveMode,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct GenerateKeypairContext {
-    config: crate::config::Config,
-    offline: bool,
+    global_context: crate::GlobalContext,
     account_properties: super::super::AccountProperties,
     key_pair_properties: crate::common::KeyPairProperties,
 }
@@ -33,8 +32,7 @@ impl GenerateKeypairContext {
         };
 
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             account_properties,
             key_pair_properties,
         })
@@ -44,8 +42,7 @@ impl GenerateKeypairContext {
 impl From<GenerateKeypairContext> for super::super::AccountPropertiesContext {
     fn from(item: GenerateKeypairContext) -> Self {
         Self {
-            config: item.config,
-            offline: item.offline,
+            global_context: item.global_context,
             account_properties: item.account_properties,
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
@@ -92,7 +89,7 @@ impl SaveModeContext {
             std::sync::Arc::new({
                 let new_account_id = previous_context.account_properties.new_account_id.clone();
                 let key_pair_properties = previous_context.key_pair_properties.clone();
-                let credentials_home_dir = previous_context.config.credentials_home_dir.clone();
+                let credentials_home_dir = previous_context.global_context.config.credentials_home_dir.clone();
 
                 move |_signed_transaction, network_config, storage_message| {
                     match scope {
@@ -136,8 +133,7 @@ impl SaveModeContext {
             });
 
         Ok(Self(super::super::AccountPropertiesContext {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             account_properties: previous_context.account_properties,
             on_before_sending_transaction_callback,
         }))

@@ -17,8 +17,7 @@ pub struct SignerAccountId {
 
 #[derive(Clone)]
 pub struct SignerAccountIdContext {
-    config: crate::config::Config,
-    offline: bool,
+    global_context: crate::GlobalContext,
     account_properties: super::AccountProperties,
     signer_account_id: near_primitives::types::AccountId,
     on_before_sending_transaction_callback:
@@ -31,8 +30,7 @@ impl SignerAccountIdContext {
         scope: &<SignerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             account_properties: previous_context.account_properties,
             signer_account_id: scope.signer_account_id.clone().into(),
             on_before_sending_transaction_callback: previous_context
@@ -43,7 +41,7 @@ impl SignerAccountIdContext {
 
 impl From<SignerAccountIdContext> for crate::commands::ActionContext {
     fn from(item: SignerAccountIdContext) -> Self {
-        let config = item.config;
+        let global_context = item.global_context.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
@@ -61,7 +59,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             new_account_id, new_account_id.as_str().chars().count()
                         ));
                     }
-                    if !item.offline {
+                    if !item.global_context.offline {
                         validate_new_account_id(network_config, &new_account_id)?;
                     }
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
@@ -139,8 +137,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
             });
 
         Self {
-            config,
-            offline: item.offline,
+            global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

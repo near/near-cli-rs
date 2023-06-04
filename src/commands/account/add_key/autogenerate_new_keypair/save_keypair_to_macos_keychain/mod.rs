@@ -7,7 +7,7 @@ pub struct SaveKeypairToMacosKeychain {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SaveKeypairToMacosKeychainContext(super::GenerateKeypairContext);
 
 impl SaveKeypairToMacosKeychainContext {
@@ -50,8 +50,7 @@ impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext 
                 },
             );
         Self {
-            config: item.0.config,
-            offline: item.0.offline,
+            global_context: item.0.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

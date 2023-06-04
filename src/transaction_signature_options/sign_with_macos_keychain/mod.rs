@@ -25,7 +25,7 @@ pub struct SignMacosKeychain {
 #[derive(Clone)]
 pub struct SignMacosKeychainContext {
     network_config: crate::config::NetworkConfig,
-    offline: bool,
+    global_context: crate::GlobalContext,
     signed_transaction_or_signed_delegate_action: super::SignedTransactionOrSignedDelegateAction,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
@@ -62,20 +62,6 @@ impl SignMacosKeychainContext {
             network_config.network_name,
             previous_context.prepopulated_transaction.signer_id.as_str()
         ));
-
-        // let (password, qqqq) = keychain
-        //         .find_generic_password(
-        //             &service_name,
-        //             &format!(
-        //                 "{}:{}",
-        //                 previous_context.prepopulated_transaction.signer_id,
-        //                 "*"
-        //             ),
-        //         )
-        //         .unwrap();
-        // let qwe = password.to_vec();
-        // let qq: serde_json::Value = serde_json::from_slice(&qwe)?;
-        // println!("{}", qq);
 
         let password = access_key_list
             .keys
@@ -154,7 +140,7 @@ impl SignMacosKeychainContext {
 
             return Ok(Self {
                 network_config: previous_context.network_config,
-                offline: previous_context.offline,
+                global_context: previous_context.global_context,
                 signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
                 on_before_sending_transaction_callback: previous_context
                     .on_before_sending_transaction_callback,
@@ -174,7 +160,7 @@ impl SignMacosKeychainContext {
 
         Ok(Self {
             network_config: previous_context.network_config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             signed_transaction_or_signed_delegate_action: signed_transaction.into(),
             on_before_sending_transaction_callback: previous_context
                 .on_before_sending_transaction_callback,
@@ -188,7 +174,7 @@ impl From<SignMacosKeychainContext> for super::SubmitContext {
     fn from(item: SignMacosKeychainContext) -> Self {
         Self {
             network_config: item.network_config,
-            offline: item.offline,
+            global_context: item.global_context,
             signed_transaction_or_signed_delegate_action: item
                 .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
@@ -270,7 +256,7 @@ impl SignMacosKeychain {
     fn input_nonce(
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
-        if context.offline {
+        if context.global_context.offline {
             return Ok(Some(
                 CustomType::<u64>::new("Enter a nonce for the access key:").prompt()?,
             ));
@@ -281,7 +267,7 @@ impl SignMacosKeychain {
     fn input_block_hash(
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        if context.offline {
+        if context.global_context.offline {
             return Ok(Some(Text::new("Enter recent block hash:").prompt()?));
         }
         Ok(None)

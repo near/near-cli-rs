@@ -11,10 +11,9 @@ pub struct DeleteAccount {
     beneficiary: BeneficiaryAccount,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct DeleteAccountContext {
-    config: crate::config::Config,
-    offline: bool,
+    global_context: crate::GlobalContext,
     account_id: near_primitives::types::AccountId,
 }
 
@@ -24,8 +23,7 @@ impl DeleteAccountContext {
         scope: &<DeleteAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context,
             account_id: scope.account_id.clone().into(),
         })
     }
@@ -43,10 +41,9 @@ pub struct BeneficiaryAccount {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct BeneficiaryAccountContext {
-    config: crate::config::Config,
-    offline: bool,
+    global_context: crate::GlobalContext,
     account_id: near_primitives::types::AccountId,
     beneficiary_account_id: near_primitives::types::AccountId,
 }
@@ -57,8 +54,7 @@ impl BeneficiaryAccountContext {
         scope: &<BeneficiaryAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             account_id: previous_context.account_id,
             beneficiary_account_id: scope.beneficiary_account_id.clone().into(),
         })
@@ -80,8 +76,7 @@ impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
                 })
             });
         Self {
-            config: item.config,
-            offline: item.offline,
+            global_context: item.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
@@ -103,7 +98,7 @@ impl BeneficiaryAccount {
         let beneficiary_account_id: crate::types::account_id::AccountId =
             CustomType::new("What is the beneficiary account ID?").prompt()?;
 
-        if context.offline {
+        if context.global_context.offline {
             return Ok(Some(beneficiary_account_id));
         }
 
@@ -128,7 +123,7 @@ impl BeneficiaryAccount {
             loop {
                 if crate::common::find_network_where_account_exist(
                     &crate::GlobalContext {
-                        config: context.config.clone(),
+                        config: context.global_context.config.clone(),
                         offline: false,
                     },
                     account_id.clone().into(),

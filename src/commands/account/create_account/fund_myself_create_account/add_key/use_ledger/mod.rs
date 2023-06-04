@@ -39,8 +39,7 @@ impl AddAccessWithLedgerContext {
         };
 
         Ok(Self(super::super::AccountPropertiesContext {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             account_properties,
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),

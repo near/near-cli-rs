@@ -13,8 +13,7 @@ pub struct WithdrawArgs {
 
 #[derive(Clone)]
 pub struct WithdrawArgsContext {
-    config: crate::config::Config,
-    offline: bool,
+    global_context: crate::GlobalContext,
     get_contract_account_id: super::GetContractAccountId,
     amount: crate::common::NearBalance,
 }
@@ -25,8 +24,7 @@ impl WithdrawArgsContext {
         scope: &<WithdrawArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
             amount: scope.amount.clone(),
         })
@@ -92,8 +90,7 @@ impl SignerAccountIdContext {
         );
 
         Ok(Self(crate::commands::ActionContext {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

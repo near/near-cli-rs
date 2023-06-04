@@ -12,8 +12,7 @@ pub struct NetworkForTransactionArgs {
 
 #[derive(Clone)]
 pub struct NetworkForTransactionArgsContext {
-    config: crate::config::Config,
-    offline: bool,
+    global_context: crate::GlobalContext,
     network_config: crate::config::NetworkConfig,
     prepopulated_transaction: crate::commands::PrepopulatedTransaction,
     on_before_signing_callback: crate::commands::OnBeforeSigningCallback,
@@ -28,7 +27,11 @@ impl NetworkForTransactionArgsContext {
         previous_context: crate::commands::ActionContext,
         scope: &<NetworkForTransactionArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let network_connection = previous_context.config.network_connection.clone();
+        let network_connection = previous_context
+            .global_context
+            .config
+            .network_connection
+            .clone();
         let network_config = network_connection
             .get(&scope.network_name)
             .expect("Failed to get network config!")
@@ -36,8 +39,7 @@ impl NetworkForTransactionArgsContext {
         let prepopulated_transaction =
             (previous_context.on_after_getting_network_callback)(&network_config)?;
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             network_config,
             prepopulated_transaction,
             on_before_signing_callback: previous_context.on_before_signing_callback,
@@ -52,8 +54,7 @@ impl NetworkForTransactionArgsContext {
 impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionContext {
     fn from(item: NetworkForTransactionArgsContext) -> Self {
         Self {
-            config: item.config,
-            offline: item.offline,
+            global_context: item.global_context,
             network_config: item.network_config,
             prepopulated_transaction: item.prepopulated_transaction,
             on_before_signing_callback: item.on_before_signing_callback,
@@ -137,10 +138,7 @@ impl NetworkForTransactionArgs {
     fn input_network_name(
         context: &crate::commands::ActionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&crate::GlobalContext {
-            config: context.config.clone(),
-            offline: context.offline,
-        })
+        crate::common::input_network_name(&context.global_context.config)
     }
 
     pub fn get_network_config(

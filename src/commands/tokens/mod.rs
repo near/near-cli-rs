@@ -20,10 +20,9 @@ pub struct TokensCommands {
     tokens_actions: TokensActions,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TokensCommandsContext {
-    config: crate::config::Config,
-    offline: bool,
+    global_context: crate::GlobalContext,
     owner_account_id: near_primitives::types::AccountId,
 }
 
@@ -33,8 +32,7 @@ impl TokensCommandsContext {
         scope: &<TokensCommands as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context,
             owner_account_id: scope.owner_account_id.clone().into(),
         })
     }

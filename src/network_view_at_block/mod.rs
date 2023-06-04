@@ -50,10 +50,7 @@ impl NetworkViewAtBlockArgs {
     fn input_network_name(
         context: &ArgsForViewContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&crate::GlobalContext {
-            config: context.config.clone(),
-            offline: false,
-        })
+        crate::common::input_network_name(&context.config)
     }
 }
 

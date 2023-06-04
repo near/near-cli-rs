@@ -26,10 +26,9 @@ pub struct SendNftCommand {
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SendNftCommandContext {
-    config: crate::config::Config,
-    offline: bool,
+    global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     nft_contract_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
@@ -44,8 +43,7 @@ impl SendNftCommandContext {
         scope: &<SendNftCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id,
             nft_contract_account_id: scope.nft_contract_account_id.clone().into(),
             receiver_account_id: scope.receiver_account_id.clone().into(),
@@ -100,8 +98,7 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
         );
 
         Self {
-            config: item.config,
-            offline: item.offline,
+            global_context: item.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

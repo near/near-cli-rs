@@ -16,8 +16,7 @@ pub struct Contract {
 
 #[derive(Clone)]
 pub struct ContractContext {
-    pub config: crate::config::Config,
-    pub offline: bool,
+    pub global_context: crate::GlobalContext,
     pub get_contract_account_id: GetContractAccountId,
 }
 
@@ -30,8 +29,7 @@ impl ContractContext {
         let get_contract_account_id: GetContractAccountId =
             std::sync::Arc::new(move |_network_config| Ok(contract_account_id.clone().into()));
         Ok(Self {
-            config: previous_context.config,
-            offline: previous_context.offline,
+            global_context: previous_context,
             get_contract_account_id,
         })
     }
