@@ -122,10 +122,7 @@ impl BeneficiaryAccount {
         let account_id = if let ConfirmOptions::Yes { mut account_id } = select_choose_input {
             loop {
                 if crate::common::find_network_where_account_exist(
-                    &crate::GlobalContext {
-                        config: context.global_context.config.clone(),
-                        offline: false,
-                    },
+                    &context.global_context,
                     account_id.clone().into(),
                 )
                 .is_none()
