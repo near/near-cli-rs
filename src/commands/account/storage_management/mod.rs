@@ -8,7 +8,7 @@ mod view_storage_balance;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractContext)]
 pub struct Contract {
-    /// Which contract account ID do you want to manage the storage?
+    /// Which contract account ID do you want to manage the storage deposit for?
     contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     storage_actions: StorageActions,
