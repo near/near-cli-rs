@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0](https://github.com/near/near-cli-rs/compare/v0.4.3...v0.5.0) - 2023-06-05
+
+### Added
+- New offline mode allows to prepare transactions on devices that are not connected to the Internet ([#209](https://github.com/near/near-cli-rs/pull/209))
+
+### Fixed
+- Add support for no-args view-function calls for legacy JS CLI `view` command ([#213](https://github.com/near/near-cli-rs/pull/213))
+
 ## [0.4.3](https://github.com/near/near-cli-rs/compare/v0.4.2...v0.4.3) - 2023-06-02
 
 ### Added
