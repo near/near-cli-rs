@@ -5,7 +5,17 @@ overview of its capabilities. This guide assumes that _near CLI_ is
 [installed](README.md#installation)
 and that readers have passing familiarity with using command line tools. This
 also assumes a Unix-like system, although most commands are probably easily
-translatable to any command line shell environment.
+translatable to any command line shell environment.  
+
+With _near CLI_ you can create, sign and send transactions in _online_ mode, which is enabled by default.
+In _offline_ mode, you can create and sign a transaction. The received transaction hash can be sent later or from another computer. To enter the _offline_ mode, you need to set the ```--offline``` flag in the command: 
+```txt
+near --offline tokens \
+    fro_volod.testnet \
+    send-near volodymyr.testnet 0.1NEAR \
+    network-config testnet \
+    sign-later
+```
 
 Before proceeding to the description of specific commands, it is necessary to consider two points common to these commands:
 
@@ -48,6 +58,10 @@ Before proceeding to the description of specific commands, it is necessary to co
     - _sign-with-seed-phrase - Sign the transaction using the seed phrase_
 
         When choosing this signature option, _near CLI_ will ask the user to enter the mnemonic phrase associated with the account.
+
+    - _sign-later - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)_
+
+        This option involves signing the created transaction later.
 
 2. Actions with a signed transaction
 
