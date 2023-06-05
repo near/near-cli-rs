@@ -3,6 +3,7 @@
 pub struct ViewArgs {
     contract_account_id: String,
     method_name: String,
+    #[clap(default_value = "")]
     args: String,
     #[clap(allow_hyphen_values = true, num_args = 0..)]
     _unknown_args: Vec<String>,
@@ -16,7 +17,7 @@ impl ViewArgs {
             "as-read-only".to_owned(),
             self.contract_account_id.to_owned(),
             self.method_name.to_owned(),
-            "json-args".to_owned(),
+            "text-args".to_owned(),
             self.args.to_owned(),
             "network-config".to_owned(),
             network_config,
