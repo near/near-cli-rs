@@ -45,32 +45,32 @@ impl DeleteAccountAction {
     pub fn input_beneficiary_id(
         context: &super::super::super::ConstructTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let beneficiary_account_id: crate::types::account_id::AccountId =
-            CustomType::new("What is the beneficiary account ID?").prompt()?;
+        loop {
+            let beneficiary_account_id: crate::types::account_id::AccountId =
+                CustomType::new("What is the beneficiary account ID?").prompt()?;
 
-        if context.global_context.offline {
-            return Ok(Some(beneficiary_account_id));
-        }
+            if context.global_context.offline {
+                return Ok(Some(beneficiary_account_id));
+            }
 
-        #[derive(derive_more::Display)]
-        enum ConfirmOptions {
-            #[display(
-                fmt = "Yes, I want to check if account <{}> exists. (It is free of charge, and only requires Internet access)",
-                account_id
-            )]
-            Yes {
-                account_id: crate::types::account_id::AccountId,
-            },
-            #[display(fmt = "No, I know this account exists and want to continue.")]
-            No,
-        }
-        let select_choose_input =
-            Select::new("\nDo you want to check the existence of the specified account so that you don't lose tokens?",
-        vec![ConfirmOptions::Yes{account_id: beneficiary_account_id.clone()}, ConfirmOptions::No],
-                )
-                .prompt()?;
-        let account_id = if let ConfirmOptions::Yes { mut account_id } = select_choose_input {
-            loop {
+            #[derive(derive_more::Display)]
+            enum ConfirmOptions {
+                #[display(
+                    fmt = "Yes, I want to check if account <{}> exists. (It is free of charge, and only requires Internet access)",
+                    account_id
+                )]
+                Yes {
+                    account_id: crate::types::account_id::AccountId,
+                },
+                #[display(fmt = "No, I know this account exists and want to continue.")]
+                No,
+            }
+            let select_choose_input =
+                Select::new("\nDo you want to check the existence of the specified account so that you don't lose tokens?",
+                    vec![ConfirmOptions::Yes{account_id: beneficiary_account_id.clone()}, ConfirmOptions::No],
+                    )
+                    .prompt()?;
+            if let ConfirmOptions::Yes { account_id } = select_choose_input {
                 if crate::common::find_network_where_account_exist(
                     &context.global_context,
                     account_id.clone().into(),
@@ -79,16 +79,14 @@ impl DeleteAccountAction {
                 {
                     eprintln!("\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{account_id}> as the beneficiary as it does not exist.");
                     if !crate::common::ask_if_different_account_id_wanted()? {
-                        break account_id;
-                    };
-                    account_id = CustomType::new("What is the beneficiary account ID?").prompt()?;
+                        return Ok(Some(account_id));
+                    }
                 } else {
-                    break account_id;
+                    return Ok(Some(account_id));
                 };
-            }
-        } else {
-            beneficiary_account_id
-        };
-        Ok(Some(account_id))
+            } else {
+                return Ok(Some(beneficiary_account_id));
+            };
+        }
     }
 }
