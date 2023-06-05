@@ -132,8 +132,9 @@ impl BeneficiaryAccount {
                         break account_id;
                     };
                     account_id = CustomType::new("What is the beneficiary account ID?").prompt()?;
+                } else {
+                    break account_id;
                 };
-                break account_id;
             }
         } else {
             beneficiary_account_id

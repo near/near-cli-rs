@@ -77,12 +77,14 @@ impl DeleteAccountAction {
                 )
                 .is_none()
                 {
-                    eprintln!("\nHeads up! You will only spend tokens if you specify the account <{account_id}> as the beneficiary, because no such account exists.");
+                    eprintln!("\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{account_id}> as the beneficiary as it does not exist.");
                     if !crate::common::ask_if_different_account_id_wanted()? {
                         break account_id;
                     };
+                    account_id = CustomType::new("What is the beneficiary account ID?").prompt()?;
+                } else {
+                    break account_id;
                 };
-                account_id = CustomType::new("What is the beneficiary account ID?").prompt()?;
             }
         } else {
             beneficiary_account_id
