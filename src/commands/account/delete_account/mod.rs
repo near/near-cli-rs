@@ -131,8 +131,9 @@ impl BeneficiaryAccount {
                     if !crate::common::ask_if_different_account_id_wanted()? {
                         break account_id;
                     };
+                    account_id = CustomType::new("What is the beneficiary account ID?").prompt()?;
                 };
-                account_id = CustomType::new("What is the beneficiary account ID?").prompt()?;
+                break account_id;
             }
         } else {
             beneficiary_account_id

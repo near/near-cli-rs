@@ -73,14 +73,14 @@ impl RelayerAccountId {
     fn input_relayer_account_id(
         context: &super::SendMetaTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let mut relayer_account_id: crate::types::account_id::AccountId =
-            CustomType::new("What is the relayer account ID?").prompt()?;
-
-        if context.global_context.offline {
-            return Ok(Some(relayer_account_id));
-        }
-
         loop {
+            let relayer_account_id: crate::types::account_id::AccountId =
+                CustomType::new("What is the relayer account ID?").prompt()?;
+
+            if context.global_context.offline {
+                return Ok(Some(relayer_account_id));
+            }
+
             if !crate::common::is_account_exist(
                 &context.global_context.config.network_connection,
                 relayer_account_id.clone().into(),
@@ -101,7 +101,6 @@ impl RelayerAccountId {
                 if let ConfirmOptions::No = select_choose_input {
                     return Ok(Some(relayer_account_id));
                 }
-                relayer_account_id = CustomType::new("What is the relayer account ID?").prompt()?;
             } else {
                 return Ok(Some(relayer_account_id));
             }
