@@ -41,8 +41,8 @@ pub enum TransactionActions {
     /// Send a signed transaction
     SendSignedTransaction(self::send_signed_transaction::SignedTransaction),
     #[strum_discriminants(strum(
-        message = "sign-transaction         - Sign base64 encoding transaction"
+        message = "sign-transaction         - Sign previously prepared unsigned transaction"
     ))]
-    /// Sign base64 encoding transaction
+    /// Sign previously prepared unsigned transaction
     SignTransaction(self::sign_transaction::SignTransaction),
 }
