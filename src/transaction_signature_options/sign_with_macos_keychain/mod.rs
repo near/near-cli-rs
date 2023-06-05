@@ -1,5 +1,5 @@
-use color_eyre::eyre::WrapErr;
-use inquire::{CustomType, Text};
+use color_eyre::eyre::{ContextCompat, WrapErr};
+use inquire::CustomType;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -11,10 +11,16 @@ use crate::common::RpcQueryResponseExt;
 pub struct SignMacosKeychain {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
+    signer_public_key: Option<crate::types::public_key::PublicKey>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
     nonce: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    block_hash: Option<String>,
+    block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    block_height: Option<near_primitives::types::BlockHeight>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     meta_transaction_valid_for: Option<u64>,
@@ -43,54 +49,75 @@ impl SignMacosKeychainContext {
         let keychain = security_framework::os::macos::keychain::SecKeychain::default()
             .wrap_err("Failed to open keychain")?;
 
-        let access_key_list = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key_list(
-                &previous_context.prepopulated_transaction.signer_id,
-                near_primitives::types::Finality::Final.into(),
-            )
-            .wrap_err_with(|| {
-                format!(
-                    "Failed to fetch access key list for {}",
-                    previous_context.prepopulated_transaction.signer_id
-                )
-            })?
-            .access_key_list_view()?;
-
         let service_name = std::borrow::Cow::Owned(format!(
             "near-{}-{}",
             network_config.network_name,
             previous_context.prepopulated_transaction.signer_id.as_str()
         ));
 
-        let password = access_key_list
-            .keys
-            .into_iter()
-            .filter(|key| {
-                matches!(
-                    key.access_key.permission,
-                    near_primitives::views::AccessKeyPermissionView::FullAccess
+        let password = if previous_context.global_context.offline {
+            let (password, _) = keychain
+                .find_generic_password(
+                    &service_name,
+                    &format!(
+                        "{}:{}",
+                        previous_context.prepopulated_transaction.signer_id,
+                        scope.signer_public_key.clone().wrap_err(
+                            "Signer public key is required to sign a transaction in offline mode"
+                        )?
+                    ),
                 )
-            })
-            .map(|key| key.public_key)
-            .find_map(|public_key| {
-                let (password, _) = keychain
-                    .find_generic_password(
-                        &service_name,
-                        &format!(
-                            "{}:{}",
-                            previous_context.prepopulated_transaction.signer_id, public_key
-                        ),
+                .wrap_err_with(|| {
+                    format!(
+                        "There are no access keys for {} account in the macOS keychain.",
+                        previous_context.prepopulated_transaction.signer_id
                     )
-                    .ok()?;
-                Some(password)
-            })
-            .ok_or_else(|| {
-                color_eyre::eyre::eyre!(format!(
-                    "There are no access keys for {} account in the macOS keychain.",
-                    previous_context.prepopulated_transaction.signer_id
-                ))
-            })?;
+                })?;
+            password
+        } else {
+            let access_key_list = network_config
+                .json_rpc_client()
+                .blocking_call_view_access_key_list(
+                    &previous_context.prepopulated_transaction.signer_id,
+                    near_primitives::types::Finality::Final.into(),
+                )
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to fetch access key list for {}",
+                        previous_context.prepopulated_transaction.signer_id
+                    )
+                })?
+                .access_key_list_view()?;
+
+            access_key_list
+                .keys
+                .into_iter()
+                .filter(|key| {
+                    matches!(
+                        key.access_key.permission,
+                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                    )
+                })
+                .map(|key| key.public_key)
+                .find_map(|public_key| {
+                    let (password, _) = keychain
+                        .find_generic_password(
+                            &service_name,
+                            &format!(
+                                "{}:{}",
+                                previous_context.prepopulated_transaction.signer_id, public_key
+                            ),
+                        )
+                        .ok()?;
+                    Some(password)
+                })
+                .ok_or_else(|| {
+                    color_eyre::eyre::eyre!(format!(
+                        "There are no access keys for {} account in the macOS keychain.",
+                        previous_context.prepopulated_transaction.signer_id
+                    ))
+                })?
+        };
 
         let account_json: super::AccountKeyPair =
             serde_json::from_slice(password.as_ref()).wrap_err("Error reading data")?;
@@ -198,6 +225,13 @@ impl interactive_clap::FromCli for SignMacosKeychain {
     {
         let mut clap_variant = optional_clap_variant.unwrap_or_default();
 
+        if clap_variant.signer_public_key.is_none() {
+            clap_variant.signer_public_key = match Self::input_signer_public_key(&context) {
+                Ok(optional_signer_public_key) => optional_signer_public_key,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let signer_public_key = clap_variant.signer_public_key.clone();
         if clap_variant.nonce.is_none() {
             clap_variant.nonce = match Self::input_nonce(&context) {
                 Ok(optional_nonce) => optional_nonce,
@@ -211,7 +245,14 @@ impl interactive_clap::FromCli for SignMacosKeychain {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let block_hash = clap_variant.block_hash.clone();
+        let block_hash = clap_variant.block_hash;
+        if clap_variant.block_height.is_none() {
+            clap_variant.block_height = match Self::input_block_height(&context) {
+                Ok(optional_block_height) => optional_block_height,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let block_height = clap_variant.block_height;
         if clap_variant.meta_transaction_valid_for.is_none() {
             clap_variant.meta_transaction_valid_for =
                 match Self::input_meta_transaction_valid_for(&context) {
@@ -224,8 +265,10 @@ impl interactive_clap::FromCli for SignMacosKeychain {
         let meta_transaction_valid_for = clap_variant.meta_transaction_valid_for;
 
         let new_context_scope = InteractiveClapContextScopeForSignMacosKeychain {
+            signer_public_key,
             nonce,
             block_hash,
+            block_height,
             meta_transaction_valid_for,
         };
         let output_context =
@@ -253,6 +296,18 @@ impl interactive_clap::FromCli for SignMacosKeychain {
 }
 
 impl SignMacosKeychain {
+    fn input_signer_public_key(
+        context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKey>> {
+        if context.global_context.offline {
+            return Ok(Some(
+                CustomType::<crate::types::public_key::PublicKey>::new("Enter public_key:")
+                    .prompt()?,
+            ));
+        }
+        Ok(None)
+    }
+
     fn input_nonce(
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
@@ -266,9 +321,28 @@ impl SignMacosKeychain {
 
     fn input_block_hash(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<String>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
         if context.global_context.offline {
-            return Ok(Some(Text::new("Enter recent block hash:").prompt()?));
+            return Ok(Some(
+                CustomType::<crate::types::crypto_hash::CryptoHash>::new(
+                    "Enter recent block hash:",
+                )
+                .prompt()?,
+            ));
+        }
+        Ok(None)
+    }
+
+    fn input_block_height(
+        context: &crate::commands::TransactionContext,
+    ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
+        if context.global_context.offline {
+            return Ok(Some(
+                CustomType::<near_primitives::types::BlockHeight>::new(
+                    "Enter recent block height:",
+                )
+                .prompt()?,
+            ));
         }
         Ok(None)
     }
