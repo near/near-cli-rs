@@ -12,7 +12,7 @@ pub struct Network {
     pub submit: Submit,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct NetworkContext {
     signed_transaction: near_primitives::transaction::SignedTransaction,
     network_config: crate::config::NetworkConfig,
@@ -40,7 +40,7 @@ impl Network {
     fn input_network_name(
         context: &super::SignedTransactionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&(context.config.clone(),))
+        crate::common::input_network_name(&context.config)
     }
 }
 
@@ -54,7 +54,7 @@ pub enum Submit {
     Send,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SubmitContext;
 
 impl SubmitContext {

@@ -9,7 +9,7 @@ pub struct AddLedgerKeyAction {
 
 #[derive(Debug, Clone)]
 pub struct AddLedgerKeyActionContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     permission: near_primitives::account::AccessKeyPermission,
     public_key: crate::types::public_key::PublicKey,
@@ -38,7 +38,7 @@ impl AddLedgerKeyActionContext {
         ));
 
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             permission: previous_context.permission,
             public_key: public_key.into(),
@@ -65,7 +65,7 @@ impl From<AddLedgerKeyActionContext> for crate::commands::ActionContext {
                 })
             });
         Self {
-            config: item.config,
+            global_context: item.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

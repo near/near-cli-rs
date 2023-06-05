@@ -13,7 +13,7 @@ pub struct DeleteKeyCommand {
 
 #[derive(Debug, Clone)]
 pub struct DeleteKeyCommandContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     owner_account_id: near_primitives::types::AccountId,
     public_keys: Vec<near_crypto::PublicKey>,
 }
@@ -24,7 +24,7 @@ impl DeleteKeyCommandContext {
         scope: &<DeleteKeyCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            global_context: previous_context,
             owner_account_id: scope.owner_account_id.clone().into(),
             public_keys: scope.public_keys.clone().into(),
         })
@@ -52,7 +52,7 @@ impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
             });
 
         Self {
-            config: item.config,
+            global_context: item.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

@@ -16,7 +16,7 @@ pub struct SendNearCommand {
 
 #[derive(Debug, Clone)]
 pub struct SendNearCommandContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
     amount_in_near: crate::common::NearBalance,
@@ -28,7 +28,7 @@ impl SendNearCommandContext {
         scope: &<SendNearCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
             amount_in_near: scope.amount_in_near.clone(),
@@ -51,7 +51,7 @@ impl From<SendNearCommandContext> for crate::commands::ActionContext {
                 })
             });
         Self {
-            config: item.config,
+            global_context: item.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

@@ -18,7 +18,7 @@ pub struct ContractAccount {
 
 #[derive(Debug, Clone)]
 pub struct ContractAccountContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     account_id: near_primitives::types::AccountId,
 }
 
@@ -28,7 +28,7 @@ impl ContractAccountContext {
         scope: &<ContractAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            global_context: previous_context,
             account_id: scope.account_id.clone().into(),
         })
     }
@@ -91,7 +91,7 @@ impl DownloadContractContext {
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
-            config: previous_context.config,
+            config: previous_context.global_context.config,
             on_after_getting_block_reference_callback,
         }))
     }

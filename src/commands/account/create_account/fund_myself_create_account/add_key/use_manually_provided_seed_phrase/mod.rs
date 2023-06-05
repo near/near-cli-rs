@@ -33,7 +33,7 @@ impl AddAccessWithSeedPhraseActionContext {
         };
 
         Ok(Self(super::super::AccountPropertiesContext {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             account_properties,
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),

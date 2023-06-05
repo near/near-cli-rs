@@ -22,7 +22,7 @@ pub struct FunctionCallAction {
 
 #[derive(Debug, Clone)]
 pub struct FunctionCallActionContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
     actions: Vec<near_primitives::transaction::Action>,
@@ -41,7 +41,7 @@ impl FunctionCallActionContext {
                 scope.function_args_type.clone(),
             )?;
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions: previous_context.actions,
@@ -76,7 +76,7 @@ pub struct PrepaidGas {
 
 #[derive(Debug, Clone)]
 pub struct PrepaidGasContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
     actions: Vec<near_primitives::transaction::Action>,
@@ -91,7 +91,7 @@ impl PrepaidGasContext {
         scope: &<PrepaidGas as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions: previous_context.actions,
@@ -140,7 +140,7 @@ pub struct Deposit {
     next_action: super::super::super::add_action_2::NextAction,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DepositContext(super::super::super::ConstructTransactionContext);
 
 impl DepositContext {
@@ -159,7 +159,7 @@ impl DepositContext {
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions,

@@ -61,7 +61,7 @@ impl Network {
     fn input_network_name(
         context: &super::SponsorServiceContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&(context.config.clone(),))
+        crate::common::input_network_name(&context.config)
     }
 }
 
@@ -75,7 +75,7 @@ pub enum Submit {
     Create,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SubmitContext;
 
 impl SubmitContext {

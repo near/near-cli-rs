@@ -11,7 +11,7 @@ pub struct SignedTransaction {
     network_config: self::network::Network,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SignedTransactionContext {
     config: crate::config::Config,
     signed_transaction: near_primitives::transaction::SignedTransaction,
@@ -23,7 +23,7 @@ impl SignedTransactionContext {
         scope: &<SignedTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            config: previous_context.config,
             signed_transaction: scope.signed_action.inner.clone(),
         })
     }

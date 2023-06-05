@@ -50,7 +50,7 @@ impl NetworkViewAtBlockArgs {
     fn input_network_name(
         context: &ArgsForViewContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&(context.config.clone(),))
+        crate::common::input_network_name(&context.config)
     }
 }
 
@@ -81,7 +81,7 @@ pub enum ViewAtBlock {
 #[interactive_clap(output_context = NowContext)]
 pub struct Now;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct NowContext;
 
 impl NowContext {
@@ -107,7 +107,7 @@ pub struct AtBlockHeight {
     block_id_height: near_primitives::types::BlockHeight,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AtBlockHeightContext;
 
 impl AtBlockHeightContext {
@@ -133,7 +133,7 @@ pub struct BlockIdHash {
     block_id_hash: String,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct BlockIdHashContext;
 
 impl BlockIdHashContext {

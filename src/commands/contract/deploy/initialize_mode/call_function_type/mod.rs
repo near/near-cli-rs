@@ -22,7 +22,7 @@ pub struct CallFunctionAction {
 
 #[derive(Debug, Clone)]
 pub struct CallFunctionActionContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     signer_account_id: near_primitives::types::AccountId,
     code: Vec<u8>,
@@ -41,7 +41,7 @@ impl CallFunctionActionContext {
                 scope.function_args_type.clone(),
             )?;
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
             code: previous_context.code,
@@ -75,7 +75,7 @@ pub struct PrepaidGas {
 
 #[derive(Debug, Clone)]
 pub struct PrepaidGasContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     signer_account_id: near_primitives::types::AccountId,
     code: Vec<u8>,
@@ -90,7 +90,7 @@ impl PrepaidGasContext {
         scope: &<PrepaidGas as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
             code: previous_context.code,
@@ -173,7 +173,7 @@ impl DepositContext {
                 })
             });
         Ok(Self(crate::commands::ActionContext {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

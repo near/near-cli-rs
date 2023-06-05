@@ -16,9 +16,9 @@ pub struct ConstructTransaction {
     next_actions: self::add_action_1::NextAction,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ConstructTransactionContext {
-    pub config: crate::config::Config,
+    pub global_context: crate::GlobalContext,
     pub signer_account_id: near_primitives::types::AccountId,
     pub receiver_account_id: near_primitives::types::AccountId,
     pub actions: Vec<near_primitives::transaction::Action>,
@@ -30,7 +30,7 @@ impl ConstructTransactionContext {
         scope: &<ConstructTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            global_context: previous_context,
             signer_account_id: scope.sender_account_id.clone().into(),
             receiver_account_id: scope.receiver_account_id.clone().into(),
             actions: vec![],

@@ -5,10 +5,7 @@ use std::str::FromStr;
 use color_eyre::eyre::WrapErr;
 use prettytable::Table;
 
-use near_primitives::{
-    borsh::BorshDeserialize, hash::CryptoHash, types::BlockReference,
-    views::AccessKeyPermissionView,
-};
+use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
@@ -36,30 +33,6 @@ impl std::fmt::Display for OutputFormat {
             OutputFormat::Plaintext => write!(f, "plaintext"),
             OutputFormat::Json => write!(f, "json"),
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct TransactionAsBase64 {
-    pub inner: near_primitives::transaction::Transaction,
-}
-
-impl std::str::FromStr for TransactionAsBase64 {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            inner: near_primitives::transaction::Transaction::try_from_slice(
-                &near_primitives::serialize::from_base64(s)
-                    .map_err(|err| format!("base64 transaction sequence is invalid: {}", err))?,
-            )
-            .map_err(|err| format!("transaction could not be parsed: {}", err))?,
-        })
-    }
-}
-
-impl std::fmt::Display for TransactionAsBase64 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner.get_hash_and_size().0)
     }
 }
 
@@ -464,9 +437,9 @@ pub fn is_account_exist(
     networks: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
     account_id: near_primitives::types::AccountId,
 ) -> bool {
-    for network in networks {
+    for (_, network_config) in networks {
         if get_account_state(
-            network.1.clone(),
+            network_config.clone(),
             account_id.clone(),
             near_primitives::types::Finality::Final.into(),
         )
@@ -476,6 +449,40 @@ pub fn is_account_exist(
         }
     }
     false
+}
+
+pub fn find_network_where_account_exist(
+    context: &crate::GlobalContext,
+    new_account_id: near_primitives::types::AccountId,
+) -> Option<crate::config::NetworkConfig> {
+    for (_, network_config) in context.config.network_connection.iter() {
+        if crate::common::get_account_state(
+            network_config.clone(),
+            new_account_id.clone(),
+            near_primitives::types::BlockReference::latest(),
+        )
+        .is_ok()
+        {
+            return Some(network_config.clone());
+        }
+    }
+    None
+}
+
+pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
+    #[derive(strum_macros::Display, PartialEq)]
+    enum ConfirmOptions {
+        #[strum(to_string = "Yes, I want to enter a new name for account ID.")]
+        Yes,
+        #[strum(to_string = "No, I want to keep using this name for account ID.")]
+        No,
+    }
+    let select_choose_input = Select::new(
+        "Do you want to enter a different name for the new account ID?",
+        vec![ConfirmOptions::Yes, ConfirmOptions::No],
+    )
+    .prompt()?;
+    Ok(select_choose_input == ConfirmOptions::Yes)
 }
 
 pub fn get_account_state(
@@ -1559,9 +1566,9 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
 }
 
 pub fn input_network_name(
-    context: &crate::GlobalContext,
+    config: &crate::config::Config,
 ) -> color_eyre::eyre::Result<Option<String>> {
-    let variants = context.0.network_connection.keys().collect::<Vec<_>>();
+    let variants = config.network_connection.keys().collect::<Vec<_>>();
     let select_submit = Select::new("What is the name of the network?", variants).prompt();
     match select_submit {
         Ok(value) => Ok(Some(value.clone())),

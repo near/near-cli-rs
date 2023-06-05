@@ -50,7 +50,7 @@ impl RelayerAccountIdContext {
             });
 
         Ok(Self(crate::commands::ActionContext {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(
@@ -76,8 +76,13 @@ impl RelayerAccountId {
         loop {
             let relayer_account_id: crate::types::account_id::AccountId =
                 CustomType::new("What is the relayer account ID?").prompt()?;
+
+            if context.global_context.offline {
+                return Ok(Some(relayer_account_id));
+            }
+
             if !crate::common::is_account_exist(
-                &context.config.network_connection,
+                &context.global_context.config.network_connection,
                 relayer_account_id.clone().into(),
             ) {
                 eprintln!("\nThe account <{relayer_account_id}> does not yet exist.");

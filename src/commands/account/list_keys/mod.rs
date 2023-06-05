@@ -45,7 +45,7 @@ impl ViewListKeysContext {
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
-            config: previous_context.0,
+            config: previous_context.config,
             on_after_getting_block_reference_callback,
         }))
     }

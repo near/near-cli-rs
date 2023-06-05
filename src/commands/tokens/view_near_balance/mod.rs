@@ -28,7 +28,7 @@ impl ViewNearBalanceContext {
         Ok(())
         }});
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
-            config: previous_context.config,
+            config: previous_context.global_context.config,
             on_after_getting_block_reference_callback,
         }))
     }

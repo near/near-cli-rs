@@ -4,25 +4,51 @@ use clap::Parser;
 use color_eyre::eyre::WrapErr;
 use interactive_clap::ToCliArgs;
 
-mod commands;
-mod common;
-mod config;
-mod js_command_match;
-mod network;
-mod network_for_transaction;
-mod network_view_at_block;
-mod transaction_signature_options;
-mod types;
-mod utils_command;
+pub use near_cli_rs::commands;
+pub use near_cli_rs::common::{self, CliResult};
+pub use near_cli_rs::config;
+pub use near_cli_rs::js_command_match;
+pub use near_cli_rs::network;
+pub use near_cli_rs::network_for_transaction;
+pub use near_cli_rs::network_view_at_block;
+pub use near_cli_rs::transaction_signature_options;
+pub use near_cli_rs::types;
+pub use near_cli_rs::utils_command;
 
-pub use common::CliResult;
-pub type GlobalContext = (crate::config::Config,);
+pub use near_cli_rs::GlobalContext;
+
+type ConfigContext = (crate::config::Config,);
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = ConfigContext)]
+#[interactive_clap(output_context = CmdContext)]
 struct Cmd {
+    /// Offline mode
+    #[interactive_clap(long)]
+    offline: bool,
     #[interactive_clap(subcommand)]
     top_level: crate::commands::TopLevelCommand,
+}
+
+#[derive(Debug, Clone)]
+struct CmdContext(crate::GlobalContext);
+
+impl CmdContext {
+    fn from_previous_context(
+        previous_context: ConfigContext,
+        scope: &<Cmd as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self(crate::GlobalContext {
+            config: previous_context.0,
+            offline: scope.offline,
+        }))
+    }
+}
+
+impl From<CmdContext> for crate::GlobalContext {
+    fn from(item: CmdContext) -> Self {
+        item.0
+    }
 }
 
 fn main() -> crate::common::CliResult {
@@ -127,6 +153,7 @@ fn main() -> crate::common::CliResult {
                     ),
                 },
             )),
+            ..
         }))
     ) {
         if let Ok(Ok(latest_version)) = handle.join() {
@@ -142,6 +169,7 @@ fn main() -> crate::common::CliResult {
                     "`near` CLI has a new update available \x1b[2m{current_version}\x1b[0m →  \x1b[32m{latest_version}\x1b[0m"
                 );
                 let self_update_cli_cmd = CliCmd {
+                    offline: false,
                     top_level:
                         Some(crate::commands::CliTopLevelCommand::Extensions(
                             crate::commands::extensions::CliExtensionsCommands {

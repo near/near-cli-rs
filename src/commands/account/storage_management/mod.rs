@@ -8,7 +8,7 @@ mod view_storage_balance;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractContext)]
 pub struct Contract {
-    /// Which contract account ID do you want to view the balance?
+    /// Which contract account ID do you want to manage the storage deposit for?
     contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     storage_actions: StorageActions,
@@ -16,7 +16,7 @@ pub struct Contract {
 
 #[derive(Clone)]
 pub struct ContractContext {
-    pub config: crate::config::Config,
+    pub global_context: crate::GlobalContext,
     pub get_contract_account_id: GetContractAccountId,
 }
 
@@ -29,7 +29,7 @@ impl ContractContext {
         let get_contract_account_id: GetContractAccountId =
             std::sync::Arc::new(move |_network_config| Ok(contract_account_id.clone().into()));
         Ok(Self {
-            config: previous_context.0,
+            global_context: previous_context,
             get_contract_account_id,
         })
     }

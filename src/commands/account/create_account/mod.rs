@@ -13,7 +13,8 @@ pub struct CreateAccount {
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = CoverCostsCreateAccountContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// How do you cover the costs of account creation?
 pub enum CoverCostsCreateAccount {
@@ -32,4 +33,33 @@ pub enum CoverCostsCreateAccount {
     ))]
     /// Create an implicit-account
     FundLater(self::create_implicit_account::ImplicitAccount),
+}
+
+#[derive(Debug, Clone)]
+pub struct CoverCostsCreateAccountContext(crate::GlobalContext);
+
+impl CoverCostsCreateAccountContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<CoverCostsCreateAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        match scope {
+            CoverCostsCreateAccountDiscriminants::SponsorByFaucetService => {
+                if previous_context.offline {
+                    Err(color_eyre::Report::msg(
+                        "Error: Creating an account with a faucet sponsor is not possible offline.",
+                    ))
+                } else {
+                    Ok(Self(previous_context))
+                }
+            }
+            _ => Ok(Self(previous_context)),
+        }
+    }
+}
+
+impl From<CoverCostsCreateAccountContext> for crate::GlobalContext {
+    fn from(item: CoverCostsCreateAccountContext) -> Self {
+        item.0
+    }
 }

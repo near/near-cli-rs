@@ -88,7 +88,7 @@ impl NewAccountContext {
             });
 
         Ok(Self {
-            config: previous_context.0,
+            config: previous_context.config,
             new_account_id: scope.new_account_id.clone(),
             on_before_creating_account_callback,
         })

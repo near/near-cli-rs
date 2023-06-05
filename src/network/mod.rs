@@ -38,7 +38,7 @@ impl interactive_clap::FromCli for Network {
             };
         };
         let network_name = clap_variant.network_name.clone().expect("Unexpected error");
-        let network_connection = context.config.network_connection.clone();
+        let network_connection = context.config.network_connection;
         let network_config = network_connection
             .get(&network_name)
             .expect("Failed to get network config!")
@@ -53,6 +53,6 @@ impl interactive_clap::FromCli for Network {
 
 impl Network {
     fn input_network_name(context: &NetworkContext) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&(context.config.clone(),))
+        crate::common::input_network_name(&context.config)
     }
 }

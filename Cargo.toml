@@ -61,8 +61,8 @@ near-primitives = "0.16.1"
 near-jsonrpc-client = "0.5.1"
 near-jsonrpc-primitives = "0.16.1"
 
-interactive-clap = "0.2.2"
-interactive-clap-derive = "0.2.2"
+interactive-clap = "0.2.4"
+interactive-clap-derive = "0.2.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "2.7.0"

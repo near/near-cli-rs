@@ -11,7 +11,7 @@ pub struct SaveKeypairToKeychain {
 
 #[derive(Debug, Clone)]
 pub struct SaveKeypairToKeychainContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     permission: near_primitives::account::AccessKeyPermission,
     key_pair_properties: crate::common::KeyPairProperties,
@@ -24,7 +24,7 @@ impl SaveKeypairToKeychainContext {
         _scope: &<SaveKeypairToKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             permission: previous_context.permission,
             key_pair_properties: previous_context.key_pair_properties,
@@ -35,7 +35,7 @@ impl SaveKeypairToKeychainContext {
 
 impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
     fn from(item: SaveKeypairToKeychainContext) -> Self {
-        let credentials_home_dir = item.config.credentials_home_dir.clone();
+        let credentials_home_dir = item.global_context.config.credentials_home_dir.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
@@ -76,7 +76,7 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
             );
 
         Self {
-            config: item.config,
+            global_context: item.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

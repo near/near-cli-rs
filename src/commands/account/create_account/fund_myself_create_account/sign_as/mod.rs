@@ -1,8 +1,7 @@
 use std::str::FromStr;
 
+use inquire::CustomType;
 use serde_json::json;
-
-use inquire::{CustomType, Select};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::AccountPropertiesContext)]
@@ -18,7 +17,7 @@ pub struct SignerAccountId {
 
 #[derive(Clone)]
 pub struct SignerAccountIdContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     account_properties: super::AccountProperties,
     signer_account_id: near_primitives::types::AccountId,
     on_before_sending_transaction_callback:
@@ -31,7 +30,7 @@ impl SignerAccountIdContext {
         scope: &<SignerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             account_properties: previous_context.account_properties,
             signer_account_id: scope.signer_account_id.clone().into(),
             on_before_sending_transaction_callback: previous_context
@@ -42,7 +41,7 @@ impl SignerAccountIdContext {
 
 impl From<SignerAccountIdContext> for crate::commands::ActionContext {
     fn from(item: SignerAccountIdContext) -> Self {
-        let config = item.config;
+        let global_context = item.global_context.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
@@ -51,8 +50,6 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 let signer_id = item.signer_account_id.clone();
 
                 move |network_config| {
-                    validate_signer_account_id(network_config, &signer_id)?;
-
                     if new_account_id.as_str().chars().count()
                         < super::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
                         && new_account_id.is_top_level()
@@ -62,8 +59,9 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             new_account_id, new_account_id.as_str().chars().count()
                         ));
                     }
-                    validate_new_account_id(network_config, &new_account_id)?;
-
+                    if !item.global_context.offline {
+                        validate_new_account_id(network_config, &new_account_id)?;
+                    }
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
                         (vec![
                                 near_primitives::transaction::Action::CreateAccount(
@@ -139,7 +137,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
             });
 
         Self {
-            config,
+            global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
@@ -162,75 +160,18 @@ impl SignerAccountId {
             .clone()
             .get_parent_account_id_from_sub_account();
         if !parent_account_id.0.is_top_level() {
-            if crate::common::is_account_exist(
-                &context.config.network_connection,
-                parent_account_id.clone().into(),
-            ) {
-                Ok(Some(parent_account_id))
-            } else {
-                Self::input_account_id(context)
-            }
+            Ok(Some(parent_account_id))
         } else {
             Self::input_account_id(context)
         }
     }
 
     fn input_account_id(
-        context: &super::AccountPropertiesContext,
+        _context: &super::AccountPropertiesContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        loop {
-            let signer_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the signer account ID?").prompt()?;
-            if !crate::common::is_account_exist(
-                &context.config.network_connection,
-                signer_account_id.clone().into(),
-            ) {
-                eprintln!("\nThe account <{}> does not yet exist.", &signer_account_id);
-                #[derive(strum_macros::Display)]
-                enum ConfirmOptions {
-                    #[strum(to_string = "Yes, I want to enter a new name for signer_account_id.")]
-                    Yes,
-                    #[strum(to_string = "No, I want to use this name for signer_account_id.")]
-                    No,
-                }
-                let select_choose_input = Select::new(
-                    "Do you want to enter a new name for signer_account_id?",
-                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
-                )
-                .prompt()?;
-                if let ConfirmOptions::No = select_choose_input {
-                    return Ok(Some(signer_account_id));
-                }
-            } else {
-                return Ok(Some(signer_account_id));
-            }
-        }
-    }
-}
-
-fn validate_signer_account_id(
-    network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
-) -> crate::CliResult {
-    match crate::common::get_account_state(
-        network_config.clone(),
-        account_id.clone(),
-        near_primitives::types::BlockReference::latest(),
-    ) {
-        Ok(_) => Ok(()),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                    requested_account_id,
-                    ..
-                },
-            ),
-        )) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Signer account <{}> does not currently exist on network <{}>.",
-            requested_account_id,
-            network_config.network_name
-        )),
-        Err(err) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string())),
+        let signer_account_id: crate::types::account_id::AccountId =
+            CustomType::new("What is the signer account ID?").prompt()?;
+        Ok(Some(signer_account_id))
     }
 }
 
@@ -238,26 +179,42 @@ fn validate_new_account_id(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> crate::CliResult {
-    match crate::common::get_account_state(
-        network_config.clone(),
-        account_id.clone(),
-        near_primitives::types::BlockReference::latest(),
-    )
-    {
-        Ok(_) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+    for _ in 0..3 {
+        let account_state = crate::common::get_account_state(
+            network_config.clone(),
+            account_id.clone(),
+            near_primitives::types::BlockReference::latest(),
+        );
+        if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
+            near_jsonrpc_client::errors::RpcTransportError::SendError(_),
+        )) = account_state
+        {
+            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            std::thread::sleep(std::time::Duration::from_millis(100))
+        } else {
+            match account_state {
+                Ok(_) => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount <{}> already exists in network <{}>. Therefore, it is not possible to create an account with this name.",
                 account_id,
                 network_config.network_name
-            ))
+            ));
+                }
+                Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                            ..
+                        },
+                    ),
+                )) => {
+                    return Ok(());
+                }
+                Err(err) => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string()))
+                }
+            }
         }
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-            ),
-        )) => {
-            Ok(())
-        }
-        Err(err) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string())),
     }
+    eprintln!("\nTransport error.\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.");
+    Ok(())
 }

@@ -64,7 +64,7 @@ pub struct PrepopulatedTransaction {
 
 #[derive(Clone)]
 pub struct ActionContext {
-    pub config: crate::config::Config,
+    pub global_context: crate::GlobalContext,
     pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,
     pub on_before_sending_transaction_callback:
@@ -75,7 +75,7 @@ pub struct ActionContext {
 
 #[derive(Clone)]
 pub struct TransactionContext {
-    pub config: crate::config::Config,
+    pub global_context: crate::GlobalContext,
     pub network_config: crate::config::NetworkConfig,
     pub prepopulated_transaction: PrepopulatedTransaction,
     pub on_before_signing_callback: OnBeforeSigningCallback,

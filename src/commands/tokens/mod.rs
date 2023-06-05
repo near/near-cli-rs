@@ -22,7 +22,7 @@ pub struct TokensCommands {
 
 #[derive(Debug, Clone)]
 pub struct TokensCommandsContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     owner_account_id: near_primitives::types::AccountId,
 }
 
@@ -32,7 +32,7 @@ impl TokensCommandsContext {
         scope: &<TokensCommands as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.0,
+            global_context: previous_context,
             owner_account_id: scope.owner_account_id.clone().into(),
         })
     }

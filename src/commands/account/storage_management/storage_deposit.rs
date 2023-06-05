@@ -6,6 +6,7 @@ use inquire::{CustomType, Select};
 #[interactive_clap(input_context = super::ContractContext)]
 #[interactive_clap(output_context = DepositArgsContext)]
 pub struct DepositArgs {
+    #[interactive_clap(skip_default_input_arg)]
     /// Which account ID do you want to add a deposit to?
     receiver_account_id: crate::types::account_id::AccountId,
     /// Enter the amount to deposit into the storage (example: 10NEAR or 0.5near or 10000yoctonear):
@@ -17,7 +18,7 @@ pub struct DepositArgs {
 
 #[derive(Clone)]
 pub struct DepositArgsContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     get_contract_account_id: super::GetContractAccountId,
     receiver_account_id: near_primitives::types::AccountId,
     deposit: crate::common::NearBalance,
@@ -29,11 +30,50 @@ impl DepositArgsContext {
         scope: &<DepositArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
             deposit: scope.deposit.clone(),
         })
+    }
+}
+
+impl DepositArgs {
+    fn input_receiver_account_id(
+        context: &super::ContractContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        loop {
+            let receiver_account_id: crate::types::account_id::AccountId =
+                CustomType::new("Which account ID do you want to add a deposit to?").prompt()?;
+
+            if context.global_context.offline {
+                return Ok(Some(receiver_account_id));
+            }
+
+            if !crate::common::is_account_exist(
+                &context.global_context.config.network_connection,
+                receiver_account_id.clone().into(),
+            ) {
+                eprintln!("\nThe account <{receiver_account_id}> does not yet exist.");
+                #[derive(strum_macros::Display)]
+                enum ConfirmOptions {
+                    #[strum(to_string = "Yes, I want to enter a new account name.")]
+                    Yes,
+                    #[strum(to_string = "No, I want to use this account name.")]
+                    No,
+                }
+                let select_choose_input = Select::new(
+                    "Do you want to enter another receiver account id?",
+                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
+                )
+                .prompt()?;
+                if let ConfirmOptions::No = select_choose_input {
+                    return Ok(Some(receiver_account_id));
+                }
+            } else {
+                return Ok(Some(receiver_account_id));
+            }
+        }
     }
 }
 
@@ -99,7 +139,7 @@ impl SignerAccountIdContext {
         );
 
         Ok(Self(crate::commands::ActionContext {
-            config: previous_context.config.clone(),
+            global_context: previous_context.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
@@ -122,34 +162,12 @@ impl SignerAccountId {
     fn input_signer_account_id(
         context: &DepositArgsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        loop {
-            let signer_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the signer account ID?")
-                    .with_default(context.receiver_account_id.clone().into())
-                    .prompt()?;
-            if !crate::common::is_account_exist(
-                &context.config.network_connection,
-                signer_account_id.clone().into(),
-            ) {
-                eprintln!("\nThe account <{signer_account_id}> does not yet exist.");
-                #[derive(strum_macros::Display)]
-                enum ConfirmOptions {
-                    #[strum(to_string = "Yes, I want to enter a new account name.")]
-                    Yes,
-                    #[strum(to_string = "No, I want to use this account name.")]
-                    No,
-                }
-                let select_choose_input = Select::new(
-                    "Do you want to enter another receiver account id?",
-                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
-                )
-                .prompt()?;
-                if let ConfirmOptions::No = select_choose_input {
-                    return Ok(Some(signer_account_id));
-                }
-            } else {
-                return Ok(Some(signer_account_id));
-            }
-        }
+        Ok(Some(
+            CustomType::<crate::types::account_id::AccountId>::new(
+                "What is the signer account ID?",
+            )
+            .with_default(context.receiver_account_id.clone().into())
+            .prompt()?,
+        ))
     }
 }

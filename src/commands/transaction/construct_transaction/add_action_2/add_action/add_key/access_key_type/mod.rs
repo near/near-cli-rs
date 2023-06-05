@@ -2,9 +2,9 @@ use std::str::FromStr;
 
 use inquire::{CustomType, Select, Text};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AccessKeyPermissionContext {
-    pub config: crate::config::Config,
+    pub global_context: crate::GlobalContext,
     pub signer_account_id: near_primitives::types::AccountId,
     pub receiver_account_id: near_primitives::types::AccountId,
     pub actions: Vec<near_primitives::transaction::Action>,
@@ -19,7 +19,7 @@ pub struct FullAccessType {
     access_key_mode: super::AccessKeyMode,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FullAccessTypeContext(AccessKeyPermissionContext);
 
 impl FullAccessTypeContext {
@@ -28,7 +28,7 @@ impl FullAccessTypeContext {
         _scope: &<FullAccessType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(AccessKeyPermissionContext {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions: previous_context.actions,
@@ -63,7 +63,7 @@ pub struct FunctionCallType {
     access_key_mode: super::AccessKeyMode,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FunctionCallTypeContext(AccessKeyPermissionContext);
 
 impl FunctionCallTypeContext {
@@ -82,7 +82,7 @@ impl FunctionCallTypeContext {
             },
         );
         Ok(Self(AccessKeyPermissionContext {
-            config: previous_context.config,
+            global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions: previous_context.actions,

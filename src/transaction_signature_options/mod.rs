@@ -3,6 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::JsonRpcClientExt;
 
+pub mod sign_later;
 pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
@@ -51,6 +52,11 @@ pub enum SignWith {
     ))]
     /// Sign the transaction using the seed phrase
     SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
+    #[strum_discriminants(strum(
+        message = "sign-later                       - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)"
+    ))]
+    /// Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)
+    SignLater(self::sign_later::Display),
 }
 
 //-----------------------------------------------------------------------------------
@@ -293,6 +299,7 @@ pub type OnAfterSendingTransactionCallback = std::sync::Arc<
 #[derive(Clone)]
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
+    pub global_context: crate::GlobalContext,
     pub signed_transaction_or_signed_delegate_action: SignedTransactionOrSignedDelegateAction,
     pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,

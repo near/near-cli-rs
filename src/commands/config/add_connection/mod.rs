@@ -34,7 +34,7 @@ pub struct AddNetworkConnection {
     meta_transaction_relayer_url: Option<crate::types::url::Url>,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AddNetworkConnectionContext;
 
 impl AddNetworkConnectionContext {
@@ -42,7 +42,7 @@ impl AddNetworkConnectionContext {
         previous_context: crate::GlobalContext,
         scope: &<AddNetworkConnection as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let mut config = previous_context.0;
+        let mut config = previous_context.config;
         config.network_connection.insert(
             scope.connection_name.clone(),
             crate::config::NetworkConfig {
