@@ -8,7 +8,7 @@ also assumes a Unix-like system, although most commands are probably easily
 translatable to any command line shell environment.  
 
 With _near CLI_ you can create, sign and send transactions in _online_ mode, which is enabled by default.
-In _offline_ mode, you can create and sign a transaction. The received transaction hash can be sent later or from another computer. To enter the _offline_ mode, you need to set the ```--offline``` flag in the command: 
+In _offline_ mode, you can create and sign a transaction. The base64 encoding transaction can be sent later or from another computer. To enter the _offline_ mode, you need to set the ```--offline``` flag in the command: 
 ```txt
 near --offline tokens \
     fro_volod.testnet \
