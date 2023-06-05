@@ -45,32 +45,34 @@ impl NewAccount {
     pub fn input_new_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let new_account_id: crate::types::account_id::AccountId =
-            CustomType::new("What is the new account ID?").prompt()?;
+        loop {
+            let new_account_id: crate::types::account_id::AccountId =
+                CustomType::new("What is the new account ID?").prompt()?;
 
-        if context.offline {
-            return Ok(Some(new_account_id));
-        }
+            if context.offline {
+                return Ok(Some(new_account_id));
+            }
 
-        #[derive(derive_more::Display)]
-        enum ConfirmOptions {
-            #[display(
-                fmt = "Yes, I want to check that <{}> account does not exist. (It is free of charge, and only requires Internet access)",
-                account_id
-            )]
-            Yes {
-                account_id: crate::types::account_id::AccountId,
-            },
-            #[display(fmt = "No, I know that this account does not exist and I want to proceed.")]
-            No,
-        }
-        let select_choose_input =
+            #[derive(derive_more::Display)]
+            enum ConfirmOptions {
+                #[display(
+                    fmt = "Yes, I want to check that <{}> account does not exist. (It is free of charge, and only requires Internet access)",
+                    account_id
+                )]
+                Yes {
+                    account_id: crate::types::account_id::AccountId,
+                },
+                #[display(
+                    fmt = "No, I know that this account does not exist and I want to proceed."
+                )]
+                No,
+            }
+            let select_choose_input =
             Select::new("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?",
                 vec![ConfirmOptions::Yes{account_id: new_account_id.clone()}, ConfirmOptions::No],
                 )
                 .prompt()?;
-        let account_id = if let ConfirmOptions::Yes { mut account_id } = select_choose_input {
-            loop {
+            if let ConfirmOptions::Yes { account_id } = select_choose_input {
                 let network = crate::common::find_network_where_account_exist(
                     context,
                     account_id.clone().into(),
@@ -81,7 +83,7 @@ impl NewAccount {
                         &account_id, network_config.network_name
                     );
                     if !crate::common::ask_if_different_account_id_wanted()? {
-                        break account_id;
+                        return Ok(Some(account_id));
                     };
                 } else if account_id.0.as_str().chars().count()
                     < MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH
@@ -94,7 +96,7 @@ impl NewAccount {
                         MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH,
                     );
                     if !crate::common::ask_if_different_account_id_wanted()? {
-                        break account_id;
+                        return Ok(Some(account_id));
                     };
                 } else {
                     let parent_account_id =
@@ -111,21 +113,19 @@ impl NewAccount {
                             eprintln!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
                                 &parent_account_id, &account_id);
                             if !crate::common::ask_if_different_account_id_wanted()? {
-                                break account_id;
+                                return Ok(Some(account_id));
                             };
                         } else {
-                            break account_id;
+                            return Ok(Some(account_id));
                         }
                     } else {
-                        break account_id;
+                        return Ok(Some(account_id));
                     }
                 };
-                account_id = CustomType::new("What is the new account ID?").prompt()?;
-            }
-        } else {
-            new_account_id
-        };
-        Ok(Some(account_id))
+            } else {
+                return Ok(Some(new_account_id));
+            };
+        }
     }
 
     fn input_initial_balance(

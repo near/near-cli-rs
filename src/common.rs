@@ -437,9 +437,9 @@ pub fn is_account_exist(
     networks: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
     account_id: near_primitives::types::AccountId,
 ) -> bool {
-    for network in networks {
+    for (_, network_config) in networks {
         if get_account_state(
-            network.1.clone(),
+            network_config.clone(),
             account_id.clone(),
             near_primitives::types::Finality::Final.into(),
         )

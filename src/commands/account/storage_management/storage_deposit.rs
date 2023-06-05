@@ -42,14 +42,14 @@ impl DepositArgs {
     fn input_receiver_account_id(
         context: &super::ContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let mut receiver_account_id: crate::types::account_id::AccountId =
-            CustomType::new("Which account ID do you want to add a deposit to?").prompt()?;
-
-        if context.global_context.offline {
-            return Ok(Some(receiver_account_id));
-        }
-
         loop {
+            let receiver_account_id: crate::types::account_id::AccountId =
+                CustomType::new("Which account ID do you want to add a deposit to?").prompt()?;
+
+            if context.global_context.offline {
+                return Ok(Some(receiver_account_id));
+            }
+
             if !crate::common::is_account_exist(
                 &context.global_context.config.network_connection,
                 receiver_account_id.clone().into(),
@@ -70,9 +70,6 @@ impl DepositArgs {
                 if let ConfirmOptions::No = select_choose_input {
                     return Ok(Some(receiver_account_id));
                 }
-                receiver_account_id =
-                    CustomType::new("Which account ID do you want to add a deposit to?")
-                        .prompt()?;
             } else {
                 return Ok(Some(receiver_account_id));
             }
