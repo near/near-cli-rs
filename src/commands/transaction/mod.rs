@@ -4,6 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 mod construct_transaction;
 mod send_meta_transaction;
 mod send_signed_transaction;
+mod sign_transaction;
 mod view_status;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -39,4 +40,9 @@ pub enum TransactionActions {
     ))]
     /// Send a signed transaction
     SendSignedTransaction(self::send_signed_transaction::SignedTransaction),
+    #[strum_discriminants(strum(
+        message = "sign-transaction         - Sign base64 encoding transaction"
+    ))]
+    /// Sign base64 encoding transaction
+    SignTransaction(self::sign_transaction::SignTransaction),
 }
