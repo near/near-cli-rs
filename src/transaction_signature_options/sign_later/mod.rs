@@ -34,7 +34,9 @@ impl DisplayContext {
             "\nUnsigned transaction (serialized to base64):\n{}",
             crate::types::transaction::TransactionAsBase64::from(unsigned_transaction)
         );
-
+        eprintln!(
+            "This base64 encoded transaction can be signed and sent later. Example:\nnear transaction sign-transaction 'EQAAAHZvb...G9AAAAAAAA==' network-config testnet sign-with-keychain send",
+        );
         Ok(Self)
     }
 }

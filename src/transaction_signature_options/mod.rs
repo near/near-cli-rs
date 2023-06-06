@@ -53,7 +53,7 @@ pub enum SignWith {
     /// Sign the transaction using the seed phrase
     SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
     #[strum_discriminants(strum(
-        message = "sign-later                       - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)"
+        message = "sign-later                       - Prepare an unsigned transaction. We will use base64 encoding to sign it later. (Example: near transaction sign-transaction 'EQAAAHZvb...' ...)"
     ))]
     /// Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)
     SignLater(self::sign_later::Display),
@@ -96,7 +96,7 @@ pub enum Submit {
     #[strum_discriminants(strum(message = "send      - Send the transaction to the network"))]
     Send,
     #[strum_discriminants(strum(
-        message = "display   - Print only base64 encoded transaction for JSON RPC input and exit"
+        message = "display   - Print only the signed transaction in base64 encoding. We will use it to send it later. (Example: near transaction send-signed-transaction 'EQAAAHZvb...' ...)"
     ))]
     Display,
 }
@@ -252,6 +252,9 @@ impl interactive_clap::FromCli for Submit {
                             crate::types::signed_transaction::SignedTransactionAsBase64::from(
                                 signed_transaction
                             )
+                        );
+                        eprintln!(
+                            "This base64 encoded signed transaction can be sent later. Example:\nnear transaction send-signed-transaction 'EQAAAHZvb...G9AAAAAAAA==' network-config testnet send",
                         );
                         eprintln!("{storage_message}");
                         interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
