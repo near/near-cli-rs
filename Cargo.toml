@@ -56,10 +56,10 @@ prettytable = "0.10.0"
 
 near-ledger = { version = "0.2.0", optional = true }
 
-near-crypto = "0.16.1"
-near-primitives = "0.16.1"
-near-jsonrpc-client = "0.5.1"
-near-jsonrpc-primitives = "0.16.1"
+near-crypto = "0.17.0"
+near-primitives = "0.17.0"
+near-jsonrpc-client = "0.6.0"
+near-jsonrpc-primitives = "0.17.0"
 
 interactive-clap = "0.2.4"
 interactive-clap-derive = "0.2.4"
