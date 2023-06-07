@@ -37,7 +37,8 @@ impl std::str::FromStr for TransactionAsBase64 {
 impl std::fmt::Display for TransactionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let base64_unsigned_transaction = near_primitives::serialize::to_base64(
-            self.inner
+            &self
+                .inner
                 .try_to_vec()
                 .expect("Transaction is not expected to fail on serialization"),
         );
