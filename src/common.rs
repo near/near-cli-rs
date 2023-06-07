@@ -12,6 +12,12 @@ pub type CliResult = color_eyre::eyre::Result<()>;
 use inquire::Select;
 use strum::IntoEnumIterator;
 
+pub fn get_near_exec_path() -> String {
+    std::env::args()
+        .next()
+        .unwrap_or_else(|| "./near".to_owned())
+}
+
 #[derive(
     Debug,
     Clone,

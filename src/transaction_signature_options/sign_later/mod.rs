@@ -31,11 +31,12 @@ impl DisplayContext {
         };
 
         eprintln!(
-            "\nUnsigned transaction (serialized to base64):\n{}",
+            "\nUnsigned transaction (serialized as base64):\n{}\n",
             crate::types::transaction::TransactionAsBase64::from(unsigned_transaction)
         );
         eprintln!(
-            "This base64 encoded transaction can be signed and sent later. Example:\nnear transaction sign-transaction 'EQAAAHZvb...G9AAAAAAAA==' network-config testnet sign-with-keychain send",
+            "This base64-encoded transaction can be signed and sent later. There is a helper command on near CLI that can do that:\n$ {} transaction sign-transaction\n",
+            crate::common::get_near_exec_path()
         );
         Ok(Self)
     }
