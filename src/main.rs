@@ -61,9 +61,7 @@ fn main() -> crate::common::CliResult {
         crate::commands::extensions::self_update::get_latest_version()
     });
 
-    let near_cli_exec_path = std::env::args()
-        .next()
-        .unwrap_or_else(|| "./near".to_owned());
+    let near_cli_exec_path = crate::common::get_near_exec_path();
 
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
@@ -112,7 +110,7 @@ fn main() -> crate::common::CliResult {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
         | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
             eprintln!(
-                "Your console command:\n{}",
+                "Here is your console command if you need to script it or re-run:\n{}",
                 shell_words::join(
                     std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
                 )
@@ -129,7 +127,7 @@ fn main() -> crate::common::CliResult {
         interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
             if let Some(cli_cmd) = optional_cli_cmd {
                 eprintln!(
-                    "Your console command:\n{}",
+                    "Here is your console command if you need to script it or re-run:\n{}",
                     shell_words::join(
                         std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
                     )

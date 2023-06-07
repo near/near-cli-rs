@@ -53,39 +53,11 @@ pub enum SignWith {
     /// Sign the transaction using the seed phrase
     SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
     #[strum_discriminants(strum(
-        message = "sign-later                       - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)"
+        message = "sign-later                       - Prepare an unsigned transaction to sign it later"
     ))]
-    /// Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)
+    /// Prepare unsigned transaction to sign it later
     SignLater(self::sign_later::Display),
 }
-
-//-----------------------------------------------------------------------------------
-//---- these functions are used for offline mode ----
-// pub fn input_access_key_nonce(public_key: &str) -> color_eyre::eyre::Result<u64> {
-//     eprintln!("Your public key: `{}`", public_key);
-//     Ok(Input::new()
-//         .with_prompt(
-//             "Enter transaction nonce for this public key (query the access key information with \
-//             `./near-cli view nonce \
-//                 network testnet \
-//                 account 'volodymyr.testnet' \
-//                 public-key ed25519:...` incremented by 1)",
-//         )
-//         .interact_text()?)
-// }
-
-// pub fn input_block_hash() -> color_eyre::eyre::Result<crate::types::crypto_hash::CryptoHash> {
-//     let input_block_hash: crate::common::BlockHashAsBase58 = Input::new()
-//         .with_prompt(
-//             "Enter recent block hash (query information about the hash of the last block with \
-//             `./near-cli view recent-block-hash network testnet`)",
-//         )
-//         .interact_text()?;
-//     Ok(crate::types::crypto_hash::CryptoHash(
-//         input_block_hash.inner,
-//     ))
-// }
-//-----------------------------------------------------------------------------------
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = SubmitContext)]
@@ -94,16 +66,19 @@ pub enum SignWith {
 /// How would you like to proceed?
 pub enum Submit {
     #[strum_discriminants(strum(message = "send      - Send the transaction to the network"))]
+    /// Send the transaction to the network
     Send,
     #[strum_discriminants(strum(
-        message = "display   - Print only base64 encoded transaction for JSON RPC input and exit"
+        message = "display   - Print the signed transaction to terminal (if you want to send it later)"
     ))]
+    /// Print the signed transaction to terminal (if you want to send it later)
     Display,
 }
 
 impl interactive_clap::FromCli for Submit {
     type FromCliContext = SubmitContext;
     type FromCliError = color_eyre::eyre::Error;
+
     fn from_cli(
         mut optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
         context: Self::FromCliContext,
@@ -248,10 +223,14 @@ impl interactive_clap::FromCli for Submit {
                             );
                         };
                         eprintln!(
-                            "\nSigned transaction (serialized to base64):\n{}",
+                            "\nSigned transaction (serialized as base64):\n{}\n",
                             crate::types::signed_transaction::SignedTransactionAsBase64::from(
                                 signed_transaction
                             )
+                        );
+                        eprintln!(
+                            "This base64-encoded signed transaction is ready to be sent to the network. You can call RPC server directly, or use a helper command on near CLI:\n$ {} transaction send-signed-transaction\n",
+                            crate::common::get_near_exec_path()
                         );
                         eprintln!("{storage_message}");
                         interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
@@ -260,10 +239,14 @@ impl interactive_clap::FromCli for Submit {
                         signed_delegate_action,
                     ) => {
                         eprintln!(
-                            "\nSigned delegate action (serialized to base64):\n{}",
+                            "\nSigned delegate action (serialized as base64):\n{}\n",
                             crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
                                 signed_delegate_action
                             )
+                        );
+                        eprintln!(
+                            "This base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n",
+                            crate::common::get_near_exec_path()
                         );
                         eprintln!("{storage_message}");
                         interactive_clap::ResultFromCli::Ok(CliSubmit::Display)

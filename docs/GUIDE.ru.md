@@ -6,7 +6,7 @@
 и пользователи знакомы с использованием инструментов командной строки. Также предполагается Unix-подобная система, хотя большинство команд, вероятно, легко переводимы в любую среду оболочки командной строки.  
 
 Спомощью _near CLI_ можно создать, подписать и отправить транзакцию в режиме _online_, который включен по умолчанию.
-В режиме _offline_ можно создать и подписать транзакцию. Транзакция, кодированная в base64 может быть отправлена позже (даже с другого компьютера). Для входа в режим _offline_ необходимо в команде установить флаг ```--offline```:  
+В режиме _offline_ можно создать и подписать транзакцию. Транзакция, кодированная в base64 может быть [подписана](#sign-transaction---sign-previously-prepared-unsigned-transaction) или [отправлена](#send-signed-transaction---send-a-signed-transaction) позже (даже с другого компьютера). Для входа в режим _offline_ необходимо в команде установить флаг ```--offline```:  
 ```txt
 near --offline tokens \
     fro_volod.testnet \
@@ -58,7 +58,8 @@ near --offline tokens \
 
     - _sign-later - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)_
 
-        Этот вариант предполагает подписание созданной транзакции позже.
+        Этот вариант предполагает подписание созданной транзакции [позже](#sign-transaction---sign-previously-prepared-unsigned-transaction).
+
 
 2. Действия с подписанной транзакцией
 
@@ -73,7 +74,7 @@ near --offline tokens \
 
    либо вывести на экран в формате base64 для последующей отправки:
 
-   - _display - Print only base64 encoded transaction for JSON RPC input and exit_
+   - _display - Print only the signed transaction in base64 encoding. We will use it to send it later. ([Example](#send-signed-transaction---send-a-signed-transaction): near transaction send-signed-transaction 'EQAAAHZvb...' ...)_
 
 ### Группы команд
 
@@ -1227,6 +1228,8 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 
 - [view-status](#view-status---View-a-transaction-status)
 - [construct-transaction](#construct-transaction---Construct-a-new-transaction)
+- [sign-transaction](#sign-transaction---Sign-previously-prepared-unsigned-transaction)
+- [send-signed-transaction](#send-signed-transaction---Send-a-signed-transaction)
 - [send-meta-transaction](#send-meta-transaction---Act-as-a-relayer-to-send-a-signed-delegate-action-meta-transaction)
 
 #### view-status - View a transaction status
@@ -1415,9 +1418,36 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </a>
 </details>
 
+#### sign-transaction - Sign previously prepared unsigned transaction
+  
+Рассмотрим пример, применив возможность создания транзакции в режиме _offline_:
+1. Создать транзакцию.
+2. При выборе средств подписи транзакции указать пункт _sign-later_ и следовать дальнейшим инструкциям.
+3. Выведенная на экран транзакция в формате base64 может быть использована здесь для её подписи и/или последующей отправки.
+
+<details><summary>Демонстрация работы команды в интерактивном режиме</summary>
+<a href="https://asciinema.org/a/7yO1OobKvE3EWezUexPEHYYVC?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/7yO1OobKvE3EWezUexPEHYYVC.png" width="836"/>
+</a>
+</details>
+
+#### send-signed-transaction - Send a signed transaction
+  
+Рассмотрим предыдущий пример, применив возможности отправки подписанной транзакции транзакции:
+1. Создать транзакцию.
+2. Подписать транзакцию своими ключами доступа.
+3. Вывести подписанную транзакцию на экран в формате base64.
+4. Отправить транзакцию.
+
+<details><summary>Демонстрация работы команды в интерактивном режиме</summary>
+<a href="https://asciinema.org/a/ignaXjJrvvDpQV4YUEK96iozX?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/ignaXjJrvvDpQV4YUEK96iozX.png" width="836"/>
+</a>
+</details>
+
 #### send-meta-transaction - Act as a relayer to send a signed delegate action (meta-transaction)
   
-Рассмотрим предыдущий пример, применив возможности мета-транзакции:
+Рассмотрим пример, применив возможности мета-транзакции:
 1. Создать транзакцию.
 2. Указать _network_ с поддержкой мета-транзакции.
 3. Подписать транзакцию своими ключами доступа.

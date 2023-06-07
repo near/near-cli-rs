@@ -8,7 +8,7 @@ also assumes a Unix-like system, although most commands are probably easily
 translatable to any command line shell environment.  
 
 With _near CLI_ you can create, sign and send transactions in _online_ mode, which is enabled by default.
-In _offline_ mode, you can create and sign a transaction. The base64 encoding transaction can be sent later (even from another computer). To enter the _offline_ mode, you need to set the ```--offline``` flag in the command: 
+In _offline_ mode, you can create and sign a transaction. The base64 encoding transaction can be [signed](#sign-transaction---sign-previously-prepared-unsigned-transaction) or [sent](#send-signed-transaction---send-a-signed-transaction) later (even from another computer). To enter the _offline_ mode, you need to set the ```--offline``` flag in the command: 
 ```txt
 near --offline tokens \
     fro_volod.testnet \
@@ -61,7 +61,7 @@ Before proceeding to the description of specific commands, it is necessary to co
 
     - _sign-later - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)_
 
-        This option involves signing the created transaction later.
+        This option involves signing the created transaction [later](#sign-transaction---sign-previously-prepared-unsigned-transaction).
 
 2. Actions with a signed transaction
 
@@ -76,7 +76,7 @@ Before proceeding to the description of specific commands, it is necessary to co
 
    or display in base64 format to send:
 
-   - _display - Print only base64 encoded transaction for JSON RPC input and exit_
+   - _display - Print only the signed transaction in base64 encoding. We will use it to send it later. ([Example](#send-signed-transaction---send-a-signed-transaction): near transaction send-signed-transaction 'EQAAAHZvb...' ...)_
 
 ### Command groups
 
@@ -1227,6 +1227,8 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 
 - [view-status](#view-status---View-a-transaction-status)
 - [construct-transaction](#construct-transaction---Construct-a-new-transaction)
+- [sign-transaction](#sign-transaction---Sign-previously-prepared-unsigned-transaction)
+- [send-signed-transaction](#send-signed-transaction---Send-a-signed-transaction)
 - [send-meta-transaction](#send-meta-transaction---Act-as-a-relayer-to-send-a-signed-delegate-action-meta-transaction)
 
 #### view-status - View a transaction status
@@ -1415,9 +1417,36 @@ To do this, we will use the transaction constructor:
 </a>
 </details>
 
+#### sign-transaction - Sign previously prepared unsigned transaction
+  
+Consider an example of using the ability to create a transaction in _offline_:
+1. Create a transaction.
+2. When choosing how to sign a transaction, select the _sign later_ option and follow the instructions.
+3. The displayed transaction in base64 format can be used here to sign it and/or send it later.
+
+<details><summary>Demonstration of the command in interactive mode</summary>
+<a href="https://asciinema.org/a/7yO1OobKvE3EWezUexPEHYYVC?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/7yO1OobKvE3EWezUexPEHYYVC.png" width="836"/>
+</a>
+</details>
+
+#### send-signed-transaction - Send a signed transaction
+  
+Let's look at the previous example, using the capabilities of sending a signed transaction:
+1. Create a transaction.
+2. Sign the transaction with your access keys.
+3. Display the transaction on the screen in base64 format.
+4. Send transaction.
+
+<details><summary>Demonstration of the command in interactive mode</summary>
+<a href="https://asciinema.org/a/ignaXjJrvvDpQV4YUEK96iozX?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/ignaXjJrvvDpQV4YUEK96iozX.png" width="836"/>
+</a>
+</details>
+
 #### send-meta-transaction - Act as a relayer to send a signed delegate action (meta-transaction)
   
-Consider the previous example using the meta-transaction features:
+Consider an example of using metatransaction functions:
 1. Create a transaction.
 2. Specify a _network_ that supports meta-transactions.
 3. Sign the transaction with your access keys.
