@@ -31,6 +31,11 @@ pub enum TransactionActions {
     /// Construct a new transaction
     ConstructTransaction(self::construct_transaction::ConstructTransaction),
     #[strum_discriminants(strum(
+        message = "sign-transaction         - Sign previously prepared unsigned transaction"
+    ))]
+    /// Sign previously prepared unsigned transaction
+    SignTransaction(self::sign_transaction::SignTransaction),
+    #[strum_discriminants(strum(
         message = "send-meta-transaction    - Act as a relayer to send a signed delegate action (meta-transaction)"
     ))]
     /// Act as a relayer to send a signed delegate action (meta-transaction)
@@ -40,9 +45,4 @@ pub enum TransactionActions {
     ))]
     /// Send a signed transaction
     SendSignedTransaction(self::send_signed_transaction::SignedTransaction),
-    #[strum_discriminants(strum(
-        message = "sign-transaction         - Sign previously prepared unsigned transaction"
-    ))]
-    /// Sign previously prepared unsigned transaction
-    SignTransaction(self::sign_transaction::SignTransaction),
 }
