@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1](https://github.com/near/near-cli-rs/compare/v0.5.0...v0.5.1) - 2023-06-07
+
+### Added
+- New `transaction sign-transaction` command [useful in combination with `... sign-later` and `transaction send-signed-transaction` commands] ([#215](https://github.com/near/near-cli-rs/pull/215))
+
+### Other
+- Upgraded NEAR crates to 0.17.0 release ([#216](https://github.com/near/near-cli-rs/pull/216))
+
 ## [0.5.0](https://github.com/near/near-cli-rs/compare/v0.4.3...v0.5.0) - 2023-06-05
 
 ### Added
