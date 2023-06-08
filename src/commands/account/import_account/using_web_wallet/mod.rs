@@ -1,7 +1,11 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = LoginFromWebWalletContext)]
+#[interactive_clap(skip_default_from_cli)]
 pub struct LoginFromWebWallet {
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    wallet_url: Option<crate::types::url::Url>,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network::Network,
@@ -57,5 +61,84 @@ impl LoginFromWebWalletContext {
 impl From<LoginFromWebWalletContext> for crate::network::NetworkContext {
     fn from(item: LoginFromWebWalletContext) -> Self {
         item.0
+    }
+}
+
+impl interactive_clap::FromCli for LoginFromWebWallet {
+    type FromCliContext = crate::GlobalContext;
+    type FromCliError = color_eyre::eyre::Error;
+
+    fn from_cli(
+        optional_clap_variant: Option<<LoginFromWebWallet as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+
+        if clap_variant.wallet_url.is_none() {
+            clap_variant.wallet_url =
+                match Self::input_wallet_url(&context) {
+                    Ok(wallet_url) => wallet_url,
+                    Err(err) => {
+                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+                    }
+                };
+        }
+        let wallet_url = clap_variant.wallet_url.clone();
+
+        let new_context_scope = InteractiveClapContextScopeForLoginFromWebWallet {
+            wallet_url,
+        };
+        let output_context =
+        match LoginFromWebWalletContext::from_previous_context(context.clone(),
+                &new_context_scope) {
+            Ok(new_context) => new_context,
+            Err(err) =>
+                return interactive_clap::ResultFromCli::Err(Some(clap_variant),
+                        err),
+        };
+    let context = output_context;
+    let optional_field =
+        match clap_variant.network_config.take() {
+            Some(ClapNamedArgNetworkForLoginFromWebWallet::NetworkConfig(cli_arg))
+                => Some(cli_arg),
+            None => None,
+        };
+    match <crate::network::Network as
+                interactive_clap::FromCli>::from_cli(optional_field,
+            context.into()) {
+        interactive_clap::ResultFromCli::Ok(cli_field) => {
+            clap_variant.network_config =
+                Some(ClapNamedArgNetworkForLoginFromWebWallet::NetworkConfig(cli_field));
+        }
+        interactive_clap::ResultFromCli::Cancel(optional_cli_field) =>
+            {
+            clap_variant.network_config =
+                optional_cli_field.map(ClapNamedArgNetworkForLoginFromWebWallet::NetworkConfig);
+            return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+        }
+        interactive_clap::ResultFromCli::Back =>
+            return interactive_clap::ResultFromCli::Back,
+        interactive_clap::ResultFromCli::Err(optional_cli_field, err)
+            => {
+            clap_variant.network_config =
+                optional_cli_field.map(ClapNamedArgNetworkForLoginFromWebWallet::NetworkConfig);
+            return interactive_clap::ResultFromCli::Err(Some(clap_variant),
+                    err);
+        }
+    };
+    interactive_clap::ResultFromCli::Ok(clap_variant)
+}
+}
+impl LoginFromWebWallet {
+    fn input_wallet_url(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
+        Ok(None)
     }
 }
