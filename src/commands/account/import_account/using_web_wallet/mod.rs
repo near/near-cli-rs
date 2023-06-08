@@ -94,18 +94,16 @@ impl interactive_clap::FromCli for LoginFromWebWallet {
         let wallet_url = clap_variant.wallet_url.clone();
 
         let new_context_scope = InteractiveClapContextScopeForLoginFromWebWallet { wallet_url };
-        let output_context = match LoginFromWebWalletContext::from_previous_context(
-            context.clone(),
-            &new_context_scope,
-        ) {
-            Ok(new_context) => new_context,
-            Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-        };
+        let output_context =
+            match LoginFromWebWalletContext::from_previous_context(context, &new_context_scope) {
+                Ok(new_context) => new_context,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            };
         let context = output_context;
-        let optional_field = match clap_variant.network_config.take() {
-            Some(ClapNamedArgNetworkForLoginFromWebWallet::NetworkConfig(cli_arg)) => Some(cli_arg),
-            None => None,
-        };
+        let optional_field = clap_variant
+            .network_config
+            .take()
+            .map(|ClapNamedArgNetworkForLoginFromWebWallet::NetworkConfig(cli_arg)| cli_arg);
         match <crate::network::Network as interactive_clap::FromCli>::from_cli(
             optional_field,
             context.into(),
