@@ -242,7 +242,17 @@ near account \
     network-config testnet
 ```
 
-Вы будете перенаправлены браузер для авторизации. После успешной авторизации в _[NEAR Wallet](https://wallet.near.org/)_ необходимо вернуться в терминал и ввести имя пользователя.
+Вы будете перенаправлены браузер для авторизации.  
+По умолчанию - это https://app.mynearwallet.com/ (для testnet - https://testnet.mynearwallet.com/). Но вы можете изменить адрес для авторизации с помощью флага `--wallet-url`:
+```txt
+near account \
+    import-account \
+    using-web-wallet \
+    --wallet-url 'https://wallet.testnet.near.org/'\
+    network-config testnet
+```
+
+После успешной авторизации в _[NEAR Wallet](https://wallet.near.org/)_ необходимо вернуться в терминал и ввести имя пользователя.
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
