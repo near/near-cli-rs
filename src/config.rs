@@ -29,7 +29,7 @@ impl Default for Config {
             NetworkConfig {
                 network_name: "mainnet".to_string(),
                 rpc_url: "https://archival-rpc.mainnet.near.org".parse().unwrap(),
-                wallet_url: "https://www.mynearwallet.com/".parse().unwrap(),
+                wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
                 explorer_transaction_url: "https://explorer.near.org/transactions/"
                     .parse()
                     .unwrap(),
