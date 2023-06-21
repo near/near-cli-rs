@@ -249,8 +249,8 @@ Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testn
 near account \
     import-account \
     using-web-wallet \
-    --wallet-url 'https://wallet.testnet.near.org/'\
-    network-config testnet
+    network-config testnet\
+    --wallet-url 'https://wallet.testnet.near.org/'
 ```
 
 After successful authorization in _[NEAR Wallet](https://wallet.near.org/)_, you need to return to the terminal and enter your login.

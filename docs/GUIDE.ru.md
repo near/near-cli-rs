@@ -248,8 +248,8 @@ near account \
 near account \
     import-account \
     using-web-wallet \
-    --wallet-url 'https://wallet.testnet.near.org/'\
-    network-config testnet
+    network-config testnet\
+    --wallet-url 'https://wallet.testnet.near.org/'
 ```
 
 После успешной авторизации в _[NEAR Wallet](https://wallet.near.org/)_ необходимо вернуться в терминал и ввести имя пользователя.

@@ -28,7 +28,7 @@ impl TransactionInfoContext {
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                move |network_config| {
+                move |network_config, _| {
                     let query_view_transaction_status = network_config
                         .json_rpc_client()
                         .blocking_call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
