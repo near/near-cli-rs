@@ -10,9 +10,8 @@ pub struct Network {
     network_name: String,
 }
 
-pub type OnAfterGettingNetworkCallback = std::sync::Arc<
-    dyn Fn(&crate::config::NetworkConfig, Option<crate::types::url::Url>) -> crate::CliResult,
->;
+pub type OnAfterGettingNetworkCallback =
+    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig) -> crate::CliResult>;
 
 #[derive(Clone)]
 pub struct NetworkContext {
@@ -52,12 +51,15 @@ impl interactive_clap::FromCli for Network {
         };
         let network_name = clap_variant.network_name.clone().expect("Unexpected error");
         let network_connection = context.config.network_connection;
-        let network_config = network_connection
+        let mut network_config = network_connection
             .get(&network_name)
             .expect("Failed to get network config!")
             .clone();
+        if let Some(url) = wallet_url {
+            network_config.wallet_url = url.into();
+        }
 
-        match (context.on_after_getting_network_callback)(&network_config, wallet_url) {
+        match (context.on_after_getting_network_callback)(&network_config) {
             Ok(_) => interactive_clap::ResultFromCli::Ok(clap_variant),
             Err(err) => interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
         }

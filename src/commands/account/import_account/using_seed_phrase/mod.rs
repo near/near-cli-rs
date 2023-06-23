@@ -35,7 +35,7 @@ impl LoginFromSeedPhraseContext {
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                move |network_config, _| {
+                move |network_config| {
                     super::login(
                         network_config.clone(),
                         config.credentials_home_dir.clone(),

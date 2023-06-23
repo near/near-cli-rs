@@ -19,14 +19,10 @@ impl LoginFromWebWalletContext {
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                move |network_config, optional_wallet_url| {
+                move |network_config| {
                     let key_pair_properties: crate::common::KeyPairProperties =
                         crate::common::generate_keypair()?;
-                    let mut url: url::Url = if let Some(url) = optional_wallet_url {
-                        url.0.join("login/")?
-                    } else {
-                        network_config.wallet_url.join("login/")?
-                    };
+                    let mut url: url::Url = network_config.wallet_url.join("login/")?;
                     url.query_pairs_mut()
                         .append_pair("title", "NEAR CLI")
                         .append_pair("public_key", &key_pair_properties.public_key_str);
