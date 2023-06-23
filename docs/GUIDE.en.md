@@ -244,7 +244,7 @@ near account \
 ```
 
 You will be redirected to the browser for authorization.  
-Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testnet.mynearwallet.com/). But if you want to change to a different wallet url, you can use `--walletUrl` option:
+Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testnet.mynearwallet.com/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
 ```txt
 near account \
     import-account \
