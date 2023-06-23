@@ -29,7 +29,7 @@ impl Default for Config {
             NetworkConfig {
                 network_name: "mainnet".to_string(),
                 rpc_url: "https://archival-rpc.mainnet.near.org".parse().unwrap(),
-                wallet_url: "https://wallet.near.org".parse().unwrap(),
+                wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
                 explorer_transaction_url: "https://explorer.near.org/transactions/"
                     .parse()
                     .unwrap(),
@@ -44,7 +44,7 @@ impl Default for Config {
             NetworkConfig {
                 network_name: "testnet".to_string(),
                 rpc_url: "https://archival-rpc.testnet.near.org".parse().unwrap(),
-                wallet_url: "https://wallet.testnet.near.org".parse().unwrap(),
+                wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
                 explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
                     .parse()
                     .unwrap(),

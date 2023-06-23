@@ -243,7 +243,17 @@ near account \
     network-config testnet
 ```
 
-You will be redirected to the browser for authorization. After successful authorization in _[NEAR Wallet](https://wallet.near.org/)_, you need to return to the terminal and enter your login.
+You will be redirected to the browser for authorization.  
+Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testnet.mynearwallet.com/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
+```txt
+near account \
+    import-account \
+    using-web-wallet \
+    network-config testnet\
+    --wallet-url 'https://wallet.testnet.near.org/'
+```
+
+After successful authorization in _[NEAR Wallet](https://wallet.near.org/)_, you need to return to the terminal and enter your login.
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
