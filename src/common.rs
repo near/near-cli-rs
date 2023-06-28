@@ -1,8 +1,9 @@
+use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 use std::str::FromStr;
 
-use color_eyre::eyre::WrapErr;
+use color_eyre::eyre:: WrapErr;
 use prettytable::Table;
 
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
@@ -1777,6 +1778,98 @@ pub impl near_primitives::views::CallResult {
         }
         eprintln!("--------------");
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
+pub struct UsedAccount {
+    account_id: near_primitives::types::AccountId,
+}
+
+pub fn create_used_account_list_from_keychain(
+    credentials_home_dir: &std::path::PathBuf,
+) -> color_eyre::eyre::Result<()> {
+    let mut path = std::path::PathBuf::from(credentials_home_dir);
+    let mut used_account_list: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    for network_connection_dir in path.read_dir().wrap_err("read_dir call failed")? {
+        if let Ok(network_connection_dir) = network_connection_dir {
+            if network_connection_dir.path().is_dir() {
+                for entry in network_connection_dir
+                    .path()
+                    .read_dir()
+                    .wrap_err("read_dir call failed")?
+                {
+                    if let Ok(entry) = entry {
+                        if let Some(extension) = entry.path().extension() {
+                            if extension == "json" {
+                                match entry.path().file_stem() {
+                                    Some(file_name) => {
+                                        if near_primitives::types::AccountId::validate(
+                                            &file_name.to_string_lossy(),
+                                        )
+                                        .is_ok()
+                                        {
+                                            let account_id =
+                                                near_primitives::types::AccountId::from_str(
+                                                    &file_name.to_string_lossy(),
+                                                )?;
+                                            if !account_id.is_implicit() {
+                                                used_account_list
+                                                    .insert(file_name.to_string_lossy().into());
+                                            }
+                                        }
+                                    }
+                                    None => continue,
+                                }
+                            }
+                        } else if entry.path().is_dir() {
+                            match entry.path().file_name() {
+                                Some(file_name) => {
+                                    if near_primitives::types::AccountId::validate(
+                                        &file_name.to_string_lossy(),
+                                    )
+                                    .is_ok()
+                                    {
+                                        let account_id =
+                                            near_primitives::types::AccountId::from_str(
+                                                &file_name.to_string_lossy(),
+                                            )?;
+                                        if !account_id.is_implicit() {
+                                            used_account_list
+                                                .insert(file_name.to_string_lossy().into());
+                                        }
+                                    }
+                                }
+                                None => continue,
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if !used_account_list.is_empty() {
+        path.push("accounts.json");
+        let used_account_list_buf = serde_json::to_string(&used_account_list)?;
+        std::fs::File::create(&path)
+            .wrap_err_with(|| format!("Failed to create file: {:?}", path))?
+            .write(used_account_list_buf.as_bytes())
+            .wrap_err_with(|| format!("Failed to write to file: {:?}", path))?;
+    }
+    Ok(())
+}
+
+// pub fn update_used_account_list(account_id: near_primitives::types::AccountId) -> CliResult {
+//     Ok(())
+// }
+
+// pub fn get_used_account_list() -> VecDeque<UsedAccount> {
+
+// }
+
+pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> bool {
+    false
 }
 
 #[cfg(test)]
