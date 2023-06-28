@@ -1846,7 +1846,7 @@ pub fn create_used_account_list_from_keychain(
                                                         &file_name.to_string_lossy(),
                                                     )?,
                                             });
-                                    }
+                                        }
                                     }
                                 }
                                 None => continue,
@@ -1869,9 +1869,27 @@ pub fn create_used_account_list_from_keychain(
     Ok(())
 }
 
-// pub fn update_used_account_list(account_id: near_primitives::types::AccountId) -> CliResult {
-//     Ok(())
-// }
+pub fn update_used_account_list(
+    credentials_home_dir: &std::path::PathBuf,
+    account_id: near_primitives::types::AccountId,
+) -> CliResult {
+    let mut used_account_list = get_used_account_list(credentials_home_dir)?
+        .into_iter()
+        .filter(|account| account.account_id != account_id)
+        .collect::<VecDeque<UsedAccount>>();
+    used_account_list.push_front(UsedAccount { account_id });
+
+    let mut path = std::path::PathBuf::from(credentials_home_dir);
+    path.push("accounts.json");
+
+    let used_account_list_buf = serde_json::to_string(&used_account_list)?;
+    std::fs::File::create(&path)
+        .wrap_err_with(|| format!("Failed to create file: {:?}", path))?
+        .write(used_account_list_buf.as_bytes())
+        .wrap_err_with(|| format!("Failed to write to file: {:?}", path))?;
+
+    Ok(())
+}
 
 pub fn get_used_account_list(
     credentials_home_dir: &std::path::PathBuf,
@@ -1882,9 +1900,9 @@ pub fn get_used_account_list(
     let mut path = std::path::PathBuf::from(credentials_home_dir);
     path.push("accounts.json");
     let data = std::fs::read_to_string(&path).wrap_err("Access key file not found!")?;
-    let account_list: VecDeque<UsedAccount> = serde_json::from_str(&data)
+    let used_account_list: VecDeque<UsedAccount> = serde_json::from_str(&data)
         .wrap_err_with(|| format!("Error reading data from file: {:?}", &path))?;
-    Ok(account_list)
+    Ok(used_account_list)
 }
 
 pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> bool {
