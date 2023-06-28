@@ -3,7 +3,7 @@ use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 use std::str::FromStr;
 
-use color_eyre::eyre:: WrapErr;
+use color_eyre::eyre::WrapErr;
 use prettytable::Table;
 
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
@@ -1869,7 +1869,9 @@ pub fn create_used_account_list_from_keychain(
 // }
 
 pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> bool {
-    false
+    let mut path = std::path::PathBuf::from(credentials_home_dir);
+    path.push("accounts.json");
+    path.exists()
 }
 
 #[cfg(test)]
