@@ -1780,7 +1780,7 @@ pub impl near_primitives::views::CallResult {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct UsedAccount {
     account_id: near_primitives::types::AccountId,
 }
@@ -1789,7 +1789,8 @@ pub fn create_used_account_list_from_keychain(
     credentials_home_dir: &std::path::PathBuf,
 ) -> color_eyre::eyre::Result<()> {
     let mut path = std::path::PathBuf::from(credentials_home_dir);
-    let mut used_account_list: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut used_account_list: std::collections::HashSet<UsedAccount> =
+        std::collections::HashSet::new();
 
     for network_connection_dir in path.read_dir().wrap_err("read_dir call failed")? {
         if let Ok(network_connection_dir) = network_connection_dir {
@@ -1814,8 +1815,12 @@ pub fn create_used_account_list_from_keychain(
                                                     &file_name.to_string_lossy(),
                                                 )?;
                                             if !account_id.is_implicit() {
-                                                used_account_list
-                                                    .insert(file_name.to_string_lossy().into());
+                                                used_account_list.insert(UsedAccount {
+                                                    account_id:
+                                                        near_primitives::types::AccountId::from_str(
+                                                            &file_name.to_string_lossy(),
+                                                        )?,
+                                                });
                                             }
                                         }
                                     }
@@ -1835,9 +1840,13 @@ pub fn create_used_account_list_from_keychain(
                                                 &file_name.to_string_lossy(),
                                             )?;
                                         if !account_id.is_implicit() {
-                                            used_account_list
-                                                .insert(file_name.to_string_lossy().into());
-                                        }
+                                            used_account_list.insert(UsedAccount {
+                                                account_id:
+                                                    near_primitives::types::AccountId::from_str(
+                                                        &file_name.to_string_lossy(),
+                                                    )?,
+                                            });
+                                    }
                                     }
                                 }
                                 None => continue,
@@ -1864,9 +1873,19 @@ pub fn create_used_account_list_from_keychain(
 //     Ok(())
 // }
 
-// pub fn get_used_account_list() -> VecDeque<UsedAccount> {
-
-// }
+pub fn get_used_account_list(
+    credentials_home_dir: &std::path::PathBuf,
+) -> color_eyre::eyre::Result<VecDeque<UsedAccount>> {
+    if !is_used_account_list_exist(&credentials_home_dir) {
+        return Ok(VecDeque::new());
+    };
+    let mut path = std::path::PathBuf::from(credentials_home_dir);
+    path.push("accounts.json");
+    let data = std::fs::read_to_string(&path).wrap_err("Access key file not found!")?;
+    let account_list: VecDeque<UsedAccount> = serde_json::from_str(&data)
+        .wrap_err_with(|| format!("Error reading data from file: {:?}", &path))?;
+    Ok(account_list)
+}
 
 pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> bool {
     let mut path = std::path::PathBuf::from(credentials_home_dir);
