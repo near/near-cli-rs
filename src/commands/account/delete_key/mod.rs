@@ -2,6 +2,7 @@
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = DeleteKeyCommandContext)]
 pub struct DeleteKeyCommand {
+    #[interactive_clap(skip_default_input_arg)]
     /// Which account should you delete the access key for?
     owner_account_id: crate::types::account_id::AccountId,
     /// Enter the public keys you wish to delete (separated by comma):
@@ -64,5 +65,18 @@ impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
                 |_outcome_view, _network_config| Ok(()),
             ),
         }
+    }
+}
+
+impl DeleteKeyCommand {
+    pub fn input_owner_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                context,
+                "Which account should you delete the access key for?",
+            )?,
+        ))
     }
 }
