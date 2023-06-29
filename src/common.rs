@@ -10,7 +10,7 @@ use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyP
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
-use inquire::{CustomUserError, Select};
+use inquire::{CustomUserError, Select, Text};
 use strum::IntoEnumIterator;
 
 pub fn get_near_exec_path() -> String {
@@ -1900,7 +1900,29 @@ pub fn get_used_account_list(
     Ok(VecDeque::new())
 }
 
-pub fn suggester(val: &str) -> Result<Vec<String>, CustomUserError> {
+pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> bool {
+    let mut path = std::path::PathBuf::from(credentials_home_dir);
+    path.push("accounts.json");
+    path.exists()
+}
+
+pub fn input_account_id_from_used_account_list(
+    context: &crate::GlobalContext,
+    message: &str,
+) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+    let account_id = crate::types::account_id::AccountId::from_str(
+        &Text::new(message)
+        .with_autocomplete(&suggester)
+        .prompt()?,
+    )?;
+    update_used_account_list(
+        &context.config.credentials_home_dir,
+        account_id.clone().into(),
+    )?;
+    Ok(Some(account_id))
+}
+
+fn suggester(val: &str) -> Result<Vec<String>, CustomUserError> {
     let val_lower = val.to_lowercase();
 
     let config = get_config_toml()?;
@@ -1914,12 +1936,6 @@ pub fn suggester(val: &str) -> Result<Vec<String>, CustomUserError> {
         .filter(|s| s.to_lowercase().contains(&val_lower))
         .map(String::from)
         .collect())
-}
-
-pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> bool {
-    let mut path = std::path::PathBuf::from(credentials_home_dir);
-    path.push("accounts.json");
-    path.exists()
 }
 
 #[cfg(test)]

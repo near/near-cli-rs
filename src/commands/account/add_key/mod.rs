@@ -1,6 +1,3 @@
-use std::str::FromStr;
-
-use inquire::Text;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod access_key_type;
@@ -43,16 +40,10 @@ impl AddKeyCommand {
     pub fn input_owner_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let account_id = crate::types::account_id::AccountId::from_str(
-            &Text::new("Which account should You add an access key to?")
-                .with_autocomplete(&crate::common::suggester)
-                .prompt()?,
-        )?;
-        crate::common::update_used_account_list(
-            &context.config.credentials_home_dir,
-            account_id.clone().into(),
-        )?;
-        Ok(Some(account_id))
+        crate::common::input_account_id_from_used_account_list(
+            context,
+            "Which account should You add an access key to?",
+        )
     }
 }
 
