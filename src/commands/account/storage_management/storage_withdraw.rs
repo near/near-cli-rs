@@ -35,6 +35,7 @@ impl WithdrawArgsContext {
 #[interactive_clap(input_context = WithdrawArgsContext)]
 #[interactive_clap(output_context = SignerAccountIdContext)]
 pub struct SignerAccountId {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is the signer account ID?
     signer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -106,5 +107,18 @@ impl SignerAccountIdContext {
 impl From<SignerAccountIdContext> for crate::commands::ActionContext {
     fn from(item: SignerAccountIdContext) -> Self {
         item.0
+    }
+}
+
+impl SignerAccountId {
+    pub fn input_signer_account_id(
+        context: &WithdrawArgsContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                &context.global_context,
+                "What is the signer account ID?",
+            )?,
+        ))
     }
 }

@@ -7,6 +7,7 @@ const STORAGE_COST_PER_BYTE: u128 = 10u128.pow(19);
 #[interactive_clap(input_context = super::ContractContext)]
 #[interactive_clap(output_context = AccountContext)]
 pub struct Account {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is your account ID?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -76,5 +77,18 @@ impl AccountContext {
 impl From<AccountContext> for crate::network_view_at_block::ArgsForViewContext {
     fn from(item: AccountContext) -> Self {
         item.0
+    }
+}
+
+impl Account {
+    pub fn input_account_id(
+        context: &super::ContractContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                &context.global_context,
+                "What is your account ID?",
+            )?,
+        ))
     }
 }
