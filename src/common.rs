@@ -10,7 +10,7 @@ use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyP
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
-use inquire::Select;
+use inquire::{CustomUserError, Select};
 use strum::IntoEnumIterator;
 
 pub fn get_near_exec_path() -> String {
@@ -1898,6 +1898,22 @@ pub fn get_used_account_list(
         return Ok(used_account_list);
     }
     Ok(VecDeque::new())
+}
+
+pub fn suggester(val: &str) -> Result<Vec<String>, CustomUserError> {
+    let val_lower = val.to_lowercase();
+
+    let config = get_config_toml()?;
+    let used_account_list = get_used_account_list(&config.credentials_home_dir)?
+        .iter()
+        .map(|account| account.account_id.to_string())
+        .collect::<Vec<_>>();
+
+    Ok(used_account_list
+        .iter()
+        .filter(|s| s.to_lowercase().contains(&val_lower))
+        .map(String::from)
+        .collect())
 }
 
 pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> bool {

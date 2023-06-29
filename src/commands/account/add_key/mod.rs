@@ -1,4 +1,6 @@
-use inquire::{CustomType, Select};
+use std::str::FromStr;
+
+use inquire::Text;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod access_key_type;
@@ -41,61 +43,16 @@ impl AddKeyCommand {
     pub fn input_owner_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let used_account_list =
-            crate::common::get_used_account_list(&context.config.credentials_home_dir)?;
-        if used_account_list.is_empty() {
-            let account_id: crate::types::account_id::AccountId =
-                CustomType::new("Which account should You add an access key to?").prompt()?;
-            crate::common::update_used_account_list(
-                &context.config.credentials_home_dir,
-                account_id.clone().into(),
-            )?;
-            return Ok(Some(account_id));
-        }
-
-        #[derive(derive_more::Display)]
-        enum ConfirmOptions {
-            #[display(fmt = "I want to manually enter an account.")]
-            ManuallyEnter,
-            #[display(fmt = "I want to select from a list of accounts.")]
-            Select,
-        }
-        let select_choose_input = Select::new(
-            "\nDo you want to enter an account or choose from a list of accounts?",
-            vec![ConfirmOptions::ManuallyEnter, ConfirmOptions::Select],
-        )
-        .prompt()?;
-        if let ConfirmOptions::ManuallyEnter = select_choose_input {
-            let account_id: crate::types::account_id::AccountId =
-                CustomType::new("Which account should You add an access key to?").prompt()?;
-            crate::common::update_used_account_list(
-                &context.config.credentials_home_dir,
-                account_id.clone().into(),
-            )?;
-            return Ok(Some(account_id));
-        }
-
-        let variants = used_account_list
-            .iter()
-            .map(|account| &account.account_id)
-            .collect();
-        let select_submit =
-            Select::new("Which account should You add an access key to?", variants).prompt();
-        match select_submit {
-            Ok(account_id) => {
-                crate::common::update_used_account_list(
-                    &context.config.credentials_home_dir,
-                    account_id.clone(),
-                )?;
-
-                Ok(Some(account_id.clone().into()))
-            }
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
+        let account_id = crate::types::account_id::AccountId::from_str(
+            &Text::new("Which account should You add an access key to?")
+                .with_autocomplete(&crate::common::suggester)
+                .prompt()?,
+        )?;
+        crate::common::update_used_account_list(
+            &context.config.credentials_home_dir,
+            account_id.clone().into(),
+        )?;
+        Ok(Some(account_id))
     }
 }
 
