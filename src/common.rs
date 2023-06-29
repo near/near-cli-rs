@@ -1909,17 +1909,15 @@ pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> 
 pub fn input_account_id_from_used_account_list(
     context: &crate::GlobalContext,
     message: &str,
-) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
     let account_id = crate::types::account_id::AccountId::from_str(
-        &Text::new(message)
-        .with_autocomplete(&suggester)
-        .prompt()?,
+        &Text::new(message).with_autocomplete(&suggester).prompt()?,
     )?;
     update_used_account_list(
         &context.config.credentials_home_dir,
         account_id.clone().into(),
     )?;
-    Ok(Some(account_id))
+    Ok(account_id)
 }
 
 fn suggester(val: &str) -> Result<Vec<String>, CustomUserError> {

@@ -40,10 +40,12 @@ impl AddKeyCommand {
     pub fn input_owner_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_account_id_from_used_account_list(
-            context,
-            "Which account should You add an access key to?",
-        )
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                context,
+                "Which account should You add an access key to?",
+            )?,
+        ))
     }
 }
 

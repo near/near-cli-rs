@@ -79,9 +79,11 @@ impl ViewAccountSummary {
     pub fn input_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_account_id_from_used_account_list(
-            context,
-            "What Account ID do you need to view?",
-        )
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                context,
+                "What Account ID do you need to view?",
+            )?,
+        ))
     }
 }
