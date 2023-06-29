@@ -7,6 +7,7 @@ use crate::common::RpcQueryResponseExt;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ViewListKeysContext)]
 pub struct ViewListKeys {
+    #[interactive_clap(skip_default_input_arg)]
     /// What Account ID do you need to view?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -54,5 +55,18 @@ impl ViewListKeysContext {
 impl From<ViewListKeysContext> for crate::network_view_at_block::ArgsForViewContext {
     fn from(item: ViewListKeysContext) -> Self {
         item.0
+    }
+}
+
+impl ViewListKeys {
+    pub fn input_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                context,
+                "What Account ID do you need to view?",
+            )?,
+        ))
     }
 }
