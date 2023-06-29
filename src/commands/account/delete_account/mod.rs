@@ -1,9 +1,10 @@
-use inquire::{CustomType, Select};
+use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = DeleteAccountContext)]
 pub struct DeleteAccount {
+    #[interactive_clap(skip_default_input_arg)]
     /// What Account ID to be deleted?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -26,6 +27,19 @@ impl DeleteAccountContext {
             global_context: previous_context,
             account_id: scope.account_id.clone().into(),
         })
+    }
+}
+
+impl DeleteAccount {
+    pub fn input_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                context,
+                "What Account ID to be deleted?",
+            )?,
+        ))
     }
 }
 
@@ -96,8 +110,10 @@ impl BeneficiaryAccount {
         context: &DeleteAccountContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
-            let beneficiary_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the beneficiary account ID?").prompt()?;
+            let beneficiary_account_id = crate::common::input_account_id_from_used_account_list(
+                &context.global_context,
+                "What is the beneficiary account ID?",
+            )?;
 
             if context.global_context.offline {
                 return Ok(Some(beneficiary_account_id));
