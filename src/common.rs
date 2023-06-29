@@ -1782,7 +1782,7 @@ pub impl near_primitives::views::CallResult {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct UsedAccount {
-    account_id: near_primitives::types::AccountId,
+    pub account_id: near_primitives::types::AccountId,
 }
 
 pub fn create_used_account_list_from_keychain(
@@ -1894,15 +1894,16 @@ pub fn update_used_account_list(
 pub fn get_used_account_list(
     credentials_home_dir: &std::path::PathBuf,
 ) -> color_eyre::eyre::Result<VecDeque<UsedAccount>> {
-    if !is_used_account_list_exist(&credentials_home_dir) {
+    if !is_used_account_list_exist(credentials_home_dir) {
         return Ok(VecDeque::new());
     };
     let mut path = std::path::PathBuf::from(credentials_home_dir);
     path.push("accounts.json");
     let data = std::fs::read_to_string(&path).wrap_err("Access key file not found!")?;
-    let used_account_list: VecDeque<UsedAccount> = serde_json::from_str(&data)
-        .wrap_err_with(|| format!("Error reading data from file: {:?}", &path))?;
-    Ok(used_account_list)
+    if let Ok(used_account_list) = serde_json::from_str::<VecDeque<UsedAccount>>(&data) {
+        return Ok(used_account_list);
+    }
+    Ok(VecDeque::new())
 }
 
 pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> bool {
