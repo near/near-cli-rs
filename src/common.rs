@@ -1792,66 +1792,60 @@ pub fn create_used_account_list_from_keychain(
     let mut used_account_list: std::collections::HashSet<UsedAccount> =
         std::collections::HashSet::new();
 
-    for network_connection_dir in path.read_dir().wrap_err("read_dir call failed")? {
-        if let Ok(network_connection_dir) = network_connection_dir {
-            if network_connection_dir.path().is_dir() {
-                for entry in network_connection_dir
-                    .path()
-                    .read_dir()
-                    .wrap_err("read_dir call failed")?
-                {
-                    if let Ok(entry) = entry {
-                        if let Some(extension) = entry.path().extension() {
-                            if extension == "json" {
-                                match entry.path().file_stem() {
-                                    Some(file_name) => {
-                                        if near_primitives::types::AccountId::validate(
-                                            &file_name.to_string_lossy(),
-                                        )
-                                        .is_ok()
-                                        {
-                                            let account_id =
+    for network_connection_dir in (path.read_dir().wrap_err("read_dir call failed")?).flatten() {
+        if network_connection_dir.path().is_dir() {
+            for entry in (network_connection_dir
+                .path()
+                .read_dir()
+                .wrap_err("read_dir call failed")?)
+            .flatten()
+            {
+                if let Some(extension) = entry.path().extension() {
+                    if extension == "json" {
+                        match entry.path().file_stem() {
+                            Some(file_name) => {
+                                if near_primitives::types::AccountId::validate(
+                                    &file_name.to_string_lossy(),
+                                )
+                                .is_ok()
+                                {
+                                    let account_id = near_primitives::types::AccountId::from_str(
+                                        &file_name.to_string_lossy(),
+                                    )?;
+                                    if !account_id.is_implicit() {
+                                        used_account_list.insert(UsedAccount {
+                                            account_id:
                                                 near_primitives::types::AccountId::from_str(
                                                     &file_name.to_string_lossy(),
-                                                )?;
-                                            if !account_id.is_implicit() {
-                                                used_account_list.insert(UsedAccount {
-                                                    account_id:
-                                                        near_primitives::types::AccountId::from_str(
-                                                            &file_name.to_string_lossy(),
-                                                        )?,
-                                                });
-                                            }
-                                        }
+                                                )?,
+                                        });
                                     }
-                                    None => continue,
                                 }
                             }
-                        } else if entry.path().is_dir() {
-                            match entry.path().file_name() {
-                                Some(file_name) => {
-                                    if near_primitives::types::AccountId::validate(
-                                        &file_name.to_string_lossy(),
-                                    )
-                                    .is_ok()
-                                    {
-                                        let account_id =
-                                            near_primitives::types::AccountId::from_str(
-                                                &file_name.to_string_lossy(),
-                                            )?;
-                                        if !account_id.is_implicit() {
-                                            used_account_list.insert(UsedAccount {
-                                                account_id:
-                                                    near_primitives::types::AccountId::from_str(
-                                                        &file_name.to_string_lossy(),
-                                                    )?,
-                                            });
-                                        }
-                                    }
+                            None => continue,
+                        }
+                    }
+                } else if entry.path().is_dir() {
+                    match entry.path().file_name() {
+                        Some(file_name) => {
+                            if near_primitives::types::AccountId::validate(
+                                &file_name.to_string_lossy(),
+                            )
+                            .is_ok()
+                            {
+                                let account_id = near_primitives::types::AccountId::from_str(
+                                    &file_name.to_string_lossy(),
+                                )?;
+                                if !account_id.is_implicit() {
+                                    used_account_list.insert(UsedAccount {
+                                        account_id: near_primitives::types::AccountId::from_str(
+                                            &file_name.to_string_lossy(),
+                                        )?,
+                                    });
                                 }
-                                None => continue,
                             }
                         }
+                        None => continue,
                     }
                 }
             }
