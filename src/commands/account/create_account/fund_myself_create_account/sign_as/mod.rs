@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use inquire::CustomType;
 use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -162,16 +161,13 @@ impl SignerAccountId {
         if !parent_account_id.0.is_top_level() {
             Ok(Some(parent_account_id))
         } else {
-            Self::input_account_id(context)
+            Ok(Some(
+                crate::common::input_account_id_from_used_account_list(
+                    &context.global_context,
+                    "What is the signer account ID?",
+                )?,
+            ))
         }
-    }
-
-    fn input_account_id(
-        _context: &super::AccountPropertiesContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let signer_account_id: crate::types::account_id::AccountId =
-            CustomType::new("What is the signer account ID?").prompt()?;
-        Ok(Some(signer_account_id))
     }
 }
 
