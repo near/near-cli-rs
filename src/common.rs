@@ -10,7 +10,7 @@ use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyP
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
-use inquire::{CustomUserError, Select, Text};
+use inquire::{Select, Text};
 use strum::IntoEnumIterator;
 
 pub fn get_near_exec_path() -> String {
@@ -1783,6 +1783,7 @@ pub impl near_primitives::views::CallResult {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct UsedAccount {
     pub account_id: near_primitives::types::AccountId,
+    pub used_as_signer: bool,
 }
 
 pub fn create_used_account_list_from_keychain(
@@ -1818,6 +1819,7 @@ pub fn create_used_account_list_from_keychain(
                                                 near_primitives::types::AccountId::from_str(
                                                     &file_name.to_string_lossy(),
                                                 )?,
+                                            used_as_signer: true,
                                         });
                                     }
                                 }
@@ -1841,6 +1843,7 @@ pub fn create_used_account_list_from_keychain(
                                         account_id: near_primitives::types::AccountId::from_str(
                                             &file_name.to_string_lossy(),
                                         )?,
+                                        used_as_signer: true,
                                     });
                                 }
                             }
@@ -1871,7 +1874,10 @@ pub fn update_used_account_list(
         .into_iter()
         .filter(|account| account.account_id != account_id)
         .collect::<VecDeque<UsedAccount>>();
-    used_account_list.push_front(UsedAccount { account_id });
+    used_account_list.push_front(UsedAccount {
+        account_id,
+        used_as_signer: true,
+    }); //XXX todo! used_as_signer
 
     let mut path = std::path::PathBuf::from(credentials_home_dir);
     path.push("accounts.json");
@@ -1910,30 +1916,29 @@ pub fn input_account_id_from_used_account_list(
     context: &crate::GlobalContext,
     message: &str,
 ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+    let credentials_home_dir = context.config.credentials_home_dir.clone();
     let account_id = crate::types::account_id::AccountId::from_str(
-        &Text::new(message).with_autocomplete(&suggester).prompt()?,
+        &Text::new(message)
+            .with_autocomplete(move |val: &str| {
+                let val_lower = val.to_lowercase();
+                let used_account_list = get_used_account_list(&credentials_home_dir)?
+                    .iter()
+                    .map(|account| account.account_id.to_string())
+                    .collect::<Vec<_>>();
+
+                Ok(used_account_list
+                    .iter()
+                    .filter(|s| s.to_lowercase().contains(&val_lower))
+                    .map(String::from)
+                    .collect())
+            })
+            .prompt()?,
     )?;
     update_used_account_list(
         &context.config.credentials_home_dir,
         account_id.clone().into(),
     )?;
     Ok(account_id)
-}
-
-fn suggester(val: &str) -> Result<Vec<String>, CustomUserError> {
-    let val_lower = val.to_lowercase();
-
-    let config = get_config_toml()?;
-    let used_account_list = get_used_account_list(&config.credentials_home_dir)?
-        .iter()
-        .map(|account| account.account_id.to_string())
-        .collect::<Vec<_>>();
-
-    Ok(used_account_list
-        .iter()
-        .filter(|s| s.to_lowercase().contains(&val_lower))
-        .map(String::from)
-        .collect())
 }
 
 #[cfg(test)]
