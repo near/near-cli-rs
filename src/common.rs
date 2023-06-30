@@ -1790,6 +1790,13 @@ pub fn create_used_account_list_from_keychain(
     credentials_home_dir: &std::path::PathBuf,
 ) -> color_eyre::eyre::Result<()> {
     let mut path = std::path::PathBuf::from(credentials_home_dir);
+    if !path.exists() {
+        std::fs::create_dir_all(&path)?;
+        path.push("accounts.json");
+        std::fs::File::create(&path)
+            .wrap_err_with(|| format!("Failed to create file: {:?}", path))?;
+        return Ok(());
+    }
     let mut used_account_list: std::collections::HashSet<UsedAccount> =
         std::collections::HashSet::new();
 

@@ -54,9 +54,9 @@ impl From<CmdContext> for crate::GlobalContext {
 fn main() -> crate::common::CliResult {
     let config = crate::common::get_config_toml()?;
 
-    // if !crate::common::is_used_account_list_exist(&config.credentials_home_dir) {
-    //     crate::common::create_used_account_list_from_keychain(&config.credentials_home_dir)?;
-    // }
+    if !crate::common::is_used_account_list_exist(&config.credentials_home_dir) {
+        crate::common::create_used_account_list_from_keychain(&config.credentials_home_dir)?;
+    }
 
     color_eyre::install()?;
 
