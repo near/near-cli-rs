@@ -7,6 +7,7 @@ use crate::common::JsonRpcClientExt;
 #[interactive_clap(input_context = super::TokensCommandsContext)]
 #[interactive_clap(output_context = ViewFtBalanceContext)]
 pub struct ViewFtBalance {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is the ft-contract account ID?
     ft_contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -81,5 +82,18 @@ impl ViewFtBalanceContext {
 impl From<ViewFtBalanceContext> for crate::network_view_at_block::ArgsForViewContext {
     fn from(item: ViewFtBalanceContext) -> Self {
         item.0
+    }
+}
+
+impl ViewFtBalance {
+    pub fn input_ft_contract_account_id(
+        context: &super::TokensCommandsContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                &context.global_context,
+                "What is the ft-contract account ID?",
+            )?,
+        ))
     }
 }

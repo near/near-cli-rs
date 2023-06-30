@@ -14,6 +14,7 @@ mod view_nft_assets;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = TokensCommandsContext)]
 pub struct TokensCommands {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is your account ID?
     owner_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
@@ -35,6 +36,19 @@ impl TokensCommandsContext {
             global_context: previous_context,
             owner_account_id: scope.owner_account_id.clone().into(),
         })
+    }
+}
+
+impl TokensCommands {
+    pub fn input_owner_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                context,
+                "What is your account ID?",
+            )?,
+        ))
     }
 }
 
