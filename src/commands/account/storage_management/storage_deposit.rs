@@ -46,6 +46,7 @@ impl DepositArgs {
             let receiver_account_id = crate::common::input_account_id_from_used_account_list(
                 &context.global_context,
                 "Which account ID do you want to add a deposit to?",
+                false,
             )?;
 
             if context.global_context.offline {
@@ -168,6 +169,7 @@ impl SignerAccountId {
             crate::common::input_account_id_from_used_account_list(
                 &context.global_context,
                 "What is the signer account ID?",
+                true,
             )?,
         ))
     }

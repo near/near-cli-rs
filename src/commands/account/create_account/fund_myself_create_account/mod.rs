@@ -49,6 +49,7 @@ impl NewAccount {
             let new_account_id = crate::common::input_account_id_from_used_account_list(
                 context,
                 "What is the new account ID?",
+                true,
             )?;
 
             if context.offline {

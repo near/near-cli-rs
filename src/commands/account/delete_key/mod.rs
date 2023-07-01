@@ -76,6 +76,7 @@ impl DeleteKeyCommand {
             crate::common::input_account_id_from_used_account_list(
                 context,
                 "Which account should you delete the access key for?",
+                true,
             )?,
         ))
     }

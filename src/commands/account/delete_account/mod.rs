@@ -38,6 +38,7 @@ impl DeleteAccount {
             crate::common::input_account_id_from_used_account_list(
                 context,
                 "What Account ID to be deleted?",
+                true,
             )?,
         ))
     }
@@ -113,6 +114,7 @@ impl BeneficiaryAccount {
             let beneficiary_account_id = crate::common::input_account_id_from_used_account_list(
                 &context.global_context,
                 "What is the beneficiary account ID?",
+                false,
             )?;
 
             if context.global_context.offline {

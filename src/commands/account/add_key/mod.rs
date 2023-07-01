@@ -44,6 +44,7 @@ impl AddKeyCommand {
             crate::common::input_account_id_from_used_account_list(
                 context,
                 "Which account should You add an access key to?",
+                true,
             )?,
         ))
     }

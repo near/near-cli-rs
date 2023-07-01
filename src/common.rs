@@ -1876,15 +1876,35 @@ pub fn create_used_account_list_from_keychain(
 pub fn update_used_account_list(
     credentials_home_dir: &std::path::PathBuf,
     account_id: near_primitives::types::AccountId,
+    mut account_is_signer: bool,
 ) -> CliResult {
-    let mut used_account_list = get_used_account_list(credentials_home_dir)?
+    let used_account_list = get_used_account_list(credentials_home_dir)?;
+
+    if used_account_list.contains(&UsedAccount {
+        account_id: account_id.clone(),
+        used_as_signer: true,
+    }) || (account_is_signer
+        && used_account_list.contains(&UsedAccount {
+            account_id: account_id.clone(),
+            used_as_signer: false,
+        }))
+    {
+        account_is_signer = true
+    } else if used_account_list.contains(&UsedAccount {
+        account_id: account_id.clone(),
+        used_as_signer: false,
+    }) {
+        account_is_signer = false
+    };
+
+    let mut used_account_list = used_account_list
         .into_iter()
         .filter(|account| account.account_id != account_id)
         .collect::<VecDeque<UsedAccount>>();
     used_account_list.push_front(UsedAccount {
         account_id,
-        used_as_signer: true,
-    }); //XXX todo! used_as_signer
+        used_as_signer: account_is_signer,
+    });
 
     let mut path = std::path::PathBuf::from(credentials_home_dir);
     path.push("accounts.json");
@@ -1922,6 +1942,7 @@ pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> 
 pub fn input_account_id_from_used_account_list(
     context: &crate::GlobalContext,
     message: &str,
+    account_is_signer: bool,
 ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
     let credentials_home_dir = context.config.credentials_home_dir.clone();
     let account_id = crate::types::account_id::AccountId::from_str(
@@ -1930,6 +1951,13 @@ pub fn input_account_id_from_used_account_list(
                 let val_lower = val.to_lowercase();
                 let used_account_list = get_used_account_list(&credentials_home_dir)?
                     .iter()
+                    .filter(|account| {
+                        if account_is_signer {
+                            account.used_as_signer
+                        } else {
+                            true
+                        }
+                    })
                     .map(|account| account.account_id.to_string())
                     .collect::<Vec<_>>();
 
@@ -1944,6 +1972,7 @@ pub fn input_account_id_from_used_account_list(
     update_used_account_list(
         &context.config.credentials_home_dir,
         account_id.clone().into(),
+        account_is_signer,
     )?;
     Ok(account_id)
 }

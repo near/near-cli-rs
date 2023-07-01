@@ -47,6 +47,7 @@ impl TokensCommands {
             crate::common::input_account_id_from_used_account_list(
                 context,
                 "What is your account ID?",
+                true,
             )?,
         ))
     }

@@ -50,6 +50,7 @@ impl Contract {
             crate::common::input_account_id_from_used_account_list(
                 context,
                 "Which contract account ID do you want to manage the storage deposit for?",
+                false,
             )?,
         ))
     }

@@ -88,6 +88,7 @@ impl Account {
             crate::common::input_account_id_from_used_account_list(
                 &context.global_context,
                 "What is your account ID?",
+                false,
             )?,
         ))
     }
