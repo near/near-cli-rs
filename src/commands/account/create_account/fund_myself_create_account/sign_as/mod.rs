@@ -135,6 +135,21 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 }
             });
 
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback =
+            std::sync::Arc::new({
+                let credentials_home_dir = global_context.config.credentials_home_dir.clone();
+
+                move |outcome_view, _network_config| {
+                    let new_account_id = outcome_view.transaction.receiver_id.clone();
+                    crate::common::update_used_account_list(
+                        &credentials_home_dir,
+                        new_account_id,
+                        true,
+                    )?;
+                    Ok(())
+                }
+            });
+
         Self {
             global_context,
             on_after_getting_network_callback,
@@ -142,9 +157,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
-            on_after_sending_transaction_callback: std::sync::Arc::new(
-                |_outcome_view, _network_config| Ok(()),
-            ),
+            on_after_sending_transaction_callback,
         }
     }
 }

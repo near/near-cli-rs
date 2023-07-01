@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use inquire::{Select, Text};
+use inquire::{CustomType, Select, Text};
 
 use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
 
@@ -46,11 +46,8 @@ impl NewAccount {
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
-            let new_account_id = crate::common::input_account_id_from_used_account_list(
-                context,
-                "What is the new account ID?",
-                true,
-            )?;
+            let new_account_id: crate::types::account_id::AccountId =
+                CustomType::new("What is the new account ID?").prompt()?;
 
             if context.offline {
                 return Ok(Some(new_account_id));

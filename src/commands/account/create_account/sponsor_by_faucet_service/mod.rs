@@ -33,6 +33,7 @@ impl NewAccountContext {
         previous_context: crate::GlobalContext,
         scope: &<NewAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let credentials_home_dir = previous_context.config.credentials_home_dir.clone();
         let on_before_creating_account_callback: self::network::OnBeforeCreatingAccountCallback =
             std::sync::Arc::new({
                 move |network_config, new_account_id, public_key| {
@@ -63,6 +64,11 @@ impl NewAccountContext {
                                         &new_account_id
                                     );
                                     } else {
+                                        crate::common::update_used_account_list(
+                                            &credentials_home_dir,
+                                            new_account_id.clone().into(),
+                                            true,
+                                        )?;
                                         eprintln!(
                                             "New account <{}> created successfully.",
                                             &new_account_id
