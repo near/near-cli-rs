@@ -8,6 +8,7 @@ use crate::common::JsonRpcClientExt;
 pub struct TransactionInfo {
     /// Enter the hash of the transaction you need to view:
     transaction_hash: crate::types::crypto_hash::CryptoHash,
+    #[interactive_clap(skip_default_input_arg)]
     /// What is the signer account ID?
     signer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -53,5 +54,19 @@ impl TransactionInfoContext {
 impl From<TransactionInfoContext> for crate::network::NetworkContext {
     fn from(item: TransactionInfoContext) -> Self {
         item.0
+    }
+}
+
+impl TransactionInfo {
+    pub fn input_signer_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                &context,
+                "What is the signer account ID?",
+                true,
+            )?,
+        ))
     }
 }

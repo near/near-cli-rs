@@ -1,11 +1,11 @@
-use inquire::{CustomType, Select};
+use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendMetaTransactionContext)]
 #[interactive_clap(output_context = RelayerAccountIdContext)]
 pub struct RelayerAccountId {
     #[interactive_clap(skip_default_input_arg)]
-    /// What is the signer account ID?
+    /// What is the relayer account ID?
     relayer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     /// Select network
@@ -74,8 +74,11 @@ impl RelayerAccountId {
         context: &super::SendMetaTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
-            let relayer_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the relayer account ID?").prompt()?;
+            let relayer_account_id = crate::common::input_account_id_from_used_account_list(
+                &context.global_context,
+                "What is the relayer account ID?",
+                true,
+            )?;
 
             if context.global_context.offline {
                 return Ok(Some(relayer_account_id));
