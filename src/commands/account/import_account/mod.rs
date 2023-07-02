@@ -78,6 +78,7 @@ pub fn login(
             break account_id_from_cli;
         }
     };
+    crate::common::update_used_account_list(&credentials_home_dir, account_id.clone(), true)?;
     save_access_key(
         account_id,
         key_pair_properties_buf,
