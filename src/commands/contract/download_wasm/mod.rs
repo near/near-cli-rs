@@ -9,6 +9,7 @@ use crate::common::JsonRpcClientExt;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractAccountContext)]
 pub struct ContractAccount {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is the contract account ID?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -31,6 +32,20 @@ impl ContractAccountContext {
             global_context: previous_context,
             account_id: scope.account_id.clone().into(),
         })
+    }
+}
+
+impl ContractAccount {
+    pub fn input_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                context,
+                "What is the contract account ID?",
+                false,
+            )?,
+        ))
     }
 }
 

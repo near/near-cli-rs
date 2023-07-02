@@ -6,6 +6,7 @@ mod initialize_mode;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractContext)]
 pub struct Contract {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is the contract account ID?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -30,6 +31,20 @@ impl ContractContext {
             receiver_account_id: scope.account_id.clone().into(),
             signer_account_id: scope.account_id.clone().into(),
         })
+    }
+}
+
+impl Contract {
+    pub fn input_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                context,
+                "What is the contract account ID?",
+                false,
+            )?,
+        ))
     }
 }
 

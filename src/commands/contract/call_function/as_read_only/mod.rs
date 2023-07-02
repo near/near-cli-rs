@@ -5,6 +5,7 @@ use crate::common::JsonRpcClientExt;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = CallFunctionViewContext)]
 pub struct CallFunctionView {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is the account ID?
     account_id: crate::types::account_id::AccountId,
     /// What is the name of the function?
@@ -81,5 +82,19 @@ impl CallFunctionView {
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<super::call_function_args_type::FunctionArgsType>> {
         super::call_function_args_type::input_function_args_type()
+    }
+}
+
+impl CallFunctionView {
+    pub fn input_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            crate::common::input_account_id_from_used_account_list(
+                context,
+                "What is the account ID?",
+                false,
+            )?,
+        ))
     }
 }
