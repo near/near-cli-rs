@@ -1,6 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-// mod using_private_key;
+mod using_private_key;
 // mod using_seed_phrase;
 mod using_web_wallet;
 
@@ -66,5 +66,5 @@ pub enum ExportAccountActions {
         message = "using-private-key         - Export existing account using a private key"
     ))]
     /// Export existing account using a private key
-    UsingPrivateKey,
+    UsingPrivateKey(self::using_private_key::ExportAccountFromPrivateKey),
 }

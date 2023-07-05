@@ -90,7 +90,7 @@ fn auto_import_secret_key(
 }
 
 #[cfg(target_os = "macos")]
-fn account_key_pair_from_macos_keychain(
+pub fn account_key_pair_from_macos_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<crate::transaction_signature_options::AccountKeyPair>> {
@@ -103,7 +103,7 @@ fn account_key_pair_from_macos_keychain(
 }
 
 #[cfg(target_os = "macos")]
-fn get_password_from_macos_keychain(
+pub fn get_password_from_macos_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<
@@ -147,7 +147,7 @@ fn get_password_from_macos_keychain(
     Ok(password)
 }
 
-fn account_key_pair_from_keychain(
+pub fn account_key_pair_from_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     credentials_home_dir: &std::path::PathBuf,
@@ -164,7 +164,7 @@ fn account_key_pair_from_keychain(
     Ok(None)
 }
 
-fn get_account_properties_data_path(
+pub fn get_account_properties_data_path(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     credentials_home_dir: &std::path::PathBuf,
