@@ -94,6 +94,21 @@ fn account_key_pair_from_macos_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<crate::transaction_signature_options::AccountKeyPair>> {
+    let password = get_password_from_macos_keychain(network_config, account_id)?;
+    if let Some(password) = password {
+        serde_json::from_slice(password.as_ref()).wrap_err("Error reading data")
+    } else {
+        Ok(None)
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn get_password_from_macos_keychain(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<
+    Option<security_framework::os::macos::passwords::SecKeychainItemPassword>,
+> {
     let keychain = security_framework::os::macos::keychain::SecKeychain::default()
         .wrap_err("Failed to open keychain")?;
 
@@ -129,11 +144,7 @@ fn account_key_pair_from_macos_keychain(
                 Some(password)
             })
     };
-    if let Some(password) = password {
-        serde_json::from_slice(password.as_ref()).wrap_err("Error reading data")
-    } else {
-        Ok(None)
-    }
+    Ok(password)
 }
 
 fn account_key_pair_from_keychain(
@@ -141,6 +152,23 @@ fn account_key_pair_from_keychain(
     account_id: &near_primitives::types::AccountId,
     credentials_home_dir: &std::path::PathBuf,
 ) -> color_eyre::eyre::Result<Option<crate::transaction_signature_options::AccountKeyPair>> {
+    let data_path =
+        get_account_properties_data_path(network_config, account_id, credentials_home_dir)?;
+    if data_path.exists() {
+        let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
+        let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
+            serde_json::from_str(&data)
+                .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
+        return Ok(Some(account_key_pair));
+    }
+    Ok(None)
+}
+
+fn get_account_properties_data_path(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    credentials_home_dir: &std::path::PathBuf,
+) -> color_eyre::eyre::Result<std::path::PathBuf> {
     let file_name = format!("{}.json", account_id);
     let mut path = std::path::PathBuf::from(credentials_home_dir);
 
@@ -197,12 +225,5 @@ fn account_key_pair_from_keychain(
             data_path
         }
     };
-    if data_path.exists() {
-        let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
-        let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
-            serde_json::from_str(&data)
-                .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
-        return Ok(Some(account_key_pair));
-    }
-    Ok(None)
+    Ok(data_path)
 }
