@@ -12,7 +12,7 @@ mod use_public_key;
 #[interactive_clap(output_context = AddKeyCommandContext)]
 pub struct AddKeyCommand {
     #[interactive_clap(skip_default_input_arg)]
-    /// Which account should You add an access key to?
+    /// Which account do you want to add an access key to?
     owner_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     permission: AccessKeyPermission,
