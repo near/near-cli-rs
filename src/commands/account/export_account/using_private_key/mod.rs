@@ -15,42 +15,40 @@ impl ExportAccountFromPrivateKeyContext {
         previous_context: super::ExportAccountContext,
         _scope: &<ExportAccountFromPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let config = previous_context.global_context.config.clone();
-
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 move |network_config| {
-                    let mut account_key_pair: Option<
-                        crate::transaction_signature_options::AccountKeyPair,
-                    > = None;
-
                     #[cfg(target_os = "macos")]
                     {
-                        account_key_pair =
+                        if let Some(account_key_pair) =
                             super::using_web_wallet::account_key_pair_from_macos_keychain(
                                 network_config,
                                 &previous_context.account_id,
                             )?
-                    };
+                        {
+                            println!(
+                                "Here is the private key for account <{}>: {}",
+                                previous_context.account_id, account_key_pair.private_key,
+                            );
+                            return Ok(());
+                        }
+                    }
 
-                    if let Some(account_key_pair) = account_key_pair {
-                        println!(
-                            "Use private key <{}> to export <{}>.",
-                            account_key_pair.private_key, previous_context.account_id
-                        );
-                    } else if let Some(account_key_pair) =
-                        super::using_web_wallet::account_key_pair_from_keychain(
+                    if let Some(account_key_pair) =
+                        super::using_web_wallet::account_key_pair_from_macos_keychain(
                             network_config,
                             &previous_context.account_id,
-                            &config.credentials_home_dir,
                         )?
                     {
                         println!(
-                            "Use private key <{}> to export <{}>.",
-                            account_key_pair.private_key, previous_context.account_id
+                            "Here is the private key for account <{}>: {}",
+                            previous_context.account_id, account_key_pair.private_key,
                         );
                     } else {
-                        return Err(color_eyre::eyre::Report::msg(format!("The macOS keychain or keychain is missing access keys for the {} account.", previous_context.account_id)));
+                        return Err(color_eyre::eyre::Report::msg(format!(
+                            "There are no access keys in keychain to export for account <{}>.",
+                            previous_context.account_id
+                        )));
                     };
                     Ok(())
                 }

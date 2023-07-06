@@ -25,25 +25,20 @@ impl ExportAccountFromWebWalletContext {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 move |network_config| {
-                    let mut account_key_pair: Option<
-                        crate::transaction_signature_options::AccountKeyPair,
-                    > = None;
-
                     #[cfg(target_os = "macos")]
                     {
-                        account_key_pair = account_key_pair_from_macos_keychain(
+                        if let Some(account_key_pair) = account_key_pair_from_macos_keychain(
                             network_config,
                             &previous_context.account_id,
-                        )?
-                    };
-
-                    if let Some(account_key_pair) = account_key_pair {
-                        auto_import_secret_key(
-                            network_config,
-                            &previous_context.account_id,
-                            &account_key_pair.private_key,
-                        )
-                    } else if let Some(account_key_pair) = account_key_pair_from_keychain(
+                        )? {
+                            return auto_import_secret_key(
+                                network_config,
+                                &previous_context.account_id,
+                                &account_key_pair.private_key,
+                            );
+                        }
+                    }
+                    if let Some(account_key_pair) = account_key_pair_from_keychain(
                         network_config,
                         &previous_context.account_id,
                         &config.credentials_home_dir,
@@ -54,7 +49,10 @@ impl ExportAccountFromWebWalletContext {
                             &account_key_pair.private_key,
                         )
                     } else {
-                        Err(color_eyre::eyre::Report::msg(format!("The macOS keychain or keychain is missing access keys for the {} account.", previous_context.account_id)))
+                        Err(color_eyre::eyre::Report::msg(format!(
+                            "There are no access keys in keychain to export for account <{}>.",
+                            previous_context.account_id
+                        )))
                     }
                 }
             });
@@ -153,7 +151,7 @@ pub fn account_key_pair_from_keychain(
     credentials_home_dir: &std::path::PathBuf,
 ) -> color_eyre::eyre::Result<Option<crate::transaction_signature_options::AccountKeyPair>> {
     let data_path =
-        get_account_properties_data_path(network_config, account_id, credentials_home_dir)?;
+        get_account_properties_data_path(network_config, account_id, credentials_home_dir, false)?;
     if data_path.exists() {
         let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
         let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
@@ -168,62 +166,73 @@ pub fn get_account_properties_data_path(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     credentials_home_dir: &std::path::PathBuf,
+    check_if_seed_phrase_exists: bool,
 ) -> color_eyre::eyre::Result<std::path::PathBuf> {
     let file_name = format!("{}.json", account_id);
     let mut path = std::path::PathBuf::from(credentials_home_dir);
 
-    let data_path: std::path::PathBuf = {
-        let dir_name = network_config.network_name.clone();
-        path.push(&dir_name);
+    let dir_name = network_config.network_name.clone();
+    path.push(&dir_name);
+    path.push(file_name);
 
-        path.push(file_name);
-        if path.exists() {
-            path
-        } else {
-            let access_key_list = network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key_list(
-                    account_id,
-                    near_primitives::types::Finality::Final.into(),
-                )
-                .wrap_err_with(|| format!("Failed to fetch access KeyList for {}", account_id))?
-                .access_key_list_view()?;
-            let mut path = std::path::PathBuf::from(credentials_home_dir);
-            path.push(dir_name);
-            path.push(account_id.to_string());
-            let mut data_path = std::path::PathBuf::new();
-            'outer: for access_key in access_key_list.keys {
-                let account_public_key = access_key.public_key.to_string();
-                let is_full_access_key: bool = match &access_key.access_key.permission {
-                    near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                    near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                        allowance: _,
-                        receiver_id: _,
-                        method_names: _,
-                    } => false,
-                };
-                let dir = path
-                    .read_dir()
-                    .wrap_err("There are no access keys found in the keychain for the account.")?;
-                for entry in dir.flatten() {
-                    // if let Ok(entry) = entry {
-                    if entry
-                        .path()
-                        .file_stem()
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .contains(account_public_key.rsplit(':').next().unwrap())
-                        && is_full_access_key
-                    {
-                        data_path.push(entry.path());
-                        break 'outer;
-                    }
-                    // };
+    if path.exists() {
+        if !check_if_seed_phrase_exists {
+            return Ok(path);
+        }
+        let data = std::fs::read_to_string(&path).wrap_err("Access key file not found!")?;
+        if serde_json::from_str::<crate::common::KeyPairProperties>(&data).is_ok() {
+            return Ok(path);
+        }
+    }
+
+    let access_key_list = network_config
+        .json_rpc_client()
+        .blocking_call_view_access_key_list(
+            account_id,
+            near_primitives::types::Finality::Final.into(),
+        )
+        .wrap_err_with(|| format!("Failed to fetch access KeyList for {}", account_id))?
+        .access_key_list_view()?;
+    let mut path = std::path::PathBuf::from(credentials_home_dir);
+    path.push(dir_name);
+    path.push(account_id.to_string());
+    let mut data_path = std::path::PathBuf::new();
+    for access_key in access_key_list.keys {
+        let account_public_key = access_key.public_key.to_string();
+        let is_full_access_key: bool = match &access_key.access_key.permission {
+            near_primitives::views::AccessKeyPermissionView::FullAccess => true,
+            near_primitives::views::AccessKeyPermissionView::FunctionCall {
+                allowance: _,
+                receiver_id: _,
+                method_names: _,
+            } => false,
+        };
+        let dir = path
+            .read_dir()
+            .wrap_err("There are no access keys found in the keychain for the account.")?;
+        for entry in dir.flatten() {
+            if entry
+                .path()
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .contains(account_public_key.rsplit(':').next().unwrap())
+                && is_full_access_key
+            {
+                data_path.push(entry.path());
+                if !check_if_seed_phrase_exists {
+                    return Ok(data_path);
+                }
+                let data =
+                    std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
+                if serde_json::from_str::<crate::common::KeyPairProperties>(&data).is_ok() {
+                    return Ok(data_path);
                 }
             }
-            data_path
         }
-    };
-    Ok(data_path)
+    }
+    Err(color_eyre::eyre::Report::msg(format!(
+        "The keychain for account <{account_id}> does not contain the path to the master seed phrase or access key."
+    )))
 }
