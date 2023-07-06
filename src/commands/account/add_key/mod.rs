@@ -43,7 +43,7 @@ impl AddKeyCommand {
         Ok(Some(
             crate::common::input_account_id_from_used_account_list(
                 &context.config.credentials_home_dir,
-                "Which account should You add an access key to?",
+                "Which account do you want to add an access key to?",
                 true,
             )?,
         ))
