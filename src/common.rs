@@ -569,7 +569,7 @@ fn need_check_account() -> bool {
     select_choose_input == ConfirmOptions::Yes
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct KeyPairProperties {
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     pub master_seed_phrase: String,
@@ -1786,95 +1786,58 @@ pub struct UsedAccount {
     pub used_as_signer: bool,
 }
 
+fn get_account_list_path(credentials_home_dir: &std::path::Path) -> std::path::PathBuf {
+    credentials_home_dir.join("accounts.json")
+}
+
 pub fn create_used_account_list_from_keychain(
     credentials_home_dir: &std::path::PathBuf,
 ) -> color_eyre::eyre::Result<()> {
-    let mut path = std::path::PathBuf::from(credentials_home_dir);
-    if !path.exists() {
-        std::fs::create_dir_all(&path)?;
-        path.push("accounts.json");
-        std::fs::File::create(&path)
-            .wrap_err_with(|| format!("Failed to create file: {:?}", path))?;
-        return Ok(());
-    }
-    let mut used_account_list: std::collections::HashSet<UsedAccount> =
-        std::collections::HashSet::new();
-
-    for network_connection_dir in (path.read_dir().wrap_err("read_dir call failed")?).flatten() {
-        if network_connection_dir.path().is_dir() {
-            for entry in (network_connection_dir
-                .path()
-                .read_dir()
-                .wrap_err("read_dir call failed")?)
-            .flatten()
-            {
-                if let Some(extension) = entry.path().extension() {
-                    if extension == "json" {
-                        match entry.path().file_stem() {
-                            Some(file_name) => {
-                                if near_primitives::types::AccountId::validate(
-                                    &file_name.to_string_lossy(),
-                                )
-                                .is_ok()
-                                {
-                                    let account_id = near_primitives::types::AccountId::from_str(
-                                        &file_name.to_string_lossy(),
-                                    )?;
-                                    if !account_id.is_implicit() {
-                                        used_account_list.insert(UsedAccount {
-                                            account_id:
-                                                near_primitives::types::AccountId::from_str(
-                                                    &file_name.to_string_lossy(),
-                                                )?,
-                                            used_as_signer: true,
-                                        });
-                                    }
-                                }
-                            }
-                            None => continue,
-                        }
-                    }
-                } else if entry.path().is_dir() {
-                    match entry.path().file_name() {
-                        Some(file_name) => {
-                            if near_primitives::types::AccountId::validate(
-                                &file_name.to_string_lossy(),
-                            )
-                            .is_ok()
-                            {
-                                let account_id = near_primitives::types::AccountId::from_str(
-                                    &file_name.to_string_lossy(),
-                                )?;
-                                if !account_id.is_implicit() {
-                                    used_account_list.insert(UsedAccount {
-                                        account_id: near_primitives::types::AccountId::from_str(
-                                            &file_name.to_string_lossy(),
-                                        )?,
-                                        used_as_signer: true,
-                                    });
-                                }
-                            }
-                        }
-                        None => continue,
+    let mut used_account_list: std::collections::BTreeSet<near_primitives::types::AccountId> =
+        std::collections::BTreeSet::new();
+    let read_dir =
+        |dir: &std::path::PathBuf| dir.read_dir().map(Iterator::flatten).into_iter().flatten();
+    for network_connection_dir in read_dir(credentials_home_dir) {
+        for entry in read_dir(&network_connection_dir.path()) {
+            match (entry.path().file_stem(), entry.path().extension()) {
+                (Some(file_stem), Some(extension)) if extension == "json" => {
+                    if let Ok(account_id) = file_stem.to_string_lossy().parse() {
+                        used_account_list.insert(account_id);
                     }
                 }
+                _ if entry.path().is_dir() => {
+                    if let Ok(account_id) = entry.file_name().to_string_lossy().parse() {
+                        used_account_list.insert(account_id);
+                    }
+                }
+                _ => {}
             }
         }
     }
 
     if !used_account_list.is_empty() {
-        path.push("accounts.json");
-        let used_account_list_buf = serde_json::to_string(&used_account_list)?;
-        std::fs::File::create(&path)
-            .wrap_err_with(|| format!("Failed to create file: {:?}", path))?
-            .write(used_account_list_buf.as_bytes())
-            .wrap_err_with(|| format!("Failed to write to file: {:?}", path))?;
+        let used_account_list_path = get_account_list_path(credentials_home_dir);
+        let used_account_list_buf = serde_json::to_string(
+            &used_account_list
+                .into_iter()
+                .map(|account_id| UsedAccount {
+                    account_id,
+                    used_as_signer: true,
+                })
+                .collect::<Vec<_>>(),
+        )?;
+        std::fs::write(&used_account_list_path, used_account_list_buf).wrap_err_with(|| {
+            format!(
+                "Failed to write to file: {}",
+                used_account_list_path.display()
+            )
+        })?;
     }
     Ok(())
 }
 
 pub fn update_used_account_list(
-    credentials_home_dir: &std::path::PathBuf,
+    credentials_home_dir: &std::path::Path,
     account_id: near_primitives::types::AccountId,
     mut account_is_signer: bool,
 ) -> CliResult {
@@ -1906,71 +1869,65 @@ pub fn update_used_account_list(
         used_as_signer: account_is_signer,
     });
 
-    let mut path = std::path::PathBuf::from(credentials_home_dir);
-    path.push("accounts.json");
-
+    let used_account_list_path = get_account_list_path(credentials_home_dir);
     let used_account_list_buf = serde_json::to_string(&used_account_list)?;
-    std::fs::File::create(&path)
-        .wrap_err_with(|| format!("Failed to create file: {:?}", path))?
-        .write(used_account_list_buf.as_bytes())
-        .wrap_err_with(|| format!("Failed to write to file: {:?}", path))?;
+    std::fs::write(&used_account_list_path, used_account_list_buf).wrap_err_with(|| {
+        format!(
+            "Failed to write to file: {}",
+            used_account_list_path.display()
+        )
+    })?;
 
     Ok(())
 }
 
 pub fn get_used_account_list(
-    credentials_home_dir: &std::path::PathBuf,
+    credentials_home_dir: &std::path::Path,
 ) -> color_eyre::eyre::Result<VecDeque<UsedAccount>> {
-    if !is_used_account_list_exist(credentials_home_dir) {
-        return Ok(VecDeque::new());
+    let used_account_list_path = get_account_list_path(credentials_home_dir);
+    let data = match std::fs::read_to_string(used_account_list_path) {
+        Ok(data) => data,
+        Err(_) => return Ok(VecDeque::new()),
     };
-    let mut path = std::path::PathBuf::from(credentials_home_dir);
-    path.push("accounts.json");
-    let data = std::fs::read_to_string(&path).wrap_err("Access key file not found!")?;
     if let Ok(used_account_list) = serde_json::from_str::<VecDeque<UsedAccount>>(&data) {
         return Ok(used_account_list);
     }
     Ok(VecDeque::new())
 }
 
-pub fn is_used_account_list_exist(credentials_home_dir: &std::path::PathBuf) -> bool {
-    let mut path = std::path::PathBuf::from(credentials_home_dir);
-    path.push("accounts.json");
-    path.exists()
+pub fn is_used_account_list_exist(credentials_home_dir: &std::path::Path) -> bool {
+    get_account_list_path(credentials_home_dir).exists()
 }
 
 pub fn input_account_id_from_used_account_list(
-    context: &crate::GlobalContext,
+    credentials_home_dir: &std::path::Path,
     message: &str,
     account_is_signer: bool,
 ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
-    let credentials_home_dir = context.config.credentials_home_dir.clone();
+    let used_account_list = get_used_account_list(credentials_home_dir)?
+        .into_iter()
+        .filter(|account| {
+            if account_is_signer {
+                account.used_as_signer
+            } else {
+                true
+            }
+        })
+        .map(|account| account.account_id.to_string())
+        .collect::<Vec<_>>();
     let account_id = crate::types::account_id::AccountId::from_str(
         &Text::new(message)
             .with_autocomplete(move |val: &str| {
-                let val_lower = val.to_lowercase();
-                let used_account_list = get_used_account_list(&credentials_home_dir)?
-                    .iter()
-                    .filter(|account| {
-                        if account_is_signer {
-                            account.used_as_signer
-                        } else {
-                            true
-                        }
-                    })
-                    .map(|account| account.account_id.to_string())
-                    .collect::<Vec<_>>();
-
                 Ok(used_account_list
                     .iter()
-                    .filter(|s| s.to_lowercase().contains(&val_lower))
-                    .map(String::from)
+                    .filter(|s| s.contains(val))
+                    .cloned()
                     .collect())
             })
             .prompt()?,
     )?;
     update_used_account_list(
-        &context.config.credentials_home_dir,
+        credentials_home_dir,
         account_id.clone().into(),
         account_is_signer,
     )?;

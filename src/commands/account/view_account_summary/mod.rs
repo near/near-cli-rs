@@ -81,7 +81,7 @@ impl ViewAccountSummary {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         Ok(Some(
             crate::common::input_account_id_from_used_account_list(
-                context,
+                &context.config.credentials_home_dir,
                 "What Account ID do you need to view?",
                 false,
             )?,
