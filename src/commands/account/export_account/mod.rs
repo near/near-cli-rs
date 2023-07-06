@@ -1,7 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod using_private_key;
-// mod using_seed_phrase;
+mod using_seed_phrase;
 mod using_web_wallet;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -39,7 +39,7 @@ impl ExportAccount {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         Ok(Some(
             crate::common::input_account_id_from_used_account_list(
-                context,
+                &context.config.credentials_home_dir,
                 "Which account ID should be exported?",
                 true,
             )?,
@@ -53,15 +53,15 @@ impl ExportAccount {
 /// How would you like to export the account?
 pub enum ExportAccountActions {
     #[strum_discriminants(strum(
-        message = "using-web-wallet          - Export existing account using NEAR Wallet (a.k.a. \"sign in\")"
+        message = "using-web-wallet          - Export existing account using NEAR Wallet"
     ))]
-    /// Export existing account using NEAR Wallet (a.k.a. "sign in")
+    /// Export existing account using NEAR Wallet
     UsingWebWallet(self::using_web_wallet::ExportAccountFromWebWallet),
     #[strum_discriminants(strum(
         message = "using-seed-phrase         - Export existing account using a seed phrase"
     ))]
     /// Export existing account using a seed phrase
-    UsingSeedPhrase,
+    UsingSeedPhrase(self::using_seed_phrase::ExportAccountFromSeedPhrase),
     #[strum_discriminants(strum(
         message = "using-private-key         - Export existing account using a private key"
     ))]
