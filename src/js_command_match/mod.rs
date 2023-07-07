@@ -82,7 +82,7 @@ impl JsCmd {
             },
             Self::AddKey(add_key_args) => Ok(add_key_args.to_cli_args(network_config)),
             Self::DeleteKey(delete_key_args) => Ok(delete_key_args.to_cli_args(network_config)),
-            Self::Validators(_) => Err("`validators` command is not implemented, yet. It will be implemented in a validators extension. Meanwhile, keep using the old CLI.".to_string()),
+            Self::Validators(validators) => Ok(validators.to_cli_args(network_config)),
             Self::Proposals(_) => Err("`proposals` command is not implemented, yet. It will be implemented in a validators extension. Meanwhile, keep using the old CLI.".to_string()),
             Self::EvmCall(_) => Err("`evm-call` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.".to_string()),
             Self::EvmDevInit(_) => Err("`evm-dev-init` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.".to_string()),
