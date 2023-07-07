@@ -1846,8 +1846,7 @@ pub fn update_used_account_list(
     if used_account_list.contains(&UsedAccount {
         account_id: account_id.clone(),
         used_as_signer: true,
-    })
-    {
+    }) {
         account_is_signer = true
     };
 
