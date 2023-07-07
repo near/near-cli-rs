@@ -64,11 +64,10 @@ impl NewAccountContext {
                                         &new_account_id
                                     );
                                     } else {
-                                        crate::common::update_used_account_list(
+                                        crate::common::update_used_account_list_as_signer(
                                             &credentials_home_dir,
                                             new_account_id.clone().into(),
-                                            true,
-                                        )?;
+                                        );
                                         eprintln!(
                                             "New account <{}> created successfully.",
                                             &new_account_id

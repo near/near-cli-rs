@@ -44,10 +44,9 @@ impl TokensCommands {
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         Ok(Some(
-            crate::common::input_account_id_from_used_account_list(
+            crate::common::input_signer_account_id_from_used_account_list(
                 &context.config.credentials_home_dir,
                 "What is your account ID?",
-                true,
             )?,
         ))
     }

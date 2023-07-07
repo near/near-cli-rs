@@ -43,11 +43,11 @@ impl DepositArgs {
         context: &super::ContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
-            let receiver_account_id = crate::common::input_account_id_from_used_account_list(
-                &context.global_context.config.credentials_home_dir,
-                "Which account ID do you want to add a deposit to?",
-                false,
-            )?;
+            let receiver_account_id =
+                crate::common::input_non_signer_account_id_from_used_account_list(
+                    &context.global_context.config.credentials_home_dir,
+                    "Which account ID do you want to add a deposit to?",
+                )?;
 
             if context.global_context.offline {
                 return Ok(Some(receiver_account_id));
@@ -166,10 +166,9 @@ impl SignerAccountId {
         context: &DepositArgsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         Ok(Some(
-            crate::common::input_account_id_from_used_account_list(
+            crate::common::input_signer_account_id_from_used_account_list(
                 &context.global_context.config.credentials_home_dir,
                 "What is the signer account ID?",
-                true,
             )?,
         ))
     }

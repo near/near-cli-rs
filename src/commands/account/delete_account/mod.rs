@@ -35,10 +35,9 @@ impl DeleteAccount {
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         Ok(Some(
-            crate::common::input_account_id_from_used_account_list(
+            crate::common::input_signer_account_id_from_used_account_list(
                 &context.config.credentials_home_dir,
                 "What Account ID to be deleted?",
-                true,
             )?,
         ))
     }
@@ -111,11 +110,11 @@ impl BeneficiaryAccount {
         context: &DeleteAccountContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
-            let beneficiary_account_id = crate::common::input_account_id_from_used_account_list(
-                &context.global_context.config.credentials_home_dir,
-                "What is the beneficiary account ID?",
-                false,
-            )?;
+            let beneficiary_account_id =
+                crate::common::input_non_signer_account_id_from_used_account_list(
+                    &context.global_context.config.credentials_home_dir,
+                    "What is the beneficiary account ID?",
+                )?;
 
             if context.global_context.offline {
                 return Ok(Some(beneficiary_account_id));

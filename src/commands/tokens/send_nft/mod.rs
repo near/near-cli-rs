@@ -118,10 +118,9 @@ impl SendNftCommand {
         context: &super::TokensCommandsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         Ok(Some(
-            crate::common::input_account_id_from_used_account_list(
+            crate::common::input_non_signer_account_id_from_used_account_list(
                 &context.global_context.config.credentials_home_dir,
                 "What is the nft-contract account ID?",
-                false,
             )?,
         ))
     }
@@ -130,10 +129,9 @@ impl SendNftCommand {
         context: &super::TokensCommandsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         Ok(Some(
-            crate::common::input_account_id_from_used_account_list(
+            crate::common::input_non_signer_account_id_from_used_account_list(
                 &context.global_context.config.credentials_home_dir,
                 "What is the receiver account ID?",
-                false,
             )?,
         ))
     }

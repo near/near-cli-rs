@@ -1836,11 +1836,27 @@ pub fn create_used_account_list_from_keychain(
     Ok(())
 }
 
-pub fn update_used_account_list(
+pub fn update_used_account_list_as_signer(
+    credentials_home_dir: &std::path::Path,
+    account_id: near_primitives::types::AccountId,
+) {
+    let account_is_signer = true;
+    update_used_account_list(credentials_home_dir, account_id, account_is_signer);
+}
+
+pub fn update_used_account_list_as_non_signer(
+    credentials_home_dir: &std::path::Path,
+    account_id: near_primitives::types::AccountId,
+) {
+    let account_is_signer = false;
+    update_used_account_list(credentials_home_dir, account_id, account_is_signer);
+}
+
+fn update_used_account_list(
     credentials_home_dir: &std::path::Path,
     account_id: near_primitives::types::AccountId,
     mut account_is_signer: bool,
-) -> CliResult {
+) {
     let mut used_account_list = get_used_account_list(credentials_home_dir);
 
     if used_account_list.contains(&UsedAccount {
@@ -1862,15 +1878,9 @@ pub fn update_used_account_list(
     });
 
     let used_account_list_path = get_account_list_path(credentials_home_dir);
-    let used_account_list_buf = serde_json::to_string(&used_account_list)?;
-    std::fs::write(&used_account_list_path, used_account_list_buf).wrap_err_with(|| {
-        format!(
-            "Failed to write to file: {}",
-            used_account_list_path.display()
-        )
-    })?;
-
-    Ok(())
+    if let Ok(used_account_list_buf) = serde_json::to_string(&used_account_list) {
+        let _ = std::fs::write(&used_account_list_path, used_account_list_buf);
+    }
 }
 
 pub fn get_used_account_list(credentials_home_dir: &std::path::Path) -> VecDeque<UsedAccount> {
@@ -1889,7 +1899,23 @@ pub fn is_used_account_list_exist(credentials_home_dir: &std::path::Path) -> boo
     get_account_list_path(credentials_home_dir).exists()
 }
 
-pub fn input_account_id_from_used_account_list(
+pub fn input_signer_account_id_from_used_account_list(
+    credentials_home_dir: &std::path::Path,
+    message: &str,
+) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+    let account_is_signer = true;
+    input_account_id_from_used_account_list(credentials_home_dir, message, account_is_signer)
+}
+
+pub fn input_non_signer_account_id_from_used_account_list(
+    credentials_home_dir: &std::path::Path,
+    message: &str,
+) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+    let account_is_signer = false;
+    input_account_id_from_used_account_list(credentials_home_dir, message, account_is_signer)
+}
+
+fn input_account_id_from_used_account_list(
     credentials_home_dir: &std::path::Path,
     message: &str,
     account_is_signer: bool,
@@ -1920,7 +1946,7 @@ pub fn input_account_id_from_used_account_list(
         credentials_home_dir,
         account_id.clone().into(),
         account_is_signer,
-    )?;
+    );
     Ok(account_id)
 }
 
