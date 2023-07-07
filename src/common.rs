@@ -1879,7 +1879,7 @@ fn update_used_account_list(
 
     let used_account_list_path = get_account_list_path(credentials_home_dir);
     if let Ok(used_account_list_buf) = serde_json::to_string(&used_account_list) {
-        let _ = std::fs::write(&used_account_list_path, used_account_list_buf);
+        let _ = std::fs::write(used_account_list_path, used_account_list_buf);
     }
 }
 
@@ -1902,7 +1902,7 @@ pub fn is_used_account_list_exist(credentials_home_dir: &std::path::Path) -> boo
 pub fn input_signer_account_id_from_used_account_list(
     credentials_home_dir: &std::path::Path,
     message: &str,
-) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
     let account_is_signer = true;
     input_account_id_from_used_account_list(credentials_home_dir, message, account_is_signer)
 }
@@ -1910,7 +1910,7 @@ pub fn input_signer_account_id_from_used_account_list(
 pub fn input_non_signer_account_id_from_used_account_list(
     credentials_home_dir: &std::path::Path,
     message: &str,
-) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
     let account_is_signer = false;
     input_account_id_from_used_account_list(credentials_home_dir, message, account_is_signer)
 }
@@ -1919,7 +1919,7 @@ fn input_account_id_from_used_account_list(
     credentials_home_dir: &std::path::Path,
     message: &str,
     account_is_signer: bool,
-) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
+) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
     let used_account_list = get_used_account_list(credentials_home_dir)
         .into_iter()
         .filter(|account| {
@@ -1931,8 +1931,9 @@ fn input_account_id_from_used_account_list(
         })
         .map(|account| account.account_id.to_string())
         .collect::<Vec<_>>();
-    let account_id = crate::types::account_id::AccountId::from_str(
-        &Text::new(message)
+    let account_id = loop {
+        let used_account_list = used_account_list.clone();
+        let input = match Text::new(message)
             .with_autocomplete(move |val: &str| {
                 Ok(used_account_list
                     .iter()
@@ -1940,14 +1941,29 @@ fn input_account_id_from_used_account_list(
                     .cloned()
                     .collect())
             })
-            .prompt()?,
-    )?;
+            .prompt()
+        {
+            Ok(value) => value,
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => return Ok(None),
+            Err(err) => return Err(err.into()),
+        };
+        match crate::types::account_id::AccountId::from_str(&input) {
+            Ok(account_id) => break account_id,
+            Err(err) => {
+                println!("{}", err.kind());
+                continue;
+            }
+        }
+    };
     update_used_account_list(
         credentials_home_dir,
         account_id.clone().into(),
         account_is_signer,
     );
-    Ok(account_id)
+    Ok(Some(account_id))
 }
 
 #[cfg(test)]

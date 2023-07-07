@@ -173,12 +173,10 @@ impl SignerAccountId {
         if !parent_account_id.0.is_top_level() {
             Ok(Some(parent_account_id))
         } else {
-            Ok(Some(
-                crate::common::input_signer_account_id_from_used_account_list(
-                    &context.global_context.config.credentials_home_dir,
-                    "What is the signer account ID?",
-                )?,
-            ))
+            crate::common::input_signer_account_id_from_used_account_list(
+                &context.global_context.config.credentials_home_dir,
+                "What is the signer account ID?",
+            )
         }
     }
 }

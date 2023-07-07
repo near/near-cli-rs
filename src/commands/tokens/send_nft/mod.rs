@@ -117,23 +117,19 @@ impl SendNftCommand {
     pub fn input_nft_contract_account_id(
         context: &super::TokensCommandsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        Ok(Some(
-            crate::common::input_non_signer_account_id_from_used_account_list(
-                &context.global_context.config.credentials_home_dir,
-                "What is the nft-contract account ID?",
-            )?,
-        ))
+        crate::common::input_non_signer_account_id_from_used_account_list(
+            &context.global_context.config.credentials_home_dir,
+            "What is the nft-contract account ID?",
+        )
     }
 
     pub fn input_receiver_account_id(
         context: &super::TokensCommandsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        Ok(Some(
-            crate::common::input_non_signer_account_id_from_used_account_list(
-                &context.global_context.config.credentials_home_dir,
-                "What is the receiver account ID?",
-            )?,
-        ))
+        crate::common::input_non_signer_account_id_from_used_account_list(
+            &context.global_context.config.credentials_home_dir,
+            "What is the receiver account ID?",
+        )
     }
 
     fn input_gas(
