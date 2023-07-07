@@ -1841,29 +1841,22 @@ pub fn update_used_account_list(
     account_id: near_primitives::types::AccountId,
     mut account_is_signer: bool,
 ) -> CliResult {
-    let used_account_list = get_used_account_list(credentials_home_dir)?;
+    let mut used_account_list = get_used_account_list(credentials_home_dir);
 
     if used_account_list.contains(&UsedAccount {
         account_id: account_id.clone(),
         used_as_signer: true,
-    }) || (account_is_signer
-        && used_account_list.contains(&UsedAccount {
-            account_id: account_id.clone(),
-            used_as_signer: false,
-        }))
+    }) || account_is_signer
     {
         account_is_signer = true
-    } else if used_account_list.contains(&UsedAccount {
-        account_id: account_id.clone(),
-        used_as_signer: false,
-    }) {
-        account_is_signer = false
     };
 
-    let mut used_account_list = used_account_list
-        .into_iter()
-        .filter(|account| account.account_id != account_id)
-        .collect::<VecDeque<UsedAccount>>();
+    if let Some(position) = used_account_list
+        .iter()
+        .position(|used_account| used_account.account_id == account_id)
+    {
+        used_account_list.remove(position);
+    }
     used_account_list.push_front(UsedAccount {
         account_id,
         used_as_signer: account_is_signer,
@@ -1881,18 +1874,16 @@ pub fn update_used_account_list(
     Ok(())
 }
 
-pub fn get_used_account_list(
-    credentials_home_dir: &std::path::Path,
-) -> color_eyre::eyre::Result<VecDeque<UsedAccount>> {
+pub fn get_used_account_list(credentials_home_dir: &std::path::Path) -> VecDeque<UsedAccount> {
     let used_account_list_path = get_account_list_path(credentials_home_dir);
     let data = match std::fs::read_to_string(used_account_list_path) {
         Ok(data) => data,
-        Err(_) => return Ok(VecDeque::new()),
+        Err(_) => return VecDeque::new(),
     };
     if let Ok(used_account_list) = serde_json::from_str::<VecDeque<UsedAccount>>(&data) {
-        return Ok(used_account_list);
+        return used_account_list;
     }
-    Ok(VecDeque::new())
+    VecDeque::new()
 }
 
 pub fn is_used_account_list_exist(credentials_home_dir: &std::path::Path) -> bool {
@@ -1904,7 +1895,7 @@ pub fn input_account_id_from_used_account_list(
     message: &str,
     account_is_signer: bool,
 ) -> color_eyre::eyre::Result<crate::types::account_id::AccountId> {
-    let used_account_list = get_used_account_list(credentials_home_dir)?
+    let used_account_list = get_used_account_list(credentials_home_dir)
         .into_iter()
         .filter(|account| {
             if account_is_signer {
