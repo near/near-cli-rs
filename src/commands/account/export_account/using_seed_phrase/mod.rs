@@ -24,42 +24,44 @@ impl ExportAccountFromSeedPhraseContext {
                 move |network_config| {
                     #[cfg(target_os = "macos")]
                     {
-                        let password = super::using_web_wallet::get_password_from_macos_keychain(
-                            network_config,
-                            &previous_context.account_id,
-                        )?;
-
-                        if let Some(password) = password {
-                            let key_pair_properties: crate::common::KeyPairProperties =
-                                serde_json::from_slice(&password)?;
-                            println!(
-                                "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
-                                previous_context.account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
-                            );
-                            return Ok(());
+                        if let Ok(password_list) =
+                            super::using_web_wallet::get_password_list_from_macos_keychain(
+                                network_config,
+                                &previous_context.account_id,
+                            )
+                        {
+                            for password in password_list {
+                                let result_key_pair_properties =
+                                    serde_json::from_slice::<crate::common::KeyPairProperties>(
+                                        &password,
+                                    );
+                                if let Ok(key_pair_properties) = result_key_pair_properties {
+                                    println!(
+                                        "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
+                                        previous_context.account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
+                                    );
+                                    return Ok(());
+                                }
+                            }
                         }
                     }
 
-                    let data_path = super::using_web_wallet::get_account_properties_data_path(
+                    let data_path = get_seed_phrase_data_path(
                         network_config,
                         &previous_context.account_id,
                         &config.credentials_home_dir,
-                        true,
                     )?;
-                    if data_path.exists() {
-                        let data = std::fs::read_to_string(&data_path)
-                            .wrap_err("Access key file not found!")?;
-                        let key_pair_properties: crate::common::KeyPairProperties =
-                            serde_json::from_str(&data).wrap_err_with(|| {
-                                format!("Error reading data from file: {:?}", &data_path)
-                            })?;
-                        println!(
-                                "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
-                                previous_context.account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
-                            );
-                    } else {
-                        return Err(color_eyre::eyre::Report::msg(format!("There are no master seed phrase in keychain to export for account <{}>.", previous_context.account_id)));
-                    };
+
+                    let data = std::fs::read_to_string(&data_path)
+                        .wrap_err("Access key file not found!")?;
+                    let key_pair_properties: crate::common::KeyPairProperties =
+                        serde_json::from_str(&data).wrap_err_with(|| {
+                            format!("Error reading data from file: {:?}", &data_path)
+                        })?;
+                    println!(
+                        "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
+                        previous_context.account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
+                    );
                     Ok(())
                 }
             });
@@ -75,4 +77,18 @@ impl From<ExportAccountFromSeedPhraseContext> for crate::network::NetworkContext
     fn from(item: ExportAccountFromSeedPhraseContext) -> Self {
         item.0
     }
+}
+
+pub fn get_seed_phrase_data_path(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    credentials_home_dir: &std::path::Path,
+) -> color_eyre::eyre::Result<std::path::PathBuf> {
+    let check_if_seed_phrase_exists = true;
+    super::using_web_wallet::get_account_properties_data_path(
+        network_config,
+        account_id,
+        credentials_home_dir,
+        check_if_seed_phrase_exists,
+    )
 }

@@ -27,10 +27,10 @@ impl ExportAccountFromWebWalletContext {
                 move |network_config| {
                     #[cfg(target_os = "macos")]
                     {
-                        if let Some(account_key_pair) = account_key_pair_from_macos_keychain(
+                        if let Ok(account_key_pair) = get_account_key_pair_from_macos_keychain(
                             network_config,
                             &previous_context.account_id,
-                        )? {
+                        ) {
                             return auto_import_secret_key(
                                 network_config,
                                 &previous_context.account_id,
@@ -38,22 +38,17 @@ impl ExportAccountFromWebWalletContext {
                             );
                         }
                     }
-                    if let Some(account_key_pair) = account_key_pair_from_keychain(
+
+                    let account_key_pair = get_account_key_pair_from_keychain(
                         network_config,
                         &previous_context.account_id,
                         &config.credentials_home_dir,
-                    )? {
-                        auto_import_secret_key(
-                            network_config,
-                            &previous_context.account_id,
-                            &account_key_pair.private_key,
-                        )
-                    } else {
-                        Err(color_eyre::eyre::Report::msg(format!(
-                            "There are no access keys in keychain to export for account <{}>.",
-                            previous_context.account_id
-                        )))
-                    }
+                    )?;
+                    auto_import_secret_key(
+                        network_config,
+                        &previous_context.account_id,
+                        &account_key_pair.private_key,
+                    )
                 }
             });
 
@@ -88,25 +83,26 @@ fn auto_import_secret_key(
 }
 
 #[cfg(target_os = "macos")]
-pub fn account_key_pair_from_macos_keychain(
+pub fn get_account_key_pair_from_macos_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<Option<crate::transaction_signature_options::AccountKeyPair>> {
-    let password = get_password_from_macos_keychain(network_config, account_id)?;
-    if let Some(password) = password {
-        serde_json::from_slice(password.as_ref()).wrap_err("Error reading data")
-    } else {
-        Ok(None)
+) -> color_eyre::eyre::Result<crate::transaction_signature_options::AccountKeyPair> {
+    let password_list = get_password_list_from_macos_keychain(network_config, account_id)?;
+    for password in password_list {
+        let account_key_pair = serde_json::from_slice(password.as_ref());
+        if let Ok(key_pair) = account_key_pair {
+            return Ok(key_pair);
+        }
     }
+    Err(color_eyre::eyre::Report::msg("Error reading data"))
 }
 
 #[cfg(target_os = "macos")]
-pub fn get_password_from_macos_keychain(
+pub fn get_password_list_from_macos_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<
-    Option<security_framework::os::macos::passwords::SecKeychainItemPassword>,
-> {
+) -> color_eyre::eyre::Result<Vec<security_framework::os::macos::passwords::SecKeychainItemPassword>>
+{
     let keychain = security_framework::os::macos::keychain::SecKeychain::default()
         .wrap_err("Failed to open keychain")?;
 
@@ -115,7 +111,7 @@ pub fn get_password_from_macos_keychain(
         network_config.network_name,
         account_id.as_str()
     ));
-    let password = {
+    let password_list = {
         let access_key_list = network_config
             .json_rpc_client()
             .blocking_call_view_access_key_list(
@@ -134,38 +130,53 @@ pub fn get_password_from_macos_keychain(
                     near_primitives::views::AccessKeyPermissionView::FullAccess
                 )
             })
-            .map(|key| key.public_key)
-            .find_map(|public_key| {
-                let (password, _) = keychain
-                    .find_generic_password(&service_name, &format!("{}:{}", account_id, public_key))
-                    .ok()?;
-                Some(password)
+            .filter_map(|key| {
+                let password = keychain.find_generic_password(
+                    &service_name,
+                    &format!("{}:{}", account_id, key.public_key),
+                );
+                match password {
+                    Ok((pas, _)) => Some(pas),
+                    Err(_) => None,
+                }
             })
+            .collect::<Vec<_>>()
     };
-    Ok(password)
+    Ok(password_list)
 }
 
-pub fn account_key_pair_from_keychain(
+pub fn get_account_key_pair_from_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
-    credentials_home_dir: &std::path::PathBuf,
-) -> color_eyre::eyre::Result<Option<crate::transaction_signature_options::AccountKeyPair>> {
+    credentials_home_dir: &std::path::Path,
+) -> color_eyre::eyre::Result<crate::transaction_signature_options::AccountKeyPair> {
     let data_path =
-        get_account_properties_data_path(network_config, account_id, credentials_home_dir, false)?;
-    if data_path.exists() {
-        let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
-        let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
-            serde_json::from_str(&data)
-                .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
-        return Ok(Some(account_key_pair));
-    }
-    Ok(None)
+        get_account_key_pair_data_path(network_config, account_id, credentials_home_dir)?;
+    let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
+    let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
+        serde_json::from_str(&data)
+            .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
+    Ok(account_key_pair)
+}
+
+fn get_account_key_pair_data_path(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    credentials_home_dir: &std::path::Path,
+) -> color_eyre::eyre::Result<std::path::PathBuf> {
+    let check_if_seed_phrase_exists = false;
+    get_account_properties_data_path(
+        network_config,
+        account_id,
+        credentials_home_dir,
+        check_if_seed_phrase_exists,
+    )
 }
 
 pub fn get_account_properties_data_path(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
-    credentials_home_dir: &std::path::PathBuf,
+    credentials_home_dir: &std::path::Path,
     check_if_seed_phrase_exists: bool,
 ) -> color_eyre::eyre::Result<std::path::PathBuf> {
     let file_name = format!("{}.json", account_id);
@@ -228,11 +239,15 @@ pub fn get_account_properties_data_path(
                     std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
                 if serde_json::from_str::<crate::common::KeyPairProperties>(&data).is_ok() {
                     return Ok(data_path);
+                } else {
+                    return Err(color_eyre::eyre::Report::msg(format!(
+                        "There are no master seed phrase in keychain to export for account <{account_id}>."
+                    )));
                 }
             }
         }
     }
     Err(color_eyre::eyre::Report::msg(format!(
-        "The keychain for account <{account_id}> does not contain the path to the master seed phrase or access key."
+        "There are no access keys in keychain to export for account <{account_id}>."
     )))
 }
