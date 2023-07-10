@@ -140,10 +140,9 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 let credentials_home_dir = global_context.config.credentials_home_dir.clone();
 
                 move |outcome_view, _network_config| {
-                    let new_account_id = outcome_view.transaction.receiver_id.clone();
                     crate::common::update_used_account_list_as_signer(
                         &credentials_home_dir,
-                        new_account_id,
+                        &outcome_view.transaction.receiver_id,
                     );
                     Ok(())
                 }
