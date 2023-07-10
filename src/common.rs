@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 use std::str::FromStr;
@@ -9,7 +10,7 @@ use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyP
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
-use inquire::Select;
+use inquire::{Select, Text};
 use strum::IntoEnumIterator;
 
 pub fn get_near_exec_path() -> String {
@@ -568,7 +569,7 @@ fn need_check_account() -> bool {
     select_choose_input == ConfirmOptions::Yes
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct KeyPairProperties {
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     pub master_seed_phrase: String,
@@ -1777,6 +1778,176 @@ pub impl near_primitives::views::CallResult {
         }
         eprintln!("--------------");
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub struct UsedAccount {
+    pub account_id: near_primitives::types::AccountId,
+    pub used_as_signer: bool,
+}
+
+fn get_used_account_list_path(credentials_home_dir: &std::path::Path) -> std::path::PathBuf {
+    credentials_home_dir.join("accounts.json")
+}
+
+pub fn create_used_account_list_from_keychain(
+    credentials_home_dir: &std::path::Path,
+) -> color_eyre::eyre::Result<()> {
+    let mut used_account_list: std::collections::BTreeSet<near_primitives::types::AccountId> =
+        std::collections::BTreeSet::new();
+    let read_dir =
+        |dir: &std::path::Path| dir.read_dir().map(Iterator::flatten).into_iter().flatten();
+    for network_connection_dir in read_dir(credentials_home_dir) {
+        for entry in read_dir(&network_connection_dir.path()) {
+            match (entry.path().file_stem(), entry.path().extension()) {
+                (Some(file_stem), Some(extension)) if extension == "json" => {
+                    if let Ok(account_id) = file_stem.to_string_lossy().parse() {
+                        used_account_list.insert(account_id);
+                    }
+                }
+                _ if entry.path().is_dir() => {
+                    if let Ok(account_id) = entry.file_name().to_string_lossy().parse() {
+                        used_account_list.insert(account_id);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    if !used_account_list.is_empty() {
+        let used_account_list_path = get_used_account_list_path(credentials_home_dir);
+        let used_account_list_buf = serde_json::to_string(
+            &used_account_list
+                .into_iter()
+                .map(|account_id| UsedAccount {
+                    account_id,
+                    used_as_signer: true,
+                })
+                .collect::<Vec<_>>(),
+        )?;
+        std::fs::write(&used_account_list_path, used_account_list_buf).wrap_err_with(|| {
+            format!(
+                "Failed to write to file: {}",
+                used_account_list_path.display()
+            )
+        })?;
+    }
+    Ok(())
+}
+
+pub fn update_used_account_list_as_signer(
+    credentials_home_dir: &std::path::Path,
+    account_id: &near_primitives::types::AccountId,
+) {
+    let account_is_signer = true;
+    update_used_account_list(credentials_home_dir, account_id, account_is_signer);
+}
+
+pub fn update_used_account_list_as_non_signer(
+    credentials_home_dir: &std::path::Path,
+    account_id: &near_primitives::types::AccountId,
+) {
+    let account_is_signer = false;
+    update_used_account_list(credentials_home_dir, account_id, account_is_signer);
+}
+
+fn update_used_account_list(
+    credentials_home_dir: &std::path::Path,
+    account_id: &near_primitives::types::AccountId,
+    account_is_signer: bool,
+) {
+    let mut used_account_list = get_used_account_list(credentials_home_dir);
+
+    let used_account = if let Some(mut used_account) = used_account_list
+        .iter()
+        .position(|used_account| &used_account.account_id == account_id)
+        .and_then(|position| used_account_list.remove(position))
+    {
+        used_account.used_as_signer |= account_is_signer;
+        used_account
+    } else {
+        UsedAccount {
+            account_id: account_id.clone(),
+            used_as_signer: account_is_signer,
+        }
+    };
+    used_account_list.push_front(used_account);
+
+    let used_account_list_path = get_used_account_list_path(credentials_home_dir);
+    if let Ok(used_account_list_buf) = serde_json::to_string(&used_account_list) {
+        let _ = std::fs::write(used_account_list_path, used_account_list_buf);
+    }
+}
+
+pub fn get_used_account_list(credentials_home_dir: &std::path::Path) -> VecDeque<UsedAccount> {
+    let used_account_list_path = get_used_account_list_path(credentials_home_dir);
+    serde_json::from_str(
+        std::fs::read_to_string(used_account_list_path)
+            .as_deref()
+            .unwrap_or("[]"),
+    )
+    .unwrap_or_default()
+}
+
+pub fn is_used_account_list_exist(credentials_home_dir: &std::path::Path) -> bool {
+    get_used_account_list_path(credentials_home_dir).exists()
+}
+
+pub fn input_signer_account_id_from_used_account_list(
+    credentials_home_dir: &std::path::Path,
+    message: &str,
+) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+    let account_is_signer = true;
+    input_account_id_from_used_account_list(credentials_home_dir, message, account_is_signer)
+}
+
+pub fn input_non_signer_account_id_from_used_account_list(
+    credentials_home_dir: &std::path::Path,
+    message: &str,
+) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+    let account_is_signer = false;
+    input_account_id_from_used_account_list(credentials_home_dir, message, account_is_signer)
+}
+
+fn input_account_id_from_used_account_list(
+    credentials_home_dir: &std::path::Path,
+    message: &str,
+    account_is_signer: bool,
+) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+    let used_account_list = get_used_account_list(credentials_home_dir)
+        .into_iter()
+        .filter(|account| !account_is_signer || account.used_as_signer)
+        .map(|account| account.account_id.to_string())
+        .collect::<Vec<_>>();
+    let account_id_str = match Text::new(message)
+        .with_autocomplete(move |val: &str| {
+            Ok(used_account_list
+                .iter()
+                .filter(|s| s.contains(val))
+                .cloned()
+                .collect())
+        })
+        .with_validator(|account_id_str: &str| {
+            match near_primitives::types::AccountId::validate(account_id_str) {
+                Ok(_) => Ok(inquire::validator::Validation::Valid),
+                Err(err) => Ok(inquire::validator::Validation::Invalid(
+                    inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
+                )),
+            }
+        })
+        .prompt()
+    {
+        Ok(value) => value,
+        Err(
+            inquire::error::InquireError::OperationCanceled
+            | inquire::error::InquireError::OperationInterrupted,
+        ) => return Ok(None),
+        Err(err) => return Err(err.into()),
+    };
+    let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;
+    update_used_account_list(credentials_home_dir, account_id.as_ref(), account_is_signer);
+    Ok(Some(account_id))
 }
 
 #[cfg(test)]

@@ -7,6 +7,7 @@ use crate::common::JsonRpcClientExt;
 #[interactive_clap(input_context = super::TokensCommandsContext)]
 #[interactive_clap(output_context = ViewNftAssetsContext)]
 pub struct ViewNftAssets {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is the nft-contract account ID?
     nft_contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
@@ -59,5 +60,16 @@ impl ViewNftAssetsContext {
 impl From<ViewNftAssetsContext> for crate::network_view_at_block::ArgsForViewContext {
     fn from(item: ViewNftAssetsContext) -> Self {
         item.0
+    }
+}
+
+impl ViewNftAssets {
+    pub fn input_nft_contract_account_id(
+        context: &super::TokensCommandsContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        crate::common::input_non_signer_account_id_from_used_account_list(
+            &context.global_context.config.credentials_home_dir,
+            "What is the nft-contract account ID?",
+        )
     }
 }

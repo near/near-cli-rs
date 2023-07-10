@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use inquire::{CustomType, Select};
+use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::ContractContext)]
@@ -43,8 +43,15 @@ impl DepositArgs {
         context: &super::ContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
-            let receiver_account_id: crate::types::account_id::AccountId =
-                CustomType::new("Which account ID do you want to add a deposit to?").prompt()?;
+            let receiver_account_id = if let Some(account_id) =
+                crate::common::input_signer_account_id_from_used_account_list(
+                    &context.global_context.config.credentials_home_dir,
+                    "Which account ID do you want to add a deposit to?",
+                )? {
+                account_id
+            } else {
+                return Ok(None);
+            };
 
             if context.global_context.offline {
                 return Ok(Some(receiver_account_id));
@@ -162,12 +169,9 @@ impl SignerAccountId {
     fn input_signer_account_id(
         context: &DepositArgsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        Ok(Some(
-            CustomType::<crate::types::account_id::AccountId>::new(
-                "What is the signer account ID?",
-            )
-            .with_default(context.receiver_account_id.clone().into())
-            .prompt()?,
-        ))
+        crate::common::input_signer_account_id_from_used_account_list(
+            &context.global_context.config.credentials_home_dir,
+            "What is the signer account ID?",
+        )
     }
 }

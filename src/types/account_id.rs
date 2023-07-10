@@ -36,6 +36,12 @@ impl AsRef<str> for AccountId {
     }
 }
 
+impl AsRef<near_primitives::types::AccountId> for AccountId {
+    fn as_ref(&self) -> &near_primitives::types::AccountId {
+        &self.0
+    }
+}
+
 impl interactive_clap::ToCli for AccountId {
     type CliVariant = AccountId;
 }

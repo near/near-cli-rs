@@ -8,6 +8,7 @@ mod view_storage_balance;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractContext)]
 pub struct Contract {
+    #[interactive_clap(skip_default_input_arg)]
     /// Which contract account ID do you want to manage the storage deposit for?
     contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
@@ -40,6 +41,17 @@ pub type GetContractAccountId = std::sync::Arc<
         &crate::config::NetworkConfig,
     ) -> color_eyre::eyre::Result<near_primitives::types::AccountId>,
 >;
+
+impl Contract {
+    pub fn input_contract_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        crate::common::input_non_signer_account_id_from_used_account_list(
+            &context.config.credentials_home_dir,
+            "Which contract account ID do you want to manage the storage deposit for?",
+        )
+    }
+}
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = ContractContext)]

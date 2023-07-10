@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use inquire::CustomType;
 use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -136,6 +135,19 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 }
             });
 
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback =
+            std::sync::Arc::new({
+                let credentials_home_dir = global_context.config.credentials_home_dir.clone();
+
+                move |outcome_view, _network_config| {
+                    crate::common::update_used_account_list_as_signer(
+                        &credentials_home_dir,
+                        &outcome_view.transaction.receiver_id,
+                    );
+                    Ok(())
+                }
+            });
+
         Self {
             global_context,
             on_after_getting_network_callback,
@@ -143,9 +155,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
-            on_after_sending_transaction_callback: std::sync::Arc::new(
-                |_outcome_view, _network_config| Ok(()),
-            ),
+            on_after_sending_transaction_callback,
         }
     }
 }
@@ -162,16 +172,11 @@ impl SignerAccountId {
         if !parent_account_id.0.is_top_level() {
             Ok(Some(parent_account_id))
         } else {
-            Self::input_account_id(context)
+            crate::common::input_signer_account_id_from_used_account_list(
+                &context.global_context.config.credentials_home_dir,
+                "What is the signer account ID?",
+            )
         }
-    }
-
-    fn input_account_id(
-        _context: &super::AccountPropertiesContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let signer_account_id: crate::types::account_id::AccountId =
-            CustomType::new("What is the signer account ID?").prompt()?;
-        Ok(Some(signer_account_id))
     }
 }
 
