@@ -31,11 +31,11 @@ impl ExportAccountFromSeedPhraseContext {
                             )
                         {
                             for password in password_list {
-                                let result_key_pair_properties =
+                                if let Ok(key_pair_properties) =
                                     serde_json::from_slice::<crate::common::KeyPairProperties>(
                                         &password,
-                                    );
-                                if let Ok(key_pair_properties) = result_key_pair_properties {
+                                    )
+                                {
                                     println!(
                                         "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
                                         previous_context.account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
