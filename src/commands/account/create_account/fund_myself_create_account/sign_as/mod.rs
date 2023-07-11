@@ -140,12 +140,10 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 let credentials_home_dir = global_context.config.credentials_home_dir.clone();
 
                 move |outcome_view, _network_config| {
-                    let new_account_id = outcome_view.transaction.receiver_id.clone();
-                    crate::common::update_used_account_list(
+                    crate::common::update_used_account_list_as_signer(
                         &credentials_home_dir,
-                        new_account_id,
-                        true,
-                    )?;
+                        &outcome_view.transaction.receiver_id,
+                    );
                     Ok(())
                 }
             });
@@ -174,13 +172,10 @@ impl SignerAccountId {
         if !parent_account_id.0.is_top_level() {
             Ok(Some(parent_account_id))
         } else {
-            Ok(Some(
-                crate::common::input_account_id_from_used_account_list(
-                    &context.global_context.config.credentials_home_dir,
-                    "What is the signer account ID?",
-                    true,
-                )?,
-            ))
+            crate::common::input_signer_account_id_from_used_account_list(
+                &context.global_context.config.credentials_home_dir,
+                "What is the signer account ID?",
+            )
         }
     }
 }
