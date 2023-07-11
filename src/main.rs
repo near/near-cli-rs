@@ -100,7 +100,7 @@ fn main() -> crate::common::CliResult {
             if let clap::error::ErrorKind::UnknownArgument
             | clap::error::ErrorKind::InvalidSubcommand = error.kind()
             {
-                return crate::common::try_external_subcommand_execution(error);
+                return crate::common::try_external_subcommand_execution(&error);
             }
             error.exit();
         }

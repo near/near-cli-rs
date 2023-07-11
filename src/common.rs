@@ -1394,7 +1394,7 @@ pub fn write_config_toml(config: crate::config::Config) -> CliResult {
     Ok(())
 }
 
-pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
+pub fn try_external_subcommand_execution(error: &clap::Error) -> CliResult {
     let (subcommand, args) = {
         let mut args = std::env::args().skip(1);
         let subcommand = args

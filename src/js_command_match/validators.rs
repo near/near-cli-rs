@@ -8,11 +8,17 @@ pub struct ValidatorsArgs {
 
 impl ValidatorsArgs {
     pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
+        let epoch = if let "current" = self.epoch.as_ref() {
+            "now"
+        } else {
+            &self.epoch
+        };
         vec![
+            "validator".to_owned(), //XXX extension name without "near-"
             "validators".to_owned(),
             "network-config".to_owned(),
             network_config,
-            self.epoch.to_owned(),
+            epoch.to_owned(),
         ]
     }
 }
