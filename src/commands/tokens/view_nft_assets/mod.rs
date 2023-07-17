@@ -23,7 +23,7 @@ impl ViewNftAssetsContext {
         previous_context: super::TokensCommandsContext,
         scope: &<ViewNftAssets as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let owner_account_id = previous_context.owner_account_id;
+        let owner_account_id = previous_context.owner_account_id.clone();
         let nft_contract_account_id: near_primitives::types::AccountId =
             scope.nft_contract_account_id.clone().into();
 
@@ -53,6 +53,7 @@ impl ViewNftAssetsContext {
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.global_context.config,
             on_after_getting_block_reference_callback,
+            account_id: crate::types::account_id::AccountId(previous_context.owner_account_id),
         }))
     }
 }

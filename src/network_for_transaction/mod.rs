@@ -138,7 +138,7 @@ impl NetworkForTransactionArgs {
     fn input_network_name(
         context: &crate::commands::ActionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&context.global_context.config)
+        crate::common::input_network_name(&context.global_context.config, None)
     }
 
     pub fn get_network_config(

@@ -23,7 +23,7 @@ impl ViewFtBalanceContext {
         previous_context: super::TokensCommandsContext,
         scope: &<ViewFtBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let owner_account_id = previous_context.owner_account_id;
+        let owner_account_id = previous_context.owner_account_id.clone();
         let ft_contract_account_id: near_primitives::types::AccountId =
             scope.ft_contract_account_id.clone().into();
 
@@ -75,6 +75,7 @@ impl ViewFtBalanceContext {
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.global_context.config,
             on_after_getting_block_reference_callback,
+            account_id: previous_context.owner_account_id.into(),
         }))
     }
 }

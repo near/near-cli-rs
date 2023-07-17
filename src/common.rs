@@ -1572,10 +1572,40 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
     table.printstd();
 }
 
+/// sort network names based on account_id if provided
+/// if account_id is not provided, sort based on network name
+/// this is to make sure that the default network is always the same
+/// otherwise, sort the network names which maps to the same account_id to the top of the list
 pub fn input_network_name(
     config: &crate::config::Config,
+    account_id: Option<&crate::types::account_id::AccountId>,
 ) -> color_eyre::eyre::Result<Option<String>> {
-    let variants = config.network_connection.keys().collect::<Vec<_>>();
+    let default_variants: Vec<_> = config.network_connection.keys().collect();
+
+    let variants = match account_id {
+        Some(account_id) => {
+            let account_id_str =
+                <crate::types::account_id::AccountId as AsRef<str>>::as_ref(account_id);
+            let last_prefix = account_id_str.rsplit('.').next();
+            let (mut matches, non_matches): (Vec<_>, Vec<_>) = config
+                .network_connection
+                .iter()
+                .map(|(k, _)| k)
+                .partition(|k| match last_prefix {
+                    Some(prefix) => k.contains(prefix),
+                    _ => false,
+                });
+            if matches.is_empty() {
+                default_variants
+            } else {
+                matches.sort();
+                matches.extend(non_matches);
+                matches
+            }
+        }
+        None => default_variants,
+    };
+
     let select_submit = Select::new("What is the name of the network?", variants).prompt();
     match select_submit {
         Ok(value) => Ok(Some(value.clone())),

@@ -8,6 +8,7 @@ pub type OnAfterGettingBlockReferenceCallback =
 #[derive(Clone)]
 pub struct ArgsForViewContext {
     pub config: crate::config::Config,
+    pub account_id: crate::types::account_id::AccountId,
     pub on_after_getting_block_reference_callback: OnAfterGettingBlockReferenceCallback,
 }
 
@@ -50,7 +51,7 @@ impl NetworkViewAtBlockArgs {
     fn input_network_name(
         context: &ArgsForViewContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&context.config)
+        crate::common::input_network_name(&context.config, Some(&context.account_id))
     }
 }
 
