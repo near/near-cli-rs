@@ -1,5 +1,8 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+mod withdraw;
+mod withdraw_all;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = DelegateStakeContext)]
@@ -58,8 +61,13 @@ pub enum DelegateStakingCommand {
     /// The transfer is carried out in NEAR tokens
     Unstake,
     #[strum_discriminants(strum(
-        message = "withdraw   - Withdrawing the non-staking balance for this account."
+        message = "withdraw        - Withdrawing the non staked balance for given account."
     ))]
-    /// The transfer is carried out in NEAR tokens
-    Withdraw,
+    /// Withdrawing the non staked balance for given account.
+    Withdraw(self::withdraw::Withdraw),
+    #[strum_discriminants(strum(
+        message = "withdraw-all    - Withdrawing the entire unstaked balance from the predecessor account."
+    ))]
+    /// Withdrawing the entire unstaked balance from the predecessor account.
+    WithdrawAll(self::withdraw_all::WithdrawAll),
 }
