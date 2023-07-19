@@ -2,8 +2,10 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::DelegateStakeContext)]
-#[interactive_clap(output_context = WithdrawAllContext)]
-pub struct WithdrawAll {
+#[interactive_clap(output_context = UnstakeContext)]
+pub struct Unstake {
+    /// Enter the amount to unstake from the inner account of the predecessor (example: 10NEAR or 0.5near or 10000yoctonear):
+    amount: crate::common::NearBalance,
     #[interactive_clap(skip_default_input_arg)]
     /// What is the signer account ID?
     signer_account_id: crate::types::account_id::AccountId,
@@ -13,16 +15,17 @@ pub struct WithdrawAll {
 }
 
 #[derive(Clone)]
-pub struct WithdrawAllContext(crate::commands::ActionContext);
+pub struct UnstakeContext(crate::commands::ActionContext);
 
-impl WithdrawAllContext {
+impl UnstakeContext {
     pub fn from_previous_context(
         previous_context: super::DelegateStakeContext,
-        scope: &<WithdrawAll as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<Unstake as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let signer = scope.signer_account_id.clone();
         let signer_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
         let validator_account_id = previous_context.validator_account_id.clone();
+        let amount = scope.amount.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
@@ -31,8 +34,12 @@ impl WithdrawAllContext {
                     receiver_id: previous_context.validator_account_id.clone(),
                     actions: vec![near_primitives::transaction::Action::FunctionCall(
                         near_primitives::transaction::FunctionCallAction {
-                            method_name: "withdraw_all".to_string(),
-                            args: vec![],
+                            method_name: "unstake".to_string(),
+                            args: serde_json::json!({
+                                "amount": amount.clone().to_yoctonear().to_string()
+                            })
+                            .to_string()
+                            .into_bytes(),
                             gas: crate::common::NearGas::from_str("300 TeraGas")
                                 .unwrap()
                                 .inner,
@@ -42,11 +49,12 @@ impl WithdrawAllContext {
                 })
             });
 
+        let amount = scope.amount.clone();
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
                 move |outcome_view, _network_config| {
                     if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                         eprintln!(
-                            "<{signer}> has successfully withdrawn the entire amount from <{validator_account_id}>.", //XXX
+                            "<{signer}> has successfully unstake {amount} from <{validator_account_id}>.",
                         );
                         }
                     Ok(())
@@ -66,13 +74,13 @@ impl WithdrawAllContext {
     }
 }
 
-impl From<WithdrawAllContext> for crate::commands::ActionContext {
-    fn from(item: WithdrawAllContext) -> Self {
+impl From<UnstakeContext> for crate::commands::ActionContext {
+    fn from(item: UnstakeContext) -> Self {
         item.0
     }
 }
 
-impl WithdrawAll {
+impl Unstake {
     pub fn input_signer_account_id(
         context: &super::DelegateStakeContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {

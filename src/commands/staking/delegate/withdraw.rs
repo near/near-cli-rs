@@ -53,7 +53,6 @@ impl WithdrawContext {
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
                 move |outcome_view, _network_config| {
                     if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                        println!("{outcome_view:#?}");
                         eprintln!(
                             "<{signer}> has successfully withdrawn {amount} from <{validator_account_id}>.",
                         );

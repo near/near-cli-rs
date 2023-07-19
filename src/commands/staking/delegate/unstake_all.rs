@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::DelegateStakeContext)]
-#[interactive_clap(output_context = WithdrawAllContext)]
-pub struct WithdrawAll {
+#[interactive_clap(output_context = UnstakeAllContext)]
+pub struct UnstakeAll {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the signer account ID?
     signer_account_id: crate::types::account_id::AccountId,
@@ -13,12 +13,12 @@ pub struct WithdrawAll {
 }
 
 #[derive(Clone)]
-pub struct WithdrawAllContext(crate::commands::ActionContext);
+pub struct UnstakeAllContext(crate::commands::ActionContext);
 
-impl WithdrawAllContext {
+impl UnstakeAllContext {
     pub fn from_previous_context(
         previous_context: super::DelegateStakeContext,
-        scope: &<WithdrawAll as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<UnstakeAll as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let signer = scope.signer_account_id.clone();
         let signer_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
@@ -31,7 +31,7 @@ impl WithdrawAllContext {
                     receiver_id: previous_context.validator_account_id.clone(),
                     actions: vec![near_primitives::transaction::Action::FunctionCall(
                         near_primitives::transaction::FunctionCallAction {
-                            method_name: "withdraw_all".to_string(),
+                            method_name: "unstake_all".to_string(),
                             args: vec![],
                             gas: crate::common::NearGas::from_str("300 TeraGas")
                                 .unwrap()
@@ -46,7 +46,7 @@ impl WithdrawAllContext {
                 move |outcome_view, _network_config| {
                     if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                         eprintln!(
-                            "<{signer}> has successfully withdrawn the entire amount from <{validator_account_id}>.", //XXX
+                            "<{signer}> has successfully unstake the entire amount from <{validator_account_id}>.", //XXX
                         );
                         }
                     Ok(())
@@ -66,13 +66,13 @@ impl WithdrawAllContext {
     }
 }
 
-impl From<WithdrawAllContext> for crate::commands::ActionContext {
-    fn from(item: WithdrawAllContext) -> Self {
+impl From<UnstakeAllContext> for crate::commands::ActionContext {
+    fn from(item: UnstakeAllContext) -> Self {
         item.0
     }
 }
 
-impl WithdrawAll {
+impl UnstakeAll {
     pub fn input_signer_account_id(
         context: &super::DelegateStakeContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {

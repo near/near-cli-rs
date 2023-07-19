@@ -1,5 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+mod unstake;
+mod unstake_all;
 mod withdraw;
 mod withdraw_all;
 
@@ -56,18 +58,23 @@ pub enum DelegateStakingCommand {
     /// The transfer is carried out in NEAR tokens
     Stake,
     #[strum_discriminants(strum(
-        message = "unstake    - Removing delegated stakes from validators."
+        message = "unstake         - Unstaking the given amount from the inner account of the predecessor"
     ))]
-    /// The transfer is carried out in NEAR tokens
-    Unstake,
+    /// Unstaking the given amount from the inner account of the predecessor
+    Unstake(self::unstake::Unstake),
     #[strum_discriminants(strum(
-        message = "withdraw        - Withdrawing the non staked balance for given account."
+        message = "unstake-all     - Unstaking all staked balance from the inner account of the predecessor"
     ))]
-    /// Withdrawing the non staked balance for given account.
+    /// Unstaking all staked balance from the inner account of the predecessor
+    UnstakeAll(self::unstake_all::UnstakeAll),
+    #[strum_discriminants(strum(
+        message = "withdraw        - Withdrawing the non staked balance for given account"
+    ))]
+    /// Withdrawing the non staked balance for given account
     Withdraw(self::withdraw::Withdraw),
     #[strum_discriminants(strum(
-        message = "withdraw-all    - Withdrawing the entire unstaked balance from the predecessor account."
+        message = "withdraw-all    - Withdrawing the entire unstaked balance from the predecessor account"
     ))]
-    /// Withdrawing the entire unstaked balance from the predecessor account.
+    /// Withdrawing the entire unstaked balance from the predecessor account
     WithdrawAll(self::withdraw_all::WithdrawAll),
 }
