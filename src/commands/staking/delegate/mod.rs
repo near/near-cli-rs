@@ -2,6 +2,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod unstake;
 mod unstake_all;
+mod view_balance;
 mod withdraw;
 mod withdraw_all;
 
@@ -51,11 +52,15 @@ impl DelegateStake {
 #[non_exhaustive]
 /// Select actions with delegated staking:
 pub enum DelegateStakingCommand {
-    #[strum_discriminants(strum(message = "view       - "))]
-    /// The transfer is carried out in NEAR tokens
-    View,
-    #[strum_discriminants(strum(message = "stake      - "))]
-    /// The transfer is carried out in NEAR tokens
+    #[strum_discriminants(strum(
+        message = "view-balance    - View the total balance for a given account"
+    ))]
+    /// View the total balance for a given account
+    ViewBalance(self::view_balance::ViewBalance),
+    #[strum_discriminants(strum(
+        message = "stake           - Staking the given amount from the inner account of the predecessor"
+    ))]
+    /// Staking the given amount from the inner account of the predecessor
     Stake,
     #[strum_discriminants(strum(
         message = "unstake         - Unstaking the given amount from the inner account of the predecessor"
