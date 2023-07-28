@@ -1,6 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod delegate;
+mod validator_list;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -15,7 +16,12 @@ pub struct Staking {
 #[non_exhaustive]
 /// Select the type of stake:
 pub enum StakingType {
-    #[strum_discriminants(strum(message = "delegate         - "))]
-    ///
+    #[strum_discriminants(strum(
+        message = "validator-list   - View the list of validators to delegate"
+    ))]
+    /// View the list of validators to delegate
+    ValidatorList(self::validator_list::ValidatorList),
+    #[strum_discriminants(strum(message = "delegate         - Delegation management"))]
+    /// Delegation management
     Delegate(self::delegate::DelegateStake),
 }
