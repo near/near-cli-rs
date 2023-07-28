@@ -27,64 +27,9 @@ impl ViewBalanceContext {
             let validator_id = previous_context.validator_account_id.clone();
 
             move |network_config, block_reference| {
-                let json_rpc_client = network_config.json_rpc_client();
-                let user_staked_balance: u128 = json_rpc_client
-                    .blocking_call_view_function(
-                        &previous_context.validator_account_id,
-                        "get_account_staked_balance",
-                        serde_json::json!({
-                            "account_id": account_id.to_string(),
-                        })
-                        .to_string()
-                        .into_bytes(),
-                        block_reference.clone(),
-                    )
-                    .wrap_err(
-                        "Failed to fetch query for view method: 'get_account_staked_balance'"
-                    )?
-                    .parse_result_from_json::<String>()
-                    .wrap_err(
-                        "Failed to parse return value of view function call for String."
-                    )?
-                    .parse()?;
-                let user_unstaked_balance: u128 = json_rpc_client
-                    .blocking_call_view_function(
-                        &previous_context.validator_account_id,
-                        "get_account_unstaked_balance",
-                        serde_json::json!({
-                            "account_id": account_id.to_string(),
-                        })
-                        .to_string()
-                        .into_bytes(),
-                        block_reference.clone(),
-                    )
-                    .wrap_err(
-                        "Failed to fetch query for view method: 'get_account_unstaked_balance'"
-                    )?
-                    .parse_result_from_json::<String>()
-                    .wrap_err(
-                        "Failed to parse return value of view function call for String."
-                    )?
-                    .parse()?;
-                let user_total_balance: u128 = json_rpc_client
-                    .blocking_call_view_function(
-                        &previous_context.validator_account_id,
-                        "get_account_total_balance",
-                        serde_json::json!({
-                            "account_id": account_id.to_string(),
-                        })
-                        .to_string()
-                        .into_bytes(),
-                        block_reference.clone(),
-                    )
-                    .wrap_err(
-                        "Failed to fetch query for view method: 'get_account_total_balance'"
-                    )?
-                    .parse_result_from_json::<String>()
-                    .wrap_err(
-                        "Failed to parse return value of view function call for String."
-                    )?
-                    .parse()?;
+                let user_staked_balance: u128 = get_user_staked_balance(network_config, block_reference, &previous_context.validator_account_id, &account_id)?;
+                let user_unstaked_balance: u128 = get_user_unstaked_balance(network_config, block_reference, &previous_context.validator_account_id, &account_id)?;
+                let user_total_balance: u128 = get_user_total_balance(network_config, block_reference, &previous_context.validator_account_id, &account_id)?;
 
                 eprintln!("Balance on validator <{validator_id}> for <{account_id}>:");
                 eprintln!("      Staked balance:     {:>38}", crate::common::NearBalance::from_yoctonear(user_staked_balance).to_string());
@@ -116,4 +61,76 @@ impl ViewBalance {
             "On which account ID do you need to view the total balance?",
         )
     }
+}
+
+pub fn get_user_staked_balance(
+    network_config: &crate::config::NetworkConfig,
+    block_reference: &near_primitives::types::BlockReference,
+    validator_account_id: &near_primitives::types::AccountId,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<u128> {
+    Ok(network_config
+        .json_rpc_client()
+        .blocking_call_view_function(
+            validator_account_id,
+            "get_account_staked_balance",
+            serde_json::json!({
+                "account_id": account_id,
+            })
+            .to_string()
+            .into_bytes(),
+            block_reference.clone(),
+        )
+        .wrap_err("Failed to fetch query for view method: 'get_account_staked_balance'")?
+        .parse_result_from_json::<String>()
+        .wrap_err("Failed to parse return value of view function call for String.")?
+        .parse::<u128>()?)
+}
+
+pub fn get_user_unstaked_balance(
+    network_config: &crate::config::NetworkConfig,
+    block_reference: &near_primitives::types::BlockReference,
+    validator_account_id: &near_primitives::types::AccountId,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<u128> {
+    Ok(network_config
+        .json_rpc_client()
+        .blocking_call_view_function(
+            validator_account_id,
+            "get_account_unstaked_balance",
+            serde_json::json!({
+                "account_id": account_id,
+            })
+            .to_string()
+            .into_bytes(),
+            block_reference.clone(),
+        )
+        .wrap_err("Failed to fetch query for view method: 'get_account_unstaked_balance'")?
+        .parse_result_from_json::<String>()
+        .wrap_err("Failed to parse return value of view function call for String.")?
+        .parse::<u128>()?)
+}
+
+pub fn get_user_total_balance(
+    network_config: &crate::config::NetworkConfig,
+    block_reference: &near_primitives::types::BlockReference,
+    validator_account_id: &near_primitives::types::AccountId,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<u128> {
+    Ok(network_config
+        .json_rpc_client()
+        .blocking_call_view_function(
+            validator_account_id,
+            "get_account_total_balance",
+            serde_json::json!({
+                "account_id": account_id,
+            })
+            .to_string()
+            .into_bytes(),
+            block_reference.clone(),
+        )
+        .wrap_err("Failed to fetch query for view method: 'get_account_total_balance'")?
+        .parse_result_from_json::<String>()
+        .wrap_err("Failed to parse return value of view function call for String.")?
+        .parse::<u128>()?)
 }
