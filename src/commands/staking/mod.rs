@@ -1,6 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod delegate;
+pub mod delegate;
 mod validator_list;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]

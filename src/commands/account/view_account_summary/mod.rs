@@ -3,6 +3,8 @@ use color_eyre::eyre::Context;
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
 
+use crate::commands::staking::delegate::view_balance;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ViewAccountSummaryContext)]
@@ -52,10 +54,29 @@ impl ViewAccountSummaryContext {
                     })?
                     .access_key_list_view()?;
 
+                let validator_list = crate::common::get_validator_list(network_config)?;
+                let delegated_stake: std::collections::HashMap<near_primitives::types::AccountId, crate::common::NearBalance> = validator_list
+                    .into_iter()
+                    .filter_map(|validator_table| {
+                        let user_total_balance = match view_balance::get_user_staked_balance(network_config, block_reference, &validator_table.validator_id, &account_id) {
+                            Ok(balance) => {
+                                if balance == 0 {
+                                    return None;
+                                } else {
+                                    crate::common::NearBalance::from_yoctonear(balance)
+                                }
+                            },
+                            Err(_) => return None,
+                        };
+                        Some((validator_table.validator_id, user_total_balance))
+                    })
+                    .collect();
+
                 crate::common::display_account_info(
                     &rpc_query_response.block_hash,
                     &rpc_query_response.block_height,
                     &account_id,
+                    delegated_stake,
                     &account_view,
                     &access_key_list.keys,
                 );

@@ -2,7 +2,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod unstake;
 mod unstake_all;
-mod view_balance;
+pub mod view_balance;
 mod withdraw;
 mod withdraw_all;
 
