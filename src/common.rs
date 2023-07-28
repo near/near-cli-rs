@@ -1461,24 +1461,6 @@ fn path_directories() -> Vec<std::path::PathBuf> {
     dirs
 }
 
-pub fn display_validators_info(network_config: &crate::config::NetworkConfig) -> crate::CliResult {
-    let mut table = Table::new();
-    table.set_titles(prettytable::row![Fg=>"#", "Validator Id", "Fee", "Delegators", "Stake"]);
-
-    for (index, validator) in get_validator_list(network_config)?.into_iter().enumerate() {
-        table.add_row(prettytable::row![
-            Fg->index + 1,
-            validator.validator_id,
-            format!("{:>6.2} %", validator.fee.numerator * 100 / validator.fee.denominator),
-            validator.delegators,
-            crate::common::NearBalance::from_yoctonear(validator.stake),
-        ]);
-    }
-    table.set_format(*prettytable::format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
-    table.printstd();
-    Ok(())
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidatorsTable {
     pub validator_id: near_primitives::types::AccountId,
