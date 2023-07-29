@@ -1,9 +1,7 @@
 use color_eyre::eyre::Context;
+use futures::StreamExt;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
-
-use crate::commands::staking::delegate::view_balance;
+use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -29,8 +27,9 @@ impl ViewAccountSummaryContext {
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             move |network_config, block_reference| {
-                let rpc_query_response = network_config
-                    .json_rpc_client()
+                let json_rpc_client = network_config.json_rpc_client();
+
+                let rpc_query_response = json_rpc_client
                     .blocking_call_view_account(&account_id.clone(), block_reference.clone())
                     .wrap_err_with(|| {
                         format!(
@@ -40,8 +39,7 @@ impl ViewAccountSummaryContext {
                     })?;
                 let account_view = rpc_query_response.account_view()?;
 
-                let access_key_list = network_config
-                    .json_rpc_client()
+                let access_key_list = json_rpc_client
                     .blocking_call_view_access_key_list(
                         &account_id,
                         block_reference.clone(),
@@ -54,23 +52,32 @@ impl ViewAccountSummaryContext {
                     })?
                     .access_key_list_view()?;
 
-                let validator_list = crate::common::get_validator_list(network_config)?;
-                let delegated_stake: std::collections::HashMap<near_primitives::types::AccountId, crate::common::NearBalance> = validator_list
-                    .into_iter()
-                    .filter_map(|validator_table| {
-                        let user_total_balance = match view_balance::get_user_staked_balance(network_config, block_reference, &validator_table.validator_id, &account_id) {
-                            Ok(balance) => {
-                                if balance == 0 {
-                                    return None;
-                                } else {
-                                    crate::common::NearBalance::from_yoctonear(balance)
-                                }
-                            },
-                            Err(_) => return None,
-                        };
-                        Some((validator_table.validator_id, user_total_balance))
+                let validators_stake = crate::common::get_validators_stake(&json_rpc_client)?;
+
+                let runtime = tokio::runtime::Builder::new_multi_thread()
+                    .enable_all()
+                    .build()?;
+                let chunk_size = 15;
+                let concurrency = 10;
+
+                let delegated_stake: std::collections::HashMap<near_primitives::types::AccountId, crate::common::NearBalance> = runtime
+                .block_on(
+                    futures::stream::iter(validators_stake
+                        .iter()
+                        .collect::<Vec<_>>()
+                        .chunks(chunk_size),
+                    )
+                    .map(|validators| async {
+                        get_delegated_stake(&json_rpc_client, block_reference, &account_id, validators).await
                     })
-                    .collect();
+                    .buffer_unordered(concurrency)
+                    .collect::<Vec<Result<_, _>>>(),
+                )
+                .into_iter()
+                .try_fold(std::collections::HashMap::new(), |mut acc, x| {
+                    acc.extend(x?);
+                    Ok::<_, color_eyre::eyre::Error>(acc)
+                })?;
 
                 crate::common::display_account_info(
                     &rpc_query_response.block_hash,
@@ -105,4 +112,68 @@ impl ViewAccountSummary {
             "What Account ID do you need to view?",
         )
     }
+}
+
+async fn get_delegated_stake(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    block_reference: &near_primitives::types::BlockReference,
+    account_id: &near_primitives::types::AccountId,
+    validators: &[(&near_primitives::types::AccountId, &u128)],
+) -> color_eyre::Result<
+    std::collections::HashMap<near_primitives::types::AccountId, crate::common::NearBalance>,
+> {
+    let mut validators_stake: std::collections::HashMap<
+        near_primitives::types::AccountId,
+        crate::common::NearBalance,
+    > = std::collections::HashMap::new();
+    for (validator_id, _) in validators {
+        let validator_id = *validator_id;
+        let user_staked_balance =
+            get_user_staked_balance(json_rpc_client, block_reference, validator_id, account_id)
+                .await
+                .ok();
+        let balance = if let Some(balance) = user_staked_balance {
+            if balance == 0 {
+                continue;
+            } else {
+                balance
+            }
+        } else {
+            continue;
+        };
+        validators_stake.insert(
+            validator_id.clone(),
+            crate::common::NearBalance::from_yoctonear(balance),
+        );
+    }
+    Ok(validators_stake)
+}
+
+async fn get_user_staked_balance(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    block_reference: &near_primitives::types::BlockReference,
+    validator_account_id: &near_primitives::types::AccountId,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<u128> {
+    Ok(json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: block_reference.clone(),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: validator_account_id.clone(),
+                method_name: "get_account_staked_balance".to_string(),
+                args: near_primitives::types::FunctionArgs::from(
+                    serde_json::json!({
+                        "account_id": account_id,
+                    })
+                    .to_string()
+                    .into_bytes(),
+                ),
+            },
+        })
+        .await
+        .wrap_err("Failed to fetch query for view method: 'get_account_staked_balance'")?
+        .call_result()?
+        .parse_result_from_json::<String>()
+        .wrap_err("Failed to parse return value of view function call for String.")?
+        .parse::<u128>()?)
 }
