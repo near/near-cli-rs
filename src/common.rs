@@ -101,7 +101,7 @@ impl std::fmt::Display for NearBalance {
                 f,
                 "{}.{} NEAR",
                 self.yoctonear_amount / ONE_NEAR,
-                format!("{:0>24}", (self.yoctonear_amount % ONE_NEAR)) //.trim_end_matches('0') XXX
+                format!("{:0>24}", (self.yoctonear_amount % ONE_NEAR)).trim_end_matches('0')
             )
         }
     }
