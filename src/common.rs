@@ -1480,6 +1480,45 @@ pub fn get_validator_list(
 ) -> color_eyre::eyre::Result<Vec<ValidatorsTable>> {
     let json_rpc_client = network_config.json_rpc_client();
 
+    let validators_stake = get_validators_stake(&json_rpc_client)?;
+
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?;
+    let chunk_size = 15;
+    let concurrency = 10;
+
+    let validators_table: std::collections::HashMap<
+        near_primitives::types::AccountId,
+        ValidatorsTable,
+    > = runtime
+        .block_on(
+            futures::stream::iter(
+                validators_stake
+                    .iter()
+                    .collect::<Vec<_>>()
+                    .chunks(chunk_size),
+            )
+            .map(|validators| async { get_validators_table(&json_rpc_client, validators).await })
+            .buffer_unordered(concurrency)
+            .collect::<Vec<Result<_, _>>>(),
+        )
+        .into_iter()
+        .try_fold(std::collections::HashMap::new(), |mut acc, x| {
+            acc.extend(x?);
+            Ok::<_, color_eyre::eyre::Error>(acc)
+        })?;
+
+    let mut validator_list: Vec<ValidatorsTable> = validators_table.into_values().collect();
+    validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
+    Ok(validator_list)
+}
+
+pub fn get_validators_stake(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+) -> color_eyre::eyre::Result<
+    std::collections::HashMap<near_primitives::types::AccountId, near_primitives::types::Balance>,
+> {
     let epoch_validator_info = json_rpc_client
         .blocking_call(
             &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
@@ -1530,44 +1569,10 @@ pub fn get_validator_list(
 
     current_validators_stake.extend(next_validators_stake);
     current_validators_stake.extend(current_proposals_stake);
-
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()?;
-    let chunk_size = 15;
-    let concurrency = 10;
-
-    let combine_validators: std::collections::HashMap<
-        near_primitives::types::AccountId,
-        ValidatorsTable,
-    > = runtime
-        .block_on(
-            futures::stream::iter(
-                current_validators_stake
-                    .iter()
-                    .collect::<Vec<_>>()
-                    .chunks(chunk_size),
-            )
-            .map(
-                |validators: &[(&near_primitives::types::AccountId, &u128)]| async {
-                    get_combine_validators(&json_rpc_client, validators).await
-                },
-            )
-            .buffer_unordered(concurrency)
-            .collect::<Vec<Result<_, _>>>(),
-        )
-        .into_iter()
-        .try_fold(std::collections::HashMap::new(), |mut acc, x| {
-            acc.extend(x?);
-            Ok::<_, color_eyre::eyre::Error>(acc)
-        })?;
-
-    let mut validator_list: Vec<ValidatorsTable> = combine_validators.into_values().collect();
-    validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
-    Ok(validator_list)
+    Ok(current_validators_stake)
 }
 
-async fn get_combine_validators(
+async fn get_validators_table(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     validators: &[(&near_primitives::types::AccountId, &u128)],
 ) -> color_eyre::Result<std::collections::HashMap<near_primitives::types::AccountId, ValidatorsTable>>
