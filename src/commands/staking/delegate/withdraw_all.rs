@@ -63,7 +63,7 @@ impl WithdrawAllContext {
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: "withdraw_all".to_string(),
-                                args: vec![],
+                                args: serde_json::json!({}).to_string().into_bytes(),
                                 gas: crate::common::NearGas::from_str("300 TeraGas")
                                     .unwrap()
                                     .inner,
