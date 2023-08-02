@@ -1,5 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+mod deposit;
+mod deposit_and_stake;
 mod stake;
 mod stake_all;
 mod unstake;
@@ -55,37 +57,47 @@ impl DelegateStake {
 /// Select actions with delegated staking:
 pub enum DelegateStakingCommand {
     #[strum_discriminants(strum(
-        message = "view-balance    - View the total balance for a given account"
+        message = "view-balance         - View the total balance for a given account"
     ))]
     /// View the total balance for a given account
     ViewBalance(self::view_balance::ViewBalance),
     #[strum_discriminants(strum(
-        message = "stake           - Staking the given amount from the inner account of the predecessor"
+        message = "deposit              - Deposits the attached amount into the inner account of the predecessor"
+    ))]
+    /// Deposits the attached amount into the inner account of the predecessor
+    Deposit(self::deposit::Deposit),
+    #[strum_discriminants(strum(
+        message = "deposit-and-stake    - Deposits the attached amount into the inner account of the predecessor and stakes it"
+    ))]
+    /// Deposits the attached amount into the inner account of the predecessor and stakes it
+    DepositAndStake(self::deposit_and_stake::DepositAndStake),
+    #[strum_discriminants(strum(
+        message = "stake                - Staking the given amount from the inner account of the predecessor"
     ))]
     /// Staking the given amount from the inner account of the predecessor
     Stake(self::stake::Stake),
     #[strum_discriminants(strum(
-        message = "stake-all       - Staking all available unstaked balance from the inner account of the predecessor"
+        message = "stake-all            - Staking all available unstaked balance from the inner account of the predecessor"
     ))]
     /// Staking all available unstaked balance from the inner account of the predecessor
     StakeAll(self::stake_all::StakeAll),
     #[strum_discriminants(strum(
-        message = "unstake         - Unstaking the given amount from the inner account of the predecessor"
+        message = "unstake              - Unstaking the given amount from the inner account of the predecessor"
     ))]
     /// Unstaking the given amount from the inner account of the predecessor
     Unstake(self::unstake::Unstake),
     #[strum_discriminants(strum(
-        message = "unstake-all     - Unstaking all staked balance from the inner account of the predecessor"
+        message = "unstake-all          - Unstaking all staked balance from the inner account of the predecessor"
     ))]
     /// Unstaking all staked balance from the inner account of the predecessor
     UnstakeAll(self::unstake_all::UnstakeAll),
     #[strum_discriminants(strum(
-        message = "withdraw        - Withdrawing the non staked balance for given account"
+        message = "withdraw             - Withdrawing the non staked balance for given account"
     ))]
     /// Withdrawing the non staked balance for given account
     Withdraw(self::withdraw::Withdraw),
     #[strum_discriminants(strum(
-        message = "withdraw-all    - Withdrawing the entire unstaked balance from the predecessor account"
+        message = "withdraw-all         - Withdrawing the entire unstaked balance from the predecessor account"
     ))]
     /// Withdrawing the entire unstaked balance from the predecessor account
     WithdrawAll(self::withdraw_all::WithdrawAll),
