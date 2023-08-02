@@ -1,5 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+mod stake;
+mod stake_all;
 mod unstake;
 mod unstake_all;
 pub mod view_balance;
@@ -61,7 +63,12 @@ pub enum DelegateStakingCommand {
         message = "stake           - Staking the given amount from the inner account of the predecessor"
     ))]
     /// Staking the given amount from the inner account of the predecessor
-    Stake,
+    Stake(self::stake::Stake),
+    #[strum_discriminants(strum(
+        message = "stake-all       - Staking all available unstaked balance from the inner account of the predecessor"
+    ))]
+    /// Staking all available unstaked balance from the inner account of the predecessor
+    StakeAll(self::stake_all::StakeAll),
     #[strum_discriminants(strum(
         message = "unstake         - Unstaking the given amount from the inner account of the predecessor"
     ))]
