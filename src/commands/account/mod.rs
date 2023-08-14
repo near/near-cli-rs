@@ -6,6 +6,7 @@ mod delete_account;
 mod delete_key;
 mod import_account;
 mod list_keys;
+pub mod profile_management;
 pub mod storage_management;
 mod view_account_summary;
 
@@ -55,6 +56,11 @@ pub enum AccountActions {
     ))]
     /// Delete an access key from an account
     DeleteKey(self::delete_key::DeleteKeyCommand),
+    #[strum_discriminants(strum(
+        message = "manage-profile          - Profile management: view, update"
+    ))]
+    /// Profile management: view, update
+    ManageProfile(self::profile_management::Contract),
     #[strum_discriminants(strum(
         message = "manage-storage-deposit  - Storage management: deposit, withdrawal, balance review"
     ))]
