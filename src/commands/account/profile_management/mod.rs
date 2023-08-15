@@ -1,5 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+mod update_profile;
 mod view_profile;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -55,5 +56,5 @@ pub enum Actions {
     ViewProfile(self::view_profile::Account),
     #[strum_discriminants(strum(message = "update-profile  - Update profile for the account"))]
     /// Update profile for the account
-    UpdateProfile,
+    UpdateProfile(self::update_profile::UpdateAccountProfile),
 }
