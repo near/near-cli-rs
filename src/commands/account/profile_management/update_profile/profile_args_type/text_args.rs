@@ -21,7 +21,7 @@ impl TextArgsContext {
             global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
             account_id: previous_context.account_id,
-            data: scope.data.clone(),
+            data: scope.data.clone().into_bytes(),
         }))
     }
 }

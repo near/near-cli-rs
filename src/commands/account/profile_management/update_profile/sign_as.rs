@@ -24,7 +24,7 @@ pub struct SignerContext {
     pub global_context: crate::GlobalContext,
     pub get_contract_account_id: super::super::super::storage_management::GetContractAccountId,
     pub account_id: near_primitives::types::AccountId,
-    pub data: String,
+    pub data: Vec<u8>,
     pub signer_account_id: near_primitives::types::AccountId,
 }
 
@@ -59,7 +59,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
                         actions: vec![],
                     };
 
-                    let local_profile: serde_json::Value = serde_json::from_str(&data)?;
+                    let local_profile: serde_json::Value = serde_json::from_slice(&data)?;
                     let remote_profile = match network_config
                     .json_rpc_client()
                     .blocking_call_view_function(

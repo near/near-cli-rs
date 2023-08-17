@@ -1,5 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+mod base64_args;
 mod json_args;
 mod text_args;
 
@@ -18,7 +19,7 @@ pub enum ProfileArgsType {
     TextArgs(self::text_args::TextArgs),
     #[strum_discriminants(strum(message = "base64-args  - Base64-encoded string (e.g. e30=)"))]
     /// Base64-encoded string (e.g. e30=)
-    Base64Args,
+    Base64Args(self::base64_args::Base64Args),
     #[strum_discriminants(strum(
         message = "file-args    - Read from file (e.g. reusable JSON or binary data)"
     ))]
@@ -34,7 +35,7 @@ pub struct ArgsContext {
     pub global_context: crate::GlobalContext,
     pub get_contract_account_id: super::super::super::storage_management::GetContractAccountId,
     pub account_id: near_primitives::types::AccountId,
-    pub data: String,
+    pub data: Vec<u8>,
 }
 
 // impl interactive_clap::ToCli for ProfileArgsType {
