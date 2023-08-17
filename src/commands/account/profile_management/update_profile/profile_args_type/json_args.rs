@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use color_eyre::eyre::WrapErr;
 use inquire::Text;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -7,7 +8,7 @@ use inquire::Text;
 #[interactive_clap(output_context = JsonArgsContext)]
 pub struct JsonArgs {
     #[interactive_clap(skip_default_input_arg)]
-    /// Input valid JSON arguments (e.g. {\"token_id\": \"42\"})"
+    /// Enter valid JSON arguments (e.g. {\"token_id\": \"42\"})":
     data: String,
     #[interactive_clap(named_arg)]
     /// Specify signer account ID
@@ -26,7 +27,10 @@ impl JsonArgsContext {
             global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
             account_id: previous_context.account_id,
-            data: scope.data.clone().into_bytes(),
+            data: serde_json::Value::from_str(&scope.data)
+                .wrap_err("Data not in JSON format!")?
+                .to_string()
+                .into_bytes(),
         }))
     }
 }
@@ -43,7 +47,7 @@ impl JsonArgs {
     ) -> color_eyre::eyre::Result<Option<String>> {
         loop {
             let data =
-                Text::new("Input valid JSON arguments (e.g. {\"token_id\": \"42\"})").prompt()?;
+                Text::new("Enter valid JSON arguments (e.g. {\"token_id\": \"42\"}):").prompt()?;
             if serde_json::Value::from_str(&data).is_ok() {
                 return Ok(Some(data));
             }

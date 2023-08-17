@@ -1,6 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod base64_args;
+mod file_args;
 mod json_args;
 mod text_args;
 
@@ -24,7 +25,7 @@ pub enum ProfileArgsType {
         message = "file-args    - Read from file (e.g. reusable JSON or binary data)"
     ))]
     /// Read from file (e.g. reusable JSON or binary data)
-    FileArgs,
+    FileArgs(self::file_args::FileArgs),
     #[strum_discriminants(strum(message = "manually     - Interactive input of arguments"))]
     /// Interactive input of arguments
     Manually,
@@ -37,77 +38,3 @@ pub struct ArgsContext {
     pub account_id: near_primitives::types::AccountId,
     pub data: Vec<u8>,
 }
-
-// impl interactive_clap::ToCli for ProfileArgsType {
-//     type CliVariant = ProfileArgsType;
-// }
-
-// impl std::str::FromStr for ProfileArgsType {
-//     type Err = String;
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         match s {
-//             "json-args" => Ok(Self::JsonArgs),
-//             "text-args" => Ok(Self::TextArgs),
-//             "base64-args" => Ok(Self::Base64Args),
-//             "file-args" => Ok(Self::FileArgs),
-//             _ => Err("FunctionArgsType: incorrect value entered".to_string()),
-//         }
-//     }
-// }
-
-// impl std::fmt::Display for ProfileArgsType {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         match self {
-//             Self::JsonArgs => write!(f, "json-args"),
-//             Self::TextArgs => write!(f, "text-args"),
-//             Self::Base64Args => write!(f, "base64-args"),
-//             Self::FileArgs => write!(f, "file-args"),
-//         }
-//     }
-// }
-
-// impl std::fmt::Display for FunctionArgsTypeDiscriminants {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         match self {
-//             Self::JsonArgs => write!(f, "json-args"),
-//             Self::TextArgs => write!(f, "text-args"),
-//             Self::Base64Args => write!(f, "base64-args"),
-//             Self::FileArgs => write!(f, "file-args"),
-//         }
-//     }
-// }
-
-// pub fn input_function_args_type() -> color_eyre::eyre::Result<Option<ProfileArgsType>> {
-//     let variants = FunctionArgsTypeDiscriminants::iter().collect::<Vec<_>>();
-//     let selected = Select::new("How would you like to proceed?", variants).prompt()?;
-//     match selected {
-//         FunctionArgsTypeDiscriminants::JsonArgs => Ok(Some(ProfileArgsType::JsonArgs)),
-//         FunctionArgsTypeDiscriminants::TextArgs => Ok(Some(ProfileArgsType::TextArgs)),
-//         FunctionArgsTypeDiscriminants::Base64Args => Ok(Some(ProfileArgsType::Base64Args)),
-//         FunctionArgsTypeDiscriminants::FileArgs => Ok(Some(ProfileArgsType::FileArgs)),
-//     }
-// }
-
-// pub fn function_args(
-//     args: String,
-//     function_args_type: ProfileArgsType,
-// ) -> color_eyre::eyre::Result<Vec<u8>> {
-//     match function_args_type {
-//         super::profile_args_type_c::ProfileArgsType::JsonArgs => {
-//             let data_json =
-//                 serde_json::Value::from_str(&args).wrap_err("Data not in JSON format!")?;
-//             Ok(data_json.to_string().into_bytes())
-//         }
-//         super::profile_args_type_c::ProfileArgsType::TextArgs => Ok(args.into_bytes()),
-//         super::profile_args_type_c::ProfileArgsType::Base64Args => {
-//             Ok(near_primitives::serialize::from_base64(&args)
-//                 .map_err(|_| color_eyre::eyre::eyre!("Data cannot be decoded with base64"))?)
-//         }
-//         super::profile_args_type_c::ProfileArgsType::FileArgs => {
-//             let data_path = std::path::PathBuf::from(args);
-//             let data = std::fs::read(&data_path)
-//                 .wrap_err_with(|| format!("Access to data file <{:?}> not found!", &data_path))?;
-//             Ok(data)
-//         }
-//     }
-// }

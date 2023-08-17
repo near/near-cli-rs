@@ -5,7 +5,7 @@ use inquire::Text;
 #[interactive_clap(output_context = Base64ArgsContext)]
 pub struct Base64Args {
     #[interactive_clap(skip_default_input_arg)]
-    /// Input valid Base64-encoded string (e.g. e30=)
+    /// Enter valid Base64-encoded string (e.g. e30=):
     data: String,
     #[interactive_clap(named_arg)]
     /// Specify signer account ID
@@ -24,7 +24,8 @@ impl Base64ArgsContext {
             global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
             account_id: previous_context.account_id,
-            data: scope.data.clone().into(),
+            data: near_primitives::serialize::from_base64(&scope.data)
+                .map_err(|_| color_eyre::eyre::eyre!("Data cannot be decoded with base64"))?,
         }))
     }
 }
@@ -40,7 +41,7 @@ impl Base64Args {
         _context: &super::super::UpdateAccountProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         loop {
-            let data = Text::new("Input valid Base64-encoded string (e.g. e30=)").prompt()?;
+            let data = Text::new("Enter valid Base64-encoded string (e.g. e30=):").prompt()?;
             if near_primitives::serialize::from_base64(&data).is_ok() {
                 return Ok(Some(data));
             }
