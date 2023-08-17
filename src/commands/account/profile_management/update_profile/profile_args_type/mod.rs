@@ -1,6 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod json_args;
+mod text_args;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = super::UpdateAccountProfileContext)]
@@ -14,7 +15,7 @@ pub enum ProfileArgsType {
     JsonArgs(self::json_args::JsonArgs),
     #[strum_discriminants(strum(message = "text-args    - Arbitrary text arguments"))]
     /// Arbitrary text arguments
-    TextArgs,
+    TextArgs(self::text_args::TextArgs),
     #[strum_discriminants(strum(message = "base64-args  - Base64-encoded string (e.g. e30=)"))]
     /// Base64-encoded string (e.g. e30=)
     Base64Args,
