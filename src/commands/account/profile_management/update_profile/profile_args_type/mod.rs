@@ -3,6 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 mod base64_args;
 mod file_args;
 mod json_args;
+mod manually;
 mod text_args;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
@@ -28,7 +29,7 @@ pub enum ProfileArgsType {
     FileArgs(self::file_args::FileArgs),
     #[strum_discriminants(strum(message = "manually     - Interactive input of arguments"))]
     /// Interactive input of arguments
-    Manually,
+    Manually(self::manually::Manually),
 }
 
 #[derive(Clone)]
