@@ -24,13 +24,13 @@ pub struct Profile {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linktree: Option<HashMap<String, Option<String>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<HashMap<String, Option<String>>>,
+    pub tags: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ProfileImage {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
+    pub url: Option<url::Url>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ipfs_cid: Option<String>,
 }

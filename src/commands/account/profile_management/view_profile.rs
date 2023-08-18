@@ -120,10 +120,8 @@ fn print_profile(optional_account_profile: Option<&crate::types::socialdb_types:
         }
         if let Some(tags) = &account_profile.profile.tags {
             eprintln!("  \"tags\": {{");
-            for (key, optional_value) in tags.iter() {
-                if let Some(value) = &optional_value {
-                    eprintln!("    \"{key}\": \"{value}\",");
-                }
+            for (key, value) in tags.iter() {
+                eprintln!("    \"{key}\": \"{value}\",");
             }
             eprintln!("  }},")
         }
