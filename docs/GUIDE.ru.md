@@ -917,10 +917,10 @@ near account \
 
 ##### update-profile - Update profile for the account
 
-- [json-args](#json-args---Valid-JSON-arguments-e.g.-{"token_id":-"42"})
+- [json-args](#json-args---Valid-JSON-arguments-eg-token_id-42)
 - text-args
 - base64-args
-- [file-args](#file-args---Read-from-file-e.g.-reusable-JSON-or-binary-data)
+- [file-args](#file-args---Read-from-file-eg-reusable-JSON-or-binary-data)
 - [manually](#manually---Interactive-input-of-arguments)
 
 ##### json-args - Valid JSON arguments (e.g. {"token_id": "42"})
