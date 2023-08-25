@@ -463,7 +463,7 @@ pub fn find_network_where_account_exist(
     new_account_id: near_primitives::types::AccountId,
 ) -> Option<crate::config::NetworkConfig> {
     for (_, network_config) in context.config.network_connection.iter() {
-        if crate::common::get_account_state(
+        if get_account_state(
             network_config.clone(),
             new_account_id.clone(),
             near_primitives::types::BlockReference::latest(),
@@ -754,7 +754,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "gas:",
-                    crate::common::NearGas {
+                    NearGas {
                         inner: function_call_action.gas
                     }
                 );
@@ -762,7 +762,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "deposit:",
-                    crate::common::NearBalance::from_yoctonear(function_call_action.deposit)
+                    NearBalance::from_yoctonear(function_call_action.deposit)
                 );
             }
             near_primitives::transaction::Action::Transfer(transfer_action) => {
@@ -770,7 +770,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>5} {:<20} {}",
                     "--",
                     "transfer deposit:",
-                    crate::common::NearBalance::from_yoctonear(transfer_action.deposit)
+                    NearBalance::from_yoctonear(transfer_action.deposit)
                 );
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
@@ -783,7 +783,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "stake:",
-                    crate::common::NearBalance::from_yoctonear(stake_action.stake)
+                    NearBalance::from_yoctonear(stake_action.stake)
                 );
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
@@ -861,7 +861,7 @@ fn print_value_successful_transaction(
                 eprintln!(
                     "<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
-                    crate::common::NearBalance::from_yoctonear(deposit),
+                    NearBalance::from_yoctonear(deposit),
                     transaction_info.transaction.receiver_id,
                 );
             }
@@ -872,7 +872,7 @@ fn print_value_successful_transaction(
                 eprintln!(
                     "Validator <{}> has successfully staked {}.",
                     transaction_info.transaction.signer_id,
-                    crate::common::NearBalance::from_yoctonear(stake),
+                    NearBalance::from_yoctonear(stake),
                 );
             }
             near_primitives::views::ActionView::AddKey {
@@ -924,7 +924,7 @@ pub fn rpc_transaction_error(
                     eprintln!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
-                    let err_invalid_transaction = crate::common::handler_invalid_tx_error(context);
+                    let err_invalid_transaction = handler_invalid_tx_error(context);
                     return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("{}", err_invalid_transaction));
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
@@ -1022,7 +1022,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             eprintln!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(*amount)
+                NearBalance::from_yoctonear(*amount)
             )
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -1040,8 +1040,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
             eprintln!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(*balance),
-                crate::common::NearBalance::from_yoctonear(*stake)
+                NearBalance::from_yoctonear(*balance),
+                NearBalance::from_yoctonear(*stake)
             )
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -1051,8 +1051,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
         } => {
             eprintln!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                crate::common::NearBalance::from_yoctonear(*stake),
-                crate::common::NearBalance::from_yoctonear(*minimum_stake)
+                NearBalance::from_yoctonear(*stake),
+                NearBalance::from_yoctonear(*minimum_stake)
             )
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -1126,8 +1126,8 @@ pub fn handler_invalid_tx_error(
                     format!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        crate::common::NearBalance::from_yoctonear(*allowance),
-                        crate::common::NearBalance::from_yoctonear(*cost)
+                        NearBalance::from_yoctonear(*allowance),
+                        NearBalance::from_yoctonear(*cost)
                     )
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -1156,14 +1156,14 @@ pub fn handler_invalid_tx_error(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             format!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(*balance),
-                crate::common::NearBalance::from_yoctonear(*cost)
+                NearBalance::from_yoctonear(*balance),
+                NearBalance::from_yoctonear(*cost)
             )
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             format!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(*amount)
+                NearBalance::from_yoctonear(*amount)
             )
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
@@ -2047,25 +2047,22 @@ pub fn get_deposit(
     near_social_account_id: &near_primitives::types::AccountId,
     required_deposit: NearBalance,
 ) -> color_eyre::eyre::Result<NearBalance> {
-    let signer_access_key_permission = crate::common::get_access_key_permission(
-        network_config,
-        signer_account_id,
-        signer_public_key,
-    )?;
+    let signer_access_key_permission =
+        get_access_key_permission(network_config, signer_account_id, signer_public_key)?;
 
     let is_signer_access_key_full_access = matches!(
         signer_access_key_permission,
         near_primitives::views::AccessKeyPermissionView::FullAccess
     );
 
-    let is_write_permission_granted_to_public_key = crate::common::is_write_permission_granted(
+    let is_write_permission_granted_to_public_key = is_write_permission_granted(
         network_config,
         near_social_account_id,
         signer_public_key.clone(),
         format!("{account_id}/{key}"),
     )?;
 
-    let is_write_permission_granted_to_signer = crate::common::is_write_permission_granted(
+    let is_write_permission_granted_to_signer = is_write_permission_granted(
         network_config,
         near_social_account_id,
         signer_account_id.clone(),
@@ -2073,14 +2070,12 @@ pub fn get_deposit(
     )?;
 
     let deposit = if is_signer_access_key_full_access
-        || crate::common::is_signer_access_key_function_call_access_can_call_set_on_social_db_account(
+        || is_signer_access_key_function_call_access_can_call_set_on_social_db_account(
             near_social_account_id,
-            &signer_access_key_permission
-        )?
-    {
+            &signer_access_key_permission,
+        )? {
         if is_write_permission_granted_to_public_key || is_write_permission_granted_to_signer {
-            if required_deposit.is_zero()
-            {
+            if required_deposit.is_zero() {
                 NearBalance::from_str("0 NEAR").unwrap()
             } else if is_signer_access_key_full_access {
                 required_deposit
@@ -2089,8 +2084,7 @@ pub fn get_deposit(
             }
         } else if signer_account_id == account_id {
             if is_signer_access_key_full_access {
-                if required_deposit.is_zero()
-                {
+                if required_deposit.is_zero() {
                     NearBalance::from_str("1 yoctoNEAR").unwrap()
                 } else {
                     required_deposit
