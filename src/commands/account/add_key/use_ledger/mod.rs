@@ -49,23 +49,29 @@ impl AddLedgerKeyActionContext {
 impl From<AddLedgerKeyActionContext> for crate::commands::ActionContext {
     fn from(item: AddLedgerKeyActionContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: item.signer_account_id.clone(),
-                    receiver_id: item.signer_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::AddKey(
-                        near_primitives::transaction::AddKeyAction {
-                            public_key: item.public_key.clone().into(),
-                            access_key: near_primitives::account::AccessKey {
-                                nonce: 0,
-                                permission: item.permission.clone(),
+            std::sync::Arc::new({
+                let signer_account_id = item.signer_account_id.clone();
+
+                move |_network_config| {
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_account_id.clone(),
+                        receiver_id: signer_account_id.clone(),
+                        actions: vec![near_primitives::transaction::Action::AddKey(
+                            near_primitives::transaction::AddKeyAction {
+                                public_key: item.public_key.clone().into(),
+                                access_key: near_primitives::account::AccessKey {
+                                    nonce: 0,
+                                    permission: item.permission.clone(),
+                                },
                             },
-                        },
-                    )],
-                })
+                        )],
+                    })
+                }
             });
+
         Self {
             global_context: item.global_context,
+            interacting_with_account_ids: vec![item.signer_account_id],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

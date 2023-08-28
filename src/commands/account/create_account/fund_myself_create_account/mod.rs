@@ -24,7 +24,7 @@ pub struct NewAccount {
 #[derive(Debug, Clone)]
 pub struct NewAccountContext {
     global_context: crate::GlobalContext,
-    new_account_id: crate::types::account_id::AccountId,
+    new_account_id: near_primitives::types::AccountId,
     initial_balance: crate::common::NearBalance,
 }
 
@@ -35,7 +35,7 @@ impl NewAccountContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context,
-            new_account_id: scope.new_account_id.clone(),
+            new_account_id: scope.new_account_id.clone().into(),
             initial_balance: scope.initial_balance.clone(),
         })
     }
@@ -154,7 +154,7 @@ pub struct AccountPropertiesContext {
 
 #[derive(Debug, Clone)]
 pub struct AccountProperties {
-    pub new_account_id: crate::types::account_id::AccountId,
+    pub new_account_id: near_primitives::types::AccountId,
     pub public_key: near_crypto::PublicKey,
     pub initial_balance: crate::common::NearBalance,
 }

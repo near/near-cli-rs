@@ -20,22 +20,21 @@ impl RelayerAccountIdContext {
         previous_context: super::SendMetaTransactionContext,
         scope: &<RelayerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let signer_id: near_primitives::types::AccountId = scope.relayer_account_id.clone().into();
-        let signed_delegate_action = previous_context.signed_delegate_action.clone();
-
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                let actions = vec![previous_context.signed_delegate_action.clone().into()];
+            std::sync::Arc::new({
+                let signer_id: near_primitives::types::AccountId =
+                    scope.relayer_account_id.clone().into();
+                let signed_delegate_action = previous_context.signed_delegate_action.clone();
 
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: signer_id.clone(),
-                    receiver_id: previous_context
-                        .signed_delegate_action
-                        .delegate_action
-                        .sender_id
-                        .clone(),
-                    actions,
-                })
+                move |_network_config| {
+                    let actions = vec![signed_delegate_action.clone().into()];
+
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_id.clone(),
+                        receiver_id: signed_delegate_action.delegate_action.sender_id.clone(),
+                        actions,
+                    })
+                }
             });
 
         let on_before_signing_callback: crate::commands::OnBeforeSigningCallback =
@@ -43,7 +42,7 @@ impl RelayerAccountIdContext {
                 move |prepopulated_unsigned_transaction, _network_config| {
                     prepopulated_unsigned_transaction.actions =
                         vec![near_primitives::transaction::Action::Delegate(
-                            signed_delegate_action.clone(),
+                            previous_context.signed_delegate_action.clone(),
                         )];
                     Ok(())
                 }
@@ -51,6 +50,7 @@ impl RelayerAccountIdContext {
 
         Ok(Self(crate::commands::ActionContext {
             global_context: previous_context.global_context,
+            interacting_with_account_ids: vec![scope.relayer_account_id.clone().into()],
             on_after_getting_network_callback,
             on_before_signing_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(
