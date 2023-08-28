@@ -16,12 +16,14 @@ pub type OnAfterGettingNetworkCallback =
 #[derive(Clone)]
 pub struct NetworkContext {
     pub config: crate::config::Config,
+    pub interacting_with_account_ids: Vec<near_primitives::types::AccountId>,
     pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
 }
 
 impl interactive_clap::FromCli for Network {
     type FromCliContext = NetworkContext;
     type FromCliError = color_eyre::eyre::Error;
+
     fn from_cli(
         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
         context: Self::FromCliContext,
@@ -68,7 +70,7 @@ impl interactive_clap::FromCli for Network {
 
 impl Network {
     fn input_network_name(context: &NetworkContext) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&context.config, &[])
+        crate::common::input_network_name(&context.config, &context.interacting_with_account_ids)
     }
 
     fn input_wallet_url(
