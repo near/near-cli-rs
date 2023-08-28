@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2](https://github.com/near/near-cli-rs/compare/v0.5.1...v0.5.2) - 2023-08-17
+
+### Added
+- Select your account when prompted interactively ([#224](https://github.com/near/near-cli-rs/pull/224))
+- Allow to specify a custom Web Wallet URL when importing account (default to MyNearWallet) ([#218](https://github.com/near/near-cli-rs/pull/218))
+
+### Other
+- Upgrade cargo-dist to 0.1.0 release ([#229](https://github.com/near/near-cli-rs/pull/229))
+
 ## [0.5.1](https://github.com/near/near-cli-rs/compare/v0.5.0...v0.5.1) - 2023-06-07
 
 ### Added
