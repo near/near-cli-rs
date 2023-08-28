@@ -66,17 +66,17 @@ impl DownloadContractContext {
         previous_context: ContractAccountContext,
         scope: &<DownloadContract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let account_id = previous_context.account_id.clone();
-        let folder_path: std::path::PathBuf = scope.folder_path.clone().into();
-
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+            let account_id = previous_context.account_id.clone();
+            let folder_path: std::path::PathBuf = scope.folder_path.clone().into();
+
             move |network_config, block_reference| {
                 let query_view_method_response = network_config
                     .json_rpc_client()
                     .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                         block_reference: block_reference.clone(),
                         request: near_primitives::views::QueryRequest::ViewCode {
-                            account_id: account_id.clone(),
+                            account_id: account_id.clone().into(),
                         },
                     })
                     .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}>", &account_id))?;
@@ -105,7 +105,7 @@ impl DownloadContractContext {
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.global_context.config,
             on_after_getting_block_reference_callback,
-            account_id: crate::types::account_id::AccountId(previous_context.account_id),
+            interacting_with_account_ids: vec![previous_context.account_id],
         }))
     }
 }

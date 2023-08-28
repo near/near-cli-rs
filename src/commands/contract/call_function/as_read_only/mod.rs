@@ -29,12 +29,12 @@ impl CallFunctionViewContext {
         previous_context: crate::GlobalContext,
         scope: &<CallFunctionView as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let function_args = scope.function_args.clone();
-        let function_args_type = scope.function_args_type.clone();
-        let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
-        let function_name = scope.function_name.clone();
-
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+            let function_args = scope.function_args.clone();
+            let function_args_type = scope.function_args_type.clone();
+            let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
+            let function_name = scope.function_name.clone();
+
             move |network_config, block_reference| {
                 let args = super::call_function_args_type::function_args(
                     function_args.clone(),
@@ -64,9 +64,10 @@ impl CallFunctionViewContext {
                 Ok(())
             }
         });
+
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.config,
-            account_id: scope.account_id.clone(),
+            interacting_with_account_ids: vec![scope.account_id.clone().into()],
             on_after_getting_block_reference_callback,
         }))
     }

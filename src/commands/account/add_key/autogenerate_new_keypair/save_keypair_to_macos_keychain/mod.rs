@@ -22,20 +22,24 @@ impl SaveKeypairToMacosKeychainContext {
 impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext {
     fn from(item: SaveKeypairToMacosKeychainContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: item.0.signer_account_id.clone(),
-                    receiver_id: item.0.signer_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::AddKey(
-                        near_primitives::transaction::AddKeyAction {
-                            public_key: item.0.public_key.clone(),
-                            access_key: near_primitives::account::AccessKey {
-                                nonce: 0,
-                                permission: item.0.permission.clone(),
+            std::sync::Arc::new({
+                let signer_account_id = item.0.signer_account_id.clone();
+
+                move |_network_config| {
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_account_id.clone(),
+                        receiver_id: signer_account_id.clone(),
+                        actions: vec![near_primitives::transaction::Action::AddKey(
+                            near_primitives::transaction::AddKeyAction {
+                                public_key: item.0.public_key.clone(),
+                                access_key: near_primitives::account::AccessKey {
+                                    nonce: 0,
+                                    permission: item.0.permission.clone(),
+                                },
                             },
-                        },
-                    )],
-                })
+                        )],
+                    })
+                }
             });
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
             std::sync::Arc::new(
@@ -49,8 +53,10 @@ impl From<SaveKeypairToMacosKeychainContext> for crate::commands::ActionContext 
                     Ok(())
                 },
             );
+
         Self {
             global_context: item.0.global_context,
+            interacting_with_account_ids: vec![item.0.signer_account_id],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

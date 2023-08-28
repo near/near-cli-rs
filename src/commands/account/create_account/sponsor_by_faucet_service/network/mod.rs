@@ -61,7 +61,7 @@ impl Network {
     fn input_network_name(
         context: &super::SponsorServiceContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&context.config, None)
+        crate::common::input_network_name(&context.config, &[context.new_account_id.clone().into()])
     }
 }
 

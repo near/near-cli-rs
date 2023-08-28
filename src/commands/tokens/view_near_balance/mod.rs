@@ -15,21 +15,23 @@ impl ViewNearBalanceContext {
         previous_context: super::TokensCommandsContext,
         _scope: &<ViewNearBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let owner_account_id = previous_context.owner_account_id.clone();
-
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+            let owner_account_id = previous_context.owner_account_id.clone();
+
             move |network_config, block_reference| {
-            let account_transfer_allowance = crate::common::get_account_transfer_allowance(
-                network_config.clone(),
-                owner_account_id.clone(),
-                block_reference.clone(),
-            )?;
-        eprintln! {"{}", &account_transfer_allowance};
-        Ok(())
-        }});
+                let account_transfer_allowance = crate::common::get_account_transfer_allowance(
+                    network_config.clone(),
+                    owner_account_id.clone(),
+                    block_reference.clone(),
+                )?;
+                eprintln! {"{}", &account_transfer_allowance};
+                Ok(())
+            }
+        });
+
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.global_context.config,
-            account_id: previous_context.owner_account_id.into(),
+            interacting_with_account_ids: vec![previous_context.owner_account_id],
             on_after_getting_block_reference_callback,
         }))
     }

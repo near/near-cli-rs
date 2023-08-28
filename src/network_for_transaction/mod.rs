@@ -138,15 +138,18 @@ impl NetworkForTransactionArgs {
     fn input_network_name(
         context: &crate::commands::ActionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&context.global_context.config, None)
+        crate::common::input_network_name(
+            &context.global_context.config,
+            &context.interacting_with_account_ids,
+        )
     }
 
     pub fn get_network_config(
         &self,
         config: crate::config::Config,
     ) -> crate::config::NetworkConfig {
-        let network_config = config.network_connection;
-        network_config
+        config
+            .network_connection
             .get(self.network_name.as_str())
             .expect("Impossible to get network name!")
             .clone()

@@ -35,25 +35,30 @@ impl DeleteKeyCommandContext {
 impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
     fn from(item: DeleteKeyCommandContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: item.owner_account_id.clone(),
-                    receiver_id: item.owner_account_id.clone(),
-                    actions: item
-                        .public_keys
-                        .clone()
-                        .into_iter()
-                        .map(|public_key| {
-                            near_primitives::transaction::Action::DeleteKey(
-                                near_primitives::transaction::DeleteKeyAction { public_key },
-                            )
-                        })
-                        .collect(),
-                })
+            std::sync::Arc::new({
+                let owner_account_id = item.owner_account_id.clone();
+
+                move |_network_config| {
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: owner_account_id.clone(),
+                        receiver_id: owner_account_id.clone(),
+                        actions: item
+                            .public_keys
+                            .clone()
+                            .into_iter()
+                            .map(|public_key| {
+                                near_primitives::transaction::Action::DeleteKey(
+                                    near_primitives::transaction::DeleteKeyAction { public_key },
+                                )
+                            })
+                            .collect(),
+                    })
+                }
             });
 
         Self {
             global_context: item.global_context,
+            interacting_with_account_ids: vec![item.owner_account_id],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

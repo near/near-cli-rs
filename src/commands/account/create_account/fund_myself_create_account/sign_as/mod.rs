@@ -44,8 +44,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let new_account_id: near_primitives::types::AccountId =
-                    item.account_properties.new_account_id.clone().into();
+                let new_account_id = item.account_properties.new_account_id.clone();
                 let signer_id = item.signer_account_id.clone();
 
                 move |network_config| {
@@ -150,6 +149,10 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
 
         Self {
             global_context,
+            interacting_with_account_ids: vec![
+                item.signer_account_id,
+                item.account_properties.new_account_id,
+            ],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
@@ -164,11 +167,10 @@ impl SignerAccountId {
     fn input_signer_account_id(
         context: &super::AccountPropertiesContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        let parent_account_id = context
-            .account_properties
-            .new_account_id
-            .clone()
-            .get_parent_account_id_from_sub_account();
+        let parent_account_id =
+            crate::types::account_id::AccountId::get_parent_account_id_from_sub_account(
+                context.account_properties.new_account_id.clone().into(),
+            );
         if !parent_account_id.0.is_top_level() {
             Ok(Some(parent_account_id))
         } else {
