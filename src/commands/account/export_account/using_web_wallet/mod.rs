@@ -21,19 +21,19 @@ impl ExportAccountFromWebWalletContext {
         _scope: &<ExportAccountFromWebWallet as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let config = previous_context.global_context.config.clone();
+        let account_id = previous_context.account_id.clone();
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 move |network_config| {
                     #[cfg(target_os = "macos")]
                     {
-                        if let Ok(account_key_pair) = get_account_key_pair_from_macos_keychain(
-                            network_config,
-                            &previous_context.account_id,
-                        ) {
+                        if let Ok(account_key_pair) =
+                            get_account_key_pair_from_macos_keychain(network_config, &account_id)
+                        {
                             return auto_import_secret_key(
                                 network_config,
-                                &previous_context.account_id,
+                                &account_id,
                                 &account_key_pair.private_key,
                             );
                         }
@@ -41,12 +41,12 @@ impl ExportAccountFromWebWalletContext {
 
                     let account_key_pair = get_account_key_pair_from_keychain(
                         network_config,
-                        &previous_context.account_id,
+                        &account_id,
                         &config.credentials_home_dir,
                     )?;
                     auto_import_secret_key(
                         network_config,
-                        &previous_context.account_id,
+                        &account_id,
                         &account_key_pair.private_key,
                     )
                 }
@@ -54,6 +54,7 @@ impl ExportAccountFromWebWalletContext {
 
         Ok(Self(crate::network::NetworkContext {
             config: previous_context.global_context.config,
+            interacting_with_account_ids: vec![previous_context.account_id],
             on_after_getting_network_callback,
         }))
     }

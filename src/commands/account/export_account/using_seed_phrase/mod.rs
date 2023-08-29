@@ -18,6 +18,7 @@ impl ExportAccountFromSeedPhraseContext {
         _scope: &<ExportAccountFromSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let config = previous_context.global_context.config.clone();
+        let account_id = previous_context.account_id.clone();
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
@@ -27,7 +28,7 @@ impl ExportAccountFromSeedPhraseContext {
                         if let Ok(password_list) =
                             super::using_web_wallet::get_password_list_from_macos_keychain(
                                 network_config,
-                                &previous_context.account_id,
+                                &account_id,
                             )
                         {
                             for password in password_list {
@@ -38,7 +39,7 @@ impl ExportAccountFromSeedPhraseContext {
                                 {
                                     println!(
                                         "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
-                                        previous_context.account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
+                                        account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
                                     );
                                     return Ok(());
                                 }
@@ -48,7 +49,7 @@ impl ExportAccountFromSeedPhraseContext {
 
                     let data_path = get_seed_phrase_data_path(
                         network_config,
-                        &previous_context.account_id,
+                        &account_id,
                         &config.credentials_home_dir,
                     )?;
 
@@ -60,7 +61,7 @@ impl ExportAccountFromSeedPhraseContext {
                         })?;
                     println!(
                         "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
-                        previous_context.account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
+                        account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
                     );
                     Ok(())
                 }
@@ -68,6 +69,7 @@ impl ExportAccountFromSeedPhraseContext {
 
         Ok(Self(crate::network::NetworkContext {
             config: previous_context.global_context.config,
+            interacting_with_account_ids: vec![previous_context.account_id],
             on_after_getting_network_callback,
         }))
     }
