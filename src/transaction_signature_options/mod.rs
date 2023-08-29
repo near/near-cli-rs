@@ -5,11 +5,10 @@ use crate::common::JsonRpcClientExt;
 
 pub mod sign_later;
 pub mod sign_with_access_key_file;
+pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
 pub mod sign_with_legacy_keychain;
-#[cfg(target_os = "macos")]
-pub mod sign_with_keychain;
 pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
 

@@ -82,13 +82,11 @@ impl SignKeychainContext {
                 Ok(password) => password,
                 Err(err) => {
                     match matches!(err, keyring::Error::NoEntry) {
-                        true => eprintln!(
-                            "Warning: no access key found in keychain, trying legacy keychain"
-                        ),
-                        false => eprintln!("Keyring was not able to be read, {}", err.to_string()),
+                        true => eprintln!("Warning: no access key found in keychain"),
+                        false => eprintln!("Warning: keychain was not able to be read, {}", err),
                     }
 
-                    // try the legacy keychain if not found
+                    eprintln!("trying with the legacy keychain");
                     return from_legacy_keychain(previous_context, scope);
                 }
             }
