@@ -15,10 +15,10 @@ impl LoginFromWebWalletContext {
         previous_context: crate::GlobalContext,
         _scope: &<LoginFromWebWallet as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let config = previous_context.config.clone();
-
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
+                let config = previous_context.config.clone();
+
                 move |network_config| {
                     let key_pair_properties: crate::common::KeyPairProperties =
                         crate::common::generate_keypair()?;
@@ -49,6 +49,7 @@ impl LoginFromWebWalletContext {
 
         Ok(Self(crate::network::NetworkContext {
             config: previous_context.config,
+            interacting_with_account_ids: Vec::new(),
             on_after_getting_network_callback,
         }))
     }

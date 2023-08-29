@@ -23,9 +23,9 @@ impl ViewListKeysContext {
         previous_context: crate::GlobalContext,
         scope: &<ViewListKeys as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
-
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+            let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
+
             move |network_config, block_reference| {
                 let access_key_list = network_config
                     .json_rpc_client()
@@ -45,8 +45,10 @@ impl ViewListKeysContext {
                 Ok(())
             }
         });
+
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.config,
+            interacting_with_account_ids: vec![scope.account_id.clone().into()],
             on_after_getting_block_reference_callback,
         }))
     }

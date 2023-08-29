@@ -40,19 +40,26 @@ impl SendNearCommandContext {
 impl From<SendNearCommandContext> for crate::commands::ActionContext {
     fn from(item: SendNearCommandContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: item.signer_account_id.clone(),
-                    receiver_id: item.receiver_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::Transfer(
-                        near_primitives::transaction::TransferAction {
-                            deposit: item.amount_in_near.to_yoctonear(),
-                        },
-                    )],
-                })
+            std::sync::Arc::new({
+                let signer_account_id = item.signer_account_id.clone();
+                let receiver_account_id = item.receiver_account_id.clone();
+
+                move |_network_config| {
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_account_id.clone(),
+                        receiver_id: receiver_account_id.clone(),
+                        actions: vec![near_primitives::transaction::Action::Transfer(
+                            near_primitives::transaction::TransferAction {
+                                deposit: item.amount_in_near.to_yoctonear(),
+                            },
+                        )],
+                    })
+                }
             });
+
         Self {
             global_context: item.global_context,
+            interacting_with_account_ids: vec![item.signer_account_id, item.receiver_account_id],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

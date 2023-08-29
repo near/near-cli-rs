@@ -23,8 +23,9 @@ impl NetworkContext {
         previous_context: super::SignedTransactionContext,
         scope: &<Network as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let networks = previous_context.config.network_connection.clone();
-        let network_config = networks
+        let network_config = previous_context
+            .config
+            .network_connection
             .get(&scope.network_name)
             .expect("Failed to get network config!")
             .clone();
@@ -40,7 +41,10 @@ impl Network {
     fn input_network_name(
         context: &super::SignedTransactionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&context.config)
+        crate::common::input_network_name(
+            &context.config,
+            &[context.signed_transaction.transaction.receiver_id.clone()],
+        )
     }
 }
 

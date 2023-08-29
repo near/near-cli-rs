@@ -23,13 +23,13 @@ impl ViewAccountSummaryContext {
         previous_context: crate::GlobalContext,
         scope: &<ViewAccountSummary as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
-
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+            let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
+
             move |network_config, block_reference| {
                 let rpc_query_response = network_config
                     .json_rpc_client()
-                    .blocking_call_view_account(&account_id.clone(), block_reference.clone())
+                    .blocking_call_view_account(&account_id, block_reference.clone())
                     .wrap_err_with(|| {
                         format!(
                             "Failed to fetch query ViewAccount for <{}>",
@@ -64,6 +64,7 @@ impl ViewAccountSummaryContext {
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.config,
+            interacting_with_account_ids: vec![scope.account_id.clone().into()],
             on_after_getting_block_reference_callback,
         }))
     }

@@ -44,19 +44,29 @@ impl NoInitializeContext {
 impl From<NoInitializeContext> for crate::commands::ActionContext {
     fn from(item: NoInitializeContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: item.0.signer_account_id.clone(),
-                    receiver_id: item.0.receiver_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::DeployContract(
-                        near_primitives::transaction::DeployContractAction {
-                            code: item.0.code.clone(),
-                        },
-                    )],
-                })
+            std::sync::Arc::new({
+                let signer_account_id = item.0.signer_account_id.clone();
+                let receiver_account_id = item.0.receiver_account_id.clone();
+
+                move |_network_config| {
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_account_id.clone(),
+                        receiver_id: receiver_account_id.clone(),
+                        actions: vec![near_primitives::transaction::Action::DeployContract(
+                            near_primitives::transaction::DeployContractAction {
+                                code: item.0.code.clone(),
+                            },
+                        )],
+                    })
+                }
             });
+
         Self {
             global_context: item.0.global_context,
+            interacting_with_account_ids: vec![
+                item.0.signer_account_id,
+                item.0.receiver_account_id,
+            ],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

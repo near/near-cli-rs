@@ -31,6 +31,6 @@ impl DeleteNetworkConnection {
     fn input_connection_name(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&context.config)
+        crate::common::input_network_name(&context.config, &[])
     }
 }
