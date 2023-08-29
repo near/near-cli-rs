@@ -151,29 +151,39 @@ impl DepositContext {
         let deposit = scope.deposit.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: previous_context.signer_account_id.clone(),
-                    receiver_id: previous_context.receiver_account_id.clone(),
-                    actions: vec![
-                        near_primitives::transaction::Action::DeployContract(
-                            near_primitives::transaction::DeployContractAction {
-                                code: previous_context.code.clone(),
-                            },
-                        ),
-                        near_primitives::transaction::Action::FunctionCall(
-                            near_primitives::transaction::FunctionCallAction {
-                                method_name: previous_context.function_name.clone(),
-                                args: previous_context.function_args.clone(),
-                                gas: previous_context.gas.inner,
-                                deposit: deposit.to_yoctonear(),
-                            },
-                        ),
-                    ],
-                })
+            std::sync::Arc::new({
+                let signer_account_id = previous_context.signer_account_id.clone();
+                let receiver_account_id = previous_context.receiver_account_id.clone();
+
+                move |_network_config| {
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_account_id.clone(),
+                        receiver_id: receiver_account_id.clone(),
+                        actions: vec![
+                            near_primitives::transaction::Action::DeployContract(
+                                near_primitives::transaction::DeployContractAction {
+                                    code: previous_context.code.clone(),
+                                },
+                            ),
+                            near_primitives::transaction::Action::FunctionCall(
+                                near_primitives::transaction::FunctionCallAction {
+                                    method_name: previous_context.function_name.clone(),
+                                    args: previous_context.function_args.clone(),
+                                    gas: previous_context.gas.inner,
+                                    deposit: deposit.to_yoctonear(),
+                                },
+                            ),
+                        ],
+                    })
+                }
             });
+
         Ok(Self(crate::commands::ActionContext {
             global_context: previous_context.global_context,
+            interacting_with_account_ids: vec![
+                previous_context.signer_account_id.clone(),
+                previous_context.receiver_account_id.clone(),
+            ],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

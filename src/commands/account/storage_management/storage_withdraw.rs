@@ -51,47 +51,54 @@ impl SignerAccountIdContext {
         previous_context: WithdrawArgsContext,
         scope: &<SignerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let signer = scope.signer_account_id.clone();
-        let signer_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
-        let amount = previous_context.amount.clone();
-        let get_contract_account_id = previous_context.get_contract_account_id.clone();
-
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: signer_id.clone(),
-                    receiver_id: get_contract_account_id(network_config)?,
-                    actions: vec![near_primitives::transaction::Action::FunctionCall(
-                        near_primitives::transaction::FunctionCallAction {
-                            method_name: "storage_withdraw".to_string(),
-                            args: serde_json::json!({
-                                "amount": previous_context.amount.clone().to_yoctonear().to_string()
-                            })
-                            .to_string()
-                            .into_bytes(),
-                            gas: crate::common::NearGas::from_str("50 TeraGas")
-                                .unwrap()
-                                .inner,
-                            deposit: crate::common::NearBalance::from_yoctonear(1).to_yoctonear(),
-                        },
-                    )],
-                })
+            std::sync::Arc::new({
+                let signer_account_id: near_primitives::types::AccountId =
+                    scope.signer_account_id.clone().into();
+                let get_contract_account_id = previous_context.get_contract_account_id.clone();
+                let amount = previous_context.amount.clone();
+
+                move |network_config| {
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_account_id.clone(),
+                        receiver_id: get_contract_account_id(network_config)?,
+                        actions: vec![near_primitives::transaction::Action::FunctionCall(
+                            near_primitives::transaction::FunctionCallAction {
+                                method_name: "storage_withdraw".to_string(),
+                                args: serde_json::json!({
+                                    "amount": amount.clone().to_yoctonear().to_string()
+                                })
+                                .to_string()
+                                .into_bytes(),
+                                gas: crate::common::NearGas::from_str("50 TeraGas")
+                                    .unwrap()
+                                    .inner,
+                                deposit: crate::common::NearBalance::from_yoctonear(1)
+                                    .to_yoctonear(),
+                            },
+                        )],
+                    })
+                }
             });
 
-        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
+            let signer_account_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
+
             move |outcome_view, network_config| {
                 let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                     eprintln!(
-                        "<{signer}> has successfully withdraw {amount} from <{contract_account_id}>.",
+                        "<{signer_account_id}> has successfully withdraw {amount} from <{contract_account_id}>.",
+                        amount = previous_context.amount,
                     );
                 }
                 Ok(())
-            },
-        );
+            }
+        });
 
         Ok(Self(crate::commands::ActionContext {
             global_context: previous_context.global_context,
+            interacting_with_account_ids: vec![scope.signer_account_id.clone().into()],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
