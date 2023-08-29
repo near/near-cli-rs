@@ -160,6 +160,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
 
         Self {
             global_context: item.global_context,
+            interacting_with_account_ids: vec![item.account_id],
             on_after_getting_network_callback,
             on_before_signing_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(
@@ -205,6 +206,3 @@ impl Signer {
         }
     }
 }
-
-// {"name":"frovolod","image":{"ipfs_cid":"bafkreifdzusz6hp3j4njdtqqxr3tlvx4agedgh7znyac4wbuiao3gtppde"},"linktree":{"github":"FroVolod","telegram":"frovolod"},"tags": {"rust":"","near":"","developer":""}}
-// {"name":"mac4","image":{"ipfs_cid":null},"linktree":{"github":null,"telegram":null},"tags": {"rust":null,"near":null,"developer":null}}
