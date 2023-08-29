@@ -1,9 +1,5 @@
-extern crate dirs;
-
-use std::str::FromStr;
-
 use color_eyre::eyre::{ContextCompat, WrapErr};
-use inquire::{CustomType, Select};
+use inquire::CustomType;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -21,10 +17,10 @@ pub struct SignKeychain {
     nonce: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    pub block_height: Option<near_primitives::types::BlockHeight>,
+    block_height: Option<near_primitives::types::BlockHeight>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     meta_transaction_valid_for: Option<u64>,
@@ -43,6 +39,19 @@ pub struct SignKeychainContext {
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }
 
+impl From<super::sign_with_legacy_keychain::SignLegacyKeychainContext> for SignKeychainContext {
+    fn from(value: super::sign_with_legacy_keychain::SignLegacyKeychainContext) -> Self {
+        SignKeychainContext {
+            network_config: value.network_config,
+            global_context: value.global_context,
+            signed_transaction_or_signed_delegate_action: value
+                .signed_transaction_or_signed_delegate_action,
+            on_before_sending_transaction_callback: value.on_before_sending_transaction_callback,
+            on_after_sending_transaction_callback: value.on_after_sending_transaction_callback,
+        }
+    }
+}
+
 impl SignKeychainContext {
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
@@ -50,155 +59,121 @@ impl SignKeychainContext {
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
-        let file_name = format!(
-            "{}.json",
-            &previous_context.prepopulated_transaction.signer_id
-        );
-        let mut path =
-            std::path::PathBuf::from(&previous_context.global_context.config.credentials_home_dir);
+        let service_name = std::borrow::Cow::Owned(format!(
+            "near-{}-{}",
+            network_config.network_name,
+            previous_context.prepopulated_transaction.signer_id.as_str()
+        ));
 
-        let data_path: std::path::PathBuf = {
-            let dir_name = network_config.network_name.clone();
-            path.push(&dir_name);
+        let password = if previous_context.global_context.offline {
+            let res = keyring::Entry::new(
+                &service_name,
+                &format!(
+                    "{}:{}",
+                    previous_context.prepopulated_transaction.signer_id,
+                    scope.signer_public_key.clone().wrap_err(
+                        "Signer public key is required to sign a transaction in offline mode"
+                    )?
+                ),
+            )?
+            .get_password();
 
-            if previous_context.global_context.offline {
-                path.push(
-                    previous_context
-                        .prepopulated_transaction
-                        .signer_id
-                        .to_string(),
-                );
-                path.push(&format!(
-                    "{}.json",
-                    scope
-                        .signer_public_key
-                        .clone()
-                        .wrap_err(
-                            "Signer public key is required to sign a transaction in offline mode"
-                        )?
-                        .to_string()
-                        .replace(':', "_")
-                ));
-                path
-            } else {
-                path.push(file_name);
-                if path.exists() {
-                    path
-                } else {
-                    let access_key_list = network_config
-                        .json_rpc_client()
-                        .blocking_call_view_access_key_list(
-                            &previous_context.prepopulated_transaction.signer_id,
-                            near_primitives::types::Finality::Final.into(),
-                        )
-                        .wrap_err_with(|| {
-                            format!(
-                                "Failed to fetch access KeyList for {}",
-                                previous_context.prepopulated_transaction.signer_id
-                            )
-                        })?
-                        .access_key_list_view()?;
-                    let mut path = std::path::PathBuf::from(
-                        &previous_context.global_context.config.credentials_home_dir,
-                    );
-                    path.push(dir_name);
-                    path.push(
-                        &previous_context
-                            .prepopulated_transaction
-                            .signer_id
-                            .to_string(),
-                    );
-                    let mut data_path = std::path::PathBuf::new();
-                    'outer: for access_key in access_key_list.keys {
-                        let account_public_key = access_key.public_key.to_string();
-                        let is_full_access_key: bool = match &access_key.access_key.permission {
-                            near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                            near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                                allowance: _,
-                                receiver_id: _,
-                                method_names: _,
-                            } => false,
-                        };
-                        let dir = path
-                        .read_dir()
-                        .wrap_err("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.")?;
-                        for entry in dir {
-                            if let Ok(entry) = entry {
-                                if entry
-                                    .path()
-                                    .file_stem()
-                                    .unwrap()
-                                    .to_str()
-                                    .unwrap()
-                                    .contains(account_public_key.rsplit(':').next().unwrap())
-                                    && is_full_access_key
-                                {
-                                    data_path.push(entry.path());
-                                    break 'outer;
-                                }
-                            } else {
-                                return Err(color_eyre::Report::msg(
-                                "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain."
-                            ));
-                            };
-                        }
+            match res {
+                Ok(password) => password,
+                Err(err) => {
+                    match matches!(err, keyring::Error::NoEntry) {
+                        true => eprintln!(
+                            "Warning: no access key found in keychain, trying legacy keychain"
+                        ),
+                        false => eprintln!("Keyring was not able to be read, {}", err.to_string()),
                     }
-                    data_path
+
+                    // try the legacy keychain if not found
+                    return from_legacy_keychain(previous_context, scope);
+                }
+            }
+        } else {
+            let access_key_list = network_config
+                .json_rpc_client()
+                .blocking_call_view_access_key_list(
+                    &previous_context.prepopulated_transaction.signer_id,
+                    near_primitives::types::Finality::Final.into(),
+                )
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to fetch access key list for {}",
+                        previous_context.prepopulated_transaction.signer_id
+                    )
+                })?
+                .access_key_list_view()?;
+
+            let res = access_key_list
+                .keys
+                .into_iter()
+                .filter(|key| {
+                    matches!(
+                        key.access_key.permission,
+                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                    )
+                })
+                .map(|key| key.public_key)
+                .find_map(|public_key| {
+                    let keyring = keyring::Entry::new(
+                        &service_name,
+                        &format!(
+                            "{}:{}",
+                            previous_context.prepopulated_transaction.signer_id, public_key
+                        ),
+                    )
+                    .ok()?;
+                    keyring.get_password().ok()
+                });
+
+            match res {
+                Some(password) => password,
+                None => {
+                    // no access keys found, try the legacy keychain
+                    eprintln!("Warning: no access keys found in keychain, trying legacy keychain");
+                    return from_legacy_keychain(previous_context, scope);
                 }
             }
         };
-        let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
-        let account_json: super::AccountKeyPair = serde_json::from_str(&data)
-            .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
 
-        let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
-            (
-                scope
-                    .nonce
-                    .wrap_err("Nonce is required to sign a transaction in offline mode")?,
-                scope
-                    .block_hash
-                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?
-                    .0,
-                scope
-                    .block_height
-                    .wrap_err("Block Height is required to sign a transaction in offline mode")?,
+        let account_json: super::AccountKeyPair =
+            serde_json::from_str(&password).wrap_err("Error reading data")?;
+
+        let rpc_query_response = network_config
+            .json_rpc_client()
+            .blocking_call_view_access_key(
+                &previous_context.prepopulated_transaction.signer_id,
+                &account_json.public_key,
+                near_primitives::types::BlockReference::latest(),
             )
-        } else {
-            let rpc_query_response = network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key(
-                    &previous_context.prepopulated_transaction.signer_id,
-                    &account_json.public_key,
-                    near_primitives::types::BlockReference::latest()
-                )
-                .wrap_err(
-                    "Cannot sign a transaction due to an error while fetching the most recent nonce value",
-                )?;
-            (
-                rpc_query_response
-                    .access_key_view()
-                    .wrap_err("Error current_nonce")?
-                    .nonce
-                    + 1,
-                rpc_query_response.block_hash,
-                rpc_query_response.block_height,
-            )
-        };
+            .wrap_err(
+                "Cannot sign a transaction due to an error while fetching the most recent nonce value",
+            )?;
+        let current_nonce = rpc_query_response
+            .access_key_view()
+            .wrap_err("Error current_nonce")?
+            .nonce;
 
         let mut unsigned_transaction = near_primitives::transaction::Transaction {
             public_key: account_json.public_key.clone(),
-            block_hash,
-            nonce,
-            signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
+            block_hash: rpc_query_response.block_hash,
+            nonce: current_nonce + 1,
+            signer_id: previous_context.prepopulated_transaction.signer_id,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             actions: previous_context.prepopulated_transaction.actions,
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
+        let signature = account_json
+            .private_key
+            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+
         if network_config.meta_transaction_relayer_url.is_some() {
-            let max_block_height = block_height
+            let max_block_height = rpc_query_response.block_height
                 + scope
                     .meta_transaction_valid_for
                     .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
@@ -221,10 +196,6 @@ impl SignKeychainContext {
             });
         }
 
-        let signature = account_json
-            .private_key
-            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
-
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
             unsigned_transaction,
@@ -244,6 +215,28 @@ impl SignKeychainContext {
                 .on_after_sending_transaction_callback,
         })
     }
+}
+
+fn from_legacy_keychain(
+    previous_context: crate::commands::TransactionContext,
+    scope:  &<SignKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+) -> color_eyre::eyre::Result<SignKeychainContext> {
+    let legacy_scope =
+        super::sign_with_legacy_keychain::InteractiveClapContextScopeForSignLegacyKeychain {
+            signer_public_key: scope.signer_public_key.clone(),
+            nonce: scope.nonce,
+            block_hash: scope.block_hash,
+            block_height: scope.block_height,
+            meta_transaction_valid_for: scope.meta_transaction_valid_for,
+        };
+
+    Ok(
+        super::sign_with_legacy_keychain::SignLegacyKeychainContext::from_previous_context(
+            previous_context,
+            &legacy_scope,
+        )?
+        .into(),
+    )
 }
 
 impl From<SignKeychainContext> for super::SubmitContext {
@@ -320,6 +313,7 @@ impl interactive_clap::FromCli for SignKeychain {
             block_height,
             meta_transaction_valid_for,
         };
+
         let output_context =
             match SignKeychainContext::from_previous_context(context, &new_context_scope) {
                 Ok(new_context) => new_context,
@@ -349,30 +343,10 @@ impl SignKeychain {
         context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKey>> {
         if context.global_context.offline {
-            let network_config = context.network_config.clone();
-
-            let mut path =
-                std::path::PathBuf::from(&context.global_context.config.credentials_home_dir);
-
-            let dir_name = network_config.network_name;
-            path.push(&dir_name);
-
-            path.push(context.prepopulated_transaction.signer_id.to_string());
-
-            let signer_dir = path.read_dir()?;
-
-            let key_list = signer_dir
-                .filter_map(|entry| entry.ok())
-                .filter_map(|entry| entry.file_name().into_string().ok())
-                .filter(|file_name_str| file_name_str.starts_with("ed25519_"))
-                .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
-                .collect::<Vec<_>>();
-
-            let selected_input = Select::new("Choose public_key:", key_list).prompt()?;
-
-            return Ok(Some(crate::types::public_key::PublicKey::from_str(
-                &selected_input,
-            )?));
+            return Ok(Some(
+                CustomType::<crate::types::public_key::PublicKey>::new("Enter public_key:")
+                    .prompt()?,
+            ));
         }
         Ok(None)
     }
