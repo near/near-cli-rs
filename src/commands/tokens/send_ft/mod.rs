@@ -58,33 +58,39 @@ impl SendFtCommandContext {
 
 impl From<SendFtCommandContext> for crate::commands::ActionContext {
     fn from(item: SendFtCommandContext) -> Self {
-        let signer_account_id = item.signer_account_id.clone();
-        let amount = item.amount;
-        let ft_contract_account_id = item.ft_contract_account_id.clone();
-        let receiver_account_id = item.receiver_account_id.clone();
-
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: item.signer_account_id.clone(),
-                    receiver_id: item.ft_contract_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::FunctionCall(
-                        near_primitives::transaction::FunctionCallAction {
-                            method_name: "ft_transfer".to_string(),
-                            args: json!({
-                                "receiver_id": item.receiver_account_id.to_string(),
-                                "amount": item.amount.to_string()
-                            })
-                            .to_string()
-                            .into_bytes(),
-                            gas: item.gas.inner,
-                            deposit: item.deposit.to_yoctonear(),
-                        },
-                    )],
-                })
+            std::sync::Arc::new({
+                let signer_account_id = item.signer_account_id.clone();
+                let ft_contract_account_id = item.ft_contract_account_id.clone();
+                let receiver_account_id = item.receiver_account_id.clone();
+
+                move |_network_config| {
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_account_id.clone().into(),
+                        receiver_id: ft_contract_account_id.clone().into(),
+                        actions: vec![near_primitives::transaction::Action::FunctionCall(
+                            near_primitives::transaction::FunctionCallAction {
+                                method_name: "ft_transfer".to_string(),
+                                args: json!({
+                                    "receiver_id": receiver_account_id.to_string(),
+                                    "amount": item.amount.to_string()
+                                })
+                                .to_string()
+                                .into_bytes(),
+                                gas: item.gas.inner,
+                                deposit: item.deposit.to_yoctonear(),
+                            },
+                        )],
+                    })
+                }
             });
 
-        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
+            let signer_account_id = item.signer_account_id.clone();
+            let amount = item.amount;
+            let ft_contract_account_id = item.ft_contract_account_id.clone();
+            let receiver_account_id = item.receiver_account_id.clone();
+
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                     eprintln!(
@@ -92,11 +98,16 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
                     );
                 }
                 Ok(())
-            },
-        );
+            }
+        });
 
         Self {
             global_context: item.global_context,
+            interacting_with_account_ids: vec![
+                item.ft_contract_account_id,
+                item.signer_account_id,
+                item.receiver_account_id,
+            ],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

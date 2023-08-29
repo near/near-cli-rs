@@ -1568,10 +1568,42 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
     table.printstd();
 }
 
+/// Interactive prompt for network name.
+///
+/// If account_ids is provided, show the network connections that are more
+/// relevant at the top of the list.
 pub fn input_network_name(
     config: &crate::config::Config,
+    account_ids: &[near_primitives::types::AccountId],
 ) -> color_eyre::eyre::Result<Option<String>> {
-    let variants = config.network_connection.keys().collect::<Vec<_>>();
+    let variants = if !account_ids.is_empty() {
+        let (mut matches, non_matches): (Vec<_>, Vec<_>) = config
+            .network_connection
+            .iter()
+            .partition(|(_, network_config)| {
+                // We use `linkdrop_account_id` as a heuristic to determine if
+                // the accounts are on the same network. In the future, we
+                // might consider to have a better way to do this.
+                network_config
+                    .linkdrop_account_id
+                    .as_ref()
+                    .map_or(false, |linkdrop_account_id| {
+                        account_ids.iter().any(|account_id| {
+                            account_id.as_str().ends_with(linkdrop_account_id.as_str())
+                        })
+                    })
+            });
+        let variants = if matches.is_empty() {
+            non_matches
+        } else {
+            matches.extend(non_matches);
+            matches
+        };
+        variants.into_iter().map(|(k, _)| k).collect()
+    } else {
+        config.network_connection.keys().collect()
+    };
+
     let select_submit = Select::new("What is the name of the network?", variants).prompt();
     match select_submit {
         Ok(value) => Ok(Some(value.clone())),

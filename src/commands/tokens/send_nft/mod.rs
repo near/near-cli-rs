@@ -58,49 +58,57 @@ impl SendNftCommandContext {
 
 impl From<SendNftCommandContext> for crate::commands::ActionContext {
     fn from(item: SendNftCommandContext) -> Self {
-        let signer_account_id = item.signer_account_id.clone();
-        let nft_contract_account_id = item.nft_contract_account_id.clone();
-        let receiver_account_id = item.receiver_account_id.clone();
-        let token_id = item.token_id.clone();
-
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(move |_network_config| {
-                Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: signer_account_id.clone(),
-                    receiver_id: nft_contract_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::FunctionCall(
-                        near_primitives::transaction::FunctionCallAction {
-                            method_name: "nft_transfer".to_string(),
-                            args: json!({
-                                "receiver_id": receiver_account_id.to_string(),
-                                "token_id": token_id
-                            })
-                            .to_string()
-                            .into_bytes(),
-                            gas: item.gas.inner,
-                            deposit: item.deposit.to_yoctonear(),
-                        },
-                    )],
-                })
+            std::sync::Arc::new({
+                let signer_account_id = item.signer_account_id.clone();
+                let nft_contract_account_id = item.nft_contract_account_id.clone();
+                let receiver_account_id = item.receiver_account_id.clone();
+                let token_id = item.token_id.clone();
+
+                move |_network_config| {
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_account_id.clone(),
+                        receiver_id: nft_contract_account_id.clone(),
+                        actions: vec![near_primitives::transaction::Action::FunctionCall(
+                            near_primitives::transaction::FunctionCallAction {
+                                method_name: "nft_transfer".to_string(),
+                                args: json!({
+                                    "receiver_id": receiver_account_id.to_string(),
+                                    "token_id": token_id
+                                })
+                                .to_string()
+                                .into_bytes(),
+                                gas: item.gas.inner,
+                                deposit: item.deposit.to_yoctonear(),
+                            },
+                        )],
+                    })
+                }
             });
 
-        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
+            let signer_account_id = item.signer_account_id.clone();
+            let nft_contract_account_id = item.nft_contract_account_id.clone();
+            let receiver_account_id = item.receiver_account_id.clone();
+            let token_id = item.token_id.clone();
+
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                     eprintln!(
-                        "<{}> has successfully transferred NFT token_id=\"{}\" to <{}> on contract <{}>.",
-                        item.signer_account_id,
-                        item.token_id,
-                        item.receiver_account_id,
-                        item.nft_contract_account_id,
+                        "<{signer_account_id}> has successfully transferred NFT token_id=\"{token_id}\" to <{receiver_account_id}> on contract <{nft_contract_account_id}>.",
                     );
                 }
                 Ok(())
-            },
-        );
+            }
+        });
 
         Self {
             global_context: item.global_context,
+            interacting_with_account_ids: vec![
+                item.nft_contract_account_id.clone(),
+                item.signer_account_id.clone(),
+                item.receiver_account_id.clone(),
+            ],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

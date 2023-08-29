@@ -2,8 +2,8 @@ use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod print_keypair_to_terminal;
+mod save_keypair_to_legacy_keychain;
 mod save_keypair_to_keychain;
-mod save_keypair_to_macos_keychain;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]
@@ -49,12 +49,12 @@ pub enum SaveMode {
         message = "save-to-keychain   - Save automatically generated key pair to keychain"
     ))]
     /// Save automatically generated key pair to keychain
-    SaveToKeychain(self::save_keypair_to_macos_keychain::SaveKeypairToKeychain),
+    SaveToKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
     #[strum_discriminants(strum(
         message = "save-to-legacy-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
     /// Save automatically generated key pair to the legacy keychain (compatible with JS CLI)
-    SaveToLegacyKeychain(self::save_keypair_to_keychain::SaveKeypairToLegacyKeychain),
+    SaveToLegacyKeychain(self::save_keypair_to_legacy_keychain::SaveKeypairToLegacyKeychain),
     #[strum_discriminants(strum(
         message = "print-to-terminal        - Print automatically generated key pair in terminal"
     ))]
