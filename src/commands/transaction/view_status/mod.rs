@@ -27,7 +27,7 @@ impl TransactionInfoContext {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = scope.signer_account_id.clone();
-                let transaction_hash = scope.transaction_hash.clone();
+                let transaction_hash = scope.transaction_hash;
 
                 move |network_config| {
                     let query_view_transaction_status = network_config
