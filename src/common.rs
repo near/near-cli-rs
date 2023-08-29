@@ -1285,30 +1285,26 @@ pub fn print_transaction_status(
     Ok(())
 }
 
-#[cfg(target_os = "macos")]
-pub fn save_access_key_to_macos_keychain(
+pub fn save_access_key_to_keychain(
     network_config: crate::config::NetworkConfig,
     key_pair_properties_buf: &str,
     public_key_str: &str,
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
-    let keychain = security_framework::os::macos::keychain::SecKeychain::default()
-        .wrap_err("Failed to open keychain")?;
     let service_name = std::borrow::Cow::Owned(format!(
         "near-{}-{}",
         network_config.network_name, account_id
     ));
-    keychain
-        .set_generic_password(
-            &service_name,
-            &format!("{}:{}", account_id, public_key_str),
-            key_pair_properties_buf.as_bytes(),
-        )
+
+    keyring::Entry::new(&service_name, &format!("{}:{}", account_id, public_key_str))
+        .wrap_err("Failed to open keychain")?
+        .set_password(key_pair_properties_buf)
         .wrap_err("Failed to save password to keychain")?;
-    Ok("The data for the access key is saved in macOS Keychain".to_string())
+
+    Ok("The data for the access key is saved in the keychain".to_string())
 }
 
-pub fn save_access_key_to_keychain(
+pub fn save_access_key_to_legacy_keychain(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties_buf: &str,

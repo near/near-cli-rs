@@ -2,9 +2,8 @@ use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod print_keypair_to_terminal;
+mod save_keypair_to_legacy_keychain;
 mod save_keypair_to_keychain;
-#[cfg(target_os = "macos")]
-mod save_keypair_to_macos_keychain;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]
@@ -46,17 +45,16 @@ impl GenerateKeypairContext {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Save an access key for this account:
 pub enum SaveMode {
-    #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
-        message = "save-to-macos-keychain   - Save automatically generated key pair to macOS keychain"
+        message = "save-to-keychain   - Save automatically generated key pair to keychain"
     ))]
-    /// Save automatically generated key pair to macOS keychain
-    SaveToMacosKeychain(self::save_keypair_to_macos_keychain::SaveKeypairToMacosKeychain),
+    /// Save automatically generated key pair to keychain
+    SaveToKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
     #[strum_discriminants(strum(
-        message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
+        message = "save-to-legacy-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
     /// Save automatically generated key pair to the legacy keychain (compatible with JS CLI)
-    SaveToKeychain(self::save_keypair_to_keychain::SaveKeypairToKeychain),
+    SaveToLegacyKeychain(self::save_keypair_to_legacy_keychain::SaveKeypairToLegacyKeychain),
     #[strum_discriminants(strum(
         message = "print-to-terminal        - Print automatically generated key pair in terminal"
     ))]

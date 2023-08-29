@@ -2096,7 +2096,6 @@ dependencies = [
  "openssl",
  "prettytable",
  "reqwest",
- "security-framework",
  "self_update",
  "semver",
  "serde",

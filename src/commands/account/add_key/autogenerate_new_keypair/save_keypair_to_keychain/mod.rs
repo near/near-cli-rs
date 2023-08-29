@@ -1,5 +1,3 @@
-use color_eyre::eyre::Context;
-
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::GenerateKeypairContext)]
 #[interactive_clap(output_context = SaveKeypairToKeychainContext)]
@@ -10,73 +8,49 @@ pub struct SaveKeypairToKeychain {
 }
 
 #[derive(Debug, Clone)]
-pub struct SaveKeypairToKeychainContext {
-    global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
-    key_pair_properties: crate::common::KeyPairProperties,
-    public_key: near_crypto::PublicKey,
-}
+pub struct SaveKeypairToKeychainContext(super::GenerateKeypairContext);
 
 impl SaveKeypairToKeychainContext {
     pub fn from_previous_context(
         previous_context: super::GenerateKeypairContext,
         _scope: &<SaveKeypairToKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        Ok(Self {
-            global_context: previous_context.global_context,
-            signer_account_id: previous_context.signer_account_id,
-            permission: previous_context.permission,
-            key_pair_properties: previous_context.key_pair_properties,
-            public_key: previous_context.public_key,
-        })
+        Ok(Self(previous_context))
     }
 }
 
 impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
     fn from(item: SaveKeypairToKeychainContext) -> Self {
-        let credentials_home_dir = item.global_context.config.credentials_home_dir.clone();
-
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
                 Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: item.signer_account_id.clone(),
-                    receiver_id: item.signer_account_id.clone(),
+                    signer_id: item.0.signer_account_id.clone(),
+                    receiver_id: item.0.signer_account_id.clone(),
                     actions: vec![near_primitives::transaction::Action::AddKey(
                         near_primitives::transaction::AddKeyAction {
-                            public_key: item.public_key.clone(),
+                            public_key: item.0.public_key.clone(),
                             access_key: near_primitives::account::AccessKey {
                                 nonce: 0,
-                                permission: item.permission.clone(),
+                                permission: item.0.permission.clone(),
                             },
                         },
                     )],
                 })
             });
-
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
             std::sync::Arc::new(
                 move |signed_transaction, network_config, storage_message| {
-                    let key_pair_properties_buf = serde_json::to_string(&item.key_pair_properties)?;
                     *storage_message = crate::common::save_access_key_to_keychain(
                         network_config.clone(),
-                        credentials_home_dir.clone(),
-                        &key_pair_properties_buf,
-                        &item.key_pair_properties.public_key_str,
+                        &serde_json::to_string(&item.0.key_pair_properties)?,
+                        &item.0.key_pair_properties.public_key_str,
                         &signed_transaction.transaction.signer_id,
-                    )
-                    .wrap_err_with(|| {
-                        format!(
-                            "Failed to save a file with access key: {}",
-                            &item.key_pair_properties.public_key_str
-                        )
-                    })?;
+                    )?;
                     Ok(())
                 },
             );
-
         Self {
-            global_context: item.global_context,
+            global_context: item.0.global_context,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
