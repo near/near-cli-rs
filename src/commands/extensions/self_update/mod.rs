@@ -23,8 +23,7 @@ impl SelfUpdateCommandContext {
             .repo_name("near-cli-rs")
             .bin_path_in_archive(
                 format!(
-                    "near-cli-rs-v{}-{}/{}",
-                    get_latest_version()?,
+                    "near-cli-rs-{}/{}",
                     self_update::get_target(),
                     BIN_NAME
                 )
