@@ -2,8 +2,8 @@ use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod print_keypair_to_terminal;
-mod save_keypair_to_legacy_keychain;
 mod save_keypair_to_keychain;
+mod save_keypair_to_legacy_keychain;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]

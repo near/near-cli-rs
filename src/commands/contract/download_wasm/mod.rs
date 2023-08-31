@@ -76,7 +76,7 @@ impl DownloadContractContext {
                     .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                         block_reference: block_reference.clone(),
                         request: near_primitives::views::QueryRequest::ViewCode {
-                            account_id: account_id.clone().into(),
+                            account_id: account_id.clone(),
                         },
                     })
                     .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}>", &account_id))?;
