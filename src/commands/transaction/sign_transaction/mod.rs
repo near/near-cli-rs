@@ -34,8 +34,8 @@ impl SignTransactionContext {
         Ok(Self(crate::commands::ActionContext {
             global_context: previous_context,
             interacting_with_account_ids: vec![
-                scope.unsigned_transaction.inner.signer_id.clone().into(),
-                scope.unsigned_transaction.inner.receiver_id.clone().into(),
+                scope.unsigned_transaction.inner.signer_id.clone(),
+                scope.unsigned_transaction.inner.receiver_id.clone(),
             ],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
