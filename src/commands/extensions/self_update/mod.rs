@@ -22,12 +22,7 @@ impl SelfUpdateCommandContext {
             .repo_owner("near")
             .repo_name("near-cli-rs")
             .bin_path_in_archive(
-                format!(
-                    "near-cli-rs-{}/{}",
-                    self_update::get_target(),
-                    BIN_NAME
-                )
-                .as_str(),
+                format!("near-cli-rs-{}/{}", self_update::get_target(), BIN_NAME).as_str(),
             )
             .bin_name(BIN_NAME)
             .show_download_progress(true)
