@@ -8,8 +8,7 @@ pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
-#[cfg(target_os = "macos")]
-pub mod sign_with_macos_keychain;
+pub mod sign_with_legacy_keychain;
 pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
 
@@ -20,17 +19,16 @@ pub const META_TRANSACTION_VALID_FOR_DEFAULT: u64 = 1000;
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Select a tool for signing the transaction:
 pub enum SignWith {
-    #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
-        message = "sign-with-macos-keychain         - Sign the transaction with a key saved in macOS keychain"
+        message = "sign-with-keychain         - Sign the transaction with a key saved in the keychain (backwards compatible with the old near CLI)"
     ))]
-    /// Sign the transaction with a key saved in macOS keychain
-    SignWithMacosKeychain(self::sign_with_macos_keychain::SignMacosKeychain),
+    /// Sign the transaction with a key saved in keychain
+    SignWithKeychain(self::sign_with_keychain::SignKeychain),
     #[strum_discriminants(strum(
-        message = "sign-with-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
+        message = "sign-with-legacy-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
     ))]
     /// Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)
-    SignWithKeychain(self::sign_with_keychain::SignKeychain),
+    SignWithLegacyKeychain(self::sign_with_legacy_keychain::SignLegacyKeychain),
     #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(
         message = "sign-with-ledger                 - Sign the transaction with Ledger Nano device"

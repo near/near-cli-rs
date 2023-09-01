@@ -24,12 +24,12 @@ derive_more = "0.99.9"
 easy-ext = "1"
 
 reqwest = { version = "0.11", features = ["blocking", "json"] }
-tokio = { version = "1.0", features = [ "rt-multi-thread" ] }
+tokio = { version = "1.0", features = ["rt-multi-thread"] }
 futures = "0.3"
 # Ad-hoc fix for compilation errors (rustls is used instead of openssl to ease the deployment avoiding the system dependency on openssl)
-openssl = { version = "0.10", features = [ "vendored" ] }
+openssl = { version = "0.10", features = ["vendored"] }
 
-bip39 = { version = "2.0.0", features = [ "rand" ] }
+bip39 = { version = "2.0.0", features = ["rand"] }
 bs58 = "0.5"
 ed25519-dalek = { version = "1" }
 hex = "0.4.2"
@@ -46,7 +46,10 @@ shell-words = "1"
 cargo-util = "0.1.1"
 
 semver = { version = "1.0.4", optional = true }
-self_update = { version = "0.37.0", features = ["archive-tar", "compression-flate2"], optional = true }
+self_update = { version = "0.37.0", features = [
+    "archive-tar",
+    "compression-flate2",
+], optional = true }
 
 color-eyre = "0.6"
 thiserror = "1"
@@ -63,9 +66,7 @@ near-jsonrpc-primitives = "0.17.0"
 
 interactive-clap = "0.2.4"
 interactive-clap-derive = "0.2.4"
-
-[target.'cfg(target_os = "macos")'.dependencies]
-security-framework = "2.7.0"
+keyring = "2.0.5"
 
 [features]
 default = ["ledger", "self-update"]
@@ -86,7 +87,12 @@ ci = ["github"]
 # The installers to generate for each app
 installers = ["shell", "powershell", "npm"]
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["x86_64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "aarch64-apple-darwin"]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "aarch64-apple-darwin",
+]
 # The archive format to use for windows builds (defaults .zip)
 windows-archive = ".tar.gz"
 # The archive format to use for non-windows builds (defaults .tar.xz)
