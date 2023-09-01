@@ -24,7 +24,7 @@ impl ExportAccountFromPrivateKeyContext {
                     #[cfg(target_os = "macos")]
                     {
                         if let Ok(account_key_pair) =
-                            super::using_web_wallet::get_account_key_pair_from_macos_keychain(
+                            super::get_account_key_pair_from_macos_keychain(
                                 network_config,
                                 &account_id,
                             )
@@ -37,13 +37,11 @@ impl ExportAccountFromPrivateKeyContext {
                         }
                     }
 
-                    if let Ok(account_key_pair) =
-                        super::using_web_wallet::get_account_key_pair_from_keychain(
-                            network_config,
-                            &account_id,
-                            &config.credentials_home_dir,
-                        )
-                    {
+                    if let Ok(account_key_pair) = super::get_account_key_pair_from_keychain(
+                        network_config,
+                        &account_id,
+                        &config.credentials_home_dir,
+                    ) {
                         println!(
                             "Here is the private key for account <{}>: {}",
                             account_id, account_key_pair.private_key,

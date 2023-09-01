@@ -25,12 +25,10 @@ impl ExportAccountFromSeedPhraseContext {
                 move |network_config| {
                     #[cfg(target_os = "macos")]
                     {
-                        if let Ok(password_list) =
-                            super::using_web_wallet::get_password_list_from_macos_keychain(
-                                network_config,
-                                &account_id,
-                            )
-                        {
+                        if let Ok(password_list) = super::get_password_list_from_macos_keychain(
+                            network_config,
+                            &account_id,
+                        ) {
                             for password in password_list {
                                 if let Ok(key_pair_properties) =
                                     serde_json::from_slice::<crate::common::KeyPairProperties>(
@@ -81,13 +79,13 @@ impl From<ExportAccountFromSeedPhraseContext> for crate::network::NetworkContext
     }
 }
 
-pub fn get_seed_phrase_data_path(
+fn get_seed_phrase_data_path(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     credentials_home_dir: &std::path::Path,
 ) -> color_eyre::eyre::Result<std::path::PathBuf> {
     let check_if_seed_phrase_exists = true;
-    super::using_web_wallet::get_account_properties_data_path(
+    super::get_account_properties_data_path(
         network_config,
         account_id,
         credentials_home_dir,
