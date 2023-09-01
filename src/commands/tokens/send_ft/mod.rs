@@ -66,8 +66,8 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
 
                 move |_network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
-                        signer_id: signer_account_id.clone().into(),
-                        receiver_id: ft_contract_account_id.clone().into(),
+                        signer_id: signer_account_id.clone(),
+                        receiver_id: ft_contract_account_id.clone(),
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: "ft_transfer".to_string(),
