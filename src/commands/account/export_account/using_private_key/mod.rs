@@ -21,21 +21,21 @@ impl ExportAccountFromPrivateKeyContext {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 move |network_config| {
-                    #[cfg(target_os = "macos")]
-                    {
-                        if let Ok(account_key_pair) =
-                            super::get_account_key_pair_from_macos_keychain(
-                                network_config,
-                                &account_id,
-                            )
-                        {
-                            println!(
-                                "Here is the private key for account <{}>: {}",
-                                account_id, account_key_pair.private_key,
-                            );
-                            return Ok(());
-                        }
-                    }
+                    // #[cfg(target_os = "macos")]
+                    // {
+                    //     if let Ok(account_key_pair) =
+                    //         super::get_account_key_pair_from_macos_keychain(
+                    //             network_config,
+                    //             &account_id,
+                    //         )
+                    //     {
+                    //         println!(
+                    //             "Here is the private key for account <{}>: {}",
+                    //             account_id, account_key_pair.private_key,
+                    //         );
+                    //         return Ok(());
+                    //     }
+                    // }
 
                     if let Ok(account_key_pair) = super::get_account_key_pair_from_keychain(
                         network_config,
