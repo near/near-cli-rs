@@ -20,7 +20,7 @@ pub const META_TRANSACTION_VALID_FOR_DEFAULT: u64 = 1000;
 /// Select a tool for signing the transaction:
 pub enum SignWith {
     #[strum_discriminants(strum(
-        message = "sign-with-keychain               - Sign the transaction with a key saved in the keychain (backwards compatible with the old near CLI)"
+        message = "sign-with-keychain               - Sign the transaction with a key saved in the secure keychain"
     ))]
     /// Sign the transaction with a key saved in keychain
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
