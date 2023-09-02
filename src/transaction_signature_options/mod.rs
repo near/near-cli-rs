@@ -20,12 +20,12 @@ pub const META_TRANSACTION_VALID_FOR_DEFAULT: u64 = 1000;
 /// Select a tool for signing the transaction:
 pub enum SignWith {
     #[strum_discriminants(strum(
-        message = "sign-with-keychain         - Sign the transaction with a key saved in the keychain (backwards compatible with the old near CLI)"
+        message = "sign-with-keychain               - Sign the transaction with a key saved in the keychain (backwards compatible with the old near CLI)"
     ))]
     /// Sign the transaction with a key saved in keychain
     SignWithKeychain(self::sign_with_keychain::SignKeychain),
     #[strum_discriminants(strum(
-        message = "sign-with-legacy-keychain               - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
+        message = "sign-with-legacy-keychain        - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
     ))]
     /// Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)
     SignWithLegacyKeychain(self::sign_with_legacy_keychain::SignLegacyKeychain),
