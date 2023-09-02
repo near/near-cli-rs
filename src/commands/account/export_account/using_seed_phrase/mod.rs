@@ -23,27 +23,19 @@ impl ExportAccountFromSeedPhraseContext {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 move |network_config| {
-                    // #[cfg(target_os = "macos")]
-                    // {
-                    //     if let Ok(password_list) = super::get_password_list_from_macos_keychain(
-                    //         network_config,
-                    //         &account_id,
-                    //     ) {
-                    //         for password in password_list {
-                    //             if let Ok(key_pair_properties) =
-                    //                 serde_json::from_slice::<crate::common::KeyPairProperties>(
-                    //                     &password,
-                    //                 )
-                    //             {
-                    //                 println!(
-                    //                     "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
-                    //                     account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
-                    //                 );
-                    //                 return Ok(());
-                    //             }
-                    //         }
-                    //     }
-                    // }
+                    if let Ok(password) =
+                        super::get_password_from_keychain(network_config, &account_id)
+                    {
+                        if let Ok(key_pair_properties) =
+                            serde_json::from_str::<crate::common::KeyPairProperties>(&password)
+                        {
+                            println!(
+                                "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
+                                account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path
+                            );
+                            return Ok(());
+                        }
+                    }
 
                     let data_path = get_seed_phrase_data_path(
                         network_config,

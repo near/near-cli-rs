@@ -16,7 +16,7 @@ pub struct ExportAccount {
     /// Which account ID should be exported?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
-    import_account_actions: ExportAccountActions,
+    export_account_actions: ExportAccountActions,
 }
 
 #[derive(Debug, Clone)]
@@ -70,36 +70,28 @@ pub enum ExportAccountActions {
     UsingPrivateKey(self::using_private_key::ExportAccountFromPrivateKey),
 }
 
-#[cfg(target_os = "macos")]
-pub fn get_account_key_pair_from_macos_keychain(
+pub fn get_account_key_pair_from_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<crate::transaction_signature_options::AccountKeyPair> {
-    let password_list = get_password_list_from_macos_keychain(network_config, account_id)?;
-    for password in password_list {
-        let account_key_pair = serde_json::from_slice(password.as_ref());
-        if let Ok(key_pair) = account_key_pair {
-            return Ok(key_pair);
-        }
+    let password = get_password_from_keychain(network_config, account_id)?;
+    let account_key_pair = serde_json::from_str(&password);
+    if let Ok(key_pair) = account_key_pair {
+        return Ok(key_pair);
     }
     Err(color_eyre::eyre::Report::msg("Error reading data"))
 }
 
-#[cfg(target_os = "macos")]
-pub fn get_password_list_from_macos_keychain(
+pub fn get_password_from_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<Vec<security_framework::os::macos::passwords::SecKeychainItemPassword>>
-{
-    let keychain = security_framework::os::macos::keychain::SecKeychain::default()
-        .wrap_err("Failed to open keychain")?;
-
+) -> color_eyre::eyre::Result<String> {
     let service_name: std::borrow::Cow<'_, str> = std::borrow::Cow::Owned(format!(
         "near-{}-{}",
         network_config.network_name,
         account_id.as_str()
     ));
-    let password_list = {
+    let password = {
         let access_key_list = network_config
             .json_rpc_client()
             .blocking_call_view_access_key_list(
@@ -109,7 +101,7 @@ pub fn get_password_list_from_macos_keychain(
             .wrap_err_with(|| format!("Failed to fetch access key list for {}", account_id))?
             .access_key_list_view()?;
 
-        access_key_list
+        let res = access_key_list
             .keys
             .into_iter()
             .filter(|key| {
@@ -118,22 +110,25 @@ pub fn get_password_list_from_macos_keychain(
                     near_primitives::views::AccessKeyPermissionView::FullAccess
                 )
             })
-            .filter_map(|key| {
-                let password = keychain.find_generic_password(
-                    &service_name,
-                    &format!("{}:{}", account_id, key.public_key),
-                );
-                match password {
-                    Ok((pas, _)) => Some(pas),
-                    Err(_) => None,
-                }
-            })
-            .collect::<Vec<_>>()
+            .map(|key| key.public_key)
+            .find_map(|public_key| {
+                let keyring =
+                    keyring::Entry::new(&service_name, &format!("{}:{}", account_id, public_key))
+                        .ok()?;
+                keyring.get_password().ok()
+            });
+
+        match res {
+            Some(password) => password,
+            None => {
+                return Err(color_eyre::Report::msg("No access keys found in keychain"));
+            }
+        }
     };
-    Ok(password_list)
+    Ok(password)
 }
 
-pub fn get_account_key_pair_from_keychain(
+pub fn get_account_key_pair_from_legacy_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     credentials_home_dir: &std::path::Path,
