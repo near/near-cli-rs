@@ -24,11 +24,11 @@ impl TransactionInfoContext {
         previous_context: crate::GlobalContext,
         scope: &<TransactionInfo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let transaction_hash = scope.transaction_hash;
-        let signer_account_id = scope.signer_account_id.clone();
-
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
+                let signer_account_id = scope.signer_account_id.clone();
+                let transaction_hash = scope.transaction_hash;
+
                 move |network_config| {
                     let query_view_transaction_status = network_config
                         .json_rpc_client()
@@ -46,6 +46,7 @@ impl TransactionInfoContext {
 
         Ok(Self(crate::network::NetworkContext {
             config: previous_context.config,
+            interacting_with_account_ids: vec![scope.signer_account_id.clone().into()],
             on_after_getting_network_callback,
         }))
     }

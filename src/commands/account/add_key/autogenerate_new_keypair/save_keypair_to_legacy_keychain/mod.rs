@@ -1,45 +1,40 @@
-use std::str::FromStr;
+use color_eyre::eyre::Context;
 
-#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]
-#[interactive_clap(output_context = AddAccessWithSeedPhraseActionContext)]
-pub struct AddAccessWithSeedPhraseAction {
-    /// Enter the seed-phrase for this sub-account:
-    master_seed_phrase: String,
+#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[interactive_clap(input_context = super::GenerateKeypairContext)]
+#[interactive_clap(output_context = SaveKeypairToLegacyKeychainContext)]
+pub struct SaveKeypairToLegacyKeychain {
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
 #[derive(Debug, Clone)]
-pub struct AddAccessWithSeedPhraseActionContext {
+pub struct SaveKeypairToLegacyKeychainContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     permission: near_primitives::account::AccessKeyPermission,
+    key_pair_properties: crate::common::KeyPairProperties,
     public_key: near_crypto::PublicKey,
 }
 
-impl AddAccessWithSeedPhraseActionContext {
+impl SaveKeypairToLegacyKeychainContext {
     pub fn from_previous_context(
-        previous_context: super::access_key_type::AccessTypeContext,
-        scope: &<AddAccessWithSeedPhraseAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        previous_context: super::GenerateKeypairContext,
+        _scope: &<SaveKeypairToLegacyKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let seed_phrase_hd_path_default = slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
-        let public_key = crate::common::get_public_key_from_seed_phrase(
-            seed_phrase_hd_path_default,
-            &scope.master_seed_phrase,
-        )?;
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             permission: previous_context.permission,
-            public_key,
+            key_pair_properties: previous_context.key_pair_properties,
+            public_key: previous_context.public_key,
         })
     }
 }
 
-impl From<AddAccessWithSeedPhraseActionContext> for crate::commands::ActionContext {
-    fn from(item: AddAccessWithSeedPhraseActionContext) -> Self {
+impl From<SaveKeypairToLegacyKeychainContext> for crate::commands::ActionContext {
+    fn from(item: SaveKeypairToLegacyKeychainContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = item.signer_account_id.clone();
@@ -61,6 +56,29 @@ impl From<AddAccessWithSeedPhraseActionContext> for crate::commands::ActionConte
                 }
             });
 
+        let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
+            std::sync::Arc::new({
+                let credentials_home_dir = item.global_context.config.credentials_home_dir.clone();
+
+                move |signed_transaction, network_config, storage_message| {
+                    let key_pair_properties_buf = serde_json::to_string(&item.key_pair_properties)?;
+                    *storage_message = crate::common::save_access_key_to_legacy_keychain(
+                        network_config.clone(),
+                        credentials_home_dir.clone(),
+                        &key_pair_properties_buf,
+                        &item.key_pair_properties.public_key_str,
+                        &signed_transaction.transaction.signer_id,
+                    )
+                    .wrap_err_with(|| {
+                        format!(
+                            "Failed to save a file with access key: {}",
+                            &item.key_pair_properties.public_key_str
+                        )
+                    })?;
+                    Ok(())
+                }
+            });
+
         Self {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.signer_account_id],
@@ -68,9 +86,7 @@ impl From<AddAccessWithSeedPhraseActionContext> for crate::commands::ActionConte
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
-            ),
+            on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
             ),

@@ -1286,30 +1286,26 @@ pub fn print_transaction_status(
     Ok(())
 }
 
-#[cfg(target_os = "macos")]
-pub fn save_access_key_to_macos_keychain(
+pub fn save_access_key_to_keychain(
     network_config: crate::config::NetworkConfig,
     key_pair_properties_buf: &str,
     public_key_str: &str,
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
-    let keychain = security_framework::os::macos::keychain::SecKeychain::default()
-        .wrap_err("Failed to open keychain")?;
     let service_name = std::borrow::Cow::Owned(format!(
         "near-{}-{}",
         network_config.network_name, account_id
     ));
-    keychain
-        .set_generic_password(
-            &service_name,
-            &format!("{}:{}", account_id, public_key_str),
-            key_pair_properties_buf.as_bytes(),
-        )
+
+    keyring::Entry::new(&service_name, &format!("{}:{}", account_id, public_key_str))
+        .wrap_err("Failed to open keychain")?
+        .set_password(key_pair_properties_buf)
         .wrap_err("Failed to save password to keychain")?;
-    Ok("The data for the access key is saved in macOS Keychain".to_string())
+
+    Ok("The data for the access key is saved in the keychain".to_string())
 }
 
-pub fn save_access_key_to_keychain(
+pub fn save_access_key_to_legacy_keychain(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties_buf: &str,
@@ -1759,10 +1755,42 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
     table.printstd();
 }
 
+/// Interactive prompt for network name.
+///
+/// If account_ids is provided, show the network connections that are more
+/// relevant at the top of the list.
 pub fn input_network_name(
     config: &crate::config::Config,
+    account_ids: &[near_primitives::types::AccountId],
 ) -> color_eyre::eyre::Result<Option<String>> {
-    let variants = config.network_connection.keys().collect::<Vec<_>>();
+    let variants = if !account_ids.is_empty() {
+        let (mut matches, non_matches): (Vec<_>, Vec<_>) = config
+            .network_connection
+            .iter()
+            .partition(|(_, network_config)| {
+                // We use `linkdrop_account_id` as a heuristic to determine if
+                // the accounts are on the same network. In the future, we
+                // might consider to have a better way to do this.
+                network_config
+                    .linkdrop_account_id
+                    .as_ref()
+                    .map_or(false, |linkdrop_account_id| {
+                        account_ids.iter().any(|account_id| {
+                            account_id.as_str().ends_with(linkdrop_account_id.as_str())
+                        })
+                    })
+            });
+        let variants = if matches.is_empty() {
+            non_matches
+        } else {
+            matches.extend(non_matches);
+            matches
+        };
+        variants.into_iter().map(|(k, _)| k).collect()
+    } else {
+        config.network_connection.keys().collect()
+    };
+
     let select_submit = Select::new("What is the name of the network?", variants).prompt();
     match select_submit {
         Ok(value) => Ok(Some(value.clone())),

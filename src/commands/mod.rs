@@ -71,6 +71,7 @@ pub struct PrepopulatedTransaction {
 #[derive(Clone)]
 pub struct ActionContext {
     pub global_context: crate::GlobalContext,
+    pub interacting_with_account_ids: Vec<near_primitives::types::AccountId>,
     pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,
     pub on_before_sending_transaction_callback:

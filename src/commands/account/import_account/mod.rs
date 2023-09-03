@@ -100,43 +100,41 @@ fn save_access_key(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
 ) -> crate::CliResult {
-    #[cfg(target_os = "macos")]
-    {
-        #[derive(strum_macros::Display)]
-        enum SelectStorage {
-            #[strum(to_string = "Store the access key in my macOS keychain")]
-            SaveToMacosKeychain,
-            #[strum(
-                to_string = "Store the access key in my legacy keychain (compatible with the old near CLI)"
-            )]
-            SaveToKeychain,
-        }
-        let selection = Select::new(
-            "Select a keychain to save the access key to:",
-            vec![
-                SelectStorage::SaveToMacosKeychain,
-                SelectStorage::SaveToKeychain,
-            ],
-        )
-        .prompt()?;
-        if let SelectStorage::SaveToMacosKeychain = selection {
-            let storage_message = crate::common::save_access_key_to_macos_keychain(
-                network_config,
-                key_pair_properties_buf,
-                public_key_str,
-                &account_id,
-            )
-            .wrap_err_with(|| {
-                format!(
-                    "Failed to save the access key <{}> to the keychain",
-                    public_key_str
-                )
-            })?;
-            eprintln!("{}", storage_message);
-            return Ok(());
-        }
+    #[derive(strum_macros::Display)]
+    enum SelectStorage {
+        #[strum(to_string = "Store the access key in my keychain")]
+        SaveToKeychain,
+        #[strum(
+            to_string = "Store the access key in my legacy keychain (compatible with the old near CLI)"
+        )]
+        SaveToLegacyKeychain,
     }
-    let storage_message = crate::common::save_access_key_to_keychain(
+    let selection = Select::new(
+        "Select a keychain to save the access key to:",
+        vec![
+            SelectStorage::SaveToKeychain,
+            SelectStorage::SaveToLegacyKeychain,
+        ],
+    )
+    .prompt()?;
+    if let SelectStorage::SaveToKeychain = selection {
+        let storage_message = crate::common::save_access_key_to_keychain(
+            network_config,
+            key_pair_properties_buf,
+            public_key_str,
+            &account_id,
+        )
+        .wrap_err_with(|| {
+            format!(
+                "Failed to save the access key <{}> to the keychain",
+                public_key_str
+            )
+        })?;
+        eprintln!("{}", storage_message);
+        return Ok(());
+    }
+
+    let storage_message = crate::common::save_access_key_to_legacy_keychain(
         network_config,
         credentials_home_dir,
         key_pair_properties_buf,
