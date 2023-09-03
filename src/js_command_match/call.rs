@@ -3,6 +3,8 @@
 pub struct CallArgs {
     contract_account_id: String,
     method_name: String,
+    #[clap(long, default_value_t = false)]
+    base64: bool,
     args: String,
     #[clap(long, aliases = ["account_id", "accountId"])]
     account_id: String,
@@ -16,13 +18,18 @@ pub struct CallArgs {
 
 impl CallArgs {
     pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
+        let format_args = if self.base64 {
+            "base64-args"
+        } else {
+            "json-args"
+        };
         vec![
             "contract".to_owned(),
             "call-function".to_owned(),
             "as-transaction".to_owned(),
             self.contract_account_id.to_owned(),
             self.method_name.to_owned(),
-            "json-args".to_owned(),
+            format_args.to_owned(),
             self.args.to_owned(),
             "prepaid-gas".to_owned(),
             format!("{} TeraGas", self.gas / 1_000_000_000_000),
