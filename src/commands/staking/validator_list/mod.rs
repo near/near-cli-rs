@@ -21,6 +21,7 @@ impl ValidatorListContext {
             std::sync::Arc::new(display_validators_info);
         Ok(Self(crate::network::NetworkContext {
             config: previous_context.config,
+            interacting_with_account_ids: vec![],
             on_after_getting_network_callback,
         }))
     }

@@ -27,9 +27,10 @@ impl ViewAccountSummaryContext {
             let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {
-                let rpc_query_response = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_account(&account_id, block_reference.clone())
+                let json_rpc_client = network_config.json_rpc_client();
+
+                let rpc_query_response = json_rpc_client
+                    .blocking_call_view_account(&account_id.clone(), block_reference.clone())
                     .wrap_err_with(|| {
                         format!(
                             "Failed to fetch query ViewAccount for <{}>",
@@ -38,7 +39,8 @@ impl ViewAccountSummaryContext {
                     })?;
                 let account_view = rpc_query_response.account_view()?;
 
-                let access_key_list = json_rpc_client
+                let access_key_list = network_config
+                    .json_rpc_client()
                     .blocking_call_view_access_key_list(
                         &account_id,
                         block_reference.clone(),

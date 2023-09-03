@@ -22,16 +22,18 @@ impl ViewBalanceContext {
         previous_context: super::DelegateStakeContext,
         scope: &<ViewBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let validator_account_id = previous_context.validator_account_id.clone();
+        let interacting_with_account_ids = vec![validator_account_id.clone()];
+
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
-            let validator_id = previous_context.validator_account_id.clone();
 
             move |network_config, block_reference| {
                 let user_staked_balance: u128 = get_user_staked_balance(network_config, block_reference, &previous_context.validator_account_id, &account_id)?;
                 let user_unstaked_balance: u128 = get_user_unstaked_balance(network_config, block_reference, &previous_context.validator_account_id, &account_id)?;
                 let user_total_balance: u128 = get_user_total_balance(network_config, block_reference, &previous_context.validator_account_id, &account_id)?;
 
-                eprintln!("Balance on validator <{validator_id}> for <{account_id}>:");
+                eprintln!("Balance on validator <{validator_account_id}> for <{account_id}>:");
                 eprintln!("      Staked balance:     {:>38}", crate::common::NearBalance::from_yoctonear(user_staked_balance).to_string());
                 eprintln!("      Unstaked balance:   {:>38}", crate::common::NearBalance::from_yoctonear(user_unstaked_balance).to_string());
                 eprintln!("      Total balance:      {:>38}", crate::common::NearBalance::from_yoctonear(user_total_balance).to_string());
@@ -41,6 +43,7 @@ impl ViewBalanceContext {
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.global_context.config,
+            interacting_with_account_ids,
             on_after_getting_block_reference_callback,
         }))
     }

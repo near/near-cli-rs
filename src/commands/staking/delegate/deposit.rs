@@ -25,6 +25,7 @@ impl DepositContext {
         let signer = scope.signer_account_id.clone();
         let signer_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
         let validator_account_id = previous_context.validator_account_id.clone();
+        let interacting_with_account_ids = vec![validator_account_id.clone()];
         let amount = scope.amount.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
@@ -49,15 +50,14 @@ impl DepositContext {
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
                 move |outcome_view, _network_config| {
                     if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                        eprintln!(
-                            "<{signer}> has successfully deposited {amount} on <{validator_account_id}>.",
-                        );
-                        }
+                        eprintln!("<{signer}> has successfully deposited {amount} on <{validator_account_id}>.")
+                    }
                     Ok(())
                 },
             );
         Ok(Self(crate::commands::ActionContext {
             global_context: previous_context.global_context,
+            interacting_with_account_ids,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

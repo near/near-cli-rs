@@ -25,6 +25,7 @@ impl WithdrawAllContext {
         scope: &<WithdrawAll as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let validator_account_id = previous_context.validator_account_id.clone();
+        let interacting_with_account_ids = vec![validator_account_id.clone()];
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
@@ -80,15 +81,14 @@ impl WithdrawAllContext {
 
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    eprintln!(
-                        "<{signer}> has successfully withdrawn the entire amount from <{validator_account_id}>.", //XXX
-                    );
-                    }
+                    eprintln!("<{signer}> has successfully withdrawn the entire amount from <{validator_account_id}>.")
+                }
                 Ok(())
             }
         });
         Ok(Self(crate::commands::ActionContext {
             global_context: previous_context.global_context,
+            interacting_with_account_ids,
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
