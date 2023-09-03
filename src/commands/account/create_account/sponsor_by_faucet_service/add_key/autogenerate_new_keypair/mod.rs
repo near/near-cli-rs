@@ -45,17 +45,16 @@ impl GenerateKeypairContext {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Save an access key for this account:
 pub enum SaveMode {
-    #[cfg(target_os = "macos")]
     #[strum_discriminants(strum(
-        message = "save-to-macos-keychain   - Save automatically generated key pair to macOS keychain"
+        message = "save-to-keychain   - Save automatically generated key pair to keychain"
     ))]
-    /// Save automatically generated key pair to macOS keychain
-    SaveToMacosKeychain(SaveKeyPair),
+    /// Save automatically generated key pair to keychain
+    SaveToKeychain(SaveKeyPair),
     #[strum_discriminants(strum(
-        message = "save-to-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
+        message = "save-to-legacy-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
     /// Save automatically generated key pair to the legacy keychain (compatible with JS CLI)
-    SaveToKeychain(SaveKeyPair),
+    SaveToLegacyKeychain(SaveKeyPair),
     #[strum_discriminants(strum(
         message = "print-to-terminal        - Print automatically generated key pair in terminal"
     ))]
@@ -81,21 +80,20 @@ impl SaveModeContext {
 
                 move |network_config, storage_message| {
                     match scope {
-                        #[cfg(target_os = "macos")]
-                        SaveModeDiscriminants::SaveToMacosKeychain => {
+                        SaveModeDiscriminants::SaveToKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            *storage_message = crate::common::save_access_key_to_macos_keychain(
+                            *storage_message = crate::common::save_access_key_to_keychain(
                                 network_config.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
                                 &new_account_id_str,
                             )?;
                         }
-                        SaveModeDiscriminants::SaveToKeychain => {
+                        SaveModeDiscriminants::SaveToLegacyKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            *storage_message = crate::common::save_access_key_to_keychain(
+                            *storage_message = crate::common::save_access_key_to_legacy_keychain(
                                 network_config.clone(),
                                 credentials_home_dir.clone(),
                                 &key_pair_properties_buf,
