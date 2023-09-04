@@ -1022,7 +1022,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
                 NearBalance::from_yoctonear(*amount)
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
@@ -1041,7 +1041,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
                 account_id,
                 NearBalance::from_yoctonear(*balance),
                 NearBalance::from_yoctonear(*stake)
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
             account_id: _,
@@ -1052,7 +1052,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
                 NearBalance::from_yoctonear(*stake),
                 NearBalance::from_yoctonear(*minimum_stake)
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An error occurred during a `FunctionCall` Action, parameter is debug message.\n{:?}", function_call_error_ser))
@@ -1127,7 +1127,7 @@ pub fn handler_invalid_tx_error(
                         account_id,
                         NearBalance::from_yoctonear(*allowance),
                         NearBalance::from_yoctonear(*cost)
-                    )
+                    ))
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Having a deposit with a function call action is not allowed with a function call access key."))
@@ -1157,13 +1157,13 @@ pub fn handler_invalid_tx_error(
                 signer_id,
                 NearBalance::from_yoctonear(*balance),
                 NearBalance::from_yoctonear(*cost)
-            )
+            ))
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
                 NearBalance::from_yoctonear(*amount)
-            )
+            ))
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An integer overflow occurred during transaction cost estimation."))
