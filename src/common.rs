@@ -925,8 +925,7 @@ pub fn rpc_transaction_error(
                     eprintln!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
-                    let err_invalid_transaction = crate::common::handler_invalid_tx_error(context);
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("{}", err_invalid_transaction));
+                    return handler_invalid_tx_error(context);
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
                     return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err));
@@ -966,71 +965,71 @@ pub fn rpc_transaction_error(
     Ok(())
 }
 
-pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
+pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -> crate::CliResult {
     match &action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
-            eprintln!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id)
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id))
         }
         near_primitives::errors::ActionErrorKind::AccountDoesNotExist { account_id } => {
-            eprintln!(
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: TX receiver ID <{}> doesn't exist (but action is not \"Create Account\").",
                 account_id
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::CreateAccountOnlyByRegistrar {
             account_id: _,
             registrar_account_id: _,
             predecessor_id: _,
         } => {
-            eprintln!("Error: A top-level account ID can only be created by registrar.")
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A top-level account ID can only be created by registrar."))
         }
         near_primitives::errors::ActionErrorKind::CreateAccountNotAllowed {
             account_id,
             predecessor_id,
         } => {
-            eprintln!("Error: A newly created account <{}> must be under a namespace of the creator account <{}>.", account_id, predecessor_id)
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A newly created account <{}> must be under a namespace of the creator account <{}>.", account_id, predecessor_id))
         }
         near_primitives::errors::ActionErrorKind::ActorNoPermission {
             account_id: _,
             actor_id: _,
         } => {
-            eprintln!("Error: Administrative actions can be proceed only if sender=receiver or the first TX action is a \"Create Account\" action.")
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Administrative actions can be proceed only if sender=receiver or the first TX action is a \"Create Account\" action."))
         }
         near_primitives::errors::ActionErrorKind::DeleteKeyDoesNotExist {
             account_id,
             public_key,
         } => {
-            eprintln!(
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}>  tries to remove an access key <{}> that doesn't exist.",
                 account_id, public_key
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::AddKeyAlreadyExists {
             account_id,
             public_key,
         } => {
-            eprintln!(
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Public key <{}> is already used for an existing account ID <{}>.",
                 public_key, account_id
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::DeleteAccountStaking { account_id } => {
-            eprintln!(
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> is staking and can not be deleted",
                 account_id
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
-            eprintln!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
                 crate::common::NearBalance::from_yoctonear(*amount)
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
-            eprintln!(
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> is not yet staked, but tries to unstake.",
                 account_id
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::TriesToStake {
             account_id,
@@ -1038,207 +1037,209 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) {
             locked: _,
             balance,
         } => {
-            eprintln!(
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
                 crate::common::NearBalance::from_yoctonear(*balance),
                 crate::common::NearBalance::from_yoctonear(*stake)
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
             account_id: _,
             stake,
             minimum_stake,
         } => {
-            eprintln!(
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
                 crate::common::NearBalance::from_yoctonear(*stake),
                 crate::common::NearBalance::from_yoctonear(*minimum_stake)
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
-            eprintln!("Error: An error occurred during a `FunctionCall` Action, parameter is debug message.\n{:?}", function_call_error_ser)
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An error occurred during a `FunctionCall` Action, parameter is debug message.\n{:?}", function_call_error_ser))
         }
         near_primitives::errors::ActionErrorKind::NewReceiptValidationError(
             receipt_validation_error,
         ) => {
-            eprintln!("Error: Error occurs when a new `ActionReceipt` created by the `FunctionCall` action fails.\n{:?}", receipt_validation_error)
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Error occurs when a new `ActionReceipt` created by the `FunctionCall` action fails.\n{:?}", receipt_validation_error))
         }
         near_primitives::errors::ActionErrorKind::OnlyImplicitAccountCreationAllowed {
             account_id: _,
         } => {
-            eprintln!("Error: `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71")
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71"))
         }
         near_primitives::errors::ActionErrorKind::DeleteAccountWithLargeState { account_id } => {
-            eprintln!(
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Delete account <{}> whose state is large is temporarily banned.",
                 account_id
-            )
+            ))
         }
         near_primitives::errors::ActionErrorKind::DelegateActionInvalidSignature => {
-            println!("Error: Invalid Signature on DelegateAction")
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid Signature on DelegateAction"))
         }
         near_primitives::errors::ActionErrorKind::DelegateActionSenderDoesNotMatchTxReceiver {
             sender_id,
             receiver_id,
         } => {
-            println!("Error: Delegate Action sender {sender_id} does not match transaction receiver {receiver_id}")
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Delegate Action sender {sender_id} does not match transaction receiver {receiver_id}"))
         }
         near_primitives::errors::ActionErrorKind::DelegateActionExpired => {
-            println!("Error: DelegateAction Expired")
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Expired"))
         }
         near_primitives::errors::ActionErrorKind::DelegateActionAccessKeyError(_) => {
-            println!("Error: The given public key doesn't exist for the sender")
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The given public key doesn't exist for the sender"))
         }
         near_primitives::errors::ActionErrorKind::DelegateActionInvalidNonce {
             delegate_nonce,
             ak_nonce,
         } => {
-            println!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} ak_nonce: {ak_nonce}")
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} ak_nonce: {ak_nonce}"))
         }
         near_primitives::errors::ActionErrorKind::DelegateActionNonceTooLarge {
             delegate_nonce,
             upper_bound,
         } => {
-            println!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}")
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}"))
         }
     }
 }
 
 pub fn handler_invalid_tx_error(
     invalid_tx_error: &near_primitives::errors::InvalidTxError,
-) -> String {
+) -> crate::CliResult {
     match invalid_tx_error {
         near_primitives::errors::InvalidTxError::InvalidAccessKeyError(invalid_access_key_error) => {
             match invalid_access_key_error {
                 near_primitives::errors::InvalidAccessKeyError::AccessKeyNotFound{account_id, public_key} => {
-                    format!("Error: Public key {} doesn't exist for the account <{}>.", public_key, account_id)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Public key {} doesn't exist for the account <{}>.", public_key, account_id))
                 },
                 near_primitives::errors::InvalidAccessKeyError::ReceiverMismatch{tx_receiver, ak_receiver} => {
-                    format!("Error: Transaction for <{}> doesn't match the access key for <{}>.", tx_receiver, ak_receiver)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction for <{}> doesn't match the access key for <{}>.", tx_receiver, ak_receiver))
                 },
                 near_primitives::errors::InvalidAccessKeyError::MethodNameMismatch{method_name} => {
-                    format!("Error: Transaction method name <{}> isn't allowed by the access key.", method_name)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction method name <{}> isn't allowed by the access key.", method_name))
                 },
                 near_primitives::errors::InvalidAccessKeyError::RequiresFullAccess => {
-                    "Error: Transaction requires a full permission access key.".to_string()
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction requires a full permission access key."))
                 },
                 near_primitives::errors::InvalidAccessKeyError::NotEnoughAllowance{account_id, public_key, allowance, cost} => {
-                    format!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
                         crate::common::NearBalance::from_yoctonear(*allowance),
                         crate::common::NearBalance::from_yoctonear(*cost)
-                    )
+                    ))
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
-                    "Error: Having a deposit with a function call action is not allowed with a function call access key.".to_string()
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Having a deposit with a function call action is not allowed with a function call access key."))
                 }
             }
         },
         near_primitives::errors::InvalidTxError::InvalidSignerId { signer_id } => {
-            format!("Error: TX signer ID <{}> is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::utils::is_valid_account_id\".", signer_id)
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX signer ID <{}> is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::utils::is_valid_account_id\".", signer_id))
         },
         near_primitives::errors::InvalidTxError::SignerDoesNotExist { signer_id } => {
-            format!("Error: TX signer ID <{}> is not found in the storage.", signer_id)
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX signer ID <{}> is not found in the storage.", signer_id))
         },
         near_primitives::errors::InvalidTxError::InvalidNonce { tx_nonce, ak_nonce } => {
-            format!("Error: Transaction nonce ({}) must be account[access_key].nonce ({}) + 1.", tx_nonce, ak_nonce)
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction nonce ({}) must be account[access_key].nonce ({}) + 1.", tx_nonce, ak_nonce))
         },
         near_primitives::errors::InvalidTxError::NonceTooLarge { tx_nonce, upper_bound } => {
-            format!("Error: Transaction nonce ({}) is larger than the upper bound ({}) given by the block height.", tx_nonce, upper_bound)
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction nonce ({}) is larger than the upper bound ({}) given by the block height.", tx_nonce, upper_bound))
         },
         near_primitives::errors::InvalidTxError::InvalidReceiverId { receiver_id } => {
-            format!("Error: TX receiver ID ({}) is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::is_valid_account_id\".", receiver_id)
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX receiver ID ({}) is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::is_valid_account_id\".", receiver_id))
         },
         near_primitives::errors::InvalidTxError::InvalidSignature => {
-            "Error: TX signature is not valid".to_string()
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX signature is not valid"))
         },
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
-            format!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
                 crate::common::NearBalance::from_yoctonear(*balance),
                 crate::common::NearBalance::from_yoctonear(*cost)
-            )
+            ))
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
-            format!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
                 crate::common::NearBalance::from_yoctonear(*amount)
-            )
+            ))
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
-            "Error: An integer overflow occurred during transaction cost estimation.".to_string()
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An integer overflow occurred during transaction cost estimation."))
         },
         near_primitives::errors::InvalidTxError::InvalidChain => {
-            "Error: Transaction parent block hash doesn't belong to the current chain.".to_string()
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction parent block hash doesn't belong to the current chain."))
         },
         near_primitives::errors::InvalidTxError::Expired => {
-            "Error: Transaction has expired.".to_string()
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction has expired."))
         },
         near_primitives::errors::InvalidTxError::ActionsValidation(actions_validation_error) => {
             match actions_validation_error {
                 near_primitives::errors::ActionsValidationError::DeleteActionMustBeFinal => {
-                    "Error: The delete action must be the final action in transaction.".to_string()
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The delete action must be the final action in transaction."))
                 },
                 near_primitives::errors::ActionsValidationError::TotalPrepaidGasExceeded {total_prepaid_gas, limit} => {
-                    format!("Error: The total prepaid gas ({}) for all given actions exceeded the limit ({}).",
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The total prepaid gas ({}) for all given actions exceeded the limit ({}).",
                     total_prepaid_gas,
                     limit
-                    )
+                    ))
                 },
                 near_primitives::errors::ActionsValidationError::TotalNumberOfActionsExceeded {total_number_of_actions, limit} => {
-                    format!("Error: The number of actions ({}) exceeded the given limit ({}).", total_number_of_actions, limit)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The number of actions ({}) exceeded the given limit ({}).", total_number_of_actions, limit))
                 },
                 near_primitives::errors::ActionsValidationError::AddKeyMethodNamesNumberOfBytesExceeded {total_number_of_bytes, limit} => {
-                    format!("Error: The total number of bytes ({}) of the method names exceeded the limit ({}) in a Add Key action.", total_number_of_bytes, limit)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The total number of bytes ({}) of the method names exceeded the limit ({}) in a Add Key action.", total_number_of_bytes, limit))
                 },
                 near_primitives::errors::ActionsValidationError::AddKeyMethodNameLengthExceeded {length, limit} => {
-                    format!("Error: The length ({}) of some method name exceeded the limit ({}) in a Add Key action.", length, limit)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The length ({}) of some method name exceeded the limit ({}) in a Add Key action.", length, limit))
                 },
                 near_primitives::errors::ActionsValidationError::IntegerOverflow => {
-                    "Error: Integer overflow.".to_string()
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Integer overflow."))
                 },
                 near_primitives::errors::ActionsValidationError::InvalidAccountId {account_id} => {
-                    format!("Error: Invalid account ID <{}>.", account_id)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid account ID <{}>.", account_id))
                 },
                 near_primitives::errors::ActionsValidationError::ContractSizeExceeded {size, limit} => {
-                    format!("Error: The size ({}) of the contract code exceeded the limit ({}) in a DeployContract action.", size, limit)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The size ({}) of the contract code exceeded the limit ({}) in a DeployContract action.", size, limit))
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallMethodNameLengthExceeded {length, limit} => {
-                    format!("Error: The length ({}) of the method name exceeded the limit ({}) in a Function Call action.", length, limit)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The length ({}) of the method name exceeded the limit ({}) in a Function Call action.", length, limit))
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallArgumentsLengthExceeded {length, limit} => {
-                    format!("Error: The length ({}) of the arguments exceeded the limit ({}) in a Function Call action.", length, limit)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The length ({}) of the arguments exceeded the limit ({}) in a Function Call action.", length, limit))
                 },
                 near_primitives::errors::ActionsValidationError::UnsuitableStakingKey {public_key} => {
-                    format!("Error: An attempt to stake with a public key <{}> that is not convertible to ristretto.", public_key)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An attempt to stake with a public key <{}> that is not convertible to ristretto.", public_key))
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallZeroAttachedGas => {
-                    "Error: The attached amount of gas in a FunctionCall action has to be a positive number.".to_string()
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The attached amount of gas in a FunctionCall action has to be a positive number."))
                 }
                 near_primitives::errors::ActionsValidationError::DelegateActionMustBeOnlyOne => {
-                    "Error: DelegateActionMustBeOnlyOne".to_string()
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateActionMustBeOnlyOne"))
                 }
                 near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => {
-                    format!("Error: Protocol Feature {} is unsupported in version {}", protocol_feature, version)
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Protocol Feature {} is unsupported in version {}", protocol_feature, version))
                 }
             }
         },
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
-            format!("Error: The size ({}) of serialized transaction exceeded the limit ({}).", size, limit)
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The size ({}) of serialized transaction exceeded the limit ({}).", size, limit))
         }
     }
 }
 
-pub fn print_transaction_error(tx_execution_error: &near_primitives::errors::TxExecutionError) {
+pub fn print_transaction_error(
+    tx_execution_error: &near_primitives::errors::TxExecutionError,
+) -> crate::CliResult {
     eprintln!("Failed transaction");
     match tx_execution_error {
         near_primitives::errors::TxExecutionError::ActionError(action_error) => {
             print_action_error(action_error)
         }
         near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
-            eprintln!("{}", handler_invalid_tx_error(invalid_tx_error))
+            handler_invalid_tx_error(invalid_tx_error)
         }
     }
 }
@@ -1260,7 +1261,7 @@ pub fn print_transaction_status(
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-            print_transaction_error(tx_execution_error)
+            return print_transaction_error(tx_execution_error);
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
             eprintln!("--- Result -------------------------");
