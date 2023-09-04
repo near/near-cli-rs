@@ -6,8 +6,8 @@ use crate::common::JsonRpcClientExt;
 #[interactive_clap(output_context = CallFunctionViewContext)]
 pub struct CallFunctionView {
     #[interactive_clap(skip_default_input_arg)]
-    /// What is the account ID?
-    account_id: crate::types::account_id::AccountId,
+    /// What is the contract account ID?
+    contract_account_id: crate::types::account_id::AccountId,
     /// What is the name of the function?
     function_name: String,
     #[interactive_clap(value_enum)]
@@ -32,7 +32,7 @@ impl CallFunctionViewContext {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let function_args = scope.function_args.clone();
             let function_args_type = scope.function_args_type.clone();
-            let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
+            let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
             let function_name = scope.function_name.clone();
 
             move |network_config, block_reference| {
@@ -67,7 +67,7 @@ impl CallFunctionViewContext {
 
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.config,
-            interacting_with_account_ids: vec![scope.account_id.clone().into()],
+            interacting_with_account_ids: vec![scope.contract_account_id.clone().into()],
             on_after_getting_block_reference_callback,
         }))
     }
@@ -85,15 +85,13 @@ impl CallFunctionView {
     ) -> color_eyre::eyre::Result<Option<super::call_function_args_type::FunctionArgsType>> {
         super::call_function_args_type::input_function_args_type()
     }
-}
 
-impl CallFunctionView {
-    pub fn input_account_id(
+    pub fn input_contract_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_non_signer_account_id_from_used_account_list(
             &context.config.credentials_home_dir,
-            "What is the account ID?",
+            "What is the contract account ID?",
         )
     }
 }
