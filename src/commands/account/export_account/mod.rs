@@ -76,10 +76,7 @@ pub fn get_account_key_pair_from_keychain(
 ) -> color_eyre::eyre::Result<crate::transaction_signature_options::AccountKeyPair> {
     let password = get_password_from_keychain(network_config, account_id)?;
     let account_key_pair = serde_json::from_str(&password);
-    if let Ok(key_pair) = account_key_pair {
-        return Ok(key_pair);
-    }
-    Err(color_eyre::eyre::Report::msg("Error reading data"))
+    account_key_pair.wrap_err("Error reading data")
 }
 
 pub fn get_password_from_keychain(
