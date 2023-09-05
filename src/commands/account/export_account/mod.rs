@@ -98,7 +98,7 @@ pub fn get_password_from_keychain(
             .wrap_err_with(|| format!("Failed to fetch access key list for {}", account_id))?
             .access_key_list_view()?;
 
-        let res = access_key_list
+        access_key_list
             .keys
             .into_iter()
             .filter(|key| {
@@ -113,14 +113,8 @@ pub fn get_password_from_keychain(
                     keyring::Entry::new(&service_name, &format!("{}:{}", account_id, public_key))
                         .ok()?;
                 keyring.get_password().ok()
-            });
-
-        match res {
-            Some(password) => password,
-            None => {
-                return Err(color_eyre::Report::msg("No access keys found in keychain"));
-            }
-        }
+            })
+            .wrap_err("No access keys found in keychain")?
     };
     Ok(password)
 }
