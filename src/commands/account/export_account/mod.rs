@@ -1,4 +1,4 @@
-use color_eyre::eyre::WrapErr;
+use color_eyre::eyre::{ContextCompat, WrapErr};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::JsonRpcClientExt;

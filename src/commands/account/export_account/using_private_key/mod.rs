@@ -1,3 +1,5 @@
+use color_eyre::eyre::WrapErr;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::ExportAccountContext)]
 #[interactive_clap(output_context = ExportAccountFromPrivateKeyContext)]
@@ -31,21 +33,19 @@ impl ExportAccountFromPrivateKeyContext {
                         return Ok(());
                     }
 
-                    if let Ok(account_key_pair) = super::get_account_key_pair_from_legacy_keychain(
+                    let account_key_pair = super::get_account_key_pair_from_legacy_keychain(
                         network_config,
                         &account_id,
                         &config.credentials_home_dir,
-                    ) {
-                        println!(
-                            "Here is the private key for account <{}>: {}",
-                            account_id, account_key_pair.private_key,
-                        );
-                    } else {
-                        return Err(color_eyre::eyre::Report::msg(format!(
-                            "There are no access keys in keychain to export for account <{}>.",
-                            account_id
-                        )));
-                    };
+                    )
+                    .wrap_err_with(|| {
+                        format!("There are no access keys in keychain to export for account <{account_id}>.")
+                    })?;
+
+                    println!(
+                        "Here is the private key for account <{}>: {}",
+                        account_id, account_key_pair.private_key,
+                    );
                     Ok(())
                 }
             });
