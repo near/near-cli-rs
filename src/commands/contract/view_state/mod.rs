@@ -1,5 +1,9 @@
 use color_eyre::eyre::Context;
 
+use near_primitives::serialize::base64_display;
+use prettytable::Table;
+
+
 use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -40,14 +44,53 @@ impl ViewStateContext {
                     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
                         query_view_method_response.kind
                     {
+                        eprintln!("Contract state (values):");
                         eprintln!(
-                            "\nContract state (values):\n{:#?}\n",
-                            &result.values
+                            "{}",
+                            // result.values[0]
+                            // serde_json::to_string_pretty(&result.values[0].key)?
+                            serde_json::to_string_pretty(&result.values)?
+                            // base64_display(&result.values[0].key.as_slice())
                         );
+
+
+
+                        for value in &result.values {
+                            eprintln!("{}: {}", String::from_utf8_lossy(&value.key), String::from_utf8_lossy(&value.value));
+                            // // let qwe = serde_json::from_slice::<near_primitives::types::StoreKey>(&result.values[0].key)?;
+                            // eprintln!(
+                            //     "{}: {}",
+                            //     // result.values[0]
+                            //     // serde_json::to_string_pretty(&result.values[0].key)?
+                            //     // serde_json::to_string_pretty(value)?
+                            //     base64_display(&value.key.as_slice()),
+                            //     base64_display(&value.value.as_slice())
+                            // );
+                        }
+
+
+                        let mut table = Table::new();
+                        table.set_titles(prettytable::row![Fg=>"key", "value"]);
+                        for value in &result.values {
+                            table.add_row(prettytable::row![
+                                Fg->String::from_utf8_lossy(&value.key),
+                                String::from_utf8_lossy(&value.value)
+                            ]);
+                    
+                            // eprintln!("{}: {}", String::from_utf8_lossy(&value.key), String::from_utf8_lossy(&value.value));
+                        }
+                        table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
+                        table.printstd();
+                    
+
+
+
+
                         eprintln!(
                             "\nContract state (proof):\n{:#?}\n",
                             &result.proof
                         );
+                        println!("{}", "'".to_string());
                     } else {
                         return Err(color_eyre::Report::msg("Error call result".to_string()));
                     };
