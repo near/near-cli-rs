@@ -29,7 +29,7 @@ pub enum ContractActions {
     #[strum_discriminants(strum(message = "download-wasm   - Download wasm"))]
     /// Download wasm
     DownloadWasm(self::download_wasm::ContractAccount),
-    #[strum_discriminants(strum(message = "view-storage    - View contract storage"))]
-    /// View contract storage
+    #[strum_discriminants(strum(message = "view-storage    - View contract storage state"))]
+    /// View contract storage state
     ViewStorage(self::view_storage::ViewStorage),
 }
