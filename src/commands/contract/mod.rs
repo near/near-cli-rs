@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 pub mod call_function;
 mod deploy;
 mod download_wasm;
-mod view_state;
+mod view_storage;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -29,7 +29,7 @@ pub enum ContractActions {
     #[strum_discriminants(strum(message = "download-wasm   - Download wasm"))]
     /// Download wasm
     DownloadWasm(self::download_wasm::ContractAccount),
-    #[strum_discriminants(strum(message = "view-state      - View contract state"))]
-    /// View contract state
-    ViewState(self::view_state::ViewState),
+    #[strum_discriminants(strum(message = "view-storage    - View contract storage"))]
+    /// View contract storage
+    ViewStorage(self::view_storage::ViewStorage),
 }
