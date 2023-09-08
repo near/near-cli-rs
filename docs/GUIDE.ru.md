@@ -1084,6 +1084,7 @@ fro_volod.testnet account has NFT tokens:
 - [call-function](#call-function---Execute-function-contract-method)
 - [deploy](#deploy---Add-a-new-contract-code)
 - [download-wasm](#download-wasm---Download-wasm)
+- [view-storage](#view-storage---View-contract-storage-state)
 
 #### call-function - Execute function (contract method)
 
@@ -1231,6 +1232,55 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/2UbeTzLJq16qtCUR015wuRFmN?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/2UbeTzLJq16qtCUR015wuRFmN.png" width="836"/>
+</a>
+</details>
+
+#### view-storage - View contract storage state
+
+Просмотреть значения ключей контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).  
+Сами же ключи можно просмотреть все (***all***) или отфильтрованные с помощью  ***keys-start-with-string*** или ***keys-start-with-bytes-as-base64***.
+
+Для просмотра ключей контракта необходимо ввести в командной строке терминала:
+
+```txt
+near contract \
+    view-storage turbo.volodymyr.testnet \
+    all \
+    as-json \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+```txt
+Contract state (values):
+[
+  {
+    "key": "MjF2b2xvZHlteXIudGVzdG5ldA==",
+    "value": "JwAAAAAAAAAIAAAAAAAAAA=="
+  },
+  {
+    "key": "U1RBVEU=",
+    "value": ""
+  },
+  {
+    "key": "ZnJvX3ZvbG9kLnRlc3RuZXQ=",
+    "value": "HQAAAAAAAAAGAAAAAAAAAA=="
+  },
+  {
+    "key": "dm9sb2R5bXlyLnRlc3RuZXQ=",
+    "value": "QAEAAAAAAABAAAAAAAAAAA=="
+  }
+]
+Contract state (proof):
+[]
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/ylVt2VzX2GZp6nP5OccBbdKul?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/ylVt2VzX2GZp6nP5OccBbdKul.png" width="836"/>
 </a>
 </details>
 
