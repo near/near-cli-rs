@@ -1,7 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod as_json;
-mod as_table;
+mod as_text;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = super::keys_to_view::KeysContext)]
@@ -9,13 +9,13 @@ mod as_table;
 /// Choose a format to view contract storage state:
 pub enum OutputFormat {
     #[strum_discriminants(strum(
-        message = "as-json      - View contract storage state in JSON format"
+        message = "as-json    - View contract storage state in JSON format"
     ))]
     /// View contract storage state in JSON format
     AsJson(self::as_json::AsJson),
     #[strum_discriminants(strum(
-        message = "as-table     - View contract storage state in the table"
+        message = "as-text    - View contract storage state in the text"
     ))]
-    /// View contract storage state in the table
-    AsTable(self::as_table::AsTable),
+    /// View contract storage state in the text
+    AsText(self::as_text::AsText),
 }

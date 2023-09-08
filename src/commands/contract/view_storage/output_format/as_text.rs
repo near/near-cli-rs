@@ -1,24 +1,24 @@
 use color_eyre::eyre::Context;
-use prettytable::Table;
+use color_print::cprintln;
 
 use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::keys_to_view::KeysContext)]
-#[interactive_clap(output_context = AsTableContext)]
-pub struct AsTable {
+#[interactive_clap(output_context = AsTextContext)]
+pub struct AsText {
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
 }
 
 #[derive(Clone)]
-pub struct AsTableContext(crate::network_view_at_block::ArgsForViewContext);
+pub struct AsTextContext(crate::network_view_at_block::ArgsForViewContext);
 
-impl AsTableContext {
+impl AsTextContext {
     pub fn from_previous_context(
         previous_context: super::super::keys_to_view::KeysContext,
-        _scope: &<AsTable as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<AsText as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let contract_account_id = previous_context.contract_account_id.clone();
@@ -40,16 +40,29 @@ impl AsTableContext {
                         query_view_method_response.kind
                     {
                         eprintln!("Contract state (values):");
-                        let mut table = Table::new();
-                        table.set_titles(prettytable::row![Fg=>"key", "value"]);
                         for value in &result.values {
-                            table.add_row(prettytable::row![
-                                Fg->String::from_utf8_lossy(&value.key),
-                                String::from_utf8_lossy(&value.value)
-                            ]);
+                            let key = String::from_utf8(
+                                value.key
+                                .as_slice()
+                                .iter()
+                                .flat_map(|b| std::ascii::escape_default(*b))
+                                .collect::<Vec<u8>>(),
+                            )
+                            .wrap_err("Wrong format. utf-8 is expected.")?;
+                            cprintln!("key:\n<green>{}</>", key);
+
+                            let val = String::from_utf8(
+                                value.value
+                                .as_slice()
+                                .iter()
+                                .flat_map(|b| std::ascii::escape_default(*b))
+                                .collect::<Vec<u8>>(),
+                            )
+                            .wrap_err("Wrong format. utf-8 is expected.")?;
+                            cprintln!("value:\n<yellow>{}</>", val);
+
+                            eprintln!("--------------------------------");
                         }
-                        table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
-                        table.printstd();
                         eprintln!(
                             "\nContract state (proof):\n{:#?}\n",
                             &result.proof
@@ -69,8 +82,8 @@ impl AsTableContext {
     }
 }
 
-impl From<AsTableContext> for crate::network_view_at_block::ArgsForViewContext {
-    fn from(item: AsTableContext) -> Self {
+impl From<AsTextContext> for crate::network_view_at_block::ArgsForViewContext {
+    fn from(item: AsTextContext) -> Self {
         item.0
     }
 }
