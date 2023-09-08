@@ -1,5 +1,4 @@
-use color_eyre::eyre::Context;
-use color_print::cprintln;
+use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 
 use crate::common::JsonRpcClientExt;
 
@@ -49,7 +48,7 @@ impl AsTextContext {
                                 .collect::<Vec<u8>>(),
                             )
                             .wrap_err("Wrong format. utf-8 is expected.")?;
-                            cprintln!("key:\n<green>{}</>", key);
+                            eprintln!("key:\n{}", key.green());
 
                             let val = String::from_utf8(
                                 value.value
@@ -59,7 +58,7 @@ impl AsTextContext {
                                 .collect::<Vec<u8>>(),
                             )
                             .wrap_err("Wrong format. utf-8 is expected.")?;
-                            cprintln!("value:\n<yellow>{}</>", val);
+                            eprintln!("value:\n{}", val.yellow());
 
                             eprintln!("--------------------------------");
                         }
