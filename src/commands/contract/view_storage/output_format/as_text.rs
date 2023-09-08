@@ -40,26 +40,8 @@ impl AsTextContext {
                     {
                         eprintln!("Contract state (values):");
                         for value in &result.values {
-                            let key = String::from_utf8(
-                                value.key
-                                .as_slice()
-                                .iter()
-                                .flat_map(|b| std::ascii::escape_default(*b))
-                                .collect::<Vec<u8>>(),
-                            )
-                            .wrap_err("Wrong format. utf-8 is expected.")?;
-                            eprintln!("key:\n{}", key.green());
-
-                            let val = String::from_utf8(
-                                value.value
-                                .as_slice()
-                                .iter()
-                                .flat_map(|b| std::ascii::escape_default(*b))
-                                .collect::<Vec<u8>>(),
-                            )
-                            .wrap_err("Wrong format. utf-8 is expected.")?;
-                            eprintln!("value:\n{}", val.yellow());
-
+                            eprintln!("key:\n{}", key_value_to_string(&value.key)?.green());
+                            eprintln!("value:\n{}", key_value_to_string(&value.value)?.yellow());
                             eprintln!("--------------------------------");
                         }
                         eprintln!(
@@ -85,4 +67,14 @@ impl From<AsTextContext> for crate::network_view_at_block::ArgsForViewContext {
     fn from(item: AsTextContext) -> Self {
         item.0
     }
+}
+
+fn key_value_to_string(slice: &[u8]) -> color_eyre::eyre::Result<String> {
+    String::from_utf8(
+        slice
+            .iter()
+            .flat_map(|b| std::ascii::escape_default(*b))
+            .collect::<Vec<u8>>(),
+    )
+    .wrap_err("Wrong format. utf-8 is expected.")
 }
