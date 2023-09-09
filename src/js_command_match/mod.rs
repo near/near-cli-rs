@@ -68,7 +68,7 @@ impl JsCmd {
             Self::DevDeploy(_) => Err("`dev-deploy` command is not implemented, yet. It will be implemented in a dev extension. Meanwhile, consider using the old CLI or a standalone implementation: https://github.com/frolvanya/dev-deploy".to_string()),
             Self::Call(call_args) => Ok(call_args.to_cli_args(network_config)),
             Self::View(view_args) => Ok(view_args.to_cli_args(network_config)),
-            Self::ViewState(_) => Err("`view-state` command is not implemented, yet. It will be implemented in a dev extension. Meanwhile, keep using the old CLI.".to_string()),
+            Self::ViewState(view_state_args) => Ok(view_state_args.to_cli_args(network_config)),
             Self::Send(send_args) => Ok(send_args.to_cli_args(network_config)),
             Self::Clean(_) => Err("`clean` command is not implemented, yet. It will be implemented in a dev extension. Meanwhile, keep using the old CLI.".to_string()),
             Self::Stake(_) => Err("`stake` command is not implemented, yet. It will be implemented in a validators extension. Meanwhile, keep using the old CLI.".to_string()),

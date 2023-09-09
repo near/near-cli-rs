@@ -1237,6 +1237,7 @@ fro_volod.testnet account has NFT tokens:
 - [call-function](#call-function---Execute-function-contract-method)
 - [deploy](#deploy---Add-a-new-contract-code)
 - [download-wasm](#download-wasm---Download-wasm)
+- [view-storage](#view-storage---View-contract-storage-state)
 
 #### call-function - Execute function (contract method)
 
@@ -1384,6 +1385,55 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/2UbeTzLJq16qtCUR015wuRFmN?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/2UbeTzLJq16qtCUR015wuRFmN.png" width="836"/>
+</a>
+</details>
+
+#### view-storage - View contract storage state
+
+You can view the contract key values at the current moment in time (***now***) and at a certain point in the past by specifying a block (***at-block-height*** or ***at-block-hash***).  
+Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).  
+The keys themselves can be viewed all (***all***) or filtered using ***keys-start-with-string*** or ***keys-start-with-bytes-as-base64***.
+
+To view contract keys, enter at the terminal command line:
+
+```txt
+near contract \
+    view-storage turbo.volodymyr.testnet \
+    all \
+    as-json \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+```txt
+Contract state (values):
+[
+  {
+    "key": "MjF2b2xvZHlteXIudGVzdG5ldA==",
+    "value": "JwAAAAAAAAAIAAAAAAAAAA=="
+  },
+  {
+    "key": "U1RBVEU=",
+    "value": ""
+  },
+  {
+    "key": "ZnJvX3ZvbG9kLnRlc3RuZXQ=",
+    "value": "HQAAAAAAAAAGAAAAAAAAAA=="
+  },
+  {
+    "key": "dm9sb2R5bXlyLnRlc3RuZXQ=",
+    "value": "QAEAAAAAAABAAAAAAAAAAA=="
+  }
+]
+Contract state (proof):
+[]
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/ylVt2VzX2GZp6nP5OccBbdKul?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/ylVt2VzX2GZp6nP5OccBbdKul.png" width="836"/>
 </a>
 </details>
 
