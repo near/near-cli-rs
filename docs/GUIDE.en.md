@@ -97,6 +97,7 @@ View account details ([View properties for an account](#view-account-summary---v
 - [list-keys](#list-keys---View-a-list-of-access-keys-of-an-account)
 - [add-key](#add-key---Add-an-access-key-to-an-account)
 - [delete-key](#delete-key---Delete-an-access-key-from-an-account)
+- [manage-storage-deposit](#manage-storage-deposit---Storage-management-deposit-withdrawal-balance-review)
 
 #### view-account-summary - View properties for an account
 
@@ -312,6 +313,72 @@ The data for the access key is saved in macOS Keychain
 <a href="https://asciinema.org/a/KK14atSSbI8dLB3RcuyI2tfP8?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/KK14atSSbI8dLB3RcuyI2tfP8.png" width="836"/>
 </a>
+</details>
+
+#### export-account - Export existing account
+
+- [using-web-wallet](#using-web-wallet---Export-existing-account-using-NEAR-Wallet-aka-sign-in)
+- [using-seed-phrase](#using-seed-phrase---Export-existing-account-using-a-seed-phrase)
+- [using-private-key](#using-private-key---Export-existing-account-using-a-private-key)
+
+
+#### using-web-wallet - Export existing account using NEAR Wallet
+
+To export an existing account, enter in the terminal command line:
+```txt
+near account \
+    export-account volodymyr.testnet \
+    using-web-wallet \
+    network-config testnet
+```
+
+You will be redirected to the browser for authorization.  
+Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testnet.mynearwallet.com/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
+```txt
+near account \
+    export-account volodymyr.testnet \
+    using-web-wallet \
+    network-config testnet\
+    --wallet-url 'https://wallet.testnet.near.org/'
+```
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/QqVhhVaBP4MP7XFDeb6arIB3S?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/QqVhhVaBP4MP7XFDeb6arIB3S.png" width="836"/>
+</a>
+</details>
+
+#### using-seed-phrase - Export existing account using a seed phrase
+
+To export an existing account, enter in the terminal command line:
+```txt
+near account \
+    export-account volodymyr.testnet \
+    using-seed-phrase \
+    network-config testnet
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Here is the secret recovery seed phrase for account <volodymyr.testnet>: "feature army carpet ..." (HD Path: m/44'/397'/0').
+```
+</details>
+
+#### using-private-key - Export existing account using a private key
+
+To export an existing account, enter in the terminal command line:
+```txt
+near account \
+    export-account volodymyr.testnet \
+    using-private-key \
+    network-config testnet
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Here is the private key for account <volodymyr.testnet>: ed25519:4TKr1c7p...y7p8BvGdB
+```
 </details>
 
 #### create-account - Create a new account
@@ -868,6 +935,93 @@ https://explorer.testnet.near.org/transactions/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/IYaNEYcMHtmSe6zKc2L63Okph?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/IYaNEYcMHtmSe6zKc2L63Okph.png" width="836"/>
+</a>
+</details>
+
+#### manage-storage-deposit - Storage management: deposit, withdrawal, balance review
+
+- [view-balance](#view-balance---View-storage-balance-for-an-account)
+- [deposit](#deposit---Make-a-storage-deposit-for-the-account)
+- [withdraw](#withdraw---Withdraw-a-deposit-from-storage-for-an-account-ID)
+
+##### view-balance - View storage balance for an account
+
+To view the account balance on the contract on the last block, you must enter in the terminal command line:
+
+```txt
+near account \
+    manage-storage-deposit v1.social08.testnet \
+    view-balance volodymyr.testnet \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+storage balance for <volodymyr.testnet>:
+ available:        1.6 MB   (15.878059999854543210876557 NEAR [  15878059999854543210876557 yoctoNEAR])
+ total:            1.6 MB   (16.238949999854543210876557 NEAR [  16238949999854543210876557 yoctoNEAR])
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/mxCOOQk8xRLvY4mIhDsrapwmG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/mxCOOQk8xRLvY4mIhDsrapwmG.png" width="836"/>
+</a>
+</details>
+
+##### deposit - Make a storage deposit for the account
+
+To add a deposit to the account balance under the contract, you must enter in the terminal command line:
+
+```txt
+near account \
+    manage-storage-deposit v1.social08.testnet \
+    deposit volodymyr.testnet '1 NEAR' \
+    sign-as fro_volod.testnet \
+    network-config testnet \
+    sign-with-macos-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<fro_volod.testnet> has successfully added a deposit of 1 NEAR to <volodymyr.testnet> on contract <v1.social08.testnet>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/QXXvnhz2HasKtQdT5KPVr6d1n?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/QXXvnhz2HasKtQdT5KPVr6d1n.png" width="836"/>
+</a>
+</details>
+
+##### withdraw - Withdraw a deposit from storage for an account ID
+
+To withdraw funds from the account balance under the contract, you must enter in the terminal command line:
+
+```txt
+near account \
+    manage-storage-deposit v1.social08.testnet \
+    withdraw '0.5 NEAR' \
+    sign-as volodymyr.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully withdraw 0.5 NEAR from <v1.social08.testnet>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/veTOTpLZZ6mKHxkn0zizpXcjx?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/veTOTpLZZ6mKHxkn0zizpXcjx.png" width="836"/>
 </a>
 </details>
 
