@@ -38,7 +38,7 @@ impl AsJsonContext {
                         query_view_method_response.kind
                     {
                         eprintln!("Contract state (values):");
-                        eprintln!(
+                        println!(
                             "{}",
                             serde_json::to_string_pretty(&result.values)?
                         );
