@@ -4,6 +4,7 @@ mod add_key;
 pub mod create_account;
 mod delete_account;
 mod delete_key;
+mod export_account;
 mod import_account;
 mod list_keys;
 pub mod profile_management;
@@ -35,6 +36,9 @@ pub enum AccountActions {
     ))]
     /// Import existing account (a.k.a. "sign in")
     ImportAccount(self::import_account::ImportAccountCommand),
+    #[strum_discriminants(strum(message = "export-account          - Export existing account"))]
+    /// Export existing account
+    ExportAccount(self::export_account::ExportAccount),
     #[strum_discriminants(strum(message = "create-account          - Create a new account"))]
     /// Create a new account
     CreateAccount(self::create_account::CreateAccount),
