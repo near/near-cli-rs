@@ -89,12 +89,14 @@ near --offline tokens \
 Просмотреть сведения об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)) и просмотреть ключи доступа к аккаунту ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***). На примерах ниже показаны варианты применения этих режимов.
 
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
-- [import-account](#import-account---import-existing-account-aka-sign-in)
+- [import-account](#import-account---Import-existing-account-aka-sign-in)
+- [export-account](#export-account---Export-existing-account)
 - [create-account](#create-account---Create-a-new-account)
 - [delete-account](#delete-account---Delete-an-account)
 - [list-keys](#list-keys---View-a-list-of-access-keys-of-an-account)
 - [add-key](#add-key---Add-an-access-key-to-an-account)
 - [delete-key](#delete-key---Delete-an-access-key-from-an-account)
+- [manage-storage-deposit](#manage-storage-deposit---Storage-management-deposit-withdrawal-balance-review)
 
 #### view-account-summary - View properties for an account
 
@@ -311,6 +313,72 @@ The data for the access key is saved in macOS Keychain
 <a href="https://asciinema.org/a/KK14atSSbI8dLB3RcuyI2tfP8?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/KK14atSSbI8dLB3RcuyI2tfP8.png" width="836"/>
 </a>
+</details>
+
+#### export-account - Export existing account
+
+- [using-web-wallet](#using-web-wallet---Export-existing-account-using-NEAR-Wallet-aka-sign-in)
+- [using-seed-phrase](#using-seed-phrase---Export-existing-account-using-a-seed-phrase)
+- [using-private-key](#using-private-key---Export-existing-account-using-a-private-key)
+
+
+#### using-web-wallet - Export existing account using NEAR Wallet
+
+Для экспорта существующего аккаунта необходимо ввести в командной строке терминала:
+```txt
+near account \
+    export-account volodymyr.testnet \
+    using-web-wallet \
+    network-config testnet
+```
+
+Вы будете перенаправлены браузер.  
+По умолчанию - это https://app.mynearwallet.com/ (для testnet - https://testnet.mynearwallet.com/). Но вы можете изменить адрес для авторизации с помощью флага `--wallet-url`:
+```txt
+near account \
+    export-account volodymyr.testnet \
+    using-web-wallet \
+    network-config testnet\
+    --wallet-url 'https://wallet.testnet.near.org/'
+```
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/QqVhhVaBP4MP7XFDeb6arIB3S?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/QqVhhVaBP4MP7XFDeb6arIB3S.png" width="836"/>
+</a>
+</details>
+
+#### using-seed-phrase - Export existing account using a seed phrase
+
+Для экспорта существующего аккаунта необходимо ввести в командной строке терминала:
+```txt
+near account \
+    export-account volodymyr.testnet \
+    using-seed-phrase \
+    network-config testnet
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Here is the secret recovery seed phrase for account <volodymyr.testnet>: "feature army carpet ..." (HD Path: m/44'/397'/0').
+```
+</details>
+
+#### using-private-key - Export existing account using a private key
+
+Для экспорта существующего аккаунта необходимо ввести в командной строке терминала:
+```txt
+near account \
+    export-account volodymyr.testnet \
+    using-private-key \
+    network-config testnet
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Here is the private key for account <volodymyr.testnet>: ed25519:4TKr1c7p...y7p8BvGdB
+```
 </details>
 
 #### create-account - Create a new account
@@ -872,6 +940,93 @@ https://explorer.testnet.near.org/transactions/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2
 </a>
 </details>
 
+#### manage-storage-deposit - Storage management: deposit, withdrawal, balance review
+
+- [view-balance](#view-balance---View-storage-balance-for-an-account)
+- [deposit](#deposit---Make-a-storage-deposit-for-the-account)
+- [withdraw](#withdraw---Withdraw-a-deposit-from-storage-for-an-account-ID)
+
+##### view-balance - View storage balance for an account
+
+Для просмотра баланса аккаунта на контракте на последнем блоке необходимо ввести в командной строке терминала:
+
+```txt
+near account \
+    manage-storage-deposit v1.social08.testnet \
+    view-balance volodymyr.testnet \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+storage balance for <volodymyr.testnet>:
+ available:        1.6 MB   (15.878059999854543210876557 NEAR [  15878059999854543210876557 yoctoNEAR])
+ total:            1.6 MB   (16.238949999854543210876557 NEAR [  16238949999854543210876557 yoctoNEAR])
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/mxCOOQk8xRLvY4mIhDsrapwmG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/mxCOOQk8xRLvY4mIhDsrapwmG.png" width="836"/>
+</a>
+</details>
+
+##### deposit - Make a storage deposit for the account
+
+Для пополнения баланса аккаунта на контракте необходимо ввести в командной строке терминала:
+
+```txt
+near account \
+    manage-storage-deposit v1.social08.testnet \
+    deposit volodymyr.testnet '1 NEAR' \
+    sign-as fro_volod.testnet \
+    network-config testnet \
+    sign-with-macos-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+<fro_volod.testnet> has successfully added a deposit of 1 NEAR to <volodymyr.testnet> on contract <v1.social08.testnet>.
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/QXXvnhz2HasKtQdT5KPVr6d1n?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/QXXvnhz2HasKtQdT5KPVr6d1n.png" width="836"/>
+</a>
+</details>
+
+##### withdraw - Withdraw a deposit from storage for an account ID
+
+Для вывода средств с баланса аккаунта на контракте необходимо ввести в командной строке терминала:
+
+```txt
+near account \
+    manage-storage-deposit v1.social08.testnet \
+    withdraw '0.5 NEAR' \
+    sign-as volodymyr.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully withdraw 0.5 NEAR from <v1.social08.testnet>.
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/veTOTpLZZ6mKHxkn0zizpXcjx?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/veTOTpLZZ6mKHxkn0zizpXcjx.png" width="836"/>
+</a>
+</details>
+
 ### tokens - Manage token assets such as NEAR, FT, NFT
 - [send-near](#send-near---The-transfer-is-carried-out-in-NEAR-tokens)
 - [send-ft](#send-ft---The-transfer-is-carried-out-in-FT-tokens)
@@ -1084,6 +1239,7 @@ fro_volod.testnet account has NFT tokens:
 - [call-function](#call-function---Execute-function-contract-method)
 - [deploy](#deploy---Add-a-new-contract-code)
 - [download-wasm](#download-wasm---Download-wasm)
+- [view-storage](#view-storage---View-contract-storage-state)
 
 #### call-function - Execute function (contract method)
 
@@ -1231,6 +1387,55 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/2UbeTzLJq16qtCUR015wuRFmN?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/2UbeTzLJq16qtCUR015wuRFmN.png" width="836"/>
+</a>
+</details>
+
+#### view-storage - View contract storage state
+
+Просмотреть значения ключей контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).  
+Сами же ключи можно просмотреть все (***all***) или отфильтрованные с помощью  ***keys-start-with-string*** или ***keys-start-with-bytes-as-base64***.
+
+Для просмотра ключей контракта необходимо ввести в командной строке терминала:
+
+```txt
+near contract \
+    view-storage turbo.volodymyr.testnet \
+    all \
+    as-json \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+```txt
+Contract state (values):
+[
+  {
+    "key": "MjF2b2xvZHlteXIudGVzdG5ldA==",
+    "value": "JwAAAAAAAAAIAAAAAAAAAA=="
+  },
+  {
+    "key": "U1RBVEU=",
+    "value": ""
+  },
+  {
+    "key": "ZnJvX3ZvbG9kLnRlc3RuZXQ=",
+    "value": "HQAAAAAAAAAGAAAAAAAAAA=="
+  },
+  {
+    "key": "dm9sb2R5bXlyLnRlc3RuZXQ=",
+    "value": "QAEAAAAAAABAAAAAAAAAAA=="
+  }
+]
+Contract state (proof):
+[]
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/ylVt2VzX2GZp6nP5OccBbdKul?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/ylVt2VzX2GZp6nP5OccBbdKul.png" width="836"/>
 </a>
 </details>
 
