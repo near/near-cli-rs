@@ -207,13 +207,10 @@ pub fn get_account_properties_data_path(
                 }
                 let data =
                     std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
-                if serde_json::from_str::<crate::common::KeyPairProperties>(&data).is_ok() {
-                    return Ok(data_path);
-                } else {
-                    return Err(color_eyre::eyre::Report::msg(format!(
+                serde_json::from_str::<crate::common::KeyPairProperties>(&data).wrap_err_with(|| format!(
                         "There are no master seed phrase in keychain to export for account <{account_id}>."
-                    )));
-                }
+                    ))?;
+                return Ok(data_path);
             }
         }
     }
