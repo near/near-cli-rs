@@ -184,14 +184,10 @@ pub fn get_account_properties_data_path(
     let mut data_path = std::path::PathBuf::new();
     for access_key in access_key_list.keys {
         let account_public_key = access_key.public_key.to_string();
-        let is_full_access_key: bool = match &access_key.access_key.permission {
-            near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-            near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                allowance: _,
-                receiver_id: _,
-                method_names: _,
-            } => false,
-        };
+        match &access_key.access_key.permission {
+            near_primitives::views::AccessKeyPermissionView::FullAccess => {}
+            near_primitives::views::AccessKeyPermissionView::FunctionCall { .. } => { continue; }
+        }
         let dir = path
             .read_dir()
             .wrap_err("There are no access keys found in the keychain for the account.")?;
