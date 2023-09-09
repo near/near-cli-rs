@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = KeysStartWithBytesAsBase64Context)]
 pub struct KeysStartWithBytesAsBase64 {
     /// Enter the string that the keys begin with Base64 bytes (for example, "Uw=="):
-    keys_begin_with: crate::types::base64_string::Base64String,
+    keys_begin_with: crate::types::base64_bytes::Base64Bytes,
     #[interactive_clap(subcommand)]
     output_format: super::super::output_format::OutputFormat,
 }
@@ -19,9 +19,7 @@ impl KeysStartWithBytesAsBase64Context {
         Ok(Self(super::KeysContext {
             global_context: previous_context.global_context,
             contract_account_id: previous_context.contract_account_id,
-            prefix: near_primitives::types::StoreKey::from(
-                scope.keys_begin_with.inner.clone().into_bytes(),
-            ),
+            prefix: near_primitives::types::StoreKey::from(scope.keys_begin_with.inner.clone()),
         }))
     }
 }
