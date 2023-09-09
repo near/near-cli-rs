@@ -98,6 +98,7 @@ View account details ([View properties for an account](#view-account-summary---v
 - [add-key](#add-key---Add-an-access-key-to-an-account)
 - [delete-key](#delete-key---Delete-an-access-key-from-an-account)
 - [manage-profile](#manage-profile---Profile-management-view-update)
+- [manage-storage-deposit](#manage-storage-deposit---Storage-management-deposit-withdrawal-balance-review)
 
 #### view-account-summary - View properties for an account
 
@@ -1009,6 +1010,93 @@ Profile for fro_volod.testnet updated successfully
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/sJxaZKOkjGu75yvMGOqkQxi34?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/sJxaZKOkjGu75yvMGOqkQxi34.png" width="836"/>
+</a>
+</details>
+
+#### manage-storage-deposit - Storage management: deposit, withdrawal, balance review
+
+- [view-balance](#view-balance---View-storage-balance-for-an-account)
+- [deposit](#deposit---Make-a-storage-deposit-for-the-account)
+- [withdraw](#withdraw---Withdraw-a-deposit-from-storage-for-an-account-ID)
+
+##### view-balance - View storage balance for an account
+
+To view the account balance on the contract on the last block, you must enter in the terminal command line:
+
+```txt
+near account \
+    manage-storage-deposit v1.social08.testnet \
+    view-balance volodymyr.testnet \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+storage balance for <volodymyr.testnet>:
+ available:        1.6 MB   (15.878059999854543210876557 NEAR [  15878059999854543210876557 yoctoNEAR])
+ total:            1.6 MB   (16.238949999854543210876557 NEAR [  16238949999854543210876557 yoctoNEAR])
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/mxCOOQk8xRLvY4mIhDsrapwmG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/mxCOOQk8xRLvY4mIhDsrapwmG.png" width="836"/>
+</a>
+</details>
+
+##### deposit - Make a storage deposit for the account
+
+To add a deposit to the account balance under the contract, you must enter in the terminal command line:
+
+```txt
+near account \
+    manage-storage-deposit v1.social08.testnet \
+    deposit volodymyr.testnet '1 NEAR' \
+    sign-as fro_volod.testnet \
+    network-config testnet \
+    sign-with-macos-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<fro_volod.testnet> has successfully added a deposit of 1 NEAR to <volodymyr.testnet> on contract <v1.social08.testnet>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/QXXvnhz2HasKtQdT5KPVr6d1n?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/QXXvnhz2HasKtQdT5KPVr6d1n.png" width="836"/>
+</a>
+</details>
+
+##### withdraw - Withdraw a deposit from storage for an account ID
+
+To withdraw funds from the account balance under the contract, you must enter in the terminal command line:
+
+```txt
+near account \
+    manage-storage-deposit v1.social08.testnet \
+    withdraw '0.5 NEAR' \
+    sign-as volodymyr.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully withdraw 0.5 NEAR from <v1.social08.testnet>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/veTOTpLZZ6mKHxkn0zizpXcjx?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/veTOTpLZZ6mKHxkn0zizpXcjx.png" width="836"/>
 </a>
 </details>
 
