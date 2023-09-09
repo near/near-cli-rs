@@ -183,7 +183,7 @@ pub fn get_account_properties_data_path(
     path.push(account_id.to_string());
     let mut data_path = std::path::PathBuf::new();
     for access_key in access_key_list.keys {
-        let account_public_key = access_key.public_key.to_string();
+        let account_public_key = access_key.public_key.to_string().replace(':', "_");
         match &access_key.access_key.permission {
             near_primitives::views::AccessKeyPermissionView::FullAccess => {}
             near_primitives::views::AccessKeyPermissionView::FunctionCall { .. } => { continue; }
@@ -198,8 +198,7 @@ pub fn get_account_properties_data_path(
                 .unwrap()
                 .to_str()
                 .unwrap()
-                .contains(account_public_key.rsplit(':').next().unwrap())
-                && is_full_access_key
+                .contains(&account_public_key)
             {
                 data_path.push(entry.path());
                 if !check_if_seed_phrase_exists {
