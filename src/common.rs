@@ -870,11 +870,18 @@ fn print_value_successful_transaction(
                 stake,
                 public_key: _,
             } => {
-                eprintln!(
-                    "Validator <{}> has successfully staked {}.",
-                    transaction_info.transaction.signer_id,
-                    crate::common::NearBalance::from_yoctonear(stake),
-                );
+                if stake == 0 {
+                    eprintln!(
+                        "Validator <{}> successfully unstaked.",
+                        transaction_info.transaction.signer_id,
+                    );
+                } else {
+                    eprintln!(
+                        "Validator <{}> has successfully staked {}.",
+                        transaction_info.transaction.signer_id,
+                        crate::common::NearBalance::from_yoctonear(stake),
+                    );
+                }
             }
             near_primitives::views::ActionView::AddKey {
                 public_key,
