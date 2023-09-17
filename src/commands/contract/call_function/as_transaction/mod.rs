@@ -106,16 +106,15 @@ impl PrepaidGas {
         _context: &CallFunctionPropertiesContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         eprintln!();
-        let gas: u64 = loop {
+        let gas = loop {
             match crate::common::NearGas::from_str(
                 &Text::new("Enter gas for function call:")
                     .with_initial_value("100 TeraGas")
                     .prompt()?,
             ) {
                 Ok(input_gas) => {
-                    let gas = input_gas.as_gas();
-                    if gas <= 300000000000000 {
-                        break gas;
+                    if input_gas <= near_gas::NearGas::from_tgas(300) {
+                        break input_gas;
                     } else {
                         eprintln!("You need to enter a value of no more than 300 TERAGAS")
                     }
@@ -123,7 +122,7 @@ impl PrepaidGas {
                 Err(err) => return Err(color_eyre::Report::msg(err)),
             }
         };
-        Ok(Some(near_gas::NearGas::from_gas(gas)))
+        Ok(Some(gas))
     }
 }
 
