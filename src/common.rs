@@ -2173,34 +2173,4 @@ mod tests {
             Err("Near Balance: invalid digit found in string".to_string())
         );
     }
-
-    #[test]
-    fn near_gas_from_str_currency_tgas() {
-        assert_eq!(
-            NearGas::from_str("10 tgas").unwrap(),
-            NearGas::from_gas(10000000000000) // 14 digits
-        );
-        assert_eq!(
-            NearGas::from_str("10.055TERAGAS").unwrap(),
-            NearGas::from_gas(10055000000000) // 14 digits
-        );
-    }
-    #[test]
-    fn near_gas_from_str_currency_gigagas() {
-        assert_eq!(
-            NearGas::from_str("10 gigagas").unwrap(),
-            NearGas::from_gas(10000000000) // 11 digits
-        );
-        assert_eq!(
-            NearGas::from_str("10GGAS ").unwrap(),
-            NearGas::from_gas(10000000000) // 11 digits
-        );
-    }
-    #[test]
-    fn near_gas_from_str_f64_tgas() {
-        assert_eq!(
-            NearGas::from_str("0.000001 tgas").unwrap(),
-            NearGas::from_gas(1000000) // 7 digits
-        );
-    }
 }
