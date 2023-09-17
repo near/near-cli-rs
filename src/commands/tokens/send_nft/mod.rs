@@ -78,7 +78,7 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                                 })
                                 .to_string()
                                 .into_bytes(),
-                                gas: item.gas.inner,
+                                gas: item.gas.as_gas(),
                                 deposit: item.deposit.to_yoctonear(),
                             },
                         )],
@@ -151,8 +151,7 @@ impl SendNftCommand {
                     .prompt()?,
             ) {
                 Ok(input_gas) => {
-                    let crate::common::NearGas { inner: num } = input_gas;
-                    let gas = num;
+                    let gas = input_gas.as_gas();
                     if gas <= 300000000000000 {
                         break gas;
                     } else {
@@ -162,7 +161,7 @@ impl SendNftCommand {
                 Err(err) => return Err(color_eyre::Report::msg(err)),
             }
         };
-        Ok(Some(gas.into()))
+        Ok(Some(near_gas::NearGas::from_gas(gas)))
     }
 
     fn input_deposit(

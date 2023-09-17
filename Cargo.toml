@@ -63,6 +63,12 @@ near-crypto = "0.17.0"
 near-primitives = "0.17.0"
 near-jsonrpc-client = "0.6.0"
 near-jsonrpc-primitives = "0.17.0"
+near-gas = { git = "https://github.com/iho/near-gas.git", rev = "b62074fe945c31a6a3807ac869f952784b9a3871", features = [
+    "serde",
+    "borsh",
+    "schemars",
+    "interactive-clap",
+] }
 
 interactive-clap = "0.2.4"
 interactive-clap-derive = "0.2.4"

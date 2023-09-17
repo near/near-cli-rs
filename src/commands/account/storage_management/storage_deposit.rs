@@ -124,7 +124,7 @@ impl SignerAccountIdContext {
                                     .into_bytes(),
                                 gas: crate::common::NearGas::from_str("50 TeraGas")
                                     .unwrap()
-                                    .inner,
+                                    .as_gas(),
                                 deposit: deposit.to_yoctonear(),
                             },
                         )],

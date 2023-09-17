@@ -113,8 +113,7 @@ impl PrepaidGas {
                     .prompt()?,
             ) {
                 Ok(input_gas) => {
-                    let crate::common::NearGas { inner: num } = input_gas;
-                    let gas = num;
+                    let gas = input_gas.as_gas();
                     if gas <= 300000000000000 {
                         break gas;
                     } else {
@@ -124,7 +123,7 @@ impl PrepaidGas {
                 Err(err) => return Err(color_eyre::Report::msg(err)),
             }
         };
-        Ok(Some(gas.into()))
+        Ok(Some(near_gas::NearGas::from_gas(gas)))
     }
 }
 
@@ -239,7 +238,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: item.function_name.clone(),
                                 args: item.function_args.clone(),
-                                gas: item.gas.inner,
+                                gas: item.gas.as_gas(),
                                 deposit: item.deposit.to_yoctonear(),
                             },
                         )],

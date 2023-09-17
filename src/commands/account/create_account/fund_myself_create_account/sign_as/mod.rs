@@ -101,7 +101,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                             args,
                                             gas: crate::common::NearGas::from_str("30 TeraGas")
                                                 .unwrap()
-                                                .inner,
+                                                .as_gas(),
                                             deposit: item
                                                 .account_properties
                                                 .initial_balance
