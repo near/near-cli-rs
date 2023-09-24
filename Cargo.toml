@@ -64,6 +64,13 @@ near-primitives = "0.17.0"
 near-jsonrpc-client = "0.6.0"
 near-jsonrpc-primitives = "0.17.0"
 
+near-gas = { version = "0.2.3", features = [
+    "serde",
+    "borsh",
+    "schemars",
+    "interactive-clap",
+] }
+
 interactive-clap = "0.2.4"
 interactive-clap-derive = "0.2.4"
 keyring = "2.0.5"
