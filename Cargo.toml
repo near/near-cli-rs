@@ -63,7 +63,8 @@ near-crypto = "0.17.0"
 near-primitives = "0.17.0"
 near-jsonrpc-client = "0.6.0"
 near-jsonrpc-primitives = "0.17.0"
-near-gas = { git = "https://github.com/iho/near-gas.git", rev = "b62074fe945c31a6a3807ac869f952784b9a3871", features = [
+
+near-gas = { git = "https://github.com/Mr0melian/near-gas.git", rev = "e6cb97e25064231f5e34c96ea4887f75169fe4cb", features = [
     "serde",
     "borsh",
     "schemars",

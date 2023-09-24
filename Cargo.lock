@@ -2229,7 +2229,7 @@ dependencies = [
 [[package]]
 name = "near-gas"
 version = "0.2.2"
-source = "git+https://github.com/iho/near-gas.git?rev=b62074fe945c31a6a3807ac869f952784b9a3871#b62074fe945c31a6a3807ac869f952784b9a3871"
+source = "git+https://github.com/Mr0melian/near-gas.git?rev=e6cb97e25064231f5e34c96ea4887f75169fe4cb#e6cb97e25064231f5e34c96ea4887f75169fe4cb"
 dependencies = [
  "borsh 0.9.3",
  "interactive-clap",

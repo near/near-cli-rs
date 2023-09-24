@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::ContractContext)]
 #[interactive_clap(output_context = WithdrawArgsContext)]
@@ -70,9 +68,7 @@ impl SignerAccountIdContext {
                                 })
                                 .to_string()
                                 .into_bytes(),
-                                gas: crate::common::NearGas::from_str("50 TeraGas")
-                                    .unwrap()
-                                    .as_gas(),
+                                gas: crate::common::NearGas::from_tgas(50).as_gas(),
                                 deposit: crate::common::NearBalance::from_yoctonear(1)
                                     .to_yoctonear(),
                             },

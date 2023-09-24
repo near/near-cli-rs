@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -122,9 +120,7 @@ impl SignerAccountIdContext {
                                 args: serde_json::json!({ "account_id": &receiver_account_id })
                                     .to_string()
                                     .into_bytes(),
-                                gas: crate::common::NearGas::from_str("50 TeraGas")
-                                    .unwrap()
-                                    .as_gas(),
+                                gas: crate::common::NearGas::from_tgas(50).as_gas(),
                                 deposit: deposit.to_yoctonear(),
                             },
                         )],
