@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use color_eyre::eyre::WrapErr;
@@ -110,9 +109,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: "set".to_string(),
                                 args,
-                                gas: crate::common::NearGas::from_str("300 TeraGas")
-                                    .unwrap()
-                                    .inner,
+                                gas: crate::common::NearGas::from_tgas(300).as_gas(),
                                 deposit: deposit.to_yoctonear(),
                             },
                         )];
