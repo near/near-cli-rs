@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use color_eyre::eyre::WrapErr;
 
 use crate::common::{CallResultExt, JsonRpcClientExt};
@@ -71,11 +69,8 @@ impl WithdrawContext {
                                 })
                                 .to_string()
                                 .into_bytes(),
-                                gas: crate::common::NearGas::from_str("300 TeraGas")
-                                    .unwrap()
-                                    .inner,
-                                deposit: crate::common::NearBalance::from_yoctonear(0)
-                                    .to_yoctonear(),
+                                gas: crate::common::NearGas::from_tgas(300).as_gas(),
+                                deposit: 0,
                             },
                         )],
                     })

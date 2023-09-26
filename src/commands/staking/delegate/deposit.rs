@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::DelegateStakeContext)]
 #[interactive_clap(output_context = DepositContext)]
@@ -37,9 +35,7 @@ impl DepositContext {
                         near_primitives::transaction::FunctionCallAction {
                             method_name: "deposit".to_string(),
                             args: serde_json::json!({}).to_string().into_bytes(),
-                            gas: crate::common::NearGas::from_str("300 TeraGas")
-                                .unwrap()
-                                .inner,
+                            gas: crate::common::NearGas::from_tgas(300).as_gas(),
                             deposit: amount.to_yoctonear(),
                         },
                     )],

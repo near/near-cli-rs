@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::DelegateStakeContext)]
 #[interactive_clap(output_context = StakeAllContext)]
@@ -34,10 +32,8 @@ impl StakeAllContext {
                         near_primitives::transaction::FunctionCallAction {
                             method_name: "stake_all".to_string(),
                             args: serde_json::json!({}).to_string().into_bytes(),
-                            gas: crate::common::NearGas::from_str("300 TeraGas")
-                                .unwrap()
-                                .inner,
-                            deposit: crate::common::NearBalance::from_yoctonear(0).to_yoctonear(),
+                            gas: crate::common::NearGas::from_tgas(300).as_gas(),
+                            deposit: 0,
                         },
                     )],
                 })
