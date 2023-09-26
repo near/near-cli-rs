@@ -107,17 +107,15 @@ impl PrepaidGas {
         _context: &FunctionCallActionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         eprintln!();
-        let gas: u64 = loop {
+        let gas = loop {
             match crate::common::NearGas::from_str(
                 &Text::new("Enter gas for function call:")
                     .with_initial_value("100 TeraGas")
                     .prompt()?,
             ) {
                 Ok(input_gas) => {
-                    let crate::common::NearGas { inner: num } = input_gas;
-                    let gas = num;
-                    if gas <= 300000000000000 {
-                        break gas;
+                    if input_gas <= near_gas::NearGas::from_tgas(300) {
+                        break input_gas;
                     } else {
                         eprintln!("You need to enter a value of no more than 300 TERAGAS")
                     }
@@ -125,7 +123,7 @@ impl PrepaidGas {
                 Err(err) => return Err(color_eyre::Report::msg(err)),
             }
         };
-        Ok(Some(gas.into()))
+        Ok(Some(gas))
     }
 }
 
@@ -152,7 +150,7 @@ impl DepositContext {
             near_primitives::transaction::FunctionCallAction {
                 method_name: previous_context.function_name,
                 args: previous_context.function_args,
-                gas: previous_context.gas.inner,
+                gas: previous_context.gas.as_gas(),
                 deposit: scope.deposit.clone().to_yoctonear(),
             },
         );
