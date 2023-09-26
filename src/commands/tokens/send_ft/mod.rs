@@ -50,7 +50,7 @@ impl SendFtCommandContext {
             ft_contract_account_id: scope.ft_contract_account_id.clone().into(),
             receiver_account_id: scope.receiver_account_id.clone().into(),
             amount: scope.amount,
-            gas: scope.gas.clone(),
+            gas: scope.gas,
             deposit: scope.deposit.clone(),
         })
     }
