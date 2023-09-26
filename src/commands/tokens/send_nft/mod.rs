@@ -50,7 +50,7 @@ impl SendNftCommandContext {
             nft_contract_account_id: scope.nft_contract_account_id.clone().into(),
             receiver_account_id: scope.receiver_account_id.clone().into(),
             token_id: scope.token_id.clone(),
-            gas: scope.gas.clone(),
+            gas: scope.gas,
             deposit: scope.deposit.clone(),
         })
     }
