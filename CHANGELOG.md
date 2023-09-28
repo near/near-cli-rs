@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0](https://github.com/near/near-cli-rs/compare/v0.5.2...v0.6.0) - 2023-09-28
+
+### Added
+- New command export-account ([#226](https://github.com/near/near-cli-rs/pull/226))
+- [**breaking**] Added system keychain support for windows & linux, so now all major desktop operating systems are supported! ([#232](https://github.com/near/near-cli-rs/pull/232))
+- order networks selection based on the selected account id (bubble up more relevant networks) ([#225](https://github.com/near/near-cli-rs/pull/225))
+
+### Fixed
+- CLI must return a non-zero exit code when function call (as-transaction) fails ([#238](https://github.com/near/near-cli-rs/pull/238))
+- legacy view-function call with --base64 was not recognized ([#237](https://github.com/near/near-cli-rs/pull/237))
+- self update is now pointing to the right archive name ([#234](https://github.com/near/near-cli-rs/pull/234))
+
+### Other
+- Upgraded cargo-dist to 0.3.0 version to enable MSI Windows installer, and binary artifacts on every PR ([#241](https://github.com/near/near-cli-rs/pull/241))
+- Switch to near-gas crate  ([#240](https://github.com/near/near-cli-rs/pull/240))
+- New command to view contract storage state ([#239](https://github.com/near/near-cli-rs/pull/239))
+
 ## [0.5.2](https://github.com/near/near-cli-rs/compare/v0.5.1...v0.5.2) - 2023-08-17
 
 ### Added
