@@ -42,6 +42,11 @@ pub enum AccountActions {
     #[strum_discriminants(strum(message = "create-account          - Create a new account"))]
     /// Create a new account
     CreateAccount(self::create_account::CreateAccount),
+    #[strum_discriminants(strum(
+        message = "update-social-profile   - Update NEAR Social profile"
+    ))]
+    /// Update NEAR Social profile
+    UpdateSocialProfile(self::update_social_profile::UpdateSocialProfile),
     #[strum_discriminants(strum(message = "delete-account          - Delete an account"))]
     /// Delete an account
     DeleteAccount(self::delete_account::DeleteAccount),
@@ -60,11 +65,6 @@ pub enum AccountActions {
     ))]
     /// Delete an access key from an account
     DeleteKey(self::delete_key::DeleteKeyCommand),
-    #[strum_discriminants(strum(
-        message = "update-social-profile   - Update NEAR Social profile"
-    ))]
-    /// Update NEAR Social profile
-    UpdateSocialProfile(self::update_social_profile::UpdateSocialProfile),
     #[strum_discriminants(strum(
         message = "manage-storage-deposit  - Storage management: deposit, withdrawal, balance review"
     ))]
