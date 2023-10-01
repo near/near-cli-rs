@@ -61,10 +61,10 @@ pub enum AccountActions {
     /// Delete an access key from an account
     DeleteKey(self::delete_key::DeleteKeyCommand),
     #[strum_discriminants(strum(
-        message = "manage-profile          - Profile management: view, update"
+            message = "update-social-profile          - Update NEAR Social profile"
     ))]
-    /// Profile management: view, update
-    ManageProfile(self::profile_management::Contract),
+    /// Update NEAR Social profile
+    UpdateSocialProfile(self::update_social_profile::UpdateSocialProfile),
     #[strum_discriminants(strum(
         message = "manage-storage-deposit  - Storage management: deposit, withdrawal, balance review"
     ))]
