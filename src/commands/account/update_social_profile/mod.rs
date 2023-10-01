@@ -5,8 +5,8 @@ mod view_profile;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = ContractContext)]
-pub struct Contract {
+#[interactive_clap(output_context = UpdateSocialProfileContext)]
+pub struct UpdateSocialProfile {
     #[interactive_clap(skip_default_input_arg)]
     /// For which contract account ID do you want to manage the profile?
     contract_account_id: crate::types::account_id::AccountId,
@@ -15,15 +15,15 @@ pub struct Contract {
 }
 
 #[derive(Clone)]
-pub struct ContractContext {
+pub struct UpdateSocialProfileContext {
     pub global_context: crate::GlobalContext,
     pub get_contract_account_id: super::storage_management::GetContractAccountId,
 }
 
-impl ContractContext {
+impl UpdateSocialProfileContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
-        scope: &<Contract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<UpdateSocialProfile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let contract_account_id = scope.contract_account_id.clone();
         let get_contract_account_id: super::storage_management::GetContractAccountId =
@@ -35,7 +35,7 @@ impl ContractContext {
     }
 }
 
-impl Contract {
+impl UpdateSocialProfile {
     pub fn input_contract_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
@@ -47,7 +47,7 @@ impl Contract {
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = ContractContext)]
+#[interactive_clap(context = UpdateSocialProfileContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// What do you want to do with the profile?
 pub enum Actions {

@@ -7,7 +7,7 @@ pub struct TransactionFunctionArgs {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::ContractContext)]
+#[interactive_clap(input_context = super::UpdateSocialProfileContext)]
 #[interactive_clap(output_context = UpdateAccountProfileContext)]
 pub struct UpdateAccountProfile {
     #[interactive_clap(skip_default_input_arg)]
@@ -26,7 +26,7 @@ pub struct UpdateAccountProfileContext {
 
 impl UpdateAccountProfileContext {
     pub fn from_previous_context(
-        previous_context: super::ContractContext,
+        previous_context: super::UpdateSocialProfileContext,
         scope: &<UpdateAccountProfile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
@@ -39,7 +39,7 @@ impl UpdateAccountProfileContext {
 
 impl UpdateAccountProfile {
     pub fn input_account_id(
-        context: &super::ContractContext,
+        context: &super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_non_signer_account_id_from_used_account_list(
             &context.global_context.config.credentials_home_dir,

@@ -3,7 +3,7 @@ use color_eyre::eyre::WrapErr;
 use crate::common::{CallResultExt, JsonRpcClientExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::ContractContext)]
+#[interactive_clap(input_context = super::UpdateSocialProfileContext)]
 #[interactive_clap(output_context = AccountContext)]
 pub struct Account {
     #[interactive_clap(skip_default_input_arg)]
@@ -19,7 +19,7 @@ pub struct AccountContext(crate::network_view_at_block::ArgsForViewContext);
 
 impl AccountContext {
     pub fn from_previous_context(
-        previous_context: super::ContractContext,
+        previous_context: super::UpdateSocialProfileContext,
         scope: &<Account as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
@@ -69,7 +69,7 @@ impl From<AccountContext> for crate::network_view_at_block::ArgsForViewContext {
 
 impl Account {
     pub fn input_account_id(
-        context: &super::ContractContext,
+        context: &super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_non_signer_account_id_from_used_account_list(
             &context.global_context.config.credentials_home_dir,

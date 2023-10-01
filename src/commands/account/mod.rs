@@ -7,8 +7,8 @@ mod delete_key;
 mod export_account;
 mod import_account;
 mod list_keys;
-pub mod profile_management;
 pub mod storage_management;
+pub mod update_social_profile;
 mod view_account_summary;
 
 pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
@@ -61,7 +61,7 @@ pub enum AccountActions {
     /// Delete an access key from an account
     DeleteKey(self::delete_key::DeleteKeyCommand),
     #[strum_discriminants(strum(
-            message = "update-social-profile          - Update NEAR Social profile"
+        message = "update-social-profile   - Update NEAR Social profile"
     ))]
     /// Update NEAR Social profile
     UpdateSocialProfile(self::update_social_profile::UpdateSocialProfile),
