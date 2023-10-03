@@ -1375,14 +1375,96 @@ pub fn display_account_info(
     account_id: &near_primitives::types::AccountId,
     account_view: &near_primitives::views::AccountView,
     access_keys: &[near_primitives::views::AccessKeyInfoView],
+    optional_account_profile: Option<&crate::types::socialdb_types::AccountProfile>,
 ) {
     let mut table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
-    table.add_row(prettytable::row![
-        Fy->account_id,
-        format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
-    ]);
+    if let Some(account_profile) = optional_account_profile {
+        if let Some(name) = &account_profile.profile.name {
+            table.add_row(prettytable::row![
+                Fy->format!("{account_id} ({name})"),
+                format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
+            ]);
+        } else {
+            table.add_row(prettytable::row![
+                Fy->account_id,
+                format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
+            ]);
+        }
+        if let Some(image) = &account_profile.profile.image {
+            if let Some(url) = &image.url {
+                table.add_row(prettytable::row![
+                    Fg->"Image (url)",
+                    Fy->url
+                ]);
+            }
+            if let Some(ipfs_cid) = &image.ipfs_cid {
+                table.add_row(prettytable::row![
+                    Fg->"Image (ipfs_cid)",
+                    Fy->ipfs_cid
+                ]);
+            }
+        }
+        if let Some(background_image) = &account_profile.profile.background_image {
+            if let Some(url) = &background_image.url {
+                table.add_row(prettytable::row![
+                    Fg->"Background image (url)",
+                    Fy->url
+                ]);
+            }
+            if let Some(ipfs_cid) = &background_image.ipfs_cid {
+                table.add_row(prettytable::row![
+                    Fg->"Background image (ipfs_cid)",
+                    Fy->ipfs_cid
+                ]);
+            }
+        }
+        if let Some(description) = &account_profile.profile.description {
+            table.add_row(prettytable::row![
+                Fg->"Description",
+                Fy->format!("{}", description)
+            ]);
+        }
+        if let Some(linktree) = &account_profile.profile.linktree {
+            table.add_row(prettytable::row![
+                Fg->"Linktree",
+                Fy->""
+            ]);
+            for (key, optional_value) in linktree.iter() {
+                if let Some(value) = &optional_value {
+                    if key == "github" {
+                        table.add_row(prettytable::row![
+                            Fg->"",
+                            Fy->format!("https://github.com/{value}")
+                        ]);
+                    } else if key == "twitter" {
+                        table.add_row(prettytable::row![
+                            Fg->"",
+                            Fy->format!("https://twitter.com/{value}")
+                        ]);
+                    } else if key == "telegram" {
+                        table.add_row(prettytable::row![
+                            Fg->"",
+                            Fy->format!("https://t.me/{value}")
+                        ]);
+                    }
+                }
+            }
+        }
+        if let Some(tags) = &account_profile.profile.tags {
+            let keys = tags.keys().cloned().collect::<Vec<String>>().join(", ");
+            table.add_row(prettytable::row![
+                Fg->"Tags",
+                Fy->keys
+            ]);
+        }
+    } else {
+        table.add_row(prettytable::row![
+            Fy->account_id,
+            format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
+        ]);
+    }
     table.add_row(prettytable::row![
         Fg->"Native account balance",
         Fy->NearBalance::from_yoctonear(account_view.amount)
@@ -1428,12 +1510,7 @@ pub fn display_account_info(
         Fg->"Access keys",
         Fy->access_keys_summary
     ]);
-
     table.printstd();
-
-    if !access_keys.is_empty() {
-        display_access_key_list(access_keys);
-    }
 }
 
 pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyInfoView]) {

@@ -1,3 +1,6 @@
+use color_eyre::eyre::WrapErr;
+use std::str::FromStr;
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub credentials_home_dir: std::path::PathBuf,
@@ -70,5 +73,19 @@ impl NetworkConfig {
                 json_rpc_client.header(near_jsonrpc_client::auth::ApiKey::from(rpc_api_key.clone()))
         };
         json_rpc_client
+    }
+
+    pub fn get_near_social_account_id_from_network(
+        &self,
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+        match self.network_name.as_str() {
+            "mainnet" => near_primitives::types::AccountId::from_str("social.near")
+                .wrap_err("Internal error"),
+            "testnet" => near_primitives::types::AccountId::from_str("v1.social08.testnet")
+                .wrap_err("Internal error"),
+            _ => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "This network does not provide the \"near-social\" contract"
+            )),
+        }
     }
 }
