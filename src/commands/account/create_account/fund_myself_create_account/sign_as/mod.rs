@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -99,9 +97,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                         near_primitives::transaction::FunctionCallAction {
                                             method_name: "create_account".to_string(),
                                             args,
-                                            gas: crate::common::NearGas::from_str("30 TeraGas")
-                                                .unwrap()
-                                                .inner,
+                                            gas: crate::common::NearGas::from_tgas(30).as_gas(),
                                             deposit: item
                                                 .account_properties
                                                 .initial_balance
