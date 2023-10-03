@@ -75,9 +75,13 @@ near-gas = { version = "0.2.3", features = [
     "interactive-clap",
 ] }
 
+keyring = "2.0.5"
 interactive-clap = "0.2.5"
 interactive-clap-derive = "0.2.5"
-keyring = "2.0.5"
+
+[patch.crates-io]
+interactive-clap = {git = "https://github.com/near-cli-rs/interactive-clap/", rev = "eb4e8406e265a10c6fd49d1ac139a6baf0f11567"}
+interactive-clap-derive = {git = "https://github.com/near-cli-rs/interactive-clap/", rev = "eb4e8406e265a10c6fd49d1ac139a6baf0f11567"}
 
 [features]
 default = ["ledger", "self-update"]
