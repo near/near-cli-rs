@@ -2,6 +2,7 @@ pub mod account_id;
 pub mod api_key;
 pub mod base64_bytes;
 pub mod crypto_hash;
+pub mod file_bytes;
 pub mod json;
 pub mod path_buf;
 pub mod public_key;

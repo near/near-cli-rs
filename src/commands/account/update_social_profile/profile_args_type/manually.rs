@@ -50,7 +50,7 @@ pub struct ManuallyContext(super::ArgsContext);
 
 impl ManuallyContext {
     pub fn from_previous_context(
-        previous_context: super::super::UpdateAccountProfileContext,
+        previous_context: super::super::UpdateSocialProfileContext,
         scope: &<Manually as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let profile = crate::types::socialdb_types::Profile {
@@ -111,7 +111,6 @@ impl ManuallyContext {
         };
         Ok(Self(super::ArgsContext {
             global_context: previous_context.global_context,
-            get_contract_account_id: previous_context.get_contract_account_id,
             account_id: previous_context.account_id,
             data: serde_json::to_vec(&profile)?,
         }))
@@ -125,7 +124,7 @@ impl From<ManuallyContext> for super::ArgsContext {
 }
 
 impl interactive_clap::FromCli for Manually {
-    type FromCliContext = super::super::UpdateAccountProfileContext;
+    type FromCliContext = super::super::UpdateSocialProfileContext;
     type FromCliError = color_eyre::eyre::Error;
     fn from_cli(
         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
@@ -263,9 +262,10 @@ impl interactive_clap::FromCli for Manually {
         interactive_clap::ResultFromCli::Ok(clap_variant)
     }
 }
+
 impl Manually {
     fn input_name(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         eprintln!();
         #[derive(strum_macros::Display)]
@@ -290,7 +290,7 @@ impl Manually {
     }
 
     fn input_image_url(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
         eprintln!();
         #[derive(strum_macros::Display)]
@@ -315,7 +315,7 @@ impl Manually {
     }
 
     fn input_image_ipfs_cid(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         eprintln!();
         #[derive(strum_macros::Display)]
@@ -342,7 +342,7 @@ impl Manually {
     }
 
     fn input_background_image_url(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
         eprintln!();
         #[derive(strum_macros::Display)]
@@ -371,7 +371,7 @@ impl Manually {
     }
 
     fn input_background_image_ipfs_cid(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         eprintln!();
         #[derive(strum_macros::Display)]
@@ -400,7 +400,7 @@ impl Manually {
     }
 
     fn input_description(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         eprintln!();
         #[derive(strum_macros::Display)]
@@ -425,7 +425,7 @@ impl Manually {
     }
 
     fn input_twitter(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         eprintln!();
         #[derive(strum_macros::Display)]
@@ -452,7 +452,7 @@ impl Manually {
     }
 
     fn input_github(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         eprintln!();
         #[derive(strum_macros::Display)]
@@ -479,7 +479,7 @@ impl Manually {
     }
 
     fn input_telegram(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         eprintln!();
         #[derive(strum_macros::Display)]
@@ -508,7 +508,7 @@ impl Manually {
     }
 
     fn input_website(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
         eprintln!();
         #[derive(strum_macros::Display)]
@@ -535,7 +535,7 @@ impl Manually {
     }
 
     fn input_tags(
-        _context: &super::super::UpdateAccountProfileContext,
+        _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
         eprintln!();
         #[derive(strum_macros::Display)]

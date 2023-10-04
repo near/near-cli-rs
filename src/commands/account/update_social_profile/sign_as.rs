@@ -21,7 +21,6 @@ pub struct Signer {
 #[derive(Clone)]
 pub struct SignerContext {
     pub global_context: crate::GlobalContext,
-    pub get_contract_account_id: super::super::super::storage_management::GetContractAccountId,
     pub account_id: near_primitives::types::AccountId,
     pub data: Vec<u8>,
     pub signer_account_id: near_primitives::types::AccountId,
@@ -34,7 +33,6 @@ impl SignerContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context.global_context,
-            get_contract_account_id: previous_context.get_contract_account_id,
             account_id: previous_context.account_id,
             data: previous_context.data,
             signer_account_id: scope.signer_account_id.clone().into(),
@@ -51,7 +49,8 @@ impl From<SignerContext> for crate::commands::ActionContext {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             Arc::new({
                 move |network_config| {
-                    let contract_account_id = (item.get_contract_account_id)(network_config)?;
+                    let contract_account_id =
+                        network_config.get_near_social_account_id_from_network()?;
                     let mut prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                         signer_id: signer_id.clone(),
                         receiver_id: contract_account_id.clone(),
