@@ -92,11 +92,11 @@ near --offline tokens \
 - [import-account](#import-account---Import-existing-account-aka-sign-in)
 - [export-account](#export-account---Export-existing-account)
 - [create-account](#create-account---Create-a-new-account)
+- [update-social-profile](#update-social-profile---Update-NEAR-Social-profile)
 - [delete-account](#delete-account---Delete-an-account)
 - [list-keys](#list-keys---View-a-list-of-access-keys-of-an-account)
 - [add-key](#add-key---Add-an-access-key-to-an-account)
 - [delete-key](#delete-key---Delete-an-access-key-from-an-account)
-- [manage-profile](#manage-profile---Profile-management-view-update)
 - [manage-storage-deposit](#manage-storage-deposit---Storage-management-deposit-withdrawal-balance-review)
 
 #### view-account-summary - View properties for an account
@@ -764,6 +764,100 @@ The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa
 </a>
 </details>
 
+#### update-social-profile - Update NEAR Social profile
+
+- [json-args](#json-args---Valid-JSON-arguments-eg-token_id-42)
+- base64-args
+- [file-args](#file-args---Read-from-file-eg-reusable-JSON-or-binary-data)
+- [manually](#manually---Interactive-input-of-arguments)
+
+##### json-args - Valid JSON arguments (e.g. {"token_id": "42"})
+
+Для изменения профиля аккаунта на контракте с использованием аргументов в формате JSON необходимо ввести в командной строке терминала:
+
+```txt
+near account \
+    update-social-profile fro_volod.testnet \
+    json-args '{"name":"frovolod","image":{"ipfs_cid":"bafkreifdzusz6hp3j4njdtqqxr3tlvx4agedgh7znyac4wbuiao3gtppde"},"linktree":{"github":"FroVolod","telegram":"frovolod"},"tags": {"rust":"","near":"","developer":""}}' \
+    sign-as fro_volod.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Profile for fro_volod.testnet updated successfully
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/bF7AQuj012xVk4Xt5kMfOWAq1?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/bF7AQuj012xVk4Xt5kMfOWAq1.png" width="836"/>
+</a>
+</details>
+
+##### file-args - Read from file (e.g. reusable JSON or binary data)
+
+Для изменения профиля аккаунта на контракте с использованием подготовленного файла необходимо ввести в командной строке терминала:
+
+```txt
+near account \
+    update-social-profile fro_volod.testnet \
+    file-args profile.txt \
+    sign-as fro_volod.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Profile for fro_volod.testnet updated successfully
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/lbyMQp94TqvbNjBGmjQ49PEpJ?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/lbyMQp94TqvbNjBGmjQ49PEpJ.png" width="836"/>
+</a>
+</details>
+
+##### manually - Interactive input of arguments
+
+Для изменения профиля аккаунта на контракте с использованием интерактивного режима необходимо воспользоваться диалоговыми подсказками либо ввести в командной строке терминала:
+
+```txt
+near account \
+    update-social-profile fro_volod.testnet \
+    manually \
+        --name fro_volod.testnet \
+        --image-ipfs-cid bafkreifdzusz6hp3j4njdtqqxr3tlvx4agedgh7znyac4wbuiao3gtppde \
+        --description 'This is my profile' \
+        --github FroVolod \
+        --website https://auto-rti.com/ \
+        --tags dev,rust \
+    sign-as fro_volod.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Profile for fro_volod.testnet updated successfully
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/sJxaZKOkjGu75yvMGOqkQxi34?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/sJxaZKOkjGu75yvMGOqkQxi34.png" width="836"/>
+</a>
+</details>
+
 #### delete-account - Delete an account
 
 Данная команда предназначена для удаления текущего аккаунта. Важно помнить, что все средства удаляемого аккаунта перейдут на счет "_beneficiary_".
@@ -938,145 +1032,6 @@ https://explorer.testnet.near.org/transactions/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/IYaNEYcMHtmSe6zKc2L63Okph?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/IYaNEYcMHtmSe6zKc2L63Okph.png" width="836"/>
-</a>
-</details>
-
-#### manage-profile - Profile management: view, update
-
-- [view-profile](#view-profile---View-profile-for-an-account)
-- [update-profile](#update-profile---Update-profile-for-the-account)
-
-##### view-profile - View profile for an account
-
-Для просмотра профиля аккаунта на контракте на последнем блоке необходимо ввести в командной строке терминала:
-
-```txt
-near account \
-    manage-profile v1.social08.testnet \
-    view-profile volodymyr.testnet \
-    network-config testnet \
-    now
-```
-
-<details><summary><i>Результат выполнения команды</i></summary>
-
-```txt
-{
-  "name": "Volodymyr",
-  "image": {
-    "ipfs_cid": "bafkreifdzusz6hp3j4njdtqqxr3tlvx4agedgh7znyac4wbuiao3gtppde",
-  },
-  "description": "description",
-  "linktree": {
-    "twitter": "volodymyr",
-    "telegram": "",
-    "website": "https://qwe.com/",
-    "github": "FroVolod",
-  },
-  "tags": {
-    "developer": "",
-    "rust": "",
-    "dev": "",
-    "near": "",
-  },
-}
-```
-</details>
-
-##### update-profile - Update profile for the account
-
-- [json-args](#json-args---Valid-JSON-arguments-eg-token_id-42)
-- text-args
-- base64-args
-- [file-args](#file-args---Read-from-file-eg-reusable-JSON-or-binary-data)
-- [manually](#manually---Interactive-input-of-arguments)
-
-##### json-args - Valid JSON arguments (e.g. {"token_id": "42"})
-
-Для изменения профиля аккаунта на контракте с использованием аргументов в формате JSON необходимо ввести в командной строке терминала:
-
-```txt
-near account \
-    update-social-profile fro_volod.testnet \
-    json-args '{"name":"frovolod","image":{"ipfs_cid":"bafkreifdzusz6hp3j4njdtqqxr3tlvx4agedgh7znyac4wbuiao3gtppde"},"linktree":{"github":"FroVolod","telegram":"frovolod"},"tags": {"rust":"","near":"","developer":""}}' \
-    sign-as fro_volod.testnet \
-    network-config testnet \
-    sign-with-keychain \
-    send
-```
-
-<details><summary><i>Результат выполнения команды</i></summary>
-
-```txt
-Profile for fro_volod.testnet updated successfully
-```
-</details>
-
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/bF7AQuj012xVk4Xt5kMfOWAq1?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/bF7AQuj012xVk4Xt5kMfOWAq1.png" width="836"/>
-</a>
-</details>
-
-##### file-args - Read from file (e.g. reusable JSON or binary data)
-
-Для изменения профиля аккаунта на контракте с использованием подготовленного файла необходимо ввести в командной строке терминала:
-
-```txt
-near account \
-    manage-profile v1.social08.testnet \
-    update-profile fro_volod.testnet \
-    file-args profile.txt \
-    sign-as fro_volod.testnet \
-    network-config testnet \
-    sign-with-keychain \
-    send
-```
-
-<details><summary><i>Результат выполнения команды</i></summary>
-
-```txt
-Profile for fro_volod.testnet updated successfully
-```
-</details>
-
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/lbyMQp94TqvbNjBGmjQ49PEpJ?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/lbyMQp94TqvbNjBGmjQ49PEpJ.png" width="836"/>
-</a>
-</details>
-
-##### manually - Interactive input of arguments
-
-Для изменения профиля аккаунта на контракте с использованием интерактивного режима необходимо воспользоваться диалоговыми подсказками либо ввести в командной строке терминала:
-
-```txt
-near account \
-    manage-profile v1.social08.testnet \
-    update-profile fro_volod.testnet \
-    manually \
-        --name fro_volod.testnet \
-        --image-ipfs-cid bafkreifdzusz6hp3j4njdtqqxr3tlvx4agedgh7znyac4wbuiao3gtppde \
-        --description 'This is my profile' \
-        --github FroVolod \
-        --website https://auto-rti.com/ \
-        --tags dev,rust \
-    sign-as fro_volod.testnet \
-    network-config testnet \
-    sign-with-keychain \
-    send
-```
-
-<details><summary><i>Результат выполнения команды</i></summary>
-
-```txt
-Profile for fro_volod.testnet updated successfully
-```
-</details>
-
-<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/sJxaZKOkjGu75yvMGOqkQxi34?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/sJxaZKOkjGu75yvMGOqkQxi34.png" width="836"/>
 </a>
 </details>
 
