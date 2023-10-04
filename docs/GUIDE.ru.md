@@ -997,8 +997,7 @@ near account \
 
 ```txt
 near account \
-    manage-profile v1.social08.testnet \
-    update-profile fro_volod.testnet \
+    update-social-profile fro_volod.testnet \
     json-args '{"name":"frovolod","image":{"ipfs_cid":"bafkreifdzusz6hp3j4njdtqqxr3tlvx4agedgh7znyac4wbuiao3gtppde"},"linktree":{"github":"FroVolod","telegram":"frovolod"},"tags": {"rust":"","near":"","developer":""}}' \
     sign-as fro_volod.testnet \
     network-config testnet \
