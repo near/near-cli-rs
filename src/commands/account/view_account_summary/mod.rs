@@ -51,7 +51,11 @@ impl ViewAccountSummaryContext {
                     })?
                     .access_key_list_view()?;
 
-                let contract_account_id = network_config.get_near_social_account_id_from_network()?;
+                let contract_account_id = if let Some(account_id) = network_config.near_social_db_contract_account_id.clone() {
+                        account_id
+                    } else {
+                        network_config.get_near_social_account_id_from_network()?
+                    };
 
                 let social_db = network_config
                     .json_rpc_client()

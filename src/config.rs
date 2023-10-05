@@ -16,6 +16,8 @@ pub struct NetworkConfig {
     pub explorer_transaction_url: url::Url,
     // https://github.com/near/near-cli-rs/issues/116
     pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
+    // https://docs.near.org/social/contract
+    pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
     pub faucet_url: Option<url::Url>,
     pub meta_transaction_relayer_url: Option<url::Url>,
 }
@@ -38,6 +40,7 @@ impl Default for Config {
                     .unwrap(),
                 rpc_api_key: None,
                 linkdrop_account_id: Some("near".parse().unwrap()),
+                near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
                 faucet_url: None,
                 meta_transaction_relayer_url: None,
             },
@@ -53,6 +56,7 @@ impl Default for Config {
                     .unwrap(),
                 rpc_api_key: None,
                 linkdrop_account_id: Some("testnet".parse().unwrap()),
+                near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
                 meta_transaction_relayer_url: None,
             },

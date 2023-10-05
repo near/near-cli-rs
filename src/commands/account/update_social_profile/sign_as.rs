@@ -49,8 +49,13 @@ impl From<SignerContext> for crate::commands::ActionContext {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             Arc::new({
                 move |network_config| {
-                    let contract_account_id =
-                        network_config.get_near_social_account_id_from_network()?;
+                    let contract_account_id = if let Some(account_id) =
+                        network_config.near_social_db_contract_account_id.clone()
+                    {
+                        account_id
+                    } else {
+                        network_config.get_near_social_account_id_from_network()?
+                    };
                     let mut prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                         signer_id: signer_id.clone(),
                         receiver_id: contract_account_id.clone(),
