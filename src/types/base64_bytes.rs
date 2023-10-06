@@ -32,7 +32,7 @@ impl Base64Bytes {
         &self.inner
     }
 
-    pub fn into_bytes(&self) -> Vec<u8> {
-        self.inner.clone()
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.inner
     }
 }
