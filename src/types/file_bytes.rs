@@ -17,8 +17,7 @@ impl std::fmt::Display for FileBytes {
 
 impl FileBytes {
     pub fn try_into_bytes(&self) -> color_eyre::Result<Vec<u8>> {
-        Ok(std::fs::read_to_string(self.inner.clone())
-            .wrap_err_with(|| format!("Error reading data from file: {}", self.inner.display()))?
-            .into_bytes())
+        Ok(std::fs::read(&self.inner)
+            .wrap_err_with(|| format!("Error reading data from file: {}", self.inner.display()))?)
     }
 }
