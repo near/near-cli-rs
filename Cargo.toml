@@ -79,6 +79,8 @@ keyring = "2.0.5"
 interactive-clap = "0.2.6"
 interactive-clap-derive = "0.2.6"
 
+near-socialdb-client-rs = {git = "https://github.com/bos-cli-rs/near-socialdb-client-rs"}
+
 [features]
 default = ["ledger", "self-update"]
 ledger = ["near-ledger"]

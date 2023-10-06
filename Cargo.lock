@@ -2158,6 +2158,7 @@ dependencies = [
  "near-jsonrpc-primitives",
  "near-ledger",
  "near-primitives",
+ "near-socialdb-client-rs",
  "open",
  "openssl",
  "prettytable",
@@ -2392,6 +2393,21 @@ dependencies = [
  "near-rpc-error-core",
  "serde",
  "syn 2.0.18",
+]
+
+[[package]]
+name = "near-socialdb-client-rs"
+version = "0.1.0"
+source = "git+https://github.com/bos-cli-rs/near-socialdb-client-rs#3266204ccb4a81f72f0832f6a280c539660fd337"
+dependencies = [
+ "color-eyre",
+ "interactive-clap",
+ "near-crypto",
+ "near-jsonrpc-client",
+ "near-jsonrpc-primitives",
+ "near-primitives",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

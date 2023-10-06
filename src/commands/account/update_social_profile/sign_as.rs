@@ -62,36 +62,39 @@ impl From<SignerContext> for crate::commands::ActionContext {
                         actions: vec![],
                     };
 
-                    let local_profile: serde_json::Value = serde_json::from_slice(&data)?;
-                    let remote_profile = match network_config
-                    .json_rpc_client()
-                    .blocking_call_view_function(
-                        &contract_account_id,
-                        "get",
-                        serde_json::json!({
-                            "keys": vec![format!("{account_id}/profile/**")],
-                        })
-                        .to_string()
-                        .into_bytes(),
-                        near_primitives::types::Finality::Final.into(),
-                    )
-                    .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?
-                    .parse_result_from_json::<crate::types::socialdb_types::SocialDb>()
-                    .wrap_err_with(|| {
-                        format!("Failed to parse view function call return value for {account_id}/profile.")
-                    })?
-                    .accounts
-                    .get(&account_id) {
-                        Some(account_profile) => serde_json::to_value(account_profile.profile.clone())?,
-                        None => serde_json::Value::Null
-                    };
+                    let json_rpc_client = network_config.json_rpc_client();
 
-                    let deposit = crate::common::required_deposit(
-                        network_config,
-                        &contract_account_id,
-                        &account_id,
-                        &local_profile,
-                        Some(&remote_profile),
+                    let local_profile: serde_json::Value = serde_json::from_slice(&data)?;
+                    let remote_profile = match json_rpc_client
+                        .blocking_call_view_function(
+                            &contract_account_id,
+                            "get",
+                            serde_json::json!({
+                                "keys": vec![format!("{account_id}/profile/**")],
+                            })
+                            .to_string()
+                            .into_bytes(),
+                            near_primitives::types::Finality::Final.into(),
+                        )
+                        .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?
+                        .parse_result_from_json::<crate::types::socialdb_types::SocialDb>()
+                        .wrap_err_with(|| {
+                            format!("Failed to parse view function call return value for {account_id}/profile.")
+                        })?
+                        .accounts
+                        .get(&account_id) {
+                            Some(account_profile) => serde_json::to_value(account_profile.profile.clone())?,
+                            None => serde_json::Value::Null
+                        };
+
+                    let deposit = tokio::runtime::Runtime::new().unwrap().block_on(
+                        near_socialdb_client_rs::required_deposit(
+                            &json_rpc_client,
+                            &contract_account_id,
+                            &account_id,
+                            &local_profile,
+                            Some(&remote_profile),
+                        ),
                     )?;
 
                     let new_social_db_state = crate::types::socialdb_types::SocialDb {
@@ -126,19 +129,23 @@ impl From<SignerContext> for crate::commands::ActionContext {
             let signer_account_id = item.signer_account_id.clone();
             let account_id = item.account_id.clone();
             move |prepopulated_unsigned_transaction, network_config| {
+                let json_rpc_client = network_config.json_rpc_client();
+
                 if let near_primitives::transaction::Action::FunctionCall(action) =
                     &mut prepopulated_unsigned_transaction.actions[0]
                 {
-                    action.deposit = crate::common::get_deposit(
-                        network_config,
-                        &signer_account_id,
-                        &prepopulated_unsigned_transaction.public_key,
-                        &account_id,
-                        "profile",
-                        &prepopulated_unsigned_transaction.receiver_id,
-                        crate::common::NearBalance::from_yoctonear(action.deposit),
-                    )?
-                    .to_yoctonear();
+                    action.deposit = tokio::runtime::Runtime::new()
+                        .unwrap()
+                        .block_on(near_socialdb_client_rs::get_deposit(
+                            &json_rpc_client,
+                            &signer_account_id,
+                            &prepopulated_unsigned_transaction.public_key,
+                            &account_id,
+                            "profile",
+                            &prepopulated_unsigned_transaction.receiver_id,
+                            crate::common::NearBalance::from_yoctonear(action.deposit),
+                        ))?
+                        .to_yoctonear();
                     Ok(())
                 } else {
                     color_eyre::eyre::bail!("Unexpected action to change components",);

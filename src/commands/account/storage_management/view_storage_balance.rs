@@ -45,7 +45,7 @@ impl AccountContext {
                         .wrap_err_with(|| {
                             "Failed to fetch query for view method: 'storage_balance_of'"
                         })?
-                        .parse_result_from_json::<crate::common::StorageBalance>()
+                        .parse_result_from_json::<near_socialdb_client_rs::StorageBalance>()
                         .wrap_err_with(|| {
                             "Failed to parse return value of view function call for StorageBalance."
                         })?;
