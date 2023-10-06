@@ -82,6 +82,9 @@ impl NetworkConfig {
     pub fn get_near_social_account_id_from_network(
         &self,
     ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+        if let Some(account_id) = self.near_social_db_contract_account_id.clone() {
+            return Ok(account_id);
+        }
         match self.network_name.as_str() {
             "mainnet" => near_primitives::types::AccountId::from_str("social.near")
                 .wrap_err("Internal error"),

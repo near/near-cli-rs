@@ -12,7 +12,6 @@ pub mod signature;
 pub mod signed_delegate_action;
 pub mod signed_transaction;
 pub mod slip10;
-pub mod socialdb_types;
 pub mod transaction;
 pub mod url;
 pub mod vec_string;

@@ -2398,7 +2398,7 @@ dependencies = [
 [[package]]
 name = "near-socialdb-client-rs"
 version = "0.1.0"
-source = "git+https://github.com/bos-cli-rs/near-socialdb-client-rs#3266204ccb4a81f72f0832f6a280c539660fd337"
+source = "git+https://github.com/bos-cli-rs/near-socialdb-client-rs#9974f789d6ca74c15a214ff9d2d48da8bc1f7d80"
 dependencies = [
  "color-eyre",
  "interactive-clap",
@@ -2408,6 +2408,7 @@ dependencies = [
  "near-primitives",
  "serde",
  "serde_json",
+ "url",
 ]
 
 [[package]]

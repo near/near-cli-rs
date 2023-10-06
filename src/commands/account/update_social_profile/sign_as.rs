@@ -49,13 +49,8 @@ impl From<SignerContext> for crate::commands::ActionContext {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             Arc::new({
                 move |network_config| {
-                    let contract_account_id = if let Some(account_id) =
-                        network_config.near_social_db_contract_account_id.clone()
-                    {
-                        account_id
-                    } else {
-                        network_config.get_near_social_account_id_from_network()?
-                    };
+                    let contract_account_id =
+                        network_config.get_near_social_account_id_from_network()?;
                     let mut prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                         signer_id: signer_id.clone(),
                         receiver_id: contract_account_id.clone(),
@@ -77,7 +72,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
                             near_primitives::types::Finality::Final.into(),
                         )
                         .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?
-                        .parse_result_from_json::<crate::types::socialdb_types::SocialDb>()
+                        .parse_result_from_json::<near_socialdb_client_rs::types::socialdb_types::SocialDb>()
                         .wrap_err_with(|| {
                             format!("Failed to parse view function call return value for {account_id}/profile.")
                         })?
@@ -97,14 +92,15 @@ impl From<SignerContext> for crate::commands::ActionContext {
                         ),
                     )?;
 
-                    let new_social_db_state = crate::types::socialdb_types::SocialDb {
-                        accounts: HashMap::from([(
-                            account_id.clone(),
-                            crate::types::socialdb_types::AccountProfile {
-                                profile: serde_json::from_value(local_profile)?,
-                            },
-                        )]),
-                    };
+                    let new_social_db_state =
+                        near_socialdb_client_rs::types::socialdb_types::SocialDb {
+                            accounts: HashMap::from([(
+                                account_id.clone(),
+                                near_socialdb_client_rs::types::socialdb_types::AccountProfile {
+                                    profile: serde_json::from_value(local_profile)?,
+                                },
+                            )]),
+                        };
 
                     let args = serde_json::to_string(&super::TransactionFunctionArgs {
                         data: new_social_db_state,

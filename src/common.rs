@@ -1282,7 +1282,9 @@ pub fn display_account_info(
     account_id: &near_primitives::types::AccountId,
     account_view: &near_primitives::views::AccountView,
     access_keys: &[near_primitives::views::AccessKeyInfoView],
-    optional_account_profile: Option<&crate::types::socialdb_types::AccountProfile>,
+    optional_account_profile: Option<
+        &near_socialdb_client_rs::types::socialdb_types::AccountProfile,
+    >,
 ) {
     let mut table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);

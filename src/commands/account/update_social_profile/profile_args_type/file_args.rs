@@ -20,7 +20,7 @@ impl FileArgsContext {
         Ok(Self(super::ArgsContext {
             global_context: previous_context.global_context,
             account_id: previous_context.account_id,
-            data: scope.data_path.try_into_bytes()?,
+            data: scope.data_path.read_bytes()?,
         }))
     }
 }

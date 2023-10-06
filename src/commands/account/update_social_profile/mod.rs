@@ -3,7 +3,7 @@ mod sign_as;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TransactionFunctionArgs {
-    pub data: crate::types::socialdb_types::SocialDb,
+    pub data: near_socialdb_client_rs::types::socialdb_types::SocialDb,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
