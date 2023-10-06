@@ -51,6 +51,13 @@ impl NewAccountContext {
                     let client = reqwest::blocking::Client::new();
                     match client.post(faucet_service_url.clone()).json(&data).send() {
                         Ok(response) => {
+                            if response.status() >= reqwest::StatusCode::BAD_REQUEST {
+                                return Err(color_eyre::Report::msg(format!(
+                                    "The faucet (helper service) server failed with status code <{}>",
+                                    response.status()
+                                )));
+                            }
+
                             let account_creation_transaction = response
                                 .json::<near_jsonrpc_client::methods::tx::RpcTransactionStatusResponse>(
                                 )?;
