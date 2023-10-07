@@ -72,7 +72,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
                             near_primitives::types::Finality::Final.into(),
                         )
                         .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?
-                        .parse_result_from_json::<near_socialdb_client_rs::types::socialdb_types::SocialDb>()
+                        .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
                         .wrap_err_with(|| {
                             format!("Failed to parse view function call return value for {account_id}/profile.")
                         })?
@@ -83,7 +83,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
                         };
 
                     let deposit = tokio::runtime::Runtime::new().unwrap().block_on(
-                        near_socialdb_client_rs::required_deposit(
+                        near_socialdb_client::required_deposit(
                             &json_rpc_client,
                             &contract_account_id,
                             &account_id,
@@ -93,10 +93,10 @@ impl From<SignerContext> for crate::commands::ActionContext {
                     )?;
 
                     let new_social_db_state =
-                        near_socialdb_client_rs::types::socialdb_types::SocialDb {
+                        near_socialdb_client::types::socialdb_types::SocialDb {
                             accounts: HashMap::from([(
                                 account_id.clone(),
-                                near_socialdb_client_rs::types::socialdb_types::AccountProfile {
+                                near_socialdb_client::types::socialdb_types::AccountProfile {
                                     profile: serde_json::from_value(local_profile)?,
                                 },
                             )]),
@@ -132,7 +132,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
                 {
                     action.deposit = tokio::runtime::Runtime::new()
                         .unwrap()
-                        .block_on(near_socialdb_client_rs::get_deposit(
+                        .block_on(near_socialdb_client::get_deposit(
                             &json_rpc_client,
                             &signer_account_id,
                             &prepopulated_unsigned_transaction.public_key,

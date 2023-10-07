@@ -2158,7 +2158,7 @@ dependencies = [
  "near-jsonrpc-primitives",
  "near-ledger",
  "near-primitives",
- "near-socialdb-client-rs",
+ "near-socialdb-client",
  "open",
  "openssl",
  "prettytable",
@@ -2396,9 +2396,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "near-socialdb-client-rs"
+name = "near-socialdb-client"
 version = "0.1.0"
-source = "git+https://github.com/bos-cli-rs/near-socialdb-client-rs#9974f789d6ca74c15a214ff9d2d48da8bc1f7d80"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0c8308868cc23a386607d73bc04b9fb8ce054e3f7bd3392899daf5d29b8b443"
 dependencies = [
  "color-eyre",
  "interactive-clap",

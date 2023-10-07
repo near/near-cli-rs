@@ -53,29 +53,25 @@ impl ManuallyContext {
         previous_context: super::super::UpdateSocialProfileContext,
         scope: &<Manually as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let profile = near_socialdb_client_rs::types::socialdb_types::Profile {
+        let profile = near_socialdb_client::types::socialdb_types::Profile {
             name: scope.name.clone(),
             image: if scope.image_url.is_none() && scope.image_ipfs_cid.is_none() {
                 None
             } else {
-                Some(
-                    near_socialdb_client_rs::types::socialdb_types::ProfileImage {
-                        url: scope.image_url.clone().map(|url| url.into()),
-                        ipfs_cid: scope.image_ipfs_cid.clone(),
-                    },
-                )
+                Some(near_socialdb_client::types::socialdb_types::ProfileImage {
+                    url: scope.image_url.clone().map(|url| url.into()),
+                    ipfs_cid: scope.image_ipfs_cid.clone(),
+                })
             },
             background_image: if scope.background_image_url.is_none()
                 && scope.background_image_ipfs_cid.is_none()
             {
                 None
             } else {
-                Some(
-                    near_socialdb_client_rs::types::socialdb_types::ProfileImage {
-                        url: scope.background_image_url.clone().map(|url| url.into()),
-                        ipfs_cid: scope.background_image_ipfs_cid.clone(),
-                    },
-                )
+                Some(near_socialdb_client::types::socialdb_types::ProfileImage {
+                    url: scope.background_image_url.clone().map(|url| url.into()),
+                    ipfs_cid: scope.background_image_ipfs_cid.clone(),
+                })
             },
             description: scope.description.clone(),
             linktree: if scope.twitter.is_none()

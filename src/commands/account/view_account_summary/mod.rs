@@ -66,7 +66,7 @@ impl ViewAccountSummaryContext {
                         block_reference.clone(),
                     )
                     .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?
-                    .parse_result_from_json::<near_socialdb_client_rs::types::socialdb_types::SocialDb>()
+                    .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
                     .wrap_err_with(|| {
                         format!("Failed to parse view function call return value for {account_id}/profile.")
                     })?;
