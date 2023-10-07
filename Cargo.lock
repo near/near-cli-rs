@@ -1794,9 +1794,9 @@ dependencies = [
 
 [[package]]
 name = "interactive-clap"
-version = "0.2.4"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9a4460797bc616e3256b1becad15e859c4f8d63a8a379c87fdcb1734206cf0a"
+checksum = "42bd342c17d765c32d082c4ecd8d5ad7c5d872b33966145282b4e2a34e146e65"
 dependencies = [
  "interactive-clap-derive",
  "strum",
@@ -1805,9 +1805,9 @@ dependencies = [
 
 [[package]]
 name = "interactive-clap-derive"
-version = "0.2.4"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4d0f6a898a8dc1bcea5b00552c5a3fa3f64a2634f84b854390269238abdc9ed"
+checksum = "7f7e9f13ff386d6b730ffe4d4d2f5cb0a38f53ebcf74e591187748723c0331cb"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",
@@ -2158,6 +2158,7 @@ dependencies = [
  "near-jsonrpc-primitives",
  "near-ledger",
  "near-primitives",
+ "near-socialdb-client",
  "open",
  "openssl",
  "prettytable",
@@ -2392,6 +2393,23 @@ dependencies = [
  "near-rpc-error-core",
  "serde",
  "syn 2.0.18",
+]
+
+[[package]]
+name = "near-socialdb-client"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0c8308868cc23a386607d73bc04b9fb8ce054e3f7bd3392899daf5d29b8b443"
+dependencies = [
+ "color-eyre",
+ "interactive-clap",
+ "near-crypto",
+ "near-jsonrpc-client",
+ "near-jsonrpc-primitives",
+ "near-primitives",
+ "serde",
+ "serde_json",
+ "url",
 ]
 
 [[package]]

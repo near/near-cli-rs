@@ -96,7 +96,7 @@ impl PrepaidGasContext {
             receiver_account_id: previous_context.receiver_account_id,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
-            gas: scope.gas.clone(),
+            gas: scope.gas,
         })
     }
 }

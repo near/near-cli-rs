@@ -1,6 +1,6 @@
 #[derive(Debug, Clone)]
 pub struct Base64Bytes {
-    pub inner: Vec<u8>,
+    inner: Vec<u8>,
 }
 
 impl interactive_clap::ToCli for Base64Bytes {
@@ -24,5 +24,15 @@ impl std::str::FromStr for Base64Bytes {
 impl std::fmt::Display for Base64Bytes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", near_primitives::serialize::to_base64(&self.inner))
+    }
+}
+
+impl Base64Bytes {
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.inner
+    }
+
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.inner
     }
 }

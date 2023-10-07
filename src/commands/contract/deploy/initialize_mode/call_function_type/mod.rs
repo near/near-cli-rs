@@ -96,7 +96,7 @@ impl PrepaidGasContext {
             code: previous_context.code,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
-            gas: scope.gas.clone(),
+            gas: scope.gas,
         })
     }
 }

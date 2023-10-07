@@ -68,100 +68,7 @@ impl std::fmt::Display for BlockHashAsBase58 {
     }
 }
 
-const ONE_NEAR: u128 = 10u128.pow(24);
-
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
-pub struct NearBalance {
-    pub yoctonear_amount: u128,
-}
-
-impl NearBalance {
-    pub fn from_yoctonear(yoctonear_amount: u128) -> Self {
-        Self { yoctonear_amount }
-    }
-
-    pub fn to_yoctonear(&self) -> u128 {
-        self.yoctonear_amount
-    }
-
-    pub fn is_zero(&self) -> bool {
-        self == &Self::from_str("0 NEAR").unwrap()
-    }
-}
-
-impl std::fmt::Display for NearBalance {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.yoctonear_amount == 0 {
-            write!(f, "0 NEAR")
-        } else if self.yoctonear_amount % ONE_NEAR == 0 {
-            write!(f, "{} NEAR", self.yoctonear_amount / ONE_NEAR,)
-        } else {
-            write!(
-                f,
-                "{}.{} NEAR",
-                self.yoctonear_amount / ONE_NEAR,
-                format!("{:0>24}", (self.yoctonear_amount % ONE_NEAR)).trim_end_matches('0')
-            )
-        }
-    }
-}
-
-impl std::str::FromStr for NearBalance {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
-        let currency = s.trim().trim_start_matches(num).trim().to_uppercase();
-        let yoctonear_amount = match currency.as_str() {
-            "N" | "NEAR" => {
-                let res_split: Vec<&str> = num.split('.').collect();
-                match res_split.len() {
-                    2 => {
-                        let num_int_yocto = res_split[0]
-                            .parse::<u128>()
-                            .map_err(|err| format!("Near Balance: {}", err))?
-                            .checked_mul(10u128.pow(24))
-                            .ok_or("Near Balance: underflow or overflow happens")?;
-                        let len_fract = res_split[1].len() as u32;
-                        let num_fract_yocto = if len_fract <= 24 {
-                            res_split[1]
-                                .parse::<u128>()
-                                .map_err(|err| format!("Near Balance: {}", err))?
-                                .checked_mul(10u128.pow(24 - res_split[1].len() as u32))
-                                .ok_or("Near Balance: underflow or overflow happens")?
-                        } else {
-                            return Err(
-                                "Near Balance: too large fractional part of a number".to_string()
-                            );
-                        };
-                        num_int_yocto
-                            .checked_add(num_fract_yocto)
-                            .ok_or("Near Balance: underflow or overflow happens")?
-                    }
-                    1 => {
-                        if res_split[0].starts_with('0') && res_split[0] != "0" {
-                            return Err("Near Balance: incorrect number entered".to_string());
-                        };
-                        res_split[0]
-                            .parse::<u128>()
-                            .map_err(|err| format!("Near Balance: {}", err))?
-                            .checked_mul(10u128.pow(24))
-                            .ok_or("Near Balance: underflow or overflow happens")?
-                    }
-                    _ => return Err("Near Balance: incorrect number entered".to_string()),
-                }
-            }
-            "YN" | "YNEAR" | "YOCTONEAR" | "YOCTON" => num
-                .parse::<u128>()
-                .map_err(|err| format!("Near Balance: {}", err))?,
-            _ => return Err("Near Balance: incorrect currency value entered".to_string()),
-        };
-        Ok(NearBalance { yoctonear_amount })
-    }
-}
-
-impl interactive_clap::ToCli for NearBalance {
-    type CliVariant = NearBalance;
-}
+pub use near_socialdb_client::NearBalance;
 
 pub use near_gas::NearGas;
 
@@ -377,7 +284,7 @@ pub fn find_network_where_account_exist(
     new_account_id: near_primitives::types::AccountId,
 ) -> Option<crate::config::NetworkConfig> {
     for (_, network_config) in context.config.network_connection.iter() {
-        if crate::common::get_account_state(
+        if get_account_state(
             network_config.clone(),
             new_account_id.clone(),
             near_primitives::types::BlockReference::latest(),
@@ -674,7 +581,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "deposit:",
-                    crate::common::NearBalance::from_yoctonear(function_call_action.deposit)
+                    NearBalance::from_yoctonear(function_call_action.deposit)
                 );
             }
             near_primitives::transaction::Action::Transfer(transfer_action) => {
@@ -682,7 +589,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>5} {:<20} {}",
                     "--",
                     "transfer deposit:",
-                    crate::common::NearBalance::from_yoctonear(transfer_action.deposit)
+                    NearBalance::from_yoctonear(transfer_action.deposit)
                 );
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
@@ -695,7 +602,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "stake:",
-                    crate::common::NearBalance::from_yoctonear(stake_action.stake)
+                    NearBalance::from_yoctonear(stake_action.stake)
                 );
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
@@ -773,7 +680,7 @@ fn print_value_successful_transaction(
                 eprintln!(
                     "<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
-                    crate::common::NearBalance::from_yoctonear(deposit),
+                    NearBalance::from_yoctonear(deposit),
                     transaction_info.transaction.receiver_id,
                 );
             }
@@ -784,7 +691,7 @@ fn print_value_successful_transaction(
                 eprintln!(
                     "Validator <{}> has successfully staked {}.",
                     transaction_info.transaction.signer_id,
-                    crate::common::NearBalance::from_yoctonear(stake),
+                    NearBalance::from_yoctonear(stake),
                 );
             }
             near_primitives::views::ActionView::AddKey {
@@ -933,7 +840,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(*amount)
+                NearBalance::from_yoctonear(*amount)
             ))
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -951,8 +858,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(*balance),
-                crate::common::NearBalance::from_yoctonear(*stake)
+                NearBalance::from_yoctonear(*balance),
+                NearBalance::from_yoctonear(*stake)
             ))
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -962,8 +869,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                crate::common::NearBalance::from_yoctonear(*stake),
-                crate::common::NearBalance::from_yoctonear(*minimum_stake)
+                NearBalance::from_yoctonear(*stake),
+                NearBalance::from_yoctonear(*minimum_stake)
             ))
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -1037,8 +944,8 @@ pub fn handler_invalid_tx_error(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        crate::common::NearBalance::from_yoctonear(*allowance),
-                        crate::common::NearBalance::from_yoctonear(*cost)
+                        NearBalance::from_yoctonear(*allowance),
+                        NearBalance::from_yoctonear(*cost)
                     ))
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -1067,14 +974,14 @@ pub fn handler_invalid_tx_error(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(*balance),
-                crate::common::NearBalance::from_yoctonear(*cost)
+                NearBalance::from_yoctonear(*balance),
+                NearBalance::from_yoctonear(*cost)
             ))
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(*amount)
+                NearBalance::from_yoctonear(*amount)
             ))
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
@@ -1375,14 +1282,96 @@ pub fn display_account_info(
     account_id: &near_primitives::types::AccountId,
     account_view: &near_primitives::views::AccountView,
     access_keys: &[near_primitives::views::AccessKeyInfoView],
+    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
     let mut table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
-    table.add_row(prettytable::row![
-        Fy->account_id,
-        format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
-    ]);
+    if let Some(account_profile) = optional_account_profile {
+        if let Some(name) = &account_profile.profile.name {
+            table.add_row(prettytable::row![
+                Fy->format!("{account_id} ({name})"),
+                format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
+            ]);
+        } else {
+            table.add_row(prettytable::row![
+                Fy->account_id,
+                format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
+            ]);
+        }
+        if let Some(image) = &account_profile.profile.image {
+            if let Some(url) = &image.url {
+                table.add_row(prettytable::row![
+                    Fg->"Image (url)",
+                    Fy->url
+                ]);
+            }
+            if let Some(ipfs_cid) = &image.ipfs_cid {
+                table.add_row(prettytable::row![
+                    Fg->"Image (ipfs_cid)",
+                    Fy->ipfs_cid
+                ]);
+            }
+        }
+        if let Some(background_image) = &account_profile.profile.background_image {
+            if let Some(url) = &background_image.url {
+                table.add_row(prettytable::row![
+                    Fg->"Background image (url)",
+                    Fy->url
+                ]);
+            }
+            if let Some(ipfs_cid) = &background_image.ipfs_cid {
+                table.add_row(prettytable::row![
+                    Fg->"Background image (ipfs_cid)",
+                    Fy->ipfs_cid
+                ]);
+            }
+        }
+        if let Some(description) = &account_profile.profile.description {
+            table.add_row(prettytable::row![
+                Fg->"Description",
+                Fy->format!("{}", description)
+            ]);
+        }
+        if let Some(linktree) = &account_profile.profile.linktree {
+            table.add_row(prettytable::row![
+                Fg->"Linktree",
+                Fy->""
+            ]);
+            for (key, optional_value) in linktree.iter() {
+                if let Some(value) = &optional_value {
+                    if key == "github" {
+                        table.add_row(prettytable::row![
+                            Fg->"",
+                            Fy->format!("https://github.com/{value}")
+                        ]);
+                    } else if key == "twitter" {
+                        table.add_row(prettytable::row![
+                            Fg->"",
+                            Fy->format!("https://twitter.com/{value}")
+                        ]);
+                    } else if key == "telegram" {
+                        table.add_row(prettytable::row![
+                            Fg->"",
+                            Fy->format!("https://t.me/{value}")
+                        ]);
+                    }
+                }
+            }
+        }
+        if let Some(tags) = &account_profile.profile.tags {
+            let keys = tags.keys().cloned().collect::<Vec<String>>().join(", ");
+            table.add_row(prettytable::row![
+                Fg->"Tags",
+                Fy->keys
+            ]);
+        }
+    } else {
+        table.add_row(prettytable::row![
+            Fy->account_id,
+            format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
+        ]);
+    }
     table.add_row(prettytable::row![
         Fg->"Native account balance",
         Fy->NearBalance::from_yoctonear(account_view.amount)
@@ -1428,12 +1417,7 @@ pub fn display_account_info(
         Fg->"Access keys",
         Fy->access_keys_summary
     ]);
-
     table.printstd();
-
-    if !access_keys.is_empty() {
-        display_access_key_list(access_keys);
-    }
 }
 
 pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyInfoView]) {
@@ -1619,25 +1603,6 @@ pub impl near_jsonrpc_client::JsonRpcClient {
             },
         })
     }
-}
-
-use serde::de::{Deserialize, Deserializer};
-
-#[derive(Debug, Clone, serde::Deserialize)]
-pub struct StorageBalance {
-    #[serde(deserialize_with = "parse_u128_string")]
-    pub available: u128,
-    #[serde(deserialize_with = "parse_u128_string")]
-    pub total: u128,
-}
-
-fn parse_u128_string<'de, D>(deserializer: D) -> color_eyre::eyre::Result<u128, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    <std::string::String as Deserialize>::deserialize(deserializer)?
-        .parse::<u128>()
-        .map_err(serde::de::Error::custom)
 }
 
 #[easy_ext::ext(RpcQueryResponseExt)]

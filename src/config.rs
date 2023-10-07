@@ -1,3 +1,6 @@
+use color_eyre::eyre::WrapErr;
+use std::str::FromStr;
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub credentials_home_dir: std::path::PathBuf,
@@ -13,6 +16,8 @@ pub struct NetworkConfig {
     pub explorer_transaction_url: url::Url,
     // https://github.com/near/near-cli-rs/issues/116
     pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
+    // https://docs.near.org/social/contract
+    pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
     pub faucet_url: Option<url::Url>,
     pub meta_transaction_relayer_url: Option<url::Url>,
 }
@@ -35,6 +40,7 @@ impl Default for Config {
                     .unwrap(),
                 rpc_api_key: None,
                 linkdrop_account_id: Some("near".parse().unwrap()),
+                near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
                 faucet_url: None,
                 meta_transaction_relayer_url: None,
             },
@@ -50,6 +56,7 @@ impl Default for Config {
                     .unwrap(),
                 rpc_api_key: None,
                 linkdrop_account_id: Some("testnet".parse().unwrap()),
+                near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
                 meta_transaction_relayer_url: None,
             },
@@ -70,5 +77,22 @@ impl NetworkConfig {
                 json_rpc_client.header(near_jsonrpc_client::auth::ApiKey::from(rpc_api_key.clone()))
         };
         json_rpc_client
+    }
+
+    pub fn get_near_social_account_id_from_network(
+        &self,
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+        if let Some(account_id) = self.near_social_db_contract_account_id.clone() {
+            return Ok(account_id);
+        }
+        match self.network_name.as_str() {
+            "mainnet" => near_primitives::types::AccountId::from_str("social.near")
+                .wrap_err("Internal error"),
+            "testnet" => near_primitives::types::AccountId::from_str("v1.social08.testnet")
+                .wrap_err("Internal error"),
+            _ => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "This network does not provide the \"near-social\" contract"
+            )),
+        }
     }
 }

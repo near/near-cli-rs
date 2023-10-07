@@ -75,9 +75,11 @@ near-gas = { version = "0.2.3", features = [
     "interactive-clap",
 ] }
 
-interactive-clap = "0.2.4"
-interactive-clap-derive = "0.2.4"
 keyring = "2.0.5"
+interactive-clap = "0.2.6"
+interactive-clap-derive = "0.2.6"
+
+near-socialdb-client = "0.1.0"
 
 [features]
 default = ["ledger", "self-update"]

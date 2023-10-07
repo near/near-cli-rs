@@ -1,7 +1,6 @@
 use color_eyre::eyre::Context;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -52,13 +51,35 @@ impl ViewAccountSummaryContext {
                     })?
                     .access_key_list_view()?;
 
+                let contract_account_id = network_config.get_near_social_account_id_from_network()?;
+
+                let social_db = network_config
+                    .json_rpc_client()
+                    .blocking_call_view_function(
+                        &contract_account_id,
+                        "get",
+                        serde_json::json!({
+                            "keys": vec![format!("{account_id}/profile/**")],
+                        })
+                        .to_string()
+                        .into_bytes(),
+                        block_reference.clone(),
+                    )
+                    .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?
+                    .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
+                    .wrap_err_with(|| {
+                        format!("Failed to parse view function call return value for {account_id}/profile.")
+                    })?;
+
                 crate::common::display_account_info(
                     &rpc_query_response.block_hash,
                     &rpc_query_response.block_height,
                     &account_id,
                     &account_view,
                     &access_key_list.keys,
+                    social_db.accounts.get(&account_id)
                 );
+
                 Ok(())
             }
         });
