@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod create_implicit_account;
 mod fund_myself_create_account;
-mod sponsor_by_faucet_service;
+pub mod sponsor_by_faucet_service;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
