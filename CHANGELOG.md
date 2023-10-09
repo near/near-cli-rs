@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0](https://github.com/near/near-cli-rs/compare/v0.6.0...v0.7.0) - 2023-10-09
+
+### Added
+- Added a new command to manage BOS profile in SocialDB ([#231](https://github.com/near/near-cli-rs/pull/231))
+- Provide a relevant faucet error message when helper API server returns an error ([#243](https://github.com/near/near-cli-rs/pull/243))
+
+### Other
+- Exposed sponsor_by_faucet_service module to re-use in "cargo-near" ([#246](https://github.com/near/near-cli-rs/pull/246))
+
 ## [0.6.0](https://github.com/near/near-cli-rs/compare/v0.5.2...v0.6.0) - 2023-09-28
 
 ### Added
