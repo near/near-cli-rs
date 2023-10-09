@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0](https://github.com/near/near-cli-rs/compare/v0.6.0...v0.7.0) - 2023-10-09
+## [0.6.1](https://github.com/near/near-cli-rs/compare/v0.6.0...v0.6.1) - 2023-10-09
 
 ### Added
 - Added a new command to manage BOS profile in SocialDB ([#231](https://github.com/near/near-cli-rs/pull/231))
