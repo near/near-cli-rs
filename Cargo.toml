@@ -76,8 +76,8 @@ near-gas = { version = "0.2.3", features = [
 ] }
 
 keyring = "2.0.5"
-interactive-clap = "0.2.6"
-interactive-clap-derive = "0.2.6"
+interactive-clap = "0.2.7"
+interactive-clap-derive = "0.2.7"
 
 near-socialdb-client = "0.1.0"
 

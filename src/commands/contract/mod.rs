@@ -1,7 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod call_function;
-mod deploy;
+pub mod deploy;
 mod download_wasm;
 mod view_storage;
 

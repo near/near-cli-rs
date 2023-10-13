@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod account;
 mod config;
-mod contract;
+pub mod contract;
 mod tokens;
 mod transaction;
 
