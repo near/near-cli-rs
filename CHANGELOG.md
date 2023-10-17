@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2](https://github.com/near/near-cli-rs/compare/v0.6.1...v0.6.2) - 2023-10-17
+
+### Added
+- Exposed some of the functions to use "manage-profile" in bos-cli-rs ([#249](https://github.com/near/near-cli-rs/pull/249))
+- Exposed subcommands related to "deploy" to reuse in cargo-near ([#247](https://github.com/near/near-cli-rs/pull/247))
+
 ## [0.6.1](https://github.com/near/near-cli-rs/compare/v0.6.0...v0.6.1) - 2023-10-09
 
 ### Added
