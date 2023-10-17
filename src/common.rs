@@ -1284,9 +1284,90 @@ pub fn display_account_info(
     access_keys: &[near_primitives::views::AccessKeyInfoView],
     optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
-    let mut table = Table::new();
+    let mut table: Table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
+    profile_table(
+        viewed_at_block_hash,
+        viewed_at_block_height,
+        account_id,
+        optional_account_profile,
+        &mut table,
+    );
+
+    table.add_row(prettytable::row![
+        Fg->"Native account balance",
+        Fy->NearBalance::from_yoctonear(account_view.amount)
+    ]);
+    table.add_row(prettytable::row![
+        Fg->"Validator stake",
+        Fy->NearBalance::from_yoctonear(account_view.locked)
+    ]);
+    table.add_row(prettytable::row![
+        Fg->"Storage used by the account",
+        Fy->bytesize::ByteSize(account_view.storage_usage),
+    ]);
+
+    let contract_status = if account_view.code_hash == CryptoHash::default() {
+        "No contract code".to_string()
+    } else {
+        hex::encode(account_view.code_hash.as_ref())
+    };
+    table.add_row(prettytable::row![
+        Fg->"Contract (SHA-256 checksum hex)",
+        Fy->contract_status
+    ]);
+
+    let access_keys_summary = if access_keys.is_empty() {
+        "Account is locked (no access keys)".to_string()
+    } else {
+        let full_access_keys_count = access_keys
+            .iter()
+            .filter(|access_key| {
+                matches!(
+                    access_key.access_key.permission,
+                    near_primitives::views::AccessKeyPermissionView::FullAccess
+                )
+            })
+            .count();
+        format!(
+            "{} full access keys and {} function-call-only access keys",
+            full_access_keys_count,
+            access_keys.len() - full_access_keys_count
+        )
+    };
+    table.add_row(prettytable::row![
+        Fg->"Access keys",
+        Fy->access_keys_summary
+    ]);
+    table.printstd();
+}
+
+pub fn display_account_profile(
+    viewed_at_block_hash: &CryptoHash,
+    viewed_at_block_height: &near_primitives::types::BlockHeight,
+    account_id: &near_primitives::types::AccountId,
+    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
+) {
+    let mut table = Table::new();
+    table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
+    profile_table(
+        viewed_at_block_hash,
+        viewed_at_block_height,
+        account_id,
+        optional_account_profile,
+        &mut table,
+    );
+    table.printstd();
+}
+
+fn profile_table(
+    viewed_at_block_hash: &CryptoHash,
+    viewed_at_block_height: &near_primitives::types::BlockHeight,
+    account_id: &near_primitives::types::AccountId,
+    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
+    table: &mut Table,
+) {
     if let Some(account_profile) = optional_account_profile {
         if let Some(name) = &account_profile.profile.name {
             table.add_row(prettytable::row![
@@ -1372,52 +1453,6 @@ pub fn display_account_info(
             format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
         ]);
     }
-    table.add_row(prettytable::row![
-        Fg->"Native account balance",
-        Fy->NearBalance::from_yoctonear(account_view.amount)
-    ]);
-    table.add_row(prettytable::row![
-        Fg->"Validator stake",
-        Fy->NearBalance::from_yoctonear(account_view.locked)
-    ]);
-    table.add_row(prettytable::row![
-        Fg->"Storage used by the account",
-        Fy->bytesize::ByteSize(account_view.storage_usage),
-    ]);
-
-    let contract_status = if account_view.code_hash == CryptoHash::default() {
-        "No contract code".to_string()
-    } else {
-        hex::encode(account_view.code_hash.as_ref())
-    };
-    table.add_row(prettytable::row![
-        Fg->"Contract (SHA-256 checksum hex)",
-        Fy->contract_status
-    ]);
-
-    let access_keys_summary = if access_keys.is_empty() {
-        "Account is locked (no access keys)".to_string()
-    } else {
-        let full_access_keys_count = access_keys
-            .iter()
-            .filter(|access_key| {
-                matches!(
-                    access_key.access_key.permission,
-                    near_primitives::views::AccessKeyPermissionView::FullAccess
-                )
-            })
-            .count();
-        format!(
-            "{} full access keys and {} function-call-only access keys",
-            full_access_keys_count,
-            access_keys.len() - full_access_keys_count
-        )
-    };
-    table.add_row(prettytable::row![
-        Fg->"Access keys",
-        Fy->access_keys_summary
-    ]);
-    table.printstd();
 }
 
 pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyInfoView]) {
