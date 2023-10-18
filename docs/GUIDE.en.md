@@ -93,6 +93,7 @@ View account details ([View properties for an account](#view-account-summary---v
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
 - [import-account](#import-account---import-existing-account-aka-sign-in)
 - [create-account](#create-account---Create-a-new-account)
+- [update-social-profile](#update-social-profile---Update-NEAR-Social-profile)
 - [delete-account](#delete-account---Delete-an-account)
 - [list-keys](#list-keys---View-a-list-of-access-keys-of-an-account)
 - [add-key](#add-key---Add-an-access-key-to-an-account)
@@ -760,6 +761,100 @@ The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/rtmvhKL9eQXqIKBkvX62oi0qx?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/rtmvhKL9eQXqIKBkvX62oi0qx.png" width="836"/>
+</a>
+</details>
+
+#### update-social-profile - Update NEAR Social profile
+
+- [json-args](#json-args---Valid-JSON-arguments-eg-token_id-42)
+- base64-args
+- [file-args](#file-args---Read-from-file-eg-reusable-JSON-or-binary-data)
+- [manually](#manually---Interactive-input-of-arguments)
+
+##### json-args - Valid JSON arguments (e.g. {"token_id": "42"})
+
+To update the contract account profile using JSON arguments, enter the following at the terminal command line:
+
+```txt
+near account \
+    update-social-profile fro_volod.testnet \
+    json-args '{"name":"frovolod","image":{"ipfs_cid":"bafkreifdzusz6hp3j4njdtqqxr3tlvx4agedgh7znyac4wbuiao3gtppde"},"linktree":{"github":"FroVolod","telegram":"frovolod"},"tags": {"rust":"","near":"","developer":""}}' \
+    sign-as fro_volod.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Profile for fro_volod.testnet updated successfully
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/bF7AQuj012xVk4Xt5kMfOWAq1?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/bF7AQuj012xVk4Xt5kMfOWAq1.png" width="836"/>
+</a>
+</details>
+
+##### file-args - Read from file (e.g. reusable JSON or binary data)
+
+To update the account profile on the contract using the prepared file, you must enter in the terminal command line:
+
+```txt
+near account \
+    update-social-profile fro_volod.testnet \
+    file-args profile.txt \
+    sign-as fro_volod.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Profile for fro_volod.testnet updated successfully
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/lbyMQp94TqvbNjBGmjQ49PEpJ?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/lbyMQp94TqvbNjBGmjQ49PEpJ.png" width="836"/>
+</a>
+</details>
+
+##### manually - Interactive input of arguments
+
+To update the account profile on the contract in interactive mode, you must use the prompts of the dialog or enter in the terminal command line:
+
+```txt
+near account \
+    update-social-profile fro_volod.testnet \
+    manually \
+        --name fro_volod.testnet \
+        --image-ipfs-cid bafkreifdzusz6hp3j4njdtqqxr3tlvx4agedgh7znyac4wbuiao3gtppde \
+        --description 'This is my profile' \
+        --github FroVolod \
+        --website https://example.com/ \
+        --tags dev,rust \
+    sign-as fro_volod.testnet \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Profile for fro_volod.testnet updated successfully
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/sJxaZKOkjGu75yvMGOqkQxi34?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/sJxaZKOkjGu75yvMGOqkQxi34.png" width="836"/>
 </a>
 </details>
 

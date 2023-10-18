@@ -28,6 +28,9 @@ pub struct AddNetworkConnection {
     linkdrop_account_id: Option<crate::types::account_id::AccountId>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
+    near_social_db_contract_account_id: Option<crate::types::account_id::AccountId>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
     faucet_url: Option<crate::types::url::Url>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
@@ -55,6 +58,12 @@ impl AddNetworkConnectionContext {
                     .linkdrop_account_id
                     .clone()
                     .map(|linkdrop_account_id| linkdrop_account_id.into()),
+                near_social_db_contract_account_id: scope
+                    .near_social_db_contract_account_id
+                    .clone()
+                    .map(|near_social_db_contract_account_id| {
+                        near_social_db_contract_account_id.into()
+                    }),
                 faucet_url: scope.faucet_url.clone().map(|faucet_url| faucet_url.into()),
                 meta_transaction_relayer_url: scope
                     .meta_transaction_relayer_url
@@ -149,6 +158,19 @@ impl interactive_clap::FromCli for AddNetworkConnection {
             };
         };
         let linkdrop_account_id = clap_variant.linkdrop_account_id.clone();
+        if clap_variant.near_social_db_contract_account_id.is_none() {
+            clap_variant.near_social_db_contract_account_id =
+                match Self::input_near_social_db_contract_account_id(&context) {
+                    Ok(optional_near_social_db_contract_account_id) => {
+                        optional_near_social_db_contract_account_id
+                    }
+                    Err(err) => {
+                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
+                    }
+                };
+        };
+        let near_social_db_contract_account_id =
+            clap_variant.near_social_db_contract_account_id.clone();
         if clap_variant.faucet_url.is_none() {
             clap_variant.faucet_url = match Self::input_faucet_url(&context) {
                 Ok(optional_faucet_url) => optional_faucet_url,
@@ -176,6 +198,7 @@ impl interactive_clap::FromCli for AddNetworkConnection {
             explorer_transaction_url,
             rpc_api_key,
             linkdrop_account_id,
+            near_social_db_contract_account_id,
             faucet_url,
             meta_transaction_relayer_url,
         };
@@ -235,6 +258,33 @@ impl AddNetworkConnection {
         if let ConfirmOptions::Yes = select_choose_input {
             let account_id: crate::types::account_id::AccountId =
             CustomType::new("What is the name of the account that hosts the \"linkdrop\" program? (e.g. on mainnet it is near, and on testnet it is testnet)").prompt()?;
+            Ok(Some(account_id))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_near_social_db_contract_account_id(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        eprintln!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, and I want to enter the NEAR Social DB contract account ID")]
+            Yes,
+            #[strum(
+                to_string = "No, I don't want to enter the NEAR Social DB contract account ID"
+            )]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the NEAR Social DB contract account ID on this network?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let account_id: crate::types::account_id::AccountId =
+            CustomType::new("What is the name of the NEAR Social DB contract account ID (e.g. on mainnet it is social.near)").prompt()?;
             Ok(Some(account_id))
         } else {
             Ok(None)

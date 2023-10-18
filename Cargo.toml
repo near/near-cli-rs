@@ -1,6 +1,6 @@
 [package]
 name = "near-cli-rs"
-version = "0.6.0"
+version = "0.6.2"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
@@ -75,9 +75,11 @@ near-gas = { version = "0.2.3", features = [
     "interactive-clap",
 ] }
 
-interactive-clap = "0.2.5"
-interactive-clap-derive = "0.2.5"
 keyring = "2.0.5"
+interactive-clap = "0.2.7"
+interactive-clap-derive = "0.2.7"
+
+near-socialdb-client = "0.1.0"
 
 [features]
 default = ["ledger", "self-update"]

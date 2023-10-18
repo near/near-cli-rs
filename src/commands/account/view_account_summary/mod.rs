@@ -62,23 +62,43 @@ impl ViewAccountSummaryContext {
                 let concurrency = 10;
 
                 let delegated_stake: std::collections::HashMap<near_primitives::types::AccountId, crate::common::NearBalance> = runtime
-                .block_on(
-                    futures::stream::iter(validators_stake
-                        .iter()
-                        .collect::<Vec<_>>()
-                        .chunks(chunk_size),
+                    .block_on(
+                        futures::stream::iter(validators_stake
+                            .iter()
+                            .collect::<Vec<_>>()
+                            .chunks(chunk_size),
+                        )
+                        .map(|validators| async {
+                            get_delegated_stake(&json_rpc_client, block_reference, &account_id, validators).await
+                        })
+                        .buffer_unordered(concurrency)
+                        .collect::<Vec<Result<_, _>>>(),
                     )
-                    .map(|validators| async {
-                        get_delegated_stake(&json_rpc_client, block_reference, &account_id, validators).await
-                    })
-                    .buffer_unordered(concurrency)
-                    .collect::<Vec<Result<_, _>>>(),
-                )
-                .into_iter()
-                .try_fold(std::collections::HashMap::new(), |mut acc, x| {
-                    acc.extend(x?);
-                    Ok::<_, color_eyre::eyre::Error>(acc)
-                })?;
+                    .into_iter()
+                    .try_fold(std::collections::HashMap::new(), |mut acc, x| {
+                        acc.extend(x?);
+                        Ok::<_, color_eyre::eyre::Error>(acc)
+                    })?;
+
+                let contract_account_id = network_config.get_near_social_account_id_from_network()?;
+
+                let social_db = network_config
+                    .json_rpc_client()
+                    .blocking_call_view_function(
+                        &contract_account_id,
+                        "get",
+                        serde_json::json!({
+                            "keys": vec![format!("{account_id}/profile/**")],
+                        })
+                        .to_string()
+                        .into_bytes(),
+                        block_reference.clone(),
+                    )
+                    .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?
+                    .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
+                    .wrap_err_with(|| {
+                        format!("Failed to parse view function call return value for {account_id}/profile.")
+                    })?;
 
                 crate::common::display_account_info(
                     &rpc_query_response.block_hash,
@@ -87,7 +107,9 @@ impl ViewAccountSummaryContext {
                     delegated_stake,
                     &account_view,
                     &access_key_list.keys,
+                    social_db.accounts.get(&account_id)
                 );
+
                 Ok(())
             }
         });
