@@ -1462,7 +1462,7 @@ pub fn display_account_info(
     viewed_at_block_hash: &CryptoHash,
     viewed_at_block_height: &near_primitives::types::BlockHeight,
     account_id: &near_primitives::types::AccountId,
-    delegated_stake: std::collections::HashMap<
+    delegated_stake: &std::collections::BTreeMap<
         near_primitives::types::AccountId,
         crate::common::NearBalance,
     >,
@@ -1490,9 +1490,9 @@ pub fn display_account_info(
         Fy->NearBalance::from_yoctonear(account_view.locked)
     ]);
 
-    for (validator_id, stake) in delegated_stake.iter() {
+    for (validator_id, stake) in delegated_stake {
         table.add_row(prettytable::row![
-            Fg->format!("Delegated stake for <{validator_id}>"),
+            Fg->format!("Delegated stake with <{validator_id}>"),
             Fy->stake
         ]);
     }

@@ -53,7 +53,7 @@ fn display_validators_info(network_config: &crate::config::NetworkConfig) -> cra
     table.printstd();
     let validators_url: url::Url = network_config.wallet_url.join("staking/validators")?;
     eprintln!(
-        "This is not a complete list of validators. To see the full list of validators visit this URL:\n{}\n",
+        "This is not a complete list of validators. To see the full list of validators visit Explorer:\n{}\n",
         &validators_url.as_str()
     );
     Ok(())
