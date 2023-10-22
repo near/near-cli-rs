@@ -63,11 +63,9 @@ impl SignerAccountIdContext {
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: "storage_withdraw".to_string(),
-                                args: serde_json::json!({
+                                args: serde_json::to_vec(&serde_json::json!({
                                     "amount": amount.clone().to_yoctonear().to_string()
-                                })
-                                .to_string()
-                                .into_bytes(),
+                                }))?,
                                 gas: crate::common::NearGas::from_tgas(50).as_gas(),
                                 deposit: crate::common::NearBalance::from_yoctonear(1)
                                     .to_yoctonear(),

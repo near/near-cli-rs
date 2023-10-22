@@ -39,11 +39,9 @@ impl WithdrawContext {
                         .blocking_call_view_function(
                             &previous_context.validator_account_id,
                             "is_account_unstaked_balance_available",
-                            serde_json::json!({
+                            serde_json::to_vec(&serde_json::json!({
                                 "account_id": signer_id.to_string(),
-                            })
-                            .to_string()
-                            .into_bytes(),
+                            }))?,
                             near_primitives::types::BlockReference::Finality(near_primitives::types::Finality::Final),
                         )
                         .wrap_err(
@@ -64,11 +62,9 @@ impl WithdrawContext {
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: "withdraw".to_string(),
-                                args: serde_json::json!({
+                                args: serde_json::to_vec(&serde_json::json!({
                                     "amount": amount.clone().to_yoctonear().to_string()
-                                })
-                                .to_string()
-                                .into_bytes(),
+                                }))?,
                                 gas: crate::common::NearGas::from_tgas(300).as_gas(),
                                 deposit: 0,
                             },

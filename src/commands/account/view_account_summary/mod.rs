@@ -87,11 +87,9 @@ impl ViewAccountSummaryContext {
                     .blocking_call_view_function(
                         &contract_account_id,
                         "get",
-                        serde_json::json!({
+                        serde_json::to_vec(&serde_json::json!({
                             "keys": vec![format!("{account_id}/profile/**")],
-                        })
-                        .to_string()
-                        .into_bytes(),
+                        }))?,
                         block_reference.clone(),
                     )
                     .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?

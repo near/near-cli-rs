@@ -77,11 +77,9 @@ pub fn get_user_staked_balance(
         .blocking_call_view_function(
             validator_account_id,
             "get_account_staked_balance",
-            serde_json::json!({
+            serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id,
-            })
-            .to_string()
-            .into_bytes(),
+            }))?,
             block_reference.clone(),
         )
         .wrap_err("Failed to fetch query for view method: 'get_account_staked_balance'")?
@@ -101,11 +99,9 @@ pub fn get_user_unstaked_balance(
         .blocking_call_view_function(
             validator_account_id,
             "get_account_unstaked_balance",
-            serde_json::json!({
+            serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id,
-            })
-            .to_string()
-            .into_bytes(),
+            }))?,
             block_reference.clone(),
         )
         .wrap_err("Failed to fetch query for view method: 'get_account_unstaked_balance'")?
@@ -125,11 +121,9 @@ pub fn get_user_total_balance(
         .blocking_call_view_function(
             validator_account_id,
             "get_account_total_balance",
-            serde_json::json!({
+            serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id,
-            })
-            .to_string()
-            .into_bytes(),
+            }))?,
             block_reference.clone(),
         )
         .wrap_err("Failed to fetch query for view method: 'get_account_total_balance'")?

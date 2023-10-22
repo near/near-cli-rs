@@ -35,11 +35,9 @@ impl AccountContext {
                         .blocking_call_view_function(
                             &contract_account_id,
                             "storage_balance_of",
-                            serde_json::json!({
+                            serde_json::to_vec(&serde_json::json!({
                                 "account_id": account_id.to_string(),
-                            })
-                            .to_string()
-                            .into_bytes(),
+                            }))?,
                             block_reference.clone(),
                         )
                         .wrap_err_with(|| {

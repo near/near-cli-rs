@@ -81,12 +81,10 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             ],
                         new_account_id.clone())
                     } else {
-                        let args = json!({
+                        let args = serde_json::to_vec(&json!({
                             "new_account_id": new_account_id.clone().to_string(),
                             "new_public_key": item.account_properties.public_key.to_string()
-                        })
-                        .to_string()
-                        .into_bytes();
+                        }))?;
 
                         if let Some(linkdrop_account_id) = &network_config.linkdrop_account_id {
                             if new_account_id.is_sub_account_of(linkdrop_account_id)

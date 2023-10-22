@@ -34,11 +34,9 @@ impl ViewFtBalanceContext {
                     network_config,
                     block_reference.clone(),
                 )?;
-                let args = json!({
+                let args = serde_json::to_vec(&json!({
                     "account_id": owner_account_id.to_string(),
-                    })
-                    .to_string()
-                    .into_bytes();
+                    }))?;
                 let call_result = network_config
                     .json_rpc_client()
                     .blocking_call_view_function(

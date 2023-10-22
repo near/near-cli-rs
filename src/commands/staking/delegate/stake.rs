@@ -34,11 +34,9 @@ impl StakeContext {
                     actions: vec![near_primitives::transaction::Action::FunctionCall(
                         near_primitives::transaction::FunctionCallAction {
                             method_name: "stake".to_string(),
-                            args: serde_json::json!({
-                                "amount": amount.clone().to_yoctonear().to_string()
-                            })
-                            .to_string()
-                            .into_bytes(),
+                            args: serde_json::to_vec(&serde_json::json!({
+                            "amount": amount.clone().to_yoctonear().to_string()
+                            }))?,
                             gas: crate::common::NearGas::from_tgas(300).as_gas(),
                             deposit: 0,
                         },

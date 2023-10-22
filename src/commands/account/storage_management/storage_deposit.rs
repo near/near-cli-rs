@@ -117,9 +117,9 @@ impl SignerAccountIdContext {
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: "storage_deposit".to_string(),
-                                args: serde_json::json!({ "account_id": &receiver_account_id })
-                                    .to_string()
-                                    .into_bytes(),
+                                args: serde_json::to_vec(&serde_json::json!({
+                                    "account_id": &receiver_account_id
+                                }))?,
                                 gas: crate::common::NearGas::from_tgas(50).as_gas(),
                                 deposit: deposit.to_yoctonear(),
                             },

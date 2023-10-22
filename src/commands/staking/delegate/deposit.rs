@@ -34,7 +34,7 @@ impl DepositContext {
                     actions: vec![near_primitives::transaction::Action::FunctionCall(
                         near_primitives::transaction::FunctionCallAction {
                             method_name: "deposit".to_string(),
-                            args: serde_json::json!({}).to_string().into_bytes(),
+                            args: serde_json::to_vec(&serde_json::json!({}))?,
                             gas: crate::common::NearGas::from_tgas(300).as_gas(),
                             deposit: amount.to_yoctonear(),
                         },

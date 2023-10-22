@@ -84,7 +84,7 @@ pub fn function_args(
         super::call_function_args_type::FunctionArgsType::JsonArgs => {
             let data_json =
                 serde_json::Value::from_str(&args).wrap_err("Data not in JSON format!")?;
-            Ok(data_json.to_string().into_bytes())
+            serde_json::to_vec(&data_json).wrap_err("Internal error!")
         }
         super::call_function_args_type::FunctionArgsType::TextArgs => Ok(args.into_bytes()),
         super::call_function_args_type::FunctionArgsType::Base64Args => {
