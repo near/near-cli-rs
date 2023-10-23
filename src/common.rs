@@ -1308,31 +1308,29 @@ pub fn get_validator_list(
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?;
-    let chunk_size = 15;
     let concurrency = 10;
 
-    let validators_table: std::collections::HashMap<
-        near_primitives::types::AccountId,
-        ValidatorsTable,
-    > = runtime
-        .block_on(
-            futures::stream::iter(
-                validators_stake
-                    .iter()
-                    .collect::<Vec<_>>()
-                    .chunks(chunk_size),
-            )
-            .map(|validators| async { get_validators_table(&json_rpc_client, validators).await })
+    let mut validator_list = runtime.block_on(
+        futures::stream::iter(validators_stake.iter())
+            .map(|(validator_account_id, stake)| async {
+                let validators_table = get_validators_table(
+                    &json_rpc_client.clone(),
+                    &validator_account_id.clone(),
+                    *stake,
+                )
+                .await?;
+                Ok::<_, color_eyre::eyre::Report>(validators_table)
+            })
             .buffer_unordered(concurrency)
-            .collect::<Vec<Result<_, _>>>(),
-        )
-        .into_iter()
-        .try_fold(std::collections::HashMap::new(), |mut acc, x| {
-            acc.extend(x?);
-            Ok::<_, color_eyre::eyre::Error>(acc)
-        })?;
-
-    let mut validator_list: Vec<ValidatorsTable> = validators_table.into_values().collect();
+            .filter_map(|validators_table_result| {
+                futures::future::ready(if let Ok(validators_table) = validators_table_result {
+                    Some(validators_table)
+                } else {
+                    None
+                })
+            })
+            .collect::<Vec<_>>(),
+    );
     validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
     Ok(validator_list)
 }
@@ -1397,65 +1395,49 @@ pub fn get_validators_stake(
 
 async fn get_validators_table(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    validators: &[(&near_primitives::types::AccountId, &u128)],
-) -> color_eyre::Result<std::collections::HashMap<near_primitives::types::AccountId, ValidatorsTable>>
-{
-    let mut combine_validators: std::collections::HashMap<
-        near_primitives::types::AccountId,
-        ValidatorsTable,
-    > = std::collections::HashMap::new();
-    for (validator_id, stake) in validators {
-        let validator_id = *validator_id;
-        let reward_fee_fraction = json_rpc_client
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::CallFunction {
-                    account_id: validator_id.clone(),
-                    method_name: "get_reward_fee_fraction".to_string(),
-                    args: near_primitives::types::FunctionArgs::from(vec![]),
-                },
-            })
-            .await
-            .wrap_err("Failed to fetch query for view method: 'get_reward_fee_fraction'");
+    validator_account_id: &near_primitives::types::AccountId,
+    stake: u128,
+) -> color_eyre::Result<ValidatorsTable> {
+    let reward_fee_fraction = json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: validator_account_id.clone(),
+                method_name: "get_reward_fee_fraction".to_string(),
+                args: near_primitives::types::FunctionArgs::from(vec![]),
+            },
+        })
+        .await
+        .wrap_err("Failed to fetch query for view method: 'get_reward_fee_fraction'")?;
 
-        if reward_fee_fraction.is_err() {
-            continue;
-        };
-        let fee = reward_fee_fraction?
-            .call_result()?
-            .parse_result_from_json::<RewardFeeFraction>()
-            .wrap_err(
-                "Failed to parse return value of view function call for RewardFeeFraction.",
-            )?;
+    let fee = reward_fee_fraction
+        .call_result()?
+        .parse_result_from_json::<RewardFeeFraction>()
+        .wrap_err("Failed to parse return value of view function call for RewardFeeFraction.")?;
 
-        let number_of_accounts = json_rpc_client
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::CallFunction {
-                    account_id: validator_id.clone(),
-                    method_name: "get_number_of_accounts".to_string(),
-                    args: near_primitives::types::FunctionArgs::from(vec![]),
-                },
-            })
-            .await
-            .wrap_err("Failed to fetch query for view method: 'get_number_of_accounts'");
-        if number_of_accounts.is_err() {
-            continue;
-        };
-        let delegators = number_of_accounts?
-            .call_result()?
-            .parse_result_from_json::<u64>()
-            .wrap_err("Failed to parse return value of view function call for u64.")?;
+    let number_of_accounts = json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: validator_account_id.clone(),
+                method_name: "get_number_of_accounts".to_string(),
+                args: near_primitives::types::FunctionArgs::from(vec![]),
+            },
+        })
+        .await
+        .wrap_err("Failed to fetch query for view method: 'get_number_of_accounts'")?;
 
-        let validators_table = ValidatorsTable {
-            validator_id: validator_id.clone(),
-            fee,
-            delegators,
-            stake: **stake,
-        };
-        combine_validators.insert(validator_id.clone(), validators_table);
-    }
-    Ok(combine_validators)
+    let delegators = number_of_accounts
+        .call_result()?
+        .parse_result_from_json::<u64>()
+        .wrap_err("Failed to parse return value of view function call for u64.")?;
+
+    Ok(ValidatorsTable {
+        validator_id: validator_account_id.clone(),
+        fee,
+        delegators,
+        stake,
+    })
 }
 
 pub fn display_account_info(
