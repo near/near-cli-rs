@@ -15,8 +15,8 @@ mod withdraw_all;
 #[interactive_clap(output_context = DelegateStakeContext)]
 pub struct DelegateStake {
     #[interactive_clap(skip_default_input_arg)]
-    /// What is validator account ID?
-    validator_account_id: crate::types::account_id::AccountId,
+    /// Enter account ID to stake:
+    account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     delegate_stake_command: DelegateStakingCommand,
 }
@@ -24,7 +24,7 @@ pub struct DelegateStake {
 #[derive(Debug, Clone)]
 pub struct DelegateStakeContext {
     global_context: crate::GlobalContext,
-    validator_account_id: near_primitives::types::AccountId,
+    account_id: near_primitives::types::AccountId,
 }
 
 impl DelegateStakeContext {
@@ -34,18 +34,18 @@ impl DelegateStakeContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context,
-            validator_account_id: scope.validator_account_id.clone().into(),
+            account_id: scope.account_id.clone().into(),
         })
     }
 }
 
 impl DelegateStake {
-    pub fn input_validator_account_id(
+    pub fn input_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_non_signer_account_id_from_used_account_list(
             &context.config.credentials_home_dir,
-            "What is validator account ID?",
+            "Enter account ID to stake:",
         )
     }
 }

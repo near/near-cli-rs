@@ -7,8 +7,8 @@ use crate::common::{CallResultExt, JsonRpcClientExt};
 #[interactive_clap(output_context = ViewBalanceContext)]
 pub struct ViewBalance {
     #[interactive_clap(skip_default_input_arg)]
-    /// On which account ID do you need to view the total balance?
-    account_id: crate::types::account_id::AccountId,
+    /// What is validator account ID?
+    validator_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
@@ -22,16 +22,17 @@ impl ViewBalanceContext {
         previous_context: super::DelegateStakeContext,
         scope: &<ViewBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let validator_account_id = previous_context.validator_account_id.clone();
-        let interacting_with_account_ids = vec![validator_account_id.clone()];
+        let account_id = previous_context.account_id.clone();
+        let validator_account_id: near_primitives::types::AccountId =
+            scope.validator_account_id.clone().into();
+        let interacting_with_account_ids = vec![account_id.clone(), validator_account_id.clone()];
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {
-                let user_staked_balance: u128 = get_user_staked_balance(network_config, block_reference, &previous_context.validator_account_id, &account_id)?;
-                let user_unstaked_balance: u128 = get_user_unstaked_balance(network_config, block_reference, &previous_context.validator_account_id, &account_id)?;
-                let user_total_balance: u128 = get_user_total_balance(network_config, block_reference, &previous_context.validator_account_id, &account_id)?;
+                let user_staked_balance: u128 = get_user_staked_balance(network_config, block_reference, &validator_account_id, &account_id)?;
+                let user_unstaked_balance: u128 = get_user_unstaked_balance(network_config, block_reference, &validator_account_id, &account_id)?;
+                let user_total_balance: u128 = get_user_total_balance(network_config, block_reference, &validator_account_id, &account_id)?;
 
                 eprintln!("Balance on validator <{validator_account_id}> for <{account_id}>:");
                 eprintln!("      Staked balance:     {:>38}", crate::common::NearBalance::from_yoctonear(user_staked_balance).to_string());
@@ -56,12 +57,12 @@ impl From<ViewBalanceContext> for crate::network_view_at_block::ArgsForViewConte
 }
 
 impl ViewBalance {
-    pub fn input_account_id(
+    pub fn input_validator_account_id(
         context: &super::DelegateStakeContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_non_signer_account_id_from_used_account_list(
             &context.global_context.config.credentials_home_dir,
-            "On which account ID do you need to view the total balance?",
+            "What is validator account ID?",
         )
     }
 }

@@ -5,8 +5,8 @@ pub struct Unstake {
     /// Enter the amount to unstake from the inner account of the predecessor (example: 10NEAR or 0.5near or 10000yoctonear):
     amount: crate::common::NearBalance,
     #[interactive_clap(skip_default_input_arg)]
-    /// What is the signer account ID?
-    signer_account_id: crate::types::account_id::AccountId,
+    /// What is validator account ID?
+    validator_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -20,17 +20,21 @@ impl UnstakeContext {
         previous_context: super::DelegateStakeContext,
         scope: &<Unstake as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let signer = scope.signer_account_id.clone();
-        let signer_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
-        let validator_account_id = previous_context.validator_account_id.clone();
-        let interacting_with_account_ids = vec![validator_account_id.clone()];
+        let signer = previous_context.account_id.clone();
+        let validator_account_id: near_primitives::types::AccountId =
+            scope.validator_account_id.clone().into();
+        let validator_id = validator_account_id.clone();
+        let interacting_with_account_ids = vec![
+            previous_context.account_id.clone(),
+            validator_account_id.clone(),
+        ];
         let amount = scope.amount.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
                 Ok(crate::commands::PrepopulatedTransaction {
-                    signer_id: signer_id.clone(),
-                    receiver_id: previous_context.validator_account_id.clone(),
+                    signer_id: previous_context.account_id.clone(),
+                    receiver_id: validator_account_id.clone(),
                     actions: vec![near_primitives::transaction::Action::FunctionCall(
                         near_primitives::transaction::FunctionCallAction {
                             method_name: "unstake".to_string(),
@@ -49,7 +53,7 @@ impl UnstakeContext {
 
                 move |outcome_view, _network_config| {
                     if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                        eprintln!("<{signer}> has successfully unstake {amount} from <{validator_account_id}>.")
+                        eprintln!("<{signer}> has successfully unstake {amount} from <{validator_id}>.")
                     }
                     Ok(())
                 }
@@ -76,12 +80,12 @@ impl From<UnstakeContext> for crate::commands::ActionContext {
 }
 
 impl Unstake {
-    pub fn input_signer_account_id(
+    pub fn input_validator_account_id(
         context: &super::DelegateStakeContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_signer_account_id_from_used_account_list(
+        crate::common::input_non_signer_account_id_from_used_account_list(
             &context.global_context.config.credentials_home_dir,
-            "What is the signer account ID?",
+            "What is validator account ID?",
         )
     }
 }
