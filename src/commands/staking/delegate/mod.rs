@@ -15,7 +15,7 @@ mod withdraw_all;
 #[interactive_clap(output_context = DelegateStakeContext)]
 pub struct DelegateStake {
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter account ID to stake:
+    /// Enter the account that you want to manage delegated stake for:
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     delegate_stake_command: DelegateStakingCommand,
@@ -45,7 +45,7 @@ impl DelegateStake {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_non_signer_account_id_from_used_account_list(
             &context.config.credentials_home_dir,
-            "Enter account ID to stake:",
+            "Enter the account that you want to manage delegated stake for:",
         )
     }
 }
