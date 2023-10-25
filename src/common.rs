@@ -4,7 +4,7 @@ use std::io::Write;
 use std::str::FromStr;
 
 use color_eyre::eyre::WrapErr;
-use futures::StreamExt;
+use futures::{StreamExt, TryStreamExt};
 use prettytable::Table;
 
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
@@ -1285,10 +1285,10 @@ fn path_directories() -> Vec<std::path::PathBuf> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ValidatorsTable {
+pub struct StakingPoolInfo {
     pub validator_id: near_primitives::types::AccountId,
-    pub fee: RewardFeeFraction,
-    pub delegators: u64,
+    pub fee: Option<RewardFeeFraction>,
+    pub delegators: Option<u64>,
     pub stake: near_primitives::types::Balance,
 }
 
@@ -1300,7 +1300,7 @@ pub struct RewardFeeFraction {
 
 pub fn get_validator_list(
     network_config: &crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<Vec<ValidatorsTable>> {
+) -> color_eyre::eyre::Result<Vec<StakingPoolInfo>> {
     let json_rpc_client = network_config.json_rpc_client();
 
     let validators_stake = get_validators_stake(&json_rpc_client)?;
@@ -1313,24 +1313,16 @@ pub fn get_validator_list(
     let mut validator_list = runtime.block_on(
         futures::stream::iter(validators_stake.iter())
             .map(|(validator_account_id, stake)| async {
-                let validators_table = get_validators_table(
+                get_staking_pool_info(
                     &json_rpc_client.clone(),
-                    &validator_account_id.clone(),
+                    validator_account_id.clone(),
                     *stake,
                 )
-                .await?;
-                Ok::<_, color_eyre::eyre::Report>(validators_table)
+                .await
             })
             .buffer_unordered(concurrency)
-            .filter_map(|validators_table_result| {
-                futures::future::ready(if let Ok(validators_table) = validators_table_result {
-                    Some(validators_table)
-                } else {
-                    None
-                })
-            })
-            .collect::<Vec<_>>(),
-    );
+            .try_collect::<Vec<_>>(),
+    )?;
     validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
     Ok(validator_list)
 }
@@ -1393,12 +1385,12 @@ pub fn get_validators_stake(
     Ok(current_validators_stake)
 }
 
-async fn get_validators_table(
+async fn get_staking_pool_info(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    validator_account_id: &near_primitives::types::AccountId,
+    validator_account_id: near_primitives::types::AccountId,
     stake: u128,
-) -> color_eyre::Result<ValidatorsTable> {
-    let reward_fee_fraction = json_rpc_client
+) -> color_eyre::Result<StakingPoolInfo> {
+    let fee = match json_rpc_client
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),
             request: near_primitives::views::QueryRequest::CallFunction {
@@ -1408,14 +1400,27 @@ async fn get_validators_table(
             },
         })
         .await
-        .wrap_err("Failed to fetch query for view method: 'get_reward_fee_fraction'")?;
+    {
+        Ok(response) => Some(
+            response
+                .call_result()?
+                .parse_result_from_json::<RewardFeeFraction>()
+                .wrap_err(
+                    "Failed to parse return value of view function call for RewardFeeFraction.",
+                )?,
+        ),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
+                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
+                    ..
+                },
+            ),
+        )) => None,
+        Err(err) => return Err(err.into()),
+    };
 
-    let fee = reward_fee_fraction
-        .call_result()?
-        .parse_result_from_json::<RewardFeeFraction>()
-        .wrap_err("Failed to parse return value of view function call for RewardFeeFraction.")?;
-
-    let number_of_accounts = json_rpc_client
+    let delegators = match json_rpc_client
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),
             request: near_primitives::views::QueryRequest::CallFunction {
@@ -1425,14 +1430,25 @@ async fn get_validators_table(
             },
         })
         .await
-        .wrap_err("Failed to fetch query for view method: 'get_number_of_accounts'")?;
+    {
+        Ok(response) => Some(
+            response
+                .call_result()?
+                .parse_result_from_json::<u64>()
+                .wrap_err("Failed to parse return value of view function call for u64.")?,
+        ),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
+                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
+                    ..
+                },
+            ),
+        )) => None,
+        Err(err) => return Err(err.into()),
+    };
 
-    let delegators = number_of_accounts
-        .call_result()?
-        .parse_result_from_json::<u64>()
-        .wrap_err("Failed to parse return value of view function call for u64.")?;
-
-    Ok(ValidatorsTable {
+    Ok(StakingPoolInfo {
         validator_id: validator_account_id.clone(),
         fee,
         delegators,

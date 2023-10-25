@@ -41,11 +41,21 @@ fn display_validators_info(network_config: &crate::config::NetworkConfig) -> cra
         .into_iter()
         .enumerate()
     {
+        let fee = if let Some(fee) = validator.fee {
+            format!("{:>6.2} %", fee.numerator * 100 / fee.denominator)
+        } else {
+            format!("{:>6}", "N/A")
+        };
+        let delegators = if let Some(num) = validator.delegators {
+            format!("{:>8}", num)
+        } else {
+            format!("{:>8}", "N/A")
+        };
         table.add_row(prettytable::row![
             Fg->index + 1,
             validator.validator_id,
-            format!("{:>6.2} %", validator.fee.numerator * 100 / validator.fee.denominator),
-            validator.delegators,
+            fee,
+            delegators,
             crate::common::NearBalance::from_yoctonear(validator.stake),
         ]);
     }
