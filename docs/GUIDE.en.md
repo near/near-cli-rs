@@ -82,6 +82,7 @@ Before proceeding to the description of specific commands, it is necessary to co
 
 - [account     - Manage accounts](#account---Manage-accounts)
 - [tokens      - Manage token assets such as NEAR, FT, NFT](#tokens---Manage-token-assets-such-as-NEAR-FT-NFT)
+- [staking     - Manage staking: view, add and withdraw stake](#staking---Manage-staking-view-add-and-withdraw-stake)
 - [contract    - Manage smart-contracts: deploy code, call functions](#contract---Manage-smart-contracts-deploy-code-call-functions)
 - [transaction - Operate transactions](#transaction---Operate-transactions)
 - [config      - Manage connections in a configuration file](#config---Manage-connections-in-a-configuration-file)
@@ -1324,6 +1325,295 @@ fro_volod.testnet account has NFT tokens:
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/znmY5yzIlSTjOlRRRUHzeeuzJ?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/znmY5yzIlSTjOlRRRUHzeeuzJ.png" width="836"/>
+</a>
+</details>
+
+### staking - Manage staking: view, add and withdraw stake
+
+- [validator-list](#validator-list---View-the-list-of-validators-to-delegate)
+- [delegate](#delegate---Delegation-management)
+
+#### validator-list - View the list of validators to delegate
+
+To view a list of validators, enter at the terminal command line:
+```txt
+near staking \
+    validator-list \
+    network-config mainnet
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
++-----+----------------------------------------------+----------+------------+----------------------------------------+
+| #   | Validator Id                                 | Fee      | Delegators | Stake                                  |
++-----+----------------------------------------------+----------+------------+----------------------------------------+
+| 1   | staked.poolv1.near                           |     10 % |     3207   | 44135674.18356215181482959363448 NEAR  |
+| 2   | figment.poolv1.near                          |     10 % |     1911   | 43158696.364374348313201031661037 NEAR |
+| 3   | astro-stakers.poolv1.near                    |      1 % |    11528   | 26760042.204197815051321354819805 NEAR |
+| 4   | bzam6yjpnfnxsdmjf6pw.poolv1.near             |    100 % |      772   | 23347900.996610021010359525969384 NEAR |
+| 5   | zavodil.poolv1.near                          |      1 % |     7116   | 20700903.223980192761611953425855 NEAR |
+| 6   | binancenode1.poolv1.near                     |      5 % |     1250   | 14209385.916611355199355410152982 NEAR |
+| 7   | staking_yes_protocol1.poolv1.near            |    100 % |       65   | 13590245.381034035922399111793022 NEAR |
+| 8   | pinnacle1.poolv1.near                        |    100 % |        4   | 13509874.537453205747773186007329 NEAR |
+| 9   | priory.poolv1.near                           |    100 % |       15   | 12727257.514716521676379711750814 NEAR |
+| 10  | stake1.poolv1.near                           |      3 % |      754   | 12449700.095021989100340879377004 NEAR |
+| 11  | mockingbird.poolv1.near                      |    100 % |       28   | 11501759.018634341466180769487983 NEAR |
+| 12  | dqw9k3e4422cxt92masmy.poolv1.near            |    100 % |       36   | 11122519.385245577197951932017032 NEAR |
+| 13  | flipside.pool.near                           |    100 % |        9   | 11087540.718366137730589600283212 NEAR |
+| 14  | sweat_validator.poolv1.near                  |    100 % |      112   | 10900424.272450229667472212076621 NEAR |
+| 15  | epic.poolv1.near                             |      1 % |     5363   | 10769900.629411406438519703653828 NEAR |
+| 16  | future_is_near.poolv1.near                   |      9 % |      355   | 10243082.132364573976720438585765 NEAR |
+| 17  | cosmose.poolv1.near                          |    100 % |       10   | 10064982.806109296980776431396738 NEAR |
+| 18  | aurora.pool.near                             |     99 % |     3301   | 9298278.181302142009939675438401 NEAR  |
+...
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/IYG8qgo3bdXHrgnyJL443gw6L?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/IYG8qgo3bdXHrgnyJL443gw6L.png" width="836"/>
+</a>
+</details>
+
+#### delegate - Delegation management
+
+- [view-balance](#View-the-total-balance-for-a-given-account)
+- [deposit](#deposit---Deposits-the-attached-amount-into-the-inner-account-of-the-predecessor)
+- [deposit-and-stake](#deposit-and-stake---Deposits-the-attached-amount-into-the-inner-account-of-the-predecessor-and-stakes-it)
+- [stake](#stake---Staking-the-given-amount-from-the-inner-account-of-the-predecessor)
+- [stake-all](#stake-all---Staking-all-available-unstaked-balance-from-the-inner-account-of-the-predecessor)
+- [unstake](#unstake---Unstaking-the-given-amount-from-the-inner-account-of-the-predecessor)
+- [unstake-all](#unstake-all---Unstaking-all-staked-balance-from-the-inner-account-of-the-predecessor)
+- [withdraw](#withdraw---Withdrawing-the-non-staked-balance-for-given-account)
+- [withdraw-all](#withdraw-all---Withdrawing-the-entire-unstaked-balance-from-the-predecessor-account)
+
+##### view-balance - View the total balance for a given account
+
+To view the account balance of a delegated validator, enter at the terminal command line:
+```txt
+near staking \
+    delegate volodymyr.testnet \
+    view-balance aurora.pool.f863973.m0 \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Balance on validator <aurora.pool.f863973.m0> for <volodymyr.testnet>:
+      Staked balance:           38.021465232511349340052266 NEAR
+      Unstaked balance:          0.000000000000000000000001 NEAR
+      Total balance:            38.021465232511349340052267 NEAR
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/2ZFe7ILJOoJCHYPYSnv7JBBFy?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/2ZFe7ILJOoJCHYPYSnv7JBBFy.png" width="836"/>
+</a>
+</details>
+
+##### deposit - Deposits the attached amount into the inner account of the predecessor
+
+To deposit your account with a delegated validator, you need to enter in the terminal command line:
+```txt
+near staking \
+    delegate volodymyr.testnet \
+    deposit '10 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully deposited 10 NEAR on <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/acAvmEqNNhfK8f4Ggl2BcOPde?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/acAvmEqNNhfK8f4Ggl2BcOPde.png" width="836"/>
+</a>
+</details>
+
+##### deposit-and-stake - Deposits the attached amount into the inner account of the predecessor and stakes it
+
+To place a deposit and a delegated stake, you must enter the following in the terminal command line:
+```txt
+near staking \
+    delegate volodymyr.testnet \
+    deposit-and-stake '15 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully deposited and staked 15 NEAR on <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/tTwzlj0FszzXEh36aP6ZaTdhG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/tTwzlj0FszzXEh36aP6ZaTdhG.png" width="836"/>
+</a>
+</details>
+
+##### stake - Staking the given amount from the inner account of the predecessor
+
+To stake a certain amount from a previously made deposit with a delegated validator, you must enter in the terminal command line:
+```txt
+near staking \
+    delegate volodymyr.testnet \
+    stake '5 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully stake 5 NEAR on <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/10T84aFMiJSYLv3shBEsql68L?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/10T84aFMiJSYLv3shBEsql68L.png" width="836"/>
+</a>
+</details>
+
+##### stake-all - Staking all available unstaked balance from the inner account of the predecessor
+
+To stake the entire deposit with a delegated validator, you must enter in the terminal command line:
+```txt
+near staking \
+    delegate volodymyr.testnet \
+    stake-all aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully stake the entire amount on <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/bhUAfnDCnt9U2XQLeY46sbTWR?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/bhUAfnDCnt9U2XQLeY46sbTWR.png" width="836"/>
+</a>
+</details>
+
+##### unstake - Unstaking the given amount from the inner account of the predecessor
+
+To unstake of a certain amount from a delegated validator, you must enter in the terminal command line:
+```txt
+near staking \
+    delegate volodymyr.testnet \
+    unstake '7 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully unstake 7 NEAR from <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/vOJusmeGFwrofAKN6wd2Q3a5w?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/vOJusmeGFwrofAKN6wd2Q3a5w.png" width="836"/>
+</a>
+</details>
+
+##### unstake-all - Unstaking all staked balance from the inner account of the predecessor
+
+To unstake the entire bet from a delegated validator, you must enter in the terminal command line:
+```txt
+near staking \
+    delegate volodymyr.testnet \
+    stake-all aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully stake the entire amount on <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/rTVT3IVLT9scE8FA21D5jqOKV?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/rTVT3IVLT9scE8FA21D5jqOKV.png" width="836"/>
+</a>
+</details>
+
+##### withdraw - Withdrawing the non staked balance for given account
+
+To withdraw a certain amount from a delegated validator to your account, you need to enter in the terminal command line:
+```txt
+near staking \
+    delegate volodymyr.testnet \
+    withdraw '3 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Error: 
+   0: <volodymyr.testnet> can't withdraw tokens in the current epoch.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/U4V6CUJU0vG0dJhT4igXyrJpk?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/U4V6CUJU0vG0dJhT4igXyrJpk.png" width="836"/>
+</a>
+</details>
+
+##### withdraw-all - Withdrawing the entire unstaked balance from the predecessor account
+
+To withdraw the entire amount from the delegated validator to your account, you need to enter in the terminal command line:
+```txt
+near staking \
+    delegate volodymyr.testnet \
+    withdraw-all aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Error: 
+   0: <volodymyr.testnet> can't withdraw tokens in the current epoch.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/5ql7FP93TM2whN2kyVYxBCtYy?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/5ql7FP93TM2whN2kyVYxBCtYy.png" width="836"/>
 </a>
 </details>
 
