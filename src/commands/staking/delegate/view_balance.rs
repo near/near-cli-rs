@@ -60,9 +60,8 @@ impl ViewBalance {
     pub fn input_validator_account_id(
         context: &super::DelegateStakeContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_non_signer_account_id_from_used_account_list(
+        crate::common::input_delegated_validator_account_id_from_used_delegated_validator_list(
             &context.global_context.config.credentials_home_dir,
-            "What is validator account ID?",
         )
     }
 }

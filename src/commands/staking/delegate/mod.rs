@@ -32,6 +32,11 @@ impl DelegateStakeContext {
         previous_context: crate::GlobalContext,
         scope: &<DelegateStake as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        if !crate::common::is_used_delegated_validator_list_exist(
+            &previous_context.config.credentials_home_dir,
+        ) {
+            crate::common::create_used_delegated_validator_list(&previous_context.config)?;
+        }
         Ok(Self {
             global_context: previous_context,
             account_id: scope.account_id.clone().into(),
