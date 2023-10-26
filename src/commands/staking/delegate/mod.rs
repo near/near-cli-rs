@@ -13,7 +13,7 @@ mod withdraw_all;
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = DelegateStakeContext)]
-pub struct DelegateStake {
+pub struct StakeDelegation {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter the account that you want to manage delegated stake for:
     account_id: crate::types::account_id::AccountId,
