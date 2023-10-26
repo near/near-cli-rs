@@ -21,7 +21,7 @@ pub enum StakingType {
     ))]
     /// View the list of validators to delegate
     ValidatorList(self::validator_list::ValidatorList),
-    #[strum_discriminants(strum(message = "delegate         - Delegation management"))]
+    #[strum_discriminants(strum(message = "delegation       - Delegation management"))]
     /// Delegation management
-    Delegate(self::delegate::DelegateStake),
+    Delegation(self::delegate::StakeDelegation),
 }

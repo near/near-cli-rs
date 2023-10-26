@@ -3,7 +3,7 @@ use color_eyre::eyre::WrapErr;
 use crate::common::{CallResultExt, JsonRpcClientExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::DelegateStakeContext)]
+#[interactive_clap(input_context = super::StakeDelegationContext)]
 #[interactive_clap(output_context = WithdrawContext)]
 pub struct Withdraw {
     /// Enter the amount to withdraw from the non staked balance (example: 10NEAR or 0.5near or 10000yoctonear):
@@ -21,7 +21,7 @@ pub struct WithdrawContext(crate::commands::ActionContext);
 
 impl WithdrawContext {
     pub fn from_previous_context(
-        previous_context: super::DelegateStakeContext,
+        previous_context: super::StakeDelegationContext,
         scope: &<Withdraw as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let validator_account_id: near_primitives::types::AccountId =
@@ -111,7 +111,7 @@ impl From<WithdrawContext> for crate::commands::ActionContext {
 
 impl Withdraw {
     pub fn input_validator_account_id(
-        context: &super::DelegateStakeContext,
+        context: &super::StakeDelegationContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_delegated_validator_account_id_from_used_delegated_validator_list(
             &context.global_context.config.credentials_home_dir,

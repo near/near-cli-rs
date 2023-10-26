@@ -3,7 +3,7 @@ use color_eyre::eyre::WrapErr;
 use crate::common::{CallResultExt, JsonRpcClientExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::DelegateStakeContext)]
+#[interactive_clap(input_context = super::StakeDelegationContext)]
 #[interactive_clap(output_context = WithdrawAllContext)]
 pub struct WithdrawAll {
     #[interactive_clap(skip_default_input_arg)]
@@ -19,7 +19,7 @@ pub struct WithdrawAllContext(crate::commands::ActionContext);
 
 impl WithdrawAllContext {
     pub fn from_previous_context(
-        previous_context: super::DelegateStakeContext,
+        previous_context: super::StakeDelegationContext,
         scope: &<WithdrawAll as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let validator_account_id: near_primitives::types::AccountId =
@@ -106,7 +106,7 @@ impl From<WithdrawAllContext> for crate::commands::ActionContext {
 
 impl WithdrawAll {
     pub fn input_validator_account_id(
-        context: &super::DelegateStakeContext,
+        context: &super::StakeDelegationContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_delegated_validator_account_id_from_used_delegated_validator_list(
             &context.global_context.config.credentials_home_dir,

@@ -12,25 +12,25 @@ mod withdraw_all;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = DelegateStakeContext)]
+#[interactive_clap(output_context = StakeDelegationContext)]
 pub struct StakeDelegation {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter the account that you want to manage delegated stake for:
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
-    delegate_stake_command: DelegateStakingCommand,
+    delegate_stake_command: StakeDelegationCommand,
 }
 
 #[derive(Debug, Clone)]
-pub struct DelegateStakeContext {
+pub struct StakeDelegationContext {
     global_context: crate::GlobalContext,
     account_id: near_primitives::types::AccountId,
 }
 
-impl DelegateStakeContext {
+impl StakeDelegationContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
-        scope: &<DelegateStake as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<StakeDelegation as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         if !crate::common::is_used_delegated_validator_list_exist(
             &previous_context.config.credentials_home_dir,
@@ -44,7 +44,7 @@ impl DelegateStakeContext {
     }
 }
 
-impl DelegateStake {
+impl StakeDelegation {
     pub fn input_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
@@ -56,11 +56,11 @@ impl DelegateStake {
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = DelegateStakeContext)]
+#[interactive_clap(context = StakeDelegationContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[non_exhaustive]
 /// Select actions with delegated staking:
-pub enum DelegateStakingCommand {
+pub enum StakeDelegationCommand {
     #[strum_discriminants(strum(
         message = "view-balance         - View the total balance for a given account"
     ))]
