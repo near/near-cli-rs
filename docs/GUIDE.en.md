@@ -1331,7 +1331,7 @@ fro_volod.testnet account has NFT tokens:
 ### staking - Manage staking: view, add and withdraw stake
 
 - [validator-list](#validator-list---View-the-list-of-validators-to-delegate)
-- [delegate](#delegate---Delegation-management)
+- [delegation](#delegation---Delegation-management)
 
 #### validator-list - View the list of validators to delegate
 
@@ -1376,7 +1376,7 @@ near staking \
 </a>
 </details>
 
-#### delegate - Delegation management
+#### delegation - Delegation management
 
 - [view-balance](#View-the-total-balance-for-a-given-account)
 - [deposit](#deposit---Deposits-the-attached-amount-into-the-inner-account-of-the-predecessor)
@@ -1393,7 +1393,7 @@ near staking \
 To view the account balance of a delegated validator, enter at the terminal command line:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     view-balance aurora.pool.f863973.m0 \
     network-config testnet \
     now
@@ -1420,7 +1420,7 @@ Balance on validator <aurora.pool.f863973.m0> for <volodymyr.testnet>:
 To deposit your account with a delegated validator, you need to enter in the terminal command line:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     deposit '10 NEAR' aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1445,7 +1445,7 @@ near staking \
 To place a deposit and a delegated stake, you must enter the following in the terminal command line:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     deposit-and-stake '15 NEAR' aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1470,7 +1470,7 @@ near staking \
 To stake a certain amount from a previously made deposit with a delegated validator, you must enter in the terminal command line:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     stake '5 NEAR' aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1495,7 +1495,7 @@ near staking \
 To stake the entire deposit with a delegated validator, you must enter in the terminal command line:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     stake-all aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1520,7 +1520,7 @@ near staking \
 To unstake of a certain amount from a delegated validator, you must enter in the terminal command line:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     unstake '7 NEAR' aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1545,8 +1545,8 @@ near staking \
 To unstake the entire bet from a delegated validator, you must enter in the terminal command line:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
-    stake-all aurora.pool.f863973.m0 \
+    delegation volodymyr.testnet \
+    unstake-all aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
     send
@@ -1555,13 +1555,13 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully stake the entire amount on <aurora.pool.f863973.m0>.
+<volodymyr.testnet> has successfully unstake the entire amount from <aurora.pool.f863973.m0>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/rTVT3IVLT9scE8FA21D5jqOKV?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/rTVT3IVLT9scE8FA21D5jqOKV.png" width="836"/>
+<a href="https://asciinema.org/a/FgEjwrSlSHjIXeUBZGyl1O6vG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/FgEjwrSlSHjIXeUBZGyl1O6vG.png" width="836"/>
 </a>
 </details>
 
@@ -1570,7 +1570,7 @@ near staking \
 To withdraw a certain amount from a delegated validator to your account, you need to enter in the terminal command line:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     withdraw '3 NEAR' aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1596,7 +1596,7 @@ Error:
 To withdraw the entire amount from the delegated validator to your account, you need to enter in the terminal command line:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     withdraw-all aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \

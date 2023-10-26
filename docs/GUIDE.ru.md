@@ -1333,7 +1333,7 @@ fro_volod.testnet account has NFT tokens:
 ### staking - Manage staking: view, add and withdraw stake
 
 - [validator-list](#validator-list---View-the-list-of-validators-to-delegate)
-- [delegate](#delegate---Delegation-management)
+- [delegation](#delegation---Delegation-management)
 
 #### validator-list - View the list of validators to delegate
 
@@ -1378,7 +1378,7 @@ near staking \
 </a>
 </details>
 
-#### delegate - Delegation management
+#### delegation - Delegation management
 
 - [view-balance](#View-the-total-balance-for-a-given-account)
 - [deposit](#deposit---Deposits-the-attached-amount-into-the-inner-account-of-the-predecessor)
@@ -1395,7 +1395,7 @@ near staking \
 Для просмотра баланса аккаунта у делегироанного валидатора необходимо ввести в командной строке терминала:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     view-balance aurora.pool.f863973.m0 \
     network-config testnet \
     now
@@ -1422,7 +1422,7 @@ Balance on validator <aurora.pool.f863973.m0> for <volodymyr.testnet>:
 Чтобы разместить депозит Вашего аккаунта у делегироанного валидатора, необходимо ввести в командной строке терминала:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     deposit '10 NEAR' aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1447,7 +1447,7 @@ near staking \
 Чтобы разместить депозит и сделать ставку Вашего аккаунта у делегироанного валидатора, необходимо ввести в командной строке терминала:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     deposit-and-stake '15 NEAR' aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1472,7 +1472,7 @@ near staking \
 Чтобы сделать ставку определенной суммы от внесенного ранее депозита у делегироанного валидатора, необходимо ввести в командной строке терминала:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     stake '5 NEAR' aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1497,7 +1497,7 @@ near staking \
 Чтобы сделать ставку всего депозита у делегироанного валидатора, необходимо ввести в командной строке терминала:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     stake-all aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1522,7 +1522,7 @@ near staking \
 Чтобы снять ставку определенной суммы у делегироанного валидатора, необходимо ввести в командной строке терминала:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     unstake '7 NEAR' aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1547,8 +1547,8 @@ near staking \
 Чтобы снять всю ставку у делегироанного валидатора, необходимо ввести в командной строке терминала:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
-    stake-all aurora.pool.f863973.m0 \
+    delegation volodymyr.testnet \
+    unstake-all aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
     send
@@ -1557,13 +1557,13 @@ near staking \
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully stake the entire amount on <aurora.pool.f863973.m0>.
+<volodymyr.testnet> has successfully unstake the entire amount from <aurora.pool.f863973.m0>.
 ```
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/rTVT3IVLT9scE8FA21D5jqOKV?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/rTVT3IVLT9scE8FA21D5jqOKV.png" width="836"/>
+<a href="https://asciinema.org/a/FgEjwrSlSHjIXeUBZGyl1O6vG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/FgEjwrSlSHjIXeUBZGyl1O6vG.png" width="836"/>
 </a>
 </details>
 
@@ -1572,7 +1572,7 @@ near staking \
 Чтобы вывести определенную сумму из делегироанного валидатора на свой аккаунт, необходимо ввести в командной строке терминала:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     withdraw '3 NEAR' aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
@@ -1598,7 +1598,7 @@ Error:
 Чтобы вывести всю сумму из делегироанного валидатора на свой аккаунт, необходимо ввести в командной строке терминала:
 ```txt
 near staking \
-    delegate volodymyr.testnet \
+    delegation volodymyr.testnet \
     withdraw-all aurora.pool.f863973.m0 \
     network-config testnet \
     sign-with-legacy-keychain \
