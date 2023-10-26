@@ -1388,9 +1388,9 @@ near staking \
 - [withdraw](#withdraw---Withdrawing-the-non-staked-balance-for-given-account)
 - [withdraw-all](#withdraw-all---Withdrawing-the-entire-unstaked-balance-from-the-predecessor-account)
 
-##### view-balance - View the total balance for a given account
+##### view-balance - View the delegated stake balance for a given account
 
-To view the account balance of a delegated validator, enter at the terminal command line:
+To view the delegated stake account balance on a validator staking pool, enter at the terminal command line:
 ```txt
 near staking \
     delegation volodymyr.testnet \
@@ -1402,9 +1402,9 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Balance on validator <aurora.pool.f863973.m0> for <volodymyr.testnet>:
+Delegated stake balance on validator <aurora.pool.f863973.m0> for <volodymyr.testnet>:
       Staked balance:           38.021465232511349340052266 NEAR
-      Unstaked balance:          0.000000000000000000000001 NEAR
+      Unstaked balance:          0.000000000000000000000001 NEAR (available for withdrawal) (not available for withdrawal in the current epoch)
       Total balance:            38.021465232511349340052267 NEAR
 ```
 </details>
