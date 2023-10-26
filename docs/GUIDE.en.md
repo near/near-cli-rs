@@ -1378,15 +1378,14 @@ near staking \
 
 #### delegation - Stake delegation management
 
-- [view-balance](#View-the-total-balance-for-a-given-account)
-- [deposit](#deposit---Deposits-the-attached-amount-into-the-inner-account-of-the-predecessor)
-- [deposit-and-stake](#deposit-and-stake---Deposits-the-attached-amount-into-the-inner-account-of-the-predecessor-and-stakes-it)
-- [stake](#stake---Staking-the-given-amount-from-the-inner-account-of-the-predecessor)
-- [stake-all](#stake-all---Staking-all-available-unstaked-balance-from-the-inner-account-of-the-predecessor)
-- [unstake](#unstake---Unstaking-the-given-amount-from-the-inner-account-of-the-predecessor)
-- [unstake-all](#unstake-all---Unstaking-all-staked-balance-from-the-inner-account-of-the-predecessor)
-- [withdraw](#withdraw---Withdrawing-the-non-staked-balance-for-given-account)
-- [withdraw-all](#withdraw-all---Withdrawing-the-entire-unstaked-balance-from-the-predecessor-account)
+- [view-balance](#view-balance---View-the-delegated-stake-balance-for-a-given-account)
+- [deposit-and-stake](#deposit-and-stake---Delegate-NEAR-tokens-to-a-validator's-staking-pool)
+- [stake](#stake---Delegate-a-certain-amount-of-previously-deposited-or-unstaked-NEAR-tokens-to-a-validator's-staking-pool)
+- [stake-all](#stake-all---Delegate-all-previously-deposited-or-unstaked-NEAR-tokens-to-a-validator's-staking-pool)
+- [unstake](#unstake---Unstake-a-certain-amount-of-delegated-NEAR-tokens-from-a-avalidator's-staking-pool)
+- [unstake-all](#unstake-all---Unstake-all-delegated-NEAR-tokens-from-a-avalidator's-staking-pool)
+- [withdraw](#withdraw---Withdraw-a-certain-amount-of-unstaked-NEAR-tokens-from-a-avalidator's-staking-pool)
+- [withdraw-all](#withdraw-all---Withdraw-all-unstaked-NEAR-tokens-from-a-avalidator's-staking-pool)
 
 ##### view-balance - View the delegated stake balance for a given account
 
