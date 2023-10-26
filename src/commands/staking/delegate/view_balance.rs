@@ -33,10 +33,15 @@ impl ViewBalanceContext {
                 let user_staked_balance: u128 = get_user_staked_balance(network_config, block_reference, &validator_account_id, &account_id)?;
                 let user_unstaked_balance: u128 = get_user_unstaked_balance(network_config, block_reference, &validator_account_id, &account_id)?;
                 let user_total_balance: u128 = get_user_total_balance(network_config, block_reference, &validator_account_id, &account_id)?;
+                let withdrawal_availability_message = match is_account_unstaked_balance_available_for_withdrawal(network_config, &validator_account_id, &account_id)? {
+                    true if user_unstaked_balance > 0  => "(available for withdrawal)",
+                    false if user_unstaked_balance > 0 => "(not available for withdrawal in the current epoch)",
+                    _ => ""
+                };
 
                 eprintln!("Balance on validator <{validator_account_id}> for <{account_id}>:");
                 eprintln!("      Staked balance:     {:>38}", crate::common::NearBalance::from_yoctonear(user_staked_balance).to_string());
-                eprintln!("      Unstaked balance:   {:>38}", crate::common::NearBalance::from_yoctonear(user_unstaked_balance).to_string());
+                eprintln!("      Unstaked balance:   {:>38} {withdrawal_availability_message}", crate::common::NearBalance::from_yoctonear(user_unstaked_balance).to_string());
                 eprintln!("      Total balance:      {:>38}", crate::common::NearBalance::from_yoctonear(user_total_balance).to_string());
 
                 Ok(())
@@ -130,4 +135,26 @@ pub fn get_user_total_balance(
         .parse_result_from_json::<String>()
         .wrap_err("Failed to parse return value of view function call for String.")?
         .parse::<u128>()?)
+}
+
+pub fn is_account_unstaked_balance_available_for_withdrawal(
+    network_config: &crate::config::NetworkConfig,
+    validator_account_id: &near_primitives::types::AccountId,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<bool> {
+    network_config
+        .json_rpc_client()
+        .blocking_call_view_function(
+            validator_account_id,
+            "is_account_unstaked_balance_available",
+            serde_json::to_vec(&serde_json::json!({
+                "account_id": account_id.to_string(),
+            }))?,
+            near_primitives::types::BlockReference::Finality(
+                near_primitives::types::Finality::Final,
+            ),
+        )
+        .wrap_err("Failed to fetch query for view method: 'is_account_unstaked_balance_available'")?
+        .parse_result_from_json::<bool>()
+        .wrap_err("Failed to parse return value of view function call for bool value.")
 }

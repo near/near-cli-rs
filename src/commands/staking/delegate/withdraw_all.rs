@@ -1,7 +1,3 @@
-use color_eyre::eyre::WrapErr;
-
-use crate::common::{CallResultExt, JsonRpcClientExt};
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::StakeDelegationContext)]
 #[interactive_clap(output_context = WithdrawAllContext)]
@@ -35,24 +31,11 @@ impl WithdrawAllContext {
                 let signer_id = previous_context.account_id.clone();
 
                 move |network_config| {
-                    let is_account_unstaked_balance_available = network_config
-                        .json_rpc_client()
-                        .blocking_call_view_function(
-                            &validator_account_id,
-                            "is_account_unstaked_balance_available",
-                            serde_json::to_vec(&serde_json::json!({
-                                "account_id": signer_id.to_string(),
-                            }))?,
-                            near_primitives::types::BlockReference::Finality(near_primitives::types::Finality::Final),
-                        )
-                        .wrap_err(
-                            "Failed to fetch query for view method: 'is_account_unstaked_balance_available'"
-                        )?
-                        .parse_result_from_json::<bool>()
-                        .wrap_err(
-                            "Failed to parse return value of view function call for bool value."
-                        )?;
-                    if !is_account_unstaked_balance_available {
+                    if !super::view_balance::is_account_unstaked_balance_available_for_withdrawal(
+                        network_config,
+                        &validator_account_id,
+                        &signer_id,
+                    )? {
                         return Err(color_eyre::Report::msg(format!(
                             "<{signer_id}> can't withdraw tokens in the current epoch."
                         )));

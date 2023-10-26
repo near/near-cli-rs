@@ -1403,7 +1403,7 @@ near staking \
 ```txt
 Delegated stake balance on validator <aurora.pool.f863973.m0> for <volodymyr.testnet>:
       Staked balance:           38.021465232511349340052266 NEAR
-      Unstaked balance:          0.000000000000000000000001 NEAR (available for withdrawal) (not available for withdrawal in the current epoch)
+      Unstaked balance:          0.000000000000000000000001 NEAR
       Total balance:            38.021465232511349340052267 NEAR
 ```
 </details>
