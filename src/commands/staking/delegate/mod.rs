@@ -1,6 +1,5 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod deposit;
 mod deposit_and_stake;
 mod stake;
 mod stake_all;
@@ -62,19 +61,14 @@ impl StakeDelegation {
 /// Select actions with delegated staking:
 pub enum StakeDelegationCommand {
     #[strum_discriminants(strum(
-        message = "view-balance         - View the total balance for a given account"
+        message = "view-balance         - View the delegated stake balance for a given account"
     ))]
-    /// View the total balance for a given account
+    /// View the delegated stake balance for a given account
     ViewBalance(self::view_balance::ViewBalance),
     #[strum_discriminants(strum(
-        message = "deposit              - Deposits the attached amount into the inner account of the predecessor"
+        message = "deposit-and-stake    - Delegate NEAR tokens to a validator's staking pool"
     ))]
-    /// Deposits the attached amount into the inner account of the predecessor
-    Deposit(self::deposit::Deposit),
-    #[strum_discriminants(strum(
-        message = "deposit-and-stake    - Deposits the attached amount into the inner account of the predecessor and stakes it"
-    ))]
-    /// Deposits the attached amount into the inner account of the predecessor and stakes it
+    /// Delegate NEAR tokens to a validator's staking pool
     DepositAndStake(self::deposit_and_stake::DepositAndStake),
     #[strum_discriminants(strum(
         message = "stake                - Staking the given amount from the inner account of the predecessor"
@@ -82,28 +76,28 @@ pub enum StakeDelegationCommand {
     /// Staking the given amount from the inner account of the predecessor
     Stake(self::stake::Stake),
     #[strum_discriminants(strum(
-        message = "stake-all            - Staking all available unstaked balance from the inner account of the predecessor"
+        message = "stake-all            - Delegate all previously deposited or unstaked NEAR tokens to a validator's staking pool"
     ))]
-    /// Staking all available unstaked balance from the inner account of the predecessor
+    /// Delegate all previously deposited or unstaked NEAR tokens to a validator's staking pool
     StakeAll(self::stake_all::StakeAll),
     #[strum_discriminants(strum(
-        message = "unstake              - Unstaking the given amount from the inner account of the predecessor"
+        message = "unstake              - Unstake a certain amount of delegated NEAR tokens from a avalidator's staking pool"
     ))]
-    /// Unstaking the given amount from the inner account of the predecessor
+    /// Unstake a certain amount of delegated NEAR tokens from a avalidator's staking pool
     Unstake(self::unstake::Unstake),
     #[strum_discriminants(strum(
-        message = "unstake-all          - Unstaking all staked balance from the inner account of the predecessor"
+        message = "unstake-all          - Unstake all delegated NEAR tokens from a avalidator's staking pool"
     ))]
-    /// Unstaking all staked balance from the inner account of the predecessor
+    /// Unstake all delegated NEAR tokens from a avalidator's staking pool
     UnstakeAll(self::unstake_all::UnstakeAll),
     #[strum_discriminants(strum(
-        message = "withdraw             - Withdrawing the non staked balance for given account"
+        message = "withdraw             - Withdraw a certain amount of unstaked NEAR tokens from a avalidator's staking pool"
     ))]
-    /// Withdrawing the non staked balance for given account
+    /// Withdraw a certain amount of unstaked NEAR tokens from a avalidator's staking pool
     Withdraw(self::withdraw::Withdraw),
     #[strum_discriminants(strum(
-        message = "withdraw-all         - Withdrawing the entire unstaked balance from the predecessor account"
+        message = "withdraw-all         - Withdraw all unstaked NEAR tokens from a avalidator's staking pool"
     ))]
-    /// Withdrawing the entire unstaked balance from the predecessor account
+    /// Withdraw all unstaked NEAR tokens from a avalidator's staking pool
     WithdrawAll(self::withdraw_all::WithdrawAll),
 }
