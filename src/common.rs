@@ -1284,106 +1284,62 @@ fn path_directories() -> Vec<std::path::PathBuf> {
     dirs
 }
 
-pub fn get_delegated_validator_list_from_network(
-    network_config: &crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<Vec<near_primitives::types::AccountId>> {
-    Ok(get_validator_list(network_config)?
-        .into_iter()
-        .filter(|staking_pool_info| staking_pool_info.delegators.is_some())
-        .map(|staking_pool_info| staking_pool_info.validator_id)
-        .collect::<Vec<_>>())
-}
-
-fn get_used_delegated_validator_list_path(
-    credentials_home_dir: &std::path::Path,
-) -> std::path::PathBuf {
-    credentials_home_dir.join("delegated_validators.json")
-}
-
-pub fn create_used_delegated_validator_list(config: &crate::config::Config) -> CliResult {
-    let mut used_delegated_validator_list: std::collections::BTreeSet<
+pub fn get_delegated_validator_list_from_mainnet(
+    network_connection: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
+) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let mut delegated_validator_list: std::collections::BTreeSet<
         near_primitives::types::AccountId,
     > = std::collections::BTreeSet::new();
+    let network_config = network_connection.get("mainnet").expect("Internal error!");
 
-    for network_config in config.network_connection.values() {
-        let used_delegated_validators = get_delegated_validator_list_from_network(network_config)?;
-        for validator_account_id in used_delegated_validators {
-            used_delegated_validator_list.insert(validator_account_id);
-        }
-    }
-
-    if !used_delegated_validator_list.is_empty() {
-        let used_delegated_validator_list_path =
-            get_used_delegated_validator_list_path(&config.credentials_home_dir);
-        let used_delegated_validator_list_buf = serde_json::to_string(
-            &used_delegated_validator_list
-                .into_iter()
-                .map(String::from)
-                .collect::<Vec<_>>(),
-        )?;
-        std::fs::write(
-            &used_delegated_validator_list_path,
-            used_delegated_validator_list_buf,
+    let epoch_validator_info = network_config
+        .json_rpc_client()
+        .blocking_call(
+            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
+                epoch_reference: near_primitives::types::EpochReference::Latest,
+            },
         )
-        .wrap_err_with(|| {
-            format!(
-                "Failed to write to file: {}",
-                used_delegated_validator_list_path.display()
-            )
-        })?;
+        .wrap_err("Failed to get epoch validators information request.")?;
+
+    for current_proposal in epoch_validator_info.current_proposals {
+        delegated_validator_list.insert(current_proposal.take_account_id());
     }
-    Ok(())
+
+    for current_validator in epoch_validator_info.current_validators {
+        delegated_validator_list.insert(current_validator.account_id);
+    }
+
+    for next_validator in epoch_validator_info.next_validators {
+        delegated_validator_list.insert(next_validator.account_id);
+    }
+
+    Ok(delegated_validator_list)
 }
 
 pub fn get_used_delegated_validator_list(
-    credentials_home_dir: &std::path::Path,
-) -> VecDeque<near_primitives::types::AccountId> {
-    serde_json::from_str(
-        std::fs::read_to_string(get_used_delegated_validator_list_path(credentials_home_dir))
-            .as_deref()
-            .unwrap_or("[]"),
-    )
-    .unwrap_or_default()
-}
+    config: &crate::config::Config,
+) -> color_eyre::eyre::Result<VecDeque<near_primitives::types::AccountId>> {
+    let used_account_list: VecDeque<UsedAccount> =
+        get_used_account_list(&config.credentials_home_dir);
+    let mut delegated_validator_list =
+        get_delegated_validator_list_from_mainnet(&config.network_connection)?;
+    let mut used_delegated_validator_list: VecDeque<near_primitives::types::AccountId> =
+        VecDeque::new();
 
-pub fn update_used_delegated_validator_list(
-    credentials_home_dir: &std::path::Path,
-    validator_account_id: &near_primitives::types::AccountId,
-) {
-    let mut used_delegated_validator_list = get_used_delegated_validator_list(credentials_home_dir);
-
-    let used_validator_account_id = if let Some(used_validator_account_id) =
-        used_delegated_validator_list
-            .iter()
-            .position(|used_account| used_account == validator_account_id)
-            .and_then(|position| used_delegated_validator_list.remove(position))
-    {
-        used_validator_account_id
-    } else {
-        validator_account_id.clone()
-    };
-    used_delegated_validator_list.push_front(used_validator_account_id);
-
-    let used_delegated_validator_list_path =
-        get_used_delegated_validator_list_path(credentials_home_dir);
-    if let Ok(used_delegated_validator_list_buf) =
-        serde_json::to_string(&used_delegated_validator_list)
-    {
-        let _ = std::fs::write(
-            used_delegated_validator_list_path,
-            used_delegated_validator_list_buf,
-        );
+    for used_account in used_account_list {
+        if delegated_validator_list.remove(&used_account.account_id) {
+            used_delegated_validator_list.push_back(used_account.account_id);
+        }
     }
-}
 
-pub fn is_used_delegated_validator_list_exist(credentials_home_dir: &std::path::Path) -> bool {
-    get_used_delegated_validator_list_path(credentials_home_dir).exists()
+    used_delegated_validator_list.extend(delegated_validator_list.into_iter());
+    Ok(used_delegated_validator_list)
 }
 
 pub fn input_delegated_validator_account_id_from_used_delegated_validator_list(
-    credentials_home_dir: &std::path::Path,
+    config: &crate::config::Config,
 ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-    let used_delegated_validator_list = get_used_delegated_validator_list(credentials_home_dir)
+    let used_delegated_validator_list = get_used_delegated_validator_list(config)?
         .into_iter()
         .map(String::from)
         .collect::<Vec<_>>();
@@ -1414,7 +1370,10 @@ pub fn input_delegated_validator_account_id_from_used_delegated_validator_list(
     };
     let validator_account_id =
         crate::types::account_id::AccountId::from_str(&validator_account_id_str)?;
-    update_used_delegated_validator_list(credentials_home_dir, validator_account_id.as_ref());
+    update_used_account_list_as_non_signer(
+        &config.credentials_home_dir,
+        validator_account_id.as_ref(),
+    );
     Ok(Some(validator_account_id))
 }
 

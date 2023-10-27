@@ -92,7 +92,7 @@ impl WithdrawAll {
         context: &super::StakeDelegationContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_delegated_validator_account_id_from_used_delegated_validator_list(
-            &context.global_context.config.credentials_home_dir,
+            &context.global_context.config,
         )
     }
 }
