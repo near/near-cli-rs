@@ -82,7 +82,7 @@ impl FunctionCallTypeContext {
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id.into(),
-            allowance: scope.allowance.clone(),
+            allowance: scope.allowance,
             receiver_account_id: scope.receiver_account_id.clone(),
             method_names: scope.method_names.clone(),
         })
@@ -126,7 +126,7 @@ impl interactive_clap::FromCli for FunctionCallType {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let allowance = clap_variant.allowance.clone();
+        let allowance = clap_variant.allowance;
         if clap_variant.receiver_account_id.is_none() {
             clap_variant.receiver_account_id = match Self::input_receiver_account_id(&context) {
                 Ok(Some(first_receiver_account_id)) => Some(first_receiver_account_id),

@@ -32,7 +32,7 @@ impl SendNearCommandContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
-            amount_in_near: scope.amount_in_near.clone(),
+            amount_in_near: scope.amount_in_near,
         })
     }
 }

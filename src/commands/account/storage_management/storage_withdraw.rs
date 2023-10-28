@@ -24,7 +24,7 @@ impl WithdrawArgsContext {
         Ok(Self {
             global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
-            amount: scope.amount.clone(),
+            amount: scope.amount,
         })
     }
 }
@@ -54,7 +54,7 @@ impl SignerAccountIdContext {
                 let signer_account_id: near_primitives::types::AccountId =
                     scope.signer_account_id.clone().into();
                 let get_contract_account_id = previous_context.get_contract_account_id.clone();
-                let amount = previous_context.amount.clone();
+                let amount = previous_context.amount;
 
                 move |network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {

@@ -36,7 +36,7 @@ impl NewAccountContext {
         Ok(Self {
             global_context: previous_context,
             new_account_id: scope.new_account_id.clone().into(),
-            initial_balance: scope.initial_balance.clone(),
+            initial_balance: scope.initial_balance,
         })
     }
 }

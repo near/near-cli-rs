@@ -51,7 +51,7 @@ impl SendFtCommandContext {
             receiver_account_id: scope.receiver_account_id.clone().into(),
             amount: scope.amount,
             gas: scope.gas,
-            deposit: scope.deposit.clone(),
+            deposit: scope.deposit,
         })
     }
 }

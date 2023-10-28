@@ -73,10 +73,7 @@ impl FunctionCallTypeContext {
     ) -> color_eyre::eyre::Result<Self> {
         let access_key_permission = near_primitives::account::AccessKeyPermission::FunctionCall(
             near_primitives::account::FunctionCallPermission {
-                allowance: scope
-                    .allowance
-                    .clone()
-                    .map(|allowance| allowance.as_yoctonear()),
+                allowance: scope.allowance.map(|allowance| allowance.as_yoctonear()),
                 receiver_id: scope.receiver_account_id.to_string(),
                 method_names: scope.method_names.clone().into(),
             },
@@ -118,7 +115,7 @@ impl interactive_clap::FromCli for FunctionCallType {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let allowance = clap_variant.allowance.clone();
+        let allowance = clap_variant.allowance;
         if clap_variant.receiver_account_id.is_none() {
             clap_variant.receiver_account_id = match Self::input_receiver_account_id(&context) {
                 Ok(Some(first_receiver_account_id)) => Some(first_receiver_account_id),

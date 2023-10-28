@@ -31,7 +31,7 @@ impl DepositArgsContext {
             global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
-            deposit: scope.deposit.clone(),
+            deposit: scope.deposit,
         })
     }
 }
@@ -108,7 +108,7 @@ impl SignerAccountIdContext {
                     scope.signer_account_id.clone().into();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let get_contract_account_id = previous_context.get_contract_account_id.clone();
-                let deposit = previous_context.deposit.clone();
+                let deposit = previous_context.deposit;
 
                 move |network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
