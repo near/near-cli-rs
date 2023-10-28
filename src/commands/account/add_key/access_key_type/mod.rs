@@ -54,7 +54,7 @@ impl From<FullAccessTypeContext> for AccessTypeContext {
 pub struct FunctionCallType {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    allowance: Option<crate::common::NearBalance>,
+    allowance: Option<near_token::NearToken>,
     #[interactive_clap(long)]
     /// Enter a receiver to use by this access key to pay for function call gas and transaction fees:
     receiver_account_id: crate::types::account_id::AccountId,
@@ -69,7 +69,7 @@ pub struct FunctionCallType {
 pub struct FunctionCallTypeContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
-    allowance: Option<crate::common::NearBalance>,
+    allowance: Option<near_token::NearToken>,
     receiver_account_id: crate::types::account_id::AccountId,
     method_names: crate::types::vec_string::VecString,
 }
@@ -96,7 +96,7 @@ impl From<FunctionCallTypeContext> for AccessTypeContext {
             signer_account_id: item.signer_account_id,
             permission: near_primitives::account::AccessKeyPermission::FunctionCall(
                 near_primitives::account::FunctionCallPermission {
-                    allowance: item.allowance.map(|allowance| allowance.to_yoctonear()),
+                    allowance: item.allowance.map(|allowance| allowance.as_yoctonear()),
                     receiver_id: item.receiver_account_id.to_string(),
                     method_names: item.method_names.into(),
                 },
@@ -217,7 +217,7 @@ impl FunctionCallType {
 
     pub fn input_allowance(
         _context: &super::AddKeyCommandContext,
-    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
+    ) -> color_eyre::eyre::Result<Option<near_token::NearToken>> {
         eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
@@ -232,7 +232,7 @@ impl FunctionCallType {
         )
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
-            let allowance_near_balance: crate::common::NearBalance =
+            let allowance_near_balance: near_token::NearToken =
                     CustomType::new("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
                     .prompt()?;
             Ok(Some(allowance_near_balance))

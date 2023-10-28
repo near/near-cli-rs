@@ -68,17 +68,15 @@ impl std::fmt::Display for BlockHashAsBase58 {
     }
 }
 
-pub use near_socialdb_client::NearBalance;
-
 pub use near_gas::NearGas;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
 pub struct TransferAmount {
-    amount: NearBalance,
+    amount: near_token::NearToken,
 }
 
 impl interactive_clap::ToCli for TransferAmount {
-    type CliVariant = NearBalance;
+    type CliVariant = near_token::NearToken;
 }
 
 impl std::fmt::Display for TransferAmount {
@@ -89,7 +87,7 @@ impl std::fmt::Display for TransferAmount {
 
 impl TransferAmount {
     pub fn from(
-        amount: NearBalance,
+        amount: near_token::NearToken,
         account_transfer_allowance: &AccountTransferAllowance,
     ) -> color_eyre::eyre::Result<Self> {
         if amount <= account_transfer_allowance.transfer_allowance() {
@@ -101,16 +99,16 @@ impl TransferAmount {
         }
     }
 
-    pub fn from_unchecked(amount: NearBalance) -> Self {
+    pub fn from_unchecked(amount: near_token::NearToken) -> Self {
         Self { amount }
     }
 
-    pub fn to_yoctonear(&self) -> u128 {
-        self.amount.to_yoctonear()
+    pub fn as_yoctonear(&self) -> u128 {
+        self.amount.as_yoctonear()
     }
 }
 
-impl From<TransferAmount> for NearBalance {
+impl From<TransferAmount> for near_token::NearToken {
     fn from(item: TransferAmount) -> Self {
         item.amount
     }
@@ -119,10 +117,10 @@ impl From<TransferAmount> for NearBalance {
 #[derive(Debug)]
 pub struct AccountTransferAllowance {
     account_id: near_primitives::types::AccountId,
-    account_liquid_balance: NearBalance,
-    account_locked_balance: NearBalance,
-    storage_stake: NearBalance,
-    pessimistic_transaction_fee: NearBalance,
+    account_liquid_balance: near_token::NearToken,
+    account_locked_balance: near_token::NearToken,
+    storage_stake: near_token::NearToken,
+    pessimistic_transaction_fee: near_token::NearToken,
 }
 
 impl std::fmt::Display for AccountTransferAllowance {
@@ -139,19 +137,19 @@ impl std::fmt::Display for AccountTransferAllowance {
 }
 
 impl AccountTransferAllowance {
-    pub fn liquid_storage_stake(&self) -> NearBalance {
-        NearBalance::from_yoctonear(
+    pub fn liquid_storage_stake(&self) -> near_token::NearToken {
+        near_token::NearToken::from_yoctonear(
             self.storage_stake
-                .to_yoctonear()
-                .saturating_sub(self.account_locked_balance.to_yoctonear()),
+                .as_yoctonear()
+                .saturating_sub(self.account_locked_balance.as_yoctonear()),
         )
     }
 
-    pub fn transfer_allowance(&self) -> NearBalance {
-        NearBalance::from_yoctonear(
-            self.account_liquid_balance.to_yoctonear()
-                - self.liquid_storage_stake().to_yoctonear()
-                - self.pessimistic_transaction_fee.to_yoctonear(),
+    pub fn transfer_allowance(&self) -> near_token::NearToken {
+        near_token::NearToken::from_yoctonear(
+            self.account_liquid_balance.as_yoctonear()
+                - self.liquid_storage_stake().as_yoctonear()
+                - self.pessimistic_transaction_fee.as_yoctonear(),
         )
     }
 }
@@ -168,10 +166,10 @@ pub fn get_account_transfer_allowance(
     } else {
         return Ok(AccountTransferAllowance {
             account_id,
-            account_liquid_balance: NearBalance::from_yoctonear(0),
-            account_locked_balance: NearBalance::from_yoctonear(0),
-            storage_stake: NearBalance::from_yoctonear(0),
-            pessimistic_transaction_fee: NearBalance::from_yoctonear(0),
+            account_liquid_balance: near_token::NearToken::from_near(0),
+            account_locked_balance: near_token::NearToken::from_near(0),
+            storage_stake: near_token::NearToken::from_near(0),
+            pessimistic_transaction_fee: near_token::NearToken::from_near(0),
         });
     };
     let storage_amount_per_byte = tokio::runtime::Runtime::new()
@@ -187,15 +185,15 @@ pub fn get_account_transfer_allowance(
 
     Ok(AccountTransferAllowance {
         account_id,
-        account_liquid_balance: NearBalance::from_yoctonear(account_view.amount),
-        account_locked_balance: NearBalance::from_yoctonear(account_view.locked),
-        storage_stake: NearBalance::from_yoctonear(
+        account_liquid_balance: near_token::NearToken::from_yoctonear(account_view.amount),
+        account_locked_balance: near_token::NearToken::from_yoctonear(account_view.locked),
+        storage_stake: near_token::NearToken::from_yoctonear(
             u128::from(account_view.storage_usage) * storage_amount_per_byte,
         ),
         // pessimistic_transaction_fee = 10^21 - this value is set temporarily
         // In the future, its value will be calculated by the function: fn tx_cost(...)
         // https://github.com/near/nearcore/blob/8a377fda0b4ce319385c463f1ae46e4b0b29dcd9/runtime/runtime/src/config.rs#L178-L232
-        pessimistic_transaction_fee: NearBalance::from_yoctonear(10u128.pow(21)),
+        pessimistic_transaction_fee: near_token::NearToken::from_yoctonear(10u128.pow(21)),
     })
 }
 
@@ -581,7 +579,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "deposit:",
-                    NearBalance::from_yoctonear(function_call_action.deposit)
+                    near_token::NearToken::from_yoctonear(function_call_action.deposit)
                 );
             }
             near_primitives::transaction::Action::Transfer(transfer_action) => {
@@ -589,7 +587,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>5} {:<20} {}",
                     "--",
                     "transfer deposit:",
-                    NearBalance::from_yoctonear(transfer_action.deposit)
+                    near_token::NearToken::from_yoctonear(transfer_action.deposit)
                 );
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
@@ -602,7 +600,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "stake:",
-                    NearBalance::from_yoctonear(stake_action.stake)
+                    near_token::NearToken::from_yoctonear(stake_action.stake)
                 );
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
@@ -680,7 +678,7 @@ fn print_value_successful_transaction(
                 eprintln!(
                     "<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
-                    NearBalance::from_yoctonear(deposit),
+                    near_token::NearToken::from_yoctonear(deposit),
                     transaction_info.transaction.receiver_id,
                 );
             }
@@ -691,7 +689,7 @@ fn print_value_successful_transaction(
                 eprintln!(
                     "Validator <{}> has successfully staked {}.",
                     transaction_info.transaction.signer_id,
-                    NearBalance::from_yoctonear(stake),
+                    near_token::NearToken::from_yoctonear(stake),
                 );
             }
             near_primitives::views::ActionView::AddKey {
@@ -840,7 +838,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                NearBalance::from_yoctonear(*amount)
+                near_token::NearToken::from_yoctonear(*amount)
             ))
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -858,8 +856,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                NearBalance::from_yoctonear(*balance),
-                NearBalance::from_yoctonear(*stake)
+                near_token::NearToken::from_yoctonear(*balance),
+                near_token::NearToken::from_yoctonear(*stake)
             ))
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -869,8 +867,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                NearBalance::from_yoctonear(*stake),
-                NearBalance::from_yoctonear(*minimum_stake)
+                near_token::NearToken::from_yoctonear(*stake),
+                near_token::NearToken::from_yoctonear(*minimum_stake)
             ))
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -944,8 +942,8 @@ pub fn handler_invalid_tx_error(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        NearBalance::from_yoctonear(*allowance),
-                        NearBalance::from_yoctonear(*cost)
+                        near_token::NearToken::from_yoctonear(*allowance),
+                        near_token::NearToken::from_yoctonear(*cost)
                     ))
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -974,14 +972,14 @@ pub fn handler_invalid_tx_error(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                NearBalance::from_yoctonear(*balance),
-                NearBalance::from_yoctonear(*cost)
+                near_token::NearToken::from_yoctonear(*balance),
+                near_token::NearToken::from_yoctonear(*cost)
             ))
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                NearBalance::from_yoctonear(*amount)
+                near_token::NearToken::from_yoctonear(*amount)
             ))
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
@@ -1297,11 +1295,11 @@ pub fn display_account_info(
 
     table.add_row(prettytable::row![
         Fg->"Native account balance",
-        Fy->NearBalance::from_yoctonear(account_view.amount)
+        Fy->near_token::NearToken::from_yoctonear(account_view.amount)
     ]);
     table.add_row(prettytable::row![
         Fg->"Validator stake",
-        Fy->NearBalance::from_yoctonear(account_view.locked)
+        Fy->near_token::NearToken::from_yoctonear(account_view.locked)
     ]);
     table.add_row(prettytable::row![
         Fg->"Storage used by the account",
@@ -1470,7 +1468,7 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                 let allowance_message = match allowance {
                     Some(amount) => format!(
                         "with an allowance of {}",
-                        NearBalance::from_yoctonear(*amount)
+                        near_token::NearToken::from_yoctonear(*amount)
                     ),
                     None => "with no limit".to_string(),
                 };
@@ -1889,288 +1887,4 @@ fn input_account_id_from_used_account_list(
     let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;
     update_used_account_list(credentials_home_dir, account_id.as_ref(), account_is_signer);
     Ok(Some(account_id))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::str::FromStr;
-
-    #[test]
-    fn near_balance_to_string_0_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 0
-            }
-            .to_string(),
-            "0 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_0dot02_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 20000000000000000000000 // 23 digits
-            }
-            .to_string(),
-            "0.02 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_0dot1_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 100000000000000000000000 // 24 digits
-            }
-            .to_string(),
-            "0.1 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_0dot00001230045600789_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 12300456007890000000 // 20 digits
-            }
-            .to_string(),
-            "0.00001230045600789 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_10_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 digits
-            }
-            .to_string(),
-            "10 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_10dot02_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 10020000000000000000000000 // 26 digits
-            }
-            .to_string(),
-            "10.02 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_1yocto_near() {
-        let yocto_near = NearBalance::from_yoctonear(1);
-        assert_eq!(
-            yocto_near.to_string(),
-            "0.000000000000000000000001 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_1_yocto_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 1
-            }
-            .to_string(),
-            "0.000000000000000000000001 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_100_yocto_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 100
-            }
-            .to_string(),
-            "0.0000000000000000000001 NEAR".to_string()
-        )
-    }
-
-    #[test]
-    fn near_balance_from_str_currency_near() {
-        assert_eq!(
-            NearBalance::from_str("10 near").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 digits
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("10.055NEAR").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10055000000000000000000000 // 26 digits
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_currency_n() {
-        assert_eq!(
-            NearBalance::from_str("10 n").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 digits
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("10N ").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 digits
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_f64_near() {
-        assert_eq!(
-            NearBalance::from_str("0.000001 near").unwrap(),
-            NearBalance {
-                yoctonear_amount: 1000000000000000000 // 18 digits
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_0_near() {
-        assert_eq!(
-            NearBalance::from_str("0 near").unwrap(),
-            NearBalance {
-                yoctonear_amount: 0
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_f64_near_without_int() {
-        let near_balance = NearBalance::from_str(".055NEAR");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: cannot parse integer from empty string".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_05_near() {
-        let near_balance = NearBalance::from_str("05NEAR");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: incorrect number entered".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_currency_ynear() {
-        assert_eq!(
-            NearBalance::from_str("100 ynear").unwrap(),
-            NearBalance {
-                yoctonear_amount: 100
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("100YNEAR ").unwrap(),
-            NearBalance {
-                yoctonear_amount: 100
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_currency_yn() {
-        assert_eq!(
-            NearBalance::from_str("9000 YN  ").unwrap(),
-            NearBalance {
-                yoctonear_amount: 9000
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("0 yn").unwrap(),
-            NearBalance {
-                yoctonear_amount: 0
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_currency_yoctonear() {
-        assert_eq!(
-            NearBalance::from_str("111YOCTONEAR").unwrap(),
-            NearBalance {
-                yoctonear_amount: 111
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("333 yoctonear").unwrap(),
-            NearBalance {
-                yoctonear_amount: 333
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_currency_yocton() {
-        assert_eq!(
-            NearBalance::from_str("10YOCTON").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("10 yocton      ").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_f64_ynear() {
-        let near_balance = NearBalance::from_str("0.055yNEAR");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: invalid digit found in string".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_without_currency() {
-        let near_balance = NearBalance::from_str("100");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: incorrect currency value entered".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_incorrect_currency() {
-        let near_balance = NearBalance::from_str("100 UAH");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: incorrect currency value entered".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_invalid_double_dot() {
-        let near_balance = NearBalance::from_str("100.55.");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: incorrect currency value entered".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_large_fractional_part() {
-        let near_balance = NearBalance::from_str("100.1111122222333334444455555 n"); // 25 digits after "."
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: too large fractional part of a number".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_large_int_part() {
-        let near_balance = NearBalance::from_str("1234567890123456.0 n");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: underflow or overflow happens".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_without_fractional_part() {
-        let near_balance = NearBalance::from_str("100. n");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: cannot parse integer from empty string".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_negative_value() {
-        let near_balance = NearBalance::from_str("-100 n");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: invalid digit found in string".to_string())
-        );
-    }
 }

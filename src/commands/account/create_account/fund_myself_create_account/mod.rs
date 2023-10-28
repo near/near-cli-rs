@@ -16,7 +16,7 @@ pub struct NewAccount {
     new_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
     /// Enter the amount for the account:
-    initial_balance: crate::common::NearBalance,
+    initial_balance: near_token::NearToken,
     #[interactive_clap(subcommand)]
     access_key_mode: add_key::AccessKeyMode,
 }
@@ -25,7 +25,7 @@ pub struct NewAccount {
 pub struct NewAccountContext {
     global_context: crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
-    initial_balance: crate::common::NearBalance,
+    initial_balance: near_token::NearToken,
 }
 
 impl NewAccountContext {
@@ -130,9 +130,9 @@ impl NewAccount {
 
     fn input_initial_balance(
         _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
+    ) -> color_eyre::eyre::Result<Option<near_token::NearToken>> {
         eprintln!();
-        match crate::common::NearBalance::from_str(&Text::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
+        match near_token::NearToken::from_str(&Text::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
             .with_initial_value("0.1 NEAR")
             .prompt()?
             ) {
@@ -156,5 +156,5 @@ pub struct AccountPropertiesContext {
 pub struct AccountProperties {
     pub new_account_id: near_primitives::types::AccountId,
     pub public_key: near_crypto::PublicKey,
-    pub initial_balance: crate::common::NearBalance,
+    pub initial_balance: near_token::NearToken,
 }
