@@ -138,19 +138,14 @@ impl std::fmt::Display for AccountTransferAllowance {
 
 impl AccountTransferAllowance {
     pub fn liquid_storage_stake(&self) -> near_token::NearToken {
-        near_token::NearToken::from_yoctonear(
-            self.storage_stake
-                .as_yoctonear()
-                .saturating_sub(self.account_locked_balance.as_yoctonear()),
-        )
+        self.storage_stake
+            .saturating_sub(self.account_locked_balance)
     }
 
     pub fn transfer_allowance(&self) -> near_token::NearToken {
-        near_token::NearToken::from_yoctonear(
-            self.account_liquid_balance.as_yoctonear()
-                - self.liquid_storage_stake().as_yoctonear()
-                - self.pessimistic_transaction_fee.as_yoctonear(),
-        )
+        self.account_liquid_balance
+            .saturating_sub(self.liquid_storage_stake())
+            .saturating_sub(self.pessimistic_transaction_fee)
     }
 }
 
@@ -193,7 +188,7 @@ pub fn get_account_transfer_allowance(
         // pessimistic_transaction_fee = 10^21 - this value is set temporarily
         // In the future, its value will be calculated by the function: fn tx_cost(...)
         // https://github.com/near/nearcore/blob/8a377fda0b4ce319385c463f1ae46e4b0b29dcd9/runtime/runtime/src/config.rs#L178-L232
-        pessimistic_transaction_fee: near_token::NearToken::from_yoctonear(10u128.pow(21)),
+        pessimistic_transaction_fee: near_token::NearToken::from_millinear(1),
     })
 }
 

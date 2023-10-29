@@ -71,13 +71,11 @@ near-jsonrpc-primitives = "0.17.0"
 near-gas = { version = "0.2.3", features = [
     "serde",
     "borsh",
-    "schemars",
     "interactive-clap",
 ] }
 near-token = { version = "0.2.0", features = [
     "serde",
     "borsh",
-    "schemars",
     "interactive-clap",
 ] }
 
