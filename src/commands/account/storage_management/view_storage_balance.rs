@@ -53,13 +53,13 @@ impl AccountContext {
                     eprintln!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
                         "available:",
                         bytesize::ByteSize(u64::try_from(storage_balance.available / STORAGE_COST_PER_BYTE).unwrap()),
-                        crate::common::NearBalance::from_yoctonear(storage_balance.available),
+                        near_token::NearToken::from_yoctonear(storage_balance.available),
                         storage_balance.available
                     );
                     eprintln!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
                         "total:",
                         bytesize::ByteSize(u64::try_from(storage_balance.total / STORAGE_COST_PER_BYTE).unwrap()),
-                        crate::common::NearBalance::from_yoctonear(storage_balance.total),
+                        near_token::NearToken::from_yoctonear(storage_balance.total),
                         storage_balance.total
                     );
 

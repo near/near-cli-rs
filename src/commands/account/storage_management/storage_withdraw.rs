@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = WithdrawArgsContext)]
 pub struct WithdrawArgs {
     /// Enter the amount to withdraw from the storage (example: 10NEAR or 0.5near or 10000yoctonear):
-    amount: crate::common::NearBalance,
+    amount: near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?
     sign_as: SignerAccountId,
@@ -13,7 +13,7 @@ pub struct WithdrawArgs {
 pub struct WithdrawArgsContext {
     global_context: crate::GlobalContext,
     get_contract_account_id: super::GetContractAccountId,
-    amount: crate::common::NearBalance,
+    amount: near_token::NearToken,
 }
 
 impl WithdrawArgsContext {
@@ -24,7 +24,7 @@ impl WithdrawArgsContext {
         Ok(Self {
             global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
-            amount: scope.amount.clone(),
+            amount: scope.amount,
         })
     }
 }
@@ -54,7 +54,7 @@ impl SignerAccountIdContext {
                 let signer_account_id: near_primitives::types::AccountId =
                     scope.signer_account_id.clone().into();
                 let get_contract_account_id = previous_context.get_contract_account_id.clone();
-                let amount = previous_context.amount.clone();
+                let amount = previous_context.amount;
 
                 move |network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
@@ -64,13 +64,12 @@ impl SignerAccountIdContext {
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: "storage_withdraw".to_string(),
                                 args: serde_json::json!({
-                                    "amount": amount.clone().to_yoctonear().to_string()
+                                    "amount": amount.clone().as_yoctonear().to_string()
                                 })
                                 .to_string()
                                 .into_bytes(),
                                 gas: crate::common::NearGas::from_tgas(50).as_gas(),
-                                deposit: crate::common::NearBalance::from_yoctonear(1)
-                                    .to_yoctonear(),
+                                deposit: near_token::NearToken::from_yoctonear(1).as_yoctonear(),
                             },
                         )],
                     })

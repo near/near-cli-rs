@@ -133,7 +133,7 @@ impl PrepaidGas {
 pub struct Deposit {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter deposit for a function call:
-    deposit: crate::common::NearBalance,
+    deposit: near_token::NearToken,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_2::NextAction,
 }
@@ -151,7 +151,7 @@ impl DepositContext {
                 method_name: previous_context.function_name,
                 args: previous_context.function_args,
                 gas: previous_context.gas.as_gas(),
-                deposit: scope.deposit.clone().to_yoctonear(),
+                deposit: scope.deposit.clone().as_yoctonear(),
             },
         );
         let mut actions = previous_context.actions;
@@ -174,9 +174,9 @@ impl From<DepositContext> for super::super::super::ConstructTransactionContext {
 impl Deposit {
     fn input_deposit(
         _context: &PrepaidGasContext,
-    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
+    ) -> color_eyre::eyre::Result<Option<near_token::NearToken>> {
         eprintln!();
-        match crate::common::NearBalance::from_str(
+        match near_token::NearToken::from_str(
             &Text::new(
                 "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
             )

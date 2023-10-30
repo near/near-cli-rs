@@ -8,7 +8,7 @@ pub struct DepositArgs {
     /// Which account ID do you want to add a deposit to?
     receiver_account_id: crate::types::account_id::AccountId,
     /// Enter the amount to deposit into the storage (example: 10NEAR or 0.5near or 10000yoctonear):
-    deposit: crate::common::NearBalance,
+    deposit: near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?
     sign_as: SignerAccountId,
@@ -19,7 +19,7 @@ pub struct DepositArgsContext {
     global_context: crate::GlobalContext,
     get_contract_account_id: super::GetContractAccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    deposit: crate::common::NearBalance,
+    deposit: near_token::NearToken,
 }
 
 impl DepositArgsContext {
@@ -31,7 +31,7 @@ impl DepositArgsContext {
             global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
-            deposit: scope.deposit.clone(),
+            deposit: scope.deposit,
         })
     }
 }
@@ -108,7 +108,7 @@ impl SignerAccountIdContext {
                     scope.signer_account_id.clone().into();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let get_contract_account_id = previous_context.get_contract_account_id.clone();
-                let deposit = previous_context.deposit.clone();
+                let deposit = previous_context.deposit;
 
                 move |network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
@@ -121,7 +121,7 @@ impl SignerAccountIdContext {
                                     .to_string()
                                     .into_bytes(),
                                 gas: crate::common::NearGas::from_tgas(50).as_gas(),
-                                deposit: deposit.to_yoctonear(),
+                                deposit: deposit.as_yoctonear(),
                             },
                         )],
                     })
