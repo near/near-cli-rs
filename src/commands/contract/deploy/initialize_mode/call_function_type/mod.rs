@@ -132,7 +132,7 @@ impl PrepaidGas {
 pub struct Deposit {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter deposit for a function call:
-    deposit: crate::common::NearBalance,
+    deposit: near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -146,7 +146,7 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let deposit = scope.deposit.clone();
+        let deposit = scope.deposit;
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
@@ -168,7 +168,7 @@ impl DepositContext {
                                     method_name: previous_context.function_name.clone(),
                                     args: previous_context.function_args.clone(),
                                     gas: previous_context.gas.as_gas(),
-                                    deposit: deposit.to_yoctonear(),
+                                    deposit: deposit.as_yoctonear(),
                                 },
                             ),
                         ],
@@ -205,9 +205,9 @@ impl From<DepositContext> for crate::commands::ActionContext {
 impl Deposit {
     fn input_deposit(
         _context: &PrepaidGasContext,
-    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
+    ) -> color_eyre::eyre::Result<Option<near_token::NearToken>> {
         eprintln!();
-        match crate::common::NearBalance::from_str(
+        match near_token::NearToken::from_str(
             &Text::new(
                 "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
             )

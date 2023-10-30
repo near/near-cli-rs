@@ -59,7 +59,7 @@ impl ViewAccountSummaryContext {
                     .enable_all()
                     .build()?;
                 let concurrency = 10;
-                let delegated_stake: std::collections::BTreeMap<near_primitives::types::AccountId, crate::common::NearBalance> = runtime
+                let delegated_stake: std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken> = runtime
                     .block_on(
                         futures::stream::iter(validators_stake.into_keys())
                         .map(|validator_account_id| async {
@@ -141,7 +141,7 @@ async fn get_delegated_staked_balance(
     block_reference: &near_primitives::types::BlockReference,
     staking_pool_account_id: &near_primitives::types::AccountId,
     account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<crate::common::NearBalance> {
+) -> color_eyre::eyre::Result<near_token::NearToken> {
     let account_staked_balance_response = json_rpc_client
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_reference.clone(),
@@ -157,7 +157,7 @@ async fn get_delegated_staked_balance(
         })
         .await;
     match account_staked_balance_response {
-        Ok(response) => Ok(crate::common::NearBalance::from_yoctonear(
+        Ok(response) => Ok(near_token::NearToken::from_yoctonear(
             response
                 .call_result()?
                 .parse_result_from_json::<String>()
@@ -171,7 +171,7 @@ async fn get_delegated_staked_balance(
                     ..
                 },
             ),
-        )) => Ok(crate::common::NearBalance::from_yoctonear(0)),
+        )) => Ok(near_token::NearToken::from_yoctonear(0)),
         Err(err) => Err(err.into()),
     }
 }

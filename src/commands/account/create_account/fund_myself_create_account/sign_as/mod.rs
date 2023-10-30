@@ -65,7 +65,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                 ),
                                 near_primitives::transaction::Action::Transfer(
                                     near_primitives::transaction::TransferAction {
-                                        deposit: item.account_properties.initial_balance.to_yoctonear(),
+                                        deposit: item.account_properties.initial_balance.as_yoctonear(),
                                     },
                                 ),
                                 near_primitives::transaction::Action::AddKey(
@@ -99,7 +99,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                             deposit: item
                                                 .account_properties
                                                 .initial_balance
-                                                .to_yoctonear(),
+                                                .as_yoctonear(),
                                         },
                                     )],
                                     linkdrop_account_id.clone(),

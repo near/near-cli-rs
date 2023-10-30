@@ -9,7 +9,7 @@ pub struct SendNearCommand {
     receiver_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
     /// Enter an amount to transfer:
-    amount_in_near: crate::common::NearBalance,
+    amount_in_near: near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -20,7 +20,7 @@ pub struct SendNearCommandContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    amount_in_near: crate::common::NearBalance,
+    amount_in_near: near_token::NearToken,
 }
 
 impl SendNearCommandContext {
@@ -32,7 +32,7 @@ impl SendNearCommandContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
-            amount_in_near: scope.amount_in_near.clone(),
+            amount_in_near: scope.amount_in_near,
         })
     }
 }
@@ -50,7 +50,7 @@ impl From<SendNearCommandContext> for crate::commands::ActionContext {
                         receiver_id: receiver_account_id.clone(),
                         actions: vec![near_primitives::transaction::Action::Transfer(
                             near_primitives::transaction::TransferAction {
-                                deposit: item.amount_in_near.to_yoctonear(),
+                                deposit: item.amount_in_near.as_yoctonear(),
                             },
                         )],
                     })
@@ -86,7 +86,7 @@ impl SendNearCommand {
 
     fn input_amount_in_near(
         _context: &super::TokensCommandsContext,
-    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
+    ) -> color_eyre::eyre::Result<Option<near_token::NearToken>> {
         let input_amount =
             CustomType::new("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)").prompt()?;
         Ok(Some(input_amount))

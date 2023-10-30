@@ -2,7 +2,7 @@
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
 #[interactive_clap(output_context = StakeActionContext)]
 pub struct StakeAction {
-    stake_amount: crate::common::NearBalance,
+    stake_amount: near_token::NearToken,
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_3::NextAction,
@@ -18,7 +18,7 @@ impl StakeActionContext {
     ) -> color_eyre::eyre::Result<Self> {
         let action = near_primitives::transaction::Action::Stake(
             near_primitives::transaction::StakeAction {
-                stake: scope.stake_amount.to_yoctonear(),
+                stake: scope.stake_amount.as_yoctonear(),
                 public_key: scope.public_key.clone().into(),
             },
         );

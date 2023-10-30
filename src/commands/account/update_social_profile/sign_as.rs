@@ -111,7 +111,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
                                 method_name: "set".to_string(),
                                 args,
                                 gas: crate::common::NearGas::from_tgas(300).as_gas(),
-                                deposit: deposit.to_yoctonear(),
+                                deposit: deposit.as_yoctonear(),
                             },
                         )];
 
@@ -137,9 +137,9 @@ impl From<SignerContext> for crate::commands::ActionContext {
                             &account_id,
                             "profile",
                             &prepopulated_unsigned_transaction.receiver_id,
-                            crate::common::NearBalance::from_yoctonear(action.deposit),
+                            near_token::NearToken::from_yoctonear(action.deposit),
                         ))?
-                        .to_yoctonear();
+                        .as_yoctonear();
                     Ok(())
                 } else {
                     color_eyre::eyre::bail!("Unexpected action to change components",);

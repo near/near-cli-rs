@@ -40,9 +40,9 @@ impl ViewBalanceContext {
                 };
 
                 eprintln!("Balance on validator <{validator_account_id}> for <{account_id}>:");
-                eprintln!("      Staked balance:     {:>38}", crate::common::NearBalance::from_yoctonear(user_staked_balance).to_string());
-                eprintln!("      Unstaked balance:   {:>38} {withdrawal_availability_message}", crate::common::NearBalance::from_yoctonear(user_unstaked_balance).to_string());
-                eprintln!("      Total balance:      {:>38}", crate::common::NearBalance::from_yoctonear(user_total_balance).to_string());
+                eprintln!("      Staked balance:     {:>38}", near_token::NearToken::from_yoctonear(user_staked_balance).to_string());
+                eprintln!("      Unstaked balance:   {:>38} {withdrawal_availability_message}", near_token::NearToken::from_yoctonear(user_unstaked_balance).to_string());
+                eprintln!("      Total balance:      {:>38}", near_token::NearToken::from_yoctonear(user_total_balance).to_string());
 
                 Ok(())
             }

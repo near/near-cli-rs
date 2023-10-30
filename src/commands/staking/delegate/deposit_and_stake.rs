@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = DepositAndStakeContext)]
 pub struct DepositAndStake {
     /// Enter the attached amount to be deposited and then staked into the predecessor's internal account (example: 10NEAR or 0.5near or 10000yoctonear):
-    amount: crate::common::NearBalance,
+    amount: near_token::NearToken,
     #[interactive_clap(skip_default_input_arg)]
     /// What is validator account ID?
     validator_account_id: crate::types::account_id::AccountId,
@@ -28,7 +28,7 @@ impl DepositAndStakeContext {
             previous_context.account_id.clone(),
             validator_account_id.clone(),
         ];
-        let amount = scope.amount.clone();
+        let amount = scope.amount;
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new(move |_network_config| {
@@ -40,13 +40,13 @@ impl DepositAndStakeContext {
                             method_name: "deposit_and_stake".to_string(),
                             args: serde_json::to_vec(&serde_json::json!({}))?,
                             gas: crate::common::NearGas::from_tgas(300).as_gas(),
-                            deposit: amount.to_yoctonear(),
+                            deposit: amount.as_yoctonear(),
                         },
                     )],
                 })
             });
 
-        let amount = scope.amount.clone();
+        let amount = scope.amount;
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new(
                 move |outcome_view, _network_config| {
                     if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
