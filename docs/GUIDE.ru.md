@@ -1404,7 +1404,7 @@ near staking \
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
-Balance on validator <aurora.pool.f863973.m0> for <volodymyr.testnet>:
+Delegated stake balance with validator <aurora.pool.f863973.m0> by <volodymyr.testnet>:
       Staked balance:           38.021465232511349340052266 NEAR
       Unstaked balance:          0.000000000000000000000001 NEAR
       Total balance:            38.021465232511349340052267 NEAR

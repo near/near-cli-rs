@@ -18,29 +18,13 @@ impl WithdrawAllContext {
         previous_context: super::StakeDelegationContext,
         scope: &<WithdrawAll as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let validator_account_id: near_primitives::types::AccountId =
-            scope.validator_account_id.clone().into();
-        let validator_id = validator_account_id.clone();
-        let interacting_with_account_ids = vec![
-            previous_context.account_id.clone(),
-            validator_account_id.clone(),
-        ];
-
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_id = previous_context.account_id.clone();
+                let validator_account_id: near_primitives::types::AccountId =
+                    scope.validator_account_id.clone().into();
 
-                move |network_config| {
-                    if !super::view_balance::is_account_unstaked_balance_available_for_withdrawal(
-                        network_config,
-                        &validator_account_id,
-                        &signer_id,
-                    )? {
-                        return Err(color_eyre::Report::msg(format!(
-                            "<{signer_id}> can't withdraw tokens in the current epoch."
-                        )));
-                    }
-
+                move |_network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_id.clone(),
                         receiver_id: validator_account_id.clone(),
@@ -48,7 +32,7 @@ impl WithdrawAllContext {
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: "withdraw_all".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({}))?,
-                                gas: crate::common::NearGas::from_tgas(300).as_gas(),
+                                gas: crate::common::NearGas::from_tgas(50).as_gas(),
                                 deposit: 0,
                             },
                         )],
@@ -58,17 +42,22 @@ impl WithdrawAllContext {
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
             let signer_id = previous_context.account_id.clone();
+            let validator_id = scope.validator_account_id.clone();
 
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    eprintln!("<{signer_id}> has successfully withdrawn the entire amount from <{validator_id}>.")
+                    eprintln!("<{signer_id}> has successfully withdrawn the entire available amount from <{validator_id}>.")
                 }
                 Ok(())
             }
         });
+
         Ok(Self(crate::commands::ActionContext {
             global_context: previous_context.global_context,
-            interacting_with_account_ids,
+            interacting_with_account_ids: vec![
+                previous_context.account_id.clone(),
+                scope.validator_account_id.clone().into(),
+            ],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),

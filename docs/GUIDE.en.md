@@ -1401,7 +1401,7 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Delegated stake balance on validator <aurora.pool.f863973.m0> for <volodymyr.testnet>:
+Delegated stake balance with validator <aurora.pool.f863973.m0> by <volodymyr.testnet>:
       Staked balance:           38.021465232511349340052266 NEAR
       Unstaked balance:          0.000000000000000000000001 NEAR
       Total balance:            38.021465232511349340052267 NEAR
@@ -1504,7 +1504,7 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully unstake 7 NEAR from <aurora.pool.f863973.m0>.
+<volodymyr.testnet> has successfully unstaked 7 NEAR from <aurora.pool.f863973.m0>.
 ```
 </details>
 
@@ -1529,7 +1529,7 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully unstake the entire amount from <aurora.pool.f863973.m0>.
+<volodymyr.testnet> has successfully unstaked the entire amount from <aurora.pool.f863973.m0>.
 ```
 </details>
 
@@ -1554,8 +1554,7 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Error:
-   0: <volodymyr.testnet> can't withdraw tokens in the current epoch.
+<volodymyr.testnet> has successfully withdrawn 3 NEAR from <aurora.pool.f863973.m0>.
 ```
 </details>
 
@@ -1580,8 +1579,7 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Error:
-   0: <volodymyr.testnet> can't withdraw tokens in the current epoch.
+<volodymyr.testnet> has successfully withdrawn the entire amount from <aurora.pool.f863973.m0>.
 ```
 </details>
 
