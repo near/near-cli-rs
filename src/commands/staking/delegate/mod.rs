@@ -66,9 +66,9 @@ pub enum StakeDelegationCommand {
     /// Delegate NEAR tokens to a validator's staking pool
     DepositAndStake(self::deposit_and_stake::DepositAndStake),
     #[strum_discriminants(strum(
-        message = "stake                - Staking the given amount from the inner account of the predecessor"
+        message = "stake                - Delegate a certain amount of previously deposited or unstaked NEAR tokens to a validator's staking pool"
     ))]
-    /// Staking the given amount from the inner account of the predecessor
+    /// Delegate a certain amount of previously deposited or unstaked NEAR tokens to a validator's staking pool
     Stake(self::stake::Stake),
     #[strum_discriminants(strum(
         message = "stake-all            - Delegate all previously deposited or unstaked NEAR tokens to a validator's staking pool"

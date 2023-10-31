@@ -1416,7 +1416,7 @@ Delegated stake balance on validator <aurora.pool.f863973.m0> for <volodymyr.tes
 
 ##### deposit-and-stake - Delegate NEAR tokens to a validator's staking pool
 
-To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, deposit NEAR tokens and stake with a selected staking pool, you may use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to deposit and stake, choose the staking pool account id, and use the appropriate network):
+To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, deposit NEAR tokens and stake with a selected staking pool, you may use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to deposit and stake, and choose the staking pool account id):
 ```txt
 near staking \
     delegation volodymyr.testnet \
@@ -1441,7 +1441,7 @@ near staking \
 
 ##### stake - Delegate a certain amount of previously deposited or unstaked NEAR tokens to a validator's staking pool
 
-To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, stake deposited NEAR tokens with a selected staking pool. You may use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to deposit and stake, choose the staking pool account id, and use the appropriate network):
+To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, stake deposited NEAR tokens with a selected staking pool. You may use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to stake, choose the staking pool account id, and use the appropriate network):
 ```txt
 near staking \
     delegation volodymyr.testnet \
@@ -1466,7 +1466,7 @@ near staking \
 
 ##### stake-all - Delegate all previously deposited or unstaked NEAR tokens to a validator's staking pool
 
-To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, stake all previosly deposited or unstaked NEAR tokens with a selected staking pool. You may use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to deposit and stake, choose the staking pool account id, and use the appropriate network):
+To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, stake all previosly deposited or unstaked NEAR tokens with a selected staking pool. You may use the following command (note that you need to use your own account id, and choose the staking pool account id):
 ```txt
 near staking \
     delegation volodymyr.testnet \
@@ -1491,7 +1491,7 @@ near staking \
 
 ##### unstake - Unstake a certain amount of delegated NEAR tokens from a avalidator's staking pool
 
-To unstake of a certain amount from a delegated validator, you must enter in the terminal command line:
+To unstake your delegated NEAR tokens from a staking pool, you can use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to unstake, and choose the staking pool account id):
 ```txt
 near staking \
     delegation volodymyr.testnet \
@@ -1516,7 +1516,7 @@ near staking \
 
 ##### unstake-all - Unstake all delegated NEAR tokens from a avalidator's staking pool
 
-To unstake the entire bet from a delegated validator, you must enter in the terminal command line:
+To unstake your delegated NEAR tokens from a staking pool, you can use the following command (note that you need to use your own account id, and choose the staking pool account id):
 ```txt
 near staking \
     delegation volodymyr.testnet \
@@ -1541,7 +1541,7 @@ near staking \
 
 ##### withdraw - Withdraw a certain amount of unstaked NEAR tokens from a avalidator's staking pool
 
-To withdraw a certain amount from a delegated validator to your account, you need to enter in the terminal command line:
+To withdraw your delegated NEAR tokens from a staking pool after you unstaked and waited for 4 epochs, you can use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to withdraw, and choose the staking pool account id):
 ```txt
 near staking \
     delegation volodymyr.testnet \
@@ -1567,7 +1567,7 @@ Error:
 
 ##### withdraw-all - Withdraw all unstaked NEAR tokens from a avalidator's staking pool
 
-To withdraw the entire amount from the delegated validator to your account, you need to enter in the terminal command line:
+To withdraw all your delegated NEAR tokens from a staking pool after you unstaked them and waited for 4 epochs, you can use the following command (note that you need to use your own account id, and choose the staking pool account id):
 ```txt
 near staking \
     delegation volodymyr.testnet \
