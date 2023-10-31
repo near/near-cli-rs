@@ -4,6 +4,7 @@ use std::io::Write;
 use std::str::FromStr;
 
 use color_eyre::eyre::WrapErr;
+use futures::{StreamExt, TryStreamExt};
 use prettytable::Table;
 
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
@@ -681,11 +682,18 @@ fn print_value_successful_transaction(
                 stake,
                 public_key: _,
             } => {
-                eprintln!(
-                    "Validator <{}> has successfully staked {}.",
-                    transaction_info.transaction.signer_id,
-                    near_token::NearToken::from_yoctonear(stake),
-                );
+                if stake == 0 {
+                    eprintln!(
+                        "Validator <{}> successfully unstaked.",
+                        transaction_info.transaction.signer_id,
+                    );
+                } else {
+                    eprintln!(
+                        "Validator <{}> has successfully staked {}.",
+                        transaction_info.transaction.signer_id,
+                        near_token::NearToken::from_yoctonear(stake),
+                    );
+                }
             }
             near_primitives::views::ActionView::AddKey {
                 public_key,
@@ -1262,17 +1270,271 @@ fn is_executable<P: AsRef<std::path::Path>>(path: P) -> bool {
 }
 
 fn path_directories() -> Vec<std::path::PathBuf> {
-    let mut dirs = vec![];
     if let Some(val) = std::env::var_os("PATH") {
-        dirs.extend(std::env::split_paths(&val));
+        std::env::split_paths(&val).collect()
+    } else {
+        Vec::new()
     }
-    dirs
+}
+
+pub fn get_delegated_validator_list_from_mainnet(
+    network_connection: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
+) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let network_config = network_connection.get("mainnet").expect("Internal error!");
+
+    let epoch_validator_info = network_config
+        .json_rpc_client()
+        .blocking_call(
+            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
+                epoch_reference: near_primitives::types::EpochReference::Latest,
+            },
+        )
+        .wrap_err("Failed to get epoch validators information request.")?;
+
+    Ok(epoch_validator_info
+        .current_proposals
+        .into_iter()
+        .map(|current_proposal| current_proposal.take_account_id())
+        .chain(
+            epoch_validator_info
+                .current_validators
+                .into_iter()
+                .map(|current_validator| current_validator.account_id),
+        )
+        .chain(
+            epoch_validator_info
+                .next_validators
+                .into_iter()
+                .map(|next_validator| next_validator.account_id),
+        )
+        .collect())
+}
+
+pub fn get_used_delegated_validator_list(
+    config: &crate::config::Config,
+) -> color_eyre::eyre::Result<VecDeque<near_primitives::types::AccountId>> {
+    let used_account_list: VecDeque<UsedAccount> =
+        get_used_account_list(&config.credentials_home_dir);
+    let mut delegated_validator_list =
+        get_delegated_validator_list_from_mainnet(&config.network_connection)?;
+    let mut used_delegated_validator_list: VecDeque<near_primitives::types::AccountId> =
+        VecDeque::new();
+
+    for used_account in used_account_list {
+        if delegated_validator_list.remove(&used_account.account_id) {
+            used_delegated_validator_list.push_back(used_account.account_id);
+        }
+    }
+
+    used_delegated_validator_list.extend(delegated_validator_list.into_iter());
+    Ok(used_delegated_validator_list)
+}
+
+pub fn input_staking_pool_validator_account_id(
+    config: &crate::config::Config,
+) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+    let used_delegated_validator_list = get_used_delegated_validator_list(config)?
+        .into_iter()
+        .map(String::from)
+        .collect::<Vec<_>>();
+    let validator_account_id_str = match Text::new("What is delegated validator account ID?")
+        .with_autocomplete(move |val: &str| {
+            Ok(used_delegated_validator_list
+                .iter()
+                .filter(|s| s.contains(val))
+                .cloned()
+                .collect())
+        })
+        .with_validator(|account_id_str: &str| {
+            match near_primitives::types::AccountId::validate(account_id_str) {
+                Ok(_) => Ok(inquire::validator::Validation::Valid),
+                Err(err) => Ok(inquire::validator::Validation::Invalid(
+                    inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
+                )),
+            }
+        })
+        .prompt()
+    {
+        Ok(value) => value,
+        Err(
+            inquire::error::InquireError::OperationCanceled
+            | inquire::error::InquireError::OperationInterrupted,
+        ) => return Ok(None),
+        Err(err) => return Err(err.into()),
+    };
+    let validator_account_id =
+        crate::types::account_id::AccountId::from_str(&validator_account_id_str)?;
+    update_used_account_list_as_non_signer(
+        &config.credentials_home_dir,
+        validator_account_id.as_ref(),
+    );
+    Ok(Some(validator_account_id))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StakingPoolInfo {
+    pub validator_id: near_primitives::types::AccountId,
+    pub fee: Option<RewardFeeFraction>,
+    pub delegators: Option<u64>,
+    pub stake: near_primitives::types::Balance,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+pub struct RewardFeeFraction {
+    pub numerator: u32,
+    pub denominator: u32,
+}
+
+pub fn get_validator_list(
+    network_config: &crate::config::NetworkConfig,
+) -> color_eyre::eyre::Result<Vec<StakingPoolInfo>> {
+    let json_rpc_client = network_config.json_rpc_client();
+
+    let validators_stake = get_validators_stake(&json_rpc_client)?;
+
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?;
+    let concurrency = 10;
+
+    let mut validator_list = runtime.block_on(
+        futures::stream::iter(validators_stake.iter())
+            .map(|(validator_account_id, stake)| async {
+                get_staking_pool_info(
+                    &json_rpc_client.clone(),
+                    validator_account_id.clone(),
+                    *stake,
+                )
+                .await
+            })
+            .buffer_unordered(concurrency)
+            .try_collect::<Vec<_>>(),
+    )?;
+    validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
+    Ok(validator_list)
+}
+
+pub fn get_validators_stake(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+) -> color_eyre::eyre::Result<
+    std::collections::HashMap<near_primitives::types::AccountId, near_primitives::types::Balance>,
+> {
+    let epoch_validator_info = json_rpc_client
+        .blocking_call(
+            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
+                epoch_reference: near_primitives::types::EpochReference::Latest,
+            },
+        )
+        .wrap_err("Failed to get epoch validators information request.")?;
+
+    Ok(epoch_validator_info
+        .current_proposals
+        .into_iter()
+        .map(|validator_stake_view| {
+            let validator_stake = validator_stake_view.into_validator_stake();
+            validator_stake.account_and_stake()
+        })
+        .chain(epoch_validator_info.current_validators.into_iter().map(
+            |current_epoch_validator_info| {
+                (
+                    current_epoch_validator_info.account_id,
+                    current_epoch_validator_info.stake,
+                )
+            },
+        ))
+        .chain(
+            epoch_validator_info
+                .next_validators
+                .into_iter()
+                .map(|next_epoch_validator_info| {
+                    (
+                        next_epoch_validator_info.account_id,
+                        next_epoch_validator_info.stake,
+                    )
+                }),
+        )
+        .collect())
+}
+
+async fn get_staking_pool_info(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    validator_account_id: near_primitives::types::AccountId,
+    stake: u128,
+) -> color_eyre::Result<StakingPoolInfo> {
+    let fee = match json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: validator_account_id.clone(),
+                method_name: "get_reward_fee_fraction".to_string(),
+                args: near_primitives::types::FunctionArgs::from(vec![]),
+            },
+        })
+        .await
+    {
+        Ok(response) => Some(
+            response
+                .call_result()?
+                .parse_result_from_json::<RewardFeeFraction>()
+                .wrap_err(
+                    "Failed to parse return value of view function call for RewardFeeFraction.",
+                )?,
+        ),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
+                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
+                    ..
+                },
+            ),
+        )) => None,
+        Err(err) => return Err(err.into()),
+    };
+
+    let delegators = match json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: validator_account_id.clone(),
+                method_name: "get_number_of_accounts".to_string(),
+                args: near_primitives::types::FunctionArgs::from(vec![]),
+            },
+        })
+        .await
+    {
+        Ok(response) => Some(
+            response
+                .call_result()?
+                .parse_result_from_json::<u64>()
+                .wrap_err("Failed to parse return value of view function call for u64.")?,
+        ),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
+                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
+                    ..
+                },
+            ),
+        )) => None,
+        Err(err) => return Err(err.into()),
+    };
+
+    Ok(StakingPoolInfo {
+        validator_id: validator_account_id.clone(),
+        fee,
+        delegators,
+        stake,
+    })
 }
 
 pub fn display_account_info(
     viewed_at_block_hash: &CryptoHash,
     viewed_at_block_height: &near_primitives::types::BlockHeight,
     account_id: &near_primitives::types::AccountId,
+    delegated_stake: &std::collections::BTreeMap<
+        near_primitives::types::AccountId,
+        near_token::NearToken,
+    >,
     account_view: &near_primitives::views::AccountView,
     access_keys: &[near_primitives::views::AccessKeyInfoView],
     optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
@@ -1296,6 +1558,14 @@ pub fn display_account_info(
         Fg->"Validator stake",
         Fy->near_token::NearToken::from_yoctonear(account_view.locked)
     ]);
+
+    for (validator_id, stake) in delegated_stake {
+        table.add_row(prettytable::row![
+            Fg->format!("Delegated stake with <{validator_id}>"),
+            Fy->stake
+        ]);
+    }
+
     table.add_row(prettytable::row![
         Fg->"Storage used by the account",
         Fy->bytesize::ByteSize(account_view.storage_usage),

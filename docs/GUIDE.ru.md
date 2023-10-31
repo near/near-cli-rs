@@ -3,10 +3,10 @@
 Это руководство предназначено для того, чтобы дать подробное описание утилиты _near CLI_ и
 обзор её возможностей. Предполагается, что утилита _near CLI_
 [установлена](README.ru.md#installation)
-и пользователи знакомы с использованием инструментов командной строки. Также предполагается Unix-подобная система, хотя большинство команд, вероятно, легко переводимы в любую среду оболочки командной строки.  
+и пользователи знакомы с использованием инструментов командной строки. Также предполагается Unix-подобная система, хотя большинство команд, вероятно, легко переводимы в любую среду оболочки командной строки.
 
 Спомощью _near CLI_ можно создать, подписать и отправить транзакцию в режиме _online_, который включен по умолчанию.
-В режиме _offline_ можно создать и подписать транзакцию. Транзакция, кодированная в base64 может быть [подписана](#sign-transaction---sign-previously-prepared-unsigned-transaction) или [отправлена](#send-signed-transaction---send-a-signed-transaction) позже (даже с другого компьютера). Для входа в режим _offline_ необходимо в команде установить флаг ```--offline```:  
+В режиме _offline_ можно создать и подписать транзакцию. Транзакция, кодированная в base64 может быть [подписана](#sign-transaction---sign-previously-prepared-unsigned-transaction) или [отправлена](#send-signed-transaction---send-a-signed-transaction) позже (даже с другого компьютера). Для входа в режим _offline_ необходимо в команде установить флаг ```--offline```:
 ```txt
 near --offline tokens \
     fro_volod.testnet \
@@ -28,8 +28,8 @@ near --offline tokens \
     - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
 
         _near CLI_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
-        Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).  
-        Ключи доступа должны находиться в файле _публичный-ключ.json_, расположенном в _/Users/user/.near-credentials/имя-сети/имя-пользователя/_.  
+        Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).
+        Ключи доступа должны находиться в файле _публичный-ключ.json_, расположенном в _/Users/user/.near-credentials/имя-сети/имя-пользователя/_.
         Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
         <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -63,7 +63,7 @@ near --offline tokens \
 
 2. Действия с подписанной транзакцией
 
-    _near CLI_ поддерживает мета-транзакции, описанные в спецификации [NEP-366](https://near.github.io/nearcore/architecture/how/meta-tx.html#meta-transactions). Для её создания достаточно указать _network_, поддерживающую мета-транзакции. Узнать о такой поддержке можно в [конфигурационном файле](#show-connections---Show-a-list-of-network-connections). За возможность поддержки мета-транзакции отвечает поле *meta_transaction_relayer_url*. Например:  
+    _near CLI_ поддерживает мета-транзакции, описанные в спецификации [NEP-366](https://near.github.io/nearcore/architecture/how/meta-tx.html#meta-transactions). Для её создания достаточно указать _network_, поддерживающую мета-транзакции. Узнать о такой поддержке можно в [конфигурационном файле](#show-connections---Show-a-list-of-network-connections). За возможность поддержки мета-транзакции отвечает поле *meta_transaction_relayer_url*. Например:
     ```txt
     meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
     ```
@@ -80,6 +80,7 @@ near --offline tokens \
 
 - [account     - Manage accounts](#account---Manage-accounts)
 - [tokens      - Manage token assets such as NEAR, FT, NFT](#tokens---Manage-token-assets-such-as-NEAR-FT-NFT)
+- [staking     - Manage staking: view, add and withdraw stake](#staking---Manage-staking-view-add-and-withdraw-stake)
 - [contract    - Manage smart-contracts: deploy code, call functions](#contract---Manage-smart-contracts-deploy-code-call-functions)
 - [transaction - Operate transactions](#transaction---Operate-transactions)
 - [config      - Manage connections in a configuration file](#config---Manage-connections-in-a-configuration-file)
@@ -245,7 +246,7 @@ near account \
     network-config testnet
 ```
 
-Вы будете перенаправлены браузер для авторизации.  
+Вы будете перенаправлены браузер для авторизации.
 По умолчанию - это https://app.mynearwallet.com/ (для testnet - https://testnet.mynearwallet.com/). Но вы можете изменить адрес для авторизации с помощью флага `--wallet-url`:
 ```txt
 near account \
@@ -333,7 +334,7 @@ near account \
     network-config testnet
 ```
 
-Вы будете перенаправлены браузер.  
+Вы будете перенаправлены браузер.
 По умолчанию - это https://app.mynearwallet.com/ (для testnet - https://testnet.mynearwallet.com/). Но вы можете изменить адрес для авторизации с помощью флага `--wallet-url`:
 ```txt
 near account \
@@ -391,9 +392,9 @@ Here is the private key for account <volodymyr.testnet>: ed25519:4TKr1c7p...y7p8
 
 #### sponsor-by-faucet-service - I would like the faucet service sponsor to cover the cost of creating an account (testnet only for now)
 
-С помощью этой команды можно создать аккаунт при помощи вспомогательного сервиса, который может спонсировать создание учетной записи (пока только testnet). 
-При добавлении собственной сети в конфигураторе [add-connection](#add-connection---Add-a-network-connection) можете указать свой сервис в поле *faucet_url*.  
-Ключи доступа к создаваемому аккаунту можно добавить несколькими способами:  
+С помощью этой команды можно создать аккаунт при помощи вспомогательного сервиса, который может спонсировать создание учетной записи (пока только testnet).
+При добавлении собственной сети в конфигураторе [add-connection](#add-connection---Add-a-network-connection) можете указать свой сервис в поле *faucet_url*.
+Ключи доступа к создаваемому аккаунту можно добавить несколькими способами:
 - [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
 - [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
 - [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
@@ -516,8 +517,8 @@ https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTb
 
 #### fund-myself - I would like fund myself to cover the cost of creating an account
 
-С помощью этой команды можно создать как суб-аккаунт, так и аккаунт с коротким именем, например, alice.near или alice.testnet (в сети testnet).  
-Ключи доступа к создаваемому аккаунту можно добавить несколькими способами:  
+С помощью этой команды можно создать как суб-аккаунт, так и аккаунт с коротким именем, например, alice.near или alice.testnet (в сети testnet).
+Ключи доступа к создаваемому аккаунту можно добавить несколькими способами:
 - [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
 - [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
 - [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
@@ -546,7 +547,7 @@ Transaction ID: DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 To see the transaction in the transaction explorer, please open this url in your browser:
 https://explorer.testnet.near.org/transactions/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json 
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json
 The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet.json"
 ```
 </details>
@@ -891,7 +892,7 @@ https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MG
 
 #### list-keys - View a list of access keys of an account
 
-Просмотр ключей доступа аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотр ключей доступа аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра списка ключей доступа необходимо ввести в командной строке терминала:
@@ -1229,7 +1230,7 @@ https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7
 
 #### view-near-balance - View the balance of Near tokens
 
-Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в NEAR токенах на счету аккаунта необходимо ввести в командной строке терминала:
@@ -1256,7 +1257,7 @@ fro_volod.testnet account has 169.589001320890476999999994 NEAR available for tr
 
 #### view-ft-balance - View the balance of FT tokens
 
-Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в FT токенах на счету аккаунта необходимо ввести в командной строке терминала:
@@ -1283,7 +1284,7 @@ fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usd
 
 #### view-nft-assets - View the balance of NFT tokens
 
-Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в NFT токенах на счету аккаунта необходимо ввести в командной строке терминала:
@@ -1329,6 +1330,276 @@ fro_volod.testnet account has NFT tokens:
 </a>
 </details>
 
+### staking - Manage staking: view, add and withdraw stake
+
+- [validator-list](#validator-list---View-the-list-of-validators-to-delegate)
+- [delegation](#delegation---Delegation-management)
+
+#### validator-list - View the list of validators to delegate
+
+Для просмотра списка валидаторов необходимо ввести в командной строке терминала:
+```txt
+near staking \
+    validator-list \
+    network-config mainnet
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
++-----+----------------------------------------------+----------+------------+----------------------------------------+
+| #   | Validator Id                                 | Fee      | Delegators | Stake                                  |
++-----+----------------------------------------------+----------+------------+----------------------------------------+
+| 1   | staked.poolv1.near                           |     10 % |     3207   | 44135674.18356215181482959363448 NEAR  |
+| 2   | figment.poolv1.near                          |     10 % |     1911   | 43158696.364374348313201031661037 NEAR |
+| 3   | astro-stakers.poolv1.near                    |      1 % |    11528   | 26760042.204197815051321354819805 NEAR |
+| 4   | bzam6yjpnfnxsdmjf6pw.poolv1.near             |    100 % |      772   | 23347900.996610021010359525969384 NEAR |
+| 5   | zavodil.poolv1.near                          |      1 % |     7116   | 20700903.223980192761611953425855 NEAR |
+| 6   | binancenode1.poolv1.near                     |      5 % |     1250   | 14209385.916611355199355410152982 NEAR |
+| 7   | staking_yes_protocol1.poolv1.near            |    100 % |       65   | 13590245.381034035922399111793022 NEAR |
+| 8   | pinnacle1.poolv1.near                        |    100 % |        4   | 13509874.537453205747773186007329 NEAR |
+| 9   | priory.poolv1.near                           |    100 % |       15   | 12727257.514716521676379711750814 NEAR |
+| 10  | stake1.poolv1.near                           |      3 % |      754   | 12449700.095021989100340879377004 NEAR |
+| 11  | mockingbird.poolv1.near                      |    100 % |       28   | 11501759.018634341466180769487983 NEAR |
+| 12  | dqw9k3e4422cxt92masmy.poolv1.near            |    100 % |       36   | 11122519.385245577197951932017032 NEAR |
+| 13  | flipside.pool.near                           |    100 % |        9   | 11087540.718366137730589600283212 NEAR |
+| 14  | sweat_validator.poolv1.near                  |    100 % |      112   | 10900424.272450229667472212076621 NEAR |
+| 15  | epic.poolv1.near                             |      1 % |     5363   | 10769900.629411406438519703653828 NEAR |
+| 16  | future_is_near.poolv1.near                   |      9 % |      355   | 10243082.132364573976720438585765 NEAR |
+| 17  | cosmose.poolv1.near                          |    100 % |       10   | 10064982.806109296980776431396738 NEAR |
+| 18  | aurora.pool.near                             |     99 % |     3301   | 9298278.181302142009939675438401 NEAR  |
+...
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/IYG8qgo3bdXHrgnyJL443gw6L?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/IYG8qgo3bdXHrgnyJL443gw6L.png" width="836"/>
+</a>
+</details>
+
+#### delegation - Delegation management
+
+- [view-balance](#View-the-total-balance-for-a-given-account)
+- [deposit-and-stake](#deposit-and-stake---Deposits-the-attached-amount-into-the-inner-account-of-the-predecessor-and-stakes-it)
+- [stake](#stake---Staking-the-given-amount-from-the-inner-account-of-the-predecessor)
+- [stake-all](#stake-all---Staking-all-available-unstaked-balance-from-the-inner-account-of-the-predecessor)
+- [unstake](#unstake---Unstaking-the-given-amount-from-the-inner-account-of-the-predecessor)
+- [unstake-all](#unstake-all---Unstaking-all-staked-balance-from-the-inner-account-of-the-predecessor)
+- [withdraw](#withdraw---Withdrawing-the-non-staked-balance-for-given-account)
+- [withdraw-all](#withdraw-all---Withdrawing-the-entire-unstaked-balance-from-the-predecessor-account)
+
+##### view-balance - View the delegated stake balance for a given account
+
+Для просмотра порученного баланса аккаунта в общий фонд валидатора необходимо ввести в командной строке терминала:
+
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    view-balance aurora.pool.f863973.m0 \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Delegated stake balance with validator <aurora.pool.f863973.m0> by <volodymyr.testnet>:
+      Staked balance:           38.021465232511349340052266 NEAR
+      Unstaked balance:          0.000000000000000000000001 NEAR
+      Total balance:            38.021465232511349340052267 NEAR
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/2ZFe7ILJOoJCHYPYSnv7JBBFy?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/2ZFe7ILJOoJCHYPYSnv7JBBFy.png" width="836"/>
+</a>
+</details>
+
+##### deposit-and-stake - Delegate NEAR tokens to a validator's staking pool
+
+Чтобы поручить ваши NEAR токены в общий фонд одного из валидаторов и получения наград, передайте ваши NEAR токены и переведите их в ставку валидатора, используя следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, указать желаемое количество NEAR токенов, а также выбрать идентификатор аккаунта валидатора):
+
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    deposit-and-stake '15 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully deposited and staked 15 NEAR on <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/tTwzlj0FszzXEh36aP6ZaTdhG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/tTwzlj0FszzXEh36aP6ZaTdhG.png" width="836"/>
+</a>
+</details>
+
+##### stake - Delegate a certain amount of previously deposited or unstaked NEAR tokens to a validator's staking pool
+
+Чтобы поручить ваши NEAR токены в общий фонд одного из валидаторов и получения наград, переведите раннее переданные NEAR токены в ставку валидатора, используя следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, указать желаемое количество NEAR токенов, а также выбрать идентификатор аккаунта валидатора):
+
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    stake '5 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully stake 5 NEAR on <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/10T84aFMiJSYLv3shBEsql68L?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/10T84aFMiJSYLv3shBEsql68L.png" width="836"/>
+</a>
+</details>
+
+##### stake-all - Delegate all previously deposited or unstaked NEAR tokens to a validator's staking pool
+
+Чтобы поручить ваши NEAR токены в общий фонд одного из валидаторов и получения наград, переведите все раннее переданные NEAR токены в ставку валидатора, используя следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, а также выбрать идентификатор аккаунта валидатора):
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    stake-all aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully stake the entire amount on <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/bhUAfnDCnt9U2XQLeY46sbTWR?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/bhUAfnDCnt9U2XQLeY46sbTWR.png" width="836"/>
+</a>
+</details>
+
+##### unstake - Unstake a certain amount of delegated NEAR tokens from a avalidator's staking pool
+
+Чтобы отменить определённую часть ставки, совершённую через общий фонд валидатора, используйте следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, указать желаемое количество NEAR токенов, а также выбрать идентификатор аккаунта валидатора):
+
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    unstake '7 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully unstake 7 NEAR from <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/vOJusmeGFwrofAKN6wd2Q3a5w?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/vOJusmeGFwrofAKN6wd2Q3a5w.png" width="836"/>
+</a>
+</details>
+
+##### unstake-all - Unstake all delegated NEAR tokens from a avalidator's staking pool
+
+Чтобы отменить всю ставку, совершённую через общий фонд валидатора, используйте следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, а также выбрать идентификатор аккаунта валидатора):
+
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    unstake-all aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully unstake the entire amount from <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/FgEjwrSlSHjIXeUBZGyl1O6vG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/FgEjwrSlSHjIXeUBZGyl1O6vG.png" width="836"/>
+</a>
+</details>
+
+##### withdraw - Withdraw a certain amount of unstaked NEAR tokens from a avalidator's staking pool
+
+Чтобы получить ваши раннее порученные NEAR токены и награды из общего фонда валидатора после того как ставка была снята и прошло 4 эпохи, используйте следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, указать желаемое количество NEAR токенов, а также выбрать идентификатор аккаунта валидатора):
+
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    withdraw '3 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Error:
+   0: <volodymyr.testnet> can't withdraw tokens in the current epoch.
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/U4V6CUJU0vG0dJhT4igXyrJpk?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/U4V6CUJU0vG0dJhT4igXyrJpk.png" width="836"/>
+</a>
+</details>
+
+##### withdraw-all - Withdraw all unstaked NEAR tokens from a avalidator's staking pool
+
+Чтобы получить все ваши раннее порученные NEAR токены и награды из общего фонда валидатора после того как ставка была снята и прошло 4 эпохи, используйте следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, а также выбрать идентификатор аккаунта валидатора):
+
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    withdraw-all aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Error:
+   0: <volodymyr.testnet> can't withdraw tokens in the current epoch.
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/5ql7FP93TM2whN2kyVYxBCtYy?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/5ql7FP93TM2whN2kyVYxBCtYy.png" width="836"/>
+</a>
+</details>
+
 ### contract - Manage smart-contracts: deploy code, call functions
 
 - [call-function](#call-function---Execute-function-contract-method)
@@ -1343,7 +1614,7 @@ fro_volod.testnet account has NFT tokens:
 
 ##### as-read-only - Calling a view method
 
-Просмотр данных возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотр данных возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для выполнения этой команды необходимо ввести в командной строке терминала:
@@ -1460,7 +1731,7 @@ https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7
 
 #### download-wasm - Download wasm
 
-Скачать файл контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Скачать файл контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для получения файла контракта необходимо ввести в командной строке терминала:
@@ -1487,8 +1758,8 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 
 #### view-storage - View contract storage state
 
-Просмотреть значения ключей контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
-Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).  
+Просмотреть значения ключей контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 Сами же ключи можно просмотреть все (***all***) или отфильтрованные с помощью  ***keys-start-with-string*** или ***keys-start-with-bytes-as-base64***.
 
 Для просмотра ключей контракта необходимо ввести в командной строке терминала:
@@ -1714,7 +1985,7 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </details>
 
 #### construct-transaction - Construct a new transaction
-  
+
 Рассмотрим пример, когда необходимо выполнить несколько действий в рамках одной транзакции:
 1. Создать аккаунт
 2. Добавить созданному аккаунту ключи доступа
@@ -1729,7 +2000,7 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </details>
 
 #### sign-transaction - Sign previously prepared unsigned transaction
-  
+
 Рассмотрим пример, применив возможность создания транзакции в режиме _offline_:
 1. Создать транзакцию.
 2. При выборе средств подписи транзакции указать пункт _sign-later_ и следовать дальнейшим инструкциям.
@@ -1742,7 +2013,7 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </details>
 
 #### send-signed-transaction - Send a signed transaction
-  
+
 Рассмотрим предыдущий пример, применив возможности отправки подписанной транзакции транзакции:
 1. Создать транзакцию.
 2. Подписать транзакцию своими ключами доступа.
@@ -1756,7 +2027,7 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </details>
 
 #### send-meta-transaction - Act as a relayer to send a signed delegate action (meta-transaction)
-  
+
 Рассмотрим пример, применив возможности мета-транзакции:
 1. Создать транзакцию.
 2. Указать _network_ с поддержкой мета-транзакции.

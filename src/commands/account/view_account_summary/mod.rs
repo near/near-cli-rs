@@ -1,4 +1,5 @@
 use color_eyre::eyre::Context;
+use futures::{StreamExt, TryStreamExt};
 
 use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
 
@@ -26,9 +27,10 @@ impl ViewAccountSummaryContext {
             let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {
-                let rpc_query_response = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_account(&account_id, block_reference.clone())
+                let json_rpc_client = network_config.json_rpc_client();
+
+                let rpc_query_response = json_rpc_client
+                    .blocking_call_view_account(&account_id.clone(), block_reference.clone())
                     .wrap_err_with(|| {
                         format!(
                             "Failed to fetch query ViewAccount for <{}>",
@@ -51,6 +53,33 @@ impl ViewAccountSummaryContext {
                     })?
                     .access_key_list_view()?;
 
+                let validators_stake = crate::common::get_validators_stake(&json_rpc_client)?;
+
+                let runtime = tokio::runtime::Builder::new_multi_thread()
+                    .enable_all()
+                    .build()?;
+                let concurrency = 10;
+                let delegated_stake: std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken> = runtime
+                    .block_on(
+                        futures::stream::iter(validators_stake.into_keys())
+                        .map(|validator_account_id| async {
+                            let balance = get_delegated_staked_balance(&json_rpc_client, block_reference, &validator_account_id, &account_id).await?;
+                            Ok::<_, color_eyre::eyre::Report>((
+                                validator_account_id,
+                                balance,
+                            ))
+                        })
+                        .buffer_unordered(concurrency)
+                        .filter(|balance_result| futures::future::ready(
+                            if let Ok((_, balance)) = balance_result {
+                                !balance.is_zero()
+                            } else {
+                                true
+                            }
+                        ))
+                        .try_collect(),
+                    )?;
+
                 let contract_account_id = network_config.get_near_social_account_id_from_network()?;
 
                 let social_db = network_config
@@ -58,11 +87,9 @@ impl ViewAccountSummaryContext {
                     .blocking_call_view_function(
                         &contract_account_id,
                         "get",
-                        serde_json::json!({
+                        serde_json::to_vec(&serde_json::json!({
                             "keys": vec![format!("{account_id}/profile/**")],
-                        })
-                        .to_string()
-                        .into_bytes(),
+                        }))?,
                         block_reference.clone(),
                     )
                     .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?
@@ -75,6 +102,7 @@ impl ViewAccountSummaryContext {
                     &rpc_query_response.block_hash,
                     &rpc_query_response.block_height,
                     &account_id,
+                    &delegated_stake,
                     &account_view,
                     &access_key_list.keys,
                     social_db.accounts.get(&account_id)
@@ -105,5 +133,45 @@ impl ViewAccountSummary {
             &context.config.credentials_home_dir,
             "What Account ID do you need to view?",
         )
+    }
+}
+
+async fn get_delegated_staked_balance(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    block_reference: &near_primitives::types::BlockReference,
+    staking_pool_account_id: &near_primitives::types::AccountId,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<near_token::NearToken> {
+    let account_staked_balance_response = json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: block_reference.clone(),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: staking_pool_account_id.clone(),
+                method_name: "get_account_staked_balance".to_string(),
+                args: near_primitives::types::FunctionArgs::from(serde_json::to_vec(
+                    &serde_json::json!({
+                        "account_id": account_id,
+                    }),
+                )?),
+            },
+        })
+        .await;
+    match account_staked_balance_response {
+        Ok(response) => Ok(near_token::NearToken::from_yoctonear(
+            response
+                .call_result()?
+                .parse_result_from_json::<String>()
+                .wrap_err("Failed to parse return value of view function call for String.")?
+                .parse::<u128>()?,
+        )),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
+                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
+                    ..
+                },
+            ),
+        )) => Ok(near_token::NearToken::from_yoctonear(0)),
+        Err(err) => Err(err.into()),
     }
 }

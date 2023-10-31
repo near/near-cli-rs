@@ -5,10 +5,10 @@ overview of its capabilities. This guide assumes that _near CLI_ is
 [installed](README.md#installation)
 and that readers have passing familiarity with using command line tools. This
 also assumes a Unix-like system, although most commands are probably easily
-translatable to any command line shell environment.  
+translatable to any command line shell environment.
 
 With _near CLI_ you can create, sign and send transactions in _online_ mode, which is enabled by default.
-In _offline_ mode, you can create and sign a transaction. The base64 encoding transaction can be [signed](#sign-transaction---sign-previously-prepared-unsigned-transaction) or [sent](#send-signed-transaction---send-a-signed-transaction) later (even from another computer). To enter the _offline_ mode, you need to set the ```--offline``` flag in the command: 
+In _offline_ mode, you can create and sign a transaction. The base64 encoding transaction can be [signed](#sign-transaction---sign-previously-prepared-unsigned-transaction) or [sent](#send-signed-transaction---send-a-signed-transaction) later (even from another computer). To enter the _offline_ mode, you need to set the ```--offline``` flag in the command:
 ```txt
 near --offline tokens \
     fro_volod.testnet \
@@ -30,9 +30,9 @@ Before proceeding to the description of specific commands, it is necessary to co
 
     - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
 
-        _near CLI_ will independently find access keys and sign the created transaction.  
+        _near CLI_ will independently find access keys and sign the created transaction.
         Directory with access keys defined in [config](#config---manage-connections-in-a-configuration-file).
-        The access keys must be in the _public-key.json_ file located in _/Users/user/.near-credentials/network-name/user-name/_  
+        The access keys must be in the _public-key.json_ file located in _/Users/user/.near-credentials/network-name/user-name/_
         For example, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
         <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -42,7 +42,7 @@ Before proceeding to the description of specific commands, it is necessary to co
         </details>
 
     - _sign-with-ledger - Sign the transaction with Ledger Nano device_
-    
+
         This option involves signing the created transaction using a ledger.
 
     - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
@@ -65,11 +65,11 @@ Before proceeding to the description of specific commands, it is necessary to co
 
 2. Actions with a signed transaction
 
-   _near CLI_ support for meta transactions as specified in [NEP-366](https://near.github.io/nearcore/architecture/how/meta-tx.html#meta-transactions). To create it, you just need to specify a _network_ that supports meta transactions. You can find out about such support in [config](#show-connections---Show-a-list-of-network-connections). The *meta_transaction_relayer_url* field is responsible for the ability to support meta transactions. For example:  
+   _near CLI_ support for meta transactions as specified in [NEP-366](https://near.github.io/nearcore/architecture/how/meta-tx.html#meta-transactions). To create it, you just need to specify a _network_ that supports meta transactions. You can find out about such support in [config](#show-connections---Show-a-list-of-network-connections). The *meta_transaction_relayer_url* field is responsible for the ability to support meta transactions. For example:
    ```txt
    meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
    ```
-   
+
    A signed transaction / meta transactions can be sent for immediate execution:
 
    - _send - Send the transaction to the network_
@@ -82,6 +82,7 @@ Before proceeding to the description of specific commands, it is necessary to co
 
 - [account     - Manage accounts](#account---Manage-accounts)
 - [tokens      - Manage token assets such as NEAR, FT, NFT](#tokens---Manage-token-assets-such-as-NEAR-FT-NFT)
+- [staking     - Manage staking: view, add and withdraw stake](#staking---Manage-staking-view-add-and-withdraw-stake)
 - [contract    - Manage smart-contracts: deploy code, call functions](#contract---Manage-smart-contracts-deploy-code-call-functions)
 - [transaction - Operate transactions](#transaction---Operate-transactions)
 - [config      - Manage connections in a configuration file](#config---Manage-connections-in-a-configuration-file)
@@ -245,7 +246,7 @@ near account \
     network-config testnet
 ```
 
-You will be redirected to the browser for authorization.  
+You will be redirected to the browser for authorization.
 Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testnet.mynearwallet.com/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
 ```txt
 near account \
@@ -333,7 +334,7 @@ near account \
     network-config testnet
 ```
 
-You will be redirected to the browser for authorization.  
+You will be redirected to the browser for authorization.
 Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testnet.mynearwallet.com/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
 ```txt
 near account \
@@ -391,9 +392,9 @@ Here is the private key for account <volodymyr.testnet>: ed25519:4TKr1c7p...y7p8
 
 #### sponsor-by-faucet-service - I would like the faucet service sponsor to cover the cost of creating an account (testnet only for now)
 
-testnet has a faucet (helper service) that can sponsor account creation.  
-When adding your own network in the [add-connection](#add-connection---Add-a-network-connection) configurator, you can specify your service in the *faucet_url* field.  
-Access keys to the created account can be added in several ways:  
+testnet has a faucet (helper service) that can sponsor account creation.
+When adding your own network in the [add-connection](#add-connection---Add-a-network-connection) configurator, you can specify your service in the *faucet_url* field.
+Access keys to the created account can be added in several ways:
 - [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
 - [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
 - [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
@@ -516,8 +517,8 @@ https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTb
 
 #### fund-myself - I would like fund myself to cover the cost of creating an account
 
-With this command, you can create both a sub account and a "short name" account.  
-Access keys to the created account can be added in several ways:  
+With this command, you can create both a sub account and a "short name" account.
+Access keys to the created account can be added in several ways:
 - [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
 - [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
 - [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
@@ -546,7 +547,7 @@ Transaction ID: DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 To see the transaction in the transaction explorer, please open this url in your browser:
 https://explorer.testnet.near.org/transactions/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json 
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json
 The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet.json"
 ```
 </details>
@@ -691,7 +692,7 @@ https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqAD
 ##### use-auto-generation - Use auto-generation to create an implicit account
 
 This command automatically generates access keys and saves them to a file named _implicit-account-id_.
-In order to execute this command, in the terminal command line type: 
+In order to execute this command, in the terminal command line type:
 ```txt
 near account \
     create-account \
@@ -891,7 +892,7 @@ https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MG
 
 #### list-keys - View a list of access keys of an account
 
-Viewing account access keys is possible at the current time (***now***) and at a certain point in the past by specifying a block (***at-block-height*** or ***at-block-hash***).  
+Viewing account access keys is possible at the current time (***now***) and at a certain point in the past by specifying a block (***at-block-height*** or ***at-block-hash***).
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view the list of access keys, type the following in the terminal command line:
@@ -1227,7 +1228,7 @@ https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7
 
 #### view-near-balance - View the balance of Near tokens
 
-Viewing the account balance is possible at the current time (***now***) and at a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).  
+Viewing the account balance is possible at the current time (***now***) and at a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view the amount in NEAR tokens on the account, type the following in the terminal command line:
@@ -1254,7 +1255,7 @@ fro_volod.testnet account has 169.589001320890476999999994 NEAR available for tr
 
 #### view-ft-balance - View the balance of FT tokens
 
-Viewing the account balance is possible at the current time (***now***) and at a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).  
+Viewing the account balance is possible at the current time (***now***) and at a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view funds in FT tokens on the account, type the following in the terminal command line:
@@ -1281,7 +1282,7 @@ fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usd
 
 #### view-nft-assets - View the balance of NFT tokens
 
-Viewing the account balance is possible at the current time (***now***) and at a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).  
+Viewing the account balance is possible at the current time (***now***) and at a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view funds in NFT tokens on the account, type the following in the terminal command line:
@@ -1327,6 +1328,267 @@ fro_volod.testnet account has NFT tokens:
 </a>
 </details>
 
+### staking - Manage staking: view, deposit, and withdraw delegated stake
+
+- [validator-list](#validator-list---View-the-list-of-validators-to-delegate)
+- [delegation](#delegation---Delegation-management)
+
+#### validator-list - View the list of validators to delegate
+
+To view a list of validators, enter at the terminal command line:
+```txt
+near staking \
+    validator-list \
+    network-config mainnet
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
++-----+----------------------------------------------+----------+------------+----------------------------------------+
+| #   | Validator Id                                 | Fee      | Delegators | Stake                                  |
++-----+----------------------------------------------+----------+------------+----------------------------------------+
+| 1   | staked.poolv1.near                           |     10 % |     3207   | 44135674.18356215181482959363448 NEAR  |
+| 2   | figment.poolv1.near                          |     10 % |     1911   | 43158696.364374348313201031661037 NEAR |
+| 3   | astro-stakers.poolv1.near                    |      1 % |    11528   | 26760042.204197815051321354819805 NEAR |
+| 4   | bzam6yjpnfnxsdmjf6pw.poolv1.near             |    100 % |      772   | 23347900.996610021010359525969384 NEAR |
+| 5   | zavodil.poolv1.near                          |      1 % |     7116   | 20700903.223980192761611953425855 NEAR |
+| 6   | binancenode1.poolv1.near                     |      5 % |     1250   | 14209385.916611355199355410152982 NEAR |
+| 7   | staking_yes_protocol1.poolv1.near            |    100 % |       65   | 13590245.381034035922399111793022 NEAR |
+| 8   | pinnacle1.poolv1.near                        |    100 % |        4   | 13509874.537453205747773186007329 NEAR |
+| 9   | priory.poolv1.near                           |    100 % |       15   | 12727257.514716521676379711750814 NEAR |
+| 10  | stake1.poolv1.near                           |      3 % |      754   | 12449700.095021989100340879377004 NEAR |
+| 11  | mockingbird.poolv1.near                      |    100 % |       28   | 11501759.018634341466180769487983 NEAR |
+| 12  | dqw9k3e4422cxt92masmy.poolv1.near            |    100 % |       36   | 11122519.385245577197951932017032 NEAR |
+| 13  | flipside.pool.near                           |    100 % |        9   | 11087540.718366137730589600283212 NEAR |
+| 14  | sweat_validator.poolv1.near                  |    100 % |      112   | 10900424.272450229667472212076621 NEAR |
+| 15  | epic.poolv1.near                             |      1 % |     5363   | 10769900.629411406438519703653828 NEAR |
+| 16  | future_is_near.poolv1.near                   |      9 % |      355   | 10243082.132364573976720438585765 NEAR |
+| 17  | cosmose.poolv1.near                          |    100 % |       10   | 10064982.806109296980776431396738 NEAR |
+| 18  | aurora.pool.near                             |     99 % |     3301   | 9298278.181302142009939675438401 NEAR  |
+...
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/IYG8qgo3bdXHrgnyJL443gw6L?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/IYG8qgo3bdXHrgnyJL443gw6L.png" width="836"/>
+</a>
+</details>
+
+#### delegation - Stake delegation management
+
+- [view-balance](#view-balance---View-the-delegated-stake-balance-for-a-given-account)
+- [deposit-and-stake](#deposit-and-stake---Delegate-NEAR-tokens-to-a-validator's-staking-pool)
+- [stake](#stake---Delegate-a-certain-amount-of-previously-deposited-or-unstaked-NEAR-tokens-to-a-validator's-staking-pool)
+- [stake-all](#stake-all---Delegate-all-previously-deposited-or-unstaked-NEAR-tokens-to-a-validator's-staking-pool)
+- [unstake](#unstake---Unstake-a-certain-amount-of-delegated-NEAR-tokens-from-a-avalidator's-staking-pool)
+- [unstake-all](#unstake-all---Unstake-all-delegated-NEAR-tokens-from-a-avalidator's-staking-pool)
+- [withdraw](#withdraw---Withdraw-a-certain-amount-of-unstaked-NEAR-tokens-from-a-avalidator's-staking-pool)
+- [withdraw-all](#withdraw-all---Withdraw-all-unstaked-NEAR-tokens-from-a-avalidator's-staking-pool)
+
+##### view-balance - View the delegated stake balance for a given account
+
+To view the delegated stake account balance on a validator staking pool, enter at the terminal command line:
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    view-balance aurora.pool.f863973.m0 \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Delegated stake balance with validator <aurora.pool.f863973.m0> by <volodymyr.testnet>:
+      Staked balance:           38.021465232511349340052266 NEAR
+      Unstaked balance:          0.000000000000000000000001 NEAR
+      Total balance:            38.021465232511349340052267 NEAR
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/2ZFe7ILJOoJCHYPYSnv7JBBFy?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/2ZFe7ILJOoJCHYPYSnv7JBBFy.png" width="836"/>
+</a>
+</details>
+
+##### deposit-and-stake - Delegate NEAR tokens to a validator's staking pool
+
+To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, deposit NEAR tokens and stake with a selected staking pool, you may use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to deposit and stake, and choose the staking pool account id):
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    deposit-and-stake '15 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully delegated 15 NEAR to stake with <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/tTwzlj0FszzXEh36aP6ZaTdhG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/tTwzlj0FszzXEh36aP6ZaTdhG.png" width="836"/>
+</a>
+</details>
+
+##### stake - Delegate a certain amount of previously deposited or unstaked NEAR tokens to a validator's staking pool
+
+To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, stake deposited NEAR tokens with a selected staking pool. You may use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to stake, choose the staking pool account id, and use the appropriate network):
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    stake '5 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully delegated 5 NEAR to stake with <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/10T84aFMiJSYLv3shBEsql68L?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/10T84aFMiJSYLv3shBEsql68L.png" width="836"/>
+</a>
+</details>
+
+##### stake-all - Delegate all previously deposited or unstaked NEAR tokens to a validator's staking pool
+
+To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, stake all previosly deposited or unstaked NEAR tokens with a selected staking pool. You may use the following command (note that you need to use your own account id, and choose the staking pool account id):
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    stake-all aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully delegated all previously unstaked NEAR tokens to stake with <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/bhUAfnDCnt9U2XQLeY46sbTWR?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/bhUAfnDCnt9U2XQLeY46sbTWR.png" width="836"/>
+</a>
+</details>
+
+##### unstake - Unstake a certain amount of delegated NEAR tokens from a avalidator's staking pool
+
+To unstake your delegated NEAR tokens from a staking pool, you can use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to unstake, and choose the staking pool account id):
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    unstake '7 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully unstaked 7 NEAR from <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/vOJusmeGFwrofAKN6wd2Q3a5w?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/vOJusmeGFwrofAKN6wd2Q3a5w.png" width="836"/>
+</a>
+</details>
+
+##### unstake-all - Unstake all delegated NEAR tokens from a avalidator's staking pool
+
+To unstake your delegated NEAR tokens from a staking pool, you can use the following command (note that you need to use your own account id, and choose the staking pool account id):
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    unstake-all aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully unstaked the entire amount from <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/FgEjwrSlSHjIXeUBZGyl1O6vG?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/FgEjwrSlSHjIXeUBZGyl1O6vG.png" width="836"/>
+</a>
+</details>
+
+##### withdraw - Withdraw a certain amount of unstaked NEAR tokens from a avalidator's staking pool
+
+To withdraw your delegated NEAR tokens from a staking pool after you unstaked and waited for 4 epochs, you can use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to withdraw, and choose the staking pool account id):
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    withdraw '3 NEAR' aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully withdrawn 3 NEAR from <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/U4V6CUJU0vG0dJhT4igXyrJpk?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/U4V6CUJU0vG0dJhT4igXyrJpk.png" width="836"/>
+</a>
+</details>
+
+##### withdraw-all - Withdraw all unstaked NEAR tokens from a avalidator's staking pool
+
+To withdraw all your delegated NEAR tokens from a staking pool after you unstaked them and waited for 4 epochs, you can use the following command (note that you need to use your own account id, and choose the staking pool account id):
+```txt
+near staking \
+    delegation volodymyr.testnet \
+    withdraw-all aurora.pool.f863973.m0 \
+    network-config testnet \
+    sign-with-legacy-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+<volodymyr.testnet> has successfully withdrawn the entire amount from <aurora.pool.f863973.m0>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/5ql7FP93TM2whN2kyVYxBCtYy?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/5ql7FP93TM2whN2kyVYxBCtYy.png" width="836"/>
+</a>
+</details>
+
 ### contract - Manage smart-contracts: deploy code, call functions
 
 - [call-function](#call-function---Execute-function-contract-method)
@@ -1341,7 +1603,7 @@ fro_volod.testnet account has NFT tokens:
 
 ##### as-read-only - Calling a view method
 
-Viewing data is possible at the current time (***now***) and at a certain point in the past by specifying a block (***at-block-height*** or ***at-block-hash***).  
+Viewing data is possible at the current time (***now***) and at a certain point in the past by specifying a block (***at-block-height*** or ***at-block-hash***).
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To run this command, type the following in the terminal command line:
@@ -1458,7 +1720,7 @@ https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7
 
 #### download-wasm - Download wasm
 
-You can download the contract file for the current moment (***now***) and for a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).  
+You can download the contract file for the current moment (***now***) and for a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 In order to get the contract file, type the following in the terminal command line:
@@ -1485,8 +1747,8 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 
 #### view-storage - View contract storage state
 
-You can view the contract key values at the current moment in time (***now***) and at a certain point in the past by specifying a block (***at-block-height*** or ***at-block-hash***).  
-Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).  
+You can view the contract key values at the current moment in time (***now***) and at a certain point in the past by specifying a block (***at-block-height*** or ***at-block-hash***).
+Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 The keys themselves can be viewed all (***all***) or filtered using ***keys-start-with-string*** or ***keys-start-with-bytes-as-base64***.
 
 To view contract keys, enter at the terminal command line:
@@ -1712,7 +1974,7 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </details>
 
 #### construct-transaction - Construct a new transaction
-  
+
 Let's consider an example when it is necessary to perform several actions within one transaction:
 1. Create an account
 2. Add access keys to the created account
@@ -1727,7 +1989,7 @@ To do this, we will use the transaction constructor:
 </details>
 
 #### sign-transaction - Sign previously prepared unsigned transaction
-  
+
 Consider an example of using the ability to create a transaction in _offline_:
 1. Create a transaction.
 2. When choosing how to sign a transaction, select the _sign later_ option and follow the instructions.
@@ -1740,7 +2002,7 @@ Consider an example of using the ability to create a transaction in _offline_:
 </details>
 
 #### send-signed-transaction - Send a signed transaction
-  
+
 Let's look at the previous example, using the capabilities of sending a signed transaction:
 1. Create a transaction.
 2. Sign the transaction with your access keys.
@@ -1754,7 +2016,7 @@ Let's look at the previous example, using the capabilities of sending a signed t
 </details>
 
 #### send-meta-transaction - Act as a relayer to send a signed delegate action (meta-transaction)
-  
+
 Consider an example of using metatransaction functions:
 1. Create a transaction.
 2. Specify a _network_ that supports meta-transactions.

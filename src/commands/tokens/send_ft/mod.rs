@@ -71,12 +71,10 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: "ft_transfer".to_string(),
-                                args: json!({
+                                args: serde_json::to_vec(&json!({
                                     "receiver_id": receiver_account_id.to_string(),
                                     "amount": item.amount.to_string()
-                                })
-                                .to_string()
-                                .into_bytes(),
+                                }))?,
                                 gas: item.gas.as_gas(),
                                 deposit: item.deposit.as_yoctonear(),
                             },

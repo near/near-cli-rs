@@ -72,12 +72,10 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
                             near_primitives::transaction::FunctionCallAction {
                                 method_name: "nft_transfer".to_string(),
-                                args: json!({
+                                args: serde_json::to_vec(&json!({
                                     "receiver_id": receiver_account_id.to_string(),
                                     "token_id": token_id
-                                })
-                                .to_string()
-                                .into_bytes(),
+                                }))?,
                                 gas: item.gas.as_gas(),
                                 deposit: item.deposit.as_yoctonear(),
                             },
