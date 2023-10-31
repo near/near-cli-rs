@@ -82,8 +82,6 @@ impl Stake {
     pub fn input_validator_account_id(
         context: &super::StakeDelegationContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_delegated_validator_account_id_from_used_delegated_validator_list(
-            &context.global_context.config,
-        )
+        crate::common::input_staking_pool_validator_account_id(&context.global_context.config)
     }
 }

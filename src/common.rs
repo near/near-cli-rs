@@ -1270,19 +1270,16 @@ fn is_executable<P: AsRef<std::path::Path>>(path: P) -> bool {
 }
 
 fn path_directories() -> Vec<std::path::PathBuf> {
-    let mut dirs = vec![];
     if let Some(val) = std::env::var_os("PATH") {
-        dirs.extend(std::env::split_paths(&val));
+        std::env::split_paths(&val).collect()
+    } else {
+        Vec::new()
     }
-    dirs
 }
 
 pub fn get_delegated_validator_list_from_mainnet(
     network_connection: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
 ) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
-    let mut delegated_validator_list: std::collections::BTreeSet<
-        near_primitives::types::AccountId,
-    > = std::collections::BTreeSet::new();
     let network_config = network_connection.get("mainnet").expect("Internal error!");
 
     let epoch_validator_info = network_config
@@ -1294,19 +1291,23 @@ pub fn get_delegated_validator_list_from_mainnet(
         )
         .wrap_err("Failed to get epoch validators information request.")?;
 
-    for current_proposal in epoch_validator_info.current_proposals {
-        delegated_validator_list.insert(current_proposal.take_account_id());
-    }
-
-    for current_validator in epoch_validator_info.current_validators {
-        delegated_validator_list.insert(current_validator.account_id);
-    }
-
-    for next_validator in epoch_validator_info.next_validators {
-        delegated_validator_list.insert(next_validator.account_id);
-    }
-
-    Ok(delegated_validator_list)
+    Ok(epoch_validator_info
+        .current_proposals
+        .into_iter()
+        .map(|current_proposal| current_proposal.take_account_id())
+        .chain(
+            epoch_validator_info
+                .current_validators
+                .into_iter()
+                .map(|current_validator| current_validator.account_id),
+        )
+        .chain(
+            epoch_validator_info
+                .next_validators
+                .into_iter()
+                .map(|next_validator| next_validator.account_id),
+        )
+        .collect())
 }
 
 pub fn get_used_delegated_validator_list(
@@ -1329,7 +1330,7 @@ pub fn get_used_delegated_validator_list(
     Ok(used_delegated_validator_list)
 }
 
-pub fn input_delegated_validator_account_id_from_used_delegated_validator_list(
+pub fn input_staking_pool_validator_account_id(
     config: &crate::config::Config,
 ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
     let used_delegated_validator_list = get_used_delegated_validator_list(config)?
@@ -1426,49 +1427,33 @@ pub fn get_validators_stake(
         )
         .wrap_err("Failed to get epoch validators information request.")?;
 
-    let current_proposals = epoch_validator_info.current_proposals;
-    let current_proposals_stake: std::collections::HashMap<
-        near_primitives::types::AccountId,
-        near_primitives::types::Balance,
-    > = current_proposals
+    Ok(epoch_validator_info
+        .current_proposals
         .into_iter()
         .map(|validator_stake_view| {
             let validator_stake = validator_stake_view.into_validator_stake();
             validator_stake.account_and_stake()
         })
-        .collect();
-
-    let current_validators = epoch_validator_info.current_validators;
-    let mut current_validators_stake: std::collections::HashMap<
-        near_primitives::types::AccountId,
-        near_primitives::types::Balance,
-    > = current_validators
-        .into_iter()
-        .map(|current_epoch_validator_info| {
-            (
-                current_epoch_validator_info.account_id,
-                current_epoch_validator_info.stake,
-            )
-        })
-        .collect();
-
-    let next_validators = epoch_validator_info.next_validators;
-    let next_validators_stake: std::collections::HashMap<
-        near_primitives::types::AccountId,
-        near_primitives::types::Balance,
-    > = next_validators
-        .into_iter()
-        .map(|next_epoch_validator_info| {
-            (
-                next_epoch_validator_info.account_id,
-                next_epoch_validator_info.stake,
-            )
-        })
-        .collect();
-
-    current_validators_stake.extend(next_validators_stake);
-    current_validators_stake.extend(current_proposals_stake);
-    Ok(current_validators_stake)
+        .chain(epoch_validator_info.current_validators.into_iter().map(
+            |current_epoch_validator_info| {
+                (
+                    current_epoch_validator_info.account_id,
+                    current_epoch_validator_info.stake,
+                )
+            },
+        ))
+        .chain(
+            epoch_validator_info
+                .next_validators
+                .into_iter()
+                .map(|next_epoch_validator_info| {
+                    (
+                        next_epoch_validator_info.account_id,
+                        next_epoch_validator_info.stake,
+                    )
+                }),
+        )
+        .collect())
 }
 
 async fn get_staking_pool_info(
