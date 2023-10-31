@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0](https://github.com/near/near-cli-rs/compare/v0.6.2...v0.7.0) - 2023-10-31
+
+### Added
+- New command: staking - delegation ([#227](https://github.com/near/near-cli-rs/pull/227))
+
+### Other
+- Refactored NEAR tokens usages to use a strictly typed near-token crate ([#253](https://github.com/near/near-cli-rs/pull/253))
+
 ## [0.6.2](https://github.com/near/near-cli-rs/compare/v0.6.1...v0.6.2) - 2023-10-17
 
 ### Added
