@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, clap::Parser)]
 /// This is a legacy `dev-deploy` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct DevDeployArgs {
-    file_path: Option<String>,
+    wasm_file_path: Option<String>,
     #[clap(long, aliases = ["wasm_file", "wasmFile"])]
     wasm_file: Option<String>,
     #[clap(long, aliases = ["init_function", "initFunction"])]
