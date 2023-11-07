@@ -62,6 +62,7 @@ impl JsCmd {
         let network_config = std::env::var("NEAR_ENV").unwrap_or_else(|_| "testnet".to_owned());
         let message = "The command you tried to run is deprecated in the new NEAR CLI, but we tried our best to match the old command with the new syntax, try it instead:".to_string();
         let near_validator_extension_message = "The command you tried to run has been moved into its own CLI extension called near-validator.\nPlease, follow the installation instructions here: https://github.com/near-cli-rs/near-validator-cli-rs/blob/master/README.md\nThen run the following command:".to_string();
+        let err_message = "The command you tried to run is deprecated in the new NEAR CLI and there is no equivalent command in the new NEAR CLI.".to_string();
         match self {
             Self::CreateAccount(create_account_args) => Ok((create_account_args.to_cli_args(network_config), message)),
             Self::State(state_args) => Ok((state_args.to_cli_args(network_config), message)),
@@ -69,15 +70,18 @@ impl JsCmd {
             Self::Keys(keys_args) => Ok((keys_args.to_cli_args(network_config), message)),
             Self::TxStatus(tx_status_args) => Ok((tx_status_args.to_cli_args(network_config), message)),
             Self::Deploy(deploy_args) => Ok((deploy_args.to_cli_args(network_config), message)),
-            Self::DevDeploy(_) => Err("`dev-deploy` command is not implemented, yet. It will be implemented in a dev extension. Meanwhile, consider using the old CLI or a standalone implementation: https://github.com/frolvanya/dev-deploy".to_string()),
+            Self::DevDeploy(dev_deploy_args) => {
+                dev_deploy_args.to_cli_args(network_config);
+                Err("".to_string())
+            },
             Self::Call(call_args) => Ok((call_args.to_cli_args(network_config), message)),
             Self::View(view_args) => Ok((view_args.to_cli_args(network_config), message)),
             Self::ViewState(view_state_args) => Ok((view_state_args.to_cli_args(network_config), message)),
             Self::Send(send_args) => Ok((send_args.to_cli_args(network_config), message)),
-            Self::Clean(_) => Err("`clean` command is not implemented, yet. It will be implemented in a dev extension. Meanwhile, keep using the old CLI.".to_string()),
+            Self::Clean(_) => Err(format!("{err_message}\n\n`clean` command is not implemented, yet. It will be implemented in a dev extension. Meanwhile, keep using the old CLI.")),
             Self::Stake(stake_args) => Ok((stake_args.to_cli_args(network_config), near_validator_extension_message)),
             Self::Login(login_args) => Ok((login_args.to_cli_args(network_config), message)),
-            Self::Repl(_) => Err("`repl` command is not implemented. Use shell scripting for the new CLI.".to_string()),
+            Self::Repl(_) => Err(format!("{err_message}\n\n`repl` command is not implemented. Use shell scripting for the new CLI.")),
             Self::GenerateKey(generate_key_args) => {
                 match generate_key_args.to_cli_args(network_config){
                     Ok(res) => Ok((res, message)),
@@ -88,16 +92,16 @@ impl JsCmd {
             Self::DeleteKey(delete_key_args) => Ok((delete_key_args.to_cli_args(network_config), message)),
             Self::Validators(validators_args) => Ok((validators_args.to_cli_args(network_config), near_validator_extension_message)),
             Self::Proposals(proposals_args) => Ok((proposals_args.to_cli_args(network_config), near_validator_extension_message)),
-            Self::EvmCall(_) => Err("`evm-call` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.".to_string()),
-            Self::EvmDevInit(_) => Err("`evm-dev-init` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.".to_string()),
-            Self::EvmView(_) => Err("`evm-view` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.".to_string()),
+            Self::EvmCall(_) => Err(format!("{err_message}\n\n`evm-call` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.")),
+            Self::EvmDevInit(_) => Err(format!("{err_message}\n\n`evm-dev-init` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.")),
+            Self::EvmView(_) => Err(format!("{err_message}\n\n`evm-view` command is not implemented, yet. It will be implemented in an evm extension. Meanwhile, keep using the old CLI.")),
             Self::SetApiKey(set_api_key_args) => {
                 match set_api_key_args.to_cli_args(network_config){
                     Ok(res) => Ok((res, message)),
                     Err(err) => Err(err.to_string())
                 }
             },
-            Self::Js(_) => Err("`js` command is not implemented. Use shell scripting for the new CLI.".to_string()),
+            Self::Js(_) => Err(format!("{err_message}\n\n`js` command is not implemented. Use shell scripting for the new CLI.")),
         }
     }
 }

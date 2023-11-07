@@ -86,8 +86,6 @@ fn main() -> crate::common::CliResult {
                                 );
                             }
                             Err(err) => {
-                                eprintln!("The command you tried to run is deprecated in the new NEAR CLI and there is no equivalent command in the new NEAR CLI.");
-                                eprintln!();
                                 eprintln!("{}", err);
                             }
                         }
