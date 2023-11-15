@@ -55,7 +55,7 @@ impl StakeAllContext {
         Ok(Self(crate::commands::ActionContext {
             global_context: previous_context.global_context,
             interacting_with_account_ids: vec![
-                previous_context.account_id.clone(),
+                previous_context.account_id,
                 scope.validator_account_id.clone().into(),
             ],
             on_after_getting_network_callback,

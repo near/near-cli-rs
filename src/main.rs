@@ -75,8 +75,8 @@ fn main() -> crate::common::CliResult {
                 _ => match crate::js_command_match::JsCmd::try_parse() {
                     Ok(js_cmd) => {
                         match js_cmd.rust_command_generation() {
-                            Ok(vec_cmd) => {
-                                eprintln!("The command you tried to run is deprecated in the new NEAR CLI, but we tried our best to match the old command with the new syntax, try it instead:");
+                            Ok((vec_cmd, success_message)) => {
+                                eprintln!("{success_message}");
                                 eprintln!();
                                 eprintln!(
                                     "{}",
@@ -86,8 +86,6 @@ fn main() -> crate::common::CliResult {
                                 );
                             }
                             Err(err) => {
-                                eprintln!("The command you tried to run is deprecated in the new NEAR CLI and there is no equivalent command in the new NEAR CLI.");
-                                eprintln!();
                                 eprintln!("{}", err);
                             }
                         }
