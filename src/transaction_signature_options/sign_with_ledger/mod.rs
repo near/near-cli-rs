@@ -1,9 +1,11 @@
 use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
-use inquire::{CustomType, Text};
+use inquire::{CustomType, Select, Text};
 
+use near_ledger::OnlyBlindSigning;
 use near_primitives::borsh::BorshSerialize;
+use slip10::BIP32Path;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -44,6 +46,62 @@ pub struct SignLedgerContext {
 }
 
 impl SignLedgerContext {
+    fn input_blind_agree() -> color_eyre::eyre::Result<bool> {
+        let options: Vec<&str> = vec!["Yes", "No"];
+
+        return Ok(
+            Select::new("Do you agree to continue with blind signature? ", options)
+                .prompt()
+                .map(|selected| selected == "Yes")?,
+        );
+    }
+
+    fn blind_sign_subflow(
+        hash: OnlyBlindSigning,
+        hd_path: BIP32Path,
+        unsigned_transaction: near_primitives::transaction::Transaction,
+    ) -> color_eyre::eyre::Result<near_crypto::Signature> {
+        eprintln!("\n\nBuffer overflow on Ledger device occured. Transaction is too large for normal signature.");
+        eprintln!("\nThe following is SHA256 of unsigned transaction:");
+        eprintln!("{}", hex::encode(&hash.0));
+
+        eprintln!(
+            "\nUnsigned transaction (serialized as base64):\n{}\n",
+            crate::types::transaction::TransactionAsBase64::from(unsigned_transaction)
+        );
+        eprintln!("Before proceeding with blind signature,");
+        eprintln!("you have ability to verify unsigned transaction's details and exact SHA256 correspondence,");
+        eprintln!("if you have concerns with trust to current device,");
+        eprintln!("on another device(s) with the following helper command on near CLI:");
+        eprintln!(
+            "$ {} transaction print-unsigned-transaction\n\n",
+            crate::common::get_near_exec_path()
+        );
+
+        eprintln!("Make sure to enable blind sign in Near app's settings on Ledger device\n");
+        let agree = Self::input_blind_agree()?;
+        if agree {
+            eprintln!(
+                "Confirm transaction blind signing on your Ledger device (HD Path: {})",
+                hd_path,
+            );
+            let result = near_ledger::blind_sign_transaction(hash, hd_path);
+            let signature = result.map_err(|err| {
+                color_eyre::Report::msg(format!(
+                    "Error occurred while signing the transaction: {:?}",
+                    err
+                ))
+            })?;
+            let signature =
+                near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
+                    .expect("Signature is not expected to fail on deserialization");
+
+            Ok(signature)
+        } else {
+            Err(color_eyre::Report::msg("signing with ledger aborted"))
+        }
+    }
+
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -101,11 +159,14 @@ impl SignLedgerContext {
             unsigned_transaction
                 .try_to_vec()
                 .expect("Transaction is not expected to fail on serialization"),
-            seed_phrase_hd_path,
+            seed_phrase_hd_path.clone(),
         ) {
             Ok(signature) => {
                 near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
                     .expect("Signature is not expected to fail on deserialization")
+            }
+            Err(near_ledger::NEARLedgerError::BufferOverflow(hash)) => {
+                Self::blind_sign_subflow(hash, seed_phrase_hd_path, unsigned_transaction.clone())?
             }
             Err(near_ledger_error) => {
                 return Err(color_eyre::Report::msg(format!(

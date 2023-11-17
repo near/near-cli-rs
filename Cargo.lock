@@ -2305,14 +2305,16 @@ dependencies = [
 
 [[package]]
 name = "near-ledger"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1edfdfadf4d772ea67c11d69cdbc8b8f0e0742d88c3baac64bdcf21482f7c950"
+version = "0.3.0"
+source = "git+https://github.com/dj8yfo/near-ledger-rs.git?branch=blind_signing#4e9d0d44a7e7c51db1632e22439e865e6d42a47c"
 dependencies = [
  "ed25519-dalek",
+ "hex 0.4.3",
  "ledger-apdu",
  "ledger-transport",
  "ledger-transport-hid",
+ "log",
+ "sha2 0.10.8",
  "slip10",
 ]
 
