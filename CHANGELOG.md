@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/near/near-cli-rs/compare/v0.7.0...v0.7.1) - 2023-11-17
+
+### Added
+- add `--offline` for `sign-with-ledger` option ([#260](https://github.com/near/near-cli-rs/pull/260))
+- Updated legacy command compatibility for near-cli (JS) for dev-deploy, validators, and staking commands ([#256](https://github.com/near/near-cli-rs/pull/256))
+
 ## [0.7.0](https://github.com/near/near-cli-rs/compare/v0.6.2...v0.7.0) - 2023-10-31
 
 ### Added
