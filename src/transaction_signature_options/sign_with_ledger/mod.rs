@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use color_eyre::eyre::WrapErr;
+use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::{CustomType, Text};
 
 use near_primitives::borsh::BorshSerialize;
@@ -27,7 +27,7 @@ pub struct SignLedger {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
-    block_hash: Option<String>,
+    pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(subcommand)]
     submit: super::Submit,
 }
@@ -52,25 +52,39 @@ impl SignLedgerContext {
         let seed_phrase_hd_path: slip10::BIP32Path = scope.seed_phrase_hd_path.clone().into();
         let public_key: near_crypto::PublicKey = scope.signer_public_key.clone().into();
 
-        let rpc_query_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
-                &previous_context.prepopulated_transaction.signer_id,
-                &public_key,
-                near_primitives::types::BlockReference::latest()
+        let (nonce, block_hash) = if previous_context.global_context.offline {
+            (
+                scope
+                    .nonce
+                    .wrap_err("Nonce is required to sign a transaction in offline mode")?,
+                scope
+                    .block_hash
+                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                    .0,
             )
-            .wrap_err(
-                "Cannot sign a transaction due to an error while fetching the most recent nonce value",
-            )?;
-        let current_nonce = rpc_query_response
-            .access_key_view()
-            .wrap_err("Error current_nonce")?
-            .nonce;
+        } else {
+            let rpc_query_response = network_config
+                .json_rpc_client()
+                .blocking_call_view_access_key(
+                    &previous_context.prepopulated_transaction.signer_id,
+                    &public_key,
+                    near_primitives::types::BlockReference::latest()
+                )
+                .wrap_err(
+                    "Cannot sign a transaction due to an error while fetching the most recent nonce value",
+                )?;
+            let current_nonce = rpc_query_response
+                .access_key_view()
+                .wrap_err("Error current_nonce")?
+                .nonce;
+
+            (current_nonce + 1, rpc_query_response.block_hash)
+        };
 
         let mut unsigned_transaction = near_primitives::transaction::Transaction {
             public_key: scope.signer_public_key.clone().into(),
-            block_hash: rpc_query_response.block_hash,
-            nonce: current_nonce + 1,
+            block_hash,
+            nonce,
             signer_id: previous_context.prepopulated_transaction.signer_id,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             actions: previous_context.prepopulated_transaction.actions,
@@ -254,9 +268,14 @@ impl SignLedger {
 
     fn input_block_hash(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<String>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
         if context.global_context.offline {
-            return Ok(Some(Text::new("Enter recent block hash:").prompt()?));
+            return Ok(Some(
+                CustomType::<crate::types::crypto_hash::CryptoHash>::new(
+                    "Enter recent block hash:",
+                )
+                .prompt()?,
+            ));
         }
         Ok(None)
     }
