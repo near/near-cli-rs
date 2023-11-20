@@ -74,7 +74,7 @@ impl SignLedgerContext {
         eprintln!("if you have concerns with trust to current device,");
         eprintln!("on another device(s) with the following helper command on near CLI:");
         eprintln!(
-            "$ {} transaction print-unsigned-transaction\n\n",
+            "$ {} transaction print-transaction unsigned\n\n",
             crate::common::get_near_exec_path()
         );
 

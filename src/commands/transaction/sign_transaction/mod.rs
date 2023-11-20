@@ -23,11 +23,9 @@ impl SignTransactionContext {
                     scope.unsigned_transaction.clone().into();
 
                 move |_network_config| {
-                    Ok(crate::commands::PrepopulatedTransaction {
-                        signer_id: unsigned_transaction.signer_id.clone(),
-                        receiver_id: unsigned_transaction.receiver_id.clone(),
-                        actions: unsigned_transaction.actions.clone(),
-                    })
+                    Ok(crate::commands::PrepopulatedTransaction::from(
+                        unsigned_transaction.clone(),
+                    ))
                 }
             });
 

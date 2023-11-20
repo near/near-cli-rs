@@ -68,6 +68,16 @@ pub struct PrepopulatedTransaction {
     pub actions: Vec<near_primitives::transaction::Action>,
 }
 
+impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction {
+    fn from(value: near_primitives::transaction::Transaction) -> Self {
+        Self {
+            signer_id: value.signer_id,
+            receiver_id: value.receiver_id,
+            actions: value.actions,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct ActionContext {
     pub global_context: crate::GlobalContext,

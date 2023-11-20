@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use color_eyre::eyre::WrapErr;
 use futures::{StreamExt, TryStreamExt};
+use near_primitives::borsh::BorshSerialize;
 use prettytable::Table;
 
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
@@ -12,6 +13,7 @@ use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyP
 pub type CliResult = color_eyre::eyre::Result<()>;
 
 use inquire::{Select, Text};
+use sha2::{Digest, Sha256};
 use strum::IntoEnumIterator;
 
 pub fn get_near_exec_path() -> String {
@@ -515,6 +517,40 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         secret_keypair_str,
     };
     Ok(key_pair_properties)
+}
+
+fn compute_hash(bytes: &[u8]) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+
+    let result = hasher.finalize();
+    let mut hash = [0u8; 32];
+    hash.copy_from_slice(&result[..]);
+
+    hash
+}
+
+pub fn print_full_signed_transaction(transaction: near_primitives::transaction::SignedTransaction) {
+    eprintln!("{:<55} {}", "signature:", transaction.signature);
+    crate::common::print_full_unsigned_transaction(transaction.transaction);
+}
+
+pub fn print_full_unsigned_transaction(transaction: near_primitives::transaction::Transaction) {
+    let bytes = transaction
+        .try_to_vec()
+        .expect("Transaction is not expected to fail on serialization");
+    eprintln!(
+        "{:<55} {}\n\n",
+        "transaction payload (without signature) sha256 hash:",
+        hex::encode(&compute_hash(&bytes))
+    );
+
+    eprintln!("{:<13} {}", "public_key:", &transaction.public_key);
+    eprintln!("{:<13} {}", "nonce:", &transaction.nonce);
+    eprintln!("{:<13} {}", "block_hash:", &transaction.block_hash);
+
+    let prepopulated = crate::commands::PrepopulatedTransaction::from(transaction);
+    print_unsigned_transaction(&prepopulated);
 }
 
 pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTransaction) {
