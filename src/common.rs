@@ -531,7 +531,7 @@ fn compute_hash(bytes: &[u8]) -> [u8; 32] {
 }
 
 pub fn print_full_signed_transaction(transaction: near_primitives::transaction::SignedTransaction) {
-    eprintln!("{:<55} {}", "signature:", transaction.signature);
+    eprintln!("{:<25} {}\n", "signature:", transaction.signature);
     crate::common::print_full_unsigned_transaction(transaction.transaction);
 }
 
@@ -539,10 +539,17 @@ pub fn print_full_unsigned_transaction(transaction: near_primitives::transaction
     let bytes = transaction
         .try_to_vec()
         .expect("Transaction is not expected to fail on serialization");
+    eprintln!("transaction payload (without signature) hash:");
     eprintln!(
-        "{:<55} {}\n\n",
-        "transaction payload (without signature) sha256 hash:",
+        "{:<25} {}",
+        "SHA256 hash(hex):",
         hex::encode(&compute_hash(&bytes))
+    );
+
+    eprintln!(
+        "{:<25} {}\n\n",
+        "SHA256 hash(base58):",
+        CryptoHash::hash_bytes(&bytes)
     );
 
     eprintln!("{:<13} {}", "public_key:", &transaction.public_key);
