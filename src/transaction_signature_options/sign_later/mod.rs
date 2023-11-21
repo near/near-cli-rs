@@ -30,11 +30,10 @@ impl DisplayContext {
             actions: previous_context.prepopulated_transaction.actions,
         };
 
-        let hash_and_size = unsigned_transaction.get_hash_and_size();
-        let hash_and_size_ref = hash_and_size.0.as_ref();
-        let hash_to_sign_hex = hex::encode(hash_and_size_ref);
-
-        eprintln!("\nHash to sign:\n{}", hash_to_sign_hex);
+        eprintln!(
+            "\nTransaction hash to sign:\n{}",
+            hex::encode(unsigned_transaction.get_hash_and_size().0)
+        );
 
         eprintln!(
             "\nUnsigned transaction (serialized as base64):\n{}\n",
