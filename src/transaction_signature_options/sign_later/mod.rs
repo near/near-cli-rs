@@ -31,6 +31,11 @@ impl DisplayContext {
         };
 
         eprintln!(
+            "\nTransaction hash to sign:\n{}",
+            hex::encode(unsigned_transaction.get_hash_and_size().0)
+        );
+
+        eprintln!(
             "\nUnsigned transaction (serialized as base64):\n{}\n",
             crate::types::transaction::TransactionAsBase64::from(unsigned_transaction)
         );
