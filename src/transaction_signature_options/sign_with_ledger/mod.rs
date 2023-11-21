@@ -87,10 +87,24 @@ impl SignLedgerContext {
             );
             let result = near_ledger::blind_sign_transaction(hash, hd_path);
             let signature = result.map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Error occurred while signing the transaction: {:?}",
-                    err
-                ))
+                match err {
+                    near_ledger::NEARLedgerError::BlindSignatureDisabled => {
+                        color_eyre::Report::msg(format!(
+                            "Blind signature is disabled in NEAR app's settings on Ledger device",
+                        ))
+                    },
+                    near_ledger::NEARLedgerError::BlindSignatureNotSupported => {
+                        color_eyre::Report::msg(format!(
+                            "Blind signature is not supported by the version of NEAR app installed on Ledger device",
+                        ))
+                    },
+                    err @ _  => {
+                        color_eyre::Report::msg(format!(
+                            "Error occurred while signing the transaction: {:?}",
+                            err
+                        ))
+                    }
+                }
             })?;
             let signature =
                 near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
