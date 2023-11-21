@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2](https://github.com/near/near-cli-rs/compare/v0.7.1...v0.7.2) - 2023-11-21
+
+### Added
+- Show hash-to-sign when using the sign_later transaction signature option ([#261](https://github.com/near/near-cli-rs/pull/261))
+
 ## [0.7.1](https://github.com/near/near-cli-rs/compare/v0.7.0...v0.7.1) - 2023-11-17
 
 ### Added
