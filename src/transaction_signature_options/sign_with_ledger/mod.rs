@@ -71,8 +71,8 @@ impl SignLedgerContext {
         );
         eprintln!("Before proceeding with blind signature,");
         eprintln!("you have ability to verify unsigned transaction's details and exact SHA256 correspondence,");
-        eprintln!("if you have concerns with trust to current device,");
-        eprintln!("on another device(s) with the following helper command on near CLI:");
+        eprintln!("if you have concerns with trust to current computer, where near CLI command is being run,");
+        eprintln!("on another computer(s) with the following helper command on near CLI:");
         eprintln!(
             "$ {} transaction print-transaction unsigned\n\n",
             crate::common::get_near_exec_path()
