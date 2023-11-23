@@ -3,7 +3,7 @@ use std::str::FromStr;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub type OnAfterGettingBlockReferenceCallback =
-    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig, &BlockReference) -> crate::CliResult>;
+    std::rc::Rc<dyn Fn(&crate::config::NetworkConfig, &BlockReference) -> crate::CliResult>;
 
 #[derive(Clone)]
 pub struct ArgsForViewContext {

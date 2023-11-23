@@ -20,7 +20,7 @@ impl SaveWithLedgerContext {
         _scope: &<SaveWithLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_folder_path_callback: super::OnAfterGettingFolderPathCallback =
-            std::sync::Arc::new({
+            std::rc::Rc::new({
                 move |folder_path| {
                     let seed_phrase_hd_path = crate::transaction_signature_options::sign_with_ledger::SignLedger::input_seed_phrase_hd_path()?.unwrap();
                     eprintln!(

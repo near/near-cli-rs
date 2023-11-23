@@ -22,7 +22,7 @@ impl SaveKeypairToKeychainContext {
 impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
     fn from(item: SaveKeypairToKeychainContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new({
+            std::rc::Rc::new({
                 let signer_account_id = item.0.signer_account_id.clone();
 
                 move |_network_config| {
@@ -42,7 +42,7 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                 }
             });
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
-            std::sync::Arc::new(
+            std::rc::Rc::new(
                 move |signed_transaction, network_config, storage_message| {
                     *storage_message = crate::common::save_access_key_to_keychain(
                         network_config.clone(),
@@ -58,11 +58,11 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
             global_context: item.0.global_context,
             interacting_with_account_ids: vec![item.0.signer_account_id],
             on_after_getting_network_callback,
-            on_before_signing_callback: std::sync::Arc::new(
+            on_before_signing_callback: std::rc::Rc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback,
-            on_after_sending_transaction_callback: std::sync::Arc::new(
+            on_after_sending_transaction_callback: std::rc::Rc::new(
                 |_outcome_view, _network_config| Ok(()),
             ),
         }

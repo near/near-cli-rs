@@ -1326,7 +1326,7 @@ pub fn get_used_delegated_validator_list(
         }
     }
 
-    used_delegated_validator_list.extend(delegated_validator_list.into_iter());
+    used_delegated_validator_list.extend(delegated_validator_list);
     Ok(used_delegated_validator_list)
 }
 

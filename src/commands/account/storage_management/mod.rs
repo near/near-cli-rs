@@ -28,7 +28,7 @@ impl ContractContext {
     ) -> color_eyre::eyre::Result<Self> {
         let contract_account_id = scope.contract_account_id.clone();
         let get_contract_account_id: GetContractAccountId =
-            std::sync::Arc::new(move |_network_config| Ok(contract_account_id.clone().into()));
+            std::rc::Rc::new(move |_network_config| Ok(contract_account_id.clone().into()));
         Ok(Self {
             global_context: previous_context,
             get_contract_account_id,
@@ -36,7 +36,7 @@ impl ContractContext {
     }
 }
 
-pub type GetContractAccountId = std::sync::Arc<
+pub type GetContractAccountId = std::rc::Rc<
     dyn Fn(
         &crate::config::NetworkConfig,
     ) -> color_eyre::eyre::Result<near_primitives::types::AccountId>,

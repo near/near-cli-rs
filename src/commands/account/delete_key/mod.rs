@@ -35,7 +35,7 @@ impl DeleteKeyCommandContext {
 impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
     fn from(item: DeleteKeyCommandContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new({
+            std::rc::Rc::new({
                 let owner_account_id = item.owner_account_id.clone();
 
                 move |_network_config| {
@@ -60,13 +60,13 @@ impl From<DeleteKeyCommandContext> for crate::commands::ActionContext {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.owner_account_id],
             on_after_getting_network_callback,
-            on_before_signing_callback: std::sync::Arc::new(
+            on_before_signing_callback: std::rc::Rc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
+            on_before_sending_transaction_callback: std::rc::Rc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
-            on_after_sending_transaction_callback: std::sync::Arc::new(
+            on_after_sending_transaction_callback: std::rc::Rc::new(
                 |_outcome_view, _network_config| Ok(()),
             ),
         }

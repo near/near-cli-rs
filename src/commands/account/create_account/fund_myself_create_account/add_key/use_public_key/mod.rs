@@ -26,7 +26,7 @@ impl AddPublicKeyActionContext {
         Ok(Self(super::super::AccountPropertiesContext {
             global_context: previous_context.global_context,
             account_properties,
-            on_before_sending_transaction_callback: std::sync::Arc::new(
+            on_before_sending_transaction_callback: std::rc::Rc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
         }))

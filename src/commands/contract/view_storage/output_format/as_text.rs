@@ -19,7 +19,7 @@ impl AsTextContext {
         previous_context: super::super::keys_to_view::KeysContext,
         _scope: &<AsText as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::rc::Rc::new({
             let contract_account_id = previous_context.contract_account_id.clone();
             let prefix = previous_context.prefix;
 

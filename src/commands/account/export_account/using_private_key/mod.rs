@@ -21,7 +21,7 @@ impl ExportAccountFromPrivateKeyContext {
         let account_id = previous_context.account_id.clone();
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new({
+            std::rc::Rc::new({
                 move |network_config| {
                     if let Ok(account_key_pair) =
                         super::get_account_key_pair_from_keychain(network_config, &account_id)

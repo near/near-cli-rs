@@ -21,7 +21,7 @@ impl AddPublicKeyActionContext {
             config: previous_context.config,
             new_account_id: previous_context.new_account_id,
             public_key: scope.public_key.clone().into(),
-            on_after_getting_network_callback: std::sync::Arc::new(
+            on_after_getting_network_callback: std::rc::Rc::new(
                 |_network_config, _storage_message| Ok(()),
             ),
             on_before_creating_account_callback: previous_context

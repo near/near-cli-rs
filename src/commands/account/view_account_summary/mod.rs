@@ -23,7 +23,7 @@ impl ViewAccountSummaryContext {
         previous_context: crate::GlobalContext,
         scope: &<ViewAccountSummary as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::rc::Rc::new({
             let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {

@@ -32,7 +32,7 @@ impl SaveWithSeedPhraseContext {
                 scope.master_seed_phrase.clone(),
             )?;
         let on_after_getting_folder_path_callback: super::OnAfterGettingFolderPathCallback =
-            std::sync::Arc::new({
+            std::rc::Rc::new({
                 move |folder_path| {
                     let mut file_path = std::path::PathBuf::new();
                     let mut file_name = std::path::PathBuf::new();

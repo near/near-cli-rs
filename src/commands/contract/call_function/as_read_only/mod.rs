@@ -29,7 +29,7 @@ impl CallFunctionViewContext {
         previous_context: crate::GlobalContext,
         scope: &<CallFunctionView as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::rc::Rc::new({
             let function_args = scope.function_args.clone();
             let function_args_type = scope.function_args_type.clone();
             let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();

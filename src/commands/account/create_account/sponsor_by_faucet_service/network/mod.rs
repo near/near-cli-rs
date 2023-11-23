@@ -99,9 +99,9 @@ impl SubmitContext {
 }
 
 pub type OnAfterGettingNetworkCallback =
-    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig, &mut String) -> crate::CliResult>;
+    std::rc::Rc<dyn Fn(&crate::config::NetworkConfig, &mut String) -> crate::CliResult>;
 
-pub type OnBeforeCreatingAccountCallback = std::sync::Arc<
+pub type OnBeforeCreatingAccountCallback = std::rc::Rc<
     dyn Fn(
         &crate::config::NetworkConfig,
         &crate::types::account_id::AccountId,

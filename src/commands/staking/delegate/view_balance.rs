@@ -27,7 +27,7 @@ impl ViewBalanceContext {
             scope.validator_account_id.clone().into();
         let interacting_with_account_ids = vec![account_id.clone(), validator_account_id.clone()];
 
-        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::rc::Rc::new({
 
             move |network_config, block_reference| {
                 let user_staked_balance: u128 = get_user_staked_balance(network_config, block_reference, &validator_account_id, &account_id)?;

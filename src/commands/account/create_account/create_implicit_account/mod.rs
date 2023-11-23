@@ -95,7 +95,7 @@ impl SaveToFolder {
 }
 
 pub type OnAfterGettingFolderPathCallback =
-    std::sync::Arc<dyn Fn(&std::path::PathBuf) -> crate::CliResult>;
+    std::rc::Rc<dyn Fn(&std::path::PathBuf) -> crate::CliResult>;
 
 #[derive(Clone)]
 pub struct SaveImplicitAccountContext {

@@ -18,7 +18,7 @@ impl SignTransactionContext {
         scope: &<SignTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new({
+            std::rc::Rc::new({
                 let unsigned_transaction: near_primitives::transaction::Transaction =
                     scope.unsigned_transaction.clone().into();
 
@@ -38,13 +38,13 @@ impl SignTransactionContext {
                 scope.unsigned_transaction.inner.receiver_id.clone(),
             ],
             on_after_getting_network_callback,
-            on_before_signing_callback: std::sync::Arc::new(
+            on_before_signing_callback: std::rc::Rc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
+            on_before_sending_transaction_callback: std::rc::Rc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
-            on_after_sending_transaction_callback: std::sync::Arc::new(
+            on_after_sending_transaction_callback: std::rc::Rc::new(
                 |_outcome_view, _network_config| Ok(()),
             ),
         }))

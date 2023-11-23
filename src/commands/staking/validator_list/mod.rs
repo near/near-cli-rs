@@ -18,7 +18,7 @@ impl ValidatorListContext {
         _scope: &<ValidatorList as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new(display_validators_info);
+            std::rc::Rc::new(display_validators_info);
         Ok(Self(crate::network::NetworkContext {
             config: previous_context.config,
             interacting_with_account_ids: vec![],

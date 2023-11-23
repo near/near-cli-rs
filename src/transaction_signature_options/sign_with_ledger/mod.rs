@@ -209,7 +209,7 @@ impl interactive_clap::FromCli for SignLedger {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let block_hash = clap_variant.block_hash.clone();
+        let block_hash = clap_variant.block_hash;
 
         let new_context_scope = InteractiveClapContextScopeForSignLedger {
             signer_public_key,

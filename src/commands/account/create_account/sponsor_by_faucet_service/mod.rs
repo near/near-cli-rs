@@ -35,7 +35,7 @@ impl NewAccountContext {
     ) -> color_eyre::eyre::Result<Self> {
         let credentials_home_dir = previous_context.config.credentials_home_dir.clone();
         let on_before_creating_account_callback: self::network::OnBeforeCreatingAccountCallback =
-            std::sync::Arc::new({
+            std::rc::Rc::new({
                 move |network_config, new_account_id, public_key| {
                     before_creating_account(
                         network_config,

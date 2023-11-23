@@ -20,7 +20,7 @@ impl SaveWithUseAutoGenerationContext {
         _scope: &<SaveWithUseAutoGeneration as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_folder_path_callback: super::OnAfterGettingFolderPathCallback =
-            std::sync::Arc::new({
+            std::rc::Rc::new({
                 move |folder_path| {
                     let key_pair_properties = crate::common::generate_keypair()?;
                     let buf = serde_json::json!({

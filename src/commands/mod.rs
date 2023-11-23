@@ -50,14 +50,14 @@ pub enum TopLevelCommand {
     Extensions(self::extensions::ExtensionsCommands),
 }
 
-pub type OnBeforeSigningCallback = std::sync::Arc<
+pub type OnBeforeSigningCallback = std::rc::Rc<
     dyn Fn(
         &mut near_primitives::transaction::Transaction,
         &crate::config::NetworkConfig,
     ) -> crate::CliResult,
 >;
 
-pub type OnAfterGettingNetworkCallback = std::sync::Arc<
+pub type OnAfterGettingNetworkCallback = std::rc::Rc<
     dyn Fn(&crate::config::NetworkConfig) -> color_eyre::eyre::Result<PrepopulatedTransaction>,
 >;
 

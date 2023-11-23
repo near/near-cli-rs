@@ -50,7 +50,7 @@ impl SignerAccountIdContext {
         scope: &<SignerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new({
+            std::rc::Rc::new({
                 let signer_account_id: near_primitives::types::AccountId =
                     scope.signer_account_id.clone().into();
                 let get_contract_account_id = previous_context.get_contract_account_id.clone();
@@ -74,7 +74,7 @@ impl SignerAccountIdContext {
                 }
             });
 
-        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::rc::Rc::new({
             let signer_account_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
 
             move |outcome_view, network_config| {
@@ -93,10 +93,10 @@ impl SignerAccountIdContext {
             global_context: previous_context.global_context,
             interacting_with_account_ids: vec![scope.signer_account_id.clone().into()],
             on_after_getting_network_callback,
-            on_before_signing_callback: std::sync::Arc::new(
+            on_before_signing_callback: std::rc::Rc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
+            on_before_sending_transaction_callback: std::rc::Rc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
             on_after_sending_transaction_callback,

@@ -11,7 +11,7 @@ pub struct Network {
 }
 
 pub type OnAfterGettingNetworkCallback =
-    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig) -> crate::CliResult>;
+    std::rc::Rc<dyn Fn(&crate::config::NetworkConfig) -> crate::CliResult>;
 
 #[derive(Clone)]
 pub struct NetworkContext {

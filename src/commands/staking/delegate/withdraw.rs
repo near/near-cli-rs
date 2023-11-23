@@ -21,7 +21,7 @@ impl WithdrawContext {
         scope: &<Withdraw as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new({
+            std::rc::Rc::new({
                 let signer_id = previous_context.account_id.clone();
                 let validator_account_id: near_primitives::types::AccountId =
                     scope.validator_account_id.clone().into();
@@ -45,7 +45,7 @@ impl WithdrawContext {
                 }
             });
 
-        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::rc::Rc::new({
             let signer_id = previous_context.account_id.clone();
             let validator_id = scope.validator_account_id.clone();
             let amount = scope.amount;
@@ -65,10 +65,10 @@ impl WithdrawContext {
                 scope.validator_account_id.clone().into(),
             ],
             on_after_getting_network_callback,
-            on_before_signing_callback: std::sync::Arc::new(
+            on_before_signing_callback: std::rc::Rc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
+            on_before_sending_transaction_callback: std::rc::Rc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
             on_after_sending_transaction_callback,
