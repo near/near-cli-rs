@@ -80,9 +80,6 @@ jobs:
     - name: Build near-cli-rs crate
       run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
 
-    - name: Run cargo clippy
-      run: cargo clippy -- -D warnings
-
     - name: Run tests
       if: matrix.build != 'macos-aarch64'
       run: ${{ env.CARGO }} test --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
@@ -118,7 +115,5 @@ jobs:
         sudo apt-get update
         sudo apt-get install --assume-yes libudev-dev
     - name: Check lints (cargo clippy)
-      uses: actions-rs/clippy-check@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        args: --all-features
+      run: cargo clippy -- -D warnings
+
