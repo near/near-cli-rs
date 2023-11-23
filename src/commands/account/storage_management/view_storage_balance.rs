@@ -24,7 +24,7 @@ impl AccountContext {
         scope: &<Account as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let account_id = scope.account_id.clone();
 
                 move |network_config, block_reference| {

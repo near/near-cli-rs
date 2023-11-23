@@ -1,3 +1,4 @@
+#![allow(clippy::arc_with_non_send_sync)]
 pub use common::CliResult;
 
 pub mod commands;

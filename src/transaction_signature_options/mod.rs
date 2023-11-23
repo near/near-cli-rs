@@ -262,7 +262,7 @@ pub struct AccountKeyPair {
     pub private_key: near_crypto::SecretKey,
 }
 
-pub type OnBeforeSendingTransactionCallback = std::rc::Rc<
+pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
     dyn Fn(
         &near_primitives::transaction::SignedTransaction,
         &crate::config::NetworkConfig,
@@ -270,7 +270,7 @@ pub type OnBeforeSendingTransactionCallback = std::rc::Rc<
     ) -> crate::CliResult,
 >;
 
-pub type OnAfterSendingTransactionCallback = std::rc::Rc<
+pub type OnAfterSendingTransactionCallback = std::sync::Arc<
     dyn Fn(
         &near_primitives::views::FinalExecutionOutcomeView,
         &crate::config::NetworkConfig,

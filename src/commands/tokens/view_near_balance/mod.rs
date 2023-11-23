@@ -15,7 +15,7 @@ impl ViewNearBalanceContext {
         previous_context: super::TokensCommandsContext,
         _scope: &<ViewNearBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::rc::Rc::new({
+        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let owner_account_id = previous_context.owner_account_id.clone();
 
             move |network_config, block_reference| {

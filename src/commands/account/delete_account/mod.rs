@@ -76,7 +76,7 @@ impl BeneficiaryAccountContext {
 impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
     fn from(item: BeneficiaryAccountContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let account_id = item.account_id.clone();
 
                 move |_network_config| {
@@ -96,13 +96,13 @@ impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.account_id],
             on_after_getting_network_callback,
-            on_before_signing_callback: std::rc::Rc::new(
+            on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_before_sending_transaction_callback: std::rc::Rc::new(
+            on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
-            on_after_sending_transaction_callback: std::rc::Rc::new(
+            on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
             ),
         }

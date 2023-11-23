@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use color_eyre::eyre::WrapErr;
 use inquire::{CustomType, Select};
@@ -46,7 +47,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
         let data = item.data.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::rc::Rc::new({
+            Arc::new({
                 move |network_config| {
                     let contract_account_id =
                         network_config.get_near_social_account_id_from_network()?;
@@ -118,38 +119,37 @@ impl From<SignerContext> for crate::commands::ActionContext {
                 }
             });
 
-        let on_before_signing_callback: crate::commands::OnBeforeSigningCallback =
-            std::rc::Rc::new({
-                let signer_account_id = item.signer_account_id.clone();
-                let account_id = item.account_id.clone();
-                move |prepopulated_unsigned_transaction, network_config| {
-                    let json_rpc_client = network_config.json_rpc_client();
+        let on_before_signing_callback: crate::commands::OnBeforeSigningCallback = Arc::new({
+            let signer_account_id = item.signer_account_id.clone();
+            let account_id = item.account_id.clone();
+            move |prepopulated_unsigned_transaction, network_config| {
+                let json_rpc_client = network_config.json_rpc_client();
 
-                    if let near_primitives::transaction::Action::FunctionCall(action) =
-                        &mut prepopulated_unsigned_transaction.actions[0]
-                    {
-                        action.deposit = tokio::runtime::Runtime::new()
-                            .unwrap()
-                            .block_on(near_socialdb_client::get_deposit(
-                                &json_rpc_client,
-                                &signer_account_id,
-                                &prepopulated_unsigned_transaction.public_key,
-                                &account_id,
-                                "profile",
-                                &prepopulated_unsigned_transaction.receiver_id,
-                                near_token::NearToken::from_yoctonear(action.deposit),
-                            ))?
-                            .as_yoctonear();
-                        Ok(())
-                    } else {
-                        color_eyre::eyre::bail!("Unexpected action to change components",);
-                    }
+                if let near_primitives::transaction::Action::FunctionCall(action) =
+                    &mut prepopulated_unsigned_transaction.actions[0]
+                {
+                    action.deposit = tokio::runtime::Runtime::new()
+                        .unwrap()
+                        .block_on(near_socialdb_client::get_deposit(
+                            &json_rpc_client,
+                            &signer_account_id,
+                            &prepopulated_unsigned_transaction.public_key,
+                            &account_id,
+                            "profile",
+                            &prepopulated_unsigned_transaction.receiver_id,
+                            near_token::NearToken::from_yoctonear(action.deposit),
+                        ))?
+                        .as_yoctonear();
+                    Ok(())
+                } else {
+                    color_eyre::eyre::bail!("Unexpected action to change components",);
                 }
-            });
+            }
+        });
 
         let account_id = item.account_id.clone();
 
-        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::rc::Rc::new({
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = Arc::new({
             move |transaction_info, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = transaction_info.status {
                     eprintln!("\nProfile for {account_id} updated successfully");
@@ -165,7 +165,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
             interacting_with_account_ids: vec![item.account_id],
             on_after_getting_network_callback,
             on_before_signing_callback,
-            on_before_sending_transaction_callback: std::rc::Rc::new(
+            on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
             on_after_sending_transaction_callback,

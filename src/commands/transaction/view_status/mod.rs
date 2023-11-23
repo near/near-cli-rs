@@ -25,7 +25,7 @@ impl TransactionInfoContext {
         scope: &<TransactionInfo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let signer_account_id = scope.signer_account_id.clone();
                 let transaction_hash = scope.transaction_hash;
 

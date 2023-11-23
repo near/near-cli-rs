@@ -16,7 +16,7 @@ impl LoginFromWebWalletContext {
         _scope: &<LoginFromWebWallet as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let config = previous_context.config.clone();
 
                 move |network_config| {

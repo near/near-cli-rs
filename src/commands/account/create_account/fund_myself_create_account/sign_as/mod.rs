@@ -41,7 +41,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
         let global_context = item.global_context.clone();
 
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let new_account_id = item.account_properties.new_account_id.clone();
                 let signer_id = item.signer_account_id.clone();
 
@@ -129,7 +129,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
             });
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let credentials_home_dir = global_context.config.credentials_home_dir.clone();
 
                 move |outcome_view, _network_config| {
@@ -148,7 +148,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 item.account_properties.new_account_id,
             ],
             on_after_getting_network_callback,
-            on_before_signing_callback: std::rc::Rc::new(
+            on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,

@@ -21,7 +21,7 @@ impl DepositAndStakeContext {
         scope: &<DepositAndStake as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let signer_id = previous_context.account_id.clone();
                 let validator_account_id: near_primitives::types::AccountId =
                     scope.validator_account_id.clone().into();
@@ -43,7 +43,7 @@ impl DepositAndStakeContext {
                 }
             });
 
-        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::rc::Rc::new({
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
             let signer_id = previous_context.account_id.clone();
             let validator_id = scope.validator_account_id.clone();
             let amount = scope.amount;
@@ -63,10 +63,10 @@ impl DepositAndStakeContext {
                 scope.validator_account_id.clone().into(),
             ],
             on_after_getting_network_callback,
-            on_before_signing_callback: std::rc::Rc::new(
+            on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_before_sending_transaction_callback: std::rc::Rc::new(
+            on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
             on_after_sending_transaction_callback,

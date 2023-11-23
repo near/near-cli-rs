@@ -59,7 +59,7 @@ impl SendFtCommandContext {
 impl From<SendFtCommandContext> for crate::commands::ActionContext {
     fn from(item: SendFtCommandContext) -> Self {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let signer_account_id = item.signer_account_id.clone();
                 let ft_contract_account_id = item.ft_contract_account_id.clone();
                 let receiver_account_id = item.receiver_account_id.clone();
@@ -83,7 +83,7 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
                 }
             });
 
-        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::rc::Rc::new({
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
             let signer_account_id = item.signer_account_id.clone();
             let amount = item.amount;
             let ft_contract_account_id = item.ft_contract_account_id.clone();
@@ -107,10 +107,10 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
                 item.receiver_account_id,
             ],
             on_after_getting_network_callback,
-            on_before_signing_callback: std::rc::Rc::new(
+            on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
-            on_before_sending_transaction_callback: std::rc::Rc::new(
+            on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
             on_after_sending_transaction_callback,

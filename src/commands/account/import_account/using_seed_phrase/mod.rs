@@ -30,7 +30,7 @@ impl LoginFromSeedPhraseContext {
         let key_pair_properties_buf = serde_json::to_string(&key_pair_properties).unwrap();
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let config = previous_context.config.clone();
 
                 move |network_config| {

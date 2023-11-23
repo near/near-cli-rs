@@ -73,7 +73,7 @@ impl SaveModeContext {
         let scope = *scope;
 
         let on_after_getting_network_callback: super::super::network::OnAfterGettingNetworkCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let new_account_id_str = previous_context.new_account_id.to_string();
                 let key_pair_properties = previous_context.key_pair_properties.clone();
                 let credentials_home_dir = previous_context.config.credentials_home_dir.clone();

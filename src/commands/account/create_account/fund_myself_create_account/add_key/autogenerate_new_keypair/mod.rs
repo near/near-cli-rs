@@ -44,7 +44,7 @@ impl From<GenerateKeypairContext> for super::super::AccountPropertiesContext {
         Self {
             global_context: item.global_context,
             account_properties: item.account_properties,
-            on_before_sending_transaction_callback: std::rc::Rc::new(
+            on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),
             ),
         }
@@ -85,7 +85,7 @@ impl SaveModeContext {
         let scope = *scope;
 
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
-            std::rc::Rc::new({
+            std::sync::Arc::new({
                 let new_account_id = previous_context.account_properties.new_account_id.clone();
                 let key_pair_properties = previous_context.key_pair_properties.clone();
                 let credentials_home_dir = previous_context.global_context.config.credentials_home_dir.clone();
