@@ -80,6 +80,9 @@ jobs:
     - name: Build near-cli-rs crate
       run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
 
+    - name: Run cargo clippy
+      run: cargo clippy -- -D warnings
+
     - name: Run tests
       if: matrix.build != 'macos-aarch64'
       run: ${{ env.CARGO }} test --verbose --all ${{ env.TARGET_FLAGS }} ${{ env.FEATURES_FLAGS }}
