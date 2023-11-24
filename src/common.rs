@@ -13,7 +13,6 @@ use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyP
 pub type CliResult = color_eyre::eyre::Result<()>;
 
 use inquire::{Select, Text};
-use sha2::{Digest, Sha256};
 use strum::IntoEnumIterator;
 
 pub fn get_near_exec_path() -> String {
@@ -519,17 +518,6 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     Ok(key_pair_properties)
 }
 
-fn compute_hash(bytes: &[u8]) -> [u8; 32] {
-    let mut hasher = Sha256::new();
-    hasher.update(&bytes);
-
-    let result = hasher.finalize();
-    let mut hash = [0u8; 32];
-    hash.copy_from_slice(&result[..]);
-
-    hash
-}
-
 pub fn print_full_signed_transaction(transaction: near_primitives::transaction::SignedTransaction) {
     eprintln!("{:<25} {}\n", "signature:", transaction.signature);
     crate::common::print_full_unsigned_transaction(transaction.transaction);
@@ -539,16 +527,9 @@ pub fn print_full_unsigned_transaction(transaction: near_primitives::transaction
     let bytes = transaction
         .try_to_vec()
         .expect("Transaction is not expected to fail on serialization");
-    eprintln!("transaction payload (without signature) hash:");
     eprintln!(
-        "{:<25} {}",
-        "SHA256 hash(hex):",
-        hex::encode(&compute_hash(&bytes))
-    );
-
-    eprintln!(
-        "{:<25} {}\n\n",
-        "SHA256 hash(base58):",
+        "{} {}\n\n",
+        "Unsigned transaction hash (Base58-encoded SHA-256 hash):",
         CryptoHash::hash_bytes(&bytes)
     );
 

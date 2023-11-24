@@ -62,8 +62,8 @@ impl SignLedgerContext {
         unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> color_eyre::eyre::Result<near_crypto::Signature> {
         eprintln!("\n\nBuffer overflow on Ledger device occured. Transaction is too large for normal signature.");
-        eprintln!("\nThe following is SHA256 of unsigned transaction:");
-        eprintln!("{}", hex::encode(&hash.0));
+        eprintln!("\nThe following is Base58-encoded SHA-256 hash of unsigned transaction:");
+        eprintln!("{}", hash.0);
 
         eprintln!(
             "\nUnsigned transaction (serialized as base64):\n{}\n",
