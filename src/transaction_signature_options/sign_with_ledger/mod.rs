@@ -44,6 +44,11 @@ pub struct SignLedgerContext {
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
 }
+const BLIND_SIGN_MEMO: &str = "Blind signature means that transaction is prepared by CLI, but cannot be reviewed on the Ledger device. \
+    In order to be absolutely sure that the transaction you are signing is not forged, take the constructed transaction, \
+    verify its content using NEAR CLI on another host or use any other tool capable of displaying unsigned NEAR transactions, \
+    and confirm that the SHA256 hash matches the one displayed above and another identical one, that will be displayed on your Ledger device after confirming the prompt. \
+    Following helper command on NEAR CLI can be used:";
 
 impl SignLedgerContext {
     fn input_blind_agree() -> color_eyre::eyre::Result<bool> {
@@ -69,16 +74,13 @@ impl SignLedgerContext {
             "\nUnsigned transaction (serialized as base64):\n{}\n",
             crate::types::transaction::TransactionAsBase64::from(unsigned_transaction)
         );
-        eprintln!("Before proceeding with blind signature,");
-        eprintln!("you have ability to verify unsigned transaction's details and exact SHA256 correspondence,");
-        eprintln!("if you have concerns with trust to current computer, where near CLI command is being run,");
-        eprintln!("on another computer(s) with the following helper command on near CLI:");
+        eprintln!("{}", BLIND_SIGN_MEMO);
         eprintln!(
             "$ {} transaction print-transaction unsigned\n\n",
             crate::common::get_near_exec_path()
         );
 
-        eprintln!("Make sure to enable blind sign in Near app's settings on Ledger device\n");
+        eprintln!("Make sure to enable blind sign in NEAR app's settings on Ledger device\n");
         let agree = Self::input_blind_agree()?;
         if agree {
             eprintln!(
