@@ -1,7 +1,9 @@
-use color_eyre::eyre::{Context, ContextCompat};
-use inquire::{CustomType, Select};
+use color_eyre::eyre::Context;
 
-use near_primitives::transaction::{Action, DeployContractAction, TransferAction};
+use near_primitives::transaction::{
+    Action, AddKeyAction, DeleteAccountAction, DeleteKeyAction, DeployContractAction,
+    FunctionCallAction, StakeAction, TransferAction,
+};
 
 use crate::common::JsonRpcClientExt;
 
@@ -14,23 +16,17 @@ pub struct TransactionInfo {
     /// What is the name of the network?
     #[interactive_clap(skip_default_input_arg)]
     network_name: String,
-    #[interactive_clap(subcommand)]
-    transaction_signature_options: crate::transaction_signature_options::SignWith,
 }
 
 #[derive(Clone)]
-pub struct TransactionInfoContext {
-    global_context: crate::GlobalContext,
-    network_config: crate::config::NetworkConfig,
-    prepopulated_transaction: crate::commands::PrepopulatedTransaction,
-}
+pub struct TransactionInfoContext;
 
 impl TransactionInfoContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
         scope: &<TransactionInfo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let networks = previous_context.config.network_connection.clone();
+        let networks = previous_context.config.network_connection;
         let network_config = networks
             .get(&scope.network_name)
             .expect("Failed to get network config!")
@@ -63,8 +59,8 @@ impl TransactionInfoContext {
             .collect::<Result<_, _>>()
             .expect("Internal error: can not convert the action_view to action.");
         let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
-            signer_id,
-            receiver_id,
+            signer_id: signer_id.clone(),
+            receiver_id: receiver_id.clone(),
             actions: actions.clone(),
         };
 
@@ -72,79 +68,108 @@ impl TransactionInfoContext {
         crate::common::print_unsigned_transaction(&prepopulated_transaction);
         eprintln!();
 
-        if !need_edit_archive_transaction() {
-            return Ok(Self {
-                global_context: previous_context,
-                network_config,
-                prepopulated_transaction,
-            });
-        }
+        let mut cli_args_suffix = "skip network-config testnet sign-with-legacy-keychain send"
+            .split(' ')
+            .map(String::from)
+            .collect::<Vec<String>>();
+        let mut cli_args = "near transaction construct-transaction"
+            .split(' ')
+            .map(String::from)
+            .collect::<Vec<String>>();
+        cli_args.push(signer_id.to_string());
+        cli_args.push(receiver_id.to_string());
 
-        let updated_receiver_id =
-            crate::common::input_non_signer_account_id_from_used_account_list(
-                &previous_context.config.credentials_home_dir,
-                "Enter receiver account ID:",
-            )?
-            .wrap_err("Internal error: can not to get the receiver account ID.")?;
-
-        let updated_signer_id = crate::common::input_signer_account_id_from_used_account_list(
-            &previous_context.config.credentials_home_dir,
-            "Enter signer account ID:",
-        )?
-        .wrap_err("Internal error: can not to get the signer account ID.")?;
-
-        let mut updated_actions: Vec<Action> = vec![];
         for action in actions {
             match action {
-                Action::CreateAccount(create_account_action) => {
-                    updated_actions.push(Action::CreateAccount(create_account_action))
+                Action::CreateAccount(_) => {
+                    cli_args.push("add-action".to_string());
+                    cli_args.push("create-account".to_string());
                 }
-                Action::DeployContract(_) => {
-                    let file_path: crate::types::path_buf::PathBuf =
-                        CustomType::new("What is a file location of the contract?").prompt()?;
-                    let code = std::fs::read(&file_path.0).wrap_err_with(|| {
-                        format!("Failed to open or read the file: {:?}.", &file_path.0,)
-                    })?;
-                    updated_actions.push(Action::DeployContract(DeployContractAction { code }))
+                Action::DeleteAccount(DeleteAccountAction { beneficiary_id }) => {
+                    cli_args.push("add-action".to_string());
+                    cli_args.push("delete-account".to_string());
+                    cli_args.push("--beneficiary-id".to_string());
+                    cli_args.push(beneficiary_id.to_string());
                 }
-                Action::Transfer(_) => {
-                    let deposit:near_token::NearToken  = CustomType::new("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)").prompt()?;
-                    updated_actions.push(Action::Transfer(TransferAction {
-                        deposit: deposit.as_yoctonear(),
-                    }))
+                Action::AddKey(AddKeyAction {
+                    public_key,
+                    access_key,
+                }) => {
+                    cli_args.push("add-action".to_string());
+                    cli_args.push("add-key".to_string());
+                    match access_key.permission {
+                        near_primitives::account::AccessKeyPermission::FullAccess => {
+                            cli_args.push("grant-full-access".to_string())
+                        }
+                        near_primitives::account::AccessKeyPermission::FunctionCall(_) => todo!(),
+                    }
+                    cli_args.push("use-manually-provided-public-key".to_string());
+                    cli_args.push(public_key.to_string());
                 }
-                _ => todo!(),
+                Action::DeleteKey(DeleteKeyAction { public_key }) => {
+                    cli_args.push("add-action".to_string());
+                    cli_args.push("delete-key".to_string());
+                    cli_args.push(public_key.to_string());
+                }
+                Action::Transfer(TransferAction { deposit }) => {
+                    cli_args.push("add-action".to_string());
+                    cli_args.push("transfer".to_string());
+                    cli_args.push(format!(
+                        "'{}'",
+                        near_token::NearToken::from_yoctonear(deposit)
+                    ));
+                }
+                Action::DeployContract(DeployContractAction { .. }) => {
+                    cli_args.push("add-action".to_string());
+                    cli_args.push("deploy-contract".to_string());
+                    cli_args.push("use-file".to_string());
+                    cli_args.push("/near/my_project.wasm".to_string());
+                    cli_args.push("without-init-call".to_string());
+                }
+                Action::FunctionCall(FunctionCallAction {
+                    method_name,
+                    args: _,
+                    gas,
+                    deposit,
+                }) => {
+                    cli_args.push("add-action".to_string());
+                    cli_args.push("function-call".to_string());
+                    cli_args.push(method_name);
+                    cli_args.push("json-args".to_string());
+                    cli_args.push("'{}'".to_string());
+                    cli_args.push("prepaid-gas".to_string());
+                    cli_args.push(format!(
+                        "'{} Tgas'",
+                        near_gas::NearGas::from_gas(gas).as_tgas()
+                    ));
+                    cli_args.push("attached-deposit".to_string());
+                    cli_args.push(format!(
+                        "'{}'",
+                        near_token::NearToken::from_yoctonear(deposit)
+                    ));
+                }
+                Action::Stake(StakeAction { stake, public_key }) => {
+                    cli_args.push("add-action".to_string());
+                    cli_args.push("stake".to_string());
+                    cli_args.push(format!(
+                        "'{}'",
+                        near_token::NearToken::from_yoctonear(stake)
+                    ));
+                    cli_args.push(public_key.to_string());
+                }
+                Action::Delegate(_) => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                        "SignedDelegateAction not implemented"
+                    ));
+                }
             }
         }
+        cli_args.append(&mut cli_args_suffix);
 
-        Ok(Self {
-            global_context: previous_context,
-            network_config,
-            prepopulated_transaction: crate::commands::PrepopulatedTransaction {
-                receiver_id: updated_receiver_id.into(),
-                signer_id: updated_signer_id.into(),
-                actions: updated_actions,
-            },
-        })
-    }
-}
+        println!("Here is your console command to run archive transaction. You can to edit it or re-run:\n");
+        println!("{}\n", cli_args.join(" "));
 
-impl From<TransactionInfoContext> for crate::commands::TransactionContext {
-    fn from(item: TransactionInfoContext) -> Self {
-        Self {
-            global_context: item.global_context,
-            network_config: item.network_config,
-            prepopulated_transaction: item.prepopulated_transaction,
-            on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
-            ),
-            on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
-            ),
-            on_after_sending_transaction_callback: std::sync::Arc::new(
-                |_outcome_view, _network_config| Ok(()),
-            ),
-        }
+        Ok(Self)
     }
 }
 
@@ -154,21 +179,4 @@ impl TransactionInfo {
     ) -> color_eyre::eyre::Result<Option<String>> {
         crate::common::input_network_name(&context.config, &[])
     }
-}
-
-fn need_edit_archive_transaction() -> bool {
-    #[derive(strum_macros::Display, PartialEq)]
-    enum ConfirmOptions {
-        #[strum(to_string = "Yes, I want to edit the transaction.")]
-        Yes,
-        #[strum(to_string = "No, I don't want to edit the transaction.")]
-        No,
-    }
-    let select_choose_input = Select::new(
-        "Do you want to edit an archive transaction?",
-        vec![ConfirmOptions::Yes, ConfirmOptions::No],
-    )
-    .prompt()
-    .unwrap_or(ConfirmOptions::Yes);
-    select_choose_input == ConfirmOptions::Yes
 }
