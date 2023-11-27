@@ -528,8 +528,7 @@ pub fn print_full_unsigned_transaction(transaction: near_primitives::transaction
         .try_to_vec()
         .expect("Transaction is not expected to fail on serialization");
     eprintln!(
-        "{} {}\n\n",
-        "Unsigned transaction hash (Base58-encoded SHA-256 hash):",
+        "Unsigned transaction hash (Base58-encoded SHA-256 hash): {}\n\n",
         CryptoHash::hash_bytes(&bytes)
     );
 

@@ -49,11 +49,11 @@ impl SignLedgerContext {
     fn input_blind_agree() -> color_eyre::eyre::Result<bool> {
         let options: Vec<&str> = vec!["Yes", "No"];
 
-        return Ok(
+        Ok(
             Select::new("Do you agree to continue with blind signature? ", options)
                 .prompt()
                 .map(|selected| selected == "Yes")?,
-        );
+        )
     }
 
     fn blind_sign_subflow(
@@ -89,16 +89,12 @@ impl SignLedgerContext {
             let signature = result.map_err(|err| {
                 match err {
                     near_ledger::NEARLedgerError::BlindSignatureDisabled => {
-                        color_eyre::Report::msg(format!(
-                            "Blind signature is disabled in NEAR app's settings on Ledger device",
-                        ))
+                        color_eyre::Report::msg("Blind signature is disabled in NEAR app's settings on Ledger device".to_string())
                     },
                     near_ledger::NEARLedgerError::BlindSignatureNotSupported => {
-                        color_eyre::Report::msg(format!(
-                            "Blind signature is not supported by the version of NEAR app installed on Ledger device",
-                        ))
+                        color_eyre::Report::msg("Blind signature is not supported by the version of NEAR app installed on Ledger device".to_string())
                     },
-                    err @ _  => {
+                    err => {
                         color_eyre::Report::msg(format!(
                             "Error occurred while signing the transaction: {:?}",
                             err
