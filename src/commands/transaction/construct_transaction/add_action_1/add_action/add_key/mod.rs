@@ -1,8 +1,8 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod access_key_type;
+pub mod access_key_type;
 mod use_manually_provided_seed_phrase;
-mod use_public_key;
+pub mod use_public_key;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = super::super::super::ConstructTransactionContext)]

@@ -1,12 +1,12 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod add_key;
-mod call_function;
-mod create_account;
-mod delete_account;
-mod delete_key;
-mod deploy_contract;
-mod stake;
+pub mod add_key;
+pub mod call_function;
+pub mod create_account;
+pub mod delete_account;
+pub mod delete_key;
+pub mod deploy_contract;
+pub mod stake;
 pub mod transfer;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
