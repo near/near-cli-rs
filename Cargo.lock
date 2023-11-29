@@ -2306,7 +2306,7 @@ dependencies = [
 [[package]]
 name = "near-ledger"
 version = "0.3.0"
-source = "git+https://github.com/dj8yfo/near-ledger-rs.git?branch=blind_signing#f7cbaae45216150e3a888e46dc28ef89d1826967"
+source = "git+https://github.com/dj8yfo/near-ledger-rs.git?branch=blind_signing#7729ef8bc0782688d2604f54f68109cfd0eb1865"
 dependencies = [
  "ed25519-dalek",
  "hex 0.4.3",

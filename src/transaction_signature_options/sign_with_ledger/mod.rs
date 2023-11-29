@@ -3,7 +3,6 @@ use std::str::FromStr;
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::{CustomType, Select, Text};
 
-use near_ledger::OnlyBlindSigning;
 use near_primitives::borsh::BorshSerialize;
 use slip10::BIP32Path;
 
@@ -62,13 +61,13 @@ impl SignLedgerContext {
     }
 
     fn blind_sign_subflow(
-        hash: OnlyBlindSigning,
+        hash: near_primitives::hash::CryptoHash,
         hd_path: BIP32Path,
         unsigned_transaction: near_primitives::transaction::Transaction,
     ) -> color_eyre::eyre::Result<near_crypto::Signature> {
         eprintln!("\n\nBuffer overflow on Ledger device occured. Transaction is too large for normal signature.");
         eprintln!("\nThe following is Base58-encoded SHA-256 hash of unsigned transaction:");
-        eprintln!("{}", hash.0);
+        eprintln!("{}", hash);
 
         eprintln!(
             "\nUnsigned transaction (serialized as base64):\n{}\n",
@@ -177,8 +176,12 @@ impl SignLedgerContext {
                 near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
                     .expect("Signature is not expected to fail on deserialization")
             }
-            Err(near_ledger::NEARLedgerError::BufferOverflow(hash)) => {
-                Self::blind_sign_subflow(hash, seed_phrase_hd_path, unsigned_transaction.clone())?
+            Err(near_ledger::NEARLedgerError::BufferOverflow { transaction_hash }) => {
+                Self::blind_sign_subflow(
+                    transaction_hash,
+                    seed_phrase_hd_path,
+                    unsigned_transaction.clone(),
+                )?
             }
             Err(near_ledger_error) => {
                 return Err(color_eyre::Report::msg(format!(
