@@ -1,7 +1,7 @@
 pub mod add_action_1;
 pub mod add_action_2;
-mod add_action_3;
-mod add_action_last;
+pub mod add_action_3;
+pub mod add_action_last;
 pub mod skip_action;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]

@@ -2,7 +2,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod construct_transaction;
-mod repeat_transaction;
+mod reconstruct_transaction;
 mod send_meta_transaction;
 mod send_signed_transaction;
 mod sign_transaction;
@@ -27,10 +27,10 @@ pub enum TransactionActions {
     /// Execute function (contract method)
     ViewStatus(self::view_status::TransactionInfo),
     #[strum_discriminants(strum(
-        message = "repeat-transaction       - Repeat a transaction from the archive"
+        message = "reconstruct-transaction  - Repeat a transaction from the archive"
     ))]
-    /// Repeat a transaction from the archive
-    RepeatTransaction(self::repeat_transaction::TransactionInfo),
+    /// Reconstruct a transaction from the archive
+    RepeatTransaction(self::reconstruct_transaction::TransactionInfo),
     #[strum_discriminants(strum(
         message = "construct-transaction    - Construct a new transaction"
     ))]

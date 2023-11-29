@@ -69,12 +69,29 @@ impl TransactionInfoContext {
         crate::common::print_unsigned_transaction(&prepopulated_transaction);
         eprintln!();
 
-        let mut cmd_cli_args: std::collections::VecDeque<String> =
-            std::collections::VecDeque::new();
+        let cmd = crate::commands::CliTopLevelCommand::Transaction(
+            crate::commands::transaction::CliTransactionCommands{
+                transaction_actions: Some(crate::commands::transaction::CliTransactionActions::ConstructTransaction(
+                    crate::commands::transaction::construct_transaction::CliConstructTransaction {
+                        sender_account_id: Some(signer_id.into()),
+                        receiver_account_id: Some(receiver_id.into()),
+                        next_actions: None
+                    }
+                ))
+            }
+        );
+        let mut cmd_cli_args = cmd.to_cli_args();
 
-        let number_actions = archival_actions.len();
+        for archival_action in archival_actions {
+            let next_actions = crate::commands::transaction::construct_transaction::add_action_1::CliNextAction::AddAction(
+                crate::commands::transaction::construct_transaction::add_action_1::add_action::CliAddAction{
+                    action: action_transformation(archival_action)
+                }
+            );
+            cmd_cli_args.extend(next_actions.to_cli_args());
+        }
 
-        let skip_action = Some(crate::commands::transaction::construct_transaction::add_action_2::CliNextAction::Skip(
+        let skip_action = crate::commands::transaction::construct_transaction::add_action_2::CliNextAction::Skip(
             crate::commands::transaction::construct_transaction::skip_action::CliSkipAction{
                 network_config: Some(crate::commands::transaction::construct_transaction::skip_action::ClapNamedArgNetworkForTransactionArgsForSkipAction::NetworkConfig(
                     crate::network_for_transaction::CliNetworkForTransactionArgs{
@@ -83,47 +100,9 @@ impl TransactionInfoContext {
                 }
                 ))
             }
-        ));
+        );
+        cmd_cli_args.extend(skip_action.to_cli_args());
 
-        for (number, archival_action) in archival_actions.into_iter().enumerate() {
-            let next_actions = Some(crate::commands::transaction::construct_transaction::add_action_1::CliNextAction::AddAction(
-                crate::commands::transaction::construct_transaction::add_action_1::add_action::CliAddAction{
-                    action: match archival_action {
-                        Action::Transfer(TransferAction { deposit }) => {
-                            Some(crate::commands::transaction::construct_transaction::add_action_1::add_action::CliActionSubcommand::Transfer(
-                                crate::commands::transaction::construct_transaction::add_action_1::add_action::transfer::CliTransferAction{
-                                    amount_in_near: Some(near_token::NearToken::from_yoctonear(deposit)),
-                                    next_action: if number == number_actions - 1 {
-                                        skip_action.clone()
-                                    } else {
-                                        None
-                                    }
-                                }
-                            ))
-                        }
-                        _ => todo!()
-                    }
-                }
-            ));
-            let next_actions_cli_args = next_actions.as_ref().expect("Internal error").to_cli_args();
-
-            let cmd = crate::commands::CliTopLevelCommand::Transaction(
-                crate::commands::transaction::CliTransactionCommands{
-                    transaction_actions: Some(crate::commands::transaction::CliTransactionActions::ConstructTransaction(
-                        crate::commands::transaction::construct_transaction::CliConstructTransaction {
-                            sender_account_id: Some(signer_id.clone().into()),
-                            receiver_account_id: Some(receiver_id.clone().into()),
-                            next_actions
-                        }
-                    ))
-                }
-            );
-            if number == 0 {
-                cmd_cli_args.extend(cmd.to_cli_args());
-            } else {
-                cmd_cli_args.extend(next_actions_cli_args);
-            }
-        }
         let near_cli_exec_path = crate::common::get_near_exec_path();
         eprintln!("Here is your console command to run archive transaction. You can to edit it or re-run:");
         eprintln!(
@@ -140,5 +119,21 @@ impl TransactionInfo {
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         crate::common::input_network_name(&context.config, &[])
+    }
+}
+
+fn action_transformation(
+    archival_action: Action,
+) -> Option<crate::commands::transaction::construct_transaction::add_action_1::add_action::CliActionSubcommand>{
+    match archival_action {
+        Action::Transfer(TransferAction { deposit }) => {
+            Some(crate::commands::transaction::construct_transaction::add_action_1::add_action::CliActionSubcommand::Transfer(
+                crate::commands::transaction::construct_transaction::add_action_1::add_action::transfer::CliTransferAction{
+                    amount_in_near: Some(near_token::NearToken::from_yoctonear(deposit)),
+                    next_action: None
+                }
+            ))
+        }
+        _ => todo!()
     }
 }
