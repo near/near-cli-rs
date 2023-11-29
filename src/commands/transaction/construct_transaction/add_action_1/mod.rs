@@ -1,7 +1,7 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod add_action;
+pub mod add_action;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = super::ConstructTransactionContext)]

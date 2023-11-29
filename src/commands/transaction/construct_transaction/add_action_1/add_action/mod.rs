@@ -7,13 +7,13 @@ mod delete_account;
 mod delete_key;
 mod deploy_contract;
 mod stake;
-mod transfer;
+pub mod transfer;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = super::super::ConstructTransactionContext)]
 pub struct AddAction {
     #[interactive_clap(subcommand)]
-    action: ActionSubcommand,
+    pub action: ActionSubcommand,
 }
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]

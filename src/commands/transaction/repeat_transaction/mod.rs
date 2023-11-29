@@ -1,4 +1,5 @@
 use color_eyre::eyre::Context;
+use interactive_clap::ToCliArgs;
 
 use near_primitives::transaction::{
     Action, AddKeyAction, DeleteAccountAction, DeleteKeyAction, DeployContractAction,
@@ -50,7 +51,7 @@ impl TransactionInfoContext {
             .final_outcome
             .transaction
             .receiver_id;
-        let actions: Vec<Action> = query_view_transaction_status
+        let archival_actions: Vec<Action> = query_view_transaction_status
             .final_outcome
             .transaction
             .actions
@@ -61,113 +62,74 @@ impl TransactionInfoContext {
         let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: signer_id.clone(),
             receiver_id: receiver_id.clone(),
-            actions: actions.clone(),
+            actions: archival_actions.clone(),
         };
 
         eprintln!("\nArchive transaction:\n");
         crate::common::print_unsigned_transaction(&prepopulated_transaction);
         eprintln!();
 
-        let mut cli_args_suffix = "skip network-config testnet sign-with-legacy-keychain send"
-            .split(' ')
-            .map(String::from)
-            .collect::<Vec<String>>();
-        let mut cli_args = "near transaction construct-transaction"
-            .split(' ')
-            .map(String::from)
-            .collect::<Vec<String>>();
-        cli_args.push(signer_id.to_string());
-        cli_args.push(receiver_id.to_string());
+        let mut cmd_cli_args: std::collections::VecDeque<String> =
+            std::collections::VecDeque::new();
 
-        for action in actions {
-            match action {
-                Action::CreateAccount(_) => {
-                    cli_args.push("add-action".to_string());
-                    cli_args.push("create-account".to_string());
+        let number_actions = archival_actions.len();
+
+        let skip_action = Some(crate::commands::transaction::construct_transaction::add_action_2::CliNextAction::Skip(
+            crate::commands::transaction::construct_transaction::skip_action::CliSkipAction{
+                network_config: Some(crate::commands::transaction::construct_transaction::skip_action::ClapNamedArgNetworkForTransactionArgsForSkipAction::NetworkConfig(
+                    crate::network_for_transaction::CliNetworkForTransactionArgs{
+                    network_name: Some(scope.network_name.clone()),
+                    transaction_signature_options: None
                 }
-                Action::DeleteAccount(DeleteAccountAction { beneficiary_id }) => {
-                    cli_args.push("add-action".to_string());
-                    cli_args.push("delete-account".to_string());
-                    cli_args.push("--beneficiary-id".to_string());
-                    cli_args.push(beneficiary_id.to_string());
-                }
-                Action::AddKey(AddKeyAction {
-                    public_key,
-                    access_key,
-                }) => {
-                    cli_args.push("add-action".to_string());
-                    cli_args.push("add-key".to_string());
-                    match access_key.permission {
-                        near_primitives::account::AccessKeyPermission::FullAccess => {
-                            cli_args.push("grant-full-access".to_string())
+                ))
+            }
+        ));
+
+        for (number, archival_action) in archival_actions.into_iter().enumerate() {
+            let next_actions = Some(crate::commands::transaction::construct_transaction::add_action_1::CliNextAction::AddAction(
+                crate::commands::transaction::construct_transaction::add_action_1::add_action::CliAddAction{
+                    action: match archival_action {
+                        Action::Transfer(TransferAction { deposit }) => {
+                            Some(crate::commands::transaction::construct_transaction::add_action_1::add_action::CliActionSubcommand::Transfer(
+                                crate::commands::transaction::construct_transaction::add_action_1::add_action::transfer::CliTransferAction{
+                                    amount_in_near: Some(near_token::NearToken::from_yoctonear(deposit)),
+                                    next_action: if number == number_actions - 1 {
+                                        skip_action.clone()
+                                    } else {
+                                        None
+                                    }
+                                }
+                            ))
                         }
-                        near_primitives::account::AccessKeyPermission::FunctionCall(_) => todo!(),
+                        _ => todo!()
                     }
-                    cli_args.push("use-manually-provided-public-key".to_string());
-                    cli_args.push(public_key.to_string());
                 }
-                Action::DeleteKey(DeleteKeyAction { public_key }) => {
-                    cli_args.push("add-action".to_string());
-                    cli_args.push("delete-key".to_string());
-                    cli_args.push(public_key.to_string());
+            ));
+            let next_actions_cli_args = next_actions.as_ref().expect("Internal error").to_cli_args();
+
+            let cmd = crate::commands::CliTopLevelCommand::Transaction(
+                crate::commands::transaction::CliTransactionCommands{
+                    transaction_actions: Some(crate::commands::transaction::CliTransactionActions::ConstructTransaction(
+                        crate::commands::transaction::construct_transaction::CliConstructTransaction {
+                            sender_account_id: Some(signer_id.clone().into()),
+                            receiver_account_id: Some(receiver_id.clone().into()),
+                            next_actions
+                        }
+                    ))
                 }
-                Action::Transfer(TransferAction { deposit }) => {
-                    cli_args.push("add-action".to_string());
-                    cli_args.push("transfer".to_string());
-                    cli_args.push(format!(
-                        "'{}'",
-                        near_token::NearToken::from_yoctonear(deposit)
-                    ));
-                }
-                Action::DeployContract(DeployContractAction { .. }) => {
-                    cli_args.push("add-action".to_string());
-                    cli_args.push("deploy-contract".to_string());
-                    cli_args.push("use-file".to_string());
-                    cli_args.push("/near/my_project.wasm".to_string());
-                    cli_args.push("without-init-call".to_string());
-                }
-                Action::FunctionCall(FunctionCallAction {
-                    method_name,
-                    args: _,
-                    gas,
-                    deposit,
-                }) => {
-                    cli_args.push("add-action".to_string());
-                    cli_args.push("function-call".to_string());
-                    cli_args.push(method_name);
-                    cli_args.push("json-args".to_string());
-                    cli_args.push("'{}'".to_string());
-                    cli_args.push("prepaid-gas".to_string());
-                    cli_args.push(format!(
-                        "'{} Tgas'",
-                        near_gas::NearGas::from_gas(gas).as_tgas()
-                    ));
-                    cli_args.push("attached-deposit".to_string());
-                    cli_args.push(format!(
-                        "'{}'",
-                        near_token::NearToken::from_yoctonear(deposit)
-                    ));
-                }
-                Action::Stake(StakeAction { stake, public_key }) => {
-                    cli_args.push("add-action".to_string());
-                    cli_args.push("stake".to_string());
-                    cli_args.push(format!(
-                        "'{}'",
-                        near_token::NearToken::from_yoctonear(stake)
-                    ));
-                    cli_args.push(public_key.to_string());
-                }
-                Action::Delegate(_) => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                        "SignedDelegateAction not implemented"
-                    ));
-                }
+            );
+            if number == 0 {
+                cmd_cli_args.extend(cmd.to_cli_args());
+            } else {
+                cmd_cli_args.extend(next_actions_cli_args);
             }
         }
-        cli_args.append(&mut cli_args_suffix);
-
-        println!("Here is your console command to run archive transaction. You can to edit it or re-run:\n");
-        println!("{}\n", cli_args.join(" "));
+        let near_cli_exec_path = crate::common::get_near_exec_path();
+        eprintln!("Here is your console command to run archive transaction. You can to edit it or re-run:");
+        eprintln!(
+            "{}\n",
+            shell_words::join(std::iter::once(near_cli_exec_path).chain(cmd_cli_args))
+        );
 
         Ok(Self)
     }

@@ -6,7 +6,7 @@ mod config;
 pub mod contract;
 mod staking;
 mod tokens;
-mod transaction;
+pub mod transaction;
 
 #[cfg(feature = "self-update")]
 pub mod extensions;

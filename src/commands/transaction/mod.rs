@@ -1,7 +1,7 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod construct_transaction;
+pub mod construct_transaction;
 mod repeat_transaction;
 mod send_meta_transaction;
 mod send_signed_transaction;
