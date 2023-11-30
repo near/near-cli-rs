@@ -14,7 +14,7 @@ use crate::common::JsonRpcClientExt;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = TransactionInfoContext)]
 pub struct TransactionInfo {
-    /// Enter the hash of the transaction you need to view:
+    /// Enter the hash of the transaction you want to use as a template:
     transaction_hash: crate::types::crypto_hash::CryptoHash,
     /// What is the name of the network?
     #[interactive_clap(skip_default_input_arg)]
