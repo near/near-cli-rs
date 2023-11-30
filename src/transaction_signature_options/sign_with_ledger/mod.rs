@@ -93,7 +93,8 @@ impl SignLedgerContext {
                         color_eyre::Report::msg("Blind signature is disabled in NEAR app's settings on Ledger device".to_string())
                     },
                     near_ledger::NEARLedgerError::BlindSignatureNotSupported => {
-                        color_eyre::Report::msg("Blind signature is not supported by the version of NEAR app installed on Ledger device".to_string())
+                        color_eyre::Report::msg("Blind signature is not supported by the version of NEAR app installed on Ledger device. \
+                        Version of the app with the feature available is tracked in https://github.com/LedgerHQ/app-near/pull/32".to_string())
                     },
                     err => {
                         color_eyre::Report::msg(format!(
