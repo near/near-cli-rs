@@ -1,7 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod access_key_type;
-mod use_manually_provided_seed_phrase;
+pub mod use_manually_provided_seed_phrase;
 pub mod use_public_key;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
