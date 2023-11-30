@@ -27,9 +27,9 @@ pub enum TransactionActions {
     /// Execute function (contract method)
     ViewStatus(self::view_status::TransactionInfo),
     #[strum_discriminants(strum(
-        message = "reconstruct-transaction  - Repeat a transaction from the archive"
+        message = "reconstruct-transaction  - Use any existing transaction from the chain to construct NEAR CLI command (helpful tool for re-submitting similar transactions)"
     ))]
-    /// Reconstruct a transaction from the archive
+    /// Use any existing transaction from the chain to construct NEAR CLI command (helpful tool for re-submitting similar transactions)
     ReconstructTransaction(self::reconstruct_transaction::TransactionInfo),
     #[strum_discriminants(strum(
         message = "construct-transaction    - Construct a new transaction"
