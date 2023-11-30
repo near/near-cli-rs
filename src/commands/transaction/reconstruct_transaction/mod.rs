@@ -93,7 +93,7 @@ impl TransactionInfoContext {
             cmd_cli_args.extend(next_actions.to_cli_args());
         }
 
-        let skip_action = crate::commands::transaction::construct_transaction::add_action_2::CliNextAction::Skip(
+        let skip_action = crate::commands::transaction::construct_transaction::add_action_1::CliNextAction::Skip(
             crate::commands::transaction::construct_transaction::skip_action::CliSkipAction{
                 network_config: Some(crate::commands::transaction::construct_transaction::skip_action::ClapNamedArgNetworkForTransactionArgsForSkipAction::NetworkConfig(
                     crate::network_for_transaction::CliNetworkForTransactionArgs{
