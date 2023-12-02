@@ -1,51 +1,7 @@
-use std::str::FromStr;
-
 use color_eyre::eyre::Context;
 use interactive_clap::ToCliArgs;
 
-use near_primitives::{
-    account::{AccessKeyPermission, FunctionCallPermission},
-    transaction::{
-        Action, AddKeyAction, DeleteAccountAction, DeleteKeyAction, DeployContractAction,
-        FunctionCallAction, StakeAction, TransferAction,
-    },
-};
-
 use crate::common::JsonRpcClientExt;
-
-use crate::commands::transaction::{
-    construct_transaction::{
-        add_action_1::{
-            add_action::{
-                add_key::CliAddKeyAction,
-                add_key::{
-                    access_key_type::{CliFullAccessType, CliFunctionCallType},
-                    use_public_key::CliAddAccessKeyAction,
-                    CliAccessKeyMode, CliAccessKeyPermission,
-                },
-                call_function::{
-                    ClapNamedArgDepositForPrepaidGas, ClapNamedArgPrepaidGasForFunctionCallAction,
-                    CliDeposit, CliFunctionCallAction, CliPrepaidGas,
-                },
-                create_account::CliCreateAccountAction,
-                delete_account::CliDeleteAccountAction,
-                delete_key::CliDeleteKeyAction,
-                deploy_contract::{
-                    initialize_mode::{CliInitializeMode, CliNoInitialize},
-                    ClapNamedArgContractFileForDeployContractAction, CliContractFile,
-                    CliDeployContractAction,
-                },
-                stake::CliStakeAction,
-                transfer::CliTransferAction,
-                CliActionSubcommand, CliAddAction,
-            },
-            CliNextAction,
-        },
-        skip_action::{ClapNamedArgNetworkForTransactionArgsForSkipAction, CliSkipAction},
-        CliConstructTransaction,
-    },
-    CliTransactionActions, CliTransactionCommands,
-};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -66,6 +22,9 @@ impl TransactionInfoContext {
         previous_context: crate::GlobalContext,
         scope: &<TransactionInfo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        use super::construct_transaction::{add_action_1, skip_action, CliConstructTransaction};
+        use super::{CliTransactionActions, CliTransactionCommands};
+
         let networks = previous_context.config.network_connection;
         let network_config = networks
             .get(&scope.network_name)
@@ -73,62 +32,70 @@ impl TransactionInfoContext {
             .clone();
         let query_view_transaction_status = network_config
             .json_rpc_client()
-            .blocking_call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
-                transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
-                    hash: scope.transaction_hash.into(),
-                    account_id: "near".parse::<near_primitives::types::AccountId>()?
-
-                }
-            })
+            .blocking_call(
+                near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
+                    transaction_info:
+                        near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
+                            hash: scope.transaction_hash.into(),
+                            account_id: "near".parse::<near_primitives::types::AccountId>()?,
+                        },
+                },
+            )
             .wrap_err("Failed to fetch query for view transaction")?;
 
-        let signer_id = query_view_transaction_status
-            .final_outcome
-            .transaction
-            .signer_id;
-        let receiver_id = query_view_transaction_status
-            .final_outcome
-            .transaction
-            .receiver_id;
-        let archival_actions: Vec<Action> = query_view_transaction_status
-            .final_outcome
-            .transaction
-            .actions
-            .into_iter()
-            .map(near_primitives::transaction::Action::try_from)
-            .collect::<Result<_, _>>()
-            .expect("Internal error: can not convert the action_view to action.");
-        let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
-            signer_id: signer_id.clone(),
-            receiver_id: receiver_id.clone(),
-            actions: archival_actions.clone(),
+        let mut prepopulated_transaction = crate::commands::PrepopulatedTransaction {
+            signer_id: query_view_transaction_status.transaction.signer_id,
+            receiver_id: query_view_transaction_status.transaction.receiver_id,
+            actions: query_view_transaction_status
+                .transaction
+                .actions
+                .into_iter()
+                .map(near_primitives::transaction::Action::try_from)
+                .collect::<Result<Vec<near_primitives::transaction::Action>, _>>()
+                .expect("Internal error: can not convert the action_view to action."),
         };
 
-        eprintln!("\nArchive transaction:\n");
+        eprintln!(
+            "\nTransaction {}:\n",
+            query_view_transaction_status.transaction.hash
+        );
         crate::common::print_unsigned_transaction(&prepopulated_transaction);
         eprintln!();
+
+        if prepopulated_transaction.actions.len() == 1 {
+            if let near_primitives::transaction::Action::Delegate(signed_delegate_action) =
+                &prepopulated_transaction.actions[0]
+            {
+                prepopulated_transaction = crate::commands::PrepopulatedTransaction {
+                    signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
+                    receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
+                    actions: signed_delegate_action.delegate_action.get_actions(),
+                };
+            }
+        }
 
         let cmd = crate::commands::CliTopLevelCommand::Transaction(CliTransactionCommands {
             transaction_actions: Some(CliTransactionActions::ConstructTransaction(
                 CliConstructTransaction {
-                    sender_account_id: Some(signer_id.into()),
-                    receiver_account_id: Some(receiver_id.into()),
+                    sender_account_id: Some(prepopulated_transaction.signer_id.into()),
+                    receiver_account_id: Some(prepopulated_transaction.receiver_id.into()),
                     next_actions: None,
                 },
             )),
         });
         let mut cmd_cli_args = cmd.to_cli_args();
 
-        for archival_action in archival_actions {
-            let next_actions = CliNextAction::AddAction(CliAddAction {
-                action: action_transformation(archival_action)?,
-            });
+        for transaction_action in prepopulated_transaction.actions {
+            let next_actions =
+                add_action_1::CliNextAction::AddAction(add_action_1::add_action::CliAddAction {
+                    action: action_transformation(transaction_action)?,
+                });
             cmd_cli_args.extend(next_actions.to_cli_args());
         }
 
-        let skip_action = CliNextAction::Skip(CliSkipAction {
+        let skip_action = add_action_1::CliNextAction::Skip(skip_action::CliSkipAction {
             network_config: Some(
-                ClapNamedArgNetworkForTransactionArgsForSkipAction::NetworkConfig(
+                skip_action::ClapNamedArgNetworkForTransactionArgsForSkipAction::NetworkConfig(
                     crate::network_for_transaction::CliNetworkForTransactionArgs {
                         network_name: Some(scope.network_name.clone()),
                         transaction_signature_options: None,
@@ -158,64 +125,66 @@ impl TransactionInfo {
 }
 
 fn action_transformation(
-    archival_action: Action,
-) -> color_eyre::eyre::Result<Option<CliActionSubcommand>> {
+    archival_action: near_primitives::transaction::Action,
+) -> color_eyre::eyre::Result<
+    Option<super::construct_transaction::add_action_1::add_action::CliActionSubcommand>,
+> {
+    use near_primitives::transaction::{self, Action};
+
+    use super::construct_transaction::add_action_1::add_action;
+
     match archival_action {
         Action::CreateAccount(_) => {
-            Ok(Some(CliActionSubcommand::CreateAccount(
-                CliCreateAccountAction{
+            Ok(Some(add_action::CliActionSubcommand::CreateAccount(
+                add_action::create_account::CliCreateAccountAction {
                     next_action: None
                 }
             )))
         }
-        Action::DeleteAccount(DeleteAccountAction { beneficiary_id }) => {
-            Ok(Some(CliActionSubcommand::DeleteAccount(
-                CliDeleteAccountAction{
+        Action::DeleteAccount(transaction::DeleteAccountAction { beneficiary_id }) => {
+            Ok(Some(add_action::CliActionSubcommand::DeleteAccount(
+                add_action::delete_account::CliDeleteAccountAction {
                     beneficiary_id: Some(beneficiary_id.into()),
                     next_action: None
                 }
             )))
         }
-        Action::AddKey(AddKeyAction {
-            public_key,
-            access_key,
-        }) => {
-            Ok(Some(CliActionSubcommand::AddKey(
-                CliAddKeyAction{
+        Action::AddKey(transaction::AddKeyAction { public_key, access_key }) => {
+            Ok(Some(add_action::CliActionSubcommand::AddKey(
+                add_action::add_key::CliAddKeyAction {
                     permission: get_access_key_permission(public_key, access_key.permission)?
                 }
             )))
         }
-        Action::DeleteKey(DeleteKeyAction { public_key }) => {
-            Ok(Some(CliActionSubcommand::DeleteKey(
-                CliDeleteKeyAction{
+        Action::DeleteKey(transaction::DeleteKeyAction { public_key }) => {
+            Ok(Some(add_action::CliActionSubcommand::DeleteKey(
+                add_action::delete_key::CliDeleteKeyAction {
                     public_key: Some(public_key.into()),
                     next_action: None
                 }
             )))
         }
-        Action::Transfer(TransferAction { deposit }) => {
-            Ok(Some(CliActionSubcommand::Transfer(
-                CliTransferAction{
+        Action::Transfer(transaction::TransferAction { deposit }) => {
+            Ok(Some(add_action::CliActionSubcommand::Transfer(
+                add_action::transfer::CliTransferAction {
                     amount_in_near: Some(near_token::NearToken::from_yoctonear(deposit)),
                     next_action: None
                 }
             )))
         }
-        Action::DeployContract(DeployContractAction { code }) => {
-            std::fs::create_dir_all("near-contract")?;
+        Action::DeployContract(transaction::DeployContractAction { code }) => {
             std::fs::write(
-                "./near-contract/my-contract.wasm",
+                "reconstruct-transaction-deploy-code.wasm",
                 code
             )
-            .wrap_err("Failed to write to file: '/near-contract/my-contract.wasm'")?;
-            Ok(Some(CliActionSubcommand::DeployContract(
-                CliDeployContractAction{
-                    use_file: Some(ClapNamedArgContractFileForDeployContractAction::UseFile(
-                        CliContractFile{
-                            file_path: Some(crate::types::path_buf::PathBuf::from_str("./near-contract/my-contract.wasm")?),
-                            initialize: Some(CliInitializeMode::WithoutInitCall(
-                                CliNoInitialize{
+            .wrap_err("Failed to write the deploy command code to file: 'reconstruct-transaction-deploy-code.wasm' in the current folder")?;
+            Ok(Some(add_action::CliActionSubcommand::DeployContract(
+                add_action::deploy_contract::CliDeployContractAction {
+                    use_file: Some(add_action::deploy_contract::ClapNamedArgContractFileForDeployContractAction::UseFile(
+                        add_action::deploy_contract::CliContractFile {
+                            file_path: Some("reconstruct-transaction-deploy-code.wasm".parse()?),
+                            initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
+                                add_action::deploy_contract::initialize_mode::CliNoInitialize {
                                     next_action: None
                                 }
                             ))
@@ -224,17 +193,17 @@ fn action_transformation(
                 }
             )))
         }
-        Action::FunctionCall(FunctionCallAction { method_name, args, gas, deposit }) => {
-            Ok(Some(CliActionSubcommand::FunctionCall(
-                CliFunctionCallAction{
+        Action::FunctionCall(transaction::FunctionCallAction { method_name, args, gas, deposit }) => {
+            Ok(Some(add_action::CliActionSubcommand::FunctionCall(
+                add_action::call_function::CliFunctionCallAction {
                     function_name: Some(method_name),
                     function_args_type: Some(crate::commands::contract::call_function::call_function_args_type::FunctionArgsType::TextArgs),
                     function_args: Some(String::from_utf8(args)?),
-                    prepaid_gas: Some(ClapNamedArgPrepaidGasForFunctionCallAction::PrepaidGas(
-                        CliPrepaidGas{
+                    prepaid_gas: Some(add_action::call_function::ClapNamedArgPrepaidGasForFunctionCallAction::PrepaidGas(
+                        add_action::call_function::CliPrepaidGas {
                             gas: Some(near_gas::NearGas::from_gas(gas)),
-                            attached_deposit: Some(ClapNamedArgDepositForPrepaidGas::AttachedDeposit(
-                                CliDeposit{
+                            attached_deposit: Some(add_action::call_function::ClapNamedArgDepositForPrepaidGas::AttachedDeposit(
+                                add_action::call_function::CliDeposit {
                                     deposit: Some(near_token::NearToken::from_yoctonear(deposit)),
                                     next_action: None
                                 }
@@ -244,9 +213,9 @@ fn action_transformation(
                 }
             )))
         }
-        Action::Stake(StakeAction { stake, public_key }) => {
-            Ok(Some(CliActionSubcommand::Stake(
-                CliStakeAction{
+        Action::Stake(transaction::StakeAction { stake, public_key }) => {
+            Ok(Some(add_action::CliActionSubcommand::Stake(
+                add_action::stake::CliStakeAction {
                     stake_amount: Some(near_token::NearToken::from_yoctonear(stake)),
                     public_key: Some(public_key.into()),
                     next_action: None
@@ -254,9 +223,7 @@ fn action_transformation(
             )))
         }
         Action::Delegate(_) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "SignedDelegateAction not implemented"
-            ))
+            panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
     }
 }
@@ -264,38 +231,44 @@ fn action_transformation(
 fn get_access_key_permission(
     public_key: near_crypto::PublicKey,
     access_key_permission: near_primitives::account::AccessKeyPermission,
-) -> color_eyre::eyre::Result<Option<CliAccessKeyPermission>> {
+) -> color_eyre::eyre::Result<
+    Option<super::construct_transaction::add_action_1::add_action::add_key::CliAccessKeyPermission>,
+> {
+    use super::construct_transaction::add_action_1::add_action::add_key;
+
     match access_key_permission {
-        AccessKeyPermission::FullAccess => Ok(Some(CliAccessKeyPermission::GrantFullAccess(
-            CliFullAccessType {
-                access_key_mode: Some(CliAccessKeyMode::UseManuallyProvidedPublicKey(
-                    CliAddAccessKeyAction {
-                        public_key: Some(public_key.into()),
-                        next_action: None,
-                    },
-                )),
+        near_primitives::account::AccessKeyPermission::FullAccess => {
+            Ok(Some(add_key::CliAccessKeyPermission::GrantFullAccess(
+                add_key::access_key_type::CliFullAccessType {
+                    access_key_mode: Some(add_key::CliAccessKeyMode::UseManuallyProvidedPublicKey(
+                        add_key::use_public_key::CliAddAccessKeyAction {
+                            public_key: Some(public_key.into()),
+                            next_action: None,
+                        },
+                    )),
+                },
+            )))
+        }
+        near_primitives::account::AccessKeyPermission::FunctionCall(
+            near_primitives::account::FunctionCallPermission {
+                allowance,
+                receiver_id,
+                method_names,
             },
-        ))),
-        AccessKeyPermission::FunctionCall(FunctionCallPermission {
-            allowance,
-            receiver_id,
-            method_names,
-        }) => Ok(Some(CliAccessKeyPermission::GrantFunctionCallAccess(
-            CliFunctionCallType {
-                allowance: Some(near_token::NearToken::from_yoctonear(
-                    allowance.expect("Internal error"),
-                )),
-                receiver_account_id: Some(crate::types::account_id::AccountId::from_str(
-                    &receiver_id,
-                )?),
-                method_names: Some(crate::types::vec_string::VecString(method_names)),
-                access_key_mode: Some(CliAccessKeyMode::UseManuallyProvidedPublicKey(
-                    CliAddAccessKeyAction {
-                        public_key: Some(public_key.into()),
-                        next_action: None,
-                    },
-                )),
-            },
-        ))),
+        ) => Ok(Some(
+            add_key::CliAccessKeyPermission::GrantFunctionCallAccess(
+                add_key::access_key_type::CliFunctionCallType {
+                    allowance: allowance.map(near_token::NearToken::from_yoctonear),
+                    receiver_account_id: Some(receiver_id.parse()?),
+                    method_names: Some(crate::types::vec_string::VecString(method_names)),
+                    access_key_mode: Some(add_key::CliAccessKeyMode::UseManuallyProvidedPublicKey(
+                        add_key::use_public_key::CliAddAccessKeyAction {
+                            public_key: Some(public_key.into()),
+                            next_action: None,
+                        },
+                    )),
+                },
+            ),
+        )),
     }
 }
