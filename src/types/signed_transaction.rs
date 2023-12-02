@@ -5,6 +5,12 @@ pub struct SignedTransactionAsBase64 {
     pub inner: near_primitives::transaction::SignedTransaction,
 }
 
+impl From<SignedTransactionAsBase64> for near_primitives::transaction::SignedTransaction {
+    fn from(transaction: SignedTransactionAsBase64) -> Self {
+        transaction.inner
+    }
+}
+
 impl std::str::FromStr for SignedTransactionAsBase64 {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {

@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use color_eyre::eyre::WrapErr;
 use futures::{StreamExt, TryStreamExt};
+use near_primitives::borsh::BorshSerialize;
 use prettytable::Table;
 
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
@@ -515,6 +516,28 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         secret_keypair_str,
     };
     Ok(key_pair_properties)
+}
+
+pub fn print_full_signed_transaction(transaction: near_primitives::transaction::SignedTransaction) {
+    eprintln!("{:<25} {}\n", "signature:", transaction.signature);
+    crate::common::print_full_unsigned_transaction(transaction.transaction);
+}
+
+pub fn print_full_unsigned_transaction(transaction: near_primitives::transaction::Transaction) {
+    let bytes = transaction
+        .try_to_vec()
+        .expect("Transaction is not expected to fail on serialization");
+    eprintln!(
+        "Unsigned transaction hash (Base58-encoded SHA-256 hash): {}\n\n",
+        CryptoHash::hash_bytes(&bytes)
+    );
+
+    eprintln!("{:<13} {}", "public_key:", &transaction.public_key);
+    eprintln!("{:<13} {}", "nonce:", &transaction.nonce);
+    eprintln!("{:<13} {}", "block_hash:", &transaction.block_hash);
+
+    let prepopulated = crate::commands::PrepopulatedTransaction::from(transaction);
+    print_unsigned_transaction(&prepopulated);
 }
 
 pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTransaction) {
