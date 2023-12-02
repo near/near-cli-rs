@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3](https://github.com/near/near-cli-rs/compare/v0.7.2...v0.7.3) - 2023-12-02
+
+### Added
+- Added support for blind signing with Ledger [requires updated Ledger app that is not yet published] ([#259](https://github.com/near/near-cli-rs/pull/259))
+- New command to reconstruct NEAR CLI command from a historical transaction ([#266](https://github.com/near/near-cli-rs/pull/266))
+
+### Other
+- Addressed all default cargo clippy warnings ([#263](https://github.com/near/near-cli-rs/pull/263))
+
 ## [0.7.2](https://github.com/near/near-cli-rs/compare/v0.7.1...v0.7.2) - 2023-11-21
 
 ### Added
