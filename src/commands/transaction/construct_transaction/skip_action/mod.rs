@@ -4,7 +4,7 @@
 pub struct SkipAction {
     #[interactive_clap(named_arg)]
     /// Select network
-    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+    pub network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
 #[derive(Debug, Clone)]
