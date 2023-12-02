@@ -1,6 +1,6 @@
 use color_eyre::eyre::Context;
 
-mod initialize_mode;
+pub mod initialize_mode;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = super::super::super::ConstructTransactionContext)]

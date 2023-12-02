@@ -1,8 +1,8 @@
-mod add_action_1;
-mod add_action_2;
-mod add_action_3;
-mod add_action_last;
-mod skip_action;
+pub mod add_action_1;
+pub mod add_action_2;
+pub mod add_action_3;
+pub mod add_action_last;
+pub mod skip_action;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -10,12 +10,12 @@ mod skip_action;
 pub struct ConstructTransaction {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the sender account ID?
-    sender_account_id: crate::types::account_id::AccountId,
+    pub sender_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
     /// What is the receiver account ID?
-    receiver_account_id: crate::types::account_id::AccountId,
+    pub receiver_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
-    next_actions: self::add_action_1::NextAction,
+    pub next_actions: self::add_action_1::NextAction,
 }
 
 #[derive(Debug, Clone)]
