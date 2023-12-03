@@ -1,7 +1,8 @@
+use color_eyre::{eyre::Context, owo_colors::OwoColorize};
+use inquire::{formatter::MultiOptionFormatter, MultiSelect};
+
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
-use color_eyre::eyre::Context;
-use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::DeleteKeysCommandContext)]
@@ -140,8 +141,10 @@ impl std::fmt::Display for AccessKeyInfo {
             near_primitives::views::AccessKeyPermissionView::FullAccess => {
                 write!(
                     f,
-                    "{} {}    full access",
-                    self.network_name, self.public_key
+                    "{} {}    {}",
+                    self.network_name.green(),
+                    self.public_key.green(),
+                    "full access".green()
                 )
             }
             near_primitives::views::AccessKeyPermissionView::FunctionCall {
@@ -159,18 +162,24 @@ impl std::fmt::Display for AccessKeyInfo {
                 if method_names.is_empty() {
                     write!(
                         f,
-                        "{} {}    do any function calls on {} {}",
-                        self.network_name, self.public_key, receiver_id, allowance_message
+                        "{} {}    {} {} {}",
+                        self.network_name.yellow(),
+                        self.public_key.yellow(),
+                        "do any function calls on".yellow(),
+                        receiver_id.yellow(),
+                        allowance_message.yellow()
                     )
                 } else {
                     write!(
                         f,
-                        "{} {}    only do {:?} function calls on {} {}",
-                        self.network_name,
-                        self.public_key,
-                        method_names,
-                        receiver_id,
-                        allowance_message
+                        "{} {}    {} {:?} {} {} {}",
+                        self.network_name.yellow(),
+                        self.public_key.yellow(),
+                        "only do".yellow(),
+                        method_names.yellow(),
+                        "function calls on".yellow(),
+                        receiver_id.yellow(),
+                        allowance_message.yellow()
                     )
                 }
             }
