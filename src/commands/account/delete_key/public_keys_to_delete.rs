@@ -141,10 +141,10 @@ impl std::fmt::Display for AccessKeyInfo {
             near_primitives::views::AccessKeyPermissionView::FullAccess => {
                 write!(
                     f,
-                    "{} {}    {}",
-                    self.network_name.green(),
-                    self.public_key.green(),
-                    "full access".green()
+                    "{} {}\t{}",
+                    self.network_name.blue(),
+                    self.public_key.yellow(),
+                    "full access".yellow()
                 )
             }
             near_primitives::views::AccessKeyPermissionView::FunctionCall {
@@ -154,7 +154,7 @@ impl std::fmt::Display for AccessKeyInfo {
             } => {
                 let allowance_message = match allowance {
                     Some(amount) => format!(
-                        "with an allowance of {}",
+                        "with a remaining fee allowance of {}",
                         near_token::NearToken::from_yoctonear(*amount)
                     ),
                     None => "with no limit".to_string(),
@@ -162,24 +162,24 @@ impl std::fmt::Display for AccessKeyInfo {
                 if method_names.is_empty() {
                     write!(
                         f,
-                        "{} {}    {} {} {}",
-                        self.network_name.yellow(),
-                        self.public_key.yellow(),
-                        "do any function calls on".yellow(),
-                        receiver_id.yellow(),
-                        allowance_message.yellow()
+                        "{} {}\t{} {} {}",
+                        self.network_name.blue(),
+                        self.public_key.green(),
+                        "call any function on".green(),
+                        receiver_id.green(),
+                        allowance_message.green()
                     )
                 } else {
                     write!(
                         f,
-                        "{} {}    {} {:?} {} {} {}",
-                        self.network_name.yellow(),
-                        self.public_key.yellow(),
-                        "only do".yellow(),
-                        method_names.yellow(),
-                        "function calls on".yellow(),
-                        receiver_id.yellow(),
-                        allowance_message.yellow()
+                        "{} {}\t{} {:?} {} {} {}",
+                        self.network_name.blue(),
+                        self.public_key.green(),
+                        "call".green(),
+                        method_names.green(),
+                        "function(s) on".green(),
+                        receiver_id.green(),
+                        allowance_message.green()
                     )
                 }
             }
