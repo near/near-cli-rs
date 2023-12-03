@@ -82,7 +82,11 @@ impl PublicKeyList {
         context: &super::DeleteKeysCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::public_key_list::PublicKeyList>> {
         let mut access_key_list: Vec<AccessKeyInfo> = vec![];
+        let mut processed_network: Vec<String> = vec![];
         for (_, network_config) in context.global_context.config.network_connection.iter() {
+            if processed_network.contains(&network_config.network_name) {
+                continue;
+            }
             let access_key_list_for_network = network_config
                 .json_rpc_client()
                 .blocking_call_view_access_key_list(
@@ -104,6 +108,7 @@ impl PublicKeyList {
                     network_name: network_config.network_name.clone(),
                 },
             ));
+            processed_network.push(network_config.network_name.to_string());
         }
 
         let formatter: MultiOptionFormatter<'_, AccessKeyInfo> = &|a| {
