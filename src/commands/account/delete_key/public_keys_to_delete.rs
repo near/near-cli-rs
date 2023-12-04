@@ -116,10 +116,7 @@ impl PublicKeyList {
                 .iter()
                 .map(|list_option| list_option.value.to_string())
                 .collect::<Vec<_>>();
-            format!(
-                "{}",
-                crate::types::vec_string::VecString::from(public_key_list)
-            )
+            format!("\n{}", public_key_list.join("\n"))
         };
 
         let selected_public_keys = MultiSelect::new(

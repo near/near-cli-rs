@@ -3,7 +3,7 @@ pub struct VecString(pub Vec<String>);
 
 impl std::fmt::Display for VecString {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "\n{}", self.0.join("\n"))
+        write!(f, "{}", self.0.join(","))
     }
 }
 
