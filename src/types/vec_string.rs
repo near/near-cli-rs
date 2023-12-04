@@ -22,6 +22,12 @@ impl From<VecString> for Vec<String> {
     }
 }
 
+impl From<Vec<String>> for VecString {
+    fn from(item: Vec<String>) -> Self {
+        Self(item)
+    }
+}
+
 impl interactive_clap::ToCli for VecString {
     type CliVariant = VecString;
 }

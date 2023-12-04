@@ -61,10 +61,10 @@ pub enum AccountActions {
     /// Add an access key to an account
     AddKey(self::add_key::AddKeyCommand),
     #[strum_discriminants(strum(
-        message = "delete-key              - Delete an access key from an account"
+        message = "delete-keys             - Delete access keys from an account"
     ))]
-    /// Delete an access key from an account
-    DeleteKey(self::delete_key::DeleteKeyCommand),
+    /// Delete access keys from an account
+    DeleteKeys(self::delete_key::DeleteKeysCommand),
     #[strum_discriminants(strum(
         message = "manage-storage-deposit  - Storage management: deposit, withdrawal, balance review"
     ))]
