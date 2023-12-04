@@ -3,7 +3,7 @@ pub struct VecString(pub Vec<String>);
 
 impl std::fmt::Display for VecString {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.0.join(","))
+        write!(f, "\n{}", self.0.join("\n"))
     }
 }
 
@@ -19,6 +19,12 @@ impl std::str::FromStr for VecString {
 impl From<VecString> for Vec<String> {
     fn from(item: VecString) -> Self {
         item.0
+    }
+}
+
+impl From<Vec<String>> for VecString {
+    fn from(item: Vec<String>) -> Self {
+        Self(item)
     }
 }
 
