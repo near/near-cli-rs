@@ -79,7 +79,7 @@ impl DownloadContractContext {
                             account_id: account_id.clone(),
                         },
                     })
-                    .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}>", &account_id))?;
+                    .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}> on network <{}>", &account_id, network_config.network_name))?;
                 let call_access_view =
                     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
                         query_view_method_response.kind

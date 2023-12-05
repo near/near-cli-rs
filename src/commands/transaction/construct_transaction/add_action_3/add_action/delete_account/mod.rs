@@ -77,7 +77,14 @@ impl DeleteAccountAction {
                 )
                 .is_none()
                 {
-                    eprintln!("\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{account_id}> as the beneficiary as it does not exist.");
+                    let networks: Vec<String> = context
+                        .global_context
+                        .config
+                        .network_connection
+                        .iter()
+                        .map(|(_, network_config)| network_config.network_name.clone())
+                        .collect();
+                    eprintln!("\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{account_id}> as the beneficiary as it does not exist on [{}] networks.", networks.join(", "));
                     if !crate::common::ask_if_different_account_id_wanted()? {
                         return Ok(Some(account_id));
                     }

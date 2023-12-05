@@ -160,6 +160,12 @@ pub fn get_account_transfer_allowance(
         get_account_state(network_config.clone(), account_id.clone(), block_reference)
     {
         account_view
+    } else if !account_id.is_implicit() {
+        return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Account <{}> does not exist on network <{}>.",
+            account_id,
+            network_config.network_name
+        ));
     } else {
         return Ok(AccountTransferAllowance {
             account_id,
@@ -1303,7 +1309,9 @@ fn path_directories() -> Vec<std::path::PathBuf> {
 pub fn get_delegated_validator_list_from_mainnet(
     network_connection: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
 ) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
-    let network_config = network_connection.get("mainnet").expect("Internal error!");
+    let network_config = network_connection
+        .get("mainnet")
+        .expect("There is no 'mainnet' network in your configuration.");
 
     let epoch_validator_info = network_config
         .json_rpc_client()
@@ -1794,6 +1802,15 @@ pub fn input_network_name(
     config: &crate::config::Config,
     account_ids: &[near_primitives::types::AccountId],
 ) -> color_eyre::eyre::Result<Option<String>> {
+    if config.network_connection.keys().len() == 1 {
+        let network_name = config
+            .network_connection
+            .iter()
+            .map(|(_, network_config)| network_config.network_name.clone())
+            .next()
+            .expect("Internall error");
+        return Ok(Some(network_name));
+    }
     let variants = if !account_ids.is_empty() {
         let (mut matches, non_matches): (Vec<_>, Vec<_>) = config
             .network_connection

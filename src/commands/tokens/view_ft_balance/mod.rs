@@ -1,3 +1,4 @@
+use color_eyre::eyre::Context;
 use serde_json::json;
 
 use crate::common::CallResultExt;
@@ -44,7 +45,13 @@ impl ViewFtBalanceContext {
                         "ft_balance_of",
                         args,
                         block_reference.clone(),
-                    )?;
+                    )
+                    .wrap_err_with(||{
+                        format!("Failed to fetch query for view method: 'ft_balance_of' (contract <{}> on network <{}>)",
+                            ft_contract_account_id,
+                            network_config.network_name
+                        )
+                    })?;
                 call_result.print_logs();
                 let amount: String = call_result.parse_result_from_json()?;
                 let amount = amount.parse::<u128>().unwrap();

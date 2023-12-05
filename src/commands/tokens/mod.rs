@@ -1,3 +1,4 @@
+use color_eyre::eyre::Context;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::CallResultExt;
@@ -100,7 +101,13 @@ pub fn params_ft_metadata(
             "ft_metadata",
             vec![],
             block_reference,
-        )?
+        )
+        .wrap_err_with(||{
+            format!("Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
+                ft_contract_account_id,
+                network_config.network_name
+            )
+        })?
         .parse_result_from_json()?;
     Ok(ft_metadata)
 }
