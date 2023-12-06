@@ -1803,13 +1803,7 @@ pub fn input_network_name(
     account_ids: &[near_primitives::types::AccountId],
 ) -> color_eyre::eyre::Result<Option<String>> {
     if config.network_connection.len() == 1 {
-        return Ok(Some(
-            config
-                .network_names()
-                .first()
-                .wrap_err("Internall error")?
-                .clone(),
-        ));
+        return Ok(config.network_names().pop());
     }
     let variants = if !account_ids.is_empty() {
         let (mut matches, non_matches): (Vec<_>, Vec<_>) = config
