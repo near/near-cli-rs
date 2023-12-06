@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4](https://github.com/near/near-cli-rs/compare/v0.7.3...v0.7.4) - 2023-12-06
+
+### Added
+- Removed the need for an additional network selection step if there is only one network connection in the config file ([#272](https://github.com/near/near-cli-rs/pull/272))
+- Added the ability to interactively select access keys to remove from the list of public keys ([#269](https://github.com/near/near-cli-rs/pull/269))
+
+### Other
+- Cleaned up duplicative CI checks and renamed 'master' to 'main' default branch
+- Automate publishing near-cli-rs to npmjs for `npx near-cli-rs` to use the latest released binary release by default ([#273](https://github.com/near/near-cli-rs/pull/273))
+
 ## [0.7.3](https://github.com/near/near-cli-rs/compare/v0.7.2...v0.7.3) - 2023-12-02
 
 ### Added
