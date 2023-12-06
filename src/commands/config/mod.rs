@@ -1,3 +1,4 @@
+use color_eyre::eyre::ContextCompat;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod add_connection;
@@ -44,7 +45,8 @@ impl ShowConnectionsContext {
         previous_context: crate::GlobalContext,
         _scope: &<ShowConnections as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let mut path_config_toml = dirs::config_dir().expect("Impossible to get your config dir!");
+        let mut path_config_toml =
+            dirs::config_dir().wrap_err("Impossible to get your config dir!")?;
         path_config_toml.push("near-cli/config.toml");
         eprintln!(
             "\nConfiguration data is stored in a file {:?}",

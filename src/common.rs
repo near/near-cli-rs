@@ -3,7 +3,7 @@ use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 use std::str::FromStr;
 
-use color_eyre::eyre::WrapErr;
+use color_eyre::eyre::{ContextCompat, WrapErr};
 use futures::{StreamExt, TryStreamExt};
 use near_primitives::borsh::BorshSerialize;
 use prettytable::Table;
@@ -1229,7 +1229,7 @@ pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {
 }
 pub fn write_config_toml(config: crate::config::Config) -> CliResult {
     let config_toml = toml::to_string(&config)?;
-    let mut path_config_toml = dirs::config_dir().expect("Impossible to get your config dir!");
+    let mut path_config_toml = dirs::config_dir().wrap_err("Impossible to get your config dir!")?;
     path_config_toml.push("near-cli");
     std::fs::create_dir_all(&path_config_toml)?;
     path_config_toml.push("config.toml");
@@ -1311,7 +1311,7 @@ pub fn get_delegated_validator_list_from_mainnet(
 ) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
     let network_config = network_connection
         .get("mainnet")
-        .expect("There is no 'mainnet' network in your configuration.");
+        .wrap_err("There is no 'mainnet' network in your configuration.")?;
 
     let epoch_validator_info = network_config
         .json_rpc_client()
@@ -1808,7 +1808,7 @@ pub fn input_network_name(
             .iter()
             .map(|(_, network_config)| network_config.network_name.clone())
             .next()
-            .expect("Internall error");
+            .wrap_err("Internall error")?;
         return Ok(Some(network_name));
     }
     let variants = if !account_ids.is_empty() {

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use color_eyre::eyre::ContextCompat;
 use inquire::{CustomType, Select, Text};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -94,7 +95,13 @@ impl ManuallyContext {
                 if scope.website.is_some() {
                     linktree_map.insert(
                         "website".to_string(),
-                        Some(scope.website.clone().expect("Unexpected error").to_string()),
+                        Some(
+                            scope
+                                .website
+                                .clone()
+                                .wrap_err("Unexpected error")?
+                                .to_string(),
+                        ),
                     );
                 }
                 Some(linktree_map)

@@ -1,3 +1,4 @@
+use color_eyre::eyre::ContextCompat;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -28,7 +29,7 @@ impl NetworkContext {
         let networks = previous_context.config.network_connection.clone();
         let network_config = networks
             .get(&scope.network_name)
-            .expect("Failed to get network config!")
+            .wrap_err("Failed to get network config!")?
             .clone();
 
         eprintln!("\nYour transaction:");
