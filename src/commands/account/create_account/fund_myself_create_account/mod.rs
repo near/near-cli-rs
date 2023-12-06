@@ -110,14 +110,11 @@ impl NewAccount {
                         )
                         .is_none()
                         {
-                            let networks: Vec<String> = context
-                                .config
-                                .network_connection
-                                .iter()
-                                .map(|(_, network_config)| network_config.network_name.clone())
-                                .collect();
                             eprintln!("\nThe parent account <{}> does not exist on [{}] networks. Therefore, you cannot create an account <{}>.",
-                                &parent_account_id, networks.join(", "), &account_id);
+                                parent_account_id,
+                                context.config.network_names().join(", "),
+                                account_id
+                            );
                             if !crate::common::ask_if_different_account_id_wanted()? {
                                 return Ok(Some(account_id));
                             };

@@ -59,16 +59,9 @@ impl DepositArgs {
                 &context.global_context.config.network_connection,
                 receiver_account_id.clone().into(),
             ) {
-                let networks: Vec<String> = context
-                    .global_context
-                    .config
-                    .network_connection
-                    .iter()
-                    .map(|(_, network_config)| network_config.network_name.clone())
-                    .collect();
                 eprintln!(
                     "\nThe account <{receiver_account_id}> does not exist on [{}] networks.",
-                    networks.join(", ")
+                    context.global_context.config.network_names().join(", ")
                 );
                 #[derive(strum_macros::Display)]
                 enum ConfirmOptions {
