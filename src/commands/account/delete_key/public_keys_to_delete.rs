@@ -120,7 +120,7 @@ impl PublicKeyList {
                 .map(|(_, network_config)| network_config.network_name.clone())
                 .collect();
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Access keys for <{}> on [{}] networks were not found",
+                "Access keys for <{}> were not found on [{}] network(s)",
                 context.owner_account_id,
                 networks.join(", ")
             ));
