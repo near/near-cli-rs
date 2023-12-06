@@ -3,7 +3,7 @@ const BIN_NAME: &str = "near.exe";
 #[cfg(not(windows))]
 const BIN_NAME: &str = "near";
 
-use color_eyre::eyre::WrapErr;
+use color_eyre::{eyre::WrapErr, owo_colors::OwoColorize};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -18,7 +18,7 @@ impl SelfUpdateCommandContext {
         _previous_context: crate::GlobalContext,
         _scope: &<SelfUpdateCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        self_update::backends::github::Update::configure()
+        let status = self_update::backends::github::Update::configure()
             .repo_owner("near")
             .repo_name("near-cli-rs")
             .bin_path_in_archive(
@@ -31,6 +31,23 @@ impl SelfUpdateCommandContext {
             .wrap_err("Failed to build self_update")?
             .update()
             .wrap_err("Failed to update near CLI")?;
+        if let self_update::Status::Updated(release) = status {
+            println!(
+                "\n{}{}{}\n",
+                "Welcome to `near` CLI v".green().bold(),
+                release.green().bold(),
+                "!".green().bold()
+            );
+            println!("Report any bugs:\n");
+            println!("\thttps://github.com/near/near-cli-rs/issues\n");
+            println!("What's new:\n");
+            println!(
+                "\t{}{}\n",
+                "https://github.com/near/near-cli-rs/releases/tag/v".truecolor(0, 160, 150),
+                release.truecolor(0, 160, 150)
+            );
+        }
+
         Ok(Self)
     }
 }
