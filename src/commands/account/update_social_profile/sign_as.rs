@@ -69,7 +69,12 @@ impl From<SignerContext> for crate::commands::ActionContext {
                             }))?,
                             near_primitives::types::Finality::Final.into(),
                         )
-                        .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?
+                        .wrap_err_with(|| {
+                            format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",
+                                contract_account_id,
+                                network_config.network_name
+                            )
+                        })?
                         .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
                         .wrap_err_with(|| {
                             format!("Failed to parse view function call return value for {account_id}/profile.")
@@ -186,7 +191,10 @@ impl Signer {
                 &context.global_context.config.network_connection,
                 signer_account_id.clone().into(),
             ) {
-                println!("\nThe account <{signer_account_id}> does not yet exist.");
+                eprintln!(
+                    "\nThe account <{signer_account_id}> does not exist on [{}] networks.",
+                    context.global_context.config.network_names().join(", ")
+                );
                 #[derive(strum_macros::Display)]
                 enum ConfirmOptions {
                     #[strum(to_string = "Yes, I want to enter a new account name.")]

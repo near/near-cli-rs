@@ -41,12 +41,13 @@ impl AccountContext {
                             block_reference.clone(),
                         )
                         .wrap_err_with(|| {
-                            "Failed to fetch query for view method: 'storage_balance_of'"
+                            format!("Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
+                                contract_account_id,
+                                network_config.network_name
+                            )
                         })?
                         .parse_result_from_json::<near_socialdb_client::StorageBalance>()
-                        .wrap_err_with(|| {
-                            "Failed to parse return value of view function call for StorageBalance."
-                        })?;
+                        .wrap_err("Failed to parse return value of view function call for StorageBalance.")?;
                     eprintln!("storage balance for <{account_id}>:");
                     eprintln!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
                         "available:",

@@ -7,21 +7,6 @@ pub struct Config {
     pub network_connection: linked_hash_map::LinkedHashMap<String, NetworkConfig>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct NetworkConfig {
-    pub network_name: String,
-    pub rpc_url: url::Url,
-    pub rpc_api_key: Option<crate::types::api_key::ApiKey>,
-    pub wallet_url: url::Url,
-    pub explorer_transaction_url: url::Url,
-    // https://github.com/near/near-cli-rs/issues/116
-    pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
-    // https://docs.near.org/social/contract
-    pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
-    pub faucet_url: Option<url::Url>,
-    pub meta_transaction_relayer_url: Option<url::Url>,
-}
-
 impl Default for Config {
     fn default() -> Self {
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
@@ -66,6 +51,30 @@ impl Default for Config {
             network_connection,
         }
     }
+}
+
+impl Config {
+    pub fn network_names(&self) -> Vec<String> {
+        self.network_connection
+            .iter()
+            .map(|(_, network_config)| network_config.network_name.clone())
+            .collect()
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct NetworkConfig {
+    pub network_name: String,
+    pub rpc_url: url::Url,
+    pub rpc_api_key: Option<crate::types::api_key::ApiKey>,
+    pub wallet_url: url::Url,
+    pub explorer_transaction_url: url::Url,
+    // https://github.com/near/near-cli-rs/issues/116
+    pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
+    // https://docs.near.org/social/contract
+    pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
+    pub faucet_url: Option<url::Url>,
+    pub meta_transaction_relayer_url: Option<url::Url>,
 }
 
 impl NetworkConfig {

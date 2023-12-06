@@ -115,7 +115,7 @@ impl BeneficiaryAccount {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let beneficiary_account_id = if let Some(account_id) =
-                crate::common::input_signer_account_id_from_used_account_list(
+                crate::common::input_non_signer_account_id_from_used_account_list(
                     &context.global_context.config.credentials_home_dir,
                     "What is the beneficiary account ID?",
                 )? {
@@ -152,7 +152,10 @@ impl BeneficiaryAccount {
                 )
                 .is_none()
                 {
-                    eprintln!("\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{account_id}> as the beneficiary as it does not exist.");
+                    eprintln!("\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{}> as the beneficiary as it does not exist on [{}] networks.",
+                        account_id,
+                        context.global_context.config.network_names().join(", ")
+                    );
                     if !crate::common::ask_if_different_account_id_wanted()? {
                         return Ok(Some(account_id));
                     }

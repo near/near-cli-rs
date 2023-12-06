@@ -110,8 +110,11 @@ impl NewAccount {
                         )
                         .is_none()
                         {
-                            eprintln!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
-                                &parent_account_id, &account_id);
+                            eprintln!("\nThe parent account <{}> does not exist on [{}] networks. Therefore, you cannot create an account <{}>.",
+                                parent_account_id,
+                                context.config.network_names().join(", "),
+                                account_id
+                            );
                             if !crate::common::ask_if_different_account_id_wanted()? {
                                 return Ok(Some(account_id));
                             };

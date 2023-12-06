@@ -1,4 +1,4 @@
-use color_eyre::eyre::Context;
+use color_eyre::eyre::{Context, ContextCompat};
 use interactive_clap::ToCliArgs;
 
 use crate::common::JsonRpcClientExt;
@@ -28,7 +28,7 @@ impl TransactionInfoContext {
         let networks = previous_context.config.network_connection;
         let network_config = networks
             .get(&scope.network_name)
-            .expect("Failed to get network config!")
+            .wrap_err("Failed to get network config!")?
             .clone();
         let query_view_transaction_status = network_config
             .json_rpc_client()
@@ -41,7 +41,12 @@ impl TransactionInfoContext {
                         },
                 },
             )
-            .wrap_err("Failed to fetch query for view transaction")?;
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to fetch query for view transaction on network <{}>",
+                    network_config.network_name
+                )
+            })?;
 
         let mut prepopulated_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: query_view_transaction_status.transaction.signer_id,

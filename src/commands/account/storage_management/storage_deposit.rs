@@ -59,7 +59,10 @@ impl DepositArgs {
                 &context.global_context.config.network_connection,
                 receiver_account_id.clone().into(),
             ) {
-                eprintln!("\nThe account <{receiver_account_id}> does not yet exist.");
+                eprintln!(
+                    "\nThe account <{receiver_account_id}> does not exist on [{}] networks.",
+                    context.global_context.config.network_names().join(", ")
+                );
                 #[derive(strum_macros::Display)]
                 enum ConfirmOptions {
                     #[strum(to_string = "Yes, I want to enter a new account name.")]

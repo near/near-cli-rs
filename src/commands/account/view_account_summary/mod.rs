@@ -33,8 +33,9 @@ impl ViewAccountSummaryContext {
                     .blocking_call_view_account(&account_id.clone(), block_reference.clone())
                     .wrap_err_with(|| {
                         format!(
-                            "Failed to fetch query ViewAccount for <{}>",
-                            &account_id
+                            "Failed to fetch query ViewAccount for account <{}> on network <{}>",
+                            account_id,
+                            network_config.network_name
                         )
                     })?;
                 let account_view = rpc_query_response.account_view()?;
@@ -92,7 +93,12 @@ impl ViewAccountSummaryContext {
                         }))?,
                         block_reference.clone(),
                     )
-                    .wrap_err_with(|| {format!("Failed to fetch query for view method: 'get {account_id}/profile/**'")})?
+                    .wrap_err_with(|| {
+                        format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",
+                            contract_account_id,
+                            network_config.network_name
+                        )
+                    })?
                     .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
                     .wrap_err_with(|| {
                         format!("Failed to parse view function call return value for {account_id}/profile.")

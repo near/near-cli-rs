@@ -148,7 +148,12 @@ impl SignLegacyKeychainContext {
                 }
             }
         };
-        let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
+        let data = std::fs::read_to_string(&data_path).wrap_err_with(|| {
+            format!(
+                "Access key file for account <{}> on network <{}> not found!",
+                previous_context.prepopulated_transaction.signer_id, network_config.network_name
+            )
+        })?;
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
             .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
 

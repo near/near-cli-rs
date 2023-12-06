@@ -94,7 +94,7 @@ impl ManuallyContext {
                 if scope.website.is_some() {
                     linktree_map.insert(
                         "website".to_string(),
-                        Some(scope.website.clone().expect("Unexpected error").to_string()),
+                        scope.website.as_ref().map(|website| website.to_string()),
                     );
                 }
                 Some(linktree_map)

@@ -1,3 +1,5 @@
+use color_eyre::eyre::Context;
+
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
 
@@ -48,7 +50,14 @@ impl CallFunctionViewContext {
                     &function_name,
                     args,
                     block_reference.clone(),
-                )?;
+                )
+                .wrap_err_with(|| {
+                    format!("Failed to fetch query for view method: '{}' (contract <{}> on network <{}>)",
+                        function_name,
+                        account_id,
+                        network_config.network_name
+                    )
+                })?;
                 call_result.print_logs();
                 eprintln!("Result:");
                 if call_result.result.is_empty() {

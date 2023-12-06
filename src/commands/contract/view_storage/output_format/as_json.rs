@@ -33,7 +33,7 @@ impl AsJsonContext {
                             include_proof: false,
                         },
                     })
-                    .wrap_err_with(|| format!("Failed to fetch query ViewState for <{contract_account_id}>"))?;
+                    .wrap_err_with(|| format!("Failed to fetch query ViewState for <{contract_account_id}> on network <{}>", network_config.network_name))?;
                     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
                         query_view_method_response.kind
                     {

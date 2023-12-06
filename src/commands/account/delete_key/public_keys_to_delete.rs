@@ -111,6 +111,14 @@ impl PublicKeyList {
             processed_network.push(network_config.network_name.to_string());
         }
 
+        if access_key_list.is_empty() {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Access keys for <{}> were not found on [{}] network(s)",
+                context.owner_account_id,
+                context.global_context.config.network_names().join(", ")
+            ));
+        }
+
         let formatter: MultiOptionFormatter<'_, AccessKeyInfo> = &|a| {
             let public_key_list = a
                 .iter()

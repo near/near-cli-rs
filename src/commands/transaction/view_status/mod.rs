@@ -38,7 +38,7 @@ impl TransactionInfoContext {
                                 account_id: signer_account_id.clone().into()
                             }
                         })
-                        .wrap_err("Failed to fetch query for view transaction")?;
+                        .wrap_err_with(|| format!("Failed to fetch query for view transaction on network <{}>", network_config.network_name))?;
                     eprintln!("Transaction status: {:#?}", query_view_transaction_status);
                     Ok(())
                 }

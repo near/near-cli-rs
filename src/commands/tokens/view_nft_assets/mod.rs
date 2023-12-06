@@ -1,3 +1,4 @@
+use color_eyre::eyre::Context;
 use serde_json::json;
 
 use crate::common::CallResultExt;
@@ -39,7 +40,13 @@ impl ViewNftAssetsContext {
                         "nft_tokens_for_owner",
                         args,
                         block_reference.clone(),
-                    )?;
+                    )
+                    .wrap_err_with(||{
+                        format!("Failed to fetch query for view method: 'nft_tokens_for_owner' (contract <{}> on network <{}>)",
+                            nft_contract_account_id,
+                            network_config.network_name
+                        )
+                    })?;
                 call_result.print_logs();
                 let serde_call_result: serde_json::Value = call_result.parse_result_from_json()?;
 

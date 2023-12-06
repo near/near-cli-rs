@@ -106,7 +106,7 @@ impl SignLedgerContext {
             })?;
             let signature =
                 near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                    .expect("Signature is not expected to fail on deserialization");
+                    .wrap_err("Signature is not expected to fail on deserialization")?;
 
             Ok(signature)
         } else {
@@ -140,8 +140,8 @@ impl SignLedgerContext {
                     &public_key,
                     near_primitives::types::BlockReference::latest()
                 )
-                .wrap_err(
-                    "Cannot sign a transaction due to an error while fetching the most recent nonce value",
+                .wrap_err_with(||
+                    format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
                 )?;
             let current_nonce = rpc_query_response
                 .access_key_view()
@@ -170,12 +170,12 @@ impl SignLedgerContext {
         let signature = match near_ledger::sign_transaction(
             unsigned_transaction
                 .try_to_vec()
-                .expect("Transaction is not expected to fail on serialization"),
+                .wrap_err("Transaction is not expected to fail on serialization")?,
             seed_phrase_hd_path.clone(),
         ) {
             Ok(signature) => {
                 near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                    .expect("Signature is not expected to fail on deserialization")
+                    .wrap_err("Signature is not expected to fail on deserialization")?
             }
             Err(near_ledger::NEARLedgerError::BufferOverflow { transaction_hash }) => {
                 Self::blind_sign_subflow(

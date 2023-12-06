@@ -1,5 +1,7 @@
-use crate::common::JsonRpcClientExt;
+use color_eyre::eyre::ContextCompat;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
+use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SignedTransactionContext)]
@@ -27,7 +29,7 @@ impl NetworkContext {
             .config
             .network_connection
             .get(&scope.network_name)
-            .expect("Failed to get network config!")
+            .wrap_err("Failed to get network config!")?
             .clone();
 
         Ok(Self {

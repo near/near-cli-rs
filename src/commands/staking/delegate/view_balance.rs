@@ -85,7 +85,12 @@ pub fn get_user_staked_balance(
             }))?,
             block_reference.clone(),
         )
-        .wrap_err("Failed to fetch query for view method: 'get_account_staked_balance'")?
+        .wrap_err_with(||{
+            format!("Failed to fetch query for view method: 'get_account_staked_balance' (contract <{}> on network <{}>)",
+                validator_account_id,
+                network_config.network_name
+            )
+        })?
         .parse_result_from_json::<String>()
         .wrap_err("Failed to parse return value of view function call for String.")?
         .parse::<u128>()?)
@@ -107,7 +112,12 @@ pub fn get_user_unstaked_balance(
             }))?,
             block_reference.clone(),
         )
-        .wrap_err("Failed to fetch query for view method: 'get_account_unstaked_balance'")?
+        .wrap_err_with(||{
+            format!("Failed to fetch query for view method: 'get_account_unstaked_balance' (contract <{}> on network <{}>)",
+                validator_account_id,
+                network_config.network_name
+            )
+        })?
         .parse_result_from_json::<String>()
         .wrap_err("Failed to parse return value of view function call for String.")?
         .parse::<u128>()?)
@@ -129,7 +139,12 @@ pub fn get_user_total_balance(
             }))?,
             block_reference.clone(),
         )
-        .wrap_err("Failed to fetch query for view method: 'get_account_total_balance'")?
+        .wrap_err_with(||{
+            format!("Failed to fetch query for view method: 'get_account_total_balance' (contract <{}> on network <{}>)",
+                validator_account_id,
+                network_config.network_name
+            )
+        })?
         .parse_result_from_json::<String>()
         .wrap_err("Failed to parse return value of view function call for String.")?
         .parse::<u128>()?)
@@ -152,7 +167,12 @@ pub fn is_account_unstaked_balance_available_for_withdrawal(
                 near_primitives::types::Finality::Final,
             ),
         )
-        .wrap_err("Failed to fetch query for view method: 'is_account_unstaked_balance_available'")?
+        .wrap_err_with(||{
+            format!("Failed to fetch query for view method: 'is_account_unstaked_balance_available' (contract <{}> on network <{}>)",
+                validator_account_id,
+                network_config.network_name
+            )
+        })?
         .parse_result_from_json::<bool>()
         .wrap_err("Failed to parse return value of view function call for bool value.")
 }

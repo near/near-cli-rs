@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use color_eyre::eyre::Context;
+use color_eyre::eyre::{Context, ContextCompat};
 use inquire::Text;
 
 use crate::common::JsonRpcClientExt;
@@ -79,7 +79,7 @@ impl DownloadContractContext {
                             account_id: account_id.clone(),
                         },
                     })
-                    .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}>", &account_id))?;
+                    .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}> on network <{}>", &account_id, network_config.network_name))?;
                 let call_access_view =
                     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
                         query_view_method_response.kind
@@ -120,7 +120,7 @@ impl DownloadContract {
     fn input_folder_path(
         _context: &ContractAccountContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
-        let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
+        let home_dir = dirs::home_dir().wrap_err("Impossible to get your home dir!")?;
         let mut folder_path = std::path::PathBuf::from(&home_dir);
         folder_path.push("Downloads");
         eprintln!();

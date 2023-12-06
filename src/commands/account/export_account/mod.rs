@@ -164,7 +164,12 @@ pub fn get_account_properties_data_path(
         if !check_if_seed_phrase_exists {
             return Ok(path);
         }
-        let data = std::fs::read_to_string(&path).wrap_err("Access key file not found!")?;
+        let data = std::fs::read_to_string(&path).wrap_err_with(|| {
+            format!(
+                "Access key file for account <{}> on network <{}> not found!",
+                account_id, network_config.network_name
+            )
+        })?;
         if serde_json::from_str::<crate::common::KeyPairProperties>(&data).is_ok() {
             return Ok(path);
         }
@@ -216,6 +221,7 @@ pub fn get_account_properties_data_path(
         }
     }
     Err(color_eyre::eyre::Report::msg(format!(
-        "There are no access keys in keychain to export for account <{account_id}>."
+        "There are no access keys in keychain to export for account <{account_id}> on network <{}>.",
+        network_config.network_name
     )))
 }
