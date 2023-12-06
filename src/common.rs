@@ -1802,7 +1802,7 @@ pub fn input_network_name(
     config: &crate::config::Config,
     account_ids: &[near_primitives::types::AccountId],
 ) -> color_eyre::eyre::Result<Option<String>> {
-    if config.network_connection.keys().len() == 1 {
+    if config.network_connection.len() == 1 {
         let network_name = config
             .network_connection
             .iter()
