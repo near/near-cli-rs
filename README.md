@@ -10,28 +10,38 @@ Just run `near` and let it guide you through!
 
 ## Install
 
-### Locally
+You can find binary releases of `near` CLI for your OS on the [Releases page](https://github.com/near/near-cli-rs/releases/).
 
-Download pre-compiled version of `near` CLI for your OS from the [Releases page](https://github.com/near/near-cli-rs/releases/).
+### Install prebuilt binaries via shell script (macOS, Linux, WSL)
 
-Alternatively, install it with `cargo` if you have [Rust](https://rustup.rs) installed on your computer:
-
-```bash
-$ cargo install near-cli-rs
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
 ```
 
-Here is the expected output when you run it:
+### Install prebuilt binaries via powershell script (Windows)
+
+```sh
+irm https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.ps1 | iex
+```
+
+### Run prebuilt binaries with npx (Node.js)
+
+```sh
+npx near-cli-rs
+```
+
+### Install prebuilt binaries into your npm project (Node.js)
+
+```sh
+npm install near-cli-rs
+```
+
+### Install from source code (Cargo)
+
+Install it with `cargo`, just make sure you have [Rust](https://rustup.rs) installed on your computer.
 
 ```bash
-$ near
-
-?  What are you up to? (select one of the options with the up-down arrows on your keyboard and press Enter)
-> account     - Manage accounts
-  tokens      - Manage token assets such as NEAR, FT, NFT
-  contract    - Manage smart-contracts: deploy code, call functions
-  transaction - Operate transactions
-  config      - Manage connections in a configuration file (config.toml)
-[↑↓ to move, enter to select, type to filter]
+cargo install near-cli-rs
 ```
 
 or, install the most recent version from git repository:
@@ -40,9 +50,9 @@ or, install the most recent version from git repository:
 $ cargo install --git https://github.com/near/near-cli-rs
 ```
 
-### GitHub Actions
+### Install on CI (GitHub Actions)
 
-It is often desirable to use `near` CLI from CI to automate some actions, and so you can use this following script if you want to make a function call during CI:
+It is often desirable to use `near` CLI from CI to automate some actions, so here is an example of how you can make a function call during CI:
 
 ```yml
 name: Release
@@ -67,7 +77,7 @@ jobs:
 
     - name: Install near CLI
       run: |
-        curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/download/v0.3.1/near-cli-rs-v0.3.1-installer.sh | sh
+        curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/download/v0.7.4/near-cli-rs-installer.sh | sh
 
     - name: Call some function
       run: |
@@ -76,16 +86,36 @@ jobs:
 
 You will need to configure GitHub Actions Secrets and Variables and once it is ready, this CI will only take a couple of _seconds_ to complete!
 
-See it in action used in [near/devgigsboard](https://github.com/near/devgigsboard).
+See how it is used in [near/devgigsboard](https://github.com/near/devgigsboard).
 
-## [README in English](docs/README.en.md)  
+## Run
+
+Once installed, you just run it with `near` command:
+
+```bash
+$ near
+
+? What are you up to? (select one of the options with the up-down arrows on your keyboard and press Enter)
+> account     - Manage accounts
+  tokens      - Manage token assets such as NEAR, FT, NFT
+  staking     - Manage staking: view, add and withdraw stake
+  contract    - Manage smart-contracts: deploy code, call functions
+  transaction - Operate transactions
+  config      - Manage connections in a configuration file (config.toml)
+  extension   - Manage near CLI and extensions
+[↑↓ to move, enter to select, type to filter]
+```
+
+The CLI interactively guides you through some pretty complex topics, helping you make informed decisions along the way.
+
+## [Read more in English](docs/README.en.md)  
   - [Usage](docs/README.en.md#usage)
   - [Installation](docs/README.en.md#installation)
   - [User Guide](docs/README.en.md#user-guide)
   - [Config](docs/README.en.md#config)
   - [Building](docs/README.en.md#building)
 
-## [README на Русском (in Russian)](docs/README.ru.md)
+## [Больше информации на русском языке (in Russian)](docs/README.ru.md)
   - [Применение](docs/README.ru.md#применение)
   - [Установка](docs/README.ru.md#установка)
   - [Инструкция](docs/README.ru.md#инструкция)
