@@ -21,11 +21,11 @@ near --offline tokens \
 
    _near CLI_ предполагает несколько способов подписи созданной транзакции. Рассмотрим подробнее каждый.
 
-    - _sign-with-macos-keychain - Sign the transaction with a key saved in macOS keychain_
+    - _sign-with-keychain - Sign the transaction with a key saved in the secure keychain_
 
-        Операционная система _MacOS_ имеет собственное приложение _[Keychain Access](https://support.apple.com/ru-ru/guide/keychain-access/welcome/mac)_, с помощью которого _near CLI_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
+        _near CLI_ позволяет хранить и извлекать пароли базовом безопасном хранилище, специфичном для конкретной ОС. В этом хранилище _near CLI_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
 
-    - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
+    - _sign-with-legacy-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
 
         _near CLI_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
         Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).
