@@ -23,12 +23,11 @@ Before proceeding to the description of specific commands, it is necessary to co
 
     _near CLI_ offers several ways to sign the created transaction. Let's take a closer look at each.
 
-    - _sign-with-macos-keychain - Sign the transaction with a key saved in macOS keychain_
+    - _sign-with-keychain - Sign the transaction with a key saved in the secure keychain_
 
-        The operating system _MacOS_ has its own application _[Keychain Access](https://support.apple.com/guide/keychain-access/welcome/mac)_, with the help of which _near CLI_ will independently find access keys and sign the created transaction.
+        _near CLI_ stores and retrieves passwords in a secure OS storage. There _near CLI_ will independently find the access keys and sign the created transaction.
 
-
-    - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
+    - _sign-with-legacy-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
 
         _near CLI_ will independently find access keys and sign the created transaction.
         Directory with access keys defined in [config](#config---manage-connections-in-a-configuration-file).
