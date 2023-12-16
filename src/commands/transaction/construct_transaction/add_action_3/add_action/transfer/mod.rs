@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = TransferActionContext)]
 pub struct TransferAction {
     /// How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)
-    amount_in_near: near_token::NearToken,
+    amount_in_near: crate::types::near_token::NearToken,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_last::NextAction,
 }

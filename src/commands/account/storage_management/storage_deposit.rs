@@ -8,7 +8,7 @@ pub struct DepositArgs {
     /// Which account ID do you want to add a deposit to?
     receiver_account_id: crate::types::account_id::AccountId,
     /// Enter the amount to deposit into the storage (example: 10NEAR or 0.5near or 10000yoctonear):
-    deposit: near_token::NearToken,
+    deposit: crate::types::near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?
     sign_as: SignerAccountId,
@@ -19,7 +19,7 @@ pub struct DepositArgsContext {
     global_context: crate::GlobalContext,
     get_contract_account_id: super::GetContractAccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    deposit: near_token::NearToken,
+    deposit: crate::types::near_token::NearToken,
 }
 
 impl DepositArgsContext {

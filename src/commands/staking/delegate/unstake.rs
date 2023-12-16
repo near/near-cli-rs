@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = UnstakeContext)]
 pub struct Unstake {
     /// Enter the amount to unstake from the inner account of the predecessor (example: 10NEAR or 0.5near or 10000yoctonear):
-    amount: near_token::NearToken,
+    amount: crate::types::near_token::NearToken,
     #[interactive_clap(skip_default_input_arg)]
     /// What is validator account ID?
     validator_account_id: crate::types::account_id::AccountId,
@@ -25,7 +25,7 @@ impl UnstakeContext {
                 let signer_id = previous_context.account_id.clone();
                 let validator_account_id: near_primitives::types::AccountId =
                     scope.validator_account_id.clone().into();
-                let amount = scope.amount;
+                let amount = scope.amount.as_yoctonear();
 
                 move |_network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
