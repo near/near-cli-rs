@@ -64,7 +64,7 @@ impl ViewFtBalanceContext {
                         format!(
                             "{}.{} {}",
                             amount / 10u128.pow(decimals as u32),
-                            format!("{:0>24}", amount % 10u128.pow(decimals as u32)).trim_end_matches('0'),
+                            format!("{:0>decimals$}", amount % 10u128.pow(decimals as u32), decimals=decimals.try_into().unwrap()).trim_end_matches('0'),
                             symbol
                         )
                     }
