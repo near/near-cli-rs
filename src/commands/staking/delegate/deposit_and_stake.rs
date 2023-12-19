@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = DepositAndStakeContext)]
 pub struct DepositAndStake {
     /// Enter the attached amount to be deposited and then staked into the predecessor's internal account (example: 10NEAR or 0.5near or 10000yoctonear):
-    amount: near_token::NearToken,
+    amount: crate::types::near_token::NearToken,
     #[interactive_clap(skip_default_input_arg)]
     /// What is validator account ID?
     validator_account_id: crate::types::account_id::AccountId,

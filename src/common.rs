@@ -604,7 +604,9 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "deposit:",
-                    near_token::NearToken::from_yoctonear(function_call_action.deposit)
+                    crate::types::near_token::NearToken::from_yoctonear(
+                        function_call_action.deposit
+                    )
                 );
             }
             near_primitives::transaction::Action::Transfer(transfer_action) => {
@@ -612,7 +614,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>5} {:<20} {}",
                     "--",
                     "transfer deposit:",
-                    near_token::NearToken::from_yoctonear(transfer_action.deposit)
+                    crate::types::near_token::NearToken::from_yoctonear(transfer_action.deposit)
                 );
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
@@ -625,7 +627,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "stake:",
-                    near_token::NearToken::from_yoctonear(stake_action.stake)
+                    crate::types::near_token::NearToken::from_yoctonear(stake_action.stake)
                 );
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
@@ -703,7 +705,7 @@ fn print_value_successful_transaction(
                 eprintln!(
                     "<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
-                    near_token::NearToken::from_yoctonear(deposit),
+                    crate::types::near_token::NearToken::from_yoctonear(deposit),
                     transaction_info.transaction.receiver_id,
                 );
             }
@@ -720,7 +722,7 @@ fn print_value_successful_transaction(
                     eprintln!(
                         "Validator <{}> has successfully staked {}.",
                         transaction_info.transaction.signer_id,
-                        near_token::NearToken::from_yoctonear(stake),
+                        crate::types::near_token::NearToken::from_yoctonear(stake),
                     );
                 }
             }
@@ -870,7 +872,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                near_token::NearToken::from_yoctonear(*amount)
+                crate::types::near_token::NearToken::from_yoctonear(*amount)
             ))
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -888,8 +890,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                near_token::NearToken::from_yoctonear(*balance),
-                near_token::NearToken::from_yoctonear(*stake)
+                crate::types::near_token::NearToken::from_yoctonear(*balance),
+                crate::types::near_token::NearToken::from_yoctonear(*stake)
             ))
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -899,8 +901,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                near_token::NearToken::from_yoctonear(*stake),
-                near_token::NearToken::from_yoctonear(*minimum_stake)
+                crate::types::near_token::NearToken::from_yoctonear(*stake),
+                crate::types::near_token::NearToken::from_yoctonear(*minimum_stake)
             ))
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -974,8 +976,8 @@ pub fn handler_invalid_tx_error(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        near_token::NearToken::from_yoctonear(*allowance),
-                        near_token::NearToken::from_yoctonear(*cost)
+                        crate::types::near_token::NearToken::from_yoctonear(*allowance),
+                        crate::types::near_token::NearToken::from_yoctonear(*cost)
                     ))
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -1004,14 +1006,14 @@ pub fn handler_invalid_tx_error(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                near_token::NearToken::from_yoctonear(*balance),
-                near_token::NearToken::from_yoctonear(*cost)
+                crate::types::near_token::NearToken::from_yoctonear(*balance),
+                crate::types::near_token::NearToken::from_yoctonear(*cost)
             ))
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                near_token::NearToken::from_yoctonear(*amount)
+                crate::types::near_token::NearToken::from_yoctonear(*amount)
             ))
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {

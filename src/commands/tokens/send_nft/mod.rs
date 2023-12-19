@@ -22,7 +22,7 @@ pub struct SendNftCommand {
     #[interactive_clap(long = "attached-deposit")]
     #[interactive_clap(skip_default_input_arg)]
     /// Enter deposit for a function call:
-    deposit: near_token::NearToken,
+    deposit: crate::types::near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -36,7 +36,7 @@ pub struct SendNftCommandContext {
     receiver_account_id: near_primitives::types::AccountId,
     token_id: String,
     gas: crate::common::NearGas,
-    deposit: near_token::NearToken,
+    deposit: crate::types::near_token::NearToken,
 }
 
 impl SendNftCommandContext {
@@ -163,9 +163,9 @@ impl SendNftCommand {
 
     fn input_deposit(
         _context: &super::TokensCommandsContext,
-    ) -> color_eyre::eyre::Result<Option<near_token::NearToken>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         eprintln!();
-        match near_token::NearToken::from_str(
+        match crate::types::near_token::NearToken::from_str(
             &Text::new(
                 "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
             )

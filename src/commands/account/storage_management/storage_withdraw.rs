@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = WithdrawArgsContext)]
 pub struct WithdrawArgs {
     /// Enter the amount to withdraw from the storage (example: 10NEAR or 0.5near or 10000yoctonear):
-    amount: near_token::NearToken,
+    amount: crate::types::near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?
     sign_as: SignerAccountId,
@@ -13,7 +13,7 @@ pub struct WithdrawArgs {
 pub struct WithdrawArgsContext {
     global_context: crate::GlobalContext,
     get_contract_account_id: super::GetContractAccountId,
-    amount: near_token::NearToken,
+    amount: crate::types::near_token::NearToken,
 }
 
 impl WithdrawArgsContext {

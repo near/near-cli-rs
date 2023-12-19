@@ -133,7 +133,7 @@ impl PrepaidGas {
 pub struct Deposit {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter deposit for a function call:
-    deposit: near_token::NearToken,
+    deposit: crate::types::near_token::NearToken,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_3::NextAction,
 }
@@ -174,9 +174,9 @@ impl From<DepositContext> for super::super::super::ConstructTransactionContext {
 impl Deposit {
     fn input_deposit(
         _context: &PrepaidGasContext,
-    ) -> color_eyre::eyre::Result<Option<near_token::NearToken>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         eprintln!();
-        match near_token::NearToken::from_str(
+        match crate::types::near_token::NearToken::from_str(
             &Text::new(
                 "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
             )

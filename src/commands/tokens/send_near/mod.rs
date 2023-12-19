@@ -1,5 +1,3 @@
-use inquire::CustomType;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
 #[interactive_clap(output_context = SendNearCommandContext)]
@@ -7,9 +5,8 @@ pub struct SendNearCommand {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the receiver account ID?
     receiver_account_id: crate::types::account_id::AccountId,
-    #[interactive_clap(skip_default_input_arg)]
-    /// Enter an amount to transfer:
-    amount_in_near: near_token::NearToken,
+    /// How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)
+    amount_in_near: crate::types::near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -20,7 +17,7 @@ pub struct SendNearCommandContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    amount_in_near: near_token::NearToken,
+    amount_in_near: crate::types::near_token::NearToken,
 }
 
 impl SendNearCommandContext {
@@ -82,13 +79,5 @@ impl SendNearCommand {
             &context.global_context.config.credentials_home_dir,
             "What is the receiver account ID?",
         )
-    }
-
-    fn input_amount_in_near(
-        _context: &super::TokensCommandsContext,
-    ) -> color_eyre::eyre::Result<Option<near_token::NearToken>> {
-        let input_amount =
-            CustomType::new("How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)").prompt()?;
-        Ok(Some(input_amount))
     }
 }

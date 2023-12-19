@@ -172,7 +172,7 @@ fn action_transformation(
         Action::Transfer(transaction::TransferAction { deposit }) => {
             Ok(Some(add_action::CliActionSubcommand::Transfer(
                 add_action::transfer::CliTransferAction {
-                    amount_in_near: Some(near_token::NearToken::from_yoctonear(deposit)),
+                    amount_in_near: Some(crate::types::near_token::NearToken::from_yoctonear(deposit)),
                     next_action: None
                 }
             )))
@@ -209,7 +209,7 @@ fn action_transformation(
                             gas: Some(near_gas::NearGas::from_gas(gas)),
                             attached_deposit: Some(add_action::call_function::ClapNamedArgDepositForPrepaidGas::AttachedDeposit(
                                 add_action::call_function::CliDeposit {
-                                    deposit: Some(near_token::NearToken::from_yoctonear(deposit)),
+                                    deposit: Some(crate::types::near_token::NearToken::from_yoctonear(deposit)),
                                     next_action: None
                                 }
                             ))
@@ -221,7 +221,7 @@ fn action_transformation(
         Action::Stake(transaction::StakeAction { stake, public_key }) => {
             Ok(Some(add_action::CliActionSubcommand::Stake(
                 add_action::stake::CliStakeAction {
-                    stake_amount: Some(near_token::NearToken::from_yoctonear(stake)),
+                    stake_amount: Some(crate::types::near_token::NearToken::from_yoctonear(stake)),
                     public_key: Some(public_key.into()),
                     next_action: None
                 }
@@ -263,7 +263,7 @@ fn get_access_key_permission(
         ) => Ok(Some(
             add_key::CliAccessKeyPermission::GrantFunctionCallAccess(
                 add_key::access_key_type::CliFunctionCallType {
-                    allowance: allowance.map(near_token::NearToken::from_yoctonear),
+                    allowance: allowance.map(crate::types::near_token::NearToken::from_yoctonear),
                     receiver_account_id: Some(receiver_id.parse()?),
                     method_names: Some(crate::types::vec_string::VecString(method_names)),
                     access_key_mode: Some(add_key::CliAccessKeyMode::UseManuallyProvidedPublicKey(
