@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.5](https://github.com/near/near-cli-rs/compare/v0.7.4...v0.7.5) - 2023-12-19
+
+### Added
+- Improved self-update UX with more details ([#274](https://github.com/near/near-cli-rs/pull/274))
+
+### Fixed
+- Display NEAR token amounts precisely ([#278](https://github.com/near/near-cli-rs/pull/278))
+
+### Other
+- Updated the guide around the usage of system keychain on Linux, Windows, and macOS ([#277](https://github.com/near/near-cli-rs/pull/277))
+- Added explicit installation instructions to README.md
+
 ## [0.7.4](https://github.com/near/near-cli-rs/compare/v0.7.3...v0.7.4) - 2023-12-06
 
 ### Added
