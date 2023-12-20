@@ -14,7 +14,6 @@ impl TxStatusArgs {
             "transaction".to_owned(),
             "view-status".to_owned(),
             self.transaction_hash.to_owned(),
-            self.account_id.to_owned(),
             "network-config".to_owned(),
             network_config,
         ]
