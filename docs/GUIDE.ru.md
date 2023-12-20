@@ -1819,7 +1819,6 @@ Contract state (proof):
 ```txt
 near transaction \
     view-status GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank \
-    volodymyr.testnet \
     network-config testnet
 ```
 
