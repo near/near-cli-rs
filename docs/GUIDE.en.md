@@ -1796,6 +1796,7 @@ Contract state (proof):
 ### transaction - Operate transactions
 
 - [view-status](#view-status---View-a-transaction-status)
+- [reconstruct-transaction](#reconstruct-transaction---Use-any-existing-transaction-from-the-chain-to-construct-NEAR-CLI-command-helpful-tool-for-re-submitting-similar-transactions)
 - [construct-transaction](#construct-transaction---Construct-a-new-transaction)
 - [sign-transaction](#sign-transaction---Sign-previously-prepared-unsigned-transaction)
 - [send-signed-transaction](#send-signed-transaction---Send-a-signed-transaction)
@@ -1969,6 +1970,41 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/xf69gJEha7yO27E27CZszkN97?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/xf69gJEha7yO27E27CZszkN97.png" width="836"/>
+</a>
+</details>
+
+#### reconstruct-transaction  - Use any existing transaction from the chain to construct NEAR CLI command (helpful tool for re-submitting similar transactions)
+
+Let's consider an example when it is necessary to repeat a previously completed transaction:
+```txt
+near transaction \
+    reconstruct-transaction GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank \
+    network-config testnet
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Transaction GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank:
+
+signer_id:    volodymyr.testnet
+receiver_id:  qweqweqwe.volodymyr.testnet
+actions:
+   -- create account:      qweqweqwe.volodymyr.testnet
+   -- transfer deposit:    100 NEAR
+   -- add access key:     
+                   public key:   ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf
+                   nonce:        0
+                   permission:   FullAccess
+
+Here is your console command to run archive transaction. You can to edit it or re-run:
+near transaction construct-transaction volodymyr.testnet qweqweqwe.volodymyr.testnet add-action create-account add-action transfer '100 NEAR' add-action add-key grant-full-access use-manually-provided-public-key ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf skip network-config testnet
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/lw5MEk8sJ1NGPMNWpuVfjLpAT?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/lw5MEk8sJ1NGPMNWpuVfjLpAT.png" width="836"/>
 </a>
 </details>
 
