@@ -1808,7 +1808,6 @@ To view the status of the desired transaction, type its hash in the terminal com
 ```txt
 near transaction \
     view-status GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank \
-    volodymyr.testnet \
     network-config testnet
 ```
 
