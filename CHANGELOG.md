@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.6](https://github.com/near/near-cli-rs/compare/v0.7.5...v0.7.6) - 2023-12-21
+
+### Other
+- Removed excessive step during transaction status view to improve UX ([#280](https://github.com/near/near-cli-rs/pull/280))
+- Updated reconstruct-transaction command ([#281](https://github.com/near/near-cli-rs/pull/281))
+
 ## [0.7.5](https://github.com/near/near-cli-rs/compare/v0.7.4...v0.7.5) - 2023-12-19
 
 ### Added
