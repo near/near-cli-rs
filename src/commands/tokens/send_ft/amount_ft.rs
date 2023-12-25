@@ -1,14 +1,16 @@
 use std::str::FromStr;
 
-use inquire::Text;
+use color_eyre::{eyre::ContextCompat, owo_colors::OwoColorize};
+use inquire::{CustomType, Text};
 use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendFtCommandContext)]
 #[interactive_clap(output_context = AmountFtContext)]
 pub struct AmountFt {
+    #[interactive_clap(skip_default_input_arg)]
     /// Enter an amount FT to transfer:
-    amount: u128,
+    amount_ft: crate::types::ft_properties::FtBalance,
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
     prepaid_gas: PrepaidGas,
@@ -20,7 +22,7 @@ pub struct AmountFtContext {
     signer_account_id: near_primitives::types::AccountId,
     ft_contract_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    amount: u128,
+    amount_ft: crate::types::ft_properties::FtBalance,
 }
 
 impl AmountFtContext {
@@ -33,8 +35,54 @@ impl AmountFtContext {
             signer_account_id: previous_context.signer_account_id,
             ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
-            amount: scope.amount,
+            amount_ft: scope.amount_ft.clone(),
         })
+    }
+}
+
+impl AmountFt {
+    fn input_amount_ft(
+        context: &super::SendFtCommandContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::ft_properties::FtBalance>> {
+        let network_config = crate::common::find_network_where_account_exist(
+            &context.global_context,
+            context.ft_contract_account_id.clone(),
+        )
+        .wrap_err_with(|| {
+            format!(
+                "Contract <{}> does not exist in networks",
+                context.ft_contract_account_id
+            )
+        })?;
+
+        let crate::types::ft_properties::FtMetadata { decimals, symbol } =
+            crate::types::ft_properties::params_ft_metadata(
+                context.ft_contract_account_id.clone(),
+                &network_config,
+                near_primitives::types::Finality::Final.into(),
+            )?;
+        eprintln!();
+        loop {
+            match CustomType::<crate::types::ft_properties::FtBalance>::new(&format!(
+                "Enter an amount FT to transfer (example: 10{symbol} or 0.5{symbol}):"
+            ))
+            .prompt()
+            {
+                Ok(mut ft_balance) => {
+                    if ft_balance.ft_metadata.symbol != symbol.to_uppercase() {
+                        eprintln!("{}", "Invalid currency symbol".red());
+                        continue;
+                    } else if ft_balance.calculated_decimals > decimals {
+                        eprintln!("{}", "Invalid decimals".red());
+                        continue;
+                    } else {
+                        ft_balance.ft_metadata.decimals = decimals;
+                        return Ok(Some(ft_balance));
+                    }
+                }
+                Err(err) => return Err(color_eyre::Report::msg(err)),
+            }
+        }
     }
 }
 
@@ -56,7 +104,7 @@ pub struct PrepaidGasContext {
     signer_account_id: near_primitives::types::AccountId,
     ft_contract_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    amount: u128,
+    amount_ft: crate::types::ft_properties::FtBalance,
     gas: crate::common::NearGas,
 }
 
@@ -70,7 +118,7 @@ impl PrepaidGasContext {
             signer_account_id: previous_context.signer_account_id,
             ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
-            amount: previous_context.amount,
+            amount_ft: previous_context.amount_ft,
             gas: scope.gas,
         })
     }
@@ -127,6 +175,7 @@ impl DepositContext {
                 let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let deposit = scope.deposit;
+                let amount_ft = previous_context.amount_ft.clone();
 
                 move |_network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
@@ -137,7 +186,7 @@ impl DepositContext {
                                 method_name: "ft_transfer".to_string(),
                                 args: serde_json::to_vec(&json!({
                                     "receiver_id": receiver_account_id.to_string(),
-                                    "amount": previous_context.amount.to_string()
+                                    "amount": amount_ft.as_amount().to_string()
                                 }))?,
                                 gas: previous_context.gas.as_gas(),
                                 deposit: deposit.as_yoctonear(),
@@ -149,14 +198,14 @@ impl DepositContext {
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
             let signer_account_id = previous_context.signer_account_id.clone();
-            let amount = previous_context.amount;
+            let amount_ft = previous_context.amount_ft.clone();
             let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
             let receiver_account_id = previous_context.receiver_account_id.clone();
 
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                     eprintln!(
-                        "<{signer_account_id}> has successfully transferred {amount} FT ({ft_contract_account_id}) to <{receiver_account_id}>.",
+                        "<{signer_account_id}> has successfully transferred {amount_ft} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.",
                     );
                 }
                 Ok(())
