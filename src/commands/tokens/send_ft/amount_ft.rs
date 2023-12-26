@@ -46,14 +46,26 @@ impl AmountFtContext {
                 previous_context.ft_contract_account_id
             )
         })?;
-        let crate::types::ft_properties::FtMetadata { decimals, .. } =
+        let crate::types::ft_properties::FtMetadata { decimals, symbol } =
             crate::types::ft_properties::params_ft_metadata(
                 previous_context.ft_contract_account_id.clone(),
                 &network_config,
                 near_primitives::types::Finality::Final.into(),
             )?;
         let mut amount_ft = scope.amount_ft.clone();
-        amount_ft.ft_metadata.decimals = decimals;
+
+        if amount_ft.ft_metadata.symbol != symbol.to_uppercase() {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Invalid currency symbol"
+            ));
+        } else if amount_ft.calculated_decimals > decimals {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Invalid decimal places. Your FT amount exceeds {decimals} decimal places."
+            ));
+        } else {
+            amount_ft.ft_metadata.decimals = decimals;
+        }
+
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
@@ -97,7 +109,12 @@ impl AmountFt {
                         eprintln!("{}", "Invalid currency symbol".red());
                         continue;
                     } else if ft_balance.calculated_decimals > decimals {
-                        eprintln!("{}", "Invalid decimals".red());
+                        eprintln!(
+                            "{} {} {}",
+                            "Invalid decimal places. Your FT amount exceeds".red(),
+                            decimals.red(),
+                            "decimal places.".red()
+                        );
                         continue;
                     } else {
                         ft_balance.ft_metadata.decimals = decimals;

@@ -13,14 +13,8 @@ pub struct FtBalance {
 
 impl FtBalance {
     pub fn as_amount(&self) -> color_eyre::eyre::Result<u128> {
-        if self.ft_metadata.decimals < self.calculated_decimals {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Invalid decimal places. Your FT amount exceeds <{}> decimal places.",
-                self.ft_metadata.decimals
-            ));
-        }
         self.amount
-            .checked_mul(10u128.pow((self.ft_metadata.decimals < self.calculated_decimals) as u32))
+            .checked_mul(10u128.pow((self.ft_metadata.decimals - self.calculated_decimals) as u32))
             .wrap_err("FT Balance: underflow or overflow happens")
     }
 }
@@ -143,19 +137,28 @@ mod tests {
     fn ft_token_to_string_0_wnear() {
         let ft_token = FtBalance::from_str("0 wNEAR").unwrap();
         assert_eq!(ft_token.to_string(), "0 WNEAR".to_string());
+        assert_eq!(ft_token.ft_metadata.symbol, "WNEAR".to_string());
         assert_eq!(ft_token.calculated_decimals, 0)
     }
     #[test]
     fn ft_token_to_string_10_wnear() {
         let ft_token = FtBalance::from_str("10 wNEAR").unwrap();
         assert_eq!(ft_token.to_string(), "10 WNEAR".to_string());
+        assert_eq!(ft_token.ft_metadata.symbol, "WNEAR".to_string());
         assert_eq!(ft_token.calculated_decimals, 0)
     }
     #[test]
     fn ft_token_to_string_0dot0200_wnear() {
         let ft_token = FtBalance::from_str("0.0200 wNEAR").unwrap();
         assert_eq!(ft_token.to_string(), "0.02 WNEAR".to_string());
+        assert_eq!(ft_token.ft_metadata.symbol, "WNEAR".to_string());
         assert_eq!(ft_token.calculated_decimals, 2)
+    }
+    #[test]
+    fn ft_token_to_string_0dot123456_usdc() {
+        let ft_token = FtBalance::from_str("0.123456 USDC").unwrap();
+        assert_eq!(ft_token.to_string(), "0.123456 USDC".to_string());
+        assert_eq!(ft_token.ft_metadata.symbol, "USDC".to_string());
     }
     #[test]
     #[should_panic]
@@ -165,7 +168,6 @@ mod tests {
             decimals: 6,
         };
         let ft_token = FtBalance::from_str("0.1234567 USDC").unwrap();
-        assert_eq!(ft_token.to_string(), "0.1234567 USDC".to_string());
         assert!(ft_token.calculated_decimals < ft_metadata.decimals)
     }
 }
