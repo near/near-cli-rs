@@ -1,3 +1,4 @@
+use color_eyre::eyre::ContextCompat;
 use color_eyre::eyre::WrapErr;
 
 use crate::common::CallResultExt;
@@ -11,10 +12,16 @@ pub struct FtBalance {
 }
 
 impl FtBalance {
-    pub fn as_amount(&self) -> u128 {
+    pub fn as_amount(&self) -> color_eyre::eyre::Result<u128> {
+        if self.ft_metadata.decimals < self.calculated_decimals {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Invalid decimal places. Your FT amount exceeds <{}> decimal places.",
+                self.ft_metadata.decimals
+            ));
+        }
         self.amount
-            .checked_mul(10u128.pow((self.ft_metadata.decimals - self.calculated_decimals) as u32))
-            .expect("FT Balance: underflow or overflow happens")
+            .checked_mul(10u128.pow((self.ft_metadata.decimals < self.calculated_decimals) as u32))
+            .wrap_err("FT Balance: underflow or overflow happens")
     }
 }
 

@@ -36,12 +36,30 @@ impl AmountFtContext {
         previous_context: super::SendFtCommandContext,
         scope: &<AmountFt as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let network_config = crate::common::find_network_where_account_exist(
+            &previous_context.global_context,
+            previous_context.ft_contract_account_id.clone(),
+        )
+        .wrap_err_with(|| {
+            format!(
+                "Contract <{}> does not exist in networks",
+                previous_context.ft_contract_account_id
+            )
+        })?;
+        let crate::types::ft_properties::FtMetadata { decimals, .. } =
+            crate::types::ft_properties::params_ft_metadata(
+                previous_context.ft_contract_account_id.clone(),
+                &network_config,
+                near_primitives::types::Finality::Final.into(),
+            )?;
+        let mut amount_ft = scope.amount_ft.clone();
+        amount_ft.ft_metadata.decimals = decimals;
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
-            amount_ft: scope.amount_ft.clone(),
+            amount_ft,
         })
     }
 }
@@ -187,7 +205,7 @@ impl DepositContext {
                         method_name: "ft_transfer".to_string(),
                         args: serde_json::to_vec(&json!({
                             "receiver_id": receiver_account_id.to_string(),
-                            "amount": amount_ft.as_amount().to_string()
+                            "amount": amount_ft.as_amount()?.to_string()
                         }))?,
                         gas: previous_context.gas.as_gas(),
                         deposit: deposit.as_yoctonear(),
