@@ -1,8 +1,14 @@
 use std::str::FromStr;
 
-use color_eyre::{eyre::ContextCompat, owo_colors::OwoColorize};
+use color_eyre::{
+    eyre::{Context, ContextCompat},
+    owo_colors::OwoColorize,
+};
 use inquire::{CustomType, Text};
-use serde_json::json;
+use serde_json::{json, Value};
+
+use crate::common::CallResultExt;
+use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendFtCommandContext)]
@@ -176,22 +182,59 @@ impl DepositContext {
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let deposit = scope.deposit;
                 let amount_ft = previous_context.amount_ft.clone();
+                let action_ft_transfer = near_primitives::transaction::Action::FunctionCall(
+                    near_primitives::transaction::FunctionCallAction {
+                        method_name: "ft_transfer".to_string(),
+                        args: serde_json::to_vec(&json!({
+                            "receiver_id": receiver_account_id.to_string(),
+                            "amount": amount_ft.as_amount().to_string()
+                        }))?,
+                        gas: previous_context.gas.as_gas(),
+                        deposit: deposit.as_yoctonear(),
+                    },
+                );
 
-                move |_network_config| {
+                move |network_config| {
+                    let args = serde_json::to_vec(&json!({
+                    "account_id": receiver_account_id.to_string(),
+                    }))?;
+                    let call_result = network_config
+                        .json_rpc_client()
+                        .blocking_call_view_function(
+                            &ft_contract_account_id,
+                            "storage_balance_of",
+                            args.clone(),
+                            near_primitives::types::Finality::Final.into(),
+                        )
+                        .wrap_err_with(||{
+                            format!("Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
+                                ft_contract_account_id,
+                                network_config.network_name
+                            )
+                        })?;
+
+                    if call_result.parse_result_from_json::<Value>()?.is_null() {
+                        let action_storage_deposit =
+                            near_primitives::transaction::Action::FunctionCall(
+                                near_primitives::transaction::FunctionCallAction {
+                                    method_name: "storage_deposit".to_string(),
+                                    args,
+                                    gas: previous_context.gas.as_gas(),
+                                    deposit: near_token::NearToken::from_millinear(100)
+                                        .as_yoctonear(),
+                                },
+                            );
+                        return Ok(crate::commands::PrepopulatedTransaction {
+                            signer_id: signer_account_id.clone(),
+                            receiver_id: ft_contract_account_id.clone(),
+                            actions: vec![action_storage_deposit, action_ft_transfer.clone()],
+                        });
+                    }
+
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: ft_contract_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            near_primitives::transaction::FunctionCallAction {
-                                method_name: "ft_transfer".to_string(),
-                                args: serde_json::to_vec(&json!({
-                                    "receiver_id": receiver_account_id.to_string(),
-                                    "amount": amount_ft.as_amount().to_string()
-                                }))?,
-                                gas: previous_context.gas.as_gas(),
-                                deposit: deposit.as_yoctonear(),
-                            },
-                        )],
+                        actions: vec![action_ft_transfer.clone()],
                     })
                 }
             });
