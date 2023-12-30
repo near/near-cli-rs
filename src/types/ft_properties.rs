@@ -1,32 +1,23 @@
-use color_eyre::eyre::ContextCompat;
 use color_eyre::eyre::WrapErr;
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
-pub struct FtBalance {
+pub struct FungibleToken {
     pub amount: u128,
-    pub calculated_decimals: u64,
-    pub ft_metadata: FtMetadata,
+    pub decimals: u8,
+    pub symbol: String,
 }
 
-impl FtBalance {
-    pub fn as_amount(&self) -> color_eyre::eyre::Result<u128> {
-        self.amount
-            .checked_mul(10u128.pow((self.ft_metadata.decimals - self.calculated_decimals) as u32))
-            .wrap_err("FT Balance: underflow or overflow happens")
-    }
-}
-
-impl std::fmt::Display for FtBalance {
+impl std::fmt::Display for FungibleToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let decimals = self.calculated_decimals;
+        let decimals = self.decimals;
         let one_ft: u128 = 10u128.pow(decimals as u32);
         if self.amount == 0 {
-            write!(f, "0 {}", self.ft_metadata.symbol)
+            write!(f, "0 {}", self.symbol)
         } else if self.amount % one_ft == 0 {
-            write!(f, "{} {}", self.amount / one_ft, self.ft_metadata.symbol)
+            write!(f, "{} {}", self.amount / one_ft, self.symbol)
         } else {
             write!(
                 f,
@@ -38,65 +29,59 @@ impl std::fmt::Display for FtBalance {
                     decimals = decimals.try_into().unwrap()
                 )
                 .trim_end_matches('0'),
-                self.ft_metadata.symbol
+                self.symbol
             )
         }
     }
 }
 
-impl std::str::FromStr for FtBalance {
+impl std::str::FromStr for FungibleToken {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
-        let currency = s.trim().trim_start_matches(num).trim().to_uppercase();
+        let currency = s.trim().trim_start_matches(num).trim().to_string();
         let res_split: Vec<&str> = num.split('.').collect();
         match res_split.len() {
             2 => {
                 let num_int_part = res_split[0]
                     .parse::<u128>()
-                    .map_err(|err| format!("FT Balance: {}", err))?;
-                let len_fract = res_split[1].trim_end_matches('0').len() as u32;
+                    .map_err(|err| format!("FungibleToken: {}", err))?;
+                let len_fract = res_split[1].trim_end_matches('0').len() as u8;
                 let num_fract_part = res_split[1]
                     .trim_end_matches('0')
                     .parse::<u128>()
-                    .map_err(|err| format!("FT Balance: {}", err))?;
+                    .map_err(|err| format!("FungibleToken: {}", err))?;
                 let amount = num_int_part
-                    .checked_mul(10u128.pow(len_fract))
-                    .ok_or("FT Balance: underflow or overflow happens")?
+                    .checked_mul(10u128.pow(len_fract as u32))
+                    .ok_or("FungibleToken: underflow or overflow happens")?
                     .checked_add(num_fract_part)
-                    .ok_or("FT Balance: underflow or overflow happens")?;
-                Ok(FtBalance {
+                    .ok_or("FungibleToken: underflow or overflow happens")?;
+                Ok(FungibleToken {
                     amount,
-                    calculated_decimals: len_fract.into(),
-                    ft_metadata: FtMetadata {
-                        symbol: currency,
-                        ..Default::default()
-                    },
+                    decimals: len_fract,
+                    symbol: currency,
                 })
             }
             1 => {
                 if res_split[0].starts_with('0') && res_split[0] != "0" {
-                    return Err("FT Balance: incorrect number entered".to_string());
+                    return Err("FungibleToken: incorrect number entered".to_string());
                 };
                 let amount = res_split[0]
                     .parse::<u128>()
-                    .map_err(|err| format!("FT Balance: {}", err))?;
-                Ok(FtBalance {
+                    .map_err(|err| format!("FungibleToken: {}", err))?;
+                Ok(FungibleToken {
                     amount,
-                    calculated_decimals: 0,
-                    ft_metadata: FtMetadata {
-                        symbol: currency,
-                        ..Default::default()
-                    },
+                    decimals: 0,
+                    symbol: currency,
                 })
             }
-            _ => Err("FT Balance: incorrect number entered".to_string()),
+            _ => Err("FungibleToken: incorrect number entered".to_string()),
         }
     }
 }
 
-impl interactive_clap::ToCli for FtBalance {
-    type CliVariant = FtBalance;
+impl interactive_clap::ToCli for FungibleToken {
+    type CliVariant = FungibleToken;
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, serde::Deserialize)]
@@ -135,39 +120,29 @@ mod tests {
 
     #[test]
     fn ft_token_to_string_0_wnear() {
-        let ft_token = FtBalance::from_str("0 wNEAR").unwrap();
-        assert_eq!(ft_token.to_string(), "0 WNEAR".to_string());
-        assert_eq!(ft_token.ft_metadata.symbol, "WNEAR".to_string());
-        assert_eq!(ft_token.calculated_decimals, 0)
+        let ft_token = FungibleToken::from_str("0 wNEAR").unwrap();
+        assert_eq!(ft_token.to_string(), "0 wNEAR".to_string());
+        assert_eq!(ft_token.symbol, "wNEAR".to_string());
+        assert_eq!(ft_token.decimals, 0)
     }
     #[test]
     fn ft_token_to_string_10_wnear() {
-        let ft_token = FtBalance::from_str("10 wNEAR").unwrap();
-        assert_eq!(ft_token.to_string(), "10 WNEAR".to_string());
-        assert_eq!(ft_token.ft_metadata.symbol, "WNEAR".to_string());
-        assert_eq!(ft_token.calculated_decimals, 0)
+        let ft_token = FungibleToken::from_str("10 wNEAR").unwrap();
+        assert_eq!(ft_token.to_string(), "10 wNEAR".to_string());
+        assert_eq!(ft_token.symbol, "wNEAR".to_string());
+        assert_eq!(ft_token.decimals, 0)
     }
     #[test]
     fn ft_token_to_string_0dot0200_wnear() {
-        let ft_token = FtBalance::from_str("0.0200 wNEAR").unwrap();
-        assert_eq!(ft_token.to_string(), "0.02 WNEAR".to_string());
-        assert_eq!(ft_token.ft_metadata.symbol, "WNEAR".to_string());
-        assert_eq!(ft_token.calculated_decimals, 2)
+        let ft_token = FungibleToken::from_str("0.0200 wNEAR").unwrap();
+        assert_eq!(ft_token.to_string(), "0.02 wNEAR".to_string());
+        assert_eq!(ft_token.symbol, "wNEAR".to_string());
+        assert_eq!(ft_token.decimals, 2)
     }
     #[test]
     fn ft_token_to_string_0dot123456_usdc() {
-        let ft_token = FtBalance::from_str("0.123456 USDC").unwrap();
+        let ft_token = FungibleToken::from_str("0.123456 USDC").unwrap();
         assert_eq!(ft_token.to_string(), "0.123456 USDC".to_string());
-        assert_eq!(ft_token.ft_metadata.symbol, "USDC".to_string());
-    }
-    #[test]
-    #[should_panic]
-    fn ft_token_to_string_0dot1234567_usdc_invalid_decimals() {
-        let ft_metadata = FtMetadata {
-            symbol: "USDC".to_string(),
-            decimals: 6,
-        };
-        let ft_token = FtBalance::from_str("0.1234567 USDC").unwrap();
-        assert!(ft_token.calculated_decimals < ft_metadata.decimals)
+        assert_eq!(ft_token.symbol, "USDC".to_string());
     }
 }

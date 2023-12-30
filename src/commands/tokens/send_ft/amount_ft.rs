@@ -16,7 +16,7 @@ use crate::common::JsonRpcClientExt;
 pub struct AmountFt {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter an amount FT to transfer:
-    amount_ft: crate::types::ft_properties::FtBalance,
+    amount_ft: crate::types::ft_properties::FungibleToken,
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
     prepaid_gas: PrepaidGas,
@@ -28,7 +28,7 @@ pub struct AmountFtContext {
     signer_account_id: near_primitives::types::AccountId,
     ft_contract_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    amount_ft: crate::types::ft_properties::FtBalance,
+    amount_ft: crate::types::ft_properties::FungibleToken,
 }
 
 impl AmountFtContext {
@@ -54,16 +54,21 @@ impl AmountFtContext {
             )?;
         let mut amount_ft = scope.amount_ft.clone();
 
-        if amount_ft.ft_metadata.symbol != symbol.to_uppercase() {
+        if amount_ft.symbol.to_uppercase() != symbol.to_uppercase() {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Invalid currency symbol"
             ));
-        } else if amount_ft.calculated_decimals > decimals {
+        } else if amount_ft.decimals > decimals as u8 {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Invalid decimal places. Your FT amount exceeds {decimals} decimal places."
             ));
         } else {
-            amount_ft.ft_metadata.decimals = decimals;
+            amount_ft.amount = amount_ft
+                .amount
+                .checked_mul(10u128.pow(decimals as u32 - amount_ft.decimals as u32))
+                .wrap_err("FT Balance: underflow or overflow happens")?;
+            amount_ft.decimals = decimals as u8;
+            amount_ft.symbol = symbol;
         }
 
         Ok(Self {
@@ -79,7 +84,7 @@ impl AmountFtContext {
 impl AmountFt {
     fn input_amount_ft(
         context: &super::SendFtCommandContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::ft_properties::FtBalance>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::ft_properties::FungibleToken>> {
         let network_config = crate::common::find_network_where_account_exist(
             &context.global_context,
             context.ft_contract_account_id.clone(),
@@ -99,16 +104,16 @@ impl AmountFt {
             )?;
         eprintln!();
         loop {
-            match CustomType::<crate::types::ft_properties::FtBalance>::new(&format!(
+            match CustomType::<crate::types::ft_properties::FungibleToken>::new(&format!(
                 "Enter an amount FT to transfer (example: 10{symbol} or 0.5{symbol}):"
             ))
             .prompt()
             {
-                Ok(mut ft_balance) => {
-                    if ft_balance.ft_metadata.symbol != symbol.to_uppercase() {
+                Ok(mut fungible_token) => {
+                    if fungible_token.symbol.to_uppercase() != symbol.to_uppercase() {
                         eprintln!("{}", "Invalid currency symbol".red());
                         continue;
-                    } else if ft_balance.calculated_decimals > decimals {
+                    } else if fungible_token.decimals > decimals as u8 {
                         eprintln!(
                             "{} {} {}",
                             "Invalid decimal places. Your FT amount exceeds".red(),
@@ -117,8 +122,15 @@ impl AmountFt {
                         );
                         continue;
                     } else {
-                        ft_balance.ft_metadata.decimals = decimals;
-                        return Ok(Some(ft_balance));
+                        fungible_token.amount = fungible_token
+                            .amount
+                            .checked_mul(
+                                10u128.pow(decimals as u32 - fungible_token.decimals as u32),
+                            )
+                            .wrap_err("FungibleToken: underflow or overflow happens")?;
+                        fungible_token.decimals = decimals as u8;
+                        fungible_token.symbol = symbol;
+                        return Ok(Some(fungible_token));
                     }
                 }
                 Err(err) => return Err(color_eyre::Report::msg(err)),
@@ -145,7 +157,7 @@ pub struct PrepaidGasContext {
     signer_account_id: near_primitives::types::AccountId,
     ft_contract_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    amount_ft: crate::types::ft_properties::FtBalance,
+    amount_ft: crate::types::ft_properties::FungibleToken,
     gas: crate::common::NearGas,
 }
 
@@ -222,7 +234,7 @@ impl DepositContext {
                         method_name: "ft_transfer".to_string(),
                         args: serde_json::to_vec(&json!({
                             "receiver_id": receiver_account_id.to_string(),
-                            "amount": amount_ft.as_amount()?.to_string()
+                            "amount": amount_ft.amount.to_string()
                         }))?,
                         gas: previous_context.gas.as_gas(),
                         deposit: deposit.as_yoctonear(),
