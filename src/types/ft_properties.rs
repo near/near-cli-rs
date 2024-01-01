@@ -26,7 +26,7 @@ impl std::fmt::Display for FungibleToken {
                 format!(
                     "{:0>decimals$}",
                     (self.amount % one_ft),
-                    decimals = decimals.try_into().unwrap()
+                    decimals = decimals.into()
                 )
                 .trim_end_matches('0'),
                 self.symbol
