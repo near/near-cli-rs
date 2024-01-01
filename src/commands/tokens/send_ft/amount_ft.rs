@@ -134,7 +134,7 @@ impl AmountFt {
                     format!(
                         "{:0>decimals$}",
                         (ft.amount % one_ft),
-                        decimals = decimals.try_into().unwrap()
+                        decimals = decimals.into()
                     )
                     .trim_end_matches('0'),
                     symbol
