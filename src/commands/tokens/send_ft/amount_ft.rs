@@ -1,9 +1,6 @@
 use std::str::FromStr;
 
-use color_eyre::{
-    eyre::{Context, ContextCompat},
-    owo_colors::OwoColorize,
-};
+use color_eyre::eyre::{Context, ContextCompat};
 use inquire::{CustomType, Text};
 use serde_json::{json, Value};
 
@@ -103,38 +100,59 @@ impl AmountFt {
                 near_primitives::types::Finality::Final.into(),
             )?;
         eprintln!();
-        loop {
-            match CustomType::<crate::types::ft_properties::FungibleToken>::new(&format!(
-                "Enter an amount FT to transfer (example: 10{symbol} or 0.5{symbol}):"
-            ))
-            .prompt()
-            {
-                Ok(mut fungible_token) => {
-                    if fungible_token.symbol.to_uppercase() != symbol.to_uppercase() {
-                        eprintln!("{}", "Invalid currency symbol".red());
-                        continue;
-                    } else if fungible_token.decimals > decimals as u8 {
-                        eprintln!(
-                            "{} {} {}",
-                            "Invalid decimal places. Your FT amount exceeds".red(),
-                            decimals.red(),
-                            "decimal places.".red()
-                        );
-                        continue;
-                    } else {
-                        fungible_token.amount = fungible_token
-                            .amount
-                            .checked_mul(
-                                10u128.pow(decimals as u32 - fungible_token.decimals as u32),
-                            )
-                            .wrap_err("FungibleToken: underflow or overflow happens")?;
-                        fungible_token.decimals = decimals as u8;
-                        fungible_token.symbol = symbol;
-                        return Ok(Some(fungible_token));
-                    }
-                }
-                Err(err) => return Err(color_eyre::Report::msg(err)),
+
+        let sym = symbol.clone();
+        match CustomType::<crate::types::ft_properties::FungibleToken>::new(&format!(
+            "Enter an amount FT to transfer (example: 10{symbol} or 0.5{symbol}):"
+        ))
+        .with_validator(move |ft: &crate::types::ft_properties::FungibleToken| {
+            if ft.symbol.to_uppercase() != sym.to_uppercase() {
+                Ok(inquire::validator::Validation::Invalid(
+                    inquire::validator::ErrorMessage::Custom("Invalid currency symbol".into()),
+                ))
+            } else if ft.decimals > decimals as u8 {
+                Ok(inquire::validator::Validation::Invalid(
+                    inquire::validator::ErrorMessage::Custom(format!(
+                        "Invalid decimal places. Your FT amount exceeds {decimals} decimal places."
+                    )),
+                ))
+            } else {
+                Ok(inquire::validator::Validation::Valid)
             }
+        })
+        .with_formatter(&|ft| {
+            let decimals = ft.decimals;
+            let one_ft: u128 = 10u128.pow(decimals as u32);
+            if ft.amount == 0 {
+                format!("0 {}", symbol)
+            } else if ft.amount % one_ft == 0 {
+                format!("{} {}", ft.amount / one_ft, symbol)
+            } else {
+                format!(
+                    "{}.{} {}",
+                    ft.amount / one_ft,
+                    format!(
+                        "{:0>decimals$}",
+                        (ft.amount % one_ft),
+                        decimals = decimals.try_into().unwrap()
+                    )
+                    .trim_end_matches('0'),
+                    symbol
+                )
+            }
+        })
+        .prompt()
+        {
+            Ok(mut fungible_token) => {
+                fungible_token.amount = fungible_token
+                    .amount
+                    .checked_mul(10u128.pow(decimals as u32 - fungible_token.decimals as u32))
+                    .wrap_err("FungibleToken: underflow or overflow happens")?;
+                fungible_token.decimals = decimals as u8;
+                fungible_token.symbol = symbol;
+                Ok(Some(fungible_token))
+            }
+            Err(err) => Err(color_eyre::Report::msg(err)),
         }
     }
 }
