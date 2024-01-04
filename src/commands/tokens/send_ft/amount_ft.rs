@@ -55,7 +55,7 @@ impl AmountFtContext {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Invalid currency symbol"
             ));
-        } else if decimals > amount_ft.decimals.into() {
+        } else if decimals < amount_ft.decimals.into() {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Invalid decimal places. Your FT amount exceeds {decimals} decimal places."
             ));
@@ -118,7 +118,7 @@ impl AmountFt {
                 Ok(inquire::validator::Validation::Invalid(
                     inquire::validator::ErrorMessage::Custom("Invalid currency symbol".into()),
                 ))
-            } else if decimals > ft.decimals.into() {
+            } else if decimals < ft.decimals.into() {
                 Ok(inquire::validator::Validation::Invalid(
                     inquire::validator::ErrorMessage::Custom(format!(
                         "Invalid decimal places. Your FT amount exceeds {decimals} decimal places."
