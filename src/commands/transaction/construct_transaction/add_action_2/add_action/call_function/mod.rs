@@ -13,7 +13,7 @@ pub struct FunctionCallAction {
     /// How do you want to pass the function call arguments?
     function_args_type:
         crate::commands::contract::call_function::call_function_args_type::FunctionArgsType,
-    /// Enter the arguments to this function or the path to the arguments file:
+    /// Enter the arguments to this function:
     function_args: String,
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
