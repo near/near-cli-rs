@@ -16,7 +16,7 @@ pub struct CallFunctionView {
     #[interactive_clap(skip_default_input_arg)]
     /// How do you want to pass the function call arguments?
     function_args_type: super::call_function_args_type::FunctionArgsType,
-    /// Enter the arguments to this function or the path to the arguments file:
+    /// Enter the arguments to this function:
     function_args: String,
     #[interactive_clap(named_arg)]
     /// Select network
