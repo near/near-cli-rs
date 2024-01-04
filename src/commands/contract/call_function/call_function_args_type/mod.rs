@@ -57,17 +57,21 @@ impl std::fmt::Display for FunctionArgsType {
 impl std::fmt::Display for FunctionArgsTypeDiscriminants {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::JsonArgs => write!(f, "json-args"),
-            Self::TextArgs => write!(f, "text-args"),
-            Self::Base64Args => write!(f, "base64-args"),
-            Self::FileArgs => write!(f, "file-args"),
+            Self::JsonArgs => write!(f, "json-args    - Valid JSON arguments (e.g. {{\"token_id\": \"42\"}} or {{}} if no arguments)"),
+            Self::TextArgs => write!(f, "text-args    - Arbitrary text arguments"),
+            Self::Base64Args => write!(f, "base64-args  - Base64-encoded string (e.g. e30=)"),
+            Self::FileArgs => write!(f, "file-args    - Read from file reusable JSON or binary data (e.g. ./args.json)"),
         }
     }
 }
 
 pub fn input_function_args_type() -> color_eyre::eyre::Result<Option<FunctionArgsType>> {
     let variants = FunctionArgsTypeDiscriminants::iter().collect::<Vec<_>>();
-    let selected = Select::new("How would you like to proceed?", variants).prompt()?;
+    let selected = Select::new(
+        "How would you like to pass the function arguments?",
+        variants,
+    )
+    .prompt()?;
     match selected {
         FunctionArgsTypeDiscriminants::JsonArgs => Ok(Some(FunctionArgsType::JsonArgs)),
         FunctionArgsTypeDiscriminants::TextArgs => Ok(Some(FunctionArgsType::TextArgs)),
