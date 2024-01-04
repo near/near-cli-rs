@@ -1,4 +1,4 @@
-use color_eyre::eyre::WrapErr;
+use color_eyre::eyre::{Context, ContextCompat};
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
@@ -10,10 +10,22 @@ pub struct FungibleToken {
     pub symbol: String,
 }
 
+impl FungibleToken {
+    pub fn from_params_ft(amount: u128, decimals: u8, symbol: String) -> Self {
+        Self {
+            amount,
+            decimals,
+            symbol,
+        }
+    }
+}
+
 impl std::fmt::Display for FungibleToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let decimals = self.decimals;
-        let one_ft: u128 = 10u128.pow(decimals as u32);
+        let one_ft: u128 = 10u128
+            .checked_pow(self.decimals.into())
+            .wrap_err("FT Balance: overflow happens")
+            .unwrap();
         if self.amount == 0 {
             write!(f, "0 {}", self.symbol)
         } else if self.amount % one_ft == 0 {
@@ -26,7 +38,7 @@ impl std::fmt::Display for FungibleToken {
                 format!(
                     "{:0>decimals$}",
                     (self.amount % one_ft),
-                    decimals = decimals.into()
+                    decimals = self.decimals.into()
                 )
                 .trim_end_matches('0'),
                 self.symbol
@@ -46,16 +58,24 @@ impl std::str::FromStr for FungibleToken {
                 let num_int_part = res_split[0]
                     .parse::<u128>()
                     .map_err(|err| format!("FungibleToken: {}", err))?;
-                let len_fract = res_split[1].trim_end_matches('0').len() as u8;
+                let len_fract: u8 = res_split[1]
+                    .trim_end_matches('0')
+                    .len()
+                    .try_into()
+                    .map_err(|_| "Error converting usize to u8")?;
                 let num_fract_part = res_split[1]
                     .trim_end_matches('0')
                     .parse::<u128>()
                     .map_err(|err| format!("FungibleToken: {}", err))?;
                 let amount = num_int_part
-                    .checked_mul(10u128.pow(len_fract as u32))
-                    .ok_or("FungibleToken: underflow or overflow happens")?
+                    .checked_mul(
+                        10u128
+                            .checked_pow(len_fract.into())
+                            .ok_or("FT Balance: overflow happens")?,
+                    )
+                    .ok_or("FungibleToken: overflow happens")?
                     .checked_add(num_fract_part)
-                    .ok_or("FungibleToken: underflow or overflow happens")?;
+                    .ok_or("FungibleToken: overflow happens")?;
                 Ok(FungibleToken {
                     amount,
                     decimals: len_fract,

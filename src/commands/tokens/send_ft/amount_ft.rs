@@ -55,16 +55,24 @@ impl AmountFtContext {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Invalid currency symbol"
             ));
-        } else if amount_ft.decimals > decimals as u8 {
+        } else if decimals > amount_ft.decimals.into() {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Invalid decimal places. Your FT amount exceeds {decimals} decimal places."
             ));
         } else {
+            let actual_decimals = u32::try_from(decimals)
+                .wrap_err("Error converting u64 to u32")?
+                .checked_sub(amount_ft.decimals.into())
+                .wrap_err("FT Balance: underflow or overflow happens")?;
             amount_ft.amount = amount_ft
                 .amount
-                .checked_mul(10u128.pow(decimals as u32 - amount_ft.decimals as u32))
-                .wrap_err("FT Balance: underflow or overflow happens")?;
-            amount_ft.decimals = decimals as u8;
+                .checked_mul(
+                    10u128
+                        .checked_pow(actual_decimals)
+                        .wrap_err("FT Balance: overflow happens")?,
+                )
+                .wrap_err("FT Balance: overflow happens")?;
+            amount_ft.decimals = decimals.try_into().wrap_err("Error converting u64 to u8")?;
             amount_ft.symbol = symbol;
         }
 
@@ -110,7 +118,7 @@ impl AmountFt {
                 Ok(inquire::validator::Validation::Invalid(
                     inquire::validator::ErrorMessage::Custom("Invalid currency symbol".into()),
                 ))
-            } else if ft.decimals > decimals as u8 {
+            } else if decimals > ft.decimals.into() {
                 Ok(inquire::validator::Validation::Invalid(
                     inquire::validator::ErrorMessage::Custom(format!(
                         "Invalid decimal places. Your FT amount exceeds {decimals} decimal places."
@@ -121,8 +129,9 @@ impl AmountFt {
             }
         })
         .with_formatter(&|ft| {
-            let decimals = ft.decimals;
-            let one_ft: u128 = 10u128.pow(decimals as u32);
+            let one_ft: u128 = 10u128
+                .checked_pow(ft.decimals.into())
+                .expect("FT Balance: overflow happens");
             if ft.amount == 0 {
                 format!("0 {}", symbol)
             } else if ft.amount % one_ft == 0 {
@@ -134,7 +143,7 @@ impl AmountFt {
                     format!(
                         "{:0>decimals$}",
                         (ft.amount % one_ft),
-                        decimals = decimals.into()
+                        decimals = ft.decimals.into()
                     )
                     .trim_end_matches('0'),
                     symbol
@@ -144,11 +153,20 @@ impl AmountFt {
         .prompt()
         {
             Ok(mut fungible_token) => {
+                let actual_decimals = u32::try_from(decimals)
+                    .wrap_err("Error converting u64 to u32")?
+                    .checked_sub(fungible_token.decimals.into())
+                    .wrap_err("FT Balance: underflow or overflow happens")?;
                 fungible_token.amount = fungible_token
                     .amount
-                    .checked_mul(10u128.pow(decimals as u32 - fungible_token.decimals as u32))
-                    .wrap_err("FungibleToken: underflow or overflow happens")?;
-                fungible_token.decimals = decimals as u8;
+                    .checked_mul(
+                        10u128
+                            .checked_pow(actual_decimals)
+                            .wrap_err("FT Balance: overflow happens")?,
+                    )
+                    .wrap_err("FungibleToken: overflow happens")?;
+                fungible_token.decimals =
+                    decimals.try_into().wrap_err("Error converting u64 to u8")?;
                 fungible_token.symbol = symbol;
                 Ok(Some(fungible_token))
             }
