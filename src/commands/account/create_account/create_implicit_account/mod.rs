@@ -37,41 +37,26 @@ pub enum Mode {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = SaveImplicitAccountContext)]
-#[interactive_clap(skip_default_from_cli)]
+#[interactive_clap(input_context = SaveImplicitAccountContext)]
+#[interactive_clap(output_context = SaveToFolderContext)]
 pub struct SaveToFolder {
     #[interactive_clap(skip_default_input_arg)]
     /// Where to save the implicit account file?
     folder_path: crate::types::path_buf::PathBuf,
 }
 
-impl interactive_clap::FromCli for SaveToFolder {
-    type FromCliContext = SaveImplicitAccountContext;
-    type FromCliError = color_eyre::eyre::Error;
-    fn from_cli(
-        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    >
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
-        if clap_variant.folder_path.is_none() {
-            clap_variant.folder_path = match Self::input_folder_path(&context) {
-                Ok(Some(folder_path)) => Some(folder_path),
-                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        };
-        let folder_path = clap_variant.folder_path.clone().expect("Unexpected error");
+#[derive(Clone)]
+struct SaveToFolderContext;
 
-        match (context.on_after_getting_folder_path_callback)(&folder_path.into()) {
-            Ok(_) => interactive_clap::ResultFromCli::Ok(clap_variant),
-            Err(err) => interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-        }
+impl SaveToFolderContext {
+    pub fn from_previous_context(
+        previous_context: SaveImplicitAccountContext,
+        scope: &<SaveToFolder as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        (previous_context.on_after_getting_folder_path_callback)(
+            &scope.folder_path.clone().into(),
+        )?;
+        Ok(Self)
     }
 }
 

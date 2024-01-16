@@ -15,18 +15,15 @@ use crate::common::RpcQueryResponseExt;
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignLedger {
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     #[allow(dead_code)]
     #[interactive_clap(skip)]
     signer_public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     nonce: Option<u64>,
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(subcommand)]
