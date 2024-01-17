@@ -7,7 +7,6 @@ use crate::common::RpcQueryResponseExt;
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
 #[interactive_clap(output_context = SignAccessKeyFileContext)]
-#[interactive_clap(skip_default_from_cli)]
 pub struct SignAccessKeyFile {
     /// What is the location of the account access key file (path/to/access-key-file.json)?
     file_path: crate::types::path_buf::PathBuf,
@@ -21,7 +20,7 @@ pub struct SignAccessKeyFile {
     #[interactive_clap(skip_default_input_arg)]
     pub block_height: Option<near_primitives::types::BlockHeight>,
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_input_arg)]
+    #[interactive_clap(skip_interactive_input)]
     meta_transaction_valid_for: Option<u64>,
     #[interactive_clap(subcommand)]
     submit: super::Submit,
@@ -159,93 +158,6 @@ impl From<SignAccessKeyFileContext> for super::SubmitContext {
     }
 }
 
-impl interactive_clap::FromCli for SignAccessKeyFile {
-    type FromCliContext = crate::commands::TransactionContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        optional_clap_variant: Option<<SignAccessKeyFile as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    >
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
-
-        if clap_variant.file_path.is_none() {
-            clap_variant.file_path = match Self::input_file_path(&context) {
-                Ok(Some(file_path)) => Some(file_path),
-                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let file_path = clap_variant.file_path.clone().expect("Unexpected error");
-        if clap_variant.nonce.is_none() {
-            clap_variant.nonce = match Self::input_nonce(&context) {
-                Ok(optional_nonce) => optional_nonce,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let nonce = clap_variant.nonce;
-        if clap_variant.block_hash.is_none() {
-            clap_variant.block_hash = match Self::input_block_hash(&context) {
-                Ok(optional_block_hash) => optional_block_hash,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let block_hash = clap_variant.block_hash;
-        if clap_variant.block_height.is_none() {
-            clap_variant.block_height = match Self::input_block_height(&context) {
-                Ok(optional_block_height) => optional_block_height,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let block_height = clap_variant.block_height;
-        if clap_variant.meta_transaction_valid_for.is_none() {
-            clap_variant.meta_transaction_valid_for =
-                match Self::input_meta_transaction_valid_for(&context) {
-                    Ok(meta_transaction_valid_for) => meta_transaction_valid_for,
-                    Err(err) => {
-                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-                    }
-                };
-        }
-        let meta_transaction_valid_for = clap_variant.meta_transaction_valid_for;
-
-        let new_context_scope = InteractiveClapContextScopeForSignAccessKeyFile {
-            file_path,
-            nonce,
-            block_hash,
-            block_height,
-            meta_transaction_valid_for,
-        };
-        let output_context =
-            match SignAccessKeyFileContext::from_previous_context(context, &new_context_scope) {
-                Ok(new_context) => new_context,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-
-        match super::Submit::from_cli(clap_variant.submit.take(), output_context.into()) {
-            interactive_clap::ResultFromCli::Ok(submit) => {
-                clap_variant.submit = Some(submit);
-                interactive_clap::ResultFromCli::Ok(clap_variant)
-            }
-            interactive_clap::ResultFromCli::Cancel(optional_submit) => {
-                clap_variant.submit = optional_submit;
-                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
-            }
-            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
-            interactive_clap::ResultFromCli::Err(optional_submit, err) => {
-                clap_variant.submit = optional_submit;
-                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-            }
-        }
-    }
-}
-
 impl SignAccessKeyFile {
     fn input_nonce(
         context: &crate::commands::TransactionContext,
@@ -283,12 +195,6 @@ impl SignAccessKeyFile {
                 .prompt()?,
             ));
         }
-        Ok(None)
-    }
-
-    fn input_meta_transaction_valid_for(
-        _context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<u64>> {
         Ok(None)
     }
 }

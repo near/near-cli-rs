@@ -80,8 +80,8 @@ near-token = { version = "0.2.0", features = [
 ] }
 
 keyring = "2.0.5"
-interactive-clap = "0.2.7"
-interactive-clap-derive = "0.2.7"
+interactive-clap = "0.2.8"
+interactive-clap-derive = "0.2.8"
 
 near-socialdb-client = "0.2.1"
 

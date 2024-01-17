@@ -1827,9 +1827,9 @@ dependencies = [
 
 [[package]]
 name = "interactive-clap"
-version = "0.2.7"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dce1b03179638eaf4301fd7a26e5798ba0d4c44a2277ef397914478088f97f27"
+checksum = "b69f547ee8ecc587e3b832ca0c6a343225ff96ff7ca51dc14c34a321fbeb6c6c"
 dependencies = [
  "interactive-clap-derive",
  "strum",
@@ -1838,9 +1838,9 @@ dependencies = [
 
 [[package]]
 name = "interactive-clap-derive"
-version = "0.2.7"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee313b6ffaa60679c3567b1a11b9a097a4ccff299ed4e780e0b2f2e6e158f159"
+checksum = "30d19b60b6a42c672d30bbc6816f7ed89aee477d8229666e3e39fb9319e8b179"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",

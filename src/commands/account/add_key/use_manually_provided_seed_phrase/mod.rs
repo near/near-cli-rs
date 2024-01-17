@@ -4,7 +4,7 @@ use std::str::FromStr;
 #[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]
 #[interactive_clap(output_context = AddAccessWithSeedPhraseActionContext)]
 pub struct AddAccessWithSeedPhraseAction {
-    /// Enter the seed-phrase for this sub-account:
+    /// Enter the seed-phrase:
     master_seed_phrase: String,
     #[interactive_clap(named_arg)]
     /// Select network
