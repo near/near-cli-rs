@@ -11,6 +11,8 @@ description = "human-friendly console utility that helps to interact with NEAR P
 [package.metadata.wix]
 upgrade-guid = "A6432354-8256-45E3-9E10-53C117EE22B4"
 path-guid = "3A5A99B6-61EC-4DFB-AA36-763EE316AF18"
+license = false
+eula = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -98,7 +100,7 @@ lto = "thin"
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.3.0"
+cargo-dist-version = "0.7.2"
 # CI backends to support
 ci = ["github"]
 # The installers to generate for each app
@@ -116,8 +118,9 @@ windows-archive = ".tar.gz"
 unix-archive = ".tar.gz"
 # Publish jobs to run in CI
 pr-run-mode = "upload"
-# XXX: In order to install system dependencies, we need to edit the release.yml,
-# so we allow dirty CI scripts to avoid cargo-dist complains.
-# This should not be necessary once the following issue is addressed:
-# https://github.com/axodotdev/cargo-dist/issues/423
+# XXX: In order to use custom GITHUB_TOKEN to trigger npm-publish workflow, 
+# we allow dirty CI scripts to avoid cargo-dist complains.
 allow-dirty = ["ci"]
+
+[workspace.metadata.dist.dependencies.apt]
+libudev-dev = { version = "*", targets = ["x86_64-unknown-linux-gnu"] }
