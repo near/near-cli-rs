@@ -20,12 +20,12 @@ impl AddAccessKeyActionContext {
             nonce: 0,
             permission: previous_context.access_key_permission,
         };
-        let action = near_primitives::transaction::Action::AddKey(
+        let action = near_primitives::transaction::Action::AddKey(Box::new(
             near_primitives::transaction::AddKeyAction {
                 public_key: scope.public_key.clone().into(),
                 access_key,
             },
-        );
+        ));
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(

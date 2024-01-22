@@ -69,14 +69,14 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                     },
                                 ),
                                 near_primitives::transaction::Action::AddKey(
-                                    near_primitives::transaction::AddKeyAction {
+                                    Box::new(near_primitives::transaction::AddKeyAction {
                                         public_key: item.account_properties.public_key.clone(),
                                         access_key: near_primitives::account::AccessKey {
                                             nonce: 0,
                                             permission:
                                                 near_primitives::account::AccessKeyPermission::FullAccess,
                                         },
-                                    },
+                                    }),
                                 ),
                             ],
                         new_account_id.clone())
@@ -92,15 +92,17 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                             {
                                 (
                                     vec![near_primitives::transaction::Action::FunctionCall(
-                                        near_primitives::transaction::FunctionCallAction {
-                                            method_name: "create_account".to_string(),
-                                            args,
-                                            gas: crate::common::NearGas::from_tgas(30).as_gas(),
-                                            deposit: item
-                                                .account_properties
-                                                .initial_balance
-                                                .as_yoctonear(),
-                                        },
+                                        Box::new(
+                                            near_primitives::transaction::FunctionCallAction {
+                                                method_name: "create_account".to_string(),
+                                                args,
+                                                gas: crate::common::NearGas::from_tgas(30).as_gas(),
+                                                deposit: item
+                                                    .account_properties
+                                                    .initial_balance
+                                                    .as_yoctonear(),
+                                            },
+                                        ),
                                     )],
                                     linkdrop_account_id.clone(),
                                 )

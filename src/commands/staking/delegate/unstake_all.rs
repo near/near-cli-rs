@@ -29,12 +29,12 @@ impl UnstakeAllContext {
                         signer_id: signer_id.clone(),
                         receiver_id: validator_account_id.clone(),
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            near_primitives::transaction::FunctionCallAction {
+                            Box::new(near_primitives::transaction::FunctionCallAction {
                                 method_name: "unstake_all".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({}))?,
                                 gas: crate::common::NearGas::from_tgas(50).as_gas(),
                                 deposit: 0,
-                            },
+                            }),
                         )],
                     })
                 }

@@ -112,12 +112,12 @@ impl From<SignerContext> for crate::commands::ActionContext {
 
                     prepopulated_transaction.actions =
                         vec![near_primitives::transaction::Action::FunctionCall(
-                            near_primitives::transaction::FunctionCallAction {
+                            Box::new(near_primitives::transaction::FunctionCallAction {
                                 method_name: "set".to_string(),
                                 args,
                                 gas: crate::common::NearGas::from_tgas(300).as_gas(),
                                 deposit: deposit.as_yoctonear(),
-                            },
+                            }),
                         )];
 
                     Ok(prepopulated_transaction)

@@ -122,7 +122,7 @@ fn save_access_key(
             network_config,
             key_pair_properties_buf,
             public_key_str,
-            &account_id,
+            account_id.as_ref(),
         )
         .wrap_err_with(|| {
             format!(
@@ -139,7 +139,7 @@ fn save_access_key(
         credentials_home_dir,
         key_pair_properties_buf,
         public_key_str,
-        &account_id,
+        account_id.as_ref(),
     )
     .wrap_err_with(|| format!("Failed to save a file with access key: {}", public_key_str))?;
     eprintln!("{}", storage_message);

@@ -163,14 +163,14 @@ impl DepositContext {
                                     code: previous_context.code.clone(),
                                 },
                             ),
-                            near_primitives::transaction::Action::FunctionCall(
+                            near_primitives::transaction::Action::FunctionCall(Box::new(
                                 near_primitives::transaction::FunctionCallAction {
                                     method_name: previous_context.function_name.clone(),
                                     args: previous_context.function_args.clone(),
                                     gas: previous_context.gas.as_gas(),
                                     deposit: deposit.as_yoctonear(),
                                 },
-                            ),
+                            )),
                         ],
                     })
                 }

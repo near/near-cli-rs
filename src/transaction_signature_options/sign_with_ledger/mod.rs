@@ -2,8 +2,7 @@ use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::{CustomType, Select, Text};
-
-use near_primitives::borsh::BorshSerialize;
+use near_primitives::borsh;
 use slip10::BIP32Path;
 
 use crate::common::JsonRpcClientExt;
@@ -165,8 +164,7 @@ impl SignLedgerContext {
         );
 
         let signature = match near_ledger::sign_transaction(
-            unsigned_transaction
-                .try_to_vec()
+            borsh::to_vec(&unsigned_transaction)
                 .wrap_err("Transaction is not expected to fail on serialization")?,
             seed_phrase_hd_path.clone(),
         ) {
