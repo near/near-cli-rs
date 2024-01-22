@@ -289,7 +289,7 @@ pub struct SubmitContext {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum SignedTransactionOrSignedDelegateAction {
     SignedTransaction(near_primitives::transaction::SignedTransaction),
-    SignedDelegateAction(near_primitives::delegate_action::SignedDelegateAction),
+    SignedDelegateAction(near_primitives::action::delegate::SignedDelegateAction),
 }
 
 impl From<near_primitives::transaction::SignedTransaction>
@@ -300,11 +300,11 @@ impl From<near_primitives::transaction::SignedTransaction>
     }
 }
 
-impl From<near_primitives::delegate_action::SignedDelegateAction>
+impl From<near_primitives::action::delegate::SignedDelegateAction>
     for SignedTransactionOrSignedDelegateAction
 {
     fn from(
-        signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,
+        signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
     ) -> Self {
         Self::SignedDelegateAction(signed_delegate_action)
     }
@@ -315,16 +315,16 @@ pub fn get_signed_delegate_action(
     public_key: &near_crypto::PublicKey,
     private_key: near_crypto::SecretKey,
     max_block_height: u64,
-) -> near_primitives::delegate_action::SignedDelegateAction {
+) -> near_primitives::action::delegate::SignedDelegateAction {
     use near_primitives::signable_message::{SignableMessage, SignableMessageType};
 
     let actions = unsigned_transaction
         .actions
         .into_iter()
-        .map(near_primitives::delegate_action::NonDelegateAction::try_from)
+        .map(near_primitives::action::delegate::NonDelegateAction::try_from)
         .collect::<Result<_, _>>()
         .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).");
-    let delegate_action = near_primitives::delegate_action::DelegateAction {
+    let delegate_action = near_primitives::action::delegate::DelegateAction {
         sender_id: unsigned_transaction.signer_id.clone(),
         receiver_id: unsigned_transaction.receiver_id,
         actions,
@@ -344,7 +344,7 @@ pub fn get_signed_delegate_action(
     eprintln!("Public key: {}", public_key);
     eprintln!("Signature: {}", signature);
 
-    near_primitives::delegate_action::SignedDelegateAction {
+    near_primitives::action::delegate::SignedDelegateAction {
         delegate_action,
         signature,
     }

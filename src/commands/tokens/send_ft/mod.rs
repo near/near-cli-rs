@@ -69,7 +69,7 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
                         signer_id: signer_account_id.clone(),
                         receiver_id: ft_contract_account_id.clone(),
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            near_primitives::transaction::FunctionCallAction {
+                            Box::new(near_primitives::transaction::FunctionCallAction {
                                 method_name: "ft_transfer".to_string(),
                                 args: serde_json::to_vec(&json!({
                                     "receiver_id": receiver_account_id.to_string(),
@@ -77,7 +77,7 @@ impl From<SendFtCommandContext> for crate::commands::ActionContext {
                                 }))?,
                                 gas: item.gas.as_gas(),
                                 deposit: item.deposit.as_yoctonear(),
-                            },
+                            }),
                         )],
                     })
                 }

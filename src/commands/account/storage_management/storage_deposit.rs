@@ -118,14 +118,14 @@ impl SignerAccountIdContext {
                         signer_id: signer_account_id.clone(),
                         receiver_id: get_contract_account_id(network_config)?,
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            near_primitives::transaction::FunctionCallAction {
+                            Box::new(near_primitives::transaction::FunctionCallAction {
                                 method_name: "storage_deposit".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({
                                     "account_id": &receiver_account_id
                                 }))?,
                                 gas: crate::common::NearGas::from_tgas(50).as_gas(),
                                 deposit: deposit.as_yoctonear(),
-                            },
+                            }),
                         )],
                     })
                 }

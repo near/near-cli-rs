@@ -234,12 +234,12 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                         signer_id: signer_account_id.clone(),
                         receiver_id: receiver_account_id.clone(),
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            near_primitives::transaction::FunctionCallAction {
+                            Box::new(near_primitives::transaction::FunctionCallAction {
                                 method_name: item.function_name.clone(),
                                 args: item.function_args.clone(),
                                 gas: item.gas.as_gas(),
                                 deposit: item.deposit.as_yoctonear(),
-                            },
+                            }),
                         )],
                     })
                 }
