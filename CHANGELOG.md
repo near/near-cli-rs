@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.7](https://github.com/near/near-cli-rs/compare/v0.7.6...v0.7.7) - 2024-01-19
+
+### Added
+- Updated dialog for entering arguments to a function (as-read-only) ([#285](https://github.com/near/near-cli-rs/pull/285))
+
+### Other
+- Updated binary releases pipeline to use cargo-dist v0.7.2 (previously v0.3.0) ([#289](https://github.com/near/near-cli-rs/pull/289))
+- Avoid unnecessary "interactive_clap::FromCli" implementations ([#288](https://github.com/near/near-cli-rs/pull/288))
+
 ## [0.7.6](https://github.com/near/near-cli-rs/compare/v0.7.5...v0.7.6) - 2023-12-21
 
 ### Other

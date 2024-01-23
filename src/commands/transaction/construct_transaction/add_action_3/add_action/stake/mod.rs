@@ -16,12 +16,12 @@ impl StakeActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<StakeAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::Stake(
+        let action = near_primitives::transaction::Action::Stake(Box::new(
             near_primitives::transaction::StakeAction {
                 stake: scope.stake_amount.as_yoctonear(),
                 public_key: scope.public_key.clone().into(),
             },
-        );
+        ));
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {

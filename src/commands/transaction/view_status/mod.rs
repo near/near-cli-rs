@@ -32,8 +32,8 @@ impl TransactionInfoContext {
                         near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
                             transaction_info:
                                 near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
-                                    hash: transaction_hash.into(),
-                                    account_id: "near".parse::<near_primitives::types::AccountId>()?,
+                                    tx_hash: transaction_hash.into(),
+                                    sender_account_id: "near".parse::<near_primitives::types::AccountId>()?,
                                 },
                         },
                     )

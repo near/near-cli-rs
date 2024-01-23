@@ -1,4 +1,4 @@
-use near_primitives::borsh::{BorshDeserialize, BorshSerialize};
+use near_primitives::{borsh, borsh::BorshDeserialize};
 
 #[derive(Debug, Clone)]
 pub struct TransactionAsBase64 {
@@ -37,9 +37,7 @@ impl std::str::FromStr for TransactionAsBase64 {
 impl std::fmt::Display for TransactionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let base64_unsigned_transaction = near_primitives::serialize::to_base64(
-            &self
-                .inner
-                .try_to_vec()
+            &borsh::to_vec(&self.inner)
                 .expect("Transaction is not expected to fail on serialization"),
         );
         write!(f, "{}", base64_unsigned_transaction)

@@ -41,7 +41,7 @@ impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: signer_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::AddKey(
+                        actions: vec![near_primitives::transaction::Action::AddKey(Box::new(
                             near_primitives::transaction::AddKeyAction {
                                 public_key: item.public_key.clone(),
                                 access_key: near_primitives::account::AccessKey {
@@ -49,7 +49,7 @@ impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
                                     permission: item.permission.clone(),
                                 },
                             },
-                        )],
+                        ))],
                     })
                 }
             });

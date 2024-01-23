@@ -5,7 +5,6 @@ use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use futures::{StreamExt, TryStreamExt};
-use near_primitives::borsh::BorshSerialize;
 use prettytable::Table;
 
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
@@ -160,7 +159,7 @@ pub fn get_account_transfer_allowance(
         get_account_state(network_config.clone(), account_id.clone(), block_reference)
     {
         account_view
-    } else if !account_id.is_implicit() {
+    } else if !account_id.get_account_type().is_implicit() {
         return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
             "Account <{}> does not exist on network <{}>.",
             account_id,
@@ -530,12 +529,9 @@ pub fn print_full_signed_transaction(transaction: near_primitives::transaction::
 }
 
 pub fn print_full_unsigned_transaction(transaction: near_primitives::transaction::Transaction) {
-    let bytes = transaction
-        .try_to_vec()
-        .expect("Transaction is not expected to fail on serialization");
     eprintln!(
         "Unsigned transaction hash (Base58-encoded SHA-256 hash): {}\n\n",
-        CryptoHash::hash_bytes(&bytes)
+        transaction.get_hash_and_size().0
     );
 
     eprintln!("{:<13} {}", "public_key:", &transaction.public_key);

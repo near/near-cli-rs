@@ -41,9 +41,9 @@ impl RelayerAccountIdContext {
             std::sync::Arc::new({
                 move |prepopulated_unsigned_transaction, _network_config| {
                     prepopulated_unsigned_transaction.actions =
-                        vec![near_primitives::transaction::Action::Delegate(
+                        vec![near_primitives::transaction::Action::Delegate(Box::new(
                             previous_context.signed_delegate_action.clone(),
-                        )];
+                        ))];
                     Ok(())
                 }
             });
