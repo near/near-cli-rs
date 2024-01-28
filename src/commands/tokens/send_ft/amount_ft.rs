@@ -43,37 +43,45 @@ impl AmountFtContext {
                 previous_context.ft_contract_account_id
             )
         })?;
-        let crate::types::ft_properties::FtMetadata { decimals, symbol } =
-            crate::types::ft_properties::params_ft_metadata(
-                previous_context.ft_contract_account_id.clone(),
-                &network_config,
-                near_primitives::types::Finality::Final.into(),
-            )?;
+        let ft_metadata = crate::types::ft_properties::params_ft_metadata(
+            previous_context.ft_contract_account_id.clone(),
+            &network_config,
+            near_primitives::types::Finality::Final.into(),
+        )?;
         let mut amount_ft = scope.amount_ft.clone();
 
-        if amount_ft.symbol.to_uppercase() != symbol.to_uppercase() {
+        if amount_ft.symbol().to_uppercase() != ft_metadata.symbol.to_uppercase() {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Invalid currency symbol"
             ));
-        } else if decimals < amount_ft.decimals.into() {
+        } else if ft_metadata.decimals < amount_ft.decimals().into() {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Invalid decimal places. Your FT amount exceeds {decimals} decimal places."
+                "Error: Invalid decimal places. Your FT amount exceeds {} decimal places.",
+                ft_metadata.decimals
             ));
         } else {
-            let actual_decimals = u32::try_from(decimals)
+            let actual_decimals = u32::try_from(ft_metadata.decimals)
                 .wrap_err("Error converting u64 to u32")?
-                .checked_sub(amount_ft.decimals.into())
+                .checked_sub(amount_ft.decimals().into())
                 .wrap_err("FT Balance: underflow or overflow happens")?;
-            amount_ft.amount = amount_ft
-                .amount
-                .checked_mul(
-                    10u128
-                        .checked_pow(actual_decimals)
-                        .wrap_err("FT Balance: overflow happens")?,
-                )
-                .wrap_err("FT Balance: overflow happens")?;
-            amount_ft.decimals = decimals.try_into().wrap_err("Error converting u64 to u8")?;
-            amount_ft.symbol = symbol;
+            amount_ft.set_amount(
+                amount_ft
+                    .amount()
+                    .checked_mul(
+                        10u128
+                            .checked_pow(actual_decimals)
+                            .wrap_err("FT Balance: overflow happens")?,
+                    )
+                    .wrap_err("FT Balance: overflow happens")?,
+            );
+            amount_ft.set_decimals(
+                ft_metadata
+                    .decimals
+                    .try_into()
+                    .wrap_err("Error converting u64 to u8")?,
+            );
+            amount_ft.set_symbol(ft_metadata.symbol.clone());
+            amount_ft.normalize(&ft_metadata)?;
         }
 
         Ok(Self {
@@ -101,27 +109,28 @@ impl AmountFt {
             )
         })?;
 
-        let crate::types::ft_properties::FtMetadata { decimals, symbol } =
-            crate::types::ft_properties::params_ft_metadata(
-                context.ft_contract_account_id.clone(),
-                &network_config,
-                near_primitives::types::Finality::Final.into(),
-            )?;
+        let ft_metadata = crate::types::ft_properties::params_ft_metadata(
+            context.ft_contract_account_id.clone(),
+            &network_config,
+            near_primitives::types::Finality::Final.into(),
+        )?;
         eprintln!();
 
-        let sym = symbol.clone();
+        let sym = ft_metadata.symbol.clone();
         match CustomType::<crate::types::ft_properties::FungibleToken>::new(&format!(
-            "Enter an amount FT to transfer (example: 10{symbol} or 0.5{symbol}):"
+            "Enter an amount FT to transfer (example: 10{symbol} or 0.5{symbol}):",
+            symbol = ft_metadata.symbol
         ))
         .with_validator(move |ft: &crate::types::ft_properties::FungibleToken| {
-            if ft.symbol.to_uppercase() != sym.to_uppercase() {
+            if ft.symbol().to_uppercase() != sym.to_uppercase() {
                 Ok(inquire::validator::Validation::Invalid(
                     inquire::validator::ErrorMessage::Custom("Invalid currency symbol".into()),
                 ))
-            } else if decimals < ft.decimals.into() {
+            } else if ft_metadata.decimals < ft.decimals().into() {
                 Ok(inquire::validator::Validation::Invalid(
                     inquire::validator::ErrorMessage::Custom(format!(
-                        "Invalid decimal places. Your FT amount exceeds {decimals} decimal places."
+                        "Invalid decimal places. Your FT amount exceeds {} decimal places.",
+                        ft_metadata.decimals
                     )),
                 ))
             } else {
@@ -130,45 +139,51 @@ impl AmountFt {
         })
         .with_formatter(&|ft| {
             let one_ft: u128 = 10u128
-                .checked_pow(ft.decimals.into())
+                .checked_pow(ft.decimals().into())
                 .expect("FT Balance: overflow happens");
-            if ft.amount == 0 {
-                format!("0 {}", symbol)
-            } else if ft.amount % one_ft == 0 {
-                format!("{} {}", ft.amount / one_ft, symbol)
+            if ft.amount() == 0 {
+                format!("0 {}", ft_metadata.symbol)
+            } else if ft.amount() % one_ft == 0 {
+                format!("{} {}", ft.amount() / one_ft, ft_metadata.symbol)
             } else {
                 format!(
                     "{}.{} {}",
-                    ft.amount / one_ft,
+                    ft.amount() / one_ft,
                     format!(
                         "{:0>decimals$}",
-                        (ft.amount % one_ft),
-                        decimals = ft.decimals.into()
+                        (ft.amount() % one_ft),
+                        decimals = ft.decimals().into()
                     )
                     .trim_end_matches('0'),
-                    symbol
+                    ft_metadata.symbol
                 )
             }
         })
         .prompt()
         {
             Ok(mut fungible_token) => {
-                let actual_decimals = u32::try_from(decimals)
+                let actual_decimals = u32::try_from(ft_metadata.decimals)
                     .wrap_err("Error converting u64 to u32")?
-                    .checked_sub(fungible_token.decimals.into())
+                    .checked_sub(fungible_token.decimals().into())
                     .wrap_err("FT Balance: underflow or overflow happens")?;
-                fungible_token.amount = fungible_token
-                    .amount
-                    .checked_mul(
-                        10u128
-                            .checked_pow(actual_decimals)
-                            .wrap_err("FT Balance: overflow happens")?,
-                    )
-                    .wrap_err("FungibleToken: overflow happens")?;
-                fungible_token.decimals =
-                    decimals.try_into().wrap_err("Error converting u64 to u8")?;
-                fungible_token.symbol = symbol;
-                Ok(Some(fungible_token))
+                fungible_token.set_amount(
+                    fungible_token
+                        .amount()
+                        .checked_mul(
+                            10u128
+                                .checked_pow(actual_decimals)
+                                .wrap_err("FT Balance: overflow happens")?,
+                        )
+                        .wrap_err("FungibleToken: overflow happens")?,
+                );
+                fungible_token.set_decimals(
+                    ft_metadata
+                        .decimals
+                        .try_into()
+                        .wrap_err("Error converting u64 to u8")?,
+                );
+                fungible_token.set_symbol(ft_metadata.symbol.clone());
+                Ok(Some(fungible_token.normalize(&ft_metadata)?))
             }
             Err(err) => Err(color_eyre::Report::msg(err)),
         }
@@ -270,7 +285,7 @@ impl DepositContext {
                         method_name: "ft_transfer".to_string(),
                         args: serde_json::to_vec(&json!({
                             "receiver_id": receiver_account_id.to_string(),
-                            "amount": amount_ft.amount.to_string()
+                            "amount": amount_ft.amount().to_string()
                         }))?,
                         gas: previous_context.gas.as_gas(),
                         deposit: deposit.as_yoctonear(),

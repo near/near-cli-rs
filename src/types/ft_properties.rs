@@ -5,9 +5,9 @@ use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
 pub struct FungibleToken {
-    pub amount: u128,
-    pub decimals: u8,
-    pub symbol: String,
+    amount: u128,
+    decimals: u8,
+    symbol: String,
 }
 
 impl FungibleToken {
@@ -17,6 +17,46 @@ impl FungibleToken {
             decimals,
             symbol,
         }
+    }
+
+    pub fn normalize(&self, ft_metadata: &FtMetadata) -> color_eyre::eyre::Result<Self> {
+        if ft_metadata.decimals != u64::from(self.decimals) {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Invalid decimal places. Your FT amount exceeds {} decimal places.",
+                ft_metadata.decimals
+            ))
+        } else if ft_metadata.symbol != self.symbol {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Invalid currency symbol"))
+        } else {
+            Ok(self.clone())
+        }
+    }
+
+    pub fn amount(&self) -> u128 {
+        self.amount
+    }
+
+    pub fn decimals(&self) -> u8 {
+        self.decimals
+    }
+
+    pub fn symbol(&self) -> String {
+        self.symbol.to_owned()
+    }
+
+    pub fn set_amount(&mut self, new_amount: u128) -> Self {
+        self.amount = new_amount;
+        self.clone()
+    }
+
+    pub fn set_decimals(&mut self, new_decimals: u8) -> Self {
+        self.decimals = new_decimals;
+        self.clone()
+    }
+
+    pub fn set_symbol(&mut self, new_symbol: String) -> Self {
+        self.symbol = new_symbol;
+        self.clone()
     }
 }
 
