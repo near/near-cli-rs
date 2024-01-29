@@ -48,14 +48,13 @@ impl AmountFtContext {
             &network_config,
             near_primitives::types::Finality::Final.into(),
         )?;
-        let amount_ft = scope.amount_ft.normalize(&ft_metadata)?;
 
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
-            amount_ft,
+            amount_ft: scope.amount_ft.normalize(&ft_metadata)?,
         })
     }
 }
@@ -82,41 +81,20 @@ impl AmountFt {
         )?;
         eprintln!();
 
-        let symbol = ft_metadata.symbol.clone();
         Ok(Some(
             CustomType::<crate::types::ft_properties::FungibleToken>::new(&format!(
-                "Enter an amount FT to transfer (example: 10{symbol} or 0.5{symbol}):"
+                "Enter an FT amount to transfer (example: 10 {symbol} or 0.5 {symbol}):",
+                symbol = ft_metadata.symbol
             ))
             .with_validator(move |ft: &crate::types::ft_properties::FungibleToken| {
-                if let Err(err) = ft.normalize(&ft_metadata.clone()) {
-                    return Ok(inquire::validator::Validation::Invalid(
+                match ft.normalize(&ft_metadata) {
+                    Err(err) => Ok(inquire::validator::Validation::Invalid(
                         inquire::validator::ErrorMessage::Custom(err.to_string()),
-                    ));
-                }
-                Ok(inquire::validator::Validation::Valid)
-            })
-            .with_formatter(&|ft| {
-                let one_ft: u128 = 10u128
-                    .checked_pow(ft.decimals().into())
-                    .expect("FT Balance: overflow happens");
-                if ft.amount() == 0 {
-                    format!("0 {}", symbol)
-                } else if ft.amount() % one_ft == 0 {
-                    format!("{} {}", ft.amount() / one_ft, symbol)
-                } else {
-                    format!(
-                        "{}.{} {}",
-                        ft.amount() / one_ft,
-                        format!(
-                            "{:0>decimals$}",
-                            (ft.amount() % one_ft),
-                            decimals = ft.decimals().into()
-                        )
-                        .trim_end_matches('0'),
-                        symbol
-                    )
+                    )),
+                    Ok(_) => Ok(inquire::validator::Validation::Valid),
                 }
             })
+            .with_formatter(&|ft| ft.to_string())
             .prompt()?,
         ))
     }
@@ -175,7 +153,7 @@ impl PrepaidGas {
                     if input_gas <= near_gas::NearGas::from_tgas(300) {
                         break input_gas;
                     } else {
-                        eprintln!("You need to enter a value of no more than 300 TERAGAS")
+                        eprintln!("You need to enter a value of no more than 300 TeraGas")
                     }
                 }
                 Err(err) => return Err(color_eyre::Report::msg(err)),
@@ -317,7 +295,7 @@ impl Deposit {
         eprintln!();
         match crate::types::near_token::NearToken::from_str(
             &Text::new(
-                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
+                "Enter deposit for a function call (example: 10 NEAR or 0.5 near or 10000 yoctonear):",
             )
             .with_initial_value("1 yoctoNEAR")
             .prompt()?,
