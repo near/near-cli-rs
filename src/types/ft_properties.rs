@@ -20,15 +20,37 @@ impl FungibleToken {
     }
 
     pub fn normalize(&self, ft_metadata: &FtMetadata) -> color_eyre::eyre::Result<Self> {
-        if ft_metadata.decimals != u64::from(self.decimals) {
+        if ft_metadata.decimals < u64::from(self.decimals) {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Invalid decimal places. Your FT amount exceeds {} decimal places.",
                 ft_metadata.decimals
             ))
-        } else if ft_metadata.symbol != self.symbol {
+        } else if ft_metadata.symbol.to_uppercase() != self.symbol.to_uppercase() {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Invalid currency symbol"))
-        } else {
+        } else if ft_metadata.symbol == self.symbol
+            && ft_metadata.decimals == u64::from(self.decimals)
+        {
             Ok(self.clone())
+        } else {
+            let mut fungible_token = self.clone();
+            let actual_decimals = u32::try_from(ft_metadata.decimals)
+                .wrap_err("Error converting u64 to u32")?
+                .checked_sub(fungible_token.decimals().into())
+                .wrap_err("FT Balance: underflow or overflow happens")?;
+            fungible_token.amount = fungible_token
+                .amount
+                .checked_mul(
+                    10u128
+                        .checked_pow(actual_decimals)
+                        .wrap_err("FT Balance: overflow happens")?,
+                )
+                .wrap_err("FungibleToken: overflow happens")?;
+            fungible_token.decimals = ft_metadata
+                .decimals
+                .try_into()
+                .wrap_err("Error converting u64 to u8")?;
+            fungible_token.symbol = ft_metadata.symbol.clone();
+            Ok(fungible_token)
         }
     }
 
@@ -42,21 +64,6 @@ impl FungibleToken {
 
     pub fn symbol(&self) -> String {
         self.symbol.to_owned()
-    }
-
-    pub fn set_amount(&mut self, new_amount: u128) -> Self {
-        self.amount = new_amount;
-        self.clone()
-    }
-
-    pub fn set_decimals(&mut self, new_decimals: u8) -> Self {
-        self.decimals = new_decimals;
-        self.clone()
-    }
-
-    pub fn set_symbol(&mut self, new_symbol: String) -> Self {
-        self.symbol = new_symbol;
-        self.clone()
     }
 }
 
