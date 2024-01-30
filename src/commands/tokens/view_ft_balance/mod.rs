@@ -30,7 +30,7 @@ impl ViewFtBalanceContext {
                 scope.ft_contract_account_id.clone().into();
 
             move |network_config, block_reference| {
-                let super::FtMetadata { decimals, symbol } = super::params_ft_metadata(
+                let crate::types::ft_properties::FtMetadata { decimals, symbol } = crate::types::ft_properties::params_ft_metadata(
                     ft_contract_account_id.clone(),
                     network_config,
                     block_reference.clone(),
@@ -54,25 +54,14 @@ impl ViewFtBalanceContext {
                     })?;
                 call_result.print_logs();
                 let amount: String = call_result.parse_result_from_json()?;
-                let amount = amount.parse::<u128>().unwrap();
-                let amount_fmt = {
-                    if amount == 0 {
-                        format!("0 {}", symbol)
-                    } else if (amount % 10u128.pow(decimals as u32)) == 0 {
-                        format!("{} {}", amount / 10u128.pow(decimals as u32), symbol,)
-                    } else {
-                        format!(
-                            "{}.{} {}",
-                            amount / 10u128.pow(decimals as u32),
-                            format!("{:0>decimals$}", amount % 10u128.pow(decimals as u32), decimals=decimals.try_into().unwrap()).trim_end_matches('0'),
-                            symbol
-                        )
-                    }
-                };
+                let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
+                    amount.parse::<u128>()?,
+                    decimals,
+                    symbol
+                );
 
                 eprintln!(
-                    "\n<{}> account has {}  (FT-contract: {})",
-                    owner_account_id, amount_fmt, ft_contract_account_id
+                    "\n<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})"
                 );
                 Ok(())
             }
