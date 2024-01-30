@@ -56,7 +56,7 @@ impl ViewFtBalanceContext {
                 let amount: String = call_result.parse_result_from_json()?;
                 let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
                     amount.parse::<u128>()?,
-                    decimals.try_into().wrap_err("Error converting u64 to u8")?,
+                    decimals,
                     symbol
                 );
 
