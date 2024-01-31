@@ -3,6 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 pub mod call_function;
 pub mod deploy;
 mod download_wasm;
+mod inspect_contract;
 mod view_storage;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -23,6 +24,11 @@ pub enum ContractActions {
     ))]
     /// Execute function (contract method)
     CallFunction(self::call_function::CallFunctionCommands),
+    #[strum_discriminants(strum(
+        message = "inspect         - Get a list of available function names"
+    ))]
+    /// Get a list of available function names
+    Inspect(self::inspect_contract::Contract),
     #[strum_discriminants(strum(message = "deploy          - Add a new contract code"))]
     /// Add a contract code
     Deploy(self::deploy::Contract),
