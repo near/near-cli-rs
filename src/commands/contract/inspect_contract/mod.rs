@@ -1,5 +1,6 @@
 use color_eyre::eyre::Context;
 
+use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -37,7 +38,7 @@ impl ContractContext {
             let account_id = scope.account_id.clone();
 
             move |network_config, block_reference| {
-                let query_view_method_response = network_config
+                let query_view_code_response = network_config
                     .json_rpc_client()
                     .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                         block_reference: block_reference.clone(),
@@ -46,24 +47,76 @@ impl ContractContext {
                         },
                     })
                     .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}> on network <{}>", &account_id, network_config.network_name))?;
-                let call_access_view =
+
+                let mut table = prettytable::Table::new();
+                table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
+
+                table.add_row(prettytable::row![
+                    Fy->account_id,
+                    format!("At block #{}\n({})", query_view_code_response.block_height, query_view_code_response.block_hash)
+                ]);
+
+
+                if let Ok(contract_source_metadata_call_result) = network_config
+                    .json_rpc_client()
+                    .blocking_call_view_function(
+                        &account_id.clone().into(),
+                        "contract_source_metadata",
+                        vec![],
+                        block_reference.clone(),
+                    ) {
+                        println!("contract_source_metadata:");
+                        if let Ok(contract_source_metadata) = contract_source_metadata_call_result.parse_result_from_json::<near_contract_standards::contract_metadata::ContractSourceMetadata>() {
+                            println!("{}", serde_json::to_string_pretty(&contract_source_metadata)?);
+                        } else {
+                            eprintln!("The returned value is not printable (binary data)");
+                        }
+
+                        if let Ok(call_result) = network_config
+                            .json_rpc_client()
+                            .blocking_call_view_function(
+                                &account_id.clone().into(),
+                                "__contract_abi",
+                                vec![],
+                                block_reference.clone(),
+                            ) {
+                                if let Ok(abi_root) = serde_json::from_slice::<near_abi::AbiRoot>(&zstd::decode_all(&call_result.result[..])?) {
+                                    println!("{:#?}", abi_root);
+                                }
+                            }
+                            table.printstd();
+                            return Ok(());
+                    }
+
+
+                let contract_code_view =
                     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-                        query_view_method_response.kind
+                        query_view_code_response.kind
                     {
                         result
                     } else {
                         return Err(color_eyre::Report::msg("Error call result".to_string()));
                     };
-                for function in wasmer::Module::from_binary(&wasmer::Store::default(), &call_access_view.code)
+
+
+                table.set_titles(prettytable::row![Fg=>"metod name", "Arguments"]);
+
+                for function in wasmer::Module::from_binary(&wasmer::Store::default(), &contract_code_view.code)
                     .wrap_err_with(|| format!("Could not create new WebAssembly module from Wasm binary for contract <{account_id}>."))?
                     .exports()
-                    .filter(|e| matches!(e.ty(), wasmer::ExternType::Function(_fty)))
+                    // .filter(|e| matches!(e.ty(), wasmer::ExternType::Function(_fty)))
                 {
-                    eprintln!("{}", function.name());
+                    table.add_row(prettytable::row![
+                        Fy->function.name(),
+                        ""
+                    ]);
                 }
 
+
+                table.printstd();
                 Ok(())
             }
+
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.config,

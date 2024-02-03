@@ -82,6 +82,10 @@ near-token = { version = "0.2.0", features = [
     "interactive-clap",
 ] }
 
+near-abi = "0.4.2"
+zstd = "0.11"
+near-contract-standards = "5.0.0-alpha.2"
+
 keyring = "2.0.5"
 interactive-clap = "0.2.8"
 interactive-clap-derive = "0.2.8"
