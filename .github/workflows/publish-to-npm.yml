@@ -3,6 +3,12 @@ name: Publish to npmjs.com
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag_name:
+        description: "Release tag name (e.g. v0.3.12)"
+        type: string
+        required: true
 
 jobs:
   publish:
@@ -13,4 +19,12 @@ jobs:
           npm set "//registry.npmjs.org/:_authToken" ${{ secrets.NPM_REGISTRY_TOKEN }}
       - name: Publish to npmjs.com
         run: |
-          npm publish https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-npm-package.tar.gz
+          RELEASE_TAG_NAME=${{ inputs.release_tag_name }}
+          if [ -z "$RELEASE_TAG_NAME" ]; then
+            RELEASE_TAG_NAME=${{ github.event.release.tag_name }}
+          fi
+          NPM_PACKAGE_NAME=${{ vars.NPM_PACKAGE_NAME }}
+          if [ -z "$NPM_PACKAGE_NAME" ]; then
+            NPM_PACKAGE_NAME=${GITHUB_REPOSITORY#*/}}
+          fi
+          npm publish "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG_NAME/$NPM_PACKAGE_NAME-npm-package.tar.gz"
