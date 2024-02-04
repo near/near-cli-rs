@@ -25,6 +25,6 @@ jobs:
           fi
           NPM_PACKAGE_NAME=${{ vars.NPM_PACKAGE_NAME }}
           if [ -z "$NPM_PACKAGE_NAME" ]; then
-            NPM_PACKAGE_NAME=${GITHUB_REPOSITORY#*/}}
+            NPM_PACKAGE_NAME=${GITHUB_REPOSITORY#*/}
           fi
           npm publish "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG_NAME/$NPM_PACKAGE_NAME-npm-package.tar.gz"
