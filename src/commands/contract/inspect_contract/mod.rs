@@ -52,10 +52,9 @@ impl ContractContext {
                 table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
                 table.add_row(prettytable::row![
-                    Fy->account_id,
+                    Fg->account_id,
                     format!("At block #{}\n({})", query_view_code_response.block_height, query_view_code_response.block_hash)
                 ]);
-
 
                 if let Ok(contract_source_metadata_call_result) = network_config
                     .json_rpc_client()
@@ -65,11 +64,22 @@ impl ContractContext {
                         vec![],
                         block_reference.clone(),
                     ) {
-                        println!("contract_source_metadata:");
                         if let Ok(contract_source_metadata) = contract_source_metadata_call_result.parse_result_from_json::<near_contract_standards::contract_metadata::ContractSourceMetadata>() {
-                            println!("{}", serde_json::to_string_pretty(&contract_source_metadata)?);
-                        } else {
-                            eprintln!("The returned value is not printable (binary data)");
+                            table.add_row(prettytable::row![
+                                Fy->"Contract version",
+                                contract_source_metadata.version.unwrap_or_default()
+                            ]);
+                            table.add_row(prettytable::row![
+                                Fy->"Contract link",
+                                contract_source_metadata.link.unwrap_or_default()
+                            ]);
+                            table.add_row(prettytable::row![
+                                Fy->"Supported standards",
+                                contract_source_metadata.standards
+                                    .iter()
+                                    .map(|standard| format!("{} ({})\n", standard.standard, standard.version))
+                                    .collect::<String>()
+                            ]);
                         }
 
                         if let Ok(call_result) = network_config
@@ -79,15 +89,74 @@ impl ContractContext {
                                 "__contract_abi",
                                 vec![],
                                 block_reference.clone(),
-                            ) {
+                            )
+                            {
                                 if let Ok(abi_root) = serde_json::from_slice::<near_abi::AbiRoot>(&zstd::decode_all(&call_result.result[..])?) {
-                                    println!("{:#?}", abi_root);
+                                    table.add_row(prettytable::row![
+                                        Fy->"Schema version",
+                                        abi_root.schema_version
+                                    ]);
+                                    table.add_empty_row();
+                                    table.add_row(prettytable::row![Fg->"Metods:"]);
+                                    for function in abi_root.body.functions {
+                                        table.add_row(prettytable::row![
+                                            Fg->function.name,
+                                            function.doc.unwrap_or_default()
+                                        ]);
+                                        table.add_row(prettytable::row![
+                                            "",
+                                            Fy->"Kind of function call",
+                                            serde_json::to_string(&function.kind).unwrap_or_default()
+                                        ]);
+                                        table.add_row(prettytable::row![
+                                            "",
+                                            Fy->"Modifiers",
+                                            serde_json::to_string(&function.modifiers).unwrap_or_default()
+                                        ]);
+                                        if !function.params.is_empty() {
+                                            match function.params {
+                                                near_abi::AbiParameters::Borsh { .. } => panic!("Borsh is currently unsupported"),
+                                                near_abi::AbiParameters::Json { args } => {
+                                                    table.add_row(prettytable::row![
+                                                        "",
+                                                        Fy->"Arguments",
+                                                        args.iter()
+                                                            .map(|arg| format!("{} ({})\n",
+                                                            arg.name,
+                                                            if let Some(reference) = arg.type_schema.clone().into_object().reference {
+                                                                reference
+                                                            } else if let Some(instance_type) = arg.type_schema.clone().into_object().instance_type {
+                                                                serde_json::to_string(&instance_type).unwrap_or_default()
+                                                            } else {
+                                                                "".to_string()
+                                                            }
+                                                        ))
+                                                        .collect::<String>()
+                                                    ]);
+                                                }
+                                            }
+                                        }
+                                        table.add_row(prettytable::row![
+                                            "",
+                                            Fy->"Return type identifier",
+                                            match function.result {
+                                                Some(r_type) => {
+                                                    match r_type {
+                                                        near_abi::AbiType::Borsh { type_schema: _ } => panic!("Borsh is currently unsupported"),
+                                                        near_abi::AbiType::Json { type_schema } => {
+                                                            serde_json::to_string(&type_schema.into_object().instance_type).unwrap_or_default()
+                                                        },
+                                                        }
+                                                },
+                                                None => "".to_string()
+                                            }
+                                        ]);
+                                    }
                                 }
                             }
-                            table.printstd();
-                            return Ok(());
+                        table.printstd();
+                        return Ok(());
                     }
-
 
                 let contract_code_view =
                     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
@@ -98,25 +167,18 @@ impl ContractContext {
                         return Err(color_eyre::Report::msg("Error call result".to_string()));
                     };
 
-
-                table.set_titles(prettytable::row![Fg=>"metod name", "Arguments"]);
+                table.add_empty_row();
+                table.add_row(prettytable::row![Fg->"Metods:"]);
 
                 for function in wasmer::Module::from_binary(&wasmer::Store::default(), &contract_code_view.code)
                     .wrap_err_with(|| format!("Could not create new WebAssembly module from Wasm binary for contract <{account_id}>."))?
                     .exports()
-                    // .filter(|e| matches!(e.ty(), wasmer::ExternType::Function(_fty)))
                 {
-                    table.add_row(prettytable::row![
-                        Fy->function.name(),
-                        ""
-                    ]);
+                    table.add_row(prettytable::row![Fy->function.name()]);
                 }
-
-
                 table.printstd();
                 Ok(())
             }
-
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.config,
