@@ -2098,14 +2098,14 @@ credentials_home_dir = "/Users/frovolod/.near-credentials"
 network_name = "mainnet"
 rpc_url = "https://archival-rpc.mainnet.near.org/"
 wallet_url = "https://wallet.near.org/"
-explorer_transaction_url = "https://explorer.near.org/transactions/"
+explorer_transaction_url = "https://nearblocks.io/txns/"
 linkdrop_account_id = "near"
 
 [network_connection.testnet]
 network_name = "testnet"
 rpc_url = "https://archival-rpc.testnet.near.org/"
 wallet_url = "https://wallet.testnet.near.org/"
-explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+explorer_transaction_url = "https://testnet.nearblocks.io/txns/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
 
