@@ -122,16 +122,16 @@ impl ContractContext {
                                                         Fy->"Arguments",
                                                         args.iter()
                                                             .map(|arg| format!("{} ({})\n",
-                                                            arg.name,
-                                                            if let Some(reference) = arg.type_schema.clone().into_object().reference {
-                                                                reference
-                                                            } else if let Some(instance_type) = arg.type_schema.clone().into_object().instance_type {
-                                                                serde_json::to_string(&instance_type).unwrap_or_default()
-                                                            } else {
-                                                                "".to_string()
-                                                            }
-                                                        ))
-                                                        .collect::<String>()
+                                                                arg.name,
+                                                                if let Some(reference) = arg.type_schema.clone().into_object().reference {
+                                                                    reference
+                                                                } else if let Some(instance_type) = arg.type_schema.clone().into_object().instance_type {
+                                                                    serde_json::to_string(&instance_type).unwrap_or_default()
+                                                                } else {
+                                                                    "".to_string()
+                                                                }
+                                                            ))
+                                                            .collect::<String>()
                                                     ]);
                                                 }
                                             }
