@@ -1,7 +1,6 @@
-use color_eyre::eyre::Context;
+use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 
-use crate::common::CallResultExt;
-use crate::common::JsonRpcClientExt;
+use crate::common::{CallResultExt, RpcQueryResponseExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -9,14 +8,14 @@ use crate::common::JsonRpcClientExt;
 pub struct Contract {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the contract account ID?
-    account_id: crate::types::account_id::AccountId,
+    contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
 }
 
 impl Contract {
-    pub fn input_account_id(
+    pub fn input_contract_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_non_signer_account_id_from_used_account_list(
@@ -35,155 +34,17 @@ impl ContractContext {
         scope: &<Contract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let account_id = scope.account_id.clone();
-
+            let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
             move |network_config, block_reference| {
-                let query_view_code_response = network_config
-                    .json_rpc_client()
-                    .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                        block_reference: block_reference.clone(),
-                        request: near_primitives::views::QueryRequest::ViewCode {
-                            account_id: account_id.clone().into(),
-                        },
-                    })
-                    .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}> on network <{}>", &account_id, network_config.network_name))?;
-
-                let mut table = prettytable::Table::new();
-                table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
-
-                table.add_row(prettytable::row![
-                    Fg->account_id,
-                    format!("At block #{}\n({})", query_view_code_response.block_height, query_view_code_response.block_hash)
-                ]);
-
-                if let Ok(contract_source_metadata_call_result) = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_function(
-                        &account_id.clone().into(),
-                        "contract_source_metadata",
-                        vec![],
-                        block_reference.clone(),
-                    ) {
-                        if let Ok(contract_source_metadata) = contract_source_metadata_call_result.parse_result_from_json::<near_contract_standards::contract_metadata::ContractSourceMetadata>() {
-                            table.add_row(prettytable::row![
-                                Fy->"Contract version",
-                                contract_source_metadata.version.unwrap_or_default()
-                            ]);
-                            table.add_row(prettytable::row![
-                                Fy->"Contract link",
-                                contract_source_metadata.link.unwrap_or_default()
-                            ]);
-                            table.add_row(prettytable::row![
-                                Fy->"Supported standards",
-                                contract_source_metadata.standards
-                                    .iter()
-                                    .map(|standard| format!("{} ({})\n", standard.standard, standard.version))
-                                    .collect::<String>()
-                            ]);
-                        }
-
-                        if let Ok(call_result) = network_config
-                            .json_rpc_client()
-                            .blocking_call_view_function(
-                                &account_id.clone().into(),
-                                "__contract_abi",
-                                vec![],
-                                block_reference.clone(),
-                            )
-                            {
-                                if let Ok(abi_root) = serde_json::from_slice::<near_abi::AbiRoot>(&zstd::decode_all(&call_result.result[..])?) {
-                                    table.add_row(prettytable::row![
-                                        Fy->"Schema version",
-                                        abi_root.schema_version
-                                    ]);
-                                    table.add_empty_row();
-                                    table.add_row(prettytable::row![Fg->"Metods:"]);
-                                    for function in abi_root.body.functions {
-                                        table.add_row(prettytable::row![
-                                            Fg->function.name,
-                                            function.doc.unwrap_or_default()
-                                        ]);
-                                        table.add_row(prettytable::row![
-                                            "",
-                                            Fy->"Kind of function call",
-                                            serde_json::to_string(&function.kind).unwrap_or_default()
-                                        ]);
-                                        table.add_row(prettytable::row![
-                                            "",
-                                            Fy->"Modifiers",
-                                            serde_json::to_string(&function.modifiers).unwrap_or_default()
-                                        ]);
-                                        if !function.params.is_empty() {
-                                            match function.params {
-                                                near_abi::AbiParameters::Borsh { .. } => panic!("Borsh is currently unsupported"),
-                                                near_abi::AbiParameters::Json { args } => {
-                                                    table.add_row(prettytable::row![
-                                                        "",
-                                                        Fy->"Arguments",
-                                                        args.iter()
-                                                            .map(|arg| format!("{} ({})\n",
-                                                                arg.name,
-                                                                if let Some(reference) = arg.type_schema.clone().into_object().reference {
-                                                                    reference
-                                                                } else if let Some(instance_type) = arg.type_schema.clone().into_object().instance_type {
-                                                                    serde_json::to_string(&instance_type).unwrap_or_default()
-                                                                } else {
-                                                                    "".to_string()
-                                                                }
-                                                            ))
-                                                            .collect::<String>()
-                                                    ]);
-                                                }
-                                            }
-                                        }
-                                        table.add_row(prettytable::row![
-                                            "",
-                                            Fy->"Return type identifier",
-                                            match function.result {
-                                                Some(r_type) => {
-                                                    match r_type {
-                                                        near_abi::AbiType::Borsh { type_schema: _ } => panic!("Borsh is currently unsupported"),
-                                                        near_abi::AbiType::Json { type_schema } => {
-                                                            serde_json::to_string(&type_schema.into_object().instance_type).unwrap_or_default()
-                                                        },
-                                                        }
-                                                },
-                                                None => "".to_string()
-                                            }
-                                        ]);
-                                    }
-                                }
-                            }
-                        table.printstd();
-                        return Ok(());
-                    }
-
-                let contract_code_view =
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-                        query_view_code_response.kind
-                    {
-                        result
-                    } else {
-                        return Err(color_eyre::Report::msg("Error call result".to_string()));
-                    };
-
-                table.add_empty_row();
-                table.add_row(prettytable::row![Fg->"Metods:"]);
-
-                for function in wasmer::Module::from_binary(&wasmer::Store::default(), &contract_code_view.code)
-                    .wrap_err_with(|| format!("Could not create new WebAssembly module from Wasm binary for contract <{account_id}>."))?
-                    .exports()
-                {
-                    table.add_row(prettytable::row![Fy->function.name()]);
-                }
-                table.printstd();
-                Ok(())
+                tokio::runtime::Runtime::new()
+                    .unwrap()
+                    .block_on(display_inspect_contract(&account_id, network_config, block_reference))
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.config,
             on_after_getting_block_reference_callback,
-            interacting_with_account_ids: vec![scope.account_id.clone().into()],
+            interacting_with_account_ids: vec![scope.contract_account_id.clone().into()],
         }))
     }
 }
@@ -192,4 +53,252 @@ impl From<ContractContext> for crate::network_view_at_block::ArgsForViewContext 
     fn from(item: ContractContext) -> Self {
         item.0
     }
+}
+
+async fn display_inspect_contract(
+    account_id: &near_primitives::types::AccountId,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: &near_primitives::types::BlockReference,
+) -> crate::CliResult {
+    let json_rpc_client = network_config.json_rpc_client();
+
+    let query_view_code_response = json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: block_reference.clone(),
+            request: near_primitives::views::QueryRequest::ViewCode {
+                account_id: account_id.clone(),
+            },
+        })
+        .await
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch query ViewCode for <{}> on network <{}>",
+                &account_id, network_config.network_name
+            )
+        })?;
+
+    let contract_code_view =
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
+            query_view_code_response.kind
+        {
+            result
+        } else {
+            return Err(color_eyre::Report::msg("Error call result".to_string()));
+        };
+
+    let account_view = json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: block_reference.clone(),
+            request: near_primitives::views::QueryRequest::ViewAccount {
+                account_id: account_id.clone(),
+            },
+        })
+        .await
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch query ViewAccount for account <{}> on network <{}>",
+                account_id, network_config.network_name
+            )
+        })?
+        .account_view()?;
+
+    let access_keys = json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: block_reference.clone(),
+            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                account_id: account_id.clone(),
+            },
+        })
+        .await
+        .wrap_err_with(|| format!("Failed to fetch ViewAccessKeyList for {}", &account_id))?
+        .access_key_list_view()?
+        .keys;
+
+    let mut table = prettytable::Table::new();
+    table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
+
+    table.add_row(prettytable::row![
+            Fg->account_id,
+            format!("At block #{}\n({})", query_view_code_response.block_height, query_view_code_response.block_hash)
+        ]);
+
+    let contract_status = if account_view.code_hash == near_primitives::hash::CryptoHash::default()
+    {
+        "No contract code".to_string()
+    } else {
+        hex::encode(account_view.code_hash.as_ref())
+    };
+    table.add_row(prettytable::row![
+        Fy->"SHA-256 checksum hex",
+        contract_status
+    ]);
+
+    table.add_row(prettytable::row![
+        Fy->"Storage used",
+        format!("{} ({} Wasm + {} data)",
+            bytesize::ByteSize(account_view.storage_usage),
+            bytesize::ByteSize(u64::try_from(contract_code_view.code.len())?),
+            bytesize::ByteSize(
+                account_view.storage_usage
+                    .checked_sub(u64::try_from(contract_code_view.code.len())?)
+                    .expect("Unexpected error")
+            )
+        )
+    ]);
+
+    let access_keys_summary = if access_keys.is_empty() {
+        "Contract is locked (no access keys)".to_string()
+    } else {
+        let full_access_keys_count = access_keys
+            .iter()
+            .filter(|access_key| {
+                matches!(
+                    access_key.access_key.permission,
+                    near_primitives::views::AccessKeyPermissionView::FullAccess
+                )
+            })
+            .count();
+        format!(
+            "{} full access keys and {} function-call-only access keys",
+            full_access_keys_count,
+            access_keys.len() - full_access_keys_count
+        )
+    };
+    table.add_row(prettytable::row![
+        Fy->"Access keys",
+        access_keys_summary
+    ]);
+
+    if let Ok(contract_source_metadata_response) = json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: block_reference.clone(),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: account_id.clone(),
+                method_name: "contract_source_metadata".to_owned(),
+                args: near_primitives::types::FunctionArgs::from(vec![]),
+            },
+        })
+        .await
+    {
+        if let Ok(contract_source_metadata) = contract_source_metadata_response
+            .call_result()?
+            .parse_result_from_json::<near_contract_standards::contract_metadata::ContractSourceMetadata>()
+            {
+                table.add_row(prettytable::row![
+                    Fy->"Contract version",
+                    contract_source_metadata.version.unwrap_or_default()
+                ]);
+                table.add_row(prettytable::row![
+                    Fy->"Contract link",
+                    contract_source_metadata.link.unwrap_or_default()
+                ]);
+                table.add_row(prettytable::row![
+                    Fy->"Supported standards",
+                    contract_source_metadata.standards
+                        .iter()
+                        .map(|standard| format!("{} ({})\n", standard.standard, standard.version))
+                        .collect::<String>()
+                ]);
+            }
+
+        if let Ok(contract_abi_response) = json_rpc_client
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: block_reference.clone(),
+                request: near_primitives::views::QueryRequest::CallFunction {
+                    account_id: account_id.clone(),
+                    method_name: "__contract_abi".to_owned(),
+                    args: near_primitives::types::FunctionArgs::from(vec![]),
+                },
+            })
+            .await
+        {
+            let call_result = contract_abi_response.call_result()?;
+            if let Ok(abi_root) = serde_json::from_slice::<near_abi::AbiRoot>(&zstd::decode_all(
+                &call_result.result[..],
+            )?) {
+                table.add_row(prettytable::row![
+                    Fy->"Schema version",
+                    abi_root.schema_version
+                ]);
+                table.add_empty_row();
+                table.add_row(prettytable::row![Fy->"Metods:"]);
+                for function in abi_root.body.functions {
+                    table.add_row(prettytable::row![
+                        Fg->function.name,
+                        function.doc.unwrap_or_default()
+                    ]);
+                    table.add_row(prettytable::row![
+                        "",
+                        Fy->"Kind of function call",
+                        serde_json::to_string(&function.kind).unwrap_or_default()
+                    ]);
+                    table.add_row(prettytable::row![
+                        "",
+                        Fy->"Modifiers",
+                        serde_json::to_string(&function.modifiers).unwrap_or_default()
+                    ]);
+                    if !function.params.is_empty() {
+                        match function.params {
+                            near_abi::AbiParameters::Borsh { .. } => {
+                                panic!("Borsh is currently unsupported")
+                            }
+                            near_abi::AbiParameters::Json { args } => {
+                                table.add_row(prettytable::row![
+                                    "",
+                                    Fy->"Arguments",
+                                    args.iter()
+                                        .map(|arg| format!("{} ({})\n",
+                                            arg.name,
+                                            if let Some(reference) = arg.type_schema.clone().into_object().reference {
+                                                reference
+                                            } else if let Some(instance_type) = arg.type_schema.clone().into_object().instance_type {
+                                                serde_json::to_string(&instance_type).unwrap_or_default()
+                                            } else {
+                                                "".to_string()
+                                            }
+                                        ))
+                                        .collect::<String>()
+                                ]);
+                            }
+                        }
+                    }
+                    table.add_row(prettytable::row![
+                        "",
+                        Fy->"Return type identifier",
+                        match function.result {
+                            Some(r_type) => {
+                                match r_type {
+                                    near_abi::AbiType::Borsh { type_schema: _ } => panic!("Borsh is currently unsupported"),
+                                    near_abi::AbiType::Json { type_schema } => {
+                                        serde_json::to_string(&type_schema.into_object().instance_type).unwrap_or_default()
+                                    },
+                                    }
+                            },
+                            None => "".to_string()
+                        }
+                    ]);
+                }
+            }
+        }
+        table.printstd();
+        return Ok(());
+    }
+
+    table.add_empty_row();
+    table.add_row(prettytable::row![
+        Fy->"Metods:",
+        format!(
+            "Contact does not support ABI ({}),\nso there is no way to get detailed information",
+            "https://github.com/near/abi".yellow()
+        )
+    ]);
+
+    for function in wasmer::Module::from_binary(&wasmer::Store::default(), &contract_code_view.code)
+            .wrap_err_with(|| format!("Could not create new WebAssembly module from Wasm binary for contract <{account_id}>."))?
+            .exports()
+        {
+            table.add_row(prettytable::row![Fg->function.name()]);
+        }
+    table.printstd();
+    Ok(())
 }
