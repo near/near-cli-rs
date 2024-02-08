@@ -39,7 +39,7 @@ impl ContractContext {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
             move |network_config, block_reference| {
-                let query_view_code_response = network_config
+                let view_code_response = network_config
                     .json_rpc_client()
                     .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                         block_reference: block_reference.clone(),
@@ -51,7 +51,7 @@ impl ContractContext {
 
                 tokio::runtime::Runtime::new()
                     .unwrap()
-                    .block_on(display_inspect_contract(&account_id, network_config, query_view_code_response))
+                    .block_on(display_inspect_contract(&account_id, network_config, view_code_response))
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -71,53 +71,41 @@ impl From<ContractContext> for crate::network_view_at_block::ArgsForViewContext 
 async fn display_inspect_contract(
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
-    query_view_code_response: near_jsonrpc_primitives::types::query::RpcQueryResponse,
+    view_code_response: near_jsonrpc_primitives::types::query::RpcQueryResponse,
 ) -> crate::CliResult {
     let json_rpc_client = network_config.json_rpc_client();
-    let block_reference = BlockReference::from(BlockId::Hash(query_view_code_response.block_hash));
+    let block_reference = BlockReference::from(BlockId::Hash(view_code_response.block_hash));
     let contract_code_view =
         if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-            query_view_code_response.kind
+            view_code_response.kind
         {
             result
         } else {
             return Err(color_eyre::Report::msg("Error call result".to_string()));
         };
 
-    let account_view = json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_reference.clone(),
-            request: near_primitives::views::QueryRequest::ViewAccount {
-                account_id: account_id.clone(),
-            },
-        })
-        .await
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch query ViewAccount for account <{}> on network <{}>",
-                account_id, network_config.network_name
-            )
-        })?
-        .account_view()?;
+    let account_view = get_account_view(
+        network_config,
+        &json_rpc_client,
+        &block_reference,
+        account_id,
+    )
+    .await?;
 
-    let access_keys = json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_reference.clone(),
-            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                account_id: account_id.clone(),
-            },
-        })
-        .await
-        .wrap_err_with(|| format!("Failed to fetch ViewAccessKeyList for {}", &account_id))?
-        .access_key_list_view()?
-        .keys;
+    let access_keys = get_access_keys(
+        network_config,
+        &json_rpc_client,
+        &block_reference,
+        account_id,
+    )
+    .await?;
 
     let mut table = prettytable::Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
     table.add_row(prettytable::row![
             Fg->account_id,
-            format!("At block #{}\n({})", query_view_code_response.block_height, query_view_code_response.block_hash)
+            format!("At block #{}\n({})", view_code_response.block_height, view_code_response.block_hash)
         ]);
 
     let contract_status = if account_view.code_hash == near_primitives::hash::CryptoHash::default()
@@ -167,16 +155,13 @@ async fn display_inspect_contract(
         access_keys_summary
     ]);
 
-    if let Ok(contract_source_metadata_response) = json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_reference.clone(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: account_id.clone(),
-                method_name: "contract_source_metadata".to_owned(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
-        .await
+    if let Ok(contract_source_metadata_response) = get_contract_source_metadata(
+        network_config,
+        &json_rpc_client,
+        &block_reference,
+        account_id,
+    )
+    .await
     {
         if let Ok(contract_source_metadata) = contract_source_metadata_response
             .call_result()?
@@ -201,16 +186,13 @@ async fn display_inspect_contract(
                 ]);
             }
 
-        if let Ok(contract_abi_response) = json_rpc_client
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: block_reference.clone(),
-                request: near_primitives::views::QueryRequest::CallFunction {
-                    account_id: account_id.clone(),
-                    method_name: "__contract_abi".to_owned(),
-                    args: near_primitives::types::FunctionArgs::from(vec![]),
-                },
-            })
-            .await
+        if let Ok(contract_abi_response) = get_contract_abi(
+            network_config,
+            &json_rpc_client,
+            &block_reference,
+            account_id,
+        )
+        .await
         {
             let call_result = contract_abi_response.call_result()?;
             if let Ok(abi_root) = serde_json::from_slice::<near_abi::AbiRoot>(&zstd::decode_all(
@@ -302,4 +284,157 @@ async fn display_inspect_contract(
         }
     table.printstd();
     Ok(())
+}
+
+async fn get_account_view(
+    network_config: &crate::config::NetworkConfig,
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    block_reference: &BlockReference,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<near_primitives::views::AccountView> {
+    for _ in 0..5 {
+        let account_view_response = json_rpc_client
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: block_reference.clone(),
+                request: near_primitives::views::QueryRequest::ViewAccount {
+                    account_id: account_id.clone(),
+                },
+            })
+            .await;
+
+        if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
+            &account_view_response
+        {
+            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            std::thread::sleep(std::time::Duration::from_millis(100))
+        } else {
+            return account_view_response
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to fetch query ViewAccount for contract <{}> on network <{}>",
+                        account_id, network_config.network_name
+                    )
+                })?
+                .account_view();
+        }
+    }
+    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
+        "Transport error. Failed to fetch query ViewAccount for contract <{}> on network <{}>",
+        account_id, network_config.network_name
+    )))
+}
+
+async fn get_access_keys(
+    network_config: &crate::config::NetworkConfig,
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    block_reference: &BlockReference,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<Vec<near_primitives::views::AccessKeyInfoView>> {
+    for _ in 0..5 {
+        let access_keys_response = json_rpc_client
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: block_reference.clone(),
+                request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                    account_id: account_id.clone(),
+                },
+            })
+            .await;
+
+        if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
+            &access_keys_response
+        {
+            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            std::thread::sleep(std::time::Duration::from_millis(100))
+        } else {
+            return Ok(access_keys_response
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to fetch ViewAccessKeyList for contract <{}> on network <{}>",
+                        account_id, network_config.network_name
+                    )
+                })?
+                .access_key_list_view()?
+                .keys);
+        }
+    }
+    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
+        "Transport error. Failed to fetch query ViewAccessKeyList for contract <{}> on network <{}>",
+        account_id, network_config.network_name
+    )))
+}
+
+async fn get_contract_source_metadata(
+    network_config: &crate::config::NetworkConfig,
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    block_reference: &BlockReference,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<near_jsonrpc_primitives::types::query::RpcQueryResponse> {
+    for _ in 0..5 {
+        let contract_source_metadata_response = json_rpc_client
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: block_reference.clone(),
+                request: near_primitives::views::QueryRequest::CallFunction {
+                    account_id: account_id.clone(),
+                    method_name: "contract_source_metadata".to_owned(),
+                    args: near_primitives::types::FunctionArgs::from(vec![]),
+                },
+            })
+            .await;
+
+        if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
+            &contract_source_metadata_response
+        {
+            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            std::thread::sleep(std::time::Duration::from_millis(100))
+        } else {
+            return contract_source_metadata_response.wrap_err_with(|| {
+                format!(
+                    "Failed to fetch 'contract_source_metadata' for account <{}> on network <{}>",
+                    account_id, network_config.network_name
+                )
+            });
+        }
+    }
+    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
+        "Transport error. Failed to fetch 'contract_source_metadata' for account <{}> on network <{}>",
+        account_id, network_config.network_name
+    )))
+}
+
+async fn get_contract_abi(
+    network_config: &crate::config::NetworkConfig,
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    block_reference: &BlockReference,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<near_jsonrpc_primitives::types::query::RpcQueryResponse> {
+    for _ in 0..5 {
+        let contract_abi_response = json_rpc_client
+            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: block_reference.clone(),
+                request: near_primitives::views::QueryRequest::CallFunction {
+                    account_id: account_id.clone(),
+                    method_name: "__contract_abi".to_owned(),
+                    args: near_primitives::types::FunctionArgs::from(vec![]),
+                },
+            })
+            .await;
+
+        if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
+            &contract_abi_response
+        {
+            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            std::thread::sleep(std::time::Duration::from_millis(100))
+        } else {
+            return contract_abi_response.wrap_err_with(|| {
+                format!(
+                    "Failed to fetch 'contract_abi' for account <{}> on network <{}>",
+                    account_id, network_config.network_name
+                )
+            });
+        }
+    }
+    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
+        "Transport error. Failed to fetch 'contract_abi' for account <{}> on network <{}>",
+        account_id, network_config.network_name
+    )))
 }
