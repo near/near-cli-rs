@@ -1,6 +1,7 @@
 use color_eyre::{eyre::Context, owo_colors::OwoColorize};
+use near_primitives::types::{BlockId, BlockReference};
 
-use crate::common::{CallResultExt, RpcQueryResponseExt};
+use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -36,9 +37,19 @@ impl ContractContext {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
             move |network_config, block_reference| {
+                let query_view_code_response = network_config
+                    .json_rpc_client()
+                    .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                        block_reference: block_reference.clone(),
+                        request: near_primitives::views::QueryRequest::ViewCode {
+                            account_id: account_id.clone(),
+                        },
+                    })
+                    .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}> on network <{}>", &account_id, network_config.network_name))?;
+
                 tokio::runtime::Runtime::new()
                     .unwrap()
-                    .block_on(display_inspect_contract(&account_id, network_config, block_reference))
+                    .block_on(display_inspect_contract(&account_id, network_config, query_view_code_response))
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -58,25 +69,10 @@ impl From<ContractContext> for crate::network_view_at_block::ArgsForViewContext 
 async fn display_inspect_contract(
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    query_view_code_response: near_jsonrpc_primitives::types::query::RpcQueryResponse,
 ) -> crate::CliResult {
     let json_rpc_client = network_config.json_rpc_client();
-
-    let query_view_code_response = json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_reference.clone(),
-            request: near_primitives::views::QueryRequest::ViewCode {
-                account_id: account_id.clone(),
-            },
-        })
-        .await
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch query ViewCode for <{}> on network <{}>",
-                &account_id, network_config.network_name
-            )
-        })?;
-
+    let block_reference = BlockReference::from(BlockId::Hash(query_view_code_response.block_hash));
     let contract_code_view =
         if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
             query_view_code_response.kind
