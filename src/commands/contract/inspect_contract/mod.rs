@@ -1,4 +1,6 @@
 use color_eyre::{eyre::Context, owo_colors::OwoColorize};
+use std::fmt::Write;
+
 use near_primitives::types::{BlockId, BlockReference};
 
 use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
@@ -192,8 +194,10 @@ async fn display_inspect_contract(
                     Fy->"Supported standards",
                     contract_source_metadata.standards
                         .iter()
-                        .map(|standard| format!("{} ({})\n", standard.standard, standard.version))
-                        .collect::<String>()
+                        .fold(String::new(), |mut output, standard| {
+                            let _ = writeln!(output, "{} ({})", standard.standard, standard.version);
+                            output
+                        })
                 ]);
             }
 
@@ -243,17 +247,18 @@ async fn display_inspect_contract(
                                     "",
                                     Fy->"Arguments",
                                     args.iter()
-                                        .map(|arg| format!("{} ({})\n",
-                                            arg.name,
-                                            if let Some(reference) = arg.type_schema.clone().into_object().reference {
-                                                reference
-                                            } else if let Some(instance_type) = arg.type_schema.clone().into_object().instance_type {
-                                                serde_json::to_string(&instance_type).unwrap_or_default()
-                                            } else {
-                                                "".to_string()
-                                            }
-                                        ))
-                                        .collect::<String>()
+                                        .fold(String::new(), |mut output, arg| {
+                                            let _ = writeln!(output, "{} ({})",
+                                                arg.name,
+                                                if let Some(reference) = arg.type_schema.clone().into_object().reference {
+                                                    reference
+                                                } else if let Some(instance_type) = arg.type_schema.clone().into_object().instance_type {
+                                                    serde_json::to_string(&instance_type).unwrap_or_default()
+                                                } else {
+                                                    "".to_string()
+                                                });
+                                            output
+                                        })
                                 ]);
                             }
                         }
