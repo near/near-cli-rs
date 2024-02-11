@@ -35,7 +35,7 @@ impl UnstakeContext {
                             Box::new(near_primitives::transaction::FunctionCallAction {
                                 method_name: "unstake".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({
-                                    "amount": amount,
+                                    "amount": amount.to_string(),
                                 }))?,
                                 gas: crate::common::NearGas::from_tgas(50).as_gas(),
                                 deposit: 0,
