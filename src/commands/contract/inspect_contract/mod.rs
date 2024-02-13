@@ -218,7 +218,12 @@ async fn display_inspect_contract(
                     }
                     table_func.add_row(prettytable::row![format!(
                         "{} (read-write function - {}) {}\n{}",
-                        format!("fn {}(...) -> ...", function.name).green(),
+                        format!(
+                            "fn {}({}) -> {}",
+                            function.name.green(),
+                            "...".yellow(),
+                            "...".blue()
+                        ),
                         match function.kind {
                             near_abi::AbiFunctionKind::Call => "transaction required",
                             near_abi::AbiFunctionKind::View => "read only",
@@ -244,9 +249,14 @@ async fn display_inspect_contract(
 
                     let mut table_args = prettytable::Table::new();
                     table_args.set_format(*prettytable::format::consts::FORMAT_CLEAN);
+                    table_args.get_format().padding(1, 0);
 
                     table_args.add_row(prettytable::row![
+                        "...".yellow(),
                         Fy->"Arguments (JSON Schema):",
+                    ]);
+                    table_args.add_row(prettytable::row![
+                        "   ",
                         if function.params.is_empty() {
                             "No arguments needed".to_string()
                         } else {
@@ -254,17 +264,24 @@ async fn display_inspect_contract(
                         }
                     ]);
                     table_args.add_row(prettytable::row![
-                        Fy->"Return Value (JSON Schema):",
+                        "...".blue(),
+                        Fb->"Return Value (JSON Schema):",
+                    ]);
+                    table_args.add_row(prettytable::row![
+                        "   ",
                         match &function.result {
                             Some(r_type) => {
                                 match r_type {
-                                    near_abi::AbiType::Borsh { type_schema: _ } => panic!("Borsh is currently unsupported"),
+                                    near_abi::AbiType::Borsh { type_schema: _ } => {
+                                        panic!("Borsh is currently unsupported")
+                                    }
                                     near_abi::AbiType::Json { type_schema: _ } => {
-                                        serde_json::to_string_pretty(&function.result).unwrap_or_default()
-                                    },
+                                        serde_json::to_string_pretty(&function.result)
+                                            .unwrap_or_default()
+                                    }
                                 }
-                            },
-                            None => "None".to_string()
+                            }
+                            None => "None".to_string(),
                         }
                     ]);
                     table_args.printstd();
