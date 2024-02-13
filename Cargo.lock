@@ -3,12 +3,6 @@
 version = 3
 
 [[package]]
-name = "Inflector"
-version = "0.11.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
-
-[[package]]
 name = "actix"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2461,7 +2455,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35cbb989542587b47205e608324ddd391f0cee1c22b4b64ae49f458334b95907"
 dependencies = [
  "borsh",
- "schemars",
  "serde",
 ]
 
@@ -2510,7 +2503,6 @@ dependencies = [
  "keyring",
  "linked-hash-map",
  "near-abi",
- "near-contract-standards",
  "near-crypto",
  "near-gas",
  "near-jsonrpc-client",
@@ -2551,15 +2543,6 @@ dependencies = [
  "json_comments",
  "thiserror",
  "tracing",
-]
-
-[[package]]
-name = "near-contract-standards"
-version = "5.0.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d38b06d3d0820dcf796f82b3990c6131a683ac24632a7bd4a06e2f06efa22aa"
-dependencies = [
- "near-sdk",
 ]
 
 [[package]]
@@ -2606,7 +2589,6 @@ checksum = "95b30860db1eceba9b445dc56558a0fdcdfe29fd612a088e697b32dfb681aaac"
 dependencies = [
  "borsh",
  "interactive-clap",
- "schemars",
  "serde",
 ]
 
@@ -2796,44 +2778,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "near-sdk"
-version = "5.0.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8869ab54cd71a1a4239002f8c00b9e6742725c386e23084be98dd4bb69336266"
-dependencies = [
- "base64 0.13.1",
- "borsh",
- "bs58 0.4.0",
- "near-abi",
- "near-account-id",
- "near-gas",
- "near-sdk-macros",
- "near-sys",
- "near-token",
- "once_cell",
- "schemars",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "near-sdk-macros"
-version = "5.0.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0efa94eb99a64491323b71ba2c0591ce4649817f26339de56f110f00649ea908"
-dependencies = [
- "Inflector",
- "darling",
- "proc-macro2",
- "quote",
- "serde",
- "serde_json",
- "strum",
- "strum_macros",
- "syn 2.0.38",
-]
-
-[[package]]
 name = "near-socialdb-client"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2857,12 +2801,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6cc34a471c6e01f9dafa6aaa2d0553a3fe859dbb0d7fc73ca73f72731392226"
 
 [[package]]
-name = "near-sys"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "397688591acf8d3ebf2c2485ba32d4b24fc10aad5334e3ad8ec0b7179bfdf06b"
-
-[[package]]
 name = "near-token"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2870,7 +2808,6 @@ checksum = "7b68f3f8a2409f72b43efdbeff8e820b81e70824c49fee8572979d789d1683fb"
 dependencies = [
  "borsh",
  "interactive-clap",
- "schemars",
  "serde",
 ]
 

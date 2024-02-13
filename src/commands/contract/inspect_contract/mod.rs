@@ -5,6 +5,8 @@ use near_primitives::types::{BlockId, BlockReference};
 
 use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
 
+mod contract_metadata;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractContext)]
@@ -100,13 +102,14 @@ async fn display_inspect_contract(
     )
     .await?;
 
+    println!();
     let mut table = prettytable::Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
     table.add_row(prettytable::row![
-            Fg->account_id,
-            format!("At block #{}\n({})", view_code_response.block_height, view_code_response.block_hash)
-        ]);
+        Fg->account_id,
+        format!("At block #{}\n({})", view_code_response.block_height, view_code_response.block_hash)
+    ]);
 
     let contract_status = if account_view.code_hash == near_primitives::hash::CryptoHash::default()
     {
@@ -165,26 +168,26 @@ async fn display_inspect_contract(
     {
         if let Ok(contract_source_metadata) = contract_source_metadata_response
             .call_result()?
-            .parse_result_from_json::<near_contract_standards::contract_metadata::ContractSourceMetadata>()
-            {
-                table.add_row(prettytable::row![
-                    Fy->"Contract version",
-                    contract_source_metadata.version.unwrap_or_default()
-                ]);
-                table.add_row(prettytable::row![
-                    Fy->"Contract link",
-                    contract_source_metadata.link.unwrap_or_default()
-                ]);
-                table.add_row(prettytable::row![
-                    Fy->"Supported standards",
-                    contract_source_metadata.standards
-                        .iter()
-                        .fold(String::new(), |mut output, standard| {
-                            let _ = writeln!(output, "{} ({})", standard.standard, standard.version);
-                            output
-                        })
-                ]);
-            }
+            .parse_result_from_json::<self::contract_metadata::ContractSourceMetadata>(
+        ) {
+            table.add_row(prettytable::row![
+                Fy->"Contract version",
+                contract_source_metadata.version.unwrap_or_default()
+            ]);
+            table.add_row(prettytable::row![
+                Fy->"Contract link",
+                contract_source_metadata.link.unwrap_or_default()
+            ]);
+            table.add_row(prettytable::row![
+                Fy->"Supported standards",
+                contract_source_metadata.standards
+                    .iter()
+                    .fold(String::new(), |mut output, standard| {
+                        let _ = writeln!(output, "{} ({})", standard.standard, standard.version);
+                        output
+                    })
+            ]);
+        }
 
         if let Ok(contract_abi_response) = get_contract_abi(
             network_config,
@@ -202,68 +205,72 @@ async fn display_inspect_contract(
                     Fy->"Schema version",
                     abi_root.schema_version
                 ]);
-                table.add_empty_row();
-                table.add_row(prettytable::row![Fy->"Metods:"]);
+                table.add_row(prettytable::row![Fy->"Functions:"]);
+                table.printstd();
+
                 for function in abi_root.body.functions {
-                    table.add_row(prettytable::row![
-                        Fg->function.name,
-                        function.doc.unwrap_or_default()
-                    ]);
-                    table.add_row(prettytable::row![
-                        "",
-                        Fy->"Kind of function call",
-                        serde_json::to_string(&function.kind).unwrap_or_default()
-                    ]);
-                    table.add_row(prettytable::row![
-                        "",
-                        Fy->"Modifiers",
-                        serde_json::to_string(&function.modifiers).unwrap_or_default()
-                    ]);
-                    if !function.params.is_empty() {
-                        match function.params {
-                            near_abi::AbiParameters::Borsh { .. } => {
-                                panic!("Borsh is currently unsupported")
-                            }
-                            near_abi::AbiParameters::Json { args } => {
-                                table.add_row(prettytable::row![
-                                    "",
-                                    Fy->"Arguments",
-                                    args.iter()
-                                        .fold(String::new(), |mut output, arg| {
-                                            let _ = writeln!(output, "{} ({})",
-                                                arg.name,
-                                                if let Some(reference) = arg.type_schema.clone().into_object().reference {
-                                                    reference
-                                                } else if let Some(instance_type) = arg.type_schema.clone().into_object().instance_type {
-                                                    serde_json::to_string(&instance_type).unwrap_or_default()
-                                                } else {
-                                                    "".to_string()
-                                                });
-                                            output
-                                        })
-                                ]);
-                            }
-                        }
+                    let mut table_func = prettytable::Table::new();
+                    table_func.set_format(*prettytable::format::consts::FORMAT_CLEAN);
+                    table_func.add_empty_row();
+
+                    if let near_abi::AbiParameters::Borsh { args: _ } = function.params {
+                        panic!("Borsh is currently unsupported")
                     }
-                    table.add_row(prettytable::row![
-                        "",
-                        Fy->"Return type identifier",
-                        match function.result {
+                    table_func.add_row(prettytable::row![format!(
+                        "{} (read-write function - {}) {}\n{}",
+                        format!("fn {}(...) -> ...", function.name).green(),
+                        match function.kind {
+                            near_abi::AbiFunctionKind::Call => "transaction required",
+                            near_abi::AbiFunctionKind::View => "read only",
+                        },
+                        function
+                            .modifiers
+                            .iter()
+                            .fold(String::new(), |mut output, modifier| {
+                                let _ = write!(
+                                    output,
+                                    "{} ",
+                                    match modifier {
+                                        near_abi::AbiFunctionModifier::Init => "init".red(),
+                                        near_abi::AbiFunctionModifier::Payable => "payble".red(),
+                                        near_abi::AbiFunctionModifier::Private => "private".red(),
+                                    }
+                                );
+                                output
+                            }),
+                        function.doc.unwrap_or_default()
+                    )]);
+                    table_func.printstd();
+
+                    let mut table_args = prettytable::Table::new();
+                    table_args.set_format(*prettytable::format::consts::FORMAT_CLEAN);
+
+                    table_args.add_row(prettytable::row![
+                        Fy->"Arguments (JSON Schema):",
+                        if function.params.is_empty() {
+                            "No arguments needed".to_string()
+                        } else {
+                            serde_json::to_string_pretty(&function.params).unwrap_or_default()
+                        }
+                    ]);
+                    table_args.add_row(prettytable::row![
+                        Fy->"Return Value (JSON Schema):",
+                        match &function.result {
                             Some(r_type) => {
                                 match r_type {
                                     near_abi::AbiType::Borsh { type_schema: _ } => panic!("Borsh is currently unsupported"),
-                                    near_abi::AbiType::Json { type_schema } => {
-                                        serde_json::to_string(&type_schema.into_object().instance_type).unwrap_or_default()
+                                    near_abi::AbiType::Json { type_schema: _ } => {
+                                        serde_json::to_string_pretty(&function.result).unwrap_or_default()
                                     },
-                                    }
+                                }
                             },
-                            None => "".to_string()
+                            None => "None".to_string()
                         }
                     ]);
+                    table_args.printstd();
                 }
             }
         }
-        table.printstd();
         return Ok(());
     }
 
