@@ -7,26 +7,26 @@ use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = ContractAccountContext)]
-pub struct ContractAccount {
+#[interactive_clap(output_context = ContractContext)]
+pub struct Contract {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the contract account ID?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    /// Select a folder to download the contract
-    to_folder: DownloadContract,
+    /// Enter the name of the file to save the contract:
+    save_to_file: DownloadContract,
 }
 
 #[derive(Debug, Clone)]
-pub struct ContractAccountContext {
+pub struct ContractContext {
     global_context: crate::GlobalContext,
     account_id: near_primitives::types::AccountId,
 }
 
-impl ContractAccountContext {
+impl ContractContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
-        scope: &<ContractAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<Contract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context,
@@ -35,7 +35,7 @@ impl ContractAccountContext {
     }
 }
 
-impl ContractAccount {
+impl Contract {
     pub fn input_account_id(
         context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
@@ -47,12 +47,12 @@ impl ContractAccount {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = ContractAccountContext)]
+#[interactive_clap(input_context = ContractContext)]
 #[interactive_clap(output_context = DownloadContractContext)]
 pub struct DownloadContract {
     #[interactive_clap(skip_default_input_arg)]
-    /// Where to download the contract file?
-    folder_path: crate::types::path_buf::PathBuf,
+    /// Enter the name of the file to save the contract:
+    file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
@@ -63,12 +63,12 @@ pub struct DownloadContractContext(crate::network_view_at_block::ArgsForViewCont
 
 impl DownloadContractContext {
     pub fn from_previous_context(
-        previous_context: ContractAccountContext,
+        previous_context: ContractContext,
         scope: &<DownloadContract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let account_id = previous_context.account_id.clone();
-            let folder_path: std::path::PathBuf = scope.folder_path.clone().into();
+            let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
             move |network_config, block_reference| {
                 let query_view_method_response = network_config
@@ -88,9 +88,6 @@ impl DownloadContractContext {
                     } else {
                         return Err(color_eyre::Report::msg("Error call result".to_string()));
                     };
-                std::fs::create_dir_all(&folder_path)?;
-                let file_name = format!("contract_{}.wasm", account_id.as_str().replace('.', "_"));
-                let file_path = folder_path.join(file_name);
                 std::fs::File::create(&file_path)
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
                     .write(&call_access_view.code)
@@ -117,17 +114,19 @@ impl From<DownloadContractContext> for crate::network_view_at_block::ArgsForView
 }
 
 impl DownloadContract {
-    fn input_folder_path(
-        _context: &ContractAccountContext,
+    fn input_file_path(
+        context: &ContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
         let home_dir = dirs::home_dir().wrap_err("Impossible to get your home dir!")?;
         let mut folder_path = std::path::PathBuf::from(&home_dir);
         folder_path.push("Downloads");
+        let file_name = format!("{}.wasm", context.account_id.as_str().replace('.', "_"));
+        let file_path = folder_path.join(file_name);
         eprintln!();
-        let input_folder_path = Text::new("Where to download the contract file?")
-            .with_initial_value(&format!("{}", folder_path.to_string_lossy()))
+        let input_file_path = Text::new("Enter the name of the file to save the contract:")
+            .with_initial_value(&format!("{}", file_path.to_string_lossy()))
             .prompt()?;
-        let folder_path = shellexpand::tilde(&input_folder_path).as_ref().parse()?;
-        Ok(Some(folder_path))
+
+        Ok(Some(shellexpand::tilde(&input_file_path).as_ref().parse()?))
     }
 }

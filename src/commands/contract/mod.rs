@@ -38,7 +38,7 @@ pub enum ContractActions {
     DownloadAbi(self::download_contract_abi::Contract),
     #[strum_discriminants(strum(message = "download-wasm   - Download wasm"))]
     /// Download wasm
-    DownloadWasm(self::download_wasm::ContractAccount),
+    DownloadWasm(self::download_wasm::Contract),
     #[strum_discriminants(strum(message = "view-storage    - View contract storage state"))]
     /// View contract storage state
     ViewStorage(self::view_storage::ViewStorage),
