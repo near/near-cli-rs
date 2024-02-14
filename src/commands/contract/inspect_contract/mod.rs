@@ -87,7 +87,7 @@ async fn display_inspect_contract(
         };
 
     let account_view = get_account_view(
-        network_config,
+        &network_config.network_name,
         &json_rpc_client,
         &block_reference,
         account_id,
@@ -95,7 +95,7 @@ async fn display_inspect_contract(
     .await?;
 
     let access_keys = get_access_keys(
-        network_config,
+        &network_config.network_name,
         &json_rpc_client,
         &block_reference,
         account_id,
@@ -159,7 +159,7 @@ async fn display_inspect_contract(
     ]);
 
     if let Ok(contract_source_metadata_response) = get_contract_source_metadata(
-        network_config,
+        &network_config.network_name,
         &json_rpc_client,
         &block_reference,
         account_id,
@@ -190,7 +190,7 @@ async fn display_inspect_contract(
         }
 
         if let Ok(contract_abi_response) = get_contract_abi(
-            network_config,
+            &network_config.network_name,
             &json_rpc_client,
             &block_reference,
             account_id,
@@ -311,7 +311,7 @@ async fn display_inspect_contract(
 }
 
 async fn get_account_view(
-    network_config: &crate::config::NetworkConfig,
+    network_name: &str,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
@@ -335,21 +335,19 @@ async fn get_account_view(
             return account_view_response
                 .wrap_err_with(|| {
                     format!(
-                        "Failed to fetch query ViewAccount for contract <{}> on network <{}>",
-                        account_id, network_config.network_name
+                        "Failed to fetch query ViewAccount for contract <{account_id}> on network <{network_name}>" 
                     )
                 })?
                 .account_view();
         }
     }
     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
-        "Transport error. Failed to fetch query ViewAccount for contract <{}> on network <{}>",
-        account_id, network_config.network_name
+        "Transport error. Failed to fetch query ViewAccount for contract <{account_id}> on network <{network_name}>"
     )))
 }
 
 async fn get_access_keys(
-    network_config: &crate::config::NetworkConfig,
+    network_name: &str,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
@@ -373,8 +371,7 @@ async fn get_access_keys(
             return Ok(access_keys_response
                 .wrap_err_with(|| {
                     format!(
-                        "Failed to fetch ViewAccessKeyList for contract <{}> on network <{}>",
-                        account_id, network_config.network_name
+                        "Failed to fetch ViewAccessKeyList for contract <{account_id}> on network <{network_name}>"
                     )
                 })?
                 .access_key_list_view()?
@@ -382,13 +379,12 @@ async fn get_access_keys(
         }
     }
     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
-        "Transport error. Failed to fetch query ViewAccessKeyList for contract <{}> on network <{}>",
-        account_id, network_config.network_name
+        "Transport error. Failed to fetch query ViewAccessKeyList for contract <{account_id}> on network <{network_name}>"
     )))
 }
 
 async fn get_contract_source_metadata(
-    network_config: &crate::config::NetworkConfig,
+    network_name: &str,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
@@ -413,20 +409,18 @@ async fn get_contract_source_metadata(
         } else {
             return contract_source_metadata_response.wrap_err_with(|| {
                 format!(
-                    "Failed to fetch 'contract_source_metadata' for account <{}> on network <{}>",
-                    account_id, network_config.network_name
+                    "Failed to fetch 'contract_source_metadata' for account <{account_id}> on network <{network_name}>"
                 )
             });
         }
     }
     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
-        "Transport error. Failed to fetch 'contract_source_metadata' for account <{}> on network <{}>",
-        account_id, network_config.network_name
+        "Transport error. Failed to fetch 'contract_source_metadata' for account <{account_id}> on network <{network_name}>"
     )))
 }
 
-async fn get_contract_abi(
-    network_config: &crate::config::NetworkConfig,
+pub async fn get_contract_abi(
+    network_name: &str,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
@@ -451,14 +445,12 @@ async fn get_contract_abi(
         } else {
             return contract_abi_response.wrap_err_with(|| {
                 format!(
-                    "Failed to fetch 'contract_abi' for account <{}> on network <{}>",
-                    account_id, network_config.network_name
+                    "Failed to fetch 'contract_abi' for account <{account_id}> on network <{network_name}>"
                 )
             });
         }
     }
     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
-        "Transport error. Failed to fetch 'contract_abi' for account <{}> on network <{}>",
-        account_id, network_config.network_name
+        "Transport error. Failed to fetch 'contract_abi' for account <{account_id}> on network <{network_name}>"
     )))
 }
