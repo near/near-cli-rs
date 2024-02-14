@@ -114,7 +114,7 @@ impl DownloadContractAbi {
         let home_dir = dirs::home_dir().wrap_err("Impossible to get your home dir!")?;
         let mut folder_path = std::path::PathBuf::from(&home_dir);
         folder_path.push("Downloads");
-        let file_name = format!("abi_{}.json", context.account_id.as_str().replace('.', "_"));
+        let file_name = format!("{}.abi.json", context.account_id.as_str().replace('.', "_"));
         let file_path = folder_path.join(file_name);
         eprintln!();
         let input_file_path = Text::new("Enter the name of the file to save the contract ABI:")
