@@ -111,15 +111,13 @@ impl DownloadContractAbi {
     fn input_file_path(
         context: &ContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
-        let home_dir = dirs::home_dir().wrap_err("Impossible to get your home dir!")?;
-        let mut folder_path = std::path::PathBuf::from(&home_dir);
-        folder_path.push("Downloads");
-        let file_name = format!("{}.abi.json", context.account_id.as_str().replace('.', "_"));
-        let file_path = folder_path.join(file_name);
-        eprintln!();
-        let input_file_path = Text::new("Enter the name of the file to save the contract ABI:")
-            .with_initial_value(&format!("{}", file_path.to_string_lossy()))
-            .prompt()?;
+        let input_file_path =
+            Text::new("Enter the file path where the contract ABI should be saved to:")
+                .with_initial_value(&format!(
+                    "{}.abi.json",
+                    context.account_id.as_str().replace('.', "_")
+                ))
+                .prompt()?;
 
         Ok(Some(shellexpand::tilde(&input_file_path).as_ref().parse()?))
     }
