@@ -2,9 +2,9 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod call_function;
 pub mod deploy;
-mod download_contract_abi;
+mod download_abi;
 mod download_wasm;
-mod inspect_contract;
+mod inspect;
 mod view_storage;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -32,10 +32,10 @@ pub enum ContractActions {
         message = "inspect         - Get a list of available function names"
     ))]
     /// Get a list of available function names
-    Inspect(self::inspect_contract::Contract),
+    Inspect(self::inspect::Contract),
     #[strum_discriminants(strum(message = "download-abi    - Download contract ABI"))]
     /// Download contract ABI
-    DownloadAbi(self::download_contract_abi::Contract),
+    DownloadAbi(self::download_abi::Contract),
     #[strum_discriminants(strum(message = "download-wasm   - Download wasm"))]
     /// Download wasm
     DownloadWasm(self::download_wasm::Contract),
