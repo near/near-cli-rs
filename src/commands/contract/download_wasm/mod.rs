@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use color_eyre::eyre::{Context, ContextCompat};
+use color_eyre::eyre::Context;
 use inquire::Text;
 
 use crate::common::JsonRpcClientExt;
