@@ -1,9 +1,7 @@
 use std::io::Write;
 
-use color_eyre::eyre::{Context, ContextCompat};
+use color_eyre::eyre::Context;
 use inquire::Text;
-
-use crate::common::RpcQueryResponseExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -71,25 +69,16 @@ impl DownloadContractContext {
             let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
             move |network_config, block_reference| {
-                if let Ok(contract_abi_response) = tokio::runtime::Runtime::new()
+                let abi_root = tokio::runtime::Runtime::new()
                     .unwrap()
-                    .block_on(super::inspect_contract::get_contract_abi(&network_config.network_name, &network_config.json_rpc_client(), block_reference, &account_id))
-                    {
-                        let abi_root = serde_json::from_slice::<near_abi::AbiRoot>(&zstd::decode_all(
-                            &contract_abi_response.call_result()?.result[..],
-                        )?)?;
-                        std::fs::File::create(&file_path)
-                            .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
-                            .write(&serde_json::to_vec_pretty(&abi_root)?)
-                            .wrap_err_with(|| {
-                                format!("Failed to write to file: {:?}", &file_path)
-                            })?;
-                        eprintln!("\nThe file {:?} was downloaded successfully", &file_path);
-                    } else {
-                        return Err(color_eyre::Report::msg(format!(
-                            "Contact <{account_id}> does not support ABI (https://github.com/near/abi), so there is no way to get detailed information."
-                        )));
-                    }
+                    .block_on(super::inspect_contract::get_contract_abi(&network_config.network_name, &network_config.json_rpc_client(), block_reference, &account_id))?;
+                std::fs::File::create(&file_path)
+                    .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
+                    .write(&serde_json::to_vec_pretty(&abi_root)?)
+                    .wrap_err_with(|| {
+                        format!("Failed to write to file: {:?}", &file_path)
+                    })?;
+                eprintln!("\nThe file {:?} was downloaded successfully", &file_path);
                 Ok(())
             }
         });

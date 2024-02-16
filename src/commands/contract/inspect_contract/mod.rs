@@ -189,7 +189,7 @@ async fn display_inspect_contract(
             ]);
         }
 
-        if let Ok(contract_abi_response) = get_contract_abi(
+        if let Ok(abi_root) = get_contract_abi(
             &network_config.network_name,
             &json_rpc_client,
             &block_reference,
@@ -197,95 +197,90 @@ async fn display_inspect_contract(
         )
         .await
         {
-            let call_result = contract_abi_response.call_result()?;
-            if let Ok(abi_root) = serde_json::from_slice::<near_abi::AbiRoot>(&zstd::decode_all(
-                &call_result.result[..],
-            )?) {
-                table.add_row(prettytable::row![
-                    Fy->"Schema version",
-                    abi_root.schema_version
-                ]);
-                table.add_row(prettytable::row![Fy->"Functions:"]);
-                table.printstd();
+            table.add_row(prettytable::row![
+                Fy->"Schema version",
+                abi_root.schema_version
+            ]);
+            table.add_row(prettytable::row![Fy->"Functions:"]);
+            table.printstd();
 
-                for function in abi_root.body.functions {
-                    let mut table_func = prettytable::Table::new();
-                    table_func.set_format(*prettytable::format::consts::FORMAT_CLEAN);
-                    table_func.add_empty_row();
+            for function in abi_root.body.functions {
+                let mut table_func = prettytable::Table::new();
+                table_func.set_format(*prettytable::format::consts::FORMAT_CLEAN);
+                table_func.add_empty_row();
 
-                    if let near_abi::AbiParameters::Borsh { args: _ } = function.params {
-                        panic!("Borsh is currently unsupported")
-                    }
-                    table_func.add_row(prettytable::row![format!(
-                        "{} (read-write function - {}) {}\n{}",
-                        format!(
-                            "fn {}({}) -> {}",
-                            function.name.green(),
-                            "...".yellow(),
-                            "...".blue()
-                        ),
-                        match function.kind {
-                            near_abi::AbiFunctionKind::Call => "transaction required",
-                            near_abi::AbiFunctionKind::View => "read only",
-                        },
-                        function
-                            .modifiers
-                            .iter()
-                            .fold(String::new(), |mut output, modifier| {
-                                let _ = write!(
-                                    output,
-                                    "{} ",
-                                    match modifier {
-                                        near_abi::AbiFunctionModifier::Init => "init".red(),
-                                        near_abi::AbiFunctionModifier::Payable => "payble".red(),
-                                        near_abi::AbiFunctionModifier::Private => "private".red(),
-                                    }
-                                );
-                                output
-                            }),
-                        function.doc.unwrap_or_default()
-                    )]);
-                    table_func.printstd();
-
-                    let mut table_args = prettytable::Table::new();
-                    table_args.set_format(*prettytable::format::consts::FORMAT_CLEAN);
-                    table_args.get_format().padding(1, 0);
-
-                    table_args.add_row(prettytable::row![
+                if let near_abi::AbiParameters::Borsh { args: _ } = function.params {
+                    panic!("Borsh is currently unsupported")
+                }
+                table_func.add_row(prettytable::row![format!(
+                    "{} (read-write function - {}) {}\n{}",
+                    format!(
+                        "fn {}({}) -> {}",
+                        function.name.green(),
                         "...".yellow(),
-                        Fy->"Arguments (JSON Schema):",
-                    ]);
-                    table_args.add_row(prettytable::row![
-                        "   ",
-                        if function.params.is_empty() {
-                            "No arguments needed".to_string()
-                        } else {
-                            serde_json::to_string_pretty(&function.params).unwrap_or_default()
-                        }
-                    ]);
-                    table_args.add_row(prettytable::row![
-                        "...".blue(),
-                        Fb->"Return Value (JSON Schema):",
-                    ]);
-                    table_args.add_row(prettytable::row![
-                        "   ",
-                        match &function.result {
-                            Some(r_type) => {
-                                match r_type {
-                                    near_abi::AbiType::Borsh { type_schema: _ } => {
-                                        panic!("Borsh is currently unsupported")
-                                    }
-                                    near_abi::AbiType::Json { type_schema: _ } => {
-                                        serde_json::to_string_pretty(&function.result)
-                                            .unwrap_or_default()
-                                    }
+                        "...".blue()
+                    ),
+                    match function.kind {
+                        near_abi::AbiFunctionKind::Call => "transaction required",
+                        near_abi::AbiFunctionKind::View => "read only",
+                    },
+                    function
+                        .modifiers
+                        .iter()
+                        .fold(String::new(), |mut output, modifier| {
+                            let _ = write!(
+                                output,
+                                "{} ",
+                                match modifier {
+                                    near_abi::AbiFunctionModifier::Init => "init".red(),
+                                    near_abi::AbiFunctionModifier::Payable => "payble".red(),
+                                    near_abi::AbiFunctionModifier::Private => "private".red(),
+                                }
+                            );
+                            output
+                        }),
+                    function.doc.unwrap_or_default()
+                )]);
+                table_func.printstd();
+
+                let mut table_args = prettytable::Table::new();
+                table_args.set_format(*prettytable::format::consts::FORMAT_CLEAN);
+                table_args.get_format().padding(1, 0);
+
+                table_args.add_row(prettytable::row![
+                    "...".yellow(),
+                    Fy->"Arguments (JSON Schema):",
+                ]);
+                table_args.add_row(prettytable::row![
+                    "   ",
+                    if function.params.is_empty() {
+                        "No arguments needed".to_string()
+                    } else {
+                        serde_json::to_string_pretty(&function.params).unwrap_or_default()
+                    }
+                ]);
+                table_args.add_row(prettytable::row![
+                    "...".blue(),
+                    Fb->"Return Value (JSON Schema):",
+                ]);
+                table_args.add_row(prettytable::row![
+                    "   ",
+                    match &function.result {
+                        Some(r_type) => {
+                            match r_type {
+                                near_abi::AbiType::Borsh { type_schema: _ } => {
+                                    panic!("Borsh is currently unsupported")
+                                }
+                                near_abi::AbiType::Json { type_schema: _ } => {
+                                    serde_json::to_string_pretty(&function.result)
+                                        .unwrap_or_default()
                                 }
                             }
-                            None => "None".to_string(),
                         }
-                    ]);
-                    table_args.printstd();
-                }
+                        None => "None".to_string(),
+                    }
+                ]);
+                table_args.printstd();
             }
         }
         return Ok(());
@@ -424,7 +419,7 @@ pub async fn get_contract_abi(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<near_jsonrpc_primitives::types::query::RpcQueryResponse> {
+) -> color_eyre::eyre::Result<near_abi::AbiRoot> {
     for _ in 0..5 {
         let contract_abi_response = json_rpc_client
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
@@ -443,9 +438,19 @@ pub async fn get_contract_abi(
             eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
             std::thread::sleep(std::time::Duration::from_millis(100))
         } else {
-            return contract_abi_response.wrap_err_with(|| {
+            let call_result = contract_abi_response
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to fetch 'contract_abi' response for account <{account_id}> on network <{network_name}>"
+                    )
+                })?
+                .call_result()?;
+            return serde_json::from_slice::<near_abi::AbiRoot>(&zstd::decode_all(
+                &call_result.result[..],
+            )?)
+            .wrap_err_with(|| {
                 format!(
-                    "Failed to fetch 'contract_abi' for account <{account_id}> on network <{network_name}>"
+                    "Contact <{account_id}> does not support ABI (https://github.com/near/abi), so there is no way to get detailed information."
                 )
             });
         }
