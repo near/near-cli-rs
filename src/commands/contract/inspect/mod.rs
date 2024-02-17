@@ -209,7 +209,7 @@ async fn display_inspect_contract(
                 panic!("Borsh is currently unsupported")
             }
             table_func.add_row(prettytable::row![format!(
-                "{} (read-write function - {}) {}\n{}",
+                "{} ({}) {}\n{}",
                 format!(
                     "fn {}({}) -> {}",
                     function.name.green(),
@@ -217,8 +217,8 @@ async fn display_inspect_contract(
                     "...".blue()
                 ),
                 match function.kind {
-                    near_abi::AbiFunctionKind::Call => "transaction required",
-                    near_abi::AbiFunctionKind::View => "read only",
+                    near_abi::AbiFunctionKind::Call => "read-write function - transcation required",
+                    near_abi::AbiFunctionKind::View => "read-only function",
                 },
                 function
                     .modifiers
