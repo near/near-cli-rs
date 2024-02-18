@@ -1,5 +1,10 @@
-use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 use std::fmt::Write;
+
+use color_eyre::{
+    eyre::{Context, Report},
+    owo_colors::OwoColorize,
+};
+use thiserror::Error;
 
 use near_primitives::types::{BlockId, BlockReference};
 
@@ -40,6 +45,7 @@ impl ContractContext {
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
+
             move |network_config, block_reference| {
                 let view_code_response = network_config
                     .json_rpc_client()
@@ -102,7 +108,6 @@ async fn display_inspect_contract(
     )
     .await?;
 
-    println!();
     let mut table = prettytable::Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
@@ -158,144 +163,178 @@ async fn display_inspect_contract(
         access_keys_summary
     ]);
 
-    if let Ok(contract_source_metadata) = get_contract_source_metadata(
-        &network_config.network_name,
-        &json_rpc_client,
-        &block_reference,
-        account_id,
-    )
-    .await
-    {
-        table.add_row(prettytable::row![
-            Fy->"Contract version",
-            contract_source_metadata.version.unwrap_or_default()
-        ]);
-        table.add_row(prettytable::row![
-            Fy->"Contract link",
-            contract_source_metadata.link.unwrap_or_default()
-        ]);
-        table.add_row(prettytable::row![
-            Fy->"Supported standards",
-            contract_source_metadata.standards
-                .iter()
-                .fold(String::new(), |mut output, standard| {
-                    let _ = writeln!(output, "{} ({})", standard.standard, standard.version);
-                    output
-                })
-        ]);
-    }
-
-    if let Ok(abi_root) = get_contract_abi(
-        &network_config.network_name,
-        &json_rpc_client,
-        &block_reference,
-        account_id,
-    )
-    .await
-    {
-        table.add_row(prettytable::row![
-            Fy->"Schema version",
-            abi_root.schema_version
-        ]);
-        table.add_row(prettytable::row![Fy->"Functions:"]);
-        table.printstd();
-
-        for function in abi_root.body.functions {
-            let mut table_func = prettytable::Table::new();
-            table_func.set_format(*prettytable::format::consts::FORMAT_CLEAN);
-            table_func.add_empty_row();
-
-            if let near_abi::AbiParameters::Borsh { args: _ } = function.params {
-                panic!("Borsh is currently unsupported")
-            }
-            table_func.add_row(prettytable::row![format!(
-                "{} ({}) {}\n{}",
-                format!(
-                    "fn {}({}) -> {}",
-                    function.name.green(),
-                    "...".yellow(),
-                    "...".blue()
-                ),
-                match function.kind {
-                    near_abi::AbiFunctionKind::Call => "read-write function - transcation required",
-                    near_abi::AbiFunctionKind::View => "read-only function",
-                },
-                function
-                    .modifiers
+    match get_contract_source_metadata(&json_rpc_client, &block_reference, account_id).await {
+        Ok(contract_source_metadata) => {
+            table.add_row(prettytable::row![
+                Fy->"Contract version",
+                contract_source_metadata.version.unwrap_or_default()
+            ]);
+            table.add_row(prettytable::row![
+                Fy->"Contract link",
+                contract_source_metadata.link.unwrap_or_default()
+            ]);
+            table.add_row(prettytable::row![
+                Fy->"Supported standards",
+                contract_source_metadata.standards
                     .iter()
-                    .fold(String::new(), |mut output, modifier| {
-                        let _ = write!(
-                            output,
-                            "{} ",
-                            match modifier {
-                                near_abi::AbiFunctionModifier::Init => "init".red(),
-                                near_abi::AbiFunctionModifier::Payable => "payble".red(),
-                                near_abi::AbiFunctionModifier::Private => "private".red(),
-                            }
-                        );
+                    .fold(String::new(), |mut output, standard| {
+                        let _ = writeln!(output, "{} ({})", standard.standard, standard.version);
                         output
-                    }),
-                function.doc.unwrap_or_default()
-            )]);
-            table_func.printstd();
-
-            let mut table_args = prettytable::Table::new();
-            table_args.set_format(*prettytable::format::consts::FORMAT_CLEAN);
-            table_args.get_format().padding(1, 0);
-
-            table_args.add_row(prettytable::row![
-                "...".yellow(),
-                Fy->"Arguments (JSON Schema):",
+                    })
             ]);
-            table_args.add_row(prettytable::row![
-                "   ",
-                if function.params.is_empty() {
-                    "No arguments needed".to_string()
-                } else {
-                    serde_json::to_string_pretty(&function.params).unwrap_or_default()
-                }
-            ]);
-            table_args.add_row(prettytable::row![
-                "...".blue(),
-                Fb->"Return Value (JSON Schema):",
-            ]);
-            table_args.add_row(prettytable::row![
-                "   ",
-                match &function.result {
-                    Some(r_type) => {
-                        match r_type {
-                            near_abi::AbiType::Borsh { type_schema: _ } => {
-                                panic!("Borsh is currently unsupported")
-                            }
-                            near_abi::AbiType::Json { type_schema: _ } => {
-                                serde_json::to_string_pretty(&function.result).unwrap_or_default()
-                            }
-                        }
-                    }
-                    None => "None".to_string(),
-                }
-            ]);
-            table_args.printstd();
         }
-        return Ok(());
+        Err(err) => {
+            match err {
+                FetchContractSourceMetadataError::ContractSourceMetadataNotSupported => {
+                    table.add_row(prettytable::row![
+                        "",
+                        format! {
+                            "Contract source metadata is not available\n({}),\nso there is no way to get detailed information",
+                            "https://nomicon.io/Standards/SourceMetadata".yellow()
+                        }
+                    ]);
+                }
+                FetchContractSourceMetadataError::RpcError(_) => {
+                    table.add_row(prettytable::row![
+                        "",
+                        "Rpc Error: failed to fetch 'contract_source_metadata' response.\nSo there is no way to get detailed information"
+                    ]);
+                }
+                FetchContractSourceMetadataError::UnknownContractSourceMetadataFormat(_) => {
+                    table.add_row(prettytable::row![
+                        "",
+                        format! {
+                            "The contract source metadata format is unknown\n({}),\nso there is no way to get detailed information",
+                            "https://nomicon.io/Standards/SourceMetadata".yellow()
+                        }
+                    ]);
+                }
+            }
+
+            table.add_row(prettytable::row![
+                Fy->"Contract version",
+                "N/A"
+            ]);
+            table.add_row(prettytable::row![
+                Fy->"Contract link",
+                "N/A"
+            ]);
+            table.add_row(prettytable::row![
+                Fy->"Supported standards",
+                "N/A"
+            ]);
+        }
     }
 
-    table.add_empty_row();
-    table.add_row(prettytable::row![
-        Fy->"Metods:",
-        format!(
-            "Contact does not support ABI ({}),\nso there is no way to get detailed information",
-            "https://github.com/near/abi".yellow()
-        )
-    ]);
+    match get_contract_abi(&json_rpc_client, &block_reference, account_id).await {
+        Ok(abi_root) => {
+            table.add_row(prettytable::row![
+                Fy->"Schema version",
+                abi_root.schema_version
+            ]);
+            table.add_row(prettytable::row![Fy->"Functions:"]);
+            table.printstd();
 
-    for function in wasmer::Module::from_binary(&wasmer::Store::default(), &contract_code_view.code)
-            .wrap_err_with(|| format!("Could not create new WebAssembly module from Wasm binary for contract <{account_id}>."))?
-            .exports()
-        {
-            table.add_row(prettytable::row![Fg->function.name()]);
+            for function in abi_root.body.functions {
+                let mut table_func = prettytable::Table::new();
+                table_func.set_format(*prettytable::format::consts::FORMAT_CLEAN);
+                table_func.add_empty_row();
+
+                table_func.add_row(prettytable::row![format!(
+                    "{} ({}) {}\n{}",
+                    format!(
+                        "fn {}({}) -> {}",
+                        function.name.green(),
+                        "...".yellow(),
+                        "...".blue()
+                    ),
+                    match function.kind {
+                        near_abi::AbiFunctionKind::Call =>
+                            "read-write function - transcation required",
+                        near_abi::AbiFunctionKind::View => "read-only function",
+                    },
+                    function
+                        .modifiers
+                        .iter()
+                        .fold(String::new(), |mut output, modifier| {
+                            let _ = write!(
+                                output,
+                                "{} ",
+                                match modifier {
+                                    near_abi::AbiFunctionModifier::Init => "init".red(),
+                                    near_abi::AbiFunctionModifier::Payable => "payble".red(),
+                                    near_abi::AbiFunctionModifier::Private => "private".red(),
+                                }
+                            );
+                            output
+                        }),
+                    function.doc.unwrap_or_default()
+                )]);
+                table_func.printstd();
+
+                let mut table_args = prettytable::Table::new();
+                table_args.set_format(*prettytable::format::consts::FORMAT_CLEAN);
+                table_args.get_format().padding(1, 0);
+
+                table_args.add_row(prettytable::row![
+                    "...".yellow(),
+                    Fy->"Arguments (JSON Schema):",
+                ]);
+                table_args.add_row(prettytable::row![
+                    "   ",
+                    if function.params.is_empty() {
+                        "No arguments needed".to_string()
+                    } else {
+                        serde_json::to_string_pretty(&function.params).unwrap_or_default()
+                    }
+                ]);
+                table_args.add_row(prettytable::row![
+                    "...".blue(),
+                    Fb->"Return Value (JSON Schema):",
+                ]);
+                table_args.add_row(prettytable::row![
+                    "   ",
+                    if let Some(result) = function.result {
+                        serde_json::to_string_pretty(&result).unwrap_or_default()
+                    } else {
+                        "No return value".to_string()
+                    }
+                ]);
+                table_args.printstd();
+            }
         }
-    table.printstd();
+        Err(err) => {
+            table.add_empty_row();
+            table.add_row(prettytable::row![
+                Fy->"Functions:",
+                match err {
+                    FetchAbiError::AbiNotSupported => {
+                        format!(
+                            "Contact does not support ABI ({}),\nso there is no way to get detailed information",
+                            "https://github.com/near/abi".yellow()
+                        )
+                    }
+                    FetchAbiError::RpcError(_) => {
+                        "Rpc Error: failed to fetch '__contract_abi' response.\nSo there is no way to get detailed information".to_string()
+                    }
+                    FetchAbiError::UnknownAbiFormat(_) =>{
+                        format!(
+                            "Contact has unknown NEAR ABI format ({}),\nso there is no way to get detailed information",
+                            "https://github.com/near/abi".yellow()
+                        )
+                    }
+                }
+            ]);
+            for function in wasmer::Module::from_binary(&wasmer::Store::default(), &contract_code_view.code)
+                    .wrap_err_with(|| format!("Could not create new WebAssembly module from Wasm binary for contract <{account_id}>."))?
+                    .exports()
+                {
+                    table.add_row(prettytable::row![Fg->function.name()]);
+                }
+            table.printstd();
+        }
+    }
+
     Ok(())
 }
 
@@ -372,13 +411,27 @@ async fn get_access_keys(
     )))
 }
 
+#[derive(Error, Debug)]
+pub enum FetchContractSourceMetadataError {
+    #[error("Contract source metadata is not available (https://nomicon.io/Standards/SourceMetadata), so there is no way to get detailed information.")]
+    ContractSourceMetadataNotSupported,
+    #[error("Failed to fetch 'contract_source_metadata' response")]
+    RpcError(
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    ),
+    #[error("The contract source metadata format is unknown (https://nomicon.io/Standards/SourceMetadata), so there is no way to get detailed information.")]
+    UnknownContractSourceMetadataFormat(Report),
+}
+
 async fn get_contract_source_metadata(
-    network_name: &str,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<self::contract_metadata::ContractSourceMetadata> {
-    for _ in 0..5 {
+) -> Result<self::contract_metadata::ContractSourceMetadata, FetchContractSourceMetadataError> {
+    let mut retries_left = (0..5).rev();
+    loop {
         let contract_source_metadata_response = json_rpc_client
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: block_reference.clone(),
@@ -390,40 +443,61 @@ async fn get_contract_source_metadata(
             })
             .await;
 
-        if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
-            &contract_source_metadata_response
-        {
-            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
-            std::thread::sleep(std::time::Duration::from_millis(100))
-        } else {
-            let contract_source_metadata = contract_source_metadata_response
-                .wrap_err_with(|| {
-                format!(
-                    "Failed to fetch 'contract_source_metadata' response for account <{account_id}> on network <{network_name}>"
-                )
-            })?
-                .call_result()?
-                .parse_result_from_json::<self::contract_metadata::ContractSourceMetadata>(
-            );
-            return contract_source_metadata.wrap_err_with(|| {
-                format!(
-                    "Failed to fetch 'contract_source_metadata' for account <{account_id}> on network <{network_name}>"
-                )
-            });
+        match contract_source_metadata_response {
+            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_))
+                if retries_left.next().is_some() =>
+            {
+                eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                    near_jsonrpc_primitives::types::query::RpcQueryError::ContractExecutionError {
+                        vm_error,
+                        ..
+                    },
+                ),
+            )) if vm_error.contains("MethodNotFound") => {
+                return Err(FetchContractSourceMetadataError::ContractSourceMetadataNotSupported);
+            }
+            Err(err) => {
+                return Err(FetchContractSourceMetadataError::RpcError(err));
+            }
+            Ok(contract_source_metadata_response) => {
+                return contract_source_metadata_response
+                    .call_result()
+                    .map_err(FetchContractSourceMetadataError::UnknownContractSourceMetadataFormat)?
+                    .parse_result_from_json::<self::contract_metadata::ContractSourceMetadata>()
+                    .wrap_err("Failed to parse contract source metadata")
+                    .map_err(
+                        FetchContractSourceMetadataError::UnknownContractSourceMetadataFormat,
+                    );
+            }
         }
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
-    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
-        "Transport error. Failed to fetch 'contract_source_metadata' for account <{account_id}> on network <{network_name}>"
-    )))
+}
+
+#[derive(Error, Debug)]
+pub enum FetchAbiError {
+    #[error("Contact does not support ABI (https://github.com/near/abi), so there is no way to get detailed information.")]
+    AbiNotSupported,
+    #[error("Failed to fetch '__contract_abi' response")]
+    RpcError(
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    ),
+    #[error("Contact has unknown NEAR ABI format (https://github.com/near/abi), so there is no way to get detailed information.")]
+    UnknownAbiFormat(Report),
 }
 
 pub async fn get_contract_abi(
-    network_name: &str,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<near_abi::AbiRoot> {
-    for _ in 0..5 {
+) -> Result<near_abi::AbiRoot, FetchAbiError> {
+    let mut retries_left = (0..5).rev();
+    loop {
         let contract_abi_response = json_rpc_client
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: block_reference.clone(),
@@ -435,30 +509,41 @@ pub async fn get_contract_abi(
             })
             .await;
 
-        if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
-            &contract_abi_response
-        {
-            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
-            std::thread::sleep(std::time::Duration::from_millis(100))
-        } else {
-            let call_result = contract_abi_response
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch 'contract_abi' response for account <{account_id}> on network <{network_name}>"
+        match contract_abi_response {
+            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_))
+                if retries_left.next().is_some() =>
+            {
+                eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            }
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                    near_jsonrpc_primitives::types::query::RpcQueryError::ContractExecutionError {
+                        vm_error,
+                        ..
+                    },
+                ),
+            )) if vm_error.contains("MethodNotFound") => {
+                return Err(FetchAbiError::AbiNotSupported);
+            }
+            Err(err) => {
+                return Err(FetchAbiError::RpcError(err));
+            }
+            Ok(contract_abi_response) => {
+                return serde_json::from_slice::<near_abi::AbiRoot>(
+                    &zstd::decode_all(
+                        contract_abi_response
+                            .call_result()
+                            .map_err(FetchAbiError::UnknownAbiFormat)?
+                            .result
+                            .as_slice(),
                     )
-                })?
-                .call_result()?;
-            return serde_json::from_slice::<near_abi::AbiRoot>(&zstd::decode_all(
-                &call_result.result[..],
-            )?)
-            .wrap_err_with(|| {
-                format!(
-                    "Contact <{account_id}> does not support ABI (https://github.com/near/abi), so there is no way to get detailed information."
+                    .wrap_err("Failed to 'zstd::decode_all' NEAR ABI")
+                    .map_err(FetchAbiError::UnknownAbiFormat)?,
                 )
-            });
+                .wrap_err("Failed to parse NEAR ABI schema")
+                .map_err(FetchAbiError::UnknownAbiFormat);
+            }
         }
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
-    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
-        "Transport error. Failed to fetch 'contract_abi' for account <{account_id}> on network <{network_name}>"
-    )))
 }

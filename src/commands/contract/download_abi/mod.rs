@@ -71,7 +71,7 @@ impl DownloadContractContext {
             move |network_config, block_reference| {
                 let abi_root = tokio::runtime::Runtime::new()
                     .unwrap()
-                    .block_on(super::inspect::get_contract_abi(&network_config.network_name, &network_config.json_rpc_client(), block_reference, &account_id))?;
+                    .block_on(super::inspect::get_contract_abi(&network_config.json_rpc_client(), block_reference, &account_id))?;
                 std::fs::File::create(&file_path)
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
                     .write(&serde_json::to_vec_pretty(&abi_root)?)
