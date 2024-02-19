@@ -58,12 +58,12 @@ impl From<GenerateKeypairContext> for super::super::AccountPropertiesContext {
 /// Save an access key for this account:
 pub enum SaveMode {
     #[strum_discriminants(strum(
-        message = "save-to-keychain   - Save automatically generated key pair to keychain"
+        message = "save-to-keychain         - Save automatically generated key pair to keychain"
     ))]
     /// Save automatically generated key pair to keychain
     SaveToKeychain(SignAs),
     #[strum_discriminants(strum(
-        message = "save-to-legacy-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
+        message = "save-to-legacy-keychain  - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
     /// Save automatically generated key pair to the legacy keychain (compatible with JS CLI)
     SaveToLegacyKeychain(SignAs),

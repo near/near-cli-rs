@@ -112,7 +112,7 @@ fn main() -> crate::common::CliResult {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
         | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
             eprintln!(
-                "Here is your console command if you need to script it or re-run:\n{}",
+                "\nHere is your console command if you need to script it or re-run:\n{}",
                 shell_words::join(
                     std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
                 )
@@ -120,7 +120,7 @@ fn main() -> crate::common::CliResult {
             Ok(Some(cli_cmd))
         }
         interactive_clap::ResultFromCli::Cancel(None) => {
-            eprintln!("Goodbye!");
+            eprintln!("\nGoodbye!");
             Ok(None)
         }
         interactive_clap::ResultFromCli::Back => {
@@ -129,7 +129,7 @@ fn main() -> crate::common::CliResult {
         interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
             if let Some(cli_cmd) = optional_cli_cmd {
                 eprintln!(
-                    "Here is your console command if you need to script it or re-run:\n{}",
+                    "\nHere is your console command if you need to script it or re-run:\n{}",
                     shell_words::join(
                         std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
                     )
@@ -164,9 +164,8 @@ fn main() -> crate::common::CliResult {
                 .wrap_err("Failed to parse latest version of `near` CLI")?;
 
             if current_version < latest_version {
-                eprintln!();
                 eprintln!(
-                    "`near` CLI has a new update available \x1b[2m{current_version}\x1b[0m →  \x1b[32m{latest_version}\x1b[0m"
+                    "\n`near` CLI has a new update available \x1b[2m{current_version}\x1b[0m →  \x1b[32m{latest_version}\x1b[0m"
                 );
                 let self_update_cli_cmd = CliCmd {
                     offline: false,

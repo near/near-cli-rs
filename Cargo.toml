@@ -51,6 +51,8 @@ open = "4"
 shell-words = "1"
 cargo-util = "0.1.1"
 
+wasmparser = "0.200.0"
+
 semver = { version = "1.0.4", optional = true }
 self_update = { version = "0.37.0", features = [
     "archive-tar",
@@ -62,6 +64,7 @@ thiserror = "1"
 
 bytesize = "1.1.0"
 prettytable = "0.10.0"
+textwrap = "0.16.1"
 
 near-ledger = { version = "0.4.0", optional = true }
 
@@ -80,12 +83,14 @@ near-token = { version = "0.2.0", features = [
     "borsh",
     "interactive-clap",
 ] }
+near-socialdb-client = "0.2.2"
+
+near-abi = "0.4.2"
+zstd = "0.11"
 
 keyring = "2.0.5"
 interactive-clap = "0.2.8"
 interactive-clap-derive = "0.2.8"
-
-near-socialdb-client = "0.2.2"
 
 [features]
 default = ["ledger", "self-update"]

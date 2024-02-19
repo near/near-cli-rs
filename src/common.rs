@@ -583,10 +583,14 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                                 .replace('\n', "\n                                 ")
                         }
                         Err(_) => {
-                            format!(
-                                "<non-printable data ({})>",
-                                bytesize::ByteSize(function_call_action.args.len() as u64)
-                            )
+                            if let Ok(args) = String::from_utf8(function_call_action.args.clone()) {
+                                args
+                            } else {
+                                format!(
+                                    "<non-printable data ({})>",
+                                    bytesize::ByteSize(function_call_action.args.len() as u64)
+                                )
+                            }
                         }
                     }
                 );
