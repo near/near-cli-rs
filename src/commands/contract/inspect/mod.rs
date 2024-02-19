@@ -309,12 +309,31 @@ async fn display_inspect_contract(
                     80
                 )
             ]);
-            for function in wasmer::Module::from_binary(&wasmer::Store::default(), &contract_code_view.code)
-                    .wrap_err_with(|| format!("Could not create new WebAssembly module from Wasm binary for contract <{account_id}>."))?
-                    .exports()
+
+            let parser = wasmparser::Parser::new(0);
+            for payload in parser.parse_all(&contract_code_view.code) {
+                if let wasmparser::Payload::ExportSection(export_section) =
+                    payload.wrap_err_with(|| {
+                        format!(
+                            "Could not parse WebAssembly binary of the contract <{account_id}>."
+                        )
+                    })?
                 {
-                    table.add_row(prettytable::row![Fg->function.name()]);
+                    for export in export_section {
+                        let export = export
+                            .wrap_err_with(|| format!("Could not parse WebAssembly export section of the contract <{account_id}>."))?;
+                        if let wasmparser::ExternalKind::Func = export.kind {
+                            table.add_row(prettytable::row![format!(
+                                "fn {}({}) -> {}",
+                                export.name.green(),
+                                "...".yellow(),
+                                "...".blue()
+                            ),]);
+                        }
+                    }
                 }
+            }
+
             table.printstd();
         }
     }
