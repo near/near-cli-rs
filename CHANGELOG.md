@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0](https://github.com/near/near-cli-rs/compare/v0.7.8...v0.8.0) - 2024-02-19
+
+### Added
+- Added `inspect` and `download-abi` commands for contracts! ([#293](https://github.com/near/near-cli-rs/pull/293))
+
+### Fixed
+- Fixed incorrect serialization in staking delegation commands that required to input amounts ([#300](https://github.com/near/near-cli-rs/pull/300))
+- Fixed a syntax error in CI (publish-to-npm.yml)
+
 ## [0.7.8](https://github.com/near/near-cli-rs/compare/v0.7.7...v0.7.8) - 2024-02-03
 
 ### Other
