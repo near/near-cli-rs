@@ -3,8 +3,6 @@ use std::io::Write;
 use color_eyre::eyre::Context;
 use inquire::Text;
 
-use crate::common::JsonRpcClientExt;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractContext)]
@@ -13,8 +11,8 @@ pub struct Contract {
     /// What is the contract account ID?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    /// Enter the name of the file to save the contract:
-    save_to_file: DownloadContract,
+    /// Enter the name of the file to save the contract ABI:
+    save_to_file: DownloadContractAbi,
 }
 
 #[derive(Debug, Clone)]
@@ -49,9 +47,9 @@ impl Contract {
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = ContractContext)]
 #[interactive_clap(output_context = DownloadContractContext)]
-pub struct DownloadContract {
+pub struct DownloadContractAbi {
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter the name of the file to save the contract:
+    /// Enter the name of the file to save the contract ABI:
     file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(named_arg)]
     /// Select network
@@ -64,38 +62,23 @@ pub struct DownloadContractContext(crate::network_view_at_block::ArgsForViewCont
 impl DownloadContractContext {
     pub fn from_previous_context(
         previous_context: ContractContext,
-        scope: &<DownloadContract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<DownloadContractAbi as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let account_id = previous_context.account_id.clone();
             let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
             move |network_config, block_reference| {
-                let query_view_method_response = network_config
-                    .json_rpc_client()
-                    .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                        block_reference: block_reference.clone(),
-                        request: near_primitives::views::QueryRequest::ViewCode {
-                            account_id: account_id.clone(),
-                        },
-                    })
-                    .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}> on network <{}>", &account_id, network_config.network_name))?;
-                let call_access_view =
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-                        query_view_method_response.kind
-                    {
-                        result
-                    } else {
-                        return Err(color_eyre::Report::msg("Error call result".to_string()));
-                    };
+                let abi_root = tokio::runtime::Runtime::new()
+                    .unwrap()
+                    .block_on(super::inspect::get_contract_abi(&network_config.json_rpc_client(), block_reference, &account_id))?;
                 std::fs::File::create(&file_path)
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
-                    .write(&call_access_view.code)
+                    .write(&serde_json::to_vec_pretty(&abi_root)?)
                     .wrap_err_with(|| {
                         format!("Failed to write to file: {:?}", &file_path)
                     })?;
                 eprintln!("\nThe file {:?} was downloaded successfully", &file_path);
-
                 Ok(())
             }
         });
@@ -113,16 +96,17 @@ impl From<DownloadContractContext> for crate::network_view_at_block::ArgsForView
     }
 }
 
-impl DownloadContract {
+impl DownloadContractAbi {
     fn input_file_path(
         context: &ContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
-        let input_file_path = Text::new("Enter the name of the file to save the contract:")
-            .with_initial_value(&format!(
-                "{}.wasm",
-                context.account_id.as_str().replace('.', "_")
-            ))
-            .prompt()?;
+        let input_file_path =
+            Text::new("Enter the file path where the contract ABI should be saved to:")
+                .with_initial_value(&format!(
+                    "{}.abi.json",
+                    context.account_id.as_str().replace('.', "_")
+                ))
+                .prompt()?;
 
         Ok(Some(shellexpand::tilde(&input_file_path).as_ref().parse()?))
     }
