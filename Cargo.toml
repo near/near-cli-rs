@@ -90,6 +90,7 @@ interactive-clap = "0.2.8"
 interactive-clap-derive = "0.2.8"
 
 near-socialdb-client = "0.2.2"
+textwrap = "0.16.1"
 
 [features]
 default = ["ledger", "self-update"]

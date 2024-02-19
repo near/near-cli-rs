@@ -184,32 +184,21 @@ async fn display_inspect_contract(
             ]);
         }
         Err(err) => {
-            match err {
-                FetchContractSourceMetadataError::ContractSourceMetadataNotSupported => {
-                    table.add_row(prettytable::row![
-                        "",
-                        format! {
-                            "Contract source metadata is not available\n({}),\nso there is no way to get detailed information",
-                            "https://nomicon.io/Standards/SourceMetadata".yellow()
-                        }
-                    ]);
-                }
-                FetchContractSourceMetadataError::RpcError(_) => {
-                    table.add_row(prettytable::row![
-                        "",
-                        "Rpc Error: failed to fetch 'contract_source_metadata' response.\nSo there is no way to get detailed information"
-                    ]);
-                }
-                FetchContractSourceMetadataError::UnknownContractSourceMetadataFormat(_) => {
-                    table.add_row(prettytable::row![
-                        "",
-                        format! {
-                            "The contract source metadata format is unknown\n({}),\nso there is no way to get detailed information",
-                            "https://nomicon.io/Standards/SourceMetadata".yellow()
-                        }
-                    ]);
-                }
-            }
+            table.add_row(prettytable::row![
+                "",
+                textwrap::fill(
+                    &format!(
+                        "{}: {}",
+                        match &err {
+                            FetchContractSourceMetadataError::ContractSourceMetadataNotSupported => "Info",
+                            FetchContractSourceMetadataError::ContractSourceMetadataUnknownFormat(_) |
+                            FetchContractSourceMetadataError::RpcError(_) => "Warning",
+                        },
+                        err
+                    ),
+                    80
+                )
+            ]);
 
             table.add_row(prettytable::row![
                 Fy->"Contract version",
@@ -307,23 +296,18 @@ async fn display_inspect_contract(
             table.add_empty_row();
             table.add_row(prettytable::row![
                 Fy->"Functions:",
-                match err {
-                    FetchAbiError::AbiNotSupported => {
-                        format!(
-                            "Contact does not support ABI ({}),\nso there is no way to get detailed information",
-                            "https://github.com/near/abi".yellow()
-                        )
-                    }
-                    FetchAbiError::RpcError(_) => {
-                        "Rpc Error: failed to fetch '__contract_abi' response.\nSo there is no way to get detailed information".to_string()
-                    }
-                    FetchAbiError::UnknownAbiFormat(_) =>{
-                        format!(
-                            "Contact has unknown NEAR ABI format ({}),\nso there is no way to get detailed information",
-                            "https://github.com/near/abi".yellow()
-                        )
-                    }
-                }
+                textwrap::fill(
+                    &format!(
+                        "{}: {}",
+                        match &err {
+                            FetchAbiError::AbiNotSupported => "Info",
+                            FetchAbiError::AbiUnknownFormat(_) |
+                            FetchAbiError::RpcError(_) => "Warning",
+                        },
+                        err
+                    ),
+                    80
+                )
             ]);
             for function in wasmer::Module::from_binary(&wasmer::Store::default(), &contract_code_view.code)
                     .wrap_err_with(|| format!("Could not create new WebAssembly module from Wasm binary for contract <{account_id}>."))?
@@ -413,16 +397,16 @@ async fn get_access_keys(
 
 #[derive(Error, Debug)]
 pub enum FetchContractSourceMetadataError {
-    #[error("Contract source metadata is not available (https://nomicon.io/Standards/SourceMetadata), so there is no way to get detailed information.")]
+    #[error("Contract Source Metadata (https://nomicon.io/Standards/SourceMetadata) is not supported by the contract, so there is no way to get detailed information.")]
     ContractSourceMetadataNotSupported,
-    #[error("Failed to fetch 'contract_source_metadata' response")]
+    #[error("'contract_source_metadata' function call failed due to RPC error, so there is no way to get Contract Source Metadata. See more details about the error:\n\n{0}")]
     RpcError(
         near_jsonrpc_client::errors::JsonRpcError<
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     ),
-    #[error("The contract source metadata format is unknown (https://nomicon.io/Standards/SourceMetadata), so there is no way to get detailed information.")]
-    UnknownContractSourceMetadataFormat(Report),
+    #[error("The contract source metadata format is unknown (https://nomicon.io/Standards/SourceMetadata), so there is no way to get detailed information. See more details about the error:\n\n{0}")]
+    ContractSourceMetadataUnknownFormat(Report),
 }
 
 async fn get_contract_source_metadata(
@@ -465,11 +449,11 @@ async fn get_contract_source_metadata(
             Ok(contract_source_metadata_response) => {
                 return contract_source_metadata_response
                     .call_result()
-                    .map_err(FetchContractSourceMetadataError::UnknownContractSourceMetadataFormat)?
+                    .map_err(FetchContractSourceMetadataError::ContractSourceMetadataUnknownFormat)?
                     .parse_result_from_json::<self::contract_metadata::ContractSourceMetadata>()
                     .wrap_err("Failed to parse contract source metadata")
                     .map_err(
-                        FetchContractSourceMetadataError::UnknownContractSourceMetadataFormat,
+                        FetchContractSourceMetadataError::ContractSourceMetadataUnknownFormat,
                     );
             }
         }
@@ -479,16 +463,16 @@ async fn get_contract_source_metadata(
 
 #[derive(Error, Debug)]
 pub enum FetchAbiError {
-    #[error("Contact does not support ABI (https://github.com/near/abi), so there is no way to get detailed information.")]
+    #[error("Contact does not support NEAR ABI (https://github.com/near/abi), so there is no way to get details about the function argument and return values.")]
     AbiNotSupported,
-    #[error("Failed to fetch '__contract_abi' response")]
+    #[error("The contact has unknown NEAR ABI format (https://github.com/near/abi), so there is no way to get details about the function argument and return values. See more details about the error:\n\n{0}")]
+    AbiUnknownFormat(Report),
+    #[error("'__contract_abi' function call failed due to RPC error, so there is no way to get details about the function argument and return values. See more details about the error:\n\n{0}")]
     RpcError(
         near_jsonrpc_client::errors::JsonRpcError<
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     ),
-    #[error("Contact has unknown NEAR ABI format (https://github.com/near/abi), so there is no way to get detailed information.")]
-    UnknownAbiFormat(Report),
 }
 
 pub async fn get_contract_abi(
@@ -533,15 +517,15 @@ pub async fn get_contract_abi(
                     &zstd::decode_all(
                         contract_abi_response
                             .call_result()
-                            .map_err(FetchAbiError::UnknownAbiFormat)?
+                            .map_err(FetchAbiError::AbiUnknownFormat)?
                             .result
                             .as_slice(),
                     )
                     .wrap_err("Failed to 'zstd::decode_all' NEAR ABI")
-                    .map_err(FetchAbiError::UnknownAbiFormat)?,
+                    .map_err(FetchAbiError::AbiUnknownFormat)?,
                 )
                 .wrap_err("Failed to parse NEAR ABI schema")
-                .map_err(FetchAbiError::UnknownAbiFormat);
+                .map_err(FetchAbiError::AbiUnknownFormat);
             }
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
