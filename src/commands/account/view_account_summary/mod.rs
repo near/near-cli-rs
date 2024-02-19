@@ -81,28 +81,33 @@ impl ViewAccountSummaryContext {
                         .try_collect(),
                     )?;
 
-                let contract_account_id = network_config.get_near_social_account_id_from_network()?;
+                let optional_account_profile =
+                    if let Ok(contract_account_id) = network_config.get_near_social_account_id_from_network() {
+                        let mut social_db = network_config
+                            .json_rpc_client()
+                            .blocking_call_view_function(
+                                &contract_account_id,
+                                "get",
+                                serde_json::to_vec(&serde_json::json!({
+                                    "keys": vec![format!("{account_id}/profile/**")],
+                                }))?,
+                                block_reference.clone(),
+                            )
+                            .wrap_err_with(|| {
+                                format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",
+                                    contract_account_id,
+                                    network_config.network_name
+                                )
+                            })?
+                            .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
+                            .wrap_err_with(|| {
+                                format!("Failed to parse view function call return value for {account_id}/profile.")
+                            })?;
 
-                let social_db = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_function(
-                        &contract_account_id,
-                        "get",
-                        serde_json::to_vec(&serde_json::json!({
-                            "keys": vec![format!("{account_id}/profile/**")],
-                        }))?,
-                        block_reference.clone(),
-                    )
-                    .wrap_err_with(|| {
-                        format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",
-                            contract_account_id,
-                            network_config.network_name
-                        )
-                    })?
-                    .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
-                    .wrap_err_with(|| {
-                        format!("Failed to parse view function call return value for {account_id}/profile.")
-                    })?;
+                        social_db.accounts.remove(&account_id)
+                    } else {
+                        None
+                    };
 
                 crate::common::display_account_info(
                     &rpc_query_response.block_hash,
@@ -111,7 +116,7 @@ impl ViewAccountSummaryContext {
                     &delegated_stake,
                     &account_view,
                     &access_key_list.keys,
-                    social_db.accounts.get(&account_id)
+                    optional_account_profile.as_ref()
                 );
 
                 Ok(())
