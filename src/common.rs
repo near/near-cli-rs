@@ -1570,7 +1570,7 @@ pub fn display_account_info(
     >,
     account_view: &near_primitives::views::AccountView,
     access_keys: &[near_primitives::views::AccessKeyInfoView],
-    optional_account_profile: Option<near_socialdb_client::types::socialdb_types::AccountProfile>,
+    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
     let mut table: Table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
@@ -1643,7 +1643,7 @@ pub fn display_account_profile(
     viewed_at_block_hash: &CryptoHash,
     viewed_at_block_height: &near_primitives::types::BlockHeight,
     account_id: &near_primitives::types::AccountId,
-    optional_account_profile: Option<near_socialdb_client::types::socialdb_types::AccountProfile>,
+    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
     let mut table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
@@ -1661,7 +1661,7 @@ fn profile_table(
     viewed_at_block_hash: &CryptoHash,
     viewed_at_block_height: &near_primitives::types::BlockHeight,
     account_id: &near_primitives::types::AccountId,
-    optional_account_profile: Option<near_socialdb_client::types::socialdb_types::AccountProfile>,
+    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
     table: &mut Table,
 ) {
     if let Some(account_profile) = optional_account_profile {

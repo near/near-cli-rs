@@ -83,7 +83,7 @@ impl ViewAccountSummaryContext {
 
                 let optional_account_profile =
                     if let Ok(contract_account_id) = network_config.get_near_social_account_id_from_network() {
-                        let social_db = network_config
+                        let mut social_db = network_config
                             .json_rpc_client()
                             .blocking_call_view_function(
                                 &contract_account_id,
@@ -104,7 +104,7 @@ impl ViewAccountSummaryContext {
                                 format!("Failed to parse view function call return value for {account_id}/profile.")
                             })?;
 
-                        social_db.accounts.get(&account_id).cloned()
+                        social_db.accounts.remove(&account_id)
                     } else {
                         None
                     };
@@ -116,7 +116,7 @@ impl ViewAccountSummaryContext {
                     &delegated_stake,
                     &account_view,
                     &access_key_list.keys,
-                    optional_account_profile
+                    optional_account_profile.as_ref()
                 );
 
                 Ok(())
