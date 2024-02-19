@@ -218,12 +218,15 @@ async fn display_inspect_contract(
     match get_contract_abi(&json_rpc_client, &block_reference, account_id).await {
         Ok(abi_root) => {
             table.add_row(prettytable::row![
-                Fy->"Schema version",
+                Fy->"NEAR ABI version",
                 abi_root.schema_version
             ]);
-            table.add_row(prettytable::row![Fy->"Functions:"]);
             table.printstd();
 
+            println!(
+                "\n {} (hint: you can download full JSON Schema using `download-abi` command)",
+                "Functions:".yellow()
+            );
             for function in abi_root.body.functions {
                 let mut table_func = prettytable::Table::new();
                 table_func.set_format(*prettytable::format::consts::FORMAT_CLEAN);
@@ -251,7 +254,7 @@ async fn display_inspect_contract(
                                 "{} ",
                                 match modifier {
                                     near_abi::AbiFunctionModifier::Init => "init".red(),
-                                    near_abi::AbiFunctionModifier::Payable => "payble".red(),
+                                    near_abi::AbiFunctionModifier::Payable => "payable".red(),
                                     near_abi::AbiFunctionModifier::Private => "private".red(),
                                 }
                             );
@@ -293,22 +296,25 @@ async fn display_inspect_contract(
             }
         }
         Err(err) => {
-            table.add_empty_row();
             table.add_row(prettytable::row![
-                Fy->"Functions:",
+                Fy->"NEAR ABI version",
                 textwrap::fill(
                     &format!(
                         "{}: {}",
                         match &err {
                             FetchAbiError::AbiNotSupported => "Info",
-                            FetchAbiError::AbiUnknownFormat(_) |
-                            FetchAbiError::RpcError(_) => "Warning",
+                            FetchAbiError::AbiUnknownFormat(_) | FetchAbiError::RpcError(_) => "Warning",
                         },
                         err
                     ),
                     80
                 )
             ]);
+            table.printstd();
+            println!(
+                "\n {} (NEAR ABI is not available, so only function names are extracted)\n",
+                "Functions:".yellow()
+            );
 
             let parser = wasmparser::Parser::new(0);
             for payload in parser.parse_all(&contract_code_view.code) {
@@ -323,18 +329,16 @@ async fn display_inspect_contract(
                         let export = export
                             .wrap_err_with(|| format!("Could not parse WebAssembly export section of the contract <{account_id}>."))?;
                         if let wasmparser::ExternalKind::Func = export.kind {
-                            table.add_row(prettytable::row![format!(
-                                "fn {}({}) -> {}",
+                            println!(
+                                " fn {}({}) -> {}\n",
                                 export.name.green(),
                                 "...".yellow(),
                                 "...".blue()
-                            ),]);
+                            );
                         }
                     }
                 }
             }
-
-            table.printstd();
         }
     }
 
