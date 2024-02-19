@@ -25,7 +25,7 @@ impl UnstakeContext {
                 let signer_id = previous_context.account_id.clone();
                 let validator_account_id: near_primitives::types::AccountId =
                     scope.validator_account_id.clone().into();
-                let amount = scope.amount.as_yoctonear();
+                let amount = scope.amount;
 
                 move |_network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
@@ -35,7 +35,7 @@ impl UnstakeContext {
                             Box::new(near_primitives::transaction::FunctionCallAction {
                                 method_name: "unstake".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({
-                                    "amount": amount.to_string(),
+                                    "amount": amount,
                                 }))?,
                                 gas: crate::common::NearGas::from_tgas(50).as_gas(),
                                 deposit: 0,

@@ -5,6 +5,8 @@ const ONE_NEAR: u128 = 10u128.pow(24);
     Default,
     Clone,
     Copy,
+    serde::Serialize,
+    serde::Deserialize,
     derive_more::AsRef,
     derive_more::From,
     derive_more::Into,
