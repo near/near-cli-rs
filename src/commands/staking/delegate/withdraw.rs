@@ -25,7 +25,7 @@ impl WithdrawContext {
                 let signer_id = previous_context.account_id.clone();
                 let validator_account_id: near_primitives::types::AccountId =
                     scope.validator_account_id.clone().into();
-                let amount = scope.amount.as_yoctonear();
+                let amount = scope.amount;
 
                 move |_network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
