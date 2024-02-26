@@ -10,33 +10,42 @@ Just run `near` and let it guide you through!
 
 ## Install
 
-You can find binary releases of `near` CLI for your OS on the [Releases page](https://github.com/near/near-cli-rs/releases/).
+Visit [Releases page](https://github.com/near/near-cli-rs/releases/) to see the latest updates.
 
-### Install prebuilt binaries via shell script (macOS, Linux, WSL)
+<details>
+  <summary>Install prebuilt binaries via shell script (macOS, Linux, WSL)</summary>
 
 ```sh
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
 ```
+</details>
 
-### Install prebuilt binaries via powershell script (Windows)
+<details>
+  <summary>Install prebuilt binaries via powershell script (Windows)</summary>
 
 ```sh
 irm https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.ps1 | iex
 ```
+</details>
 
-### Run prebuilt binaries with npx (Node.js)
+<details>
+  <summary>Run prebuilt binaries with npx (Node.js)</summary>
 
 ```sh
 npx near-cli-rs
 ```
+</details>
 
-### Install prebuilt binaries into your npm project (Node.js)
+<details>
+  <summary>Install prebuilt binaries into your npm project (Node.js)</summary>
 
 ```sh
 npm install near-cli-rs
 ```
+</details>
 
-### Install from source code (Cargo)
+<details>
+  <summary>Compile and install from the source code (Cargo)</summary>
 
 Install it with `cargo`, just make sure you have [Rust](https://rustup.rs) installed on your computer.
 
@@ -49,8 +58,10 @@ or, install the most recent version from git repository:
 ```bash
 $ cargo install --git https://github.com/near/near-cli-rs
 ```
+</details>
 
-### Install on CI (GitHub Actions)
+<details>
+  <summary>Install on CI (GitHub Actions)</summary>
 
 It is often desirable to use `near` CLI from CI to automate some actions, so here is an example of how you can make a function call during CI:
 
@@ -86,7 +97,8 @@ jobs:
 
 You will need to configure GitHub Actions Secrets and Variables and once it is ready, this CI will only take a couple of _seconds_ to complete!
 
-See how it is used in [near/devgigsboard](https://github.com/near/devgigsboard).
+See how it is used by [DevHub]([https://github.com/near/devgigsboard](https://github.com/NEAR-DevHub/neardevhub-contract/blob/05fb66ac307d84347f29e8e3ab9f429a78cb6513/.github/workflows/release.yml#L30-L41)).
+</details>
 
 ## Run
 
