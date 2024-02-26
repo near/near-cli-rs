@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1](https://github.com/near/near-cli-rs/compare/v0.8.0...v0.8.1) - 2024-02-26
+
+### Fixed
+- Added support for viewing account summary on networks without NEAR Social contract ([#302](https://github.com/near/near-cli-rs/pull/302))
+
+### Other
+- Improved formatting of the Install section in the README
+
 ## [0.8.0](https://github.com/near/near-cli-rs/compare/v0.7.8...v0.8.0) - 2024-02-19
 
 ### Added
