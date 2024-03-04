@@ -563,8 +563,13 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "--", "create account:", &transaction.receiver_id
                 )
             }
-            near_primitives::transaction::Action::DeployContract(_) => {
-                eprintln!("{:>5} {:<20}", "--", "deploy contract")
+            near_primitives::transaction::Action::DeployContract(code) => {
+                let code_hash = CryptoHash::hash_bytes(&code.code);
+                eprintln!(
+                    "{:>5} {:<70}",
+                    "--",
+                    format!("deploy contract {:?}", code_hash)
+                )
             }
             near_primitives::transaction::Action::FunctionCall(function_call_action) => {
                 eprintln!("{:>5} {:<20}", "--", "function call:");
