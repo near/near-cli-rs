@@ -1,4 +1,4 @@
-use inquire::Text;
+use inquire::CustomType;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod use_auto_generation;
@@ -65,17 +65,14 @@ impl SaveToFolder {
         context: &SaveImplicitAccountContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
         eprintln!();
-        let input_folder_path: String = Text::new("Where to save the implicit account file?")
-            .with_initial_value(
-                format!(
+        Ok(Some(
+            CustomType::new("Where to save the implicit account file?")
+                .with_starting_input(&format!(
                     "{}/implicit",
                     context.config.credentials_home_dir.to_string_lossy()
-                )
-                .as_str(),
-            )
-            .prompt()?;
-        let folder_path = shellexpand::tilde(&input_folder_path).as_ref().parse()?;
-        Ok(Some(folder_path))
+                ))
+                .prompt()?,
+        ))
     }
 }
 
