@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use inquire::{CustomType, Select, Text};
+use inquire::{CustomType, Select};
 
 use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
 
@@ -135,15 +133,11 @@ impl NewAccount {
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         eprintln!();
-        match crate::types::near_token::NearToken::from_str(&Text::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
-            .with_initial_value("0.1 NEAR")
-            .prompt()?
-            ) {
-                Ok(initial_balance) => Ok(Some(initial_balance)),
-                Err(err) => Err(color_eyre::Report::msg(
-                    err,
-                ))
-            }
+        Ok(Some(
+            CustomType::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
+                .with_starting_input("0.1 NEAR")
+                .prompt()?
+        ))
     }
 }
 

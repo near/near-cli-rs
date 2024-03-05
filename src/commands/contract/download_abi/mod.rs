@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use color_eyre::eyre::Context;
-use inquire::Text;
+use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -100,14 +100,13 @@ impl DownloadContractAbi {
     fn input_file_path(
         context: &ContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
-        let input_file_path =
-            Text::new("Enter the file path where the contract ABI should be saved to:")
-                .with_initial_value(&format!(
+        Ok(Some(
+            CustomType::new("Enter the file path where the contract ABI should be saved to:")
+                .with_starting_input(&format!(
                     "{}.abi.json",
                     context.account_id.as_str().replace('.', "_")
                 ))
-                .prompt()?;
-
-        Ok(Some(shellexpand::tilde(&input_file_path).as_ref().parse()?))
+                .prompt()?,
+        ))
     }
 }

@@ -1,7 +1,5 @@
-use std::str::FromStr;
-
 use color_eyre::eyre::{ContextCompat, WrapErr};
-use inquire::{CustomType, Select, Text};
+use inquire::{CustomType, Select};
 use near_primitives::borsh;
 use slip10::BIP32Path;
 
@@ -317,13 +315,9 @@ impl SignLedger {
     pub fn input_seed_phrase_hd_path(
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
         Ok(Some(
-            crate::types::slip10::BIP32Path::from_str(
-                &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
-                    .with_initial_value("44'/397'/0'/0'/1'")
-                    .prompt()
-                    .unwrap(),
-            )
-            .unwrap(),
+            CustomType::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
+                .with_starting_input("44'/397'/0'/0'/1'")
+                .prompt()?,
         ))
     }
 

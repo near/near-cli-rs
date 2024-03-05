@@ -1,8 +1,7 @@
 use std::io::Write;
-use std::str::FromStr;
 
 use color_eyre::eyre::Context;
-use inquire::Text;
+use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -76,13 +75,9 @@ impl SaveWithSeedPhrase {
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
         Ok(Some(
-            crate::types::slip10::BIP32Path::from_str(
-                &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
-                    .with_initial_value("m/44'/397'/0'")
-                    .prompt()
-                    .unwrap(),
-            )
-            .unwrap(),
+            CustomType::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
+                .with_starting_input("m/44'/397'/0'")
+                .prompt()?,
         ))
     }
 }

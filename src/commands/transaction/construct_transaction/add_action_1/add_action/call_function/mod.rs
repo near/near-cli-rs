@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use inquire::Text;
+use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
@@ -107,23 +105,22 @@ impl PrepaidGas {
         _context: &FunctionCallActionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         eprintln!();
-        let gas = loop {
-            match crate::common::NearGas::from_str(
-                &Text::new("Enter gas for function call:")
-                    .with_initial_value("100 TeraGas")
-                    .prompt()?,
-            ) {
-                Ok(input_gas) => {
-                    if input_gas <= near_gas::NearGas::from_tgas(300) {
-                        break input_gas;
+        Ok(Some(
+            CustomType::new("Enter gas for function call:")
+                .with_starting_input("100 TeraGas")
+                .with_validator(move |gas: &crate::common::NearGas| {
+                    if gas > &near_gas::NearGas::from_tgas(300) {
+                        Ok(inquire::validator::Validation::Invalid(
+                            inquire::validator::ErrorMessage::Custom(
+                                "You need to enter a value of no more than 300 TeraGas".to_string(),
+                            ),
+                        ))
                     } else {
-                        eprintln!("You need to enter a value of no more than 300 TERAGAS")
+                        Ok(inquire::validator::Validation::Valid)
                     }
-                }
-                Err(err) => return Err(color_eyre::Report::msg(err)),
-            }
-        };
-        Ok(Some(gas))
+                })
+                .prompt()?,
+        ))
     }
 }
 
@@ -176,15 +173,10 @@ impl Deposit {
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         eprintln!();
-        match crate::types::near_token::NearToken::from_str(
-            &Text::new(
-                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
-            )
-            .with_initial_value("0 NEAR")
-            .prompt()?,
-        ) {
-            Ok(deposit) => Ok(Some(deposit)),
-            Err(err) => Err(color_eyre::Report::msg(err)),
-        }
+        Ok(Some(
+            CustomType::new("Enter deposit for a function call (example: 10 NEAR or 0.5 near or 10000 yoctonear):")
+                .with_starting_input("0 NEAR")
+                .prompt()?
+        ))
     }
 }
