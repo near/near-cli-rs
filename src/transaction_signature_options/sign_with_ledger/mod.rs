@@ -1,9 +1,16 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
+use near_ledger::NEARLedgerError;
 use near_primitives::borsh;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
+
+const SW_BUFFER_OVERFLOW: &str = "0x6990";
+const ERR_OVERFLOW_MEMO: &str = "Buffer overflow on Ledger device occured. \
+Transaction is too large for signature. \
+This is resolved in https://github.com/dj8yfo/app-near-rs . \
+The status is tracked in `About` section.";
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -99,6 +106,9 @@ impl SignLedgerContext {
             Ok(signature) => {
                 near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
                     .wrap_err("Signature is not expected to fail on deserialization")?
+            }
+            Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
+                return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
             }
             Err(near_ledger_error) => {
                 return Err(color_eyre::Report::msg(format!(
