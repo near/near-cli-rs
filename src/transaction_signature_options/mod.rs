@@ -1,8 +1,9 @@
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::JsonRpcClientExt;
-
+pub mod display;
+pub mod save_to_file;
+pub mod send;
 pub mod sign_later;
 pub mod sign_with_access_key_file;
 pub mod sign_with_keychain;
@@ -54,206 +55,29 @@ pub enum SignWith {
         message = "sign-later                       - Prepare an unsigned transaction to sign it later"
     ))]
     /// Prepare unsigned transaction to sign it later
-    SignLater(self::sign_later::Display),
+    SignLater(self::sign_later::SignLater),
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = SubmitContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-#[interactive_clap(skip_default_from_cli)]
 /// How would you like to proceed?
 pub enum Submit {
-    #[strum_discriminants(strum(message = "send      - Send the transaction to the network"))]
-    /// Send the transaction to the network
-    Send,
     #[strum_discriminants(strum(
-        message = "display   - Print the signed transaction to terminal (if you want to send it later)"
+        message = "send             - Send the transaction to the network"
+    ))]
+    /// Send the transaction to the network
+    Send(self::send::Send),
+    #[strum_discriminants(strum(
+        message = "save-to-file     - Save the signed transaction to file (if you want to send it later)"
+    ))]
+    /// Save the signed transaction to file (if you want to send it later)
+    SaveToFile(self::save_to_file::SaveToFile),
+    #[strum_discriminants(strum(
+        message = "display          - Print the signed transaction to terminal (if you want to send it later)"
     ))]
     /// Print the signed transaction to terminal (if you want to send it later)
-    Display,
-}
-
-impl interactive_clap::FromCli for Submit {
-    type FromCliContext = SubmitContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        mut optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    >
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let mut storage_message = String::new();
-
-        if optional_clap_variant.is_none() {
-            match Self::choose_variant(context.clone()) {
-                interactive_clap::ResultFromCli::Ok(cli_submit) => {
-                    optional_clap_variant = Some(cli_submit)
-                }
-                result => return result,
-            }
-        }
-
-        match optional_clap_variant {
-            Some(CliSubmit::Send) => match context.signed_transaction_or_signed_delegate_action {
-                SignedTransactionOrSignedDelegateAction::SignedTransaction(signed_transaction) => {
-                    if let Err(report) = (context.on_before_sending_transaction_callback)(
-                        &signed_transaction,
-                        &context.network_config,
-                        &mut storage_message,
-                    ) {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        );
-                    };
-
-                    eprintln!("Transaction sent ...");
-                    let transaction_info = loop {
-                        let transaction_info_result = context.network_config.json_rpc_client()
-                        .blocking_call(
-                            near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{
-                                signed_transaction: signed_transaction.clone()
-                            }
-                        );
-                        match transaction_info_result {
-                            Ok(response) => {
-                                break response;
-                            }
-                            Err(err) => match crate::common::rpc_transaction_error(err) {
-                                Ok(_) => std::thread::sleep(std::time::Duration::from_millis(100)),
-                                Err(report) => {
-                                    return interactive_clap::ResultFromCli::Err(
-                                        optional_clap_variant,
-                                        color_eyre::Report::msg(report),
-                                    )
-                                }
-                            },
-                        };
-                    };
-                    if let Err(report) = crate::common::print_transaction_status(
-                        &transaction_info,
-                        &context.network_config,
-                    ) {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        );
-                    };
-                    if let Err(report) = (context.on_after_sending_transaction_callback)(
-                        &transaction_info,
-                        &context.network_config,
-                    ) {
-                        return interactive_clap::ResultFromCli::Err(
-                            optional_clap_variant,
-                            color_eyre::Report::msg(report),
-                        );
-                    };
-                    eprintln!("{storage_message}");
-                    interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
-                }
-                SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
-                    signed_delegate_action,
-                ) => {
-                    let client = reqwest::blocking::Client::new();
-                    let json_payload = serde_json::json!({
-                        "signed_delegate_action": crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
-                            signed_delegate_action
-                        ).to_string()
-                    });
-                    match client
-                        .post(
-                            context
-                                .network_config
-                                .meta_transaction_relayer_url
-                                .expect("Internal error: Meta-transaction relayer URL must be Some() at this point"),
-                        )
-                        .json(&json_payload)
-                        .send()
-                    {
-                        Ok(relayer_response) => {
-                            if relayer_response.status().is_success() {
-                                let response_text = match relayer_response.text() {
-                                    Ok(text) => text,
-                                    Err(report) => {
-                                        return interactive_clap::ResultFromCli::Err(
-                                            optional_clap_variant,
-                                            color_eyre::Report::msg(report),
-                                        )
-                                    }
-                                };
-                                println!("Relayer Response text: {}", response_text);
-                            } else {
-                                println!(
-                                    "Request failed with status code: {}",
-                                    relayer_response.status()
-                                );
-                            }
-                        }
-                        Err(report) => {
-                            return interactive_clap::ResultFromCli::Err(
-                                optional_clap_variant,
-                                color_eyre::Report::msg(report),
-                            )
-                        }
-                    }
-                    eprintln!("{storage_message}");
-                    interactive_clap::ResultFromCli::Ok(CliSubmit::Send)
-                }
-            },
-            Some(CliSubmit::Display) => {
-                match context.signed_transaction_or_signed_delegate_action {
-                    SignedTransactionOrSignedDelegateAction::SignedTransaction(
-                        signed_transaction,
-                    ) => {
-                        if let Err(report) = (context.on_before_sending_transaction_callback)(
-                            &signed_transaction,
-                            &context.network_config,
-                            &mut storage_message,
-                        ) {
-                            return interactive_clap::ResultFromCli::Err(
-                                optional_clap_variant,
-                                color_eyre::Report::msg(report),
-                            );
-                        };
-                        eprintln!(
-                            "\nSigned transaction (serialized as base64):\n{}\n",
-                            crate::types::signed_transaction::SignedTransactionAsBase64::from(
-                                signed_transaction
-                            )
-                        );
-                        eprintln!(
-                            "This base64-encoded signed transaction is ready to be sent to the network. You can call RPC server directly, or use a helper command on near CLI:\n$ {} transaction send-signed-transaction\n",
-                            crate::common::get_near_exec_path()
-                        );
-                        eprintln!("{storage_message}");
-                        interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
-                    }
-                    SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
-                        signed_delegate_action,
-                    ) => {
-                        eprintln!(
-                            "\nSigned delegate action (serialized as base64):\n{}\n",
-                            crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
-                                signed_delegate_action
-                            )
-                        );
-                        eprintln!(
-                            "This base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n",
-                            crate::common::get_near_exec_path()
-                        );
-                        eprintln!("{storage_message}");
-                        interactive_clap::ResultFromCli::Ok(CliSubmit::Display)
-                    }
-                }
-            }
-            None => unreachable!("Unexpected error"),
-        }
-    }
+    Display(self::display::Display),
 }
 
 #[derive(Debug, Deserialize)]
