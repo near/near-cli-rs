@@ -55,7 +55,7 @@ pub enum SignWith {
         message = "sign-later                       - Prepare an unsigned transaction to sign it later"
     ))]
     /// Prepare unsigned transaction to sign it later
-    SignLater(self::sign_later::Display),
+    SignLater(self::sign_later::SignLater),
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
