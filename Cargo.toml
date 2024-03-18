@@ -92,6 +92,10 @@ keyring = "2.0.5"
 interactive-clap = "0.2.8"
 interactive-clap-derive = "0.2.8"
 
+[patch.crates-io]
+interactive-clap = {path = "/Users/frovolod/Documents2/Rust/hello-macro/macro-proba/interactive_clap/"}
+interactive-clap-derive = {path = "/Users/frovolod/Documents2/Rust/hello-macro/macro-proba/interactive_clap/interactive-clap-derive/"}
+
 [features]
 default = ["ledger", "self-update"]
 ledger = ["near-ledger"]
