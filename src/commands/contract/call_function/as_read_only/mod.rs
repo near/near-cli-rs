@@ -1,5 +1,6 @@
 use color_eyre::eyre::Context;
 use inquire::Select;
+use interactive_clap::ToCliArgs;
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
@@ -49,7 +50,7 @@ impl interactive_clap::FromCli for CallFunctionView {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+        let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
 
         if clap_variant.contract_account_id.is_none() {
             clap_variant.contract_account_id = match Self::input_contract_account_id(&context) {
@@ -68,7 +69,10 @@ impl interactive_clap::FromCli for CallFunctionView {
             contract_account_id: contract_account_id.clone().into(),
         };
 
-        let function = match Function::from_cli(Some(CliFunction::default()), output_context) {
+        let function = match Function::from_cli(
+            optional_clap_variant.unwrap_or_default().function,
+            output_context,
+        ) {
             interactive_clap::ResultFromCli::Ok(function) => function,
             interactive_clap::ResultFromCli::Cancel(optional_function) => {
                 clap_variant.function = optional_function;
@@ -80,10 +84,9 @@ impl interactive_clap::FromCli for CallFunctionView {
                 return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
             }
         };
-        interactive_clap::ResultFromCli::Ok(
-        CliCallFunctionView {
+        interactive_clap::ResultFromCli::Ok(CliCallFunctionView {
             contract_account_id: Some(contract_account_id),
-            function: Some(function)
+            function: Some(function),
         })
     }
 }
@@ -115,6 +118,13 @@ pub struct Function {
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
+}
+
+impl std::fmt::Display for CliFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let cli_args: Vec<String> = self.to_cli_args().into();
+        write!(f, "{}", cli_args.join(" "))
+    }
 }
 
 #[derive(Clone)]
@@ -199,13 +209,4 @@ impl Function {
 
         Ok(Some(function_name.to_string()))
     }
-
-    // pub fn input_contract_account_id(
-    //     context: &CallFunctionViewContext,
-    // ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-    //     crate::common::input_non_signer_account_id_from_used_account_list(
-    //         &context.global_context.config.credentials_home_dir,
-    //         "What is the contract account ID?",
-    //     )
-    // }
 }
