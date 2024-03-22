@@ -1,19 +1,18 @@
 use color_eyre::eyre::Context;
-use inquire::Select;
-use interactive_clap::ToCliArgs;
+use inquire::{Select, Text};
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
 
+use super::super::inspect::get_contract_abi;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = CallFunctionViewContext)]
-#[interactive_clap(skip_default_from_cli)]
 pub struct CallFunctionView {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the contract account ID?
     contract_account_id: crate::types::account_id::AccountId,
-    #[interactive_clap(skip_default_input_arg)]
     #[interactive_clap(flatten)]
     /// Select function
     function: Function,
@@ -33,60 +32,6 @@ impl CallFunctionViewContext {
         Ok(Self {
             global_context: previous_context,
             contract_account_id: scope.contract_account_id.clone().into(),
-        })
-    }
-}
-
-impl interactive_clap::FromCli for CallFunctionView {
-    type FromCliContext = crate::GlobalContext;
-    type FromCliError = color_eyre::eyre::Error;
-    fn from_cli(
-        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    >
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
-
-        if clap_variant.contract_account_id.is_none() {
-            clap_variant.contract_account_id = match Self::input_contract_account_id(&context) {
-                Ok(Some(contract_account_id)) => Some(contract_account_id),
-                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let contract_account_id = clap_variant
-            .contract_account_id
-            .clone()
-            .expect("Unexpected error");
-
-        let output_context = CallFunctionViewContext {
-            global_context: context,
-            contract_account_id: contract_account_id.clone().into(),
-        };
-
-        let function = match Function::from_cli(
-            optional_clap_variant.unwrap_or_default().function,
-            output_context,
-        ) {
-            interactive_clap::ResultFromCli::Ok(function) => function,
-            interactive_clap::ResultFromCli::Cancel(optional_function) => {
-                clap_variant.function = optional_function;
-                return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
-            }
-            interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
-            interactive_clap::ResultFromCli::Err(optional_function, err) => {
-                clap_variant.function = optional_function;
-                return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
-            }
-        };
-        interactive_clap::ResultFromCli::Ok(CliCallFunctionView {
-            contract_account_id: Some(contract_account_id),
-            function: Some(function),
         })
     }
 }
@@ -118,13 +63,6 @@ pub struct Function {
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
-}
-
-impl std::fmt::Display for CliFunction {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let cli_args: Vec<String> = self.to_cli_args().into();
-        write!(f, "{}", cli_args.join(" "))
-    }
 }
 
 #[derive(Clone)]
@@ -200,12 +138,46 @@ impl Function {
     }
 
     fn input_function_name(
-        _context: &CallFunctionViewContext,
+        context: &CallFunctionViewContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        let options = vec!["qwe", "asd", "zxc", "new", "unsafe_self_upgrade", "get_num"];
+        let network_config = crate::common::find_network_where_account_exist(
+            &context.global_context,
+            context.contract_account_id.clone(),
+        );
+
+        let functions: Vec<String> = if let Some(network_config) = network_config {
+            let json_rpc_client = network_config.json_rpc_client();
+            match tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(get_contract_abi(
+                    &json_rpc_client,
+                    &near_primitives::types::Finality::Final.into(),
+                    &context.contract_account_id,
+                )) {
+                Ok(abi_root) => abi_root
+                    .body
+                    .functions
+                    .iter()
+                    .filter_map(|function| {
+                        if let near_abi::AbiFunctionKind::View = function.kind {
+                            Some(function.name.clone())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<String>>(),
+                Err(_) => {
+                    return Ok(Some(
+                        Text::new("What is the name of the function?").prompt()?,
+                    ));
+                }
+            }
+        } else {
+            vec![]
+        };
 
         let function_name =
-            Select::new("Select the viewing function for your contract:", options).prompt()?;
+            Select::new("Select the viewing function for your contract:", functions).prompt()?;
 
         Ok(Some(function_name.to_string()))
     }
