@@ -1,10 +1,7 @@
 use color_eyre::eyre::Context;
-use inquire::{Select, Text};
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
-
-use super::super::inspect::get_contract_abi;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -140,45 +137,6 @@ impl Function {
     fn input_function_name(
         context: &CallFunctionViewContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        let network_config = crate::common::find_network_where_account_exist(
-            &context.global_context,
-            context.contract_account_id.clone(),
-        );
-
-        let functions: Vec<String> = if let Some(network_config) = network_config {
-            let json_rpc_client = network_config.json_rpc_client();
-            match tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(get_contract_abi(
-                    &json_rpc_client,
-                    &near_primitives::types::Finality::Final.into(),
-                    &context.contract_account_id,
-                )) {
-                Ok(abi_root) => abi_root
-                    .body
-                    .functions
-                    .iter()
-                    .filter_map(|function| {
-                        if let near_abi::AbiFunctionKind::View = function.kind {
-                            Some(function.name.clone())
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<Vec<String>>(),
-                Err(_) => {
-                    return Ok(Some(
-                        Text::new("What is the name of the function?").prompt()?,
-                    ));
-                }
-            }
-        } else {
-            vec![]
-        };
-
-        let function_name =
-            Select::new("Select the viewing function for your contract:", functions).prompt()?;
-
-        Ok(Some(function_name.to_string()))
+        super::input_view_function_name(&context.global_context, &context.contract_account_id)
     }
 }
