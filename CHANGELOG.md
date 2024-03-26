@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0](https://github.com/near/near-cli-rs/compare/v0.8.1...v0.9.0) - 2024-03-26
+
+### Added
+- Added ability to select contract function from NEAR ABI functions ([#314](https://github.com/near/near-cli-rs/pull/314))
+- Added the ability to output a signed transaction (serialized as base64) to a file ([#313](https://github.com/near/near-cli-rs/pull/313))
+
+### Other
+- update `near-ledger` to `0.5.0` ([#309](https://github.com/near/near-cli-rs/pull/309))
+- Upgraded `inquire` crate to use CustomType inputs where initial value is needed ([#310](https://github.com/near/near-cli-rs/pull/310))
+
 ## [0.8.1](https://github.com/near/near-cli-rs/compare/v0.8.0...v0.8.1) - 2024-02-26
 
 ### Fixed
