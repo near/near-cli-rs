@@ -60,38 +60,31 @@ fn input_function_name(
         contract_account_id.clone(),
     );
 
-    let functions: Vec<String> = if let Some(network_config) = network_config {
+    if let Some(network_config) = network_config {
         let json_rpc_client = network_config.json_rpc_client();
-        match tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(super::inspect::get_contract_abi(
-                &json_rpc_client,
-                &near_primitives::types::Finality::Final.into(),
-                contract_account_id,
-            )) {
-            Ok(abi_root) => abi_root
+        if let Ok(contract_abi) =
+            tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(super::inspect::get_contract_abi(
+                    &json_rpc_client,
+                    &near_primitives::types::Finality::Final.into(),
+                    contract_account_id,
+                ))
+        {
+            let function_names = contract_abi
                 .body
                 .functions
-                .iter()
-                .filter_map(|function| {
-                    if function_kind == function.kind {
-                        Some(function.name.clone())
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<String>>(),
-            Err(_) => {
-                return Ok(Some(
-                    Text::new("What is the name of the function?").prompt()?,
-                ));
-            }
+                .into_iter()
+                .filter(|function| function_kind == function.kind)
+                .map(|function| function.name)
+                .collect::<Vec<String>>();
+            return Ok(Some(
+                Select::new(message, function_names).prompt()?.to_string(),
+            ));
         }
-    } else {
-        vec![]
-    };
+    }
 
-    let function_name = Select::new(message, functions).prompt()?;
-
-    Ok(Some(function_name.to_string()))
+    Ok(Some(
+        Text::new("What is the name of the function?").prompt()?,
+    ))
 }
