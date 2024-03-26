@@ -2,11 +2,50 @@ use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = CallFunctionPropertiesContext)]
-pub struct CallFunctionProperties {
+#[interactive_clap(output_context = CallFunctionContext)]
+pub struct CallFunction {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the contract account ID?
     contract_account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(flatten)]
+    /// Select function
+    function: Function,
+}
+
+#[derive(Debug, Clone)]
+pub struct CallFunctionContext {
+    global_context: crate::GlobalContext,
+    contract_account_id: near_primitives::types::AccountId,
+}
+
+impl CallFunctionContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<CallFunction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            global_context: previous_context,
+            contract_account_id: scope.contract_account_id.clone().into(),
+        })
+    }
+}
+
+impl CallFunction {
+    pub fn input_contract_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        crate::common::input_non_signer_account_id_from_used_account_list(
+            &context.config.credentials_home_dir,
+            "What is the contract account ID?",
+        )
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = CallFunctionContext)]
+#[interactive_clap(output_context = FunctionContext)]
+pub struct Function {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is the name of the function?
     function_name: String,
     #[interactive_clap(value_enum)]
@@ -20,51 +59,48 @@ pub struct CallFunctionProperties {
     prepaid_gas: PrepaidGas,
 }
 
-#[derive(Debug, Clone)]
-pub struct CallFunctionPropertiesContext {
+#[derive(Clone)]
+pub struct FunctionContext {
     global_context: crate::GlobalContext,
-    receiver_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_primitives::types::AccountId,
     function_name: String,
     function_args: Vec<u8>,
 }
 
-impl CallFunctionPropertiesContext {
+impl FunctionContext {
     pub fn from_previous_context(
-        previous_context: crate::GlobalContext,
-        scope: &<CallFunctionProperties as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        previous_context: CallFunctionContext,
+        scope: &<Function as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let function_args = super::call_function_args_type::function_args(
             scope.function_args.clone(),
             scope.function_args_type.clone(),
         )?;
         Ok(Self {
-            global_context: previous_context,
-            receiver_account_id: scope.contract_account_id.clone().into(),
+            global_context: previous_context.global_context,
+            contract_account_id: previous_context.contract_account_id,
             function_name: scope.function_name.clone(),
             function_args,
         })
     }
 }
 
-impl CallFunctionProperties {
-    pub fn input_contract_account_id(
-        context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_non_signer_account_id_from_used_account_list(
-            &context.config.credentials_home_dir,
-            "What is the contract account ID?",
-        )
-    }
-
+impl Function {
     fn input_function_args_type(
-        _context: &crate::GlobalContext,
+        _context: &CallFunctionContext,
     ) -> color_eyre::eyre::Result<Option<super::call_function_args_type::FunctionArgsType>> {
         super::call_function_args_type::input_function_args_type()
+    }
+
+    fn input_function_name(
+        context: &CallFunctionContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        super::input_call_function_name(&context.global_context, &context.contract_account_id)
     }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = CallFunctionPropertiesContext)]
+#[interactive_clap(input_context = FunctionContext)]
 #[interactive_clap(output_context = PrepaidGasContext)]
 pub struct PrepaidGas {
     #[interactive_clap(skip_default_input_arg)]
@@ -78,7 +114,7 @@ pub struct PrepaidGas {
 #[derive(Debug, Clone)]
 pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
-    receiver_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_primitives::types::AccountId,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
@@ -86,12 +122,12 @@ pub struct PrepaidGasContext {
 
 impl PrepaidGasContext {
     pub fn from_previous_context(
-        previous_context: CallFunctionPropertiesContext,
+        previous_context: FunctionContext,
         scope: &<PrepaidGas as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context.global_context,
-            receiver_account_id: previous_context.receiver_account_id,
+            contract_account_id: previous_context.contract_account_id,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
             gas: scope.gas,
@@ -101,7 +137,7 @@ impl PrepaidGasContext {
 
 impl PrepaidGas {
     fn input_gas(
-        _context: &CallFunctionPropertiesContext,
+        _context: &FunctionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         eprintln!();
         Ok(Some(
@@ -138,7 +174,7 @@ pub struct Deposit {
 #[derive(Debug, Clone)]
 pub struct DepositContext {
     global_context: crate::GlobalContext,
-    receiver_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_primitives::types::AccountId,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
@@ -152,7 +188,7 @@ impl DepositContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context.global_context,
-            receiver_account_id: previous_context.receiver_account_id,
+            contract_account_id: previous_context.contract_account_id,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
             gas: previous_context.gas,
@@ -189,7 +225,7 @@ pub struct SignerAccountId {
 #[derive(Debug, Clone)]
 pub struct SignerAccountIdContext {
     global_context: crate::GlobalContext,
-    receiver_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_primitives::types::AccountId,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
@@ -204,7 +240,7 @@ impl SignerAccountIdContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context.global_context,
-            receiver_account_id: previous_context.receiver_account_id,
+            contract_account_id: previous_context.contract_account_id,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
             gas: previous_context.gas,
@@ -219,7 +255,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
         let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = item.signer_account_id.clone();
-                let receiver_account_id = item.receiver_account_id.clone();
+                let receiver_account_id = item.contract_account_id.clone();
 
                 move |_network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
@@ -239,7 +275,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
 
         Self {
             global_context: item.global_context,
-            interacting_with_account_ids: vec![item.signer_account_id, item.receiver_account_id],
+            interacting_with_account_ids: vec![item.signer_account_id, item.contract_account_id],
             on_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
