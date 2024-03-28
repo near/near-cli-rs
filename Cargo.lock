@@ -2310,6 +2310,7 @@ dependencies = [
  "ed25519-dalek 1.0.1",
  "futures",
  "hex 0.4.3",
+ "indicatif",
  "inquire",
  "interactive-clap",
  "interactive-clap-derive",
