@@ -50,6 +50,7 @@ url = { version = "2", features = ["serde"] }
 open = "4"
 shell-words = "1"
 cargo-util = "0.1.1"
+indicatif = "0.17.8"
 
 wasmparser = "0.200.0"
 

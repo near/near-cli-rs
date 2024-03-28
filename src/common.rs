@@ -766,7 +766,7 @@ fn print_value_successful_transaction(
 }
 
 pub fn rpc_transaction_error(
-    err: near_jsonrpc_client::errors::JsonRpcError<
+    err: &near_jsonrpc_client::errors::JsonRpcError<
         near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError,
     >,
 ) -> CliResult {
