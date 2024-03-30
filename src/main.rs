@@ -2,6 +2,7 @@
 use clap::Parser;
 #[cfg(feature = "self-update")]
 use color_eyre::eyre::WrapErr;
+use color_eyre::owo_colors::OwoColorize;
 use interactive_clap::ToCliArgs;
 
 pub use near_cli_rs::commands;
@@ -112,10 +113,11 @@ fn main() -> crate::common::CliResult {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
         | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
             eprintln!(
-                "\nHere is your console command if you need to script it or re-run:\n{}",
+                "\n\nHere is your console command if you need to script it or re-run:\n{:>3}{}",
+                "",
                 shell_words::join(
                     std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
-                )
+                ).yellow()
             );
             Ok(Some(cli_cmd))
         }
