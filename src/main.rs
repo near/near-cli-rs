@@ -117,7 +117,8 @@ fn main() -> crate::common::CliResult {
                 "",
                 shell_words::join(
                     std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
-                ).yellow()
+                )
+                .yellow()
             );
             Ok(Some(cli_cmd))
         }
