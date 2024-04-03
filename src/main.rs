@@ -4,6 +4,12 @@ use clap::Parser;
 use color_eyre::eyre::WrapErr;
 use interactive_clap::ToCliArgs;
 
+use indicatif::ProgressStyle;
+use tracing_indicatif::IndicatifLayer;
+use tracing_subscriber::fmt::writer::MakeWriterExt;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+
 pub use near_cli_rs::commands;
 pub use near_cli_rs::common::{self, CliResult};
 pub use near_cli_rs::config;
@@ -59,6 +65,32 @@ fn main() -> crate::common::CliResult {
     }
 
     color_eyre::install()?;
+
+    let indicatif_layer = IndicatifLayer::new().with_progress_style(
+        ProgressStyle::with_template(
+            "{spinner:.blue} {span_child_prefix} {span_name} {{{span_fields}}}",
+        )
+        .unwrap()
+        .tick_strings(&[
+            "▹▹▹▹▹",
+            "▸▹▹▹▹",
+            "▹▸▹▹▹",
+            "▹▹▸▹▹",
+            "▹▹▹▸▹",
+            "▹▹▹▹▸",
+            "▪▪▪▪▪",
+        ]),
+    );
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer().with_writer(
+                indicatif_layer
+                    .get_stderr_writer()
+                    .with_max_level(tracing::Level::INFO),
+            ),
+        )
+        .with(indicatif_layer)
+        .init();
 
     #[cfg(feature = "self-update")]
     let handle = std::thread::spawn(|| -> color_eyre::eyre::Result<String> {

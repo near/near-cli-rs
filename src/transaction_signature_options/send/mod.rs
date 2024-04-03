@@ -9,6 +9,7 @@ pub struct Send;
 pub struct SendContext;
 
 impl SendContext {
+    #[tracing::instrument(skip_all, name = "Sending transaction ...")]
     pub fn from_previous_context(
         previous_context: super::SubmitContext,
         _scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -26,35 +27,9 @@ impl SendContext {
                 )
                 .map_err(color_eyre::Report::msg)?;
 
-                // eprintln!("Transaction sent ..."); // long-spinner download iterator
                 let retries_number = 5;
-                let mut retries_left = (0..retries_number).rev();
+                let mut retries = (0..retries_number).rev();
                 let transaction_info = loop {
-                    let pb = indicatif::ProgressBar::new_spinner();
-                    pb.enable_steady_tick(std::time::Duration::from_millis(120));
-                    pb.set_style(
-                        indicatif::ProgressStyle::with_template("{spinner:.blue} {msg}")
-                            .unwrap()
-                            .tick_strings(&[
-                                "▹▹▹▹▹",
-                                "▸▹▹▹▹",
-                                "▹▸▹▹▹",
-                                "▹▹▸▹▹",
-                                "▹▹▹▸▹",
-                                "▹▹▹▹▸",
-                                "▪▪▪▪▪",
-                            ]),
-                    );
-                    if retries_left.len() < retries_number {
-                        pb.set_message(format!(
-                            "Sending a transaction ({} retries left) ...",
-                            retries_left.len() + 1
-                        ));
-                    } else {
-                        pb.set_message("Sending a transaction ...");
-                    }
-                    std::thread::sleep(std::time::Duration::from_secs(5));
-
                     let transaction_info_result = previous_context.network_config.json_rpc_client()
                     .blocking_call(
                         near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{
@@ -63,16 +38,14 @@ impl SendContext {
                     );
                     match transaction_info_result {
                         Ok(response) => {
-                            pb.finish_with_message("Your transaction has been sent successfully.");
                             break response;
                         }
                         Err(ref err) => match crate::common::rpc_transaction_error(err) {
                             Ok(_) => {
-                                if retries_left.next().is_some() {
-                                    std::thread::sleep(std::time::Duration::from_millis(100));
-                                } else {
+                                if retries.next().is_none() {
                                     return Err(color_eyre::eyre::eyre!(err.to_string()));
                                 }
+                                std::thread::sleep(std::time::Duration::from_secs(5));
                             }
                             Err(report) => return Err(color_eyre::Report::msg(report)),
                         },
