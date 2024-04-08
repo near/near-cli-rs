@@ -1,5 +1,3 @@
-use crate::common::JsonRpcClientExt;
-
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
 #[interactive_clap(output_context = SendContext)]
@@ -14,6 +12,7 @@ impl SendContext {
         previous_context: super::SubmitContext,
         _scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        std::thread::sleep(std::time::Duration::from_millis(100));
         let mut storage_message = String::new();
 
         match previous_context.signed_transaction_or_signed_delegate_action {
@@ -30,22 +29,32 @@ impl SendContext {
                 let retries_number = 5;
                 let mut retries = (0..retries_number).rev();
                 let transaction_info = loop {
-                    let transaction_info_result = previous_context.network_config.json_rpc_client()
-                    .blocking_call(
-                        near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{
-                            signed_transaction: signed_transaction.clone()
-                        }
-                    );
+                    let transaction_info_result =
+                        tokio::runtime::Runtime::new()
+                            .unwrap()
+                            .block_on(sending_transaction(
+                                format!(
+                                    "Broadcasting transaction via RPC {}",
+                                    previous_context.network_config.rpc_url
+                                ),
+                                &previous_context.network_config.json_rpc_client(),
+                                signed_transaction.clone(),
+                            ));
                     match transaction_info_result {
                         Ok(response) => {
                             break response;
                         }
                         Err(ref err) => match crate::common::rpc_transaction_error(err) {
-                            Ok(_) => {
-                                if retries.next().is_none() {
+                            Ok(message) => {
+                                let retr = retries.next();
+                                if retr.is_none() {
                                     return Err(color_eyre::eyre::eyre!(err.to_string()));
                                 }
-                                std::thread::sleep(std::time::Duration::from_secs(5));
+                                err_message(
+                                    format!("Broadcasting transaction via RPC {} (the last attempt failed with an error '{}', retrying {} more times)",
+                                    previous_context.network_config.rpc_url,
+                                    message, retr.unwrap_or_default()+1)
+                                );
                             }
                             Err(report) => return Err(color_eyre::Report::msg(report)),
                         },
@@ -107,4 +116,30 @@ impl SendContext {
         }
         Ok(Self)
     }
+}
+
+#[tracing::instrument(name="", fields(%message))]
+fn err_message(message: String) {
+    std::thread::sleep(std::time::Duration::from_secs(5));
+}
+
+#[tracing::instrument(name="", skip_all, fields(%message))]
+async fn sending_transaction(
+    message: String,
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    signed_transaction: near_primitives::transaction::SignedTransaction,
+) -> Result<
+    near_primitives::views::FinalExecutionOutcomeView,
+    near_jsonrpc_client::errors::JsonRpcError<
+        near_jsonrpc_primitives::types::transactions::RpcTransactionError,
+    >,
+> {
+    std::thread::sleep(std::time::Duration::from_secs(1));
+    json_rpc_client
+        .call(
+            near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
+                signed_transaction: signed_transaction.clone(),
+            },
+        )
+        .await
 }

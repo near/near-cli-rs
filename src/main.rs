@@ -66,21 +66,23 @@ fn main() -> crate::common::CliResult {
 
     color_eyre::install()?;
 
-    let indicatif_layer = IndicatifLayer::new().with_progress_style(
-        ProgressStyle::with_template(
-            "{spinner:.blue} {span_child_prefix} {span_name} {{{span_fields}}}",
+    let indicatif_layer = IndicatifLayer::new()
+        .with_progress_style(
+            ProgressStyle::with_template(
+                "{spinner:.blue}{span_child_prefix} {span_name} {{{span_fields}}}",
+            )
+            .unwrap()
+            .tick_strings(&[
+                "▹▹▹▹▹",
+                "▸▹▹▹▹",
+                "▹▸▹▹▹",
+                "▹▹▸▹▹",
+                "▹▹▹▸▹",
+                "▹▹▹▹▸",
+                "▪▪▪▪▪",
+            ]),
         )
-        .unwrap()
-        .tick_strings(&[
-            "▹▹▹▹▹",
-            "▸▹▹▹▹",
-            "▹▸▹▹▹",
-            "▹▹▸▹▹",
-            "▹▹▹▸▹",
-            "▹▹▹▹▸",
-            "▪▪▪▪▪",
-        ]),
-    );
+        .with_span_child_prefix_symbol("↳ ");
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::fmt::layer().with_writer(
