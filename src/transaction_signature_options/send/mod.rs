@@ -1,3 +1,5 @@
+use tracing_indicatif::span_ext::IndicatifSpanExt;
+
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
 #[interactive_clap(output_context = SendContext)]
@@ -12,7 +14,6 @@ impl SendContext {
         previous_context: super::SubmitContext,
         _scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        std::thread::sleep(std::time::Duration::from_millis(100));
         let mut storage_message = String::new();
 
         match previous_context.signed_transaction_or_signed_delegate_action {
@@ -29,6 +30,7 @@ impl SendContext {
                 let retries_number = 5;
                 let mut retries = (0..retries_number).rev();
                 let transaction_info = loop {
+                    std::thread::sleep(std::time::Duration::from_millis(300));
                     let transaction_info_result =
                         tokio::runtime::Runtime::new()
                             .unwrap()
@@ -118,12 +120,13 @@ impl SendContext {
     }
 }
 
-#[tracing::instrument(name="", fields(%message))]
+#[tracing::instrument(skip_all, name = "")]
 fn err_message(message: String) {
+    tracing::Span::current().pb_set_message(&message);
     std::thread::sleep(std::time::Duration::from_secs(5));
 }
 
-#[tracing::instrument(name="", skip_all, fields(%message))]
+#[tracing::instrument(skip_all, name = "")]
 async fn sending_transaction(
     message: String,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
@@ -134,6 +137,7 @@ async fn sending_transaction(
         near_jsonrpc_primitives::types::transactions::RpcTransactionError,
     >,
 > {
+    tracing::Span::current().pb_set_message(&message);
     std::thread::sleep(std::time::Duration::from_secs(1));
     json_rpc_client
         .call(

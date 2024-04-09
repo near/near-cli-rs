@@ -68,19 +68,17 @@ fn main() -> crate::common::CliResult {
 
     let indicatif_layer = IndicatifLayer::new()
         .with_progress_style(
-            ProgressStyle::with_template(
-                "{spinner:.blue}{span_child_prefix} {span_name} {{{span_fields}}}",
-            )
-            .unwrap()
-            .tick_strings(&[
-                "▹▹▹▹▹",
-                "▸▹▹▹▹",
-                "▹▸▹▹▹",
-                "▹▹▸▹▹",
-                "▹▹▹▸▹",
-                "▹▹▹▹▸",
-                "▪▪▪▪▪",
-            ]),
+            ProgressStyle::with_template("{spinner:.blue}{span_child_prefix} {msg}{span_name}")
+                .unwrap()
+                .tick_strings(&[
+                    "▹▹▹▹▹",
+                    "▸▹▹▹▹",
+                    "▹▸▹▹▹",
+                    "▹▹▸▹▹",
+                    "▹▹▹▸▹",
+                    "▹▹▹▹▸",
+                    "▪▪▪▪▪",
+                ]),
         )
         .with_span_child_prefix_symbol("↳ ");
     tracing_subscriber::registry()
