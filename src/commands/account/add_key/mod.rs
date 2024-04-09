@@ -88,6 +88,6 @@ pub enum AccessKeyMode {
     UseManuallyProvidedPublicKey(self::use_public_key::AddAccessKeyAction),
     #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(message = "use-ledger                        - Use a ledger"))]
-    /// Use the Ledger Hadware wallet
+    /// Use the Ledger Hardware wallet
     UseLedger(self::use_ledger::AddLedgerKeyAction),
 }
