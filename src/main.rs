@@ -6,9 +6,9 @@ use interactive_clap::ToCliArgs;
 
 use indicatif::ProgressStyle;
 use tracing_indicatif::IndicatifLayer;
-use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::EnvFilter;
 
 pub use near_cli_rs::commands;
 pub use near_cli_rs::common::{self, CliResult};
@@ -82,14 +82,9 @@ fn main() -> crate::common::CliResult {
         )
         .with_span_child_prefix_symbol("↳ ");
     tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::fmt::layer().with_writer(
-                indicatif_layer
-                    .get_stderr_writer()
-                    .with_max_level(tracing::Level::INFO),
-            ),
-        )
+        .with(tracing_subscriber::fmt::layer().with_writer(indicatif_layer.get_stderr_writer()))
         .with(indicatif_layer)
+        .with(EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
         .init();
 
     #[cfg(feature = "self-update")]
