@@ -1,3 +1,4 @@
+use color_eyre::owo_colors::OwoColorize;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
@@ -53,9 +54,10 @@ impl SendContext {
                                     return Err(color_eyre::eyre::eyre!(err.to_string()));
                                 }
                                 err_message(
-                                    format!("Broadcasting transaction via RPC {} (the last attempt failed with an error '{}', retrying {} more times)",
+                                    format!("Broadcasting transaction via RPC {} (This attempt failed with error `{}`. Will retry {} more times)",
                                     previous_context.network_config.rpc_url,
-                                    message, retr.unwrap_or_default()+1)
+                                    message.red(),
+                                    retr.unwrap_or_default()+1)
                                 );
                             }
                             Err(report) => return Err(color_eyre::Report::msg(report)),
