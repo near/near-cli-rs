@@ -36,10 +36,7 @@ impl SendContext {
                         tokio::runtime::Runtime::new()
                             .unwrap()
                             .block_on(sending_transaction(
-                                format!(
-                                    "Broadcasting transaction via RPC {}",
-                                    previous_context.network_config.rpc_url
-                                ),
+                                format!("{}", previous_context.network_config.rpc_url),
                                 &previous_context.network_config.json_rpc_client(),
                                 signed_transaction.clone(),
                             ));
@@ -53,8 +50,8 @@ impl SendContext {
                                 if retr.is_none() {
                                     return Err(color_eyre::eyre::eyre!(err.to_string()));
                                 }
-                                err_message(
-                                    format!("Broadcasting transaction via RPC {} (This attempt failed with error `{}`. Will retry {} more times)",
+                                sleep_after_error(
+                                    format!("{} (Previous attempt failed with error: `{}`. Will retry {} more times)",
                                     previous_context.network_config.rpc_url,
                                     message.red(),
                                     retr.unwrap_or_default()+1)
@@ -122,15 +119,18 @@ impl SendContext {
     }
 }
 
-#[tracing::instrument(skip_all, name = "")]
-fn err_message(message: String) {
-    tracing::Span::current().pb_set_message(&message);
+#[tracing::instrument(
+    skip_all,
+    name = "Waiting 5 seconds before broadcasting transaction via RPC"
+)]
+fn sleep_after_error(additional_message_for_name: String) {
+    tracing::Span::current().pb_set_message(&additional_message_for_name);
     std::thread::sleep(std::time::Duration::from_secs(5));
 }
 
-#[tracing::instrument(skip_all, name = "")]
+#[tracing::instrument(name = "Broadcasting transaction via RPC", skip_all)]
 async fn sending_transaction(
-    message: String,
+    additional_message_for_name: String,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     signed_transaction: near_primitives::transaction::SignedTransaction,
 ) -> Result<
@@ -139,7 +139,7 @@ async fn sending_transaction(
         near_jsonrpc_primitives::types::transactions::RpcTransactionError,
     >,
 > {
-    tracing::Span::current().pb_set_message(&message);
+    tracing::Span::current().pb_set_message(&additional_message_for_name);
     std::thread::sleep(std::time::Duration::from_secs(1));
     json_rpc_client
         .call(
