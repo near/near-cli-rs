@@ -93,7 +93,7 @@ interactive-clap = "0.2.9"
 interactive-clap-derive = "0.2.9"
 
 [features]
-default = ["ledger", "self-update"]
+default = []
 ledger = ["near-ledger"]
 self-update = ["self_update", "semver"]
 
