@@ -1465,7 +1465,7 @@ near staking \
 
 ##### stake-all - Delegate all previously deposited or unstaked NEAR tokens to a validator's staking pool
 
-To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, stake all previosly deposited or unstaked NEAR tokens with a selected staking pool. You may use the following command (note that you need to use your own account id, and choose the staking pool account id):
+To delegate your NEAR tokens to a staking pool to support a validator and gain staking rewards, stake all previously deposited or unstaked NEAR tokens with a selected staking pool. You may use the following command (note that you need to use your own account id, and choose the staking pool account id):
 ```txt
 near staking \
     delegation volodymyr.testnet \
