@@ -80,10 +80,11 @@ fn main() -> crate::common::CliResult {
                                 eprintln!("{success_message}");
                                 eprintln!();
                                 eprintln!(
-                                    "{}",
+                                    "    {}",
                                     shell_words::join(
                                         std::iter::once(near_cli_exec_path).chain(vec_cmd)
                                     )
+                                    .yellow()
                                 );
                             }
                             Err(err) => {
@@ -113,8 +114,7 @@ fn main() -> crate::common::CliResult {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
         | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
             eprintln!(
-                "\n\nHere is your console command if you need to script it or re-run:\n{:>3}{}",
-                "",
+                "\n\nHere is your console command if you need to script it or re-run:\n    {}\n",
                 shell_words::join(
                     std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
                 )
@@ -132,10 +132,11 @@ fn main() -> crate::common::CliResult {
         interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
             if let Some(cli_cmd) = optional_cli_cmd {
                 eprintln!(
-                    "\nHere is your console command if you need to script it or re-run:\n{}",
+                    "\nHere is your console command if you need to script it or re-run:\n    {}\n",
                     shell_words::join(
                         std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
                     )
+                    .yellow()
                 );
             }
             Err(err)
@@ -188,6 +189,7 @@ fn main() -> crate::common::CliResult {
                         std::iter::once(near_cli_exec_path)
                             .chain(self_update_cli_cmd.to_cli_args())
                     )
+                    .yellow()
                 );
             }
         }
