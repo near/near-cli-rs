@@ -89,8 +89,8 @@ near-abi = "0.4.2"
 zstd = "0.11"
 
 keyring = "2.0.5"
-interactive-clap = "0.2.9"
-interactive-clap-derive = "0.2.9"
+interactive-clap = "0.2.10"
+interactive-clap-derive = "0.2.10"
 
 [features]
 default = ["ledger", "self-update"]
