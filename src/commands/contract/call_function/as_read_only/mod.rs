@@ -10,7 +10,7 @@ pub struct CallFunctionView {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the contract account ID?
     contract_account_id: crate::types::account_id::AccountId,
-    #[interactive_clap(flatten)]
+    #[interactive_clap(subargs)]
     /// Select function
     function: Function,
 }
