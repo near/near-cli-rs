@@ -183,11 +183,14 @@ fn validate_new_account_id(
     account_id: &near_primitives::types::AccountId,
 ) -> crate::CliResult {
     for _ in 0..3 {
-        let account_state = crate::common::get_account_state(
-            network_config.clone(),
-            account_id.clone(),
-            near_primitives::types::BlockReference::latest(),
-        );
+        let account_state =
+            tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(crate::common::get_account_state(
+                    network_config,
+                    account_id,
+                    near_primitives::types::BlockReference::latest(),
+                ));
         if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
             near_jsonrpc_client::errors::RpcTransportError::SendError(_),
         )) = account_state
@@ -198,10 +201,10 @@ fn validate_new_account_id(
             match account_state {
                 Ok(_) => {
                     return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "\nAccount <{}> already exists in network <{}>. Therefore, it is not possible to create an account with this name.",
-                account_id,
-                network_config.network_name
-            ));
+                        "\nAccount <{}> already exists in network <{}>. Therefore, it is not possible to create an account with this name.",
+                        account_id,
+                        network_config.network_name
+                    ));
                 }
                 Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
                     near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
