@@ -29,7 +29,7 @@ impl SendContext {
                 .map_err(color_eyre::Report::msg)?;
 
                 let retries_number = 5;
-                let mut retries = (0..retries_number).rev();
+                let mut retries = (1..=retries_number).rev();
                 let transaction_info = loop {
                     let transaction_info_result =
                         tokio::runtime::Runtime::new()
