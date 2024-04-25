@@ -11,6 +11,7 @@ pub struct ViewNearBalance {
 pub struct ViewNearBalanceContext(crate::network_view_at_block::ArgsForViewContext);
 
 impl ViewNearBalanceContext {
+    #[tracing::instrument(name = "Getting a NEAR balance for your account ...", skip_all)]
     pub fn from_previous_context(
         previous_context: super::TokensCommandsContext,
         _scope: &<ViewNearBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,

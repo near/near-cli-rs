@@ -808,57 +808,56 @@ pub fn rpc_transaction_error(
         near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError,
     >,
 ) -> color_eyre::Result<String> {
-    Ok(match &err {
+    match &err {
         near_jsonrpc_client::errors::JsonRpcError::TransportError(_rpc_transport_error) => {
-            "Transport error transaction".to_string()
+            Ok("Transport error transaction".to_string())
         }
         near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::TimeoutError => {
-                    "Timeout error transaction".to_string()
+                    Ok("Timeout error transaction".to_string())
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
                     match handler_invalid_tx_error(context) {
-                        Ok(_) => "".to_string(),
-                        Err(err) => return Err(err)
+                        Ok(_) => Ok("".to_string()),
+                        Err(err) => Err(err)
                     }
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err))
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::RequestRouted{transaction_hash} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", transaction_hash, err));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", transaction_hash, err))
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::UnknownTransaction{requested_transaction_hash} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", requested_transaction_hash, err));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", requested_transaction_hash, err))
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InternalError{debug_info} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", debug_info));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", debug_info))
                 }
             }
             near_jsonrpc_client::errors::JsonRpcServerError::RequestValidationError(rpc_request_validation_error) => {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Incompatible request with the server: {:#?}",  rpc_request_validation_error));
+                color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Incompatible request with the server: {:#?}",  rpc_request_validation_error))
             }
             near_jsonrpc_client::errors::JsonRpcServerError::InternalError{ info } => {
-                format!("Internal server error: {}", info.clone().unwrap_or_default())
+                Ok(format!("Internal server error: {}", info.clone().unwrap_or_default()))
             }
             near_jsonrpc_client::errors::JsonRpcServerError::NonContextualError(rpc_error) => {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Unexpected response: {}", rpc_error));
+                color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Unexpected response: {}", rpc_error))
             }
             near_jsonrpc_client::errors::JsonRpcServerError::ResponseStatusError(json_rpc_server_response_status_error) => match json_rpc_server_response_status_error {
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unauthorized => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use."));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use."))
                 }
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TooManyRequests => {
-                    "JSON RPC server is currently busy".to_string()
+                    Ok("JSON RPC server is currently busy".to_string())
                 }
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status))
                 }
             }
         }
-    })
-    // Ok(())
+    }
 }
 
 pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -> crate::CliResult {
