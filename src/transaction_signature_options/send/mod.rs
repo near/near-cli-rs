@@ -45,7 +45,6 @@ impl SendContext {
                         }
                         Err(ref err) => match crate::common::rpc_transaction_error(err) {
                             Ok(message) => {
-                                let retr = retries.next();
                                 if let Some(retries_left) = retries.next() {
                                     sleep_after_error(
                                         format!("{} (Previous attempt failed with error: `{}`. Will retry {} more times)",
@@ -56,7 +55,6 @@ impl SendContext {
                                 } else {
                                     return Err(color_eyre::eyre::eyre!(err.to_string()));
                                 }
-
                             }
                             Err(report) => return Err(color_eyre::Report::msg(report)),
                         },
