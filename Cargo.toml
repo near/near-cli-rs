@@ -50,6 +50,10 @@ url = { version = "2", features = ["serde"] }
 open = "4"
 shell-words = "1"
 cargo-util = "0.1.1"
+indicatif = "0.17.8"
+tracing = "0.1.40"
+tracing-indicatif = "0.3.6"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 wasmparser = "0.200.0"
 

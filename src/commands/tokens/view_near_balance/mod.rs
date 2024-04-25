@@ -11,6 +11,7 @@ pub struct ViewNearBalance {
 pub struct ViewNearBalanceContext(crate::network_view_at_block::ArgsForViewContext);
 
 impl ViewNearBalanceContext {
+    #[tracing::instrument(name = "Getting a NEAR balance for your account ...", skip_all)]
     pub fn from_previous_context(
         previous_context: super::TokensCommandsContext,
         _scope: &<ViewNearBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -19,11 +20,13 @@ impl ViewNearBalanceContext {
             let owner_account_id = previous_context.owner_account_id.clone();
 
             move |network_config, block_reference| {
-                let account_transfer_allowance = crate::common::get_account_transfer_allowance(
-                    network_config.clone(),
+                let account_transfer_allowance = tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(crate::common::get_account_transfer_allowance(
+                    network_config,
                     owner_account_id.clone(),
                     block_reference.clone(),
-                )?;
+                ))?;
                 eprintln!("{account_transfer_allowance}");
                 Ok(())
             }

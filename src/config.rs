@@ -1,5 +1,6 @@
 use color_eyre::eyre::WrapErr;
 use std::str::FromStr;
+use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Config {
@@ -78,7 +79,9 @@ pub struct NetworkConfig {
 }
 
 impl NetworkConfig {
+    #[tracing::instrument(name = "Connecting to RPC", skip_all)]
     pub fn json_rpc_client(&self) -> near_jsonrpc_client::JsonRpcClient {
+        tracing::Span::current().pb_set_message(self.rpc_url.as_str());
         let mut json_rpc_client =
             near_jsonrpc_client::JsonRpcClient::connect(self.rpc_url.as_ref());
         if let Some(rpc_api_key) = &self.rpc_api_key {

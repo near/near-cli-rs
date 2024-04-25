@@ -1,4 +1,5 @@
-use crate::common::JsonRpcClientExt;
+use color_eyre::owo_colors::OwoColorize;
+use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
@@ -9,6 +10,7 @@ pub struct Send;
 pub struct SendContext;
 
 impl SendContext {
+    #[tracing::instrument(skip_all, name = "Sending transaction ...")]
     pub fn from_previous_context(
         previous_context: super::SubmitContext,
         _scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -26,20 +28,34 @@ impl SendContext {
                 )
                 .map_err(color_eyre::Report::msg)?;
 
-                eprintln!("Transaction sent ...");
+                let retries_number = 5;
+                let mut retries = (1..=retries_number).rev();
                 let transaction_info = loop {
-                    let transaction_info_result = previous_context.network_config.json_rpc_client()
-                    .blocking_call(
-                        near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest{
-                            signed_transaction: signed_transaction.clone()
-                        }
-                    );
+                    let transaction_info_result =
+                        tokio::runtime::Runtime::new()
+                            .unwrap()
+                            .block_on(sending_transaction(
+                                format!("{}", previous_context.network_config.rpc_url),
+                                &previous_context.network_config.json_rpc_client(),
+                                signed_transaction.clone(),
+                            ));
                     match transaction_info_result {
                         Ok(response) => {
                             break response;
                         }
-                        Err(err) => match crate::common::rpc_transaction_error(err) {
-                            Ok(_) => std::thread::sleep(std::time::Duration::from_millis(100)),
+                        Err(ref err) => match crate::common::rpc_transaction_error(err) {
+                            Ok(message) => {
+                                if let Some(retries_left) = retries.next() {
+                                    sleep_after_error(
+                                        format!("{} (Previous attempt failed with error: `{}`. Will retry {} more times)",
+                                        previous_context.network_config.rpc_url,
+                                        message.red(),
+                                        retries_left)
+                                    );
+                                } else {
+                                    return Err(color_eyre::eyre::eyre!(err.to_string()));
+                                }
+                            }
                             Err(report) => return Err(color_eyre::Report::msg(report)),
                         },
                     };
@@ -100,4 +116,34 @@ impl SendContext {
         }
         Ok(Self)
     }
+}
+
+#[tracing::instrument(
+    skip_all,
+    name = "Waiting 5 seconds before broadcasting transaction via RPC"
+)]
+fn sleep_after_error(additional_message_for_name: String) {
+    tracing::Span::current().pb_set_message(&additional_message_for_name);
+    std::thread::sleep(std::time::Duration::from_secs(5));
+}
+
+#[tracing::instrument(name = "Broadcasting transaction via RPC", skip_all)]
+async fn sending_transaction(
+    additional_message_for_name: String,
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    signed_transaction: near_primitives::transaction::SignedTransaction,
+) -> Result<
+    near_primitives::views::FinalExecutionOutcomeView,
+    near_jsonrpc_client::errors::JsonRpcError<
+        near_jsonrpc_primitives::types::transactions::RpcTransactionError,
+    >,
+> {
+    tracing::Span::current().pb_set_message(&additional_message_for_name);
+    json_rpc_client
+        .call(
+            near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
+                signed_transaction: signed_transaction.clone(),
+            },
+        )
+        .await
 }

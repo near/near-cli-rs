@@ -82,7 +82,7 @@ impl SubmitContext {
                 Ok(response) => {
                     break response;
                 }
-                Err(err) => match crate::common::rpc_transaction_error(err) {
+                Err(err) => match crate::common::rpc_transaction_error(&err) {
                     Ok(_) => std::thread::sleep(std::time::Duration::from_millis(100)),
                     Err(report) => return Err(color_eyre::Report::msg(report)),
                 },

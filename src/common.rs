@@ -6,6 +6,8 @@ use std::str::FromStr;
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use futures::{StreamExt, TryStreamExt};
 use prettytable::Table;
+use tracing_indicatif::span_ext::IndicatifSpanExt;
+use tracing_indicatif::suspend_tracing_indicatif;
 
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
 
@@ -127,12 +129,11 @@ pub struct AccountTransferAllowance {
 impl std::fmt::Display for AccountTransferAllowance {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(fmt,
-            "\n{} account has {} available for transfer (the total balance is {}, but {} is locked for storage and the transfer transaction fee is ~{})",
+            "\n{} account has {} available for transfer (the total balance is {}, but {} is locked for storage)",
             self.account_id,
             self.transfer_allowance(),
             self.account_liquid_balance,
             self.liquid_storage_stake(),
-            self.pessimistic_transaction_fee
         )
     }
 }
@@ -149,38 +150,49 @@ impl AccountTransferAllowance {
             .saturating_sub(self.pessimistic_transaction_fee)
     }
 }
-
-pub fn get_account_transfer_allowance(
-    network_config: crate::config::NetworkConfig,
+#[tracing::instrument(name = "Getting the transfer allowance for the account ...", skip_all)]
+pub async fn get_account_transfer_allowance(
+    network_config: &crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
-    let account_view = if let Ok(account_view) =
-        get_account_state(network_config.clone(), account_id.clone(), block_reference)
-    {
-        account_view
-    } else if !account_id.get_account_type().is_implicit() {
-        return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Account <{}> does not exist on network <{}>.",
-            account_id,
-            network_config.network_name
-        ));
-    } else {
-        return Ok(AccountTransferAllowance {
-            account_id,
-            account_liquid_balance: near_token::NearToken::from_near(0),
-            account_locked_balance: near_token::NearToken::from_near(0),
-            storage_stake: near_token::NearToken::from_near(0),
-            pessimistic_transaction_fee: near_token::NearToken::from_near(0),
-        });
+    let account_state = get_account_state(network_config, &account_id, block_reference).await;
+    let account_view = match account_state {
+        Ok(account_view) => account_view,
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
+            ),
+        )) if account_id.get_account_type().is_implicit() => {
+            return Ok(AccountTransferAllowance {
+                account_id,
+                account_liquid_balance: near_token::NearToken::from_near(0),
+                account_locked_balance: near_token::NearToken::from_near(0),
+                storage_stake: near_token::NearToken::from_near(0),
+                pessimistic_transaction_fee: near_token::NearToken::from_near(0),
+            });
+        }
+        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
+            return color_eyre::eyre::Result::Err(
+                    color_eyre::eyre::eyre!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.\n{err}",
+                        network_config.network_name
+                    ));
+        }
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
+            return color_eyre::eyre::Result::Err(
+            color_eyre::eyre::eyre!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.\n{err}",
+                network_config.network_name
+            ));
+        }
     };
-    let storage_amount_per_byte = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(network_config.json_rpc_client().call(
+    let storage_amount_per_byte = network_config
+        .json_rpc_client()
+        .call(
             near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
             },
-        ))
+        )
+        .await
         .wrap_err("RpcError")?
         .runtime_config
         .storage_amount_per_byte;
@@ -240,20 +252,12 @@ pub fn verify_account_access_key(
                 return Err(err);
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
-                    account_id, network_config.network_name
-                );
-                if !need_check_account() {
-                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
-                        err,
-                    ));
+                if !need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.", network_config.network_name)) {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err));
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
-                    account_id, network_config.network_name
-                );
-                if !need_check_account() {
+                if !need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.", network_config.network_name)) {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
                 }
             }
@@ -266,12 +270,14 @@ pub fn is_account_exist(
     account_id: near_primitives::types::AccountId,
 ) -> bool {
     for (_, network_config) in networks {
-        if get_account_state(
-            network_config.clone(),
-            account_id.clone(),
-            near_primitives::types::Finality::Final.into(),
-        )
-        .is_ok()
+        if tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(get_account_state(
+                network_config,
+                &account_id,
+                near_primitives::types::Finality::Final.into(),
+            ))
+            .is_ok()
         {
             return true;
         }
@@ -284,12 +290,14 @@ pub fn find_network_where_account_exist(
     new_account_id: near_primitives::types::AccountId,
 ) -> Option<crate::config::NetworkConfig> {
     for (_, network_config) in context.config.network_connection.iter() {
-        if get_account_state(
-            network_config.clone(),
-            new_account_id.clone(),
-            near_primitives::types::BlockReference::latest(),
-        )
-        .is_ok()
+        if tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(get_account_state(
+                network_config,
+                &new_account_id,
+                near_primitives::types::BlockReference::latest(),
+            ))
+            .is_ok()
         {
             return Some(network_config.clone());
         }
@@ -313,18 +321,24 @@ pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
     Ok(select_choose_input == ConfirmOptions::Yes)
 }
 
-pub fn get_account_state(
-    network_config: crate::config::NetworkConfig,
-    account_id: near_primitives::types::AccountId,
+#[tracing::instrument(name = "Getting the account state ...", skip_all)]
+pub async fn get_account_state(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<
     near_primitives::views::AccountView,
     near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
     loop {
-        let query_view_method_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_account(&account_id.clone(), block_reference.clone());
+        let query_view_method_response = view_account(
+            format!("{}", network_config.rpc_url),
+            &network_config.json_rpc_client(),
+            account_id,
+            block_reference.clone(),
+        )
+        .await;
+
         match query_view_method_response {
             Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
@@ -352,20 +366,20 @@ pub fn get_account_state(
                 return Err(err);
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
-                    account_id, network_config.network_name
-                );
-                if !need_check_account() {
+                if !suspend_tracing_indicatif::<_, bool>(|| {
+                    need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
+                        network_config.network_name))
+                }) {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
                         err,
                     ));
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
-                    account_id, network_config.network_name
-                );
-                if !need_check_account() {
+                if !suspend_tracing_indicatif::<_, bool>(|| {
+                    need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.",
+                        network_config.network_name))
+                }) {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
                 }
             }
@@ -373,7 +387,28 @@ pub fn get_account_state(
     }
 }
 
-fn need_check_account() -> bool {
+#[tracing::instrument(name = "Receiving request via RPC", skip_all)]
+async fn view_account(
+    instrument_message: String,
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    account_id: &near_primitives::types::AccountId,
+    block_reference: BlockReference,
+) -> Result<
+    near_jsonrpc_primitives::types::query::RpcQueryResponse,
+    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+> {
+    tracing::Span::current().pb_set_message(&instrument_message);
+    json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewAccount {
+                account_id: account_id.clone(),
+            },
+        })
+        .await
+}
+
+fn need_check_account(message: String) -> bool {
     #[derive(strum_macros::Display, PartialEq)]
     enum ConfirmOptions {
         #[strum(to_string = "Yes, I want to check the account again.")]
@@ -382,7 +417,7 @@ fn need_check_account() -> bool {
         No,
     }
     let select_choose_input = Select::new(
-        "Do you want to try again?",
+        &format!("{message}\nDo you want to try again?"),
         vec![ConfirmOptions::Yes, ConfirmOptions::No],
     )
     .prompt()
@@ -766,58 +801,60 @@ fn print_value_successful_transaction(
 }
 
 pub fn rpc_transaction_error(
-    err: near_jsonrpc_client::errors::JsonRpcError<
+    err: &near_jsonrpc_client::errors::JsonRpcError<
         near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError,
     >,
-) -> CliResult {
+) -> color_eyre::Result<String> {
     match &err {
         near_jsonrpc_client::errors::JsonRpcError::TransportError(_rpc_transport_error) => {
-            eprintln!("Transport error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+            Ok("Transport error transaction".to_string())
         }
         near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::TimeoutError => {
-                    eprintln!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+                    Ok("Timeout error transaction".to_string())
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
-                    return handler_invalid_tx_error(context);
+                    match handler_invalid_tx_error(context) {
+                        Ok(_) => Ok("".to_string()),
+                        Err(err) => Err(err)
+                    }
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err))
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::RequestRouted{transaction_hash} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", transaction_hash, err));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", transaction_hash, err))
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::UnknownTransaction{requested_transaction_hash} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", requested_transaction_hash, err));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", requested_transaction_hash, err))
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InternalError{debug_info} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", debug_info));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", debug_info))
                 }
             }
             near_jsonrpc_client::errors::JsonRpcServerError::RequestValidationError(rpc_request_validation_error) => {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Incompatible request with the server: {:#?}",  rpc_request_validation_error));
+                color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Incompatible request with the server: {:#?}",  rpc_request_validation_error))
             }
             near_jsonrpc_client::errors::JsonRpcServerError::InternalError{ info } => {
-                eprintln!("Internal server error: {}.\nPlease wait. The next try to send this transaction is happening right now ...", info.clone().unwrap_or_default());
+                Ok(format!("Internal server error: {}", info.clone().unwrap_or_default()))
             }
             near_jsonrpc_client::errors::JsonRpcServerError::NonContextualError(rpc_error) => {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Unexpected response: {}", rpc_error));
+                color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Unexpected response: {}", rpc_error))
             }
             near_jsonrpc_client::errors::JsonRpcServerError::ResponseStatusError(json_rpc_server_response_status_error) => match json_rpc_server_response_status_error {
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unauthorized => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use."));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use."))
                 }
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TooManyRequests => {
-                    eprintln!("JSON RPC server is currently busy.\nPlease wait. The next try to send this transaction is happening right now ...");
+                    Ok("JSON RPC server is currently busy".to_string())
                 }
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status))
                 }
             }
         }
     }
-    Ok(())
 }
 
 pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -> crate::CliResult {
