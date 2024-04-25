@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1](https://github.com/near/near-cli-rs/compare/v0.9.0...v0.9.1) - 2024-04-25
+
+### Added
+- Added loading indicators for waiting for responses from RPC ([#315](https://github.com/near/near-cli-rs/pull/315))
+
 ## [0.9.0](https://github.com/near/near-cli-rs/compare/v0.8.1...v0.9.0) - 2024-04-22
 
 ### Added
