@@ -31,7 +31,6 @@ impl SendContext {
                 let retries_number = 5;
                 let mut retries = (0..retries_number).rev();
                 let transaction_info = loop {
-                    std::thread::sleep(std::time::Duration::from_millis(300));
                     let transaction_info_result =
                         tokio::runtime::Runtime::new()
                             .unwrap()
@@ -140,7 +139,6 @@ async fn sending_transaction(
     >,
 > {
     tracing::Span::current().pb_set_message(&additional_message_for_name);
-    std::thread::sleep(std::time::Duration::from_secs(1));
     json_rpc_client
         .call(
             near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {

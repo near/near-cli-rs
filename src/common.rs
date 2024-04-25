@@ -156,7 +156,6 @@ pub async fn get_account_transfer_allowance(
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
-    std::thread::sleep(std::time::Duration::from_millis(300));
     let account_state = get_account_state(network_config, &account_id, block_reference).await;
     let account_view = match account_state {
         Ok(account_view) => account_view,
@@ -331,7 +330,6 @@ pub async fn get_account_state(
     near_primitives::views::AccountView,
     near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
-    std::thread::sleep(std::time::Duration::from_millis(300));
     loop {
         let query_view_method_response = view_account(
             format!("{}", network_config.rpc_url),
@@ -400,7 +398,6 @@ async fn view_account(
     near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
     tracing::Span::current().pb_set_message(&instrument_message);
-    std::thread::sleep(std::time::Duration::from_secs(1));
     json_rpc_client
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
