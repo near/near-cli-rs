@@ -29,9 +29,7 @@ impl Default for Config {
                 near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
                 faucet_url: None,
                 meta_transaction_relayer_url: None,
-                stake_delegators_api: Some(String::from(
-                    "https://api.fastnear.com/v1/account/{account_id}/staking",
-                )),
+                fastnear_url: Some(String::from("https://api.fastnear.com")),
                 staking_pools_factory_account_id: "poolv1.near".parse().unwrap(),
             },
         );
@@ -49,7 +47,7 @@ impl Default for Config {
                 near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
                 meta_transaction_relayer_url: None,
-                stake_delegators_api: None,
+                fastnear_url: None,
                 staking_pools_factory_account_id: "pool.f863973.m0".parse().unwrap(),
             },
         );
@@ -83,7 +81,7 @@ pub struct NetworkConfig {
     pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
     pub faucet_url: Option<url::Url>,
     pub meta_transaction_relayer_url: Option<url::Url>,
-    pub stake_delegators_api: Option<String>,
+    pub fastnear_url: Option<String>,
     pub staking_pools_factory_account_id: near_primitives::types::AccountId,
 }
 

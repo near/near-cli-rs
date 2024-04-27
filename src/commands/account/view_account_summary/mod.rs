@@ -54,7 +54,7 @@ impl ViewAccountSummaryContext {
                     })?
                     .access_key_list_view()?;
 
-                let validators = match crate::common::fetch_validators_api(&account_id, network_config.stake_delegators_api.clone()) {
+                let validators = match crate::common::fetch_validators_api(&account_id, network_config.fastnear_url.clone()) {
                     Ok(api_validators) => api_validators,
                     Err(_) => crate::common::fetch_validators_rpc(&json_rpc_client, network_config.staking_pools_factory_account_id.clone())?,
                 };

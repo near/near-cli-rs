@@ -36,7 +36,7 @@ pub struct AddNetworkConnection {
     meta_transaction_relayer_url: Option<crate::types::url::Url>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    stake_delegators_api: Option<String>,
+    fastnear_url: Option<String>,
     #[interactive_clap(long)]
     staking_pools_factory_account_id: crate::types::account_id::AccountId,
 }
@@ -73,7 +73,7 @@ impl AddNetworkConnectionContext {
                     .meta_transaction_relayer_url
                     .clone()
                     .map(|meta_transaction_relayer_url| meta_transaction_relayer_url.into()),
-                stake_delegators_api: scope.stake_delegators_api.clone(),
+                fastnear_url: scope.fastnear_url.clone(),
                 staking_pools_factory_account_id: scope
                     .staking_pools_factory_account_id
                     .clone()
@@ -220,25 +220,25 @@ impl AddNetworkConnection {
         }
     }
 
-    fn input_stake_delegators_api(
+    fn input_fastnear_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
-            #[strum(to_string = "Yes, I want to enter the stake delegators API")]
+            #[strum(to_string = "Yes, I want to enter the fastnear API url")]
             Yes,
-            #[strum(to_string = "No, I don't want to enter the stake delegators API")]
+            #[strum(to_string = "No, I don't want to enter the fastnear API url")]
             No,
         }
         let select_choose_input = Select::new(
-            "Do you want to enter the stake delegators API?",
+            "Do you want to enter the fastnear API url?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let stake_delegators_api: String =
-                CustomType::new("What is the stake delegators API?").prompt()?;
+                CustomType::new("What is the fastnear API url?").prompt()?;
             Ok(Some(stake_delegators_api))
         } else {
             Ok(None)

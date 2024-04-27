@@ -1502,15 +1502,15 @@ struct StakingResponse {
 
 pub fn fetch_validators_api(
     account_id: &near_primitives::types::AccountId,
-    stake_delegators_api: Option<String>,
+    fastnear_url: Option<String>,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
-    let Some(stake_delegators_api) = stake_delegators_api else {
+    let Some(fastnear_url) = fastnear_url else {
         return Err(color_eyre::Report::msg(
             "Stake delegators API is not set for selected network",
         ));
     };
 
-    let url = stake_delegators_api.replace("{account_id}", account_id.as_ref());
+    let url = format!("{fastnear_url}/v1/account/{account_id}/staking");
 
     let request = reqwest::blocking::get(url)?;
     let response: StakingResponse = request.json()?;
