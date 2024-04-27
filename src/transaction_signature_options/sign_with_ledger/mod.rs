@@ -2,7 +2,6 @@ use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
 use near_ledger::NEARLedgerError;
 use near_primitives::borsh;
-use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -97,8 +96,6 @@ impl SignLedgerContext {
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
-
-        confirm_message(format!("(HD Path: {seed_phrase_hd_path})"));
 
         let signature = match near_ledger::sign_transaction(
             borsh::to_vec(&unsigned_transaction)
@@ -280,10 +277,4 @@ impl SignLedger {
         }
         Ok(None)
     }
-}
-
-#[tracing::instrument(name = "Confirm transaction signing on your Ledger device", skip_all)]
-fn confirm_message(instrument_message: String) {
-    tracing::Span::current().pb_set_message(&instrument_message);
-    std::thread::sleep(std::time::Duration::from_secs(5));
 }
