@@ -43,6 +43,7 @@ pub struct SignSeedPhraseContext {
 }
 
 impl SignSeedPhraseContext {
+    #[tracing::instrument(name = "Signing the transaction using the seed phrase ...", skip_all)]
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,

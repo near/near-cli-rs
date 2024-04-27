@@ -38,6 +38,10 @@ pub struct SignAccessKeyFileContext {
 }
 
 impl SignAccessKeyFileContext {
+    #[tracing::instrument(
+        name = "Signing the transaction using the account access key file ...",
+        skip_all
+    )]
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignAccessKeyFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,

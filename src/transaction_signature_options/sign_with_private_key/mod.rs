@@ -42,6 +42,10 @@ pub struct SignPrivateKeyContext {
 }
 
 impl SignPrivateKeyContext {
+    #[tracing::instrument(
+        name = "Signing the transaction with a plaintext private key ...",
+        skip_all
+    )]
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,

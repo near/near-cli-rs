@@ -44,6 +44,10 @@ pub struct SignLegacyKeychainContext {
 }
 
 impl SignLegacyKeychainContext {
+    #[tracing::instrument(
+        name = "Signing the transaction with a key saved in legacy keychain ...",
+        skip_all
+    )]
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignLegacyKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,

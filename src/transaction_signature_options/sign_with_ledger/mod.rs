@@ -45,6 +45,10 @@ pub struct SignLedgerContext {
 }
 
 impl SignLedgerContext {
+    #[tracing::instrument(
+        name = "Signing the transaction with Ledger Nano device. Follow the instructions on the ledger ...",
+        skip_all
+    )]
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -92,11 +96,6 @@ impl SignLedgerContext {
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
-
-        eprintln!(
-            "Confirm transaction signing on your Ledger device (HD Path: {})",
-            seed_phrase_hd_path,
-        );
 
         let signature = match near_ledger::sign_transaction(
             borsh::to_vec(&unsigned_transaction)
