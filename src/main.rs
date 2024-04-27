@@ -87,7 +87,11 @@ fn main() -> crate::common::CliResult {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().with_writer(indicatif_layer.get_stderr_writer()))
         .with(indicatif_layer)
-        .with(EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
+        .with(
+            EnvFilter::from_default_env()
+                .add_directive(tracing::Level::WARN.into())
+                .add_directive("near_cli_rs=info".parse()?),
+        )
         .init();
 
     #[cfg(feature = "self-update")]
