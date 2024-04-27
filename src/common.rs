@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use futures::{StreamExt, TryStreamExt};
+use near_primitives::borsh::BorshDeserialize;
 use prettytable::Table;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
@@ -1487,6 +1488,73 @@ pub fn get_validator_list(
     )?;
     validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
     Ok(validator_list)
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct StakingPool {
+    pool_id: near_primitives::types::AccountId,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct StakingResponse {
+    pools: Vec<StakingPool>,
+}
+
+pub fn fetch_validators_api(
+    account_id: &near_primitives::types::AccountId,
+    fastnear_url: Option<String>,
+) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let Some(fastnear_url) = fastnear_url else {
+        return Err(color_eyre::Report::msg(
+            "Stake delegators API is not set for selected network",
+        ));
+    };
+
+    let url = format!("{fastnear_url}/v1/account/{account_id}/staking");
+
+    let request = reqwest::blocking::get(url)?;
+    let response: StakingResponse = request.json()?;
+
+    Ok(response
+        .pools
+        .into_iter()
+        .map(|pool| pool.pool_id)
+        .collect())
+}
+
+pub fn fetch_validators_rpc(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    staking_pools_factory_account_id: near_primitives::types::AccountId,
+) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let query_view_method_response = json_rpc_client
+        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::ViewState {
+                account_id: staking_pools_factory_account_id,
+                prefix: near_primitives::types::StoreKey::from(Vec::new()),
+                include_proof: false,
+            },
+        })
+        .context("Failed to fetch query ViewState for <poolv1.near> on the selected network")?;
+    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
+        query_view_method_response.kind
+    {
+        Ok(result
+            .values
+            .iter()
+            .filter_map(|item| {
+                if &item.key[..2] == b"se" {
+                    String::try_from_slice(&item.value)
+                        .ok()
+                        .and_then(|result| result.parse().ok())
+                } else {
+                    None
+                }
+            })
+            .collect())
+    } else {
+        Err(color_eyre::Report::msg("Error call result".to_string()))
+    }
 }
 
 pub fn get_validators_stake(

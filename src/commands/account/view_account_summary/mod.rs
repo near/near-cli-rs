@@ -54,7 +54,10 @@ impl ViewAccountSummaryContext {
                     })?
                     .access_key_list_view()?;
 
-                let validators_stake = crate::common::get_validators_stake(&json_rpc_client)?;
+                let validators = match crate::common::fetch_validators_api(&account_id, network_config.fastnear_url.clone()) {
+                    Ok(api_validators) => api_validators,
+                    Err(_) => crate::common::fetch_validators_rpc(&json_rpc_client, network_config.staking_pools_factory_account_id.clone())?,
+                };
 
                 let runtime = tokio::runtime::Builder::new_multi_thread()
                     .enable_all()
@@ -62,7 +65,7 @@ impl ViewAccountSummaryContext {
                 let concurrency = 10;
                 let delegated_stake: std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken> = runtime
                     .block_on(
-                        futures::stream::iter(validators_stake.into_keys())
+                        futures::stream::iter(validators)
                         .map(|validator_account_id| async {
                             let balance = get_delegated_staked_balance(&json_rpc_client, block_reference, &validator_account_id, &account_id).await?;
                             Ok::<_, color_eyre::eyre::Report>((
