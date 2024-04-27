@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use futures::{StreamExt, TryStreamExt};
+use near_primitives::borsh::BorshDeserialize;
 use prettytable::Table;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
@@ -1487,6 +1488,65 @@ pub fn get_validator_list(
     )?;
     validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
     Ok(validator_list)
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct StakingPool {
+    pool_id: near_primitives::types::AccountId,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct StakingResponse {
+    pools: Vec<StakingPool>,
+}
+
+pub fn fetch_validators_api(
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let url = format!("https://api.fastnear.com/v1/account/{}/staking", account_id);
+
+    let request = reqwest::blocking::get(url)?;
+    let response: StakingResponse = request.json()?;
+
+    Ok(response
+        .pools
+        .into_iter()
+        .map(|pool| pool.pool_id)
+        .collect())
+}
+
+pub fn fetch_validators_rpc(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let query_view_method_response = json_rpc_client
+        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::ViewState {
+                account_id: "poolv1.near".parse()?,
+                prefix: near_primitives::types::StoreKey::from(Vec::new()),
+                include_proof: false,
+            },
+        })
+        .context("Failed to fetch query ViewState for <poolv1.near> on network <beta-rpc>")?;
+    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
+        query_view_method_response.kind
+    {
+        Ok(result
+            .values
+            .iter()
+            .filter_map(|item| {
+                if &item.key[..2] == b"se" {
+                    String::try_from_slice(&item.value)
+                        .ok()
+                        .and_then(|result| result.parse().ok())
+                } else {
+                    None
+                }
+            })
+            .collect())
+    } else {
+        Err(color_eyre::Report::msg("Error call result".to_string()))
+    }
 }
 
 pub fn get_validators_stake(
