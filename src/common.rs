@@ -1527,7 +1527,7 @@ pub fn fetch_validators_rpc(
                 include_proof: false,
             },
         })
-        .context("Failed to fetch query ViewState for <poolv1.near> on network <beta-rpc>")?;
+        .context("Failed to fetch query ViewState for <poolv1.near> on the selected network")?;
     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
         query_view_method_response.kind
     {
