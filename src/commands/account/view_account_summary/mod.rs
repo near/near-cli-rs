@@ -23,6 +23,8 @@ impl ViewAccountSummaryContext {
         previous_context: crate::GlobalContext,
         scope: &<ViewAccountSummary as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let stake_delegators_api = previous_context.config.stake_delegators_api.clone();
+
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
 
@@ -54,7 +56,7 @@ impl ViewAccountSummaryContext {
                     })?
                     .access_key_list_view()?;
 
-                let validators = match crate::common::fetch_validators_api(&account_id) {
+                let validators = match crate::common::fetch_validators_api(&account_id, stake_delegators_api.clone()) {
                     Ok(api_validators) => api_validators,
                     Err(_) => crate::common::fetch_validators_rpc(&json_rpc_client)?,
                 };

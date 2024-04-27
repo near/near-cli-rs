@@ -5,6 +5,7 @@ use tracing_indicatif::span_ext::IndicatifSpanExt;
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub credentials_home_dir: std::path::PathBuf,
+    pub stake_delegators_api: String,
     pub network_connection: linked_hash_map::LinkedHashMap<String, NetworkConfig>,
 }
 
@@ -13,6 +14,9 @@ impl Default for Config {
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
         let mut credentials_home_dir = std::path::PathBuf::from(&home_dir);
         credentials_home_dir.push(".near-credentials");
+
+        let stake_delegators_api =
+            String::from("https://api.fastnear.com/v1/account/{account_id}/staking");
 
         let mut network_connection = linked_hash_map::LinkedHashMap::new();
         network_connection.insert(
@@ -49,6 +53,7 @@ impl Default for Config {
         );
         Self {
             credentials_home_dir,
+            stake_delegators_api,
             network_connection,
         }
     }

@@ -1502,8 +1502,9 @@ struct StakingResponse {
 
 pub fn fetch_validators_api(
     account_id: &near_primitives::types::AccountId,
+    stake_delegators_api: String,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
-    let url = format!("https://api.fastnear.com/v1/account/{}/staking", account_id);
+    let url = stake_delegators_api.replace("{account_id}", account_id.as_ref());
 
     let request = reqwest::blocking::get(url)?;
     let response: StakingResponse = request.json()?;
