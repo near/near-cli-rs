@@ -1502,8 +1502,14 @@ struct StakingResponse {
 
 pub fn fetch_validators_api(
     account_id: &near_primitives::types::AccountId,
-    stake_delegators_api: String,
+    stake_delegators_api: Option<String>,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let Some(stake_delegators_api) = stake_delegators_api else {
+        return Err(color_eyre::Report::msg(
+            "Stake delegators API is not set for selected network",
+        ));
+    };
+
     let url = stake_delegators_api.replace("{account_id}", account_id.as_ref());
 
     let request = reqwest::blocking::get(url)?;
@@ -1518,12 +1524,13 @@ pub fn fetch_validators_api(
 
 pub fn fetch_validators_rpc(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    staking_pools_factory_account_id: near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
     let query_view_method_response = json_rpc_client
         .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),
             request: near_primitives::views::QueryRequest::ViewState {
-                account_id: "poolv1.near".parse()?,
+                account_id: staking_pools_factory_account_id,
                 prefix: near_primitives::types::StoreKey::from(Vec::new()),
                 include_proof: false,
             },

@@ -5,7 +5,6 @@ use tracing_indicatif::span_ext::IndicatifSpanExt;
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub credentials_home_dir: std::path::PathBuf,
-    pub stake_delegators_api: String,
     pub network_connection: linked_hash_map::LinkedHashMap<String, NetworkConfig>,
 }
 
@@ -14,9 +13,6 @@ impl Default for Config {
         let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
         let mut credentials_home_dir = std::path::PathBuf::from(&home_dir);
         credentials_home_dir.push(".near-credentials");
-
-        let stake_delegators_api =
-            String::from("https://api.fastnear.com/v1/account/{account_id}/staking");
 
         let mut network_connection = linked_hash_map::LinkedHashMap::new();
         network_connection.insert(
@@ -33,6 +29,10 @@ impl Default for Config {
                 near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
                 faucet_url: None,
                 meta_transaction_relayer_url: None,
+                stake_delegators_api: Some(String::from(
+                    "https://api.fastnear.com/v1/account/{account_id}/staking",
+                )),
+                staking_pools_factory_account_id: "poolv1.near".parse().unwrap(),
             },
         );
         network_connection.insert(
@@ -49,11 +49,13 @@ impl Default for Config {
                 near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
                 meta_transaction_relayer_url: None,
+                stake_delegators_api: None,
+                staking_pools_factory_account_id: "pool.f863973.m0".parse().unwrap(),
             },
         );
+
         Self {
             credentials_home_dir,
-            stake_delegators_api,
             network_connection,
         }
     }
@@ -81,6 +83,8 @@ pub struct NetworkConfig {
     pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
     pub faucet_url: Option<url::Url>,
     pub meta_transaction_relayer_url: Option<url::Url>,
+    pub stake_delegators_api: Option<String>,
+    pub staking_pools_factory_account_id: near_primitives::types::AccountId,
 }
 
 impl NetworkConfig {

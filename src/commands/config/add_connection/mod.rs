@@ -34,6 +34,11 @@ pub struct AddNetworkConnection {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     meta_transaction_relayer_url: Option<crate::types::url::Url>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    stake_delegators_api: Option<String>,
+    #[interactive_clap(long)]
+    staking_pools_factory_account_id: crate::types::account_id::AccountId,
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +73,11 @@ impl AddNetworkConnectionContext {
                     .meta_transaction_relayer_url
                     .clone()
                     .map(|meta_transaction_relayer_url| meta_transaction_relayer_url.into()),
+                stake_delegators_api: scope.stake_delegators_api.clone(),
+                staking_pools_factory_account_id: scope
+                    .staking_pools_factory_account_id
+                    .clone()
+                    .into(),
             },
         );
         eprintln!();
@@ -205,6 +215,31 @@ impl AddNetworkConnection {
             let meta_transaction_relayer_url: crate::types::url::Url =
                 CustomType::new("What is the relayer url?").prompt()?;
             Ok(Some(meta_transaction_relayer_url))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_stake_delegators_api(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        eprintln!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter the stake delegators API")]
+            Yes,
+            #[strum(to_string = "No, I don't want to enter the stake delegators API")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the stake delegators API?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let stake_delegators_api: String =
+                CustomType::new("What is the stake delegators API?").prompt()?;
+            Ok(Some(stake_delegators_api))
         } else {
             Ok(None)
         }
