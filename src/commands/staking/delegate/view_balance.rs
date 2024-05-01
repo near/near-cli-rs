@@ -18,6 +18,10 @@ pub struct ViewBalance {
 pub struct ViewBalanceContext(crate::network_view_at_block::ArgsForViewContext);
 
 impl ViewBalanceContext {
+    #[tracing::instrument(
+        name = "View the delegated stake balance for your account ...",
+        skip_all
+    )]
     pub fn from_previous_context(
         previous_context: super::StakeDelegationContext,
         scope: &<ViewBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -69,6 +73,7 @@ impl ViewBalance {
     }
 }
 
+#[tracing::instrument(name = "Getting the staked balance for the user ...", skip_all)]
 pub fn get_user_staked_balance(
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
@@ -96,6 +101,7 @@ pub fn get_user_staked_balance(
         .parse::<u128>()?)
 }
 
+#[tracing::instrument(name = "Getting the unstaked balance for the user ...", skip_all)]
 pub fn get_user_unstaked_balance(
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
@@ -123,6 +129,7 @@ pub fn get_user_unstaked_balance(
         .parse::<u128>()?)
 }
 
+#[tracing::instrument(name = "Getting the total balance for the user ...", skip_all)]
 pub fn get_user_total_balance(
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,

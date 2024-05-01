@@ -33,6 +33,7 @@ impl From<ValidatorListContext> for crate::network::NetworkContext {
     }
 }
 
+#[tracing::instrument(name = "View the list of validators for delegation ...", skip_all)]
 fn display_validators_info(network_config: &crate::config::NetworkConfig) -> crate::CliResult {
     let mut table = Table::new();
     table.set_titles(prettytable::row![Fg=>"#", "Validator Id", "Fee", "Delegators", "Stake"]);
