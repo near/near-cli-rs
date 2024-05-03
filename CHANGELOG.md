@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0](https://github.com/near/near-cli-rs/compare/v0.9.1...v0.10.0) - 2024-05-03
+
+### Added
+- Added loading indicators to wait for staking properties to be viewed ([#328](https://github.com/near/near-cli-rs/pull/328))
+- improved fetching staking pools ([#325](https://github.com/near/near-cli-rs/pull/325))
+- Added loading indicators for waiting for the transaction to be signed ([#324](https://github.com/near/near-cli-rs/pull/324))
+
+### Fixed
+- Wrong console command for adding Function-Call key with any methods to account ([#329](https://github.com/near/near-cli-rs/pull/329))
+
+### Other
+- Support automatic config version migration ([#331](https://github.com/near/near-cli-rs/pull/331))
+- Updated dependencies ([#332](https://github.com/near/near-cli-rs/pull/332))
+- Refactored the command for adding Function-Call Access key ([#330](https://github.com/near/near-cli-rs/pull/330))
+
 ## [0.9.1](https://github.com/near/near-cli-rs/compare/v0.9.0...v0.9.1) - 2024-04-25
 
 ### Added
