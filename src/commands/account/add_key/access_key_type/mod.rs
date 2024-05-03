@@ -116,15 +116,13 @@ impl FunctionCallType {
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to input a list of method names that can be used")]
             Yes,
-            #[strum(
-                to_string = "No, I don't want to input a list of method names that can be used"
-            )]
+            #[strum(to_string = "No, I allow it to perform any methods from the contract")]
             No,
         }
 
         eprintln!();
         let select_choose_input = Select::new(
-            "Do You want to input a list of method names that can be used?",
+            "Do you want to limit the use of the \"function call key\" to only certain methods or allow it to perform any method according to the specified contract?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
