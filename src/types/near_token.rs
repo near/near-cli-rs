@@ -42,6 +42,10 @@ impl NearToken {
     pub fn from_yoctonear(inner: u128) -> Self {
         Self(near_token::NearToken::from_yoctonear(inner))
     }
+
+    pub const fn is_zero(&self) -> bool {
+        self.0.is_zero()
+    }
 }
 
 impl interactive_clap::ToCli for NearToken {

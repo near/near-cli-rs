@@ -40,11 +40,7 @@ impl DeployArgs {
             ];
         };
 
-        if let Some(init_args) = &self.init_args {
-            let mut initial_function = "new".to_string();
-            if let Some(init_function) = &self.init_function {
-                initial_function.clone_from(init_function);
-            }
+        if self.init_function.is_some() {
             vec![
                 "contract".to_owned(),
                 "deploy".to_owned(),
@@ -52,9 +48,9 @@ impl DeployArgs {
                 "use-file".to_owned(),
                 wasm_file.to_owned(),
                 "with-init-call".to_owned(),
-                initial_function,
+                self.init_function.as_deref().unwrap_or("new").to_owned(),
                 "json-args".to_owned(),
-                init_args.to_owned(),
+                self.init_args.as_deref().unwrap_or("{}").to_owned(),
                 "prepaid-gas".to_owned(),
                 format!("{} TeraGas", self.init_gas / 1_000_000_000_000),
                 "attached-deposit".to_owned(),

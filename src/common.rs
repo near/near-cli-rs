@@ -1428,6 +1428,7 @@ pub struct RewardFeeFraction {
     pub denominator: u32,
 }
 
+#[tracing::instrument(name = "Getting a list of validators ...", skip_all)]
 pub fn get_validator_list(
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<Vec<StakingPoolInfo>> {
@@ -1530,6 +1531,7 @@ pub fn fetch_validators_rpc(
     }
 }
 
+#[tracing::instrument(name = "Getting a stake of validators ...", skip_all)]
 pub fn get_validators_stake(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
 ) -> color_eyre::eyre::Result<

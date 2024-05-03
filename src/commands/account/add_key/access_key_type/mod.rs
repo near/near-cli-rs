@@ -53,7 +53,7 @@ impl From<FullAccessTypeContext> for AccessTypeContext {
 pub struct FunctionCallType {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    allowance: Option<crate::types::near_token::NearToken>,
+    allowance: crate::types::near_token::NearToken,
     #[interactive_clap(long)]
     /// Enter a receiver to use by this access key to pay for function call gas and transaction fees:
     receiver_account_id: crate::types::account_id::AccountId,
@@ -81,7 +81,7 @@ impl FunctionCallTypeContext {
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id.into(),
-            allowance: scope.allowance,
+            allowance: Some(scope.allowance),
             receiver_account_id: scope.receiver_account_id.clone(),
             method_names: scope.method_names.clone(),
         })
@@ -110,17 +110,17 @@ impl FunctionCallType {
     ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
-            #[strum(to_string = "Yes, I want to input a list of method names that can be used")]
-            Yes,
             #[strum(
-                to_string = "No, I don't want to input a list of method names that can be used"
+                to_string = "Yes, I want to input a list of function names that can be called when transaction is signed by this access key"
             )]
+            Yes,
+            #[strum(to_string = "No, I allow it to call any functions on the specified contract")]
             No,
         }
 
         eprintln!();
         let select_choose_input = Select::new(
-            "Do You want to input a list of method names that can be used?",
+            "Would you like the access key to be valid exclusively for calling specific functions on the contract?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
@@ -145,26 +145,10 @@ impl FunctionCallType {
     pub fn input_allowance(
         _context: &super::AddKeyCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
-        enum ConfirmOptions {
-            #[strum(to_string = "Yes, I want to input allowance for receiver ID")]
-            Yes,
-            #[strum(to_string = "No, I don't want to input allowance for receiver ID")]
-            No,
-        }
-        let select_choose_input = Select::new(
-            "Do You want to input an allowance for receiver ID?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
-        if let ConfirmOptions::Yes = select_choose_input {
-            let allowance_near_balance: crate::types::near_token::NearToken =
-                    CustomType::new("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
-                    .prompt()?;
-            Ok(Some(allowance_near_balance))
-        } else {
-            Ok(None)
-        }
+        let allowance_near_balance: crate::types::near_token::NearToken =
+            CustomType::new("Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
+                .with_starting_input("0.25 NEAR")
+                .prompt()?;
+        Ok(Some(allowance_near_balance))
     }
 }
