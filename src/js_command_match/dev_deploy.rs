@@ -30,11 +30,7 @@ impl DevDeployArgs {
             "2. Run the following command, after inserting the name of the created dev-account:"
         );
 
-        if let Some(init_args) = &self.init_args {
-            let mut initial_function = "new".to_string();
-            if let Some(init_function) = &self.init_function {
-                initial_function.clone_from(init_function);
-            }
+        if self.init_function.is_some() {
             eprintln!(
                 "   {}",
                 shell_words::join(vec![
@@ -43,9 +39,9 @@ impl DevDeployArgs {
                     "deploy".to_owned(),
                     "<created-dev-account>".to_owned(),
                     "with-init-call".to_owned(),
-                    initial_function,
+                    self.init_function.as_deref().unwrap_or("new").to_owned(),
                     "json-args".to_owned(),
-                    init_args.to_owned(),
+                    self.init_args.as_deref().unwrap_or("{}").to_owned(),
                     "prepaid-gas".to_owned(),
                     format!("{} TeraGas", self.init_gas / 1_000_000_000_000),
                     "attached-deposit".to_owned(),
