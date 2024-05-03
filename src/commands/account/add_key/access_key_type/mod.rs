@@ -110,15 +110,17 @@ impl FunctionCallType {
     ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
-            #[strum(to_string = "Yes, I want to input a list of method names that can be used")]
+            #[strum(
+                to_string = "Yes, I want to input a list of function names that can be called when transaction is signed by this access key"
+            )]
             Yes,
-            #[strum(to_string = "No, I allow it to perform any methods from the contract")]
+            #[strum(to_string = "No, I allow it to call any functions on the specified contract")]
             No,
         }
 
         eprintln!();
         let select_choose_input = Select::new(
-            "Do you want to limit the use of the \"function call key\" to only certain methods or allow it to perform any method according to the specified contract?",
+            "Would you like the access key to be valid exclusively for calling specific functions on the contract?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
@@ -144,7 +146,7 @@ impl FunctionCallType {
         _context: &super::AddKeyCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         let allowance_near_balance: crate::types::near_token::NearToken =
-            CustomType::new("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
+            CustomType::new("Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
                 .with_starting_input("0.25 NEAR")
                 .prompt()?;
         Ok(Some(allowance_near_balance))
