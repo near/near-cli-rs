@@ -1,0 +1,97 @@
+use crate::config::Config as ConfigV2;
+use crate::config::NetworkConfig as NetworkConfigV2;
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ConfigV1 {
+    pub credentials_home_dir: std::path::PathBuf,
+    pub network_connection: linked_hash_map::LinkedHashMap<String, NetworkConfigV1>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct NetworkConfigV1 {
+    pub network_name: String,
+    pub rpc_url: url::Url,
+    pub rpc_api_key: Option<crate::types::api_key::ApiKey>,
+    pub wallet_url: url::Url,
+    pub explorer_transaction_url: url::Url,
+    // https://github.com/near/near-cli-rs/issues/116
+    pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
+    // https://docs.near.org/social/contract
+    pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
+    pub faucet_url: Option<url::Url>,
+    pub meta_transaction_relayer_url: Option<url::Url>,
+}
+
+impl From<ConfigV1> for ConfigV2 {
+    fn from(config: ConfigV1) -> Self {
+        ConfigV2 {
+            credentials_home_dir: config.credentials_home_dir,
+            network_connection: config
+                .network_connection
+                .into_iter()
+                .map(|(network_name, network_config)| (network_name, network_config.into()))
+                .collect(),
+        }
+    }
+}
+
+impl From<NetworkConfigV1> for NetworkConfigV2 {
+    fn from(network_config: NetworkConfigV1) -> Self {
+        match network_config.network_name.as_str() {
+            "mainnet" => NetworkConfigV2 {
+                network_name: network_config.network_name.clone(),
+                rpc_url: network_config.rpc_url.clone(),
+                wallet_url: network_config.wallet_url.clone(),
+                explorer_transaction_url: network_config.explorer_transaction_url.clone(),
+                rpc_api_key: network_config.rpc_api_key.clone(),
+                linkdrop_account_id: network_config.linkdrop_account_id.clone(),
+                near_social_db_contract_account_id: network_config
+                    .near_social_db_contract_account_id
+                    .clone(),
+                faucet_url: network_config.faucet_url.clone(),
+                meta_transaction_relayer_url: network_config.meta_transaction_relayer_url.clone(),
+                fastnear_url: Some(String::from("https://api.fastnear.com")),
+                staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
+            },
+            "testnet" => NetworkConfigV2 {
+                network_name: network_config.network_name.clone(),
+                rpc_url: network_config.rpc_url.clone(),
+                wallet_url: network_config.wallet_url.clone(),
+                explorer_transaction_url: network_config.explorer_transaction_url.clone(),
+                rpc_api_key: network_config.rpc_api_key.clone(),
+                linkdrop_account_id: network_config.linkdrop_account_id.clone(),
+                near_social_db_contract_account_id: network_config
+                    .near_social_db_contract_account_id
+                    .clone(),
+                faucet_url: network_config.faucet_url.clone(),
+                meta_transaction_relayer_url: network_config.meta_transaction_relayer_url.clone(),
+                fastnear_url: None,
+                staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
+            },
+            _ => NetworkConfigV2 {
+                network_name: network_config.network_name.clone(),
+                rpc_url: network_config.rpc_url.clone(),
+                wallet_url: network_config.wallet_url.clone(),
+                explorer_transaction_url: network_config.explorer_transaction_url.clone(),
+                rpc_api_key: network_config.rpc_api_key.clone(),
+                linkdrop_account_id: network_config.linkdrop_account_id.clone(),
+                near_social_db_contract_account_id: network_config
+                    .near_social_db_contract_account_id
+                    .clone(),
+                faucet_url: network_config.faucet_url.clone(),
+                meta_transaction_relayer_url: network_config.meta_transaction_relayer_url.clone(),
+                fastnear_url: None,
+                staking_pools_factory_account_id: None,
+            },
+        }
+    }
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "version")]
+pub enum ConfigVersion {
+    #[serde(rename = "1")]
+    V1(ConfigV1),
+    #[serde(rename = "2")]
+    V2(ConfigV2),
+}
