@@ -98,7 +98,7 @@ impl FunctionCallType {
         eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
-            #[strum(to_string = "Yes, I want to input a list of method names that can be used")]
+            #[strum(to_string = "Yes, I want to input a list of function names that can be called when transaction is signed by this access key")]
             Yes,
             #[strum(to_string = "No, I allow it to perform any methods from the contract")]
             No,
