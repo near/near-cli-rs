@@ -104,7 +104,7 @@ impl FunctionCallType {
             No,
         }
         let select_choose_input = Select::new(
-            "Do you want to limit the use of the \"function call key\" to only certain methods or allow it to perform any method according to the specified contract?",
+            "Would you like the access key to be valid exclusively for calling specific functions on the contract?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
