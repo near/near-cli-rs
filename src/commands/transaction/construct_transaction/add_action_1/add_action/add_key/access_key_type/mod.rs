@@ -131,7 +131,7 @@ impl FunctionCallType {
         _context: &super::super::super::super::ConstructTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         let allowance_near_balance: crate::types::near_token::NearToken =
-            CustomType::new("Enter an allowance which is a balance limit to use by this access key to pay for function call gas and transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
+            CustomType::new("Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
                 .with_starting_input("0.25 NEAR")
                 .prompt()?;
         Ok(Some(allowance_near_balance))
