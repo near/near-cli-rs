@@ -81,11 +81,7 @@ impl FunctionCallTypeContext {
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id.into(),
-            allowance: if scope.allowance.is_zero() {
-                None
-            } else {
-                Some(scope.allowance)
-            },
+            allowance: Some(scope.allowance),
             receiver_account_id: scope.receiver_account_id.clone(),
             method_names: scope.method_names.clone(),
         })
