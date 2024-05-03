@@ -43,7 +43,7 @@ impl DeployArgs {
         if let Some(init_args) = &self.init_args {
             let mut initial_function = "new".to_string();
             if let Some(init_function) = &self.init_function {
-                initial_function = init_function.clone();
+                initial_function.clone_from(init_function);
             }
             vec![
                 "contract".to_owned(),
