@@ -12,7 +12,7 @@ pub struct GenerateKeyArgs {
 
 impl GenerateKeyArgs {
     pub fn to_cli_args(&self, network_config: String) -> color_eyre::eyre::Result<Vec<String>> {
-        let config = crate::common::get_config_toml()?;
+        let config = crate::config::Config::get_config_toml()?;
         let mut generation_method = "use-auto-generation".to_string();
         if self.use_ledger_key.is_some() {
             generation_method = "use-ledger".to_string();

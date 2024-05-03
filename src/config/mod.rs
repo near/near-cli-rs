@@ -1,5 +1,9 @@
-use color_eyre::eyre::WrapErr;
-use std::str::FromStr;
+mod migrations;
+
+pub type CliResult = color_eyre::eyre::Result<()>;
+
+use color_eyre::eyre::{ContextCompat, WrapErr};
+use std::{io::Write, str::FromStr};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -30,7 +34,7 @@ impl Default for Config {
                 faucet_url: None,
                 meta_transaction_relayer_url: None,
                 fastnear_url: Some(String::from("https://api.fastnear.com")),
-                staking_pools_factory_account_id: "poolv1.near".parse().unwrap(),
+                staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             },
         );
         network_connection.insert(
@@ -48,7 +52,7 @@ impl Default for Config {
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
                 meta_transaction_relayer_url: None,
                 fastnear_url: None,
-                staking_pools_factory_account_id: "pool.f863973.m0".parse().unwrap(),
+                staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             },
         );
 
@@ -66,6 +70,57 @@ impl Config {
             .map(|(_, network_config)| network_config.network_name.clone())
             .collect()
     }
+
+    pub fn into_latest_version(self) -> migrations::ConfigVersion {
+        migrations::ConfigVersion::V2(self)
+    }
+
+    pub fn get_config_toml() -> color_eyre::eyre::Result<Self> {
+        if let Some(mut path_config_toml) = dirs::config_dir() {
+            path_config_toml.extend(&["near-cli", "config.toml"]);
+
+            if !path_config_toml.is_file() {
+                Self::write_config_toml(crate::config::Config::default())?;
+            };
+
+            let config_toml = std::fs::read_to_string(&path_config_toml)?;
+
+            let config_version = toml::from_str::<migrations::ConfigVersion>(&config_toml).or_else::<color_eyre::eyre::Report, _>(|err| {
+                if let Ok(config_v1) = toml::from_str::<migrations::ConfigV1>(&config_toml) {
+                    Ok(migrations::ConfigVersion::V1(config_v1))
+                } else {
+                    eprintln!("Warning: `near` CLI configuration file stored at {path_config_toml:?} could not be parsed due to: {err}");
+                    eprintln!("Note: The default configuration printed below will be used instead:\n");
+                    let default_config = crate::config::Config::default();
+                    eprintln!("{}", toml::to_string(&default_config)?);
+                    Ok(default_config.into_latest_version())
+                }
+            })?;
+
+            Ok(config_version.into())
+        } else {
+            Ok(crate::config::Config::default())
+        }
+    }
+
+    pub fn write_config_toml(self) -> CliResult {
+        let config_toml = toml::to_string(&self.into_latest_version())?;
+        let mut path_config_toml =
+            dirs::config_dir().wrap_err("Impossible to get your config dir!")?;
+
+        path_config_toml.push("near-cli");
+        std::fs::create_dir_all(&path_config_toml)?;
+        path_config_toml.push("config.toml");
+
+        std::fs::File::create(&path_config_toml)
+            .wrap_err_with(|| format!("Failed to create file: {path_config_toml:?}"))?
+            .write(config_toml.as_bytes())
+            .wrap_err_with(|| format!("Failed to write to file: {path_config_toml:?}"))?;
+
+        eprintln!("Note: `near` CLI configuration is stored in {path_config_toml:?}");
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -82,7 +137,7 @@ pub struct NetworkConfig {
     pub faucet_url: Option<url::Url>,
     pub meta_transaction_relayer_url: Option<url::Url>,
     pub fastnear_url: Option<String>,
-    pub staking_pools_factory_account_id: near_primitives::types::AccountId,
+    pub staking_pools_factory_account_id: Option<near_primitives::types::AccountId>,
 }
 
 impl NetworkConfig {
@@ -112,6 +167,21 @@ impl NetworkConfig {
             _ => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "This network does not provide the \"near-social\" contract"
             )),
+        }
+    }
+}
+
+impl From<migrations::ConfigVersion> for Config {
+    fn from(mut config_version: migrations::ConfigVersion) -> Self {
+        loop {
+            config_version = match config_version {
+                migrations::ConfigVersion::V1(config_v1) => {
+                    migrations::ConfigVersion::V2(config_v1.into())
+                }
+                migrations::ConfigVersion::V2(config_v2) => {
+                    break config_v2;
+                }
+            };
         }
     }
 }

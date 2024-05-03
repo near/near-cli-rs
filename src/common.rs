@@ -1253,39 +1253,6 @@ pub fn save_access_key_to_legacy_keychain(
     }
 }
 
-pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {
-    if let Some(mut path_config_toml) = dirs::config_dir() {
-        path_config_toml.extend(&["near-cli", "config.toml"]);
-
-        if !path_config_toml.is_file() {
-            write_config_toml(crate::config::Config::default())?;
-        };
-        let config_toml = std::fs::read_to_string(&path_config_toml)?;
-        toml::from_str(&config_toml).or_else(|err| {
-            eprintln!("Warning: `near` CLI configuration file stored at {path_config_toml:?} could not be parsed due to: {err}");
-            eprintln!("Note: The default configuration printed below will be used instead:\n");
-            let default_config = crate::config::Config::default();
-            eprintln!("{}", toml::to_string(&default_config)?);
-            Ok(default_config)
-        })
-    } else {
-        Ok(crate::config::Config::default())
-    }
-}
-pub fn write_config_toml(config: crate::config::Config) -> CliResult {
-    let config_toml = toml::to_string(&config)?;
-    let mut path_config_toml = dirs::config_dir().wrap_err("Impossible to get your config dir!")?;
-    path_config_toml.push("near-cli");
-    std::fs::create_dir_all(&path_config_toml)?;
-    path_config_toml.push("config.toml");
-    std::fs::File::create(&path_config_toml)
-        .wrap_err_with(|| format!("Failed to create file: {path_config_toml:?}"))?
-        .write(config_toml.as_bytes())
-        .wrap_err_with(|| format!("Failed to write to file: {path_config_toml:?}"))?;
-    eprintln!("Note: `near` CLI configuration is stored in {path_config_toml:?}");
-    Ok(())
-}
-
 pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
     let (subcommand, args) = {
         let mut args = std::env::args().skip(1);
@@ -1525,8 +1492,14 @@ pub fn fetch_validators_api(
 
 pub fn fetch_validators_rpc(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    staking_pools_factory_account_id: near_primitives::types::AccountId,
+    staking_pools_factory_account_id: Option<near_primitives::types::AccountId>,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let Some(staking_pools_factory_account_id) = staking_pools_factory_account_id else {
+        return Err(color_eyre::Report::msg(
+            "Staking pools factory account ID is not set for selected network",
+        ));
+    };
+
     let query_view_method_response = json_rpc_client
         .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),

@@ -38,7 +38,8 @@ pub struct AddNetworkConnection {
     #[interactive_clap(skip_default_input_arg)]
     fastnear_url: Option<String>,
     #[interactive_clap(long)]
-    staking_pools_factory_account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(skip_default_input_arg)]
+    staking_pools_factory_account_id: Option<crate::types::account_id::AccountId>,
 }
 
 #[derive(Debug, Clone)]
@@ -77,11 +78,13 @@ impl AddNetworkConnectionContext {
                 staking_pools_factory_account_id: scope
                     .staking_pools_factory_account_id
                     .clone()
-                    .into(),
+                    .map(|staking_pools_factory_account_id| {
+                        staking_pools_factory_account_id.into()
+                    }),
             },
         );
         eprintln!();
-        crate::common::write_config_toml(config)?;
+        config.write_config_toml()?;
         eprintln!(
             "Network connection \"{}\" was successfully added to config.toml",
             &scope.connection_name
@@ -240,6 +243,31 @@ impl AddNetworkConnection {
             let stake_delegators_api: String =
                 CustomType::new("What is the fastnear API url?").prompt()?;
             Ok(Some(stake_delegators_api))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_staking_pools_factory_account_id(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        eprintln!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter the staking pools factory account ID")]
+            Yes,
+            #[strum(to_string = "No, I don't want to enter the staking pools factory account ID")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the staking pools factory account ID?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let account_id: crate::types::account_id::AccountId =
+                CustomType::new("What is the staking pools factory account ID?").prompt()?;
+            Ok(Some(account_id))
         } else {
             Ok(None)
         }

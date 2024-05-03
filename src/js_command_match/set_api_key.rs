@@ -9,7 +9,7 @@ pub struct SetApiKeyArgs {
 
 impl SetApiKeyArgs {
     pub fn to_cli_args(&self, network_name: String) -> color_eyre::eyre::Result<Vec<String>> {
-        let config = crate::common::get_config_toml()?;
+        let config = crate::config::Config::get_config_toml()?;
         let network_config = match config.network_connection.get(&network_name) {
             Some(network_config) => network_config,
             None => {
