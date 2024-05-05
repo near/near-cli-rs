@@ -1123,11 +1123,15 @@ pub fn handler_invalid_tx_error(
     }
 }
 
-fn get_near_price() -> color_eyre::eyre::Result<Option<f64>> {
+fn get_near_price(api: Option<url::Url>) -> color_eyre::eyre::Result<Option<f64>> {
+    let url = if let Some(api) = api {
+        api.join("api/v3/simple/price?ids=near&vs_currencies=usd")?
+    } else {
+        return Ok(None);
+    };
+
     for _ in 0..10 {
-        let response = reqwest::blocking::get(
-            "https://api.coingecko.com/api/v3/simple/price?ids=near&vs_currencies=usd",
-        )?;
+        let response = reqwest::blocking::get(url.clone())?;
 
         let body = response.text()?;
         let parsed_body: serde_json::Value = serde_json::from_str(&body)?;
@@ -1144,11 +1148,8 @@ fn get_near_price() -> color_eyre::eyre::Result<Option<f64>> {
     Ok(None)
 }
 
-fn convert_near_to_usd(yoctonear: u128) -> Option<f64> {
-    get_near_price()
-        .ok()
-        .flatten()
-        .map(|price| yoctonear as f64 * price / 10_f64.powf(24_f64))
+fn convert_near_to_usd(yoctonear: u128, price: f64) -> f64 {
+    yoctonear as f64 * price / 10_f64.powf(24_f64)
 }
 
 pub fn print_transaction_error(
@@ -1171,6 +1172,9 @@ pub fn print_transaction_status(
 ) -> crate::CliResult {
     eprintln!("--- Logs ---------------------------");
 
+    let price = get_near_price(network_config.coingecko_url.clone())
+        .ok()
+        .flatten();
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
 
@@ -1186,6 +1190,12 @@ pub fn print_transaction_status(
         };
     }
 
+    let approximate_usd = if let Some(price) = price {
+        format!("{:.8}", convert_near_to_usd(total_tokens_burnt, price))
+    } else {
+        "N/A".to_string()
+    };
+
     eprintln!(
         "Gas burned: {}",
         crate::common::NearGas::from_gas(total_gas_burnt)
@@ -1193,9 +1203,7 @@ pub fn print_transaction_status(
     eprintln!(
         "Tokens burned: {} (approximately ${} USD)",
         crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
-        convert_near_to_usd(total_tokens_burnt)
-            .map(|price| format!("{:.8}", price))
-            .unwrap_or("N/A".to_string())
+        approximate_usd
     );
 
     match &transaction_info.status {
@@ -1519,15 +1527,15 @@ struct StakingResponse {
 
 pub fn fetch_validators_api(
     account_id: &near_primitives::types::AccountId,
-    fastnear_url: Option<String>,
+    fastnear_url: Option<url::Url>,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
-    let Some(fastnear_url) = fastnear_url else {
+    let url = if let Some(fastnear_url) = fastnear_url {
+        fastnear_url.join(&format!("v1/account/{}/staking", account_id))?
+    } else {
         return Err(color_eyre::Report::msg(
             "Stake delegators API is not set for selected network",
         ));
     };
-
-    let url = format!("{fastnear_url}/v1/account/{account_id}/staking");
 
     let request = reqwest::blocking::get(url)?;
     let response: StakingResponse = request.json()?;

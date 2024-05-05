@@ -33,8 +33,9 @@ impl Default for Config {
                 near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
                 faucet_url: None,
                 meta_transaction_relayer_url: None,
-                fastnear_url: Some(String::from("https://api.fastnear.com")),
+                fastnear_url: Some("https://api.fastnear.com/".parse().unwrap()),
                 staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
+                coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             },
         );
         network_connection.insert(
@@ -53,6 +54,7 @@ impl Default for Config {
                 meta_transaction_relayer_url: None,
                 fastnear_url: None,
                 staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
+                coingecko_url: None,
             },
         );
 
@@ -136,8 +138,9 @@ pub struct NetworkConfig {
     pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
     pub faucet_url: Option<url::Url>,
     pub meta_transaction_relayer_url: Option<url::Url>,
-    pub fastnear_url: Option<String>,
+    pub fastnear_url: Option<url::Url>,
     pub staking_pools_factory_account_id: Option<near_primitives::types::AccountId>,
+    pub coingecko_url: Option<url::Url>,
 }
 
 impl NetworkConfig {

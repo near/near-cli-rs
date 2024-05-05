@@ -36,10 +36,13 @@ pub struct AddNetworkConnection {
     meta_transaction_relayer_url: Option<crate::types::url::Url>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    fastnear_url: Option<String>,
+    fastnear_url: Option<crate::types::url::Url>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     staking_pools_factory_account_id: Option<crate::types::account_id::AccountId>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    coingecko_url: Option<crate::types::url::Url>,
 }
 
 #[derive(Debug, Clone)]
@@ -74,13 +77,20 @@ impl AddNetworkConnectionContext {
                     .meta_transaction_relayer_url
                     .clone()
                     .map(|meta_transaction_relayer_url| meta_transaction_relayer_url.into()),
-                fastnear_url: scope.fastnear_url.clone(),
+                fastnear_url: scope
+                    .fastnear_url
+                    .clone()
+                    .map(|fastnear_url| fastnear_url.into()),
                 staking_pools_factory_account_id: scope
                     .staking_pools_factory_account_id
                     .clone()
                     .map(|staking_pools_factory_account_id| {
                         staking_pools_factory_account_id.into()
                     }),
+                coingecko_url: scope
+                    .coingecko_url
+                    .clone()
+                    .map(|coingecko_url| coingecko_url.into()),
             },
         );
         eprintln!();
@@ -225,7 +235,7 @@ impl AddNetworkConnection {
 
     fn input_fastnear_url(
         _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<String>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
         eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
@@ -240,7 +250,7 @@ impl AddNetworkConnection {
         )
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
-            let stake_delegators_api: String =
+            let stake_delegators_api: crate::types::url::Url =
                 CustomType::new("What is the fastnear API url?").prompt()?;
             Ok(Some(stake_delegators_api))
         } else {
@@ -268,6 +278,31 @@ impl AddNetworkConnection {
             let account_id: crate::types::account_id::AccountId =
                 CustomType::new("What is the staking pools factory account ID?").prompt()?;
             Ok(Some(account_id))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_coingecko_url(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
+        eprintln!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter the coingecko API url")]
+            Yes,
+            #[strum(to_string = "No, I don't want to enter the coingecko API url")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the coingecko API url?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let coingecko_api: crate::types::url::Url =
+                CustomType::new("What is the coingecko API url?").prompt()?;
+            Ok(Some(coingecko_api))
         } else {
             Ok(None)
         }
