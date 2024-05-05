@@ -1142,7 +1142,14 @@ pub fn print_transaction_status(
     network_config: &crate::config::NetworkConfig,
 ) -> crate::CliResult {
     eprintln!("--- Logs ---------------------------");
+
+    let mut total_gas_burnt = 0;
+    let mut total_tokens_burnt = 0;
+
     for receipt in transaction_info.receipts_outcome.iter() {
+        total_gas_burnt += receipt.outcome.gas_burnt;
+        total_tokens_burnt += receipt.outcome.tokens_burnt;
+
         if receipt.outcome.logs.is_empty() {
             eprintln!("Logs [{}]:   No logs", receipt.outcome.executor_id);
         } else {
@@ -1150,6 +1157,16 @@ pub fn print_transaction_status(
             eprintln!("  {}", receipt.outcome.logs.join("\n  "));
         };
     }
+
+    eprintln!(
+        "Gas burnt: {}",
+        crate::common::NearGas::from_gas(total_gas_burnt)
+    );
+    eprintln!(
+        "Tokens burnt: {}",
+        crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt)
+    );
+
     match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
