@@ -1137,6 +1137,8 @@ fn get_near_price() -> color_eyre::eyre::Result<Option<f64>> {
         if let Some(price) = price {
             return Ok(Some(price));
         }
+
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
 
     Ok(None)
