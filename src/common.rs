@@ -1144,9 +1144,11 @@ fn get_near_price() -> color_eyre::eyre::Result<Option<f64>> {
     Ok(None)
 }
 
-fn convert_near_to_usd(near: crate::types::near_token::NearToken) -> Option<f64> {
-    let near_price = get_near_price().ok().flatten();
-    near_price.map(|price| near.0.as_yoctonear() as f64 * price / 10_f64.powf(24_f64))
+fn convert_near_to_usd(yoctonear: u128) -> Option<f64> {
+    get_near_price()
+        .ok()
+        .flatten()
+        .map(|price| yoctonear as f64 * price / 10_f64.powf(24_f64))
 }
 
 pub fn print_transaction_error(
@@ -1184,17 +1186,14 @@ pub fn print_transaction_status(
         };
     }
 
-    let total_tokens_burnt_yoctonear =
-        crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt);
-
     eprintln!(
         "Gas burned: {}",
         crate::common::NearGas::from_gas(total_gas_burnt)
     );
     eprintln!(
         "Tokens burned: {} (approximately ${} USD)",
-        total_tokens_burnt_yoctonear,
-        convert_near_to_usd(total_tokens_burnt_yoctonear)
+        crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
+        convert_near_to_usd(total_tokens_burnt)
             .map(|price| format!("{:.8}", price))
             .unwrap_or("N/A".to_string())
     );
@@ -1226,6 +1225,7 @@ pub fn print_transaction_status(
         id=transaction_info.transaction_outcome.id,
         path=network_config.explorer_transaction_url
     );
+
     Ok(())
 }
 
