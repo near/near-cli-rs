@@ -1123,6 +1123,30 @@ pub fn handler_invalid_tx_error(
     }
 }
 
+fn get_near_price() -> color_eyre::eyre::Result<Option<f64>> {
+    for _ in 0..10 {
+        let response = reqwest::blocking::get(
+            "https://api.coingecko.com/api/v3/simple/price?ids=near&vs_currencies=usd",
+        )?;
+
+        let body = response.text()?;
+        let parsed_body: serde_json::Value = serde_json::from_str(&body)?;
+
+        let price = parsed_body["near"]["usd"].as_f64();
+
+        if let Some(price) = price {
+            return Ok(Some(price));
+        }
+    }
+
+    Ok(None)
+}
+
+fn convert_near_to_usd(near: crate::types::near_token::NearToken) -> Option<f64> {
+    let near_price = get_near_price().ok().flatten();
+    near_price.map(|price| near.0.as_yoctonear() as f64 * price / 10_f64.powf(24_f64))
+}
+
 pub fn print_transaction_error(
     tx_execution_error: &near_primitives::errors::TxExecutionError,
 ) -> crate::CliResult {
@@ -1143,8 +1167,8 @@ pub fn print_transaction_status(
 ) -> crate::CliResult {
     eprintln!("--- Logs ---------------------------");
 
-    let mut total_gas_burnt = 0;
-    let mut total_tokens_burnt = 0;
+    let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
+    let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
 
     for receipt in transaction_info.receipts_outcome.iter() {
         total_gas_burnt += receipt.outcome.gas_burnt;
@@ -1158,13 +1182,19 @@ pub fn print_transaction_status(
         };
     }
 
+    let total_tokens_burnt_yoctonear =
+        crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt);
+
     eprintln!(
-        "Gas burnt: {}",
+        "Gas burned: {}",
         crate::common::NearGas::from_gas(total_gas_burnt)
     );
     eprintln!(
-        "Tokens burnt: {}",
-        crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt)
+        "Tokens burned: {} (approximately ${} USD)",
+        total_tokens_burnt_yoctonear,
+        convert_near_to_usd(total_tokens_burnt_yoctonear)
+            .map(|price| format!("{:.8}", price))
+            .unwrap_or("N/A".to_string())
     );
 
     match &transaction_info.status {
