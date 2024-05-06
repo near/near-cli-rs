@@ -1202,6 +1202,8 @@ pub fn print_transaction_status(
             " (approximately ${:.8} USD)",
             convert_near_to_usd(total_tokens_burnt, price)
         );
+    } else {
+        eprintln!();
     }
 
     match &transaction_info.status {
