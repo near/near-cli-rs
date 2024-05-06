@@ -1137,7 +1137,7 @@ fn get_near_usd_exchange_rate(coingecko_url: &url::Url) -> color_eyre::Result<f6
     }
 
     let coingecko_exchange_rate_api_url =
-        coingecko_url.join("simple/price?ids=near&vs_currencies=usd")?;
+        coingecko_url.join("api/v3/simple/price?ids=near&vs_currencies=usd")?;
     let mut last_error_message = String::new();
 
     for _ in 0..10 {
