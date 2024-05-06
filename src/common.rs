@@ -5,7 +5,6 @@ use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use futures::{StreamExt, TryStreamExt};
-use near_primitives::borsh::BorshDeserialize;
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
@@ -817,7 +816,7 @@ pub fn rpc_transaction_error(
                     Ok("Timeout error transaction".to_string())
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
-                    match handler_invalid_tx_error(context) {
+                    match convert_invalid_tx_error_to_cli_result(context) {
                         Ok(_) => Ok("".to_string()),
                         Err(err) => Err(err)
                     }
@@ -859,7 +858,7 @@ pub fn rpc_transaction_error(
     }
 }
 
-pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -> crate::CliResult {
+pub fn convert_action_error_to_cli_result(action_error: &near_primitives::errors::ActionError) -> crate::CliResult {
     match &action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id))
@@ -998,7 +997,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
     }
 }
 
-pub fn handler_invalid_tx_error(
+pub fn convert_invalid_tx_error_to_cli_result(
     invalid_tx_error: &near_primitives::errors::InvalidTxError,
 ) -> crate::CliResult {
     match invalid_tx_error {
@@ -1134,20 +1133,22 @@ struct NearData {
     usd: f64,
 }
 
-fn get_near_price(url: url::Url) -> color_eyre::Result<f64> {
+fn get_near_usd_exchange_rate(coingecko_url: &url::Url) -> color_eyre::Result<f64> {
+    let coingecko_exchange_rate_api_url =
+        coingecko_url.join("simple/price?ids=near&vs_currencies=usd")?;
     let mut error_message = String::new();
 
     for _ in 0..10 {
-        match reqwest::blocking::get(url.clone()) {
+        match reqwest::blocking::get(coingecko_exchange_rate_api_url.clone()) {
             Ok(response) => match response.json::<CoingeckoResponse>() {
                 Ok(parsed_body) => return Ok(parsed_body.near.usd),
                 Err(err) => {
                     error_message =
-                        format!("Failed to parse the response from Coingecko API as JSON: {err}")
+                        format!("Failed to parse the response from Coingecko API as JSON: {err}");
                 }
             },
             Err(err) => {
-                error_message = format!("Failed to get the response from Coingecko API: {err}")
+                error_message = format!("Failed to get the response from Coingecko API: {err}");
             }
         }
 
@@ -1167,33 +1168,11 @@ fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decima
     Some(tokens_decimal * price_decimal)
 }
 
-pub fn print_transaction_error(
-    tx_execution_error: &near_primitives::errors::TxExecutionError,
-) -> crate::CliResult {
-    eprintln!("Failed transaction");
-    match tx_execution_error {
-        near_primitives::errors::TxExecutionError::ActionError(action_error) => {
-            print_action_error(action_error)
-        }
-        near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
-            handler_invalid_tx_error(invalid_tx_error)
-        }
-    }
-}
-
 pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
 ) -> crate::CliResult {
     eprintln!("--- Logs ---------------------------");
-
-    let price = network_config.coingecko_url.clone().map(|api| {
-        api.join("api/v3/simple/price?ids=near&vs_currencies=usd")
-            .map_err(|err| {
-                color_eyre::eyre::eyre!("Failed to build the URL for Coingecko API: {}", err)
-            })
-            .and_then(get_near_price)
-    });
 
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
@@ -1210,32 +1189,19 @@ pub fn print_transaction_status(
         };
     }
 
-    eprintln!(
-        "Gas burned: {}",
-        crate::common::NearGas::from_gas(total_gas_burnt)
-    );
-    match price {
-        Some(Ok(price)) => eprintln!(
-            "Tokens burned: {}{}",
-            crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
-            calculate_usd_amount(total_tokens_burnt, price).map_or_else(
-                String::new,
-                |amount| format!(" (approximately ${:.8} USD)", amount)
-            )
-        ),
-        Some(Err(err)) => eprintln!(
-            "Tokens burned: {} (approximate USD equivalent is unavailable due to an error: {})",
-            crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
-            err
-        ),
-        None => {}
-    }
-
-    match &transaction_info.status {
+    let return_value = match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-            return print_transaction_error(tx_execution_error);
+            eprintln!("--- Transaction failed ------------");
+            match tx_execution_error {
+                near_primitives::errors::TxExecutionError::ActionError(action_error) => {
+                    convert_action_error_to_cli_result(action_error)
+                }
+                near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
+                    convert_invalid_tx_error_to_cli_result(invalid_tx_error)
+                }
+            }
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
             eprintln!("--- Result -------------------------");
@@ -1251,15 +1217,38 @@ pub fn print_transaction_status(
                 eprintln!("The returned value is not printable (binary data)");
             }
             eprintln!("------------------------------------\n");
-            print_value_successful_transaction(transaction_info.clone())
+            print_value_successful_transaction(transaction_info.clone());
+            Ok(())
         }
     };
+
+    eprintln!();
+    eprintln!("Gas burned: {}", NearGas::from_gas(total_gas_burnt));
+    let near_usd_exchange_rate = network_config
+        .coingecko_url
+        .as_ref()
+        .map(get_near_usd_exchange_rate);
+    eprintln!(
+        "Transaction fee: {}{}",
+        crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
+        match near_usd_exchange_rate {
+            Some(Ok(price)) => calculate_usd_amount(total_tokens_burnt, price).map_or_else(
+                || String::from(" (USD equivalent is too big to be displayed)"),
+                |amount| format!(" (approximately ${:.8} USD)", amount)
+            ),
+            Some(Err(err)) => format!(" (USD equivalent is unavailable due to an error: {})", err),
+            None => String::from(
+                " (USD equivalent is unavailable due to missing Coingecko URL in the config)"
+            ),
+        }
+    );
+
     eprintln!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
         id=transaction_info.transaction_outcome.id,
         path=network_config.explorer_transaction_url
     );
 
-    Ok(())
+    return_value
 }
 
 pub fn save_access_key_to_keychain(
@@ -1550,10 +1539,12 @@ struct StakingResponse {
     pools: Vec<StakingPool>,
 }
 
-pub fn fetch_validators_api(
-    url: url::Url,
+pub fn fetch_historically_delegated_staking_pools(
+    fastnear_url: &url::Url,
+    account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
-    let request = reqwest::blocking::get(url)?;
+    let request =
+        reqwest::blocking::get(fastnear_url.join(&format!("v1/account/{}/staking", account_id))?)?;
     let response: StakingResponse = request.json()?;
 
     Ok(response
@@ -1563,21 +1554,15 @@ pub fn fetch_validators_api(
         .collect())
 }
 
-pub fn fetch_validators_rpc(
+pub fn fetch_currently_active_staking_pools(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    staking_pools_factory_account_id: Option<near_primitives::types::AccountId>,
+    staking_pools_factory_account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
-    let Some(staking_pools_factory_account_id) = staking_pools_factory_account_id else {
-        return Err(color_eyre::Report::msg(
-            "Staking pools factory account ID is not set for selected network",
-        ));
-    };
-
     let query_view_method_response = json_rpc_client
         .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),
             request: near_primitives::views::QueryRequest::ViewState {
-                account_id: staking_pools_factory_account_id,
+                account_id: staking_pools_factory_account_id.clone(),
                 prefix: near_primitives::types::StoreKey::from(Vec::new()),
                 include_proof: false,
             },
@@ -1588,16 +1573,10 @@ pub fn fetch_validators_rpc(
     {
         Ok(result
             .values
-            .iter()
-            .filter_map(|item| {
-                if &item.key[..2] == b"se" {
-                    String::try_from_slice(&item.value)
-                        .ok()
-                        .and_then(|result| result.parse().ok())
-                } else {
-                    None
-                }
-            })
+            .into_iter()
+            .filter(|item| &item.key[..2] == b"se")
+            .filter_map(|item| String::from_utf8(item.value.into()).ok())
+            .filter_map(|result| result.parse().ok())
             .collect())
     } else {
         Err(color_eyre::Report::msg("Error call result".to_string()))
