@@ -1133,13 +1133,12 @@ fn get_near_price(api: Option<url::Url>) -> color_eyre::eyre::Result<Option<f64>
     for _ in 0..10 {
         let response = reqwest::blocking::get(url.clone())?;
 
-        let body = response.text()?;
-        let parsed_body: serde_json::Value = serde_json::from_str(&body)?;
+        if let Ok(parsed_body) = response.json::<serde_json::Value>() {
+            let price = parsed_body["near"]["usd"].as_f64();
 
-        let price = parsed_body["near"]["usd"].as_f64();
-
-        if let Some(price) = price {
-            return Ok(Some(price));
+            if let Some(price) = price {
+                return Ok(Some(price));
+            }
         }
 
         std::thread::sleep(std::time::Duration::from_millis(100));
@@ -1190,21 +1189,20 @@ pub fn print_transaction_status(
         };
     }
 
-    let approximate_usd = if let Some(price) = price {
-        format!("{:.8}", convert_near_to_usd(total_tokens_burnt, price))
-    } else {
-        "N/A".to_string()
-    };
-
     eprintln!(
         "Gas burned: {}",
         crate::common::NearGas::from_gas(total_gas_burnt)
     );
-    eprintln!(
-        "Tokens burned: {} (approximately ${} USD)",
-        crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
-        approximate_usd
+    eprint!(
+        "Tokens burned: {}",
+        crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt)
     );
+    if let Some(price) = price {
+        eprintln!(
+            " (approximately ${:.8} USD)",
+            convert_near_to_usd(total_tokens_burnt, price)
+        );
+    }
 
     match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted

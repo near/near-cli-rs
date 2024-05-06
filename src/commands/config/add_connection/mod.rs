@@ -301,7 +301,9 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let coingecko_api: crate::types::url::Url =
-                CustomType::new("What is the coingecko API url?").prompt()?;
+                CustomType::new("What is the coingecko API url?")
+                    .with_starting_input("https://api.coingecko.com")
+                    .prompt()?;
             Ok(Some(coingecko_api))
         } else {
             Ok(None)
