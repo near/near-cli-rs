@@ -54,10 +54,16 @@ impl ViewAccountSummaryContext {
                     })?
                     .access_key_list_view()?;
 
-                let validators = match crate::common::fetch_validators_api(&account_id, network_config.fastnear_url.clone()) {
-                    Ok(api_validators) => api_validators,
-                    Err(_) => crate::common::fetch_validators_rpc(&json_rpc_client, network_config.staking_pools_factory_account_id.clone())?,
-                };
+                let validators = network_config.fastnear_url.clone().map_or_else(
+                    || crate::common::fetch_validators_rpc(&json_rpc_client, network_config.staking_pools_factory_account_id.clone()),
+                    |api| {
+                        api.join(&format!("v1/account/{}/staking", account_id))
+                            .map_or(
+                                crate::common::fetch_validators_rpc(&json_rpc_client, network_config.staking_pools_factory_account_id.clone()),
+                                crate::common::fetch_validators_api,
+                            )
+                    },
+                )?;
 
                 let runtime = tokio::runtime::Builder::new_multi_thread()
                     .enable_all()

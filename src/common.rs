@@ -1134,24 +1134,21 @@ struct NearData {
     usd: f64,
 }
 
-fn get_near_price(api: Option<url::Url>) -> color_eyre::Result<Option<f64>> {
-    let url = if let Some(api) = api {
-        api.join("api/v3/simple/price?ids=near&vs_currencies=usd")
-            .map_err(|err| color_eyre::eyre::eyre!("Failed to construct Coingecko URL: {}", err))?
-    } else {
-        return Ok(None);
-    };
+fn get_near_price(url: url::Url) -> color_eyre::Result<f64> {
+    let mut error_message = String::new();
 
-    let mut error_message = "";
     for _ in 0..10 {
-        if let Ok(response) = reqwest::blocking::get(url.clone()) {
-            if let Ok(parsed_body) = response.json::<CoingeckoResponse>() {
-                return Ok(Some(parsed_body.near.usd));
-            } else {
-                error_message = "Failed to parse the response from Coingecko API as JSON";
+        match reqwest::blocking::get(url.clone()) {
+            Ok(response) => match response.json::<CoingeckoResponse>() {
+                Ok(parsed_body) => return Ok(parsed_body.near.usd),
+                Err(err) => {
+                    error_message =
+                        format!("Failed to parse the response from Coingecko API as JSON: {err}")
+                }
+            },
+            Err(err) => {
+                error_message = format!("Failed to get the response from Coingecko API: {err}")
             }
-        } else {
-            error_message = "Failed to get the response from Coingecko API";
         }
 
         std::thread::sleep(std::time::Duration::from_millis(100));
@@ -1190,7 +1187,13 @@ pub fn print_transaction_status(
 ) -> crate::CliResult {
     eprintln!("--- Logs ---------------------------");
 
-    let price = get_near_price(network_config.coingecko_url.clone());
+    let price = network_config.coingecko_url.clone().map(|api| {
+        api.join("api/v3/simple/price?ids=near&vs_currencies=usd")
+            .map_err(|err| {
+                color_eyre::eyre::eyre!("Failed to build the URL for Coingecko API: {}", err)
+            })
+            .and_then(get_near_price)
+    });
 
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
@@ -1212,7 +1215,7 @@ pub fn print_transaction_status(
         crate::common::NearGas::from_gas(total_gas_burnt)
     );
     match price {
-        Ok(Some(price)) => eprintln!(
+        Some(Ok(price)) => eprintln!(
             "Tokens burned: {}{}",
             crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
             calculate_usd_amount(total_tokens_burnt, price).map_or_else(
@@ -1220,12 +1223,12 @@ pub fn print_transaction_status(
                 |amount| format!(" (approximately ${:.8} USD)", amount)
             )
         ),
-        Ok(None) => {}
-        Err(err) => eprintln!(
+        Some(Err(err)) => eprintln!(
             "Tokens burned: {} (approximate USD equivalent is unavailable due to an error: {})",
             crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
             err
         ),
+        None => {}
     }
 
     match &transaction_info.status {
@@ -1548,17 +1551,8 @@ struct StakingResponse {
 }
 
 pub fn fetch_validators_api(
-    account_id: &near_primitives::types::AccountId,
-    fastnear_url: Option<url::Url>,
+    url: url::Url,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
-    let url = if let Some(fastnear_url) = fastnear_url {
-        fastnear_url.join(&format!("v1/account/{}/staking", account_id))?
-    } else {
-        return Err(color_eyre::Report::msg(
-            "Stake delegators API is not set for selected network",
-        ));
-    };
-
     let request = reqwest::blocking::get(url)?;
     let response: StakingResponse = request.json()?;
 
