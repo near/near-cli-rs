@@ -1194,13 +1194,13 @@ pub fn print_transaction_status(
         crate::common::NearGas::from_gas(total_gas_burnt)
     );
     if let Some(price) = price {
-        eprint!(
+        eprintln!(
             "Tokens burned: {} (approximately ${:.8} USD)",
             crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
             convert_near_to_usd(total_tokens_burnt, price)
         );
     } else {
-        eprint!(
+        eprintln!(
             "Tokens burned: {}",
             crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
         );
