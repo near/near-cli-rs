@@ -858,7 +858,9 @@ pub fn rpc_transaction_error(
     }
 }
 
-pub fn convert_action_error_to_cli_result(action_error: &near_primitives::errors::ActionError) -> crate::CliResult {
+pub fn convert_action_error_to_cli_result(
+    action_error: &near_primitives::errors::ActionError,
+) -> crate::CliResult {
     match &action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id))
@@ -1123,39 +1125,40 @@ pub fn convert_invalid_tx_error_to_cli_result(
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
-struct CoingeckoResponse {
-    near: NearData,
-}
-
-#[derive(Debug, serde::Deserialize)]
-struct NearData {
-    usd: f64,
-}
-
 fn get_near_usd_exchange_rate(coingecko_url: &url::Url) -> color_eyre::Result<f64> {
+    #[derive(serde::Deserialize)]
+    struct CoinGeckoResponse {
+        near: CoinGeckoNearData,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct CoinGeckoNearData {
+        usd: f64,
+    }
+
     let coingecko_exchange_rate_api_url =
         coingecko_url.join("simple/price?ids=near&vs_currencies=usd")?;
-    let mut error_message = String::new();
+    let mut last_error_message = String::new();
 
     for _ in 0..10 {
         match reqwest::blocking::get(coingecko_exchange_rate_api_url.clone()) {
-            Ok(response) => match response.json::<CoingeckoResponse>() {
+            Ok(response) => match response.json::<CoinGeckoResponse>() {
                 Ok(parsed_body) => return Ok(parsed_body.near.usd),
                 Err(err) => {
-                    error_message =
+                    last_error_message =
                         format!("Failed to parse the response from Coingecko API as JSON: {err}");
                 }
             },
             Err(err) => {
-                error_message = format!("Failed to get the response from Coingecko API: {err}");
+                last_error_message =
+                    format!("Failed to get the response from Coingecko API: {err}");
             }
         }
 
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
 
-    Err(color_eyre::eyre::eyre!(error_message))
+    Err(color_eyre::eyre::eyre!(last_error_message))
 }
 
 fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decimal> {
