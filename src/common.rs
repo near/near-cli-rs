@@ -1123,32 +1123,38 @@ pub fn handler_invalid_tx_error(
     }
 }
 
-fn get_near_price(api: Option<url::Url>) -> color_eyre::eyre::Result<Option<f64>> {
+#[derive(Debug, serde::Deserialize)]
+struct CoingeckoResponse {
+    near: NearData,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct NearData {
+    usd: f64,
+}
+
+fn get_near_price(api: Option<url::Url>) -> color_eyre::Result<f64> {
     let url = if let Some(api) = api {
         api.join("api/v3/simple/price?ids=near&vs_currencies=usd")?
     } else {
-        return Ok(None);
+        return Err(color_eyre::eyre::eyre!(
+            "The coingecko URL is not set in the config file"
+        ));
     };
 
     for _ in 0..10 {
         if let Ok(response) = reqwest::blocking::get(url.clone()) {
-            if let Ok(parsed_body) = response.json::<serde_json::Value>() {
-                let price = parsed_body["near"]["usd"].as_f64();
-
-                if let Some(price) = price {
-                    return Ok(Some(price));
-                }
+            if let Ok(parsed_body) = response.json::<CoingeckoResponse>() {
+                return Ok(parsed_body.near.usd);
             }
         }
 
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
 
-    Ok(None)
-}
-
-fn convert_near_to_usd(yoctonear: u128, price: f64) -> f64 {
-    yoctonear as f64 * price / 10_f64.powf(24_f64)
+    Err(color_eyre::eyre::eyre!(
+        "Reached the maximum number of retries for getting the NEAR price"
+    ))
 }
 
 pub fn print_transaction_error(
@@ -1171,9 +1177,14 @@ pub fn print_transaction_status(
 ) -> crate::CliResult {
     eprintln!("--- Logs ---------------------------");
 
-    let price = get_near_price(network_config.coingecko_url.clone())
-        .ok()
-        .flatten();
+    let price = match get_near_price(network_config.coingecko_url.clone()) {
+        Ok(price) => Some(price),
+        Err(err) => {
+            eprintln!("Failed to get the NEAR price: {}", err);
+            None
+        }
+    };
+
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
 
@@ -1197,7 +1208,7 @@ pub fn print_transaction_status(
         eprintln!(
             "Tokens burned: {} (approximately ${:.8} USD)",
             crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
-            convert_near_to_usd(total_tokens_burnt, price)
+            total_tokens_burnt as f64 * price / 10_f64.powf(24_f64)
         );
     } else {
         eprintln!(
