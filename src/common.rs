@@ -1134,28 +1134,30 @@ struct NearData {
     usd: f64,
 }
 
-fn get_near_price(api: Option<url::Url>) -> color_eyre::Result<f64> {
+fn get_near_price(api: Option<url::Url>) -> color_eyre::Result<Option<f64>> {
     let url = if let Some(api) = api {
-        api.join("api/v3/simple/price?ids=near&vs_currencies=usd")?
+        api.join("api/v3/simple/price?ids=near&vs_currencies=usd")
+            .map_err(|err| color_eyre::eyre::eyre!("Failed to construct Coingecko URL: {}", err))?
     } else {
-        return Err(color_eyre::eyre::eyre!(
-            "The coingecko URL is not set in the config file"
-        ));
+        return Ok(None);
     };
 
+    let mut error_message = "";
     for _ in 0..10 {
         if let Ok(response) = reqwest::blocking::get(url.clone()) {
             if let Ok(parsed_body) = response.json::<CoingeckoResponse>() {
-                return Ok(parsed_body.near.usd);
+                return Ok(Some(parsed_body.near.usd));
+            } else {
+                error_message = "Failed to parse the response from Coingecko API as JSON";
             }
+        } else {
+            error_message = "Failed to get the response from Coingecko API";
         }
 
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
 
-    Err(color_eyre::eyre::eyre!(
-        "Reached the maximum number of retries for getting the NEAR price"
-    ))
+    Err(color_eyre::eyre::eyre!(error_message))
 }
 
 fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decimal> {
@@ -1188,13 +1190,7 @@ pub fn print_transaction_status(
 ) -> crate::CliResult {
     eprintln!("--- Logs ---------------------------");
 
-    let price = match get_near_price(network_config.coingecko_url.clone()) {
-        Ok(price) => Some(price),
-        Err(err) => {
-            eprintln!("Failed to get the NEAR price: {}", err);
-            None
-        }
-    };
+    let price = get_near_price(network_config.coingecko_url.clone());
 
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
@@ -1215,20 +1211,21 @@ pub fn print_transaction_status(
         "Gas burned: {}",
         crate::common::NearGas::from_gas(total_gas_burnt)
     );
-    if let Some(price) = price {
-        eprintln!(
+    match price {
+        Ok(Some(price)) => eprintln!(
             "Tokens burned: {}{}",
             crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
             calculate_usd_amount(total_tokens_burnt, price).map_or_else(
                 String::new,
                 |amount| format!(" (approximately ${:.8} USD)", amount)
             )
-        );
-    } else {
-        eprintln!(
-            "Tokens burned: {}",
+        ),
+        Ok(None) => {}
+        Err(err) => eprintln!(
+            "Tokens burned: {} (approximate USD equivalent is unavailable due to an error: {})",
             crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
-        );
+            err
+        ),
     }
 
     match &transaction_info.status {
