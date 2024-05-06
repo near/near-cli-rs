@@ -96,6 +96,8 @@ keyring = "2.0.5"
 interactive-clap = "0.2.10"
 interactive-clap-derive = "0.2.10"
 
+rust_decimal = "1.35.0"
+
 [features]
 default = ["ledger", "self-update"]
 ledger = ["near-ledger"]

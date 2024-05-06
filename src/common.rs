@@ -7,6 +7,7 @@ use color_eyre::eyre::{ContextCompat, WrapErr};
 use futures::{StreamExt, TryStreamExt};
 use near_primitives::borsh::BorshDeserialize;
 use prettytable::Table;
+use rust_decimal::prelude::FromPrimitive;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
 
@@ -1157,6 +1158,16 @@ fn get_near_price(api: Option<url::Url>) -> color_eyre::Result<f64> {
     ))
 }
 
+fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decimal> {
+    let tokens_decimal = rust_decimal::Decimal::from_u128(tokens)?;
+    let price_decimal = rust_decimal::Decimal::from_f64(price)?;
+
+    let divisor = rust_decimal::Decimal::from_u128(10u128.pow(24))?;
+    let tokens_decimal = tokens_decimal / divisor;
+
+    Some(tokens_decimal * price_decimal)
+}
+
 pub fn print_transaction_error(
     tx_execution_error: &near_primitives::errors::TxExecutionError,
 ) -> crate::CliResult {
@@ -1206,9 +1217,12 @@ pub fn print_transaction_status(
     );
     if let Some(price) = price {
         eprintln!(
-            "Tokens burned: {} (approximately ${:.8} USD)",
+            "Tokens burned: {}{}",
             crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
-            total_tokens_burnt as f64 * price / 10_f64.powf(24_f64)
+            calculate_usd_amount(total_tokens_burnt, price).map_or_else(
+                String::new,
+                |amount| format!(" (approximately ${:.8} USD)", amount)
+            )
         );
     } else {
         eprintln!(
