@@ -1131,13 +1131,13 @@ fn get_near_price(api: Option<url::Url>) -> color_eyre::eyre::Result<Option<f64>
     };
 
     for _ in 0..10 {
-        let response = reqwest::blocking::get(url.clone())?;
+        if let Ok(response) = reqwest::blocking::get(url.clone()) {
+            if let Ok(parsed_body) = response.json::<serde_json::Value>() {
+                let price = parsed_body["near"]["usd"].as_f64();
 
-        if let Ok(parsed_body) = response.json::<serde_json::Value>() {
-            let price = parsed_body["near"]["usd"].as_f64();
-
-            if let Some(price) = price {
-                return Ok(Some(price));
+                if let Some(price) = price {
+                    return Ok(Some(price));
+                }
             }
         }
 
