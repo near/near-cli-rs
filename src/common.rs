@@ -1235,14 +1235,12 @@ pub fn print_transaction_status(
         "Transaction fee: {}{}",
         crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
         match near_usd_exchange_rate {
-            Some(Ok(price)) => calculate_usd_amount(total_tokens_burnt, price).map_or_else(
-                || String::from(" (USD equivalent is too big to be displayed)"),
-                |amount| format!(" (approximately ${:.8} USD)", amount)
+            Some(Ok(exchange_rate)) => calculate_usd_amount(total_tokens_burnt, exchange_rate).map_or_else(
+                || format!(" (USD equivalent is too big to be displayed, using ${:.2} USD/NEAR exchange rate)", exchange_rate),
+                |amount| format!(" (approximately ${:.8} USD, using ${:.2} USD/NEAR exchange rate)", amount, exchange_rate)
             ),
             Some(Err(err)) => format!(" (USD equivalent is unavailable due to an error: {})", err),
-            None => String::from(
-                " (USD equivalent is unavailable due to missing Coingecko URL in the config)"
-            ),
+            None => String::new(),
         }
     );
 
