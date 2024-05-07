@@ -49,8 +49,9 @@ impl From<NetworkConfigV1> for NetworkConfigV2 {
                     .near_social_db_contract_account_id,
                 faucet_url: network_config.faucet_url,
                 meta_transaction_relayer_url: network_config.meta_transaction_relayer_url,
-                fastnear_url: Some(String::from("https://api.fastnear.com")),
+                fastnear_url: Some("https://api.fastnear.com".parse().unwrap()),
                 staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
+                coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             },
             "testnet" => NetworkConfigV2 {
                 network_name: network_config.network_name,
@@ -65,6 +66,7 @@ impl From<NetworkConfigV1> for NetworkConfigV2 {
                 meta_transaction_relayer_url: network_config.meta_transaction_relayer_url,
                 fastnear_url: None,
                 staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
+                coingecko_url: None,
             },
             _ => NetworkConfigV2 {
                 network_name: network_config.network_name,
@@ -79,6 +81,7 @@ impl From<NetworkConfigV1> for NetworkConfigV2 {
                 meta_transaction_relayer_url: network_config.meta_transaction_relayer_url,
                 fastnear_url: None,
                 staking_pools_factory_account_id: None,
+                coingecko_url: None,
             },
         }
     }

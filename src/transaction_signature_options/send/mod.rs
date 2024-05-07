@@ -61,9 +61,14 @@ impl SendContext {
                     };
                 };
 
-                crate::common::print_transaction_status(
-                    &transaction_info,
-                    &previous_context.network_config,
+                tracing_indicatif::suspend_tracing_indicatif(
+                    || -> color_eyre::eyre::Result<()> {
+                        crate::common::print_transaction_status(
+                            &transaction_info,
+                            &previous_context.network_config,
+                        )?;
+                        Ok(())
+                    },
                 )?;
 
                 (previous_context.on_after_sending_transaction_callback)(
