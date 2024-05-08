@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.11.0](https://github.com/near/near-cli-rs/compare/v0.10.0...v0.11.0) - 2024-05-07
+## [0.10.1](https://github.com/near/near-cli-rs/compare/v0.10.0...v0.10.1) - 2024-05-07
 
 ### Added
 - Display the transaction fee in NEAR and approximate $ after transaction is executed ([#333](https://github.com/near/near-cli-rs/pull/333))
