@@ -1,5 +1,5 @@
-use color_eyre::{eyre::Context, owo_colors::OwoColorize};
-use inquire::{formatter::MultiOptionFormatter, MultiSelect};
+use color_eyre::owo_colors::OwoColorize;
+use inquire::{formatter::MultiOptionFormatter, CustomType, MultiSelect};
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -81,42 +81,51 @@ impl PublicKeyList {
     pub fn input_public_keys(
         context: &super::DeleteKeysCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::public_key_list::PublicKeyList>> {
+        if context.global_context.offline {
+            return Ok(Some(
+                CustomType::new("Enter a comma-separated list of public keys you want to delete (for example, ed25519:FAXX...RUQa, ed25519:FgVF...oSWJ, ...):")
+                    .prompt()?,
+            ));
+        }
         let mut access_key_list: Vec<AccessKeyInfo> = vec![];
         let mut processed_network: Vec<String> = vec![];
+        let mut errors: Vec<String> = vec![];
         for (_, network_config) in context.global_context.config.network_connection.iter() {
             if processed_network.contains(&network_config.network_name) {
                 continue;
             }
-            let access_key_list_for_network = network_config
+            match network_config
                 .json_rpc_client()
                 .blocking_call_view_access_key_list(
                     &context.owner_account_id,
                     near_primitives::types::Finality::Final.into(),
-                )
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch query AccessKeyList for {}",
-                        &context.owner_account_id
-                    )
-                })?
-                .access_key_list_view()?;
-
-            access_key_list.extend(access_key_list_for_network.keys.iter().map(
-                |access_key_info_view| AccessKeyInfo {
-                    public_key: access_key_info_view.public_key.clone(),
-                    permission: access_key_info_view.access_key.permission.clone(),
-                    network_name: network_config.network_name.clone(),
-                },
-            ));
-            processed_network.push(network_config.network_name.to_string());
+                ) {
+                Ok(rpc_query_response) => {
+                    let access_key_list_for_network = rpc_query_response.access_key_list_view()?;
+                    access_key_list.extend(access_key_list_for_network.keys.iter().map(
+                        |access_key_info_view| AccessKeyInfo {
+                            public_key: access_key_info_view.public_key.clone(),
+                            permission: access_key_info_view.access_key.permission.clone(),
+                            network_name: network_config.network_name.clone(),
+                        },
+                    ));
+                    processed_network.push(network_config.network_name.to_string());
+                }
+                Err(err) => {
+                    errors.push(err.to_string());
+                }
+            }
         }
 
         if access_key_list.is_empty() {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Access keys for <{}> were not found on [{}] network(s)",
+            for error in errors {
+                println!("WARNING! {error}");
+            }
+            println!("Automatic search of access keys for <{}> is not possible on [{}] network(s).\nYou can enter access keys to remove manually.",
                 context.owner_account_id,
-                context.global_context.config.network_names().join(", ")
-            ));
+                context.global_context.config.network_names().join(", "));
+            return Ok(Some(CustomType::new("Enter a comma-separated list of public keys you want to delete (for example, ed25519:FAXX...RUQa, ed25519:FgVF...oSWJ, ...):")
+                    .prompt()?));
         }
 
         let formatter: MultiOptionFormatter<'_, AccessKeyInfo> = &|a| {
