@@ -78,14 +78,19 @@ impl From<PublicKeyListContext> for crate::commands::ActionContext {
 }
 
 impl PublicKeyList {
+    fn input_public_keys_manually(
+    ) -> color_eyre::eyre::Result<Option<crate::types::public_key_list::PublicKeyList>> {
+        Ok(Some(
+                CustomType::new("Enter a comma-separated list of public keys you want to delete (for example, ed25519:FAXX...RUQa, ed25519:FgVF...oSWJ, ...):")
+                    .prompt()?,
+            ))
+    }
+
     pub fn input_public_keys(
         context: &super::DeleteKeysCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::public_key_list::PublicKeyList>> {
         if context.global_context.offline {
-            return Ok(Some(
-                CustomType::new("Enter a comma-separated list of public keys you want to delete (for example, ed25519:FAXX...RUQa, ed25519:FgVF...oSWJ, ...):")
-                    .prompt()?,
-            ));
+            return Self::input_public_keys_manually();
         }
         let mut access_key_list: Vec<AccessKeyInfo> = vec![];
         let mut processed_network: Vec<String> = vec![];
@@ -124,8 +129,7 @@ impl PublicKeyList {
             println!("Automatic search of access keys for <{}> is not possible on [{}] network(s).\nYou can enter access keys to remove manually.",
                 context.owner_account_id,
                 context.global_context.config.network_names().join(", "));
-            return Ok(Some(CustomType::new("Enter a comma-separated list of public keys you want to delete (for example, ed25519:FAXX...RUQa, ed25519:FgVF...oSWJ, ...):")
-                    .prompt()?));
+            return Self::input_public_keys_manually();
         }
 
         let formatter: MultiOptionFormatter<'_, AccessKeyInfo> = &|a| {
