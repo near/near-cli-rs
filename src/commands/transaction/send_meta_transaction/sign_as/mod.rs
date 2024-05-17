@@ -20,7 +20,7 @@ impl RelayerAccountIdContext {
         previous_context: super::SendMetaTransactionContext,
         scope: &<RelayerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_id: near_primitives::types::AccountId =
                     scope.relayer_account_id.clone().into();
@@ -51,7 +51,7 @@ impl RelayerAccountIdContext {
         Ok(Self(crate::commands::ActionContext {
             global_context: previous_context.global_context,
             interacting_with_account_ids: vec![scope.relayer_account_id.clone().into()],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),

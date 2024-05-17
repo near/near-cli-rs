@@ -46,7 +46,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
         let signer_id = item.signer_account_id.clone();
         let data = item.data.clone();
 
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             Arc::new({
                 move |network_config| {
                     let contract_account_id =
@@ -168,7 +168,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
         Self {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.account_id],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config, _message| Ok(()),

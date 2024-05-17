@@ -38,7 +38,7 @@ impl PublicKeyListContext {
 
 impl From<PublicKeyListContext> for crate::commands::ActionContext {
     fn from(item: PublicKeyListContext) -> Self {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let owner_account_id = item.owner_account_id.clone();
 
@@ -63,7 +63,7 @@ impl From<PublicKeyListContext> for crate::commands::ActionContext {
         Self {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.owner_account_id],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),

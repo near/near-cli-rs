@@ -145,7 +145,7 @@ impl DepositContext {
     ) -> color_eyre::eyre::Result<Self> {
         let deposit = scope.deposit;
 
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = previous_context.signer_account_id.clone();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
@@ -179,7 +179,7 @@ impl DepositContext {
                 previous_context.signer_account_id.clone(),
                 previous_context.receiver_account_id.clone(),
             ],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
