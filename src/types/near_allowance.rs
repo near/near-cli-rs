@@ -3,7 +3,6 @@ const UNLIMITED: &str = "unlimited";
 
 #[derive(
     Debug,
-    Default,
     Clone,
     Copy,
     serde::Serialize,
