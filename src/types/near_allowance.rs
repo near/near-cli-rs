@@ -18,20 +18,7 @@ pub struct NearAllowance(Option<near_token::NearToken>);
 impl std::fmt::Display for NearAllowance {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(amount) = self.0 {
-            if amount.as_yoctonear() == 0 {
-                write!(f, "0 NEAR")
-            } else if amount.as_yoctonear() <= 1_000 {
-                write!(f, "{} yoctoNEAR", amount.as_yoctonear())
-            } else if amount.as_yoctonear() % ONE_NEAR == 0 {
-                write!(f, "{} NEAR", amount.as_yoctonear() / ONE_NEAR,)
-            } else {
-                write!(
-                    f,
-                    "{}.{} NEAR",
-                    amount.as_yoctonear() / ONE_NEAR,
-                    format!("{:0>24}", (amount.as_yoctonear() % ONE_NEAR)).trim_end_matches('0')
-                )
-            }
+            amount.fmt(f)
         } else {
             write!(f, "{UNLIMITED}")
         }
