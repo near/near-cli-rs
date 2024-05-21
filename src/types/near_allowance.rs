@@ -24,7 +24,7 @@ impl std::fmt::Display for NearAllowance {
 }
 
 impl std::str::FromStr for NearAllowance {
-    type Err = color_eyre::eyre::Report;
+    type Err = near_token::NearTokenError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s == UNLIMITED {
