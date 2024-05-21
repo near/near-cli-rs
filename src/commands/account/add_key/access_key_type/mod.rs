@@ -68,7 +68,7 @@ pub struct FunctionCallType {
 pub struct FunctionCallTypeContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
-    allowance: Option<near_token::NearToken>,
+    allowance: Option<crate::types::near_token::NearToken>,
     receiver_account_id: crate::types::account_id::AccountId,
     method_names: crate::types::vec_string::VecString,
 }

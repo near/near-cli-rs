@@ -1,4 +1,3 @@
-const ONE_NEAR: u128 = 10u128.pow(24);
 const UNLIMITED: &str = "unlimited";
 
 #[derive(
@@ -12,7 +11,7 @@ const UNLIMITED: &str = "unlimited";
     derive_more::Into,
 )]
 #[as_ref(forward)]
-pub struct NearAllowance(Option<near_token::NearToken>);
+pub struct NearAllowance(Option<crate::types::near_token::NearToken>);
 
 impl std::fmt::Display for NearAllowance {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -31,12 +30,14 @@ impl std::str::FromStr for NearAllowance {
         if s == UNLIMITED {
             return Ok(Self(None));
         }
-        Ok(Self(Some(near_token::NearToken::from_str(s)?)))
+        Ok(Self(Some(crate::types::near_token::NearToken::from_str(
+            s,
+        )?)))
     }
 }
 
 impl NearAllowance {
-    pub fn optional_near_token(&self) -> Option<near_token::NearToken> {
+    pub fn optional_near_token(&self) -> Option<crate::types::near_token::NearToken> {
         self.0
     }
 }
@@ -53,14 +54,14 @@ mod tests {
     #[test]
     fn near_allowance_to_string_0_near() {
         assert_eq!(
-            NearAllowance(Some(near_token::NearToken::from_near(0))).to_string(),
+            NearAllowance(Some(near_token::NearToken::from_near(0).into())).to_string(),
             "0 NEAR".to_string()
         )
     }
     #[test]
     fn near_allowance_to_string_0_millinear() {
         assert_eq!(
-            NearAllowance(Some(near_token::NearToken::from_millinear(0))).to_string(),
+            NearAllowance(Some(near_token::NearToken::from_millinear(0).into())).to_string(),
             "0 NEAR".to_string()
         )
     }
@@ -71,9 +72,9 @@ mod tests {
     #[test]
     fn near_allowance_to_string_0dot02_near() {
         assert_eq!(
-            NearAllowance(Some(near_token::NearToken::from_yoctonear(
-                20_000_000_000_000_000_000_000
-            )))
+            NearAllowance(Some(
+                near_token::NearToken::from_yoctonear(20_000_000_000_000_000_000_000).into()
+            ))
             .to_string(),
             "0.02 NEAR".to_string()
         )
@@ -82,7 +83,7 @@ mod tests {
     fn near_allowance_from_str_unlimited() {
         assert_eq!(
             NearAllowance::from_str("unlimited")
-                .unwrap_or_default()
+                .unwrap()
                 .optional_near_token(),
             None
         )

@@ -11,6 +11,7 @@ const ONE_NEAR: u128 = 10u128.pow(24);
     derive_more::From,
     derive_more::Into,
     derive_more::FromStr,
+    PartialEq,
 )]
 #[as_ref(forward)]
 pub struct NearToken(pub near_token::NearToken);
