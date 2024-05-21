@@ -53,7 +53,7 @@ impl From<FullAccessTypeContext> for AccessTypeContext {
 pub struct FunctionCallType {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    allowance: crate::types::near_token::NearToken,
+    allowance: crate::types::near_allowance::NearAllowance,
     #[interactive_clap(long)]
     /// Enter a receiver to use by this access key to pay for function call gas and transaction fees:
     receiver_account_id: crate::types::account_id::AccountId,
@@ -68,7 +68,7 @@ pub struct FunctionCallType {
 pub struct FunctionCallTypeContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
-    allowance: Option<crate::types::near_token::NearToken>,
+    allowance: Option<near_token::NearToken>,
     receiver_account_id: crate::types::account_id::AccountId,
     method_names: crate::types::vec_string::VecString,
 }
@@ -81,7 +81,7 @@ impl FunctionCallTypeContext {
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id.into(),
-            allowance: Some(scope.allowance),
+            allowance: scope.allowance.optional_near_token(),
             receiver_account_id: scope.receiver_account_id.clone(),
             method_names: scope.method_names.clone(),
         })
@@ -144,10 +144,10 @@ impl FunctionCallType {
 
     pub fn input_allowance(
         _context: &super::AddKeyCommandContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        let allowance_near_balance: crate::types::near_token::NearToken =
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_allowance::NearAllowance>> {
+        let allowance_near_balance: crate::types::near_allowance::NearAllowance =
             CustomType::new("Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
-                .with_starting_input("0.25 NEAR")
+                .with_starting_input("unlimited")
                 .prompt()?;
         Ok(Some(allowance_near_balance))
     }
