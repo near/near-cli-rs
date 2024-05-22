@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.2](https://github.com/near/near-cli-rs/compare/v0.10.1...v0.10.2) - 2024-05-21
+
+### Fixed
+- Wrong console command for adding Function-Call key with unlimited allowance ([#342](https://github.com/near/near-cli-rs/pull/342))
+- Fallback to non-auto-suggesting input of the keys to be deleted in interactive mode in offline mode or if there is a connectivity issue ([#338](https://github.com/near/near-cli-rs/pull/338))
+
 ## [0.10.1](https://github.com/near/near-cli-rs/compare/v0.10.0...v0.10.1) - 2024-05-07
 
 ### Added
