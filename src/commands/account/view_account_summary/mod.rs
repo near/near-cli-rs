@@ -42,17 +42,9 @@ impl ViewAccountSummaryContext {
 
                 let access_key_list = network_config
                     .json_rpc_client()
-                    .blocking_call_view_access_key_list(
-                        &account_id,
-                        block_reference.clone(),
-                    )
-                    .wrap_err_with(|| {
-                        format!(
-                            "Failed to fetch ViewAccessKeyList for {}",
-                            &account_id
-                        )
-                    })?
-                    .access_key_list_view()?;
+                    .blocking_call_view_access_key_list(&account_id, block_reference.clone())
+                    .ok()
+                    .and_then(|res| res.access_key_list_view().ok());
 
                 let historically_delegated_validators = network_config.fastnear_url.as_ref()
                     .and_then(|fastnear_url| crate::common::fetch_historically_delegated_staking_pools(fastnear_url, &account_id).ok());
@@ -123,7 +115,7 @@ impl ViewAccountSummaryContext {
                     &account_id,
                     &delegated_stake,
                     &account_view,
-                    &access_key_list.keys,
+                    access_key_list.as_ref(),
                     optional_account_profile.as_ref()
                 );
 
