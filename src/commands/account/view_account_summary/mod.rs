@@ -44,7 +44,7 @@ impl ViewAccountSummaryContext {
                     .json_rpc_client()
                     .blocking_call_view_access_key_list(&account_id, block_reference.clone())
                     .ok()
-                    .and_then(|res| res.access_key_list_view().ok());
+                    .and_then(|query_response| query_response.access_key_list_view().ok());
 
                 let historically_delegated_validators = network_config.fastnear_url.as_ref()
                     .and_then(|fastnear_url| crate::common::fetch_historically_delegated_staking_pools(fastnear_url, &account_id).ok());
