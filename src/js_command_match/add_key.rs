@@ -3,6 +3,8 @@
 pub struct AddKeyArgs {
     account_id: String,
     access_key: String,
+    #[clap(long, aliases = ["network_id", "networkId"], default_value=None)]
+    network_id: Option<String>,
     #[clap(long, aliases = ["contract_id", "contractId"], default_value = None)]
     contract_id: Option<String>,
     #[clap(long, aliases = ["method_names", "methodNames"], requires = "contract_id", value_delimiter = ',', num_args = 1..)]
@@ -30,7 +32,7 @@ impl AddKeyArgs {
                 "use-manually-provided-public-key".to_owned(),
                 self.access_key.to_owned(),
                 "network-config".to_owned(),
-                network_config,
+                self.network_id.clone().unwrap_or(network_config.to_owned()),
                 "sign-with-keychain".to_owned(),
                 "send".to_owned(),
             ];
@@ -43,7 +45,7 @@ impl AddKeyArgs {
             "use-manually-provided-public-key".to_owned(),
             self.access_key.to_owned(),
             "network-config".to_owned(),
-            network_config,
+            self.network_id.clone().unwrap_or(network_config.to_owned()),
             "sign-with-keychain".to_owned(),
             "send".to_owned(),
         ]
