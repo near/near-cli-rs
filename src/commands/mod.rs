@@ -82,7 +82,8 @@ impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction
 pub struct ActionContext {
     pub global_context: crate::GlobalContext,
     pub interacting_with_account_ids: Vec<near_primitives::types::AccountId>,
-    pub get_prepopulated_transaction_after_getting_network_callback: GetPrepopulatedTransactionAfterGettingNetworkCallback,
+    pub get_prepopulated_transaction_after_getting_network_callback:
+        GetPrepopulatedTransactionAfterGettingNetworkCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,
     pub on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
