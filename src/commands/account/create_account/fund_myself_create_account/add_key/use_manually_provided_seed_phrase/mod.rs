@@ -36,7 +36,7 @@ impl AddAccessWithSeedPhraseActionContext {
             global_context: previous_context.global_context,
             account_properties,
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
         }))
     }

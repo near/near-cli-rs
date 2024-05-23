@@ -11,19 +11,15 @@ impl DisplayContext {
         previous_context: super::SubmitContext,
         _scope: &<Display as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let mut storage_message = String::new();
-
         match previous_context.signed_transaction_or_signed_delegate_action {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                 signed_transaction,
             ) => {
-                (previous_context.on_before_sending_transaction_callback)(
+                let storage_message = (previous_context.on_before_sending_transaction_callback)(
                     &signed_transaction,
                     &previous_context.network_config,
-                    &mut storage_message,
                 )
                 .map_err(color_eyre::Report::msg)?;
-
                 eprintln!(
                     "\nSigned transaction (serialized as base64):\n{}\n",
                     crate::types::signed_transaction::SignedTransactionAsBase64::from(
@@ -49,7 +45,6 @@ impl DisplayContext {
                     "This base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n",
                     crate::common::get_near_exec_path()
                 );
-                eprintln!("{storage_message}");
             }
         }
         Ok(Self)

@@ -43,14 +43,13 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
             });
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
             std::sync::Arc::new(
-                move |signed_transaction, network_config, storage_message| {
-                    *storage_message = crate::common::save_access_key_to_keychain(
+                move |signed_transaction, network_config| {
+                    crate::common::save_access_key_to_keychain(
                         network_config.clone(),
                         &serde_json::to_string(&item.0.key_pair_properties)?,
                         &item.0.key_pair_properties.public_key_str,
                         signed_transaction.transaction.signer_id.as_ref(),
-                    )?;
-                    Ok(())
+                    )
                 },
             );
 

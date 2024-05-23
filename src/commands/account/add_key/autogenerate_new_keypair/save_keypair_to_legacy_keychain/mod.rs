@@ -60,9 +60,9 @@ impl From<SaveKeypairToLegacyKeychainContext> for crate::commands::ActionContext
             std::sync::Arc::new({
                 let credentials_home_dir = item.global_context.config.credentials_home_dir.clone();
 
-                move |signed_transaction, network_config, storage_message| {
+                move |signed_transaction, network_config| {
                     let key_pair_properties_buf = serde_json::to_string(&item.key_pair_properties)?;
-                    *storage_message = crate::common::save_access_key_to_legacy_keychain(
+                    crate::common::save_access_key_to_legacy_keychain(
                         network_config.clone(),
                         credentials_home_dir.clone(),
                         &key_pair_properties_buf,
@@ -74,8 +74,7 @@ impl From<SaveKeypairToLegacyKeychainContext> for crate::commands::ActionContext
                             "Failed to save a file with access key: {}",
                             &item.key_pair_properties.public_key_str
                         )
-                    })?;
-                    Ok(())
+                    })
                 }
             });
 

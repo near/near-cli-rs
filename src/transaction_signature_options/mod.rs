@@ -90,8 +90,7 @@ pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
     dyn Fn(
         &near_primitives::transaction::SignedTransaction,
         &crate::config::NetworkConfig,
-        &mut String,
-    ) -> crate::CliResult,
+    ) -> color_eyre::eyre::Result<String>,
 >;
 
 pub type OnAfterSendingTransactionCallback = std::sync::Arc<
