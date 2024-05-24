@@ -15,6 +15,12 @@ impl SendContext {
         previous_context: super::SubmitContext,
         _scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let storage_message = (previous_context.on_before_sending_transaction_callback)(
+            &previous_context.signed_transaction_or_signed_delegate_action,
+            &previous_context.network_config,
+        )
+        .map_err(color_eyre::Report::msg)?;
+
         match previous_context.signed_transaction_or_signed_delegate_action {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                 signed_transaction,
@@ -63,11 +69,6 @@ impl SendContext {
                 )
                 .map_err(color_eyre::Report::msg)?;
 
-                let storage_message = (previous_context.on_before_sending_transaction_callback)(
-                    &signed_transaction,
-                    &previous_context.network_config,
-                )
-                .map_err(color_eyre::Report::msg)?;
                 eprintln!("{storage_message}");
             }
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
@@ -107,6 +108,7 @@ impl SendContext {
                         )
                     }
                 }
+                eprintln!("{storage_message}");
             }
         }
         Ok(Self)

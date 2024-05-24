@@ -88,7 +88,7 @@ pub struct AccountKeyPair {
 
 pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
     dyn Fn(
-        &near_primitives::transaction::SignedTransaction,
+        &SignedTransactionOrSignedDelegateAction,
         &crate::config::NetworkConfig,
     ) -> color_eyre::eyre::Result<String>,
 >;

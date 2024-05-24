@@ -22,16 +22,16 @@ impl SaveToFileContext {
     ) -> color_eyre::eyre::Result<Self> {
         let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
+        let storage_message = (previous_context.on_before_sending_transaction_callback)(
+            &previous_context.signed_transaction_or_signed_delegate_action,
+            &previous_context.network_config,
+        )
+        .map_err(color_eyre::Report::msg)?;
+
         match previous_context.signed_transaction_or_signed_delegate_action {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                 signed_transaction,
             ) => {
-                let storage_message = (previous_context.on_before_sending_transaction_callback)(
-                    &signed_transaction,
-                    &previous_context.network_config,
-                )
-                .map_err(color_eyre::Report::msg)?;
-
                 let signed_transaction_as_base64 =
                     crate::types::signed_transaction::SignedTransactionAsBase64::from(
                         signed_transaction,
@@ -75,6 +75,7 @@ impl SaveToFileContext {
                     "This base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n",
                     crate::common::get_near_exec_path()
                 );
+                eprintln!("{storage_message}");
             }
         }
         Ok(Self)

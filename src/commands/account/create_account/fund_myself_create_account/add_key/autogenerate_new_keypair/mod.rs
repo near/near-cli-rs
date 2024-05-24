@@ -90,7 +90,7 @@ impl SaveModeContext {
                 let key_pair_properties = previous_context.key_pair_properties.clone();
                 let credentials_home_dir = previous_context.global_context.config.credentials_home_dir.clone();
 
-                move |_signed_transaction, network_config| {
+                move |_transaction, network_config| {
                     match scope {
                         SaveModeDiscriminants::SaveToKeychain => {
                             let key_pair_properties_buf =
@@ -114,17 +114,16 @@ impl SaveModeContext {
                             )
                         }
                         SaveModeDiscriminants::PrintToTerminal => {
-                            Ok(
-                                format!("\n--------------------  Access key info ------------------
-                                    \nMaster Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}
-                                    \n--------------------------------------------------------",
-                                    key_pair_properties.master_seed_phrase,
-                                    key_pair_properties.seed_phrase_hd_path,
-                                    key_pair_properties.implicit_account_id,
-                                    key_pair_properties.public_key_str,
-                                    key_pair_properties.secret_keypair_str,
-                                )
-                            )
+                            Ok(format!(
+                                "\n--------------------  Access key info ------------------
+                                \nMaster Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}
+                                \n--------------------------------------------------------",
+                                key_pair_properties.master_seed_phrase,
+                                key_pair_properties.seed_phrase_hd_path,
+                                key_pair_properties.implicit_account_id,
+                                key_pair_properties.public_key_str,
+                                key_pair_properties.secret_keypair_str,
+                            ))
                         }
                     }
                 }

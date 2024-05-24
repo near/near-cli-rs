@@ -43,12 +43,20 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
             });
         let on_before_sending_transaction_callback: crate::transaction_signature_options::OnBeforeSendingTransactionCallback =
             std::sync::Arc::new(
-                move |signed_transaction, network_config| {
+                move |transaction, network_config| {
+                    let account_id = match transaction {
+                        crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedTransaction(
+                            signed_transaction,
+                        ) => signed_transaction.transaction.signer_id.clone(),
+                        crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
+                            signed_delegate_action,
+                        ) => signed_delegate_action.delegate_action.sender_id.clone()
+                    };
                     crate::common::save_access_key_to_keychain(
                         network_config.clone(),
                         &serde_json::to_string(&item.0.key_pair_properties)?,
                         &item.0.key_pair_properties.public_key_str,
-                        signed_transaction.transaction.signer_id.as_ref(),
+                        account_id.as_ref(),
                     )
                 },
             );
