@@ -1774,7 +1774,7 @@ pub fn display_account_info(
             )
         }
     } else {
-        "Warning: Failed to retrieve access keys. Retry later..."
+        "Warning: Failed to retrieve access keys. Retry later."
             .red()
             .to_string()
     };
