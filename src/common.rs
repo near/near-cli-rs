@@ -4,6 +4,7 @@ use std::io::Write;
 use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
+use color_eyre::owo_colors::OwoColorize;
 use futures::{StreamExt, TryStreamExt};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
@@ -1773,7 +1774,9 @@ pub fn display_account_info(
             )
         }
     } else {
-        "Failed to retrieve access keys".to_string()
+        "Warning: Failed to retrieve access keys. Retry later..."
+            .red()
+            .to_string()
     };
 
     table.add_row(prettytable::row![
