@@ -4,6 +4,7 @@ use std::io::Write;
 use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
+use color_eyre::owo_colors::OwoColorize;
 use futures::{StreamExt, TryStreamExt};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
@@ -1707,7 +1708,7 @@ pub fn display_account_info(
         near_token::NearToken,
     >,
     account_view: &near_primitives::views::AccountView,
-    access_keys: &[near_primitives::views::AccessKeyInfoView],
+    access_key_list: Option<&near_primitives::views::AccessKeyList>,
     optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
     let mut table: Table = Table::new();
@@ -1752,24 +1753,32 @@ pub fn display_account_info(
         Fy->contract_status
     ]);
 
-    let access_keys_summary = if access_keys.is_empty() {
-        "Account is locked (no access keys)".to_string()
+    let access_keys_summary = if let Some(info) = access_key_list {
+        let keys = &info.keys;
+        if keys.is_empty() {
+            "Account is locked (no access keys)".to_string()
+        } else {
+            let full_access_keys_count = keys
+                .iter()
+                .filter(|access_key| {
+                    matches!(
+                        access_key.access_key.permission,
+                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                    )
+                })
+                .count();
+            format!(
+                "{} full access keys and {} function-call-only access keys",
+                full_access_keys_count,
+                keys.len() - full_access_keys_count
+            )
+        }
     } else {
-        let full_access_keys_count = access_keys
-            .iter()
-            .filter(|access_key| {
-                matches!(
-                    access_key.access_key.permission,
-                    near_primitives::views::AccessKeyPermissionView::FullAccess
-                )
-            })
-            .count();
-        format!(
-            "{} full access keys and {} function-call-only access keys",
-            full_access_keys_count,
-            access_keys.len() - full_access_keys_count
-        )
+        "Warning: Failed to retrieve access keys. Retry later."
+            .red()
+            .to_string()
     };
+
     table.add_row(prettytable::row![
         Fg->"Access keys",
         Fy->access_keys_summary
