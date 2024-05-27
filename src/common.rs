@@ -1267,7 +1267,7 @@ pub fn save_access_key_to_keychain(
     keyring::Entry::new(&service_name, &format!("{}:{}", account_id, public_key_str))
         .wrap_err("Failed to open keychain")?
         .set_password(key_pair_properties_buf)
-        .wrap_err("Failed to save password to keychain")?;
+        .wrap_err("Failed to save password to keychain. You may have to install the secure keychain by the following instructions: https://github.com/jaraco/keyring#using-keyring-on-headless-linux-systems")?;
 
     Ok("The data for the access key is saved in the keychain".to_string())
 }
