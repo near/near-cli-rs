@@ -10,7 +10,7 @@ pub struct Send;
 pub struct SendContext;
 
 impl SendContext {
-    #[tracing::instrument(skip_all, name = "Sending transaction ...")]
+    #[tracing::instrument(name = "Sending transaction ...", skip_all)]
     pub fn from_previous_context(
         previous_context: super::SubmitContext,
         _scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -68,56 +68,39 @@ impl SendContext {
                     &previous_context.network_config,
                 )
                 .map_err(color_eyre::Report::msg)?;
-
-                eprintln!("{storage_message}");
             }
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
             ) => {
-                let client = reqwest::blocking::Client::new();
-                let json_payload = serde_json::json!({
-                    "signed_delegate_action": crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
-                        signed_delegate_action
-                    ).to_string()
-                });
-                match client
-                    .post(
-                        previous_context
-                            .network_config
-                            .meta_transaction_relayer_url
-                            .expect("Internal error: Meta-transaction relayer URL must be Some() at this point"),
-                    )
-                    .json(&json_payload)
-                    .send()
-                {
+                match sending_delegate_action(
+                    signed_delegate_action,
+                    previous_context.network_config
+                        .meta_transaction_relayer_url
+                        .expect("Internal error: Meta-transaction relayer URL must be Some() at this point"),
+                ){
                     Ok(relayer_response) => {
                         if relayer_response.status().is_success() {
-                            let response_text = relayer_response.text()
-                                .map_err(color_eyre::Report::msg)?;
-                            println!("Relayer Response text: {}", response_text);
+                            let response_text = relayer_response.text().map_err(color_eyre::Report::msg)?;
+                            eprintln!("\nRelayer Response text: {}", response_text);
                         } else {
-                            println!(
-                                "Request failed with status code: {}",
+                            eprintln!(
+                                "\nRequest failed with status code: {}",
                                 relayer_response.status()
                             );
                         }
                     }
-                    Err(report) => {
-                        return Err(
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                }
-                eprintln!("{storage_message}");
+                    Err(report) => return Err(color_eyre::Report::msg(report)),
+                };
             }
         }
+        eprintln!("{storage_message}");
         Ok(Self)
     }
 }
 
 #[tracing::instrument(
-    skip_all,
-    name = "Waiting 5 seconds before broadcasting transaction via RPC"
+    name = "Waiting 5 seconds before broadcasting transaction via RPC",
+    skip_all
 )]
 fn sleep_after_error(additional_message_for_name: String) {
     tracing::Span::current().pb_set_message(&additional_message_for_name);
@@ -143,4 +126,22 @@ async fn sending_transaction(
             },
         )
         .await
+}
+
+#[tracing::instrument(name = "Broadcasting delegate action via a relayer url", skip_all)]
+fn sending_delegate_action(
+    signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
+    meta_transaction_relayer_url: url::Url,
+) -> Result<reqwest::blocking::Response, reqwest::Error> {
+    tracing::Span::current().pb_set_message(meta_transaction_relayer_url.as_str());
+    let client = reqwest::blocking::Client::new();
+    let json_payload = serde_json::json!({
+        "signed_delegate_action": crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
+            signed_delegate_action
+        ).to_string()
+    });
+    client
+        .post(meta_transaction_relayer_url)
+        .json(&json_payload)
+        .send()
 }

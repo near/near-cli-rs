@@ -1180,7 +1180,7 @@ pub fn print_transaction_status(
         .as_ref()
         .map(get_near_usd_exchange_rate);
 
-    eprintln!("--- Logs ---------------------------");
+    eprintln!("\n--- Logs ---------------------------"); // "\n" - required for correct display after {span_name}
 
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
