@@ -86,7 +86,26 @@ pub fn before_creating_account(
     data.insert("newAccountPublicKey", public_key.to_string());
 
     let client = reqwest::blocking::Client::new();
-    match client.post(faucet_service_url.clone()).json(&data).send() {
+    let result = client.post(faucet_service_url.clone()).json(&data).send();
+
+    print_account_creation_status(
+        result,
+        network_config,
+        new_account_id,
+        credentials_home_dir,
+        storage_message,
+    )
+}
+
+fn print_account_creation_status(
+    result: Result<reqwest::blocking::Response, reqwest::Error>,
+    network_config: &crate::config::NetworkConfig,
+    new_account_id: &crate::types::account_id::AccountId,
+    credentials_home_dir: &std::path::Path,
+    storage_message: String,
+) -> crate::CliResult {
+    eprintln!();
+    match result {
         Ok(response) => {
             if response.status() >= reqwest::StatusCode::BAD_REQUEST {
                 eprintln!("WARNING! The new account <{new_account_id}> could not be created successfully.\n{storage_message}\n");

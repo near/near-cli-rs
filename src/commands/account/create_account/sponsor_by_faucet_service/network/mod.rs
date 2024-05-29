@@ -85,11 +85,8 @@ impl SubmitContext {
         previous_context: NetworkContext,
         _scope: &<Submit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let mut storage_message = String::new();
-        (previous_context.on_after_getting_network_callback)(
-            &previous_context.network_config,
-            &mut storage_message,
-        )?;
+        let storage_message =
+            (previous_context.on_after_getting_network_callback)(&previous_context.network_config)?;
         (previous_context.on_before_creating_account_callback)(
             &previous_context.network_config,
             &previous_context.new_account_id,
@@ -101,7 +98,7 @@ impl SubmitContext {
 }
 
 pub type OnAfterGettingNetworkCallback =
-    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig, &mut String) -> crate::CliResult>;
+    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig) -> color_eyre::eyre::Result<String>>;
 
 pub type OnBeforeCreatingAccountCallback = std::sync::Arc<
     dyn Fn(
