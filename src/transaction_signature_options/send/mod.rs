@@ -1,6 +1,8 @@
 use color_eyre::owo_colors::OwoColorize;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
+use crate::common::JsonRpcClientExt;
+
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
 #[interactive_clap(output_context = SendContext)]
@@ -10,65 +12,29 @@ pub struct Send;
 pub struct SendContext;
 
 impl SendContext {
-    #[tracing::instrument(skip_all, name = "Sending transaction ...")]
+    #[tracing::instrument(name = "Sending transaction ...", skip_all)]
     pub fn from_previous_context(
         previous_context: super::SubmitContext,
         _scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let mut storage_message = String::new();
+        let storage_message = (previous_context.on_before_sending_transaction_callback)(
+            &previous_context.signed_transaction_or_signed_delegate_action,
+            &previous_context.network_config,
+        )
+        .map_err(color_eyre::Report::msg)?;
 
         match previous_context.signed_transaction_or_signed_delegate_action {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                 signed_transaction,
             ) => {
-                (previous_context.on_before_sending_transaction_callback)(
-                    &signed_transaction,
+                let transaction_info = sending_signed_transaction(
                     &previous_context.network_config,
-                    &mut storage_message,
-                )
-                .map_err(color_eyre::Report::msg)?;
+                    &signed_transaction,
+                )?;
 
-                let retries_number = 5;
-                let mut retries = (1..=retries_number).rev();
-                let transaction_info = loop {
-                    let transaction_info_result =
-                        tokio::runtime::Runtime::new()
-                            .unwrap()
-                            .block_on(sending_transaction(
-                                format!("{}", previous_context.network_config.rpc_url),
-                                &previous_context.network_config.json_rpc_client(),
-                                signed_transaction.clone(),
-                            ));
-                    match transaction_info_result {
-                        Ok(response) => {
-                            break response;
-                        }
-                        Err(ref err) => match crate::common::rpc_transaction_error(err) {
-                            Ok(message) => {
-                                if let Some(retries_left) = retries.next() {
-                                    sleep_after_error(
-                                        format!("{} (Previous attempt failed with error: `{}`. Will retry {} more times)",
-                                        previous_context.network_config.rpc_url,
-                                        message.red(),
-                                        retries_left)
-                                    );
-                                } else {
-                                    return Err(color_eyre::eyre::eyre!(err.to_string()));
-                                }
-                            }
-                            Err(report) => return Err(color_eyre::Report::msg(report)),
-                        },
-                    };
-                };
-
-                tracing_indicatif::suspend_tracing_indicatif(
-                    || -> color_eyre::eyre::Result<()> {
-                        crate::common::print_transaction_status(
-                            &transaction_info,
-                            &previous_context.network_config,
-                        )?;
-                        Ok(())
-                    },
+                crate::common::print_transaction_status(
+                    &transaction_info,
+                    &previous_context.network_config,
                 )?;
 
                 (previous_context.on_after_sending_transaction_callback)(
@@ -76,79 +42,97 @@ impl SendContext {
                     &previous_context.network_config,
                 )
                 .map_err(color_eyre::Report::msg)?;
-
-                eprintln!("{storage_message}");
             }
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
             ) => {
-                let client = reqwest::blocking::Client::new();
-                let json_payload = serde_json::json!({
-                    "signed_delegate_action": crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
-                        signed_delegate_action
-                    ).to_string()
-                });
-                match client
-                    .post(
-                        previous_context
-                            .network_config
-                            .meta_transaction_relayer_url
-                            .expect("Internal error: Meta-transaction relayer URL must be Some() at this point"),
-                    )
-                    .json(&json_payload)
-                    .send()
-                {
+                match sending_delegate_action(
+                    signed_delegate_action,
+                    previous_context.network_config
+                        .meta_transaction_relayer_url
+                        .expect("Internal error: Meta-transaction relayer URL must be Some() at this point"),
+                ){
                     Ok(relayer_response) => {
                         if relayer_response.status().is_success() {
-                            let response_text = relayer_response.text()
-                                .map_err(color_eyre::Report::msg)?;
-                            println!("Relayer Response text: {}", response_text);
+                            let response_text = relayer_response.text().map_err(color_eyre::Report::msg)?;
+                            eprintln!("\nRelayer Response text: {}", response_text);
                         } else {
-                            println!(
-                                "Request failed with status code: {}",
+                            eprintln!(
+                                "\nRequest failed with status code: {}",
                                 relayer_response.status()
                             );
                         }
                     }
-                    Err(report) => {
-                        return Err(
-                            color_eyre::Report::msg(report),
-                        )
-                    }
-                }
-                eprintln!("{storage_message}");
+                    Err(report) => return Err(color_eyre::Report::msg(report)),
+                };
             }
         }
+        eprintln!("{storage_message}");
         Ok(Self)
     }
 }
 
+#[tracing::instrument(name = "Broadcasting transaction via RPC", skip_all)]
+pub fn sending_signed_transaction(
+    network_config: &crate::config::NetworkConfig,
+    signed_transaction: &near_primitives::transaction::SignedTransaction,
+) -> color_eyre::Result<near_primitives::views::FinalExecutionOutcomeView> {
+    tracing::Span::current().pb_set_message(network_config.rpc_url.as_str());
+    let retries_number = 5;
+    let mut retries = (1..=retries_number).rev();
+    let transaction_info = loop {
+        let transaction_info_result = network_config.json_rpc_client().blocking_call(
+            near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
+                signed_transaction: signed_transaction.clone(),
+            },
+        );
+        match transaction_info_result {
+            Ok(response) => {
+                break response;
+            }
+            Err(ref err) => match crate::common::rpc_transaction_error(err) {
+                Ok(message) => {
+                    if let Some(retries_left) = retries.next() {
+                        sleep_after_error(
+                            format!("{} (Previous attempt failed with error: `{}`. Will retry {} more times)",
+                            network_config.rpc_url,
+                            message.red(),
+                            retries_left)
+                        );
+                    } else {
+                        return Err(color_eyre::eyre::eyre!(err.to_string()));
+                    }
+                }
+                Err(report) => return Err(color_eyre::Report::msg(report)),
+            },
+        };
+    };
+    Ok(transaction_info)
+}
+
 #[tracing::instrument(
-    skip_all,
-    name = "Waiting 5 seconds before broadcasting transaction via RPC"
+    name = "Waiting 5 seconds before broadcasting transaction via RPC",
+    skip_all
 )]
-fn sleep_after_error(additional_message_for_name: String) {
+pub fn sleep_after_error(additional_message_for_name: String) {
     tracing::Span::current().pb_set_message(&additional_message_for_name);
     std::thread::sleep(std::time::Duration::from_secs(5));
 }
 
-#[tracing::instrument(name = "Broadcasting transaction via RPC", skip_all)]
-async fn sending_transaction(
-    additional_message_for_name: String,
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    signed_transaction: near_primitives::transaction::SignedTransaction,
-) -> Result<
-    near_primitives::views::FinalExecutionOutcomeView,
-    near_jsonrpc_client::errors::JsonRpcError<
-        near_jsonrpc_primitives::types::transactions::RpcTransactionError,
-    >,
-> {
-    tracing::Span::current().pb_set_message(&additional_message_for_name);
-    json_rpc_client
-        .call(
-            near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
-                signed_transaction: signed_transaction.clone(),
-            },
-        )
-        .await
+#[tracing::instrument(name = "Broadcasting delegate action via a relayer url", skip_all)]
+fn sending_delegate_action(
+    signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
+    meta_transaction_relayer_url: url::Url,
+) -> Result<reqwest::blocking::Response, reqwest::Error> {
+    tracing::Span::current().pb_set_message(meta_transaction_relayer_url.as_str());
+    let client = reqwest::blocking::Client::new();
+    let json_payload = serde_json::json!({
+        "signed_delegate_action": crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
+            signed_delegate_action
+        ).to_string()
+    });
+    client
+        .post(meta_transaction_relayer_url)
+        .json(&json_payload)
+        .send()
 }
