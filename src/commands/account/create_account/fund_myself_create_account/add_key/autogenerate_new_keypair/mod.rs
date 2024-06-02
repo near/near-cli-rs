@@ -45,7 +45,7 @@ impl From<GenerateKeypairContext> for super::super::AccountPropertiesContext {
             global_context: item.global_context,
             account_properties: item.account_properties,
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
         }
     }
@@ -90,43 +90,42 @@ impl SaveModeContext {
                 let key_pair_properties = previous_context.key_pair_properties.clone();
                 let credentials_home_dir = previous_context.global_context.config.credentials_home_dir.clone();
 
-                move |_signed_transaction, network_config, storage_message| {
+                move |_transaction, network_config| {
                     match scope {
                         SaveModeDiscriminants::SaveToKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            *storage_message = crate::common::save_access_key_to_keychain(
+                            crate::common::save_access_key_to_keychain(
                                 network_config.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
                                 new_account_id.as_ref(),
-                            )?;
+                            )
                         }
                         SaveModeDiscriminants::SaveToLegacyKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            *storage_message = crate::common::save_access_key_to_legacy_keychain(
+                            crate::common::save_access_key_to_legacy_keychain(
                                 network_config.clone(),
                                 credentials_home_dir.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
                                 new_account_id.as_ref(),
-                            )?;
+                            )
                         }
                         SaveModeDiscriminants::PrintToTerminal => {
-                            eprintln!("\n--------------------  Access key info for account <{}> ------------------\n", &new_account_id);
-                            eprintln!(
-                                "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
+                            Ok(format!(
+                                "\n--------------------  Access key info ------------------
+                                \nMaster Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}
+                                \n--------------------------------------------------------",
                                 key_pair_properties.master_seed_phrase,
                                 key_pair_properties.seed_phrase_hd_path,
                                 key_pair_properties.implicit_account_id,
                                 key_pair_properties.public_key_str,
                                 key_pair_properties.secret_keypair_str,
-                            );
-                            eprintln!("\n------------------------------------------------------------------------------------");
+                            ))
                         }
                     }
-                    Ok(())
                 }
             });
 

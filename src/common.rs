@@ -1176,7 +1176,12 @@ pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
 ) -> crate::CliResult {
-    eprintln!("--- Logs ---------------------------");
+    let near_usd_exchange_rate: Option<Result<f64, color_eyre::eyre::Error>> = network_config
+        .coingecko_url
+        .as_ref()
+        .map(get_near_usd_exchange_rate);
+
+    eprintln!("\n--- Logs ---------------------------"); // "\n" - required for correct display after {span_name}
 
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
@@ -1228,10 +1233,6 @@ pub fn print_transaction_status(
 
     eprintln!();
     eprintln!("Gas burned: {}", NearGas::from_gas(total_gas_burnt));
-    let near_usd_exchange_rate = network_config
-        .coingecko_url
-        .as_ref()
-        .map(get_near_usd_exchange_rate);
     eprintln!(
         "Transaction fee: {}{}",
         crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
