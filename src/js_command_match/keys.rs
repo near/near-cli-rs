@@ -2,6 +2,8 @@
 /// This is a legacy `keys` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct KeysArgs {
     account_id: String,
+    #[clap(long, aliases = ["network_id", "networkId"], default_value=None)]
+    network_id: Option<String>,
     #[clap(allow_hyphen_values = true, num_args = 0..)]
     _unknown_args: Vec<String>,
 }
@@ -13,7 +15,7 @@ impl KeysArgs {
             "list-keys".to_owned(),
             self.account_id.to_owned(),
             "network-config".to_owned(),
-            network_config,
+            self.network_id.clone().unwrap_or(network_config.to_owned()),
             "now".to_owned(),
         ]
     }
