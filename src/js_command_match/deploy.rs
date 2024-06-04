@@ -15,64 +15,57 @@ pub struct DeployArgs {
     init_gas: u64,
     #[clap(long, aliases = ["init_deposit", "initDeposit"], default_value = "0")]
     init_deposit: String,
+    #[clap(long, aliases = ["network_id", "networkId"], default_value=None)]
+    network_id: Option<String>,
     #[clap(allow_hyphen_values = true, num_args = 0..)]
     _unknown_args: Vec<String>,
 }
 
 impl DeployArgs {
     pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
+        let network_id = self.network_id.clone().unwrap_or(network_config.to_owned());
+        let mut command = vec![
+            "contract".to_owned(),
+            "deploy".to_owned(),
+        ];
+
         let contract_account_id = if let Some(account_id) = &self.contract_account_id {
             account_id
         } else if let Some(account_id) = &self.account_id {
             account_id
         } else {
-            return vec!["contract".to_owned(), "deploy".to_owned()];
+            return command;
         };
+
+        command.push(contract_account_id.to_owned());
+
         let wasm_file = if let Some(file_path) = &self.wasm_file_path {
             file_path
         } else if let Some(wasm_file) = &self.wasm_file {
             wasm_file
         } else {
-            return vec![
-                "contract".to_owned(),
-                "deploy".to_owned(),
-                contract_account_id.to_owned(),
-            ];
+            return command;
         };
 
+        command.push("use-file".to_owned());
+        command.push(wasm_file.to_owned());
+        command.push("with-init-call".to_owned());
+
         if self.init_function.is_some() {
-            vec![
-                "contract".to_owned(),
-                "deploy".to_owned(),
-                contract_account_id.to_owned(),
-                "use-file".to_owned(),
-                wasm_file.to_owned(),
-                "with-init-call".to_owned(),
-                self.init_function.as_deref().unwrap_or("new").to_owned(),
-                "json-args".to_owned(),
-                self.init_args.as_deref().unwrap_or("{}").to_owned(),
-                "prepaid-gas".to_owned(),
-                format!("{} TeraGas", self.init_gas / 1_000_000_000_000),
-                "attached-deposit".to_owned(),
-                format!("{} NEAR", self.init_deposit),
-                "network-config".to_owned(),
-                network_config,
-                "sign-with-keychain".to_owned(),
-                "send".to_owned(),
-            ]
-        } else {
-            vec![
-                "contract".to_owned(),
-                "deploy".to_owned(),
-                contract_account_id.to_owned(),
-                "use-file".to_owned(),
-                wasm_file.to_owned(),
-                "without-init-call".to_owned(),
-                "network-config".to_owned(),
-                network_config,
-                "sign-with-keychain".to_owned(),
-                "send".to_owned(),
-            ]
+            command.push(self.init_function.as_deref().unwrap_or("new").to_owned());
+            command.push("json-args".to_owned());
+            command.push(self.init_args.as_deref().unwrap_or("{}").to_owned());
+            command.push("prepaid-gas".to_owned());
+            command.push(format!("{} TeraGas", self.init_gas / 1_000_000_000_000));
+            command.push("attached-deposit".to_owned());
+            command.push(format!("{} NEAR", self.init_deposit));
         }
+
+        command.push("network-config".to_owned());
+        command.push(network_id);
+        command.push("sign-with-keychain".to_owned());
+        command.push("send".to_owned());
+
+        command
     }
 }

@@ -5,13 +5,17 @@ pub struct ViewArgs {
     method_name: String,
     #[clap(default_value = "")]
     args: String,
+    #[clap(long, aliases = ["network_id", "networkId"], default_value=None)]
+    network_id: Option<String>,
     #[clap(allow_hyphen_values = true, num_args = 0..)]
     _unknown_args: Vec<String>,
 }
 
 impl ViewArgs {
     pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
-        vec![
+        let network_id = self.network_id.clone().unwrap_or(network_config.to_owned());
+
+        let command = vec![
             "contract".to_owned(),
             "call-function".to_owned(),
             "as-read-only".to_owned(),
@@ -20,8 +24,10 @@ impl ViewArgs {
             "text-args".to_owned(),
             self.args.to_owned(),
             "network-config".to_owned(),
-            network_config,
+            network_id,
             "now".to_owned(),
-        ]
+        ];
+
+        command
     }
 }

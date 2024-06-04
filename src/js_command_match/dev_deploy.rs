@@ -25,6 +25,8 @@ impl DevDeployArgs {
         eprintln!("The command you tried to run is deprecated in the new NEAR CLI, but we tried our best to match the old command with the new syntax, try it instead:\n");
         eprintln!("Make sure you have the cargo-near app installed on your computer (https://github.com/near/cargo-near/blob/main/README.md)");
         eprintln!("In your project folder (cargo.toml) do the following:");
+
+        // TODO: Have to change this, because we don't have dev accounts anymore. Probably we should just delete this file. We already have "deploy" command
         eprintln!("1. Create a dev-account using the command:\n   cargo near create-dev-account\n");
         eprintln!(
             "2. Run the following command, after inserting the name of the created dev-account:"
