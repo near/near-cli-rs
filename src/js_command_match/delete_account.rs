@@ -26,6 +26,9 @@ impl DeleteAccountArgs {
             self.beneficiary_id.to_owned()
         ];
 
+        command.push("network-config".to_owned());
+        command.push(network_id);
+
         if self.use_ledger {
             command.push("sign-with-ledger".to_owned());
             command.push("--seed-phrase-hd-path".to_owned());
@@ -34,8 +37,6 @@ impl DeleteAccountArgs {
             command.push("sign-with-legacy-keychain".to_owned());
         }
 
-        command.push("network-config".to_owned());
-        command.push(network_id);
         command.push("send".to_owned());
         
         command

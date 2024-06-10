@@ -5,6 +5,11 @@ const creationAccountCommands = require('./test_cases/account_actions');
 
 const script_path = "./target/release/near";
 
+const testResults = {
+  successful: 0,
+  failed: 0,
+};
+
 async function runCliCommand(command, regex) {
   try {
     const { stdout, stderr } = await exec(command);
@@ -30,7 +35,6 @@ async function start() {
     const jsCmd = creationAccountCommands[i].jsCmd;
     const suggestedCommandRegexPattern = creationAccountCommands[i].suggestedCommandRegexPattern;
     const expectedResult = creationAccountCommands[i].expectedResult;
-    console.log("creationAccountCommands[i].expectedResult: ", creationAccountCommands[i].expectedResult);
 
     console.log(`▶️ Running the command: \n\t${jsCmd}`);
     const suggestedCommand = await runCliCommand(`${script_path} ${jsCmd}`, new RegExp(`${script_path} ${suggestedCommandRegexPattern}`));
@@ -42,11 +46,17 @@ async function start() {
   
     if (result === expectedResult) {
       console.log("\n✅ Test passed");
+      testResults.successful += 1;
     } else {
       console.error("❌ Test failed");
+      testResults.failed += 1;
     }
     console.log("\n---\n");
   }
+
+  console.log('Test stats:\n');
+  console.log('✅ Successful: ', testResults.successful);
+  console.log('❌ Failed: ', testResults.failed);
 }
 
 start()

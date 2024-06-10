@@ -16,7 +16,7 @@ module.exports = [
     suggestedCommandRegexPattern: '(.*?)testnet create',
     expectedResult: `New account <${testaccount1}> created successfully.`,
   },
-  // // Creating a pre-funded account with a seedPhrase
+  // Creating a pre-funded account with a seedPhrase
   {
     jsCmd: `create-account ${testaccount2} --seedPhrase \"crisp clump stay mean dynamic become fashion mail bike disorder chronic sight\" --useFaucet`,
     suggestedCommandRegexPattern: '(.*?)testnet create',
@@ -76,10 +76,28 @@ module.exports = [
     suggestedCommandRegexPattern: '(.*?)testnet sign-with-legacy-keychain send',
     expectedResult: `Account <${testaccount1}> does not have enough balance`,
   },
-  // // Deleting an account
-  // {
-  //   jsCmd: `delete-account ${testaccount2} ${testaccount1}`,
-  //   suggestedCommandRegexPattern: '(.*?)testnet send',
-  //   expectedResult: `Account <${testaccount1}> does not have enough balance`,
-  // },
+  // Deleting an account
+  {
+    jsCmd: `delete-account ${testaccount3} ${testaccount1}`,
+    suggestedCommandRegexPattern: '(.*?)testnet sign-with-legacy-keychain send',
+    expectedResult: `Account <${testaccount3}> has been successfully deleted.`,
+  },
+  // Deleting an account on mainnet
+  {
+    jsCmd: `delete-account ${testaccount3} ${testaccount1} --networkId mainnet`,
+    suggestedCommandRegexPattern: '(.*?)mainnet sign-with-legacy-keychain send',
+    expectedResult: `Access key file for account <${testaccount3}> on network <mainnet> not found!`,
+  },
+  // Deleting an account using ledger
+  {
+    jsCmd: `delete-account ${testaccount4} ${testaccount1} --signWithLedger`,
+    suggestedCommandRegexPattern: "(.*?)testnet sign-with-ledger --seed-phrase-hd-path '' send",
+    expectedResult: 'An error occurred while trying to get PublicKey from Ledger device',
+  },
+  // Deleting an account using ledger with custom ledgerPath
+  {
+    jsCmd: `delete-account ${testaccount4} ${testaccount1} --signWithLedger --ledgerPath "44'/397'/0'/0'/2'"`,
+    suggestedCommandRegexPattern: "(.*?) testnet sign-with-ledger --seed-phrase-hd-path '44'\\\\''\/397'\\\\''\/0'\\\\''\/0'\\\\''\/2'\\\\''' send", // .replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    expectedResult: 'An error occurred while trying to get PublicKey from Ledger device',
+  },
 ];
