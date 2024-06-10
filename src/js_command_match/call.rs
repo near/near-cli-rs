@@ -23,9 +23,6 @@ impl CallArgs {
         let network_id = self.network_id.clone().unwrap_or(network_config.to_owned());
 
         let mut command = vec![
-            "account".to_owned(),
-            "add-key".to_owned(),
-            self.account_id.to_owned(),
             "contract".to_owned(),
             "call-function".to_owned(),
             "as-transaction".to_owned(),
@@ -53,5 +50,85 @@ impl CallArgs {
         command.push("send".to_owned());
 
         command
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+ 
+    #[test]
+    fn call_with_json_args_testnet() {
+        let call_args = CallArgs {
+            contract_account_id: "contract.testnet".to_string(),
+            method_name: "flip_coin".to_string(),
+            base64: false,
+            args: "{\"player_guess\": \"tail\"}".to_string(),
+            account_id: "bob.testnet".to_string(),
+            gas: 30000000000000,
+            deposit: "0".to_string(),
+            network_id: None,
+            _unknown_args: [].to_vec(),
+        };
+        let result = CallArgs::to_cli_args(&call_args, "testnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!(
+                "contract call-function as-transaction {} flip_coin json-args {} prepaid-gas 30 TeraGas attached-deposit 0 NEAR sign-as {} network-config testnet sign-with-keychain send",
+                call_args.contract_account_id,
+                call_args.args,
+                call_args.account_id,
+            )
+        )
+    }
+
+    #[test]
+    fn call_with_json_args_mainnet() {
+        let call_args = CallArgs {
+            contract_account_id: "contract.testnet".to_string(),
+            method_name: "flip_coin".to_string(),
+            base64: false,
+            args: "{\"player_guess\": \"tail\"}".to_string(),
+            account_id: "bob.testnet".to_string(),
+            gas: 30000000000000,
+            deposit: "0".to_string(),
+            network_id: None,
+            _unknown_args: [].to_vec(),
+        };
+        let result = CallArgs::to_cli_args(&call_args, "mainnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!(
+                "contract call-function as-transaction {} flip_coin json-args {} prepaid-gas 30 TeraGas attached-deposit 0 NEAR sign-as {} network-config mainnet sign-with-keychain send",
+                call_args.contract_account_id,
+                call_args.args,
+                call_args.account_id,
+            )
+        )
+    }
+
+    #[test]
+    fn call_with_base64_args_testnet() {
+        let call_args = CallArgs {
+            contract_account_id: "contract.testnet".to_string(),
+            method_name: "flip_coin".to_string(),
+            base64: true,
+            args: "{\"player_guess\": \"tail\"}".to_string(),
+            account_id: "bob.testnet".to_string(),
+            gas: 30000000000000,
+            deposit: "0".to_string(),
+            network_id: None,
+            _unknown_args: [].to_vec(),
+        };
+        let result = CallArgs::to_cli_args(&call_args, "mainnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!(
+                "contract call-function as-transaction {} flip_coin base64-args {} prepaid-gas 30 TeraGas attached-deposit 0 NEAR sign-as {} network-config mainnet sign-with-keychain send",
+                call_args.contract_account_id,
+                call_args.args,
+                call_args.account_id,
+            )
+        )
     }
 }

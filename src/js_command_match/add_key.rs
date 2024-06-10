@@ -53,7 +53,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn add_function_call_access_key() {
+    fn add_function_call_access_key_testnet() {
         let account_id = "bob.testnet".to_string();
         let access_key = "access_key_placeholder".to_string();
         let contract_id = "example.testnet".to_string();
@@ -75,7 +75,7 @@ mod tests {
     }
 
     #[test]
-    fn add_full_access_key() {
+    fn add_full_access_key_testnet() {
         let account_id = "bob.testnet".to_string();
         let access_key = "access_key_placeholder".to_string();
 
@@ -92,6 +92,27 @@ mod tests {
         assert_eq!(
             result.join(" "),
             format!("account add-key {} grant-full-access use-manually-provided-public-key {} network-config testnet sign-with-keychain send", account_id, access_key)
+        )
+    }
+
+    #[test]
+    fn add_full_access_key_mainnet() {
+        let account_id = "bob.testnet".to_string();
+        let access_key = "access_key_placeholder".to_string();
+
+        let add_key_args = AddKeyArgs {
+            account_id: account_id.clone(),
+            access_key: access_key.clone(),
+            contract_id: None,
+            method_names: [].to_vec(),
+            allowance: "0".to_string(),
+            network_id: None,
+            _unknown_args: [].to_vec(),
+        };
+        let result = AddKeyArgs::to_cli_args(&add_key_args, "mainnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!("account add-key {} grant-full-access use-manually-provided-public-key {} network-config mainnet sign-with-keychain send", account_id, access_key)
         )
     }
 }

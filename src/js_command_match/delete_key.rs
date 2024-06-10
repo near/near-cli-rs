@@ -28,3 +28,46 @@ impl DeleteKeyArgs {
         command
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+ 
+    #[test]
+    fn delete_key_testnet() {
+        let delete_args = DeleteKeyArgs {
+            account_id: "bob.testnet".to_string(),
+            access_key: "access_key_placeholder".to_string(),
+            network_id: None,
+            _unknown_args: [].to_vec(),
+        };
+        let result = DeleteKeyArgs::to_cli_args(&delete_args, "testnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!(
+                "account delete-keys {} {} public-keys network-config testnet sign-with-keychain send",
+                delete_args.account_id,
+                delete_args.access_key
+            )
+        )
+    }
+
+    #[test]
+    fn delete_key_mainnet() {
+        let delete_args = DeleteKeyArgs {
+            account_id: "bob.testnet".to_string(),
+            access_key: "access_key_placeholder".to_string(),
+            network_id: Some("mainnet".to_owned()),
+            _unknown_args: [].to_vec(),
+        };
+        let result = DeleteKeyArgs::to_cli_args(&delete_args, "testnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!(
+                "account delete-keys {} {} public-keys network-config mainnet sign-with-keychain send",
+                delete_args.account_id,
+                delete_args.access_key
+            )
+        )
+    }
+}

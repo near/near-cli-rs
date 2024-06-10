@@ -41,3 +41,71 @@ impl DeleteAccountArgs {
         command
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+ 
+    #[test]
+    fn delete_account_using_ledger_testnet() {
+        let delete_args = DeleteAccountArgs {
+            account_id: "bob.testnet".to_string(),
+            beneficiary_id: "alice.testnet".to_string(),
+            use_ledger: true,
+            ledger_path: None,
+            network_id: None,
+            _unknown_args: [].to_vec(),
+        };
+        let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!(
+                "account delete-account {} beneficiary {} sign-with-ledger --seed-phrase-hd-path  network-config testnet send",
+                delete_args.account_id,
+                delete_args.beneficiary_id
+            )
+        )
+    }
+
+    #[test]
+    fn delete_account_using_ledger_mainnet() {
+        let delete_args = DeleteAccountArgs {
+            account_id: "bob.testnet".to_string(),
+            beneficiary_id: "alice.testnet".to_string(),
+            use_ledger: true,
+            ledger_path: None,
+            network_id: Some("mainnet".to_string()),
+            _unknown_args: [].to_vec(),
+        };
+        let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!(
+                "account delete-account {} beneficiary {} sign-with-ledger --seed-phrase-hd-path  network-config mainnet send",
+                delete_args.account_id,
+                delete_args.beneficiary_id
+            )
+        )
+    }
+    
+    #[test]
+    fn delete_account_using_keychain_testnet() {
+        let delete_args = DeleteAccountArgs {
+            account_id: "bob.testnet".to_string(),
+            beneficiary_id: "alice.testnet".to_string(),
+            use_ledger: false,
+            ledger_path: None,
+            network_id: None,
+            _unknown_args: [].to_vec(),
+        };
+        let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!(
+                "account delete-account {} beneficiary {} sign-with-legacy-keychain network-config testnet send",
+                delete_args.account_id,
+                delete_args.beneficiary_id
+            )
+        )
+    }
+}

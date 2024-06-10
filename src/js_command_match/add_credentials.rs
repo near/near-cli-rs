@@ -45,7 +45,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn add_credentials_using_seed_phrase() {
+    fn add_credentials_using_seed_phrase_testnet() {
         let seed_phrase = "seed_phrase_placeholder".to_string();
         let add_credentials_args = AddCredentialsArgs {
             account_id: "bob.testnet".to_string(),
@@ -62,7 +62,24 @@ mod tests {
     }
 
     #[test]
-    fn add_credentials_using_secret_key() {
+    fn add_credentials_using_seed_phrase_mainnet() {
+        let seed_phrase = "seed_phrase_placeholder".to_string();
+        let add_credentials_args = AddCredentialsArgs {
+            account_id: "bob.testnet".to_string(),
+            seed_phrase: Some(seed_phrase.clone()),
+            secret_key: None,
+            network_id: None,
+            _unknown_args: [].to_vec(),
+        };
+        let result = AddCredentialsArgs::to_cli_args(&add_credentials_args, "mainnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!("account import-account using-seed-phrase {} --seed-phrase-hd-path {} network-config mainnet", seed_phrase, DEFAULT_SEED_PHRASE_PATH.to_string())
+        )
+    }
+
+    #[test]
+    fn add_credentials_using_secret_key_testnet() {
         let secret_key = "secret_key_placeholder".to_string();
         let add_credentials_args = AddCredentialsArgs {
             account_id: "bob.testnet".to_string(),
