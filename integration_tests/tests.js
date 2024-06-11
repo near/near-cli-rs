@@ -10,41 +10,45 @@ const testResults = {
   failed: 0,
 };
 
-async function runCliCommand(command, regex) {
+async function getSuggestedCommand(command) {
   try {
-    const { stdout, stderr } = await exec(command);
-
-    const match = stderr.trim().match(regex);
-    const result = match ? match[0] : null;
-
-    return result;
+    await exec(command);
+    throw new Error(`Command ${command} should have failed`);
   } catch (error) {
+    // we actually expect this to run into an error
+    const regex = new RegExp(`\n${script_path} .*`)
     const match = error.message.match(regex);
     const suggestedCommand = match ? match[0] : null;
 
-    if (suggestedCommand) {
-      return suggestedCommand;
-    }
-
+    if (suggestedCommand) return suggestedCommand;
     return error;
+  }
+}
+
+async function runSuggestedCommand(command, expectedResult) {
+  try {
+    const { stdout, stderr } = await exec(command);
+    const match = (stdout + stderr).trim().match(expectedResult);
+    return match ? match[0] : result;
+  } catch (error) {
+    const match = error.message.match(expectedResult);
+    return match ? match[0] : null;
   }
 }
 
 async function start() {
   for (let i = 0; i < creationAccountCommands.length; i++) {
-    const jsCmd = creationAccountCommands[i].jsCmd;
-    const suggestedCommandRegexPattern = creationAccountCommands[i].suggestedCommandRegexPattern;
-    const expectedResult = creationAccountCommands[i].expectedResult;
+    const { jsCmd, expectedResult } = creationAccountCommands[i];
 
     console.log(`▶️ Running the command: \n\t${jsCmd}`);
-    const suggestedCommand = await runCliCommand(`${script_path} ${jsCmd}`, new RegExp(`${script_path} ${suggestedCommandRegexPattern}`));
+    const suggestedCommand = await getSuggestedCommand(`${script_path} ${jsCmd}`);
     console.log(`\nSuggested command: \n\t${suggestedCommand}`);
-  
+
     console.log("\nRunning the suggested command...");
-    const result = (await runCliCommand(suggestedCommand, new RegExp(expectedResult)));
+    const result = await runSuggestedCommand(suggestedCommand, expectedResult);
     console.log(`\t${result}`);
-  
-    if (result === expectedResult) {
+
+    if (result) {
       console.log("\n✅ Test passed");
       testResults.successful += 1;
     } else {
