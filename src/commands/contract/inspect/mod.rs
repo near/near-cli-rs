@@ -328,10 +328,10 @@ async fn display_inspect_contract(
                     for export in export_section {
                         let export = export
                             .wrap_err_with(|| format!("Could not parse WebAssembly export section of the contract <{account_id}>."))?;
-                        if let wasmparser::ExternalKind::Function = export.kind {
+                        if let wasmparser::ExternalKind::Func = export.kind {
                             println!(
                                 " fn {}({}) -> {}\n",
-                                export.field.green(),
+                                export.name.green(),
                                 "...".yellow(),
                                 "...".blue()
                             );
