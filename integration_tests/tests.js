@@ -16,11 +16,17 @@ async function getSuggestedCommand(command) {
     throw new Error(`Command ${command} should have failed`);
   } catch (error) {
     // we actually expect this to run into an error
-    const regex = new RegExp(`\n${script_path} .*`)
-    const match = error.message.match(regex);
-    const suggestedCommand = match ? match[0] : null;
+    const regex = new RegExp(`(    )(${script_path} .*)`);
 
-    if (suggestedCommand) return suggestedCommand;
+    // replace here removes styling from the error message
+    const match = error.message.replace(/\u001b\[.*?m/g, '').match(regex);
+    
+    const suggestedCommand = match ? match[2] : null;
+
+    if (suggestedCommand) {
+      return suggestedCommand;
+    }
+
     return error;
   }
 }
@@ -63,4 +69,4 @@ async function start() {
   console.log('❌ Failed: ', testResults.failed);
 }
 
-start()
+start();
