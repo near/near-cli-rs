@@ -115,9 +115,17 @@ fn print_account_creation_status(
                 )));
             }
 
-            let account_creation_transaction =
-                response
-                    .json::<near_jsonrpc_client::methods::tx::RpcTransactionStatusResponse>()?;
+            let account_creation_transaction = response
+                .json::<near_jsonrpc_client::methods::tx::RpcTransactionResponse>()?
+                .final_execution_outcome
+                .map(|outcome| {
+                    near_primitives::views::FinalExecutionOutcomeView::from(outcome.into_outcome())
+                })
+                .ok_or_else(|| {
+                    color_eyre::Report::msg(
+                        "The faucet (helper service) server did not return a transaction response.",
+                    )
+                })?;
             match account_creation_transaction.status {
                 near_primitives::views::FinalExecutionStatus::SuccessValue(ref value) => {
                     if value == b"false" {
