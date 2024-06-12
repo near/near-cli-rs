@@ -34,6 +34,7 @@ async function getSuggestedCommand(command) {
 async function runSuggestedCommand(command, expectedResult) {
   try {
     const { stdout, stderr } = await exec(command);
+    console.log(stdout + stderr);
     const match = (stdout + stderr).trim().match(expectedResult);
     return match ? match[0] : result;
   } catch (error) {

@@ -75,9 +75,39 @@ module.exports = [
     jsCmd: `delete-account ${testaccount3} ${testaccount1} --networkId mainnet`,
     expectedResult: `Access key file for account <${testaccount3}> on network <mainnet> not found!`,
   },
-  // check that the key is the right one - do at the end, so the account info is updated
+  // Checking that the key is the right one - do at the end, so the account info is updated
   {
     jsCmd: `keys ${testaccount2}`,
     expectedResult: `.*ed25519:GPnL8k4MV1hLccB5rkNiihVAEEmQX3BTDJnmW1T7ZDXG.*`,
+  },
+  // Getting created account state
+  {
+    jsCmd: `state ${testaccount1}`,
+    expectedResult: `Native account balance           9.80 NEAR`,
+  },
+  // Getting created account storage (optimistic finality)
+  {
+    jsCmd: `storage ${testaccount1} --finality optimistic`,
+    expectedResult: 'Contract state',
+  },
+  // Getting created account storage (final finality)
+  {
+    jsCmd: `storage ${testaccount1} --finality final`,
+    expectedResult: 'Contract state',
+  },
+  // Getting created account storage by specific block
+  {
+    jsCmd: `storage ${testaccount1} --blockId 166144161`,
+    expectedResult: `account ${testaccount1} does not exist while viewing`,
+  },
+  // Getting created account storage by block hash
+  {
+    jsCmd: `storage ${testaccount1} --blockId 5bewVzQq8nYNVJZmrWxGotfZ3Fs3EZcbZaQWKLzDnnx3`,
+    expectedResult: `account ${testaccount1} does not exist while viewing`,
+  },
+  // Failling while getting account storage using mutually exclusive parameters
+  {
+    jsCmd: `storage ${testaccount1}`, //  --blockId 5bewVzQq8nYNVJZmrWxGotfZ3Fs3EZcbZaQWKLzDnnx3 --finality optimistic
+    expectedResult: `account ${testaccount1} does not exist while viewing`,
   },
 ];
