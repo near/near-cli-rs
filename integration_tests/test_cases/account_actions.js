@@ -104,10 +104,5 @@ module.exports = [
   {
     jsCmd: `storage ${testaccount1} --blockId 5bewVzQq8nYNVJZmrWxGotfZ3Fs3EZcbZaQWKLzDnnx3`,
     expectedResult: `account ${testaccount1} does not exist while viewing`,
-  },
-  // Failling while getting account storage using mutually exclusive parameters
-  {
-    jsCmd: `storage ${testaccount1}`, //  --blockId 5bewVzQq8nYNVJZmrWxGotfZ3Fs3EZcbZaQWKLzDnnx3 --finality optimistic
-    expectedResult: `account ${testaccount1} does not exist while viewing`,
-  },
+  }
 ];

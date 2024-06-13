@@ -17,11 +17,11 @@ impl DeleteKeyArgs {
             "account".to_owned(),
             "delete-keys".to_owned(),
             self.account_id.to_owned(),
-            self.access_key.to_owned(),
             "public-keys".to_owned(),
+            self.access_key.to_owned(),
             "network-config".to_owned(),
             network_id,
-            "sign-with-keychain".to_owned(),
+            "sign-with-legacy-keychain".to_owned(),
             "send".to_owned(),
         ];
 

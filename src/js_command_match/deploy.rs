@@ -49,9 +49,9 @@ impl DeployArgs {
 
         command.push("use-file".to_owned());
         command.push(wasm_file.to_owned());
-        command.push("with-init-call".to_owned());
-
+        
         if self.init_function.is_some() {
+            command.push("with-init-call".to_owned());
             command.push(self.init_function.as_deref().unwrap_or("new").to_owned());
             command.push("json-args".to_owned());
             command.push(self.init_args.as_deref().unwrap_or("{}").to_owned());
@@ -59,11 +59,13 @@ impl DeployArgs {
             command.push(format!("{} TeraGas", self.init_gas / 1_000_000_000_000));
             command.push("attached-deposit".to_owned());
             command.push(format!("{} NEAR", self.init_deposit));
+        } else {
+          command.push("without-init-call".to_owned());
         }
 
         command.push("network-config".to_owned());
         command.push(network_id);
-        command.push("sign-with-keychain".to_owned());
+        command.push("sign-with-legacy-keychain".to_owned());
         command.push("send".to_owned());
 
         command

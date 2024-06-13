@@ -1,7 +1,15 @@
 const util = require('node:util');
 const exec = util.promisify(require('node:child_process').exec);
 
-const creationAccountCommands = require('./test_cases/account_actions');
+const accountActions = require('./test_cases/account_actions');
+const contractActions = require('./test_cases/contract_actions');
+const keyActions = require('./test_cases/key_actions');
+
+const testCases = [
+  accountActions,
+  contractActions,
+  keyActions
+];
 
 const script_path = "./target/release/near";
 
@@ -9,6 +17,10 @@ const testResults = {
   successful: 0,
   failed: 0,
 };
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 async function getSuggestedCommand(command) {
   try {
@@ -31,10 +43,12 @@ async function getSuggestedCommand(command) {
   }
 }
 
-async function runSuggestedCommand(command, expectedResult) {
+async function runSuggestedCommand(command, expectedResult, isNeedToWaitForNextBlock = false) {
   try {
+    if (isNeedToWaitForNextBlock) {
+      await sleep(1400);
+    }
     const { stdout, stderr } = await exec(command);
-    console.log(stdout + stderr);
     const match = (stdout + stderr).trim().match(expectedResult);
     return match ? match[0] : result;
   } catch (error) {
@@ -44,25 +58,27 @@ async function runSuggestedCommand(command, expectedResult) {
 }
 
 async function start() {
-  for (let i = 0; i < creationAccountCommands.length; i++) {
-    const { jsCmd, expectedResult } = creationAccountCommands[i];
-
-    console.log(`▶️ Running the command: \n\t${jsCmd}`);
-    const suggestedCommand = await getSuggestedCommand(`${script_path} ${jsCmd}`);
-    console.log(`\nSuggested command: \n\t${suggestedCommand}`);
-
-    console.log("\nRunning the suggested command...");
-    const result = await runSuggestedCommand(suggestedCommand, expectedResult);
-    console.log(`\t${result}`);
-
-    if (result) {
-      console.log("\n✅ Test passed");
-      testResults.successful += 1;
-    } else {
-      console.error("❌ Test failed");
-      testResults.failed += 1;
+  for (j = 0; j < testCases.length; j++) {
+    for (let i = 0; i < testCases[j].length; i++) {
+      const { jsCmd, expectedResult, isNeedToWaitForNextBlock } = testCases[j][i];
+  
+      console.log(`▶️ Running the command: \n\t${jsCmd}`);
+      const suggestedCommand = await getSuggestedCommand(`${script_path} ${jsCmd}`);
+      console.log(`\nSuggested command: \n\t${suggestedCommand}`);
+  
+      console.log("\nRunning the suggested command...");
+      const result = await runSuggestedCommand(suggestedCommand, expectedResult, isNeedToWaitForNextBlock);
+      console.log(`\t${result}`);
+  
+      if (result) {
+        console.log("\n✅ Test passed");
+        testResults.successful += 1;
+      } else {
+        console.error("❌ Test failed");
+        testResults.failed += 1;
+      }
+      console.log("\n---\n");
     }
-    console.log("\n---\n");
   }
 
   console.log('Test stats:\n');
