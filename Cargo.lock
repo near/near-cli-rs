@@ -2554,9 +2554,9 @@ dependencies = [
  "bytesize",
  "chrono",
  "derive_more",
- "near-config-utils 0.22.0",
- "near-crypto 0.22.0",
- "near-parameters 0.22.0",
+ "near-config-utils 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "near-crypto",
+ "near-parameters 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "near-primitives",
  "num-rational 0.3.2",
  "once_cell",
@@ -2590,7 +2590,7 @@ dependencies = [
  "keyring",
  "linked-hash-map",
  "near-abi",
- "near-crypto 0.22.0",
+ "near-crypto",
  "near-gas",
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
@@ -2639,8 +2639,8 @@ dependencies = [
 
 [[package]]
 name = "near-config-utils"
-version = "1.39.2"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#4a2360759111693020825eed80022ecaccb008fa"
+version = "0.22.0"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
 dependencies = [
  "anyhow",
  "json_comments",
@@ -2651,8 +2651,7 @@ dependencies = [
 [[package]]
 name = "near-crypto"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d914f93b5fcec0cf6d897e04cb98622a38653924b1ef06c0e69c3d24854dfb3"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
 dependencies = [
  "blake2",
  "borsh",
@@ -2663,34 +2662,8 @@ dependencies = [
  "ed25519-dalek 2.1.1",
  "hex 0.4.3",
  "near-account-id",
- "near-config-utils 0.22.0",
- "near-stdx 0.22.0",
- "once_cell",
- "primitive-types",
- "rand 0.7.3",
- "secp256k1",
- "serde",
- "serde_json",
- "subtle",
- "thiserror",
-]
-
-[[package]]
-name = "near-crypto"
-version = "1.39.2"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#4a2360759111693020825eed80022ecaccb008fa"
-dependencies = [
- "blake2",
- "borsh",
- "bs58 0.4.0",
- "c2-chacha",
- "curve25519-dalek 4.1.2",
- "derive_more",
- "ed25519-dalek 2.1.1",
- "hex 0.4.3",
- "near-account-id",
- "near-config-utils 1.39.2",
- "near-stdx 1.39.2",
+ "near-config-utils 0.22.0 (git+https://github.com/akorchyn/nearcore?branch=patch-defaults)",
+ "near-stdx",
  "once_cell",
  "primitive-types",
  "rand 0.7.3",
@@ -2704,10 +2677,9 @@ dependencies = [
 [[package]]
 name = "near-fmt"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "594b6636fb6f69469a01761132d7aba59410d451169427fdd141cddb3ff9eb3d"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
 dependencies = [
- "near-primitives-core 0.22.0",
+ "near-primitives-core",
 ]
 
 [[package]]
@@ -2731,7 +2703,7 @@ dependencies = [
  "lazy_static",
  "log",
  "near-chain-configs",
- "near-crypto 0.22.0",
+ "near-crypto",
  "near-jsonrpc-primitives",
  "near-primitives",
  "reqwest",
@@ -2748,9 +2720,9 @@ checksum = "9e79664df2a90c6eb229f726720dd070a3235ec95acace41fcfd794dd3497803"
 dependencies = [
  "arbitrary",
  "near-chain-configs",
- "near-crypto 0.22.0",
+ "near-crypto",
  "near-primitives",
- "near-rpc-error-macro",
+ "near-rpc-error-macro 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_json",
  "thiserror",
@@ -2769,22 +2741,21 @@ dependencies = [
  "ledger-transport-hid",
  "log",
  "near-primitives",
- "near-primitives-core 0.22.0",
+ "near-primitives-core",
  "slip10",
 ]
 
 [[package]]
 name = "near-o11y"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba830de3e7f0c5ef9a9baa4d96012b6d2605263434c399fc4472c6b42f1a451c"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
 dependencies = [
  "actix",
  "base64 0.21.7",
  "clap",
- "near-crypto 0.22.0",
+ "near-crypto",
  "near-fmt",
- "near-primitives-core 0.22.0",
+ "near-primitives-core",
  "once_cell",
  "opentelemetry",
  "opentelemetry-otlp",
@@ -2811,7 +2782,7 @@ dependencies = [
  "borsh",
  "enum-map",
  "near-account-id",
- "near-primitives-core 0.22.0",
+ "near-primitives-core",
  "num-rational 0.3.2",
  "serde",
  "serde_repr",
@@ -2822,14 +2793,14 @@ dependencies = [
 
 [[package]]
 name = "near-parameters"
-version = "1.39.2"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#4a2360759111693020825eed80022ecaccb008fa"
+version = "0.22.0"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
 dependencies = [
  "assert_matches",
  "borsh",
  "enum-map",
  "near-account-id",
- "near-primitives-core 1.39.2",
+ "near-primitives-core",
  "num-rational 0.3.2",
  "serde",
  "serde_repr",
@@ -2841,8 +2812,7 @@ dependencies = [
 [[package]]
 name = "near-primitives"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c1c3d27ae7ea27a2844385246f007a7a75f703ac135e95e27795a4cf4dfad4b"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
 dependencies = [
  "arbitrary",
  "base64 0.21.7",
@@ -2854,13 +2824,13 @@ dependencies = [
  "easy-ext 0.2.9",
  "enum-map",
  "hex 0.4.3",
- "near-crypto 0.22.0",
+ "near-crypto",
  "near-fmt",
  "near-o11y",
- "near-parameters 0.22.0",
- "near-primitives-core 0.22.0",
- "near-rpc-error-macro",
- "near-stdx 0.22.0",
+ "near-parameters 0.22.0 (git+https://github.com/akorchyn/nearcore?branch=patch-defaults)",
+ "near-primitives-core",
+ "near-rpc-error-macro 0.22.0 (git+https://github.com/akorchyn/nearcore?branch=patch-defaults)",
+ "near-stdx",
  "near-vm-runner",
  "num-rational 0.3.2",
  "once_cell",
@@ -2883,29 +2853,7 @@ dependencies = [
 [[package]]
 name = "near-primitives-core"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42620c4640ce68d9a3d525ad90ba1892dd8693cf99f879a724c964f84a95abc7"
-dependencies = [
- "arbitrary",
- "base64 0.21.7",
- "borsh",
- "bs58 0.4.0",
- "derive_more",
- "enum-map",
- "near-account-id",
- "num-rational 0.3.2",
- "serde",
- "serde_repr",
- "serde_with",
- "sha2 0.10.8",
- "strum",
- "thiserror",
-]
-
-[[package]]
-name = "near-primitives-core"
-version = "1.39.2"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#4a2360759111693020825eed80022ecaccb008fa"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
 dependencies = [
  "arbitrary",
  "base64 0.21.7",
@@ -2935,13 +2883,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "near-rpc-error-core"
+version = "0.22.0"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+dependencies = [
+ "quote",
+ "serde",
+ "syn 2.0.61",
+]
+
+[[package]]
 name = "near-rpc-error-macro"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14ff0542196665dfea91933e35bd3763ddc48861d5913e3deeea020fbbd67e49"
 dependencies = [
  "fs2",
- "near-rpc-error-core",
+ "near-rpc-error-core 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde",
+ "syn 2.0.61",
+]
+
+[[package]]
+name = "near-rpc-error-macro"
+version = "0.22.0"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+dependencies = [
+ "fs2",
+ "near-rpc-error-core 0.22.0 (git+https://github.com/akorchyn/nearcore?branch=patch-defaults)",
  "serde",
  "syn 2.0.61",
 ]
@@ -2953,7 +2922,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4d19df572044f589a586400acde973e7846efae66ba5c8af3c0181f57806887"
 dependencies = [
  "color-eyre",
- "near-crypto 0.22.0",
+ "near-crypto",
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
  "near-primitives",
@@ -2966,13 +2935,7 @@ dependencies = [
 [[package]]
 name = "near-stdx"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e111e0da22d28d9b7405e86d3314835d9f5ab8036e3580a480177f6d0a329ab9"
-
-[[package]]
-name = "near-stdx"
-version = "1.39.2"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#4a2360759111693020825eed80022ecaccb008fa"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
 
 [[package]]
 name = "near-token"
@@ -2988,7 +2951,7 @@ dependencies = [
 [[package]]
 name = "near-vm-runner"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#4a2360759111693020825eed80022ecaccb008fa"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
 dependencies = [
  "base64 0.21.7",
  "borsh",
@@ -2998,10 +2961,10 @@ dependencies = [
  "loupe",
  "lru",
  "memoffset 0.8.0",
- "near-crypto 1.39.2",
- "near-parameters 1.39.2",
- "near-primitives-core 1.39.2",
- "near-stdx 1.39.2",
+ "near-crypto",
+ "near-parameters 0.22.0 (git+https://github.com/akorchyn/nearcore?branch=patch-defaults)",
+ "near-primitives-core",
+ "near-stdx",
  "num-rational 0.3.2",
  "once_cell",
  "parity-wasm 0.41.0",

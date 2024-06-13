@@ -137,4 +137,6 @@ allow-dirty = ["ci"]
 libudev-dev = { version = "*", targets = ["x86_64-unknown-linux-gnu"] }
 
 [patch.crates-io]
-near-vm-runner = { git = "https://github.com/akorchyn/nearcore", branch = "patch-defaults" }
+near-primitives = { git = "https://github.com/akorchyn/nearcore", branch = "patch-defaults" }
+near-crypto = { git = "https://github.com/akorchyn/nearcore", branch = "patch-defaults" }
+near-primitives-core = { git = "https://github.com/akorchyn/nearcore", branch = "patch-defaults" }
