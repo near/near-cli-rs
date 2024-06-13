@@ -47,7 +47,7 @@ dirs = "5"
 shellexpand = "3"
 slip10 = "0.4.3"
 url = { version = "2", features = ["serde"] }
-open = "4"
+open = "5"
 shell-words = "1"
 cargo-util = "0.1.1"
 indicatif = "0.17.8"
@@ -135,3 +135,6 @@ allow-dirty = ["ci"]
 
 [workspace.metadata.dist.dependencies.apt]
 libudev-dev = { version = "*", targets = ["x86_64-unknown-linux-gnu"] }
+
+[patch.crates-io]
+near-vm-runner = { git = "https://github.com/akorchyn/nearcore", branch = "patch-defaults" }
