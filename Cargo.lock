@@ -2640,7 +2640,7 @@ dependencies = [
 [[package]]
 name = "near-config-utils"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 dependencies = [
  "anyhow",
  "json_comments",
@@ -2651,7 +2651,7 @@ dependencies = [
 [[package]]
 name = "near-crypto"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 dependencies = [
  "blake2",
  "borsh",
@@ -2677,7 +2677,7 @@ dependencies = [
 [[package]]
 name = "near-fmt"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 dependencies = [
  "near-primitives-core",
 ]
@@ -2748,7 +2748,7 @@ dependencies = [
 [[package]]
 name = "near-o11y"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 dependencies = [
  "actix",
  "base64 0.21.7",
@@ -2794,7 +2794,7 @@ dependencies = [
 [[package]]
 name = "near-parameters"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 dependencies = [
  "assert_matches",
  "borsh",
@@ -2812,7 +2812,7 @@ dependencies = [
 [[package]]
 name = "near-primitives"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 dependencies = [
  "arbitrary",
  "base64 0.21.7",
@@ -2853,7 +2853,7 @@ dependencies = [
 [[package]]
 name = "near-primitives-core"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 dependencies = [
  "arbitrary",
  "base64 0.21.7",
@@ -2885,7 +2885,7 @@ dependencies = [
 [[package]]
 name = "near-rpc-error-core"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 dependencies = [
  "quote",
  "serde",
@@ -2907,7 +2907,7 @@ dependencies = [
 [[package]]
 name = "near-rpc-error-macro"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 dependencies = [
  "fs2",
  "near-rpc-error-core 0.22.0 (git+https://github.com/akorchyn/nearcore?branch=patch-defaults)",
@@ -2935,7 +2935,7 @@ dependencies = [
 [[package]]
 name = "near-stdx"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 
 [[package]]
 name = "near-token"
@@ -2951,7 +2951,7 @@ dependencies = [
 [[package]]
 name = "near-vm-runner"
 version = "0.22.0"
-source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#c43e37bf90c7b7babeb81de43688b8e4ca139456"
+source = "git+https://github.com/akorchyn/nearcore?branch=patch-defaults#a039f2295db592dd93b4d728964b4b302f5aacec"
 dependencies = [
  "base64 0.21.7",
  "borsh",
@@ -2972,7 +2972,6 @@ dependencies = [
  "prefix-sum-vec",
  "pwasm-utils",
  "ripemd",
- "rustix 0.38.34",
  "serde",
  "serde_repr",
  "serde_with",
