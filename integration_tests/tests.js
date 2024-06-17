@@ -4,11 +4,15 @@ const exec = util.promisify(require('node:child_process').exec);
 const accountActions = require('./test_cases/account_actions');
 const contractActions = require('./test_cases/contract_actions');
 const keyActions = require('./test_cases/key_actions');
+const credentialsActions = require('./test_cases/credentials_actions');
+const nearActions = require('./test_cases/near_actions');
 
 const testCases = [
   accountActions,
-  contractActions,
-  keyActions
+  contractActions, 
+  keyActions,
+  credentialsActions,
+  nearActions
 ];
 
 const script_path = "./target/release/near";
@@ -46,9 +50,12 @@ async function getSuggestedCommand(command) {
 async function runSuggestedCommand(command, expectedResult, isNeedToWaitForNextBlock = false) {
   try {
     if (isNeedToWaitForNextBlock) {
-      await sleep(1400);
+      await sleep(2000);
     }
     const { stdout, stderr } = await exec(command);
+    // console.log(stdout);
+    // console.log(stderr);
+    // console.log(expectedResult);
     const match = (stdout + stderr).trim().match(expectedResult);
     return match ? match[0] : result;
   } catch (error) {

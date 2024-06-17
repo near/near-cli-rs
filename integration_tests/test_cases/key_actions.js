@@ -11,7 +11,7 @@ module.exports = [
   // Getting a list of keys
   {
     jsCmd: `list-keys ${testaccount1}`,
-    expectedResult: 'ed25519',
+    expectedResult: 'ed25519\:.* \| full access',
     isNeedToWaitForNextBlock: true,
   },
   // Adding public key to account
