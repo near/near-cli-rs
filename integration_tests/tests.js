@@ -53,9 +53,6 @@ async function runSuggestedCommand(command, expectedResult, isNeedToWaitForNextB
       await sleep(2000);
     }
     const { stdout, stderr } = await exec(command);
-    // console.log(stdout);
-    // console.log(stderr);
-    // console.log(expectedResult);
     const match = (stdout + stderr).trim().match(expectedResult);
     return match ? match[0] : result;
   } catch (error) {
