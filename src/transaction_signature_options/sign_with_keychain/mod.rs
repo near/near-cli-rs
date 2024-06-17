@@ -1,5 +1,4 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
-use color_eyre::owo_colors::OwoColorize;
 use inquire::CustomType;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
@@ -136,10 +135,7 @@ impl SignKeychainContext {
                 Some(password) => password,
                 None => {
                     // no access keys found, try the legacy keychain
-                    warning_message(format!(
-                        "{}",
-                        "no access keys found in keychain, trying legacy keychain".red()
-                    ));
+                    warning_message("no access keys found in keychain, trying legacy keychain");
                     return from_legacy_keychain(previous_context, scope);
                 }
             }
@@ -224,8 +220,8 @@ impl SignKeychainContext {
 }
 
 #[tracing::instrument(name = "Warning:", skip_all)]
-fn warning_message(instrument_message: String) {
-    tracing::Span::current().pb_set_message(&instrument_message);
+fn warning_message(instrument_message: &str) {
+    tracing::Span::current().pb_set_message(instrument_message);
     std::thread::sleep(std::time::Duration::from_secs(1));
 }
 
