@@ -98,7 +98,7 @@ impl ViewAccountSummaryContext {
                         .try_collect(),
                     )?;
 
-                let optional_account_profile = get_account_profile(&account_id, network_config, block_reference)?;
+                let optional_account_profile = get_account_profile(&account_id, network_config, block_reference).ok().flatten();
 
                 crate::common::display_account_info(
                     &rpc_query_response.block_hash,

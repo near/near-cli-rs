@@ -1712,6 +1712,7 @@ pub fn display_account_info(
     access_key_list: Option<&near_primitives::views::AccessKeyList>,
     optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
+    eprintln!();
     let mut table: Table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
@@ -1895,6 +1896,13 @@ fn profile_table(
         table.add_row(prettytable::row![
             Fy->account_id,
             format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
+        ]);
+        table.add_row(prettytable::row![
+            Fd->"NEAR Social profile unavailable",
+            Fd->format!("The profile can be edited at {}\nor using the cli command: {}\n(https://github.com/bos-cli-rs/bos-cli-rs)",
+                "https://near.social".blue(),
+                "bos social-db manage-profile".blue()
+            )
         ]);
     }
 }
