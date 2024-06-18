@@ -1712,6 +1712,7 @@ pub fn display_account_info(
     access_key_list: Option<&near_primitives::views::AccessKeyList>,
     optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
+    eprintln!();
     let mut table: Table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
@@ -1896,6 +1897,13 @@ fn profile_table(
             Fy->account_id,
             format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
         ]);
+        table.add_row(prettytable::row![
+            Fd->"NEAR Social profile unavailable",
+            Fd->format!("The profile can be edited at {}\nor using the cli command: {}\n(https://github.com/bos-cli-rs/bos-cli-rs)",
+                "https://near.social".blue(),
+                "bos social-db manage-profile".blue()
+            )
+        ]);
     }
 }
 
@@ -1994,8 +2002,60 @@ pub fn input_network_name(
     }
 }
 
-#[easy_ext::ext(JsonRpcClientExt)]
-pub impl near_jsonrpc_client::JsonRpcClient {
+pub trait JsonRpcClientExt {
+    fn blocking_call<M>(
+        &self,
+        method: M,
+    ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
+    where
+        M: near_jsonrpc_client::methods::RpcMethod;
+
+    /// A helper function to make a view-funcation call using JSON encoding for the function
+    /// arguments and function return value.
+    fn blocking_call_view_function(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        method_name: &str,
+        args: Vec<u8>,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error>;
+
+    fn blocking_call_view_access_key(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        public_key: &near_crypto::PublicKey,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    >;
+
+    fn blocking_call_view_access_key_list(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    >;
+
+    fn blocking_call_view_account(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    >;
+}
+
+impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     fn blocking_call<M>(
         &self,
         method: M,
@@ -2010,6 +2070,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
 
     /// A helper function to make a view-funcation call using JSON encoding for the function
     /// arguments and function return value.
+    #[tracing::instrument(name = "Getting the result of executing", skip_all)]
     fn blocking_call_view_function(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2017,6 +2078,9 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         args: Vec<u8>,
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
+        tracing::Span::current().pb_set_message(&format!(
+            "the '{method_name}' method of the <{account_id}> contract ..."
+        ));
         let query_view_method_response = self
             .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference,
@@ -2030,6 +2094,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         query_view_method_response.call_result()
     }
 
+    #[tracing::instrument(name = "Getting access key information:", skip_all)]
     fn blocking_call_view_access_key(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2041,6 +2106,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     > {
+        tracing::Span::current().pb_set_message(&format!("{public_key} ..."));
         self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccessKey {
@@ -2050,6 +2116,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         })
     }
 
+    #[tracing::instrument(name = "Getting a list of", skip_all)]
     fn blocking_call_view_access_key_list(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2060,6 +2127,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     > {
+        tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
         self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccessKeyList {
@@ -2068,6 +2136,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         })
     }
 
+    #[tracing::instrument(name = "Getting information about", skip_all)]
     fn blocking_call_view_account(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2078,6 +2147,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     > {
+        tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
         self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccount {
