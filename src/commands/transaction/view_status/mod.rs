@@ -35,6 +35,7 @@ impl TransactionInfoContext {
                                     tx_hash: transaction_hash.into(),
                                     sender_account_id: "near".parse::<near_primitives::types::AccountId>()?,
                                 },
+                            wait_until: near_primitives::views::TxExecutionStatus::Final,
                         },
                     )
                     .wrap_err_with(|| {

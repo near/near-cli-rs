@@ -1,4 +1,4 @@
-use color_eyre::eyre::Context;
+use color_eyre::eyre::{Context, ContextCompat};
 use interactive_clap::ToCliArgs;
 
 use crate::common::JsonRpcClientExt;
@@ -39,6 +39,7 @@ impl TransactionInfoContext {
                                         tx_hash: transaction_hash.into(),
                                         sender_account_id: "near".parse::<near_primitives::types::AccountId>()?,
                                     },
+                                    wait_until: near_primitives::views::TxExecutionStatus::Final
                             },
                         )
                         .wrap_err_with(|| {
@@ -47,6 +48,16 @@ impl TransactionInfoContext {
                                 network_config.network_name
                             )
                         })?;
+
+                    let query_view_transaction_status = query_view_transaction_status
+                        .final_execution_outcome
+                        .wrap_err_with(|| {
+                            format!(
+                                "Failed to get the final execution outcome for the transaction {}",
+                                transaction_hash
+                            )
+                        })?
+                        .into_outcome();
 
                     let mut prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                         signer_id: query_view_transaction_status.transaction.signer_id,
