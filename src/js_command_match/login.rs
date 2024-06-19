@@ -1,3 +1,5 @@
+use interactive_clap::ToCliArgs;
+
 #[derive(Debug, Clone, clap::Parser)]
 /// This is a legacy `legacy` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct LoginArgs {
@@ -10,17 +12,25 @@ pub struct LoginArgs {
 }
 
 impl LoginArgs {
-    pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
-        let network_id = self.network_id.clone().unwrap_or(network_config.to_owned());
+    pub fn to_cli_args(&self, network_config: String) -> std::collections::VecDeque<String> {
+        let network_id = self.network_id.clone().unwrap_or(network_config);
 
-        let command = vec![
-            "account".to_owned(),
-            "import-account".to_owned(),
-            "using-web-wallet".to_owned(),
-            "network-config".to_owned(),
-            network_id,
-        ];
-
-        command
+        crate::commands::CliTopLevelCommand::Account(
+            crate::commands::account::CliAccountCommands {
+                account_actions: Some(crate::commands::account::CliAccountActions::ImportAccount(
+                    crate::commands::account::import_account::CliImportAccountCommand {
+                        import_account_actions: Some(crate::commands::account::import_account::CliImportAccountActions::UsingWebWallet(
+                            crate::commands::account::import_account::using_web_wallet::CliLoginFromWebWallet {
+                                network_config: Some(crate::commands::account::import_account::using_web_wallet::ClapNamedArgNetworkForLoginFromWebWallet::NetworkConfig(
+                                    crate::network::CliNetwork {
+                                    wallet_url: None,
+                                    network_name: Some(network_id),
+                                })),
+                            }
+                        ))
+                    }
+                ))
+            }
+        ).to_cli_args()
     }
 }

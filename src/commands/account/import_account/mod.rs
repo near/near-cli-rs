@@ -5,9 +5,9 @@ use color_eyre::eyre::Context;
 use inquire::{CustomType, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod using_private_key;
-mod using_seed_phrase;
-mod using_web_wallet;
+pub mod using_private_key;
+pub mod using_seed_phrase;
+pub mod using_web_wallet;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]

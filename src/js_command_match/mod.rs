@@ -93,7 +93,7 @@ impl JsCmd {
             Self::SendNear(send_args) => Ok((send_args.to_cli_args(network_config), message)),
             Self::Clean(_) => Err(format!("{err_message}\n\n`clean` command is not implemented, yet. It will be implemented in a dev extension. Meanwhile, keep using the old CLI.")),
             Self::Stake(stake_args) => Ok((stake_args.to_cli_args(network_config), near_validator_extension_message)),
-            Self::Login(login_args) => Ok((login_args.to_cli_args(network_config), message)),
+            Self::Login(login_args) => Ok((login_args.to_cli_args(network_config).into(), message)),
             Self::AddCredentials(add_credentials) => Ok((add_credentials.to_cli_args(network_config), message)),
             Self::Repl(_) => Err(format!("{err_message}\n\n`repl` command is not implemented. Use shell scripting for the new CLI.")),
             Self::GenerateKey(generate_key_args) => {
