@@ -52,7 +52,7 @@ mod tests {
             seed_phrase: Some(seed_phrase.clone()),
             secret_key: None,
             network_id: None,
-            _unknown_args: [].to_vec(),
+            _unknown_args: vec![],
         };
         let result = AddCredentialsArgs::to_cli_args(&add_credentials_args, "testnet".to_string());
         assert_eq!(
