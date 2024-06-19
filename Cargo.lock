@@ -2652,8 +2652,9 @@ dependencies = [
 
 [[package]]
 name = "near-ledger"
-version = "0.6.0"
-source = "git+https://github.com/akorchyn/near-ledger-rs?branch=0.23#9bcf7189f5e37ce57249674546fffbab7e7ab05d"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba806a9bfd13d560190dc744c372510f73eb89bd9de054bb2b0bb58ddbea4ad7"
 dependencies = [
  "ed25519-dalek 1.0.1",
  "hex 0.4.3",
@@ -2814,8 +2815,9 @@ dependencies = [
 
 [[package]]
 name = "near-socialdb-client"
-version = "0.3.0"
-source = "git+https://github.com/akorchyn/near-socialdb-client-rs?branch=0.23#d7b5668980fc74ae72c324c18fc28494c7c61359"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ce6219bcc96bcfc79bb3cc24f6e9bba223628f3b74f3d8bde69cafb2635eb05"
 dependencies = [
  "color-eyre",
  "near-crypto",
