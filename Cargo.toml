@@ -57,7 +57,7 @@ tracing = "0.1.40"
 tracing-indicatif = "0.3.6"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-wasmparser = "0.78" # Downgraded to have same as near-primitives, but we have a plenty of various version in use...
+wasmparser = "0.78"
 
 semver = { version = "1.0.4", optional = true }
 self_update = { version = "0.40.0", features = [
