@@ -996,6 +996,9 @@ pub fn convert_action_error_to_cli_result(
             upper_bound,
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}"))
+        },
+        near_primitives::errors::ActionErrorKind::NonRefundableTransferToExistingAccount { account_id } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Non-refundable storage transfer to an existing account <{account_id}> is not allowed according to NEP-491."))
         }
     }
 }

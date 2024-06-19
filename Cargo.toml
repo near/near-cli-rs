@@ -30,7 +30,9 @@ derive_more = "0.99.9"
 easy-ext = "1"
 
 reqwest = { version = "0.12", features = ["blocking", "json"] }
-tokio = { version = "1.0", features = ["rt-multi-thread"] }
+tokio = { version = "1.0", default-features = false, features = [
+    "rt-multi-thread",
+] }
 futures = "0.3"
 # Ad-hoc fix for compilation errors (rustls is used instead of openssl to ease the deployment avoiding the system dependency on openssl)
 openssl = { version = "0.10", features = ["vendored"] }
@@ -72,10 +74,10 @@ textwrap = "0.16.1"
 
 near-ledger = { version = "0.6.0", optional = true }
 
-near-crypto = "0.22"
-near-primitives = "0.22"
-near-jsonrpc-client = "0.10"
-near-jsonrpc-primitives = "0.22"
+near-crypto = "0.23"
+near-primitives = "0.23"
+near-jsonrpc-client = "0.10.1"
+near-jsonrpc-primitives = "0.23"
 
 near-gas = { version = "0.2.3", features = [
     "serde",
@@ -137,6 +139,5 @@ allow-dirty = ["ci"]
 libudev-dev = { version = "*", targets = ["x86_64-unknown-linux-gnu"] }
 
 [patch.crates-io]
-near-primitives = { git = "https://github.com/akorchyn/nearcore", branch = "patch-defaults" }
-near-crypto = { git = "https://github.com/akorchyn/nearcore", branch = "patch-defaults" }
-near-primitives-core = { git = "https://github.com/akorchyn/nearcore", branch = "patch-defaults" }
+near-ledger = { git = "https://github.com/akorchyn/near-ledger-rs", branch = "0.23" }
+near-socialdb-client = { git = "https://github.com/akorchyn/near-socialdb-client-rs", branch = "0.23" }
