@@ -85,6 +85,7 @@ Before proceeding to the description of specific commands, it is necessary to co
 - [contract    - Manage smart-contracts: deploy code, call functions](#contract---Manage-smart-contracts-deploy-code-call-functions)
 - [transaction - Operate transactions](#transaction---Operate-transactions)
 - [config      - Manage connections in a configuration file](#config---Manage-connections-in-a-configuration-file)
+- [olaf        - Manage threshold accounts](#olaf---Manage-threshold-accounts)
 
 ### account - Manage accounts
 
@@ -1991,7 +1992,7 @@ receiver_id:  qweqweqwe.volodymyr.testnet
 actions:
    -- create account:      qweqweqwe.volodymyr.testnet
    -- transfer deposit:    100 NEAR
-   -- add access key:     
+   -- add access key:
                    public key:   ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf
                    nonce:        0
                    permission:   FullAccess
@@ -2154,3 +2155,164 @@ Configuration data is stored in a file "/Users/frovolod/Library/Application Supp
 Network connection "pagoda-testnet" was successfully removed from config.toml
 ```
 </details>
+
+### olaf - Manage threshold accounts
+
+This command is a proof of concept application of [this](https://github.com/Fiono11/Olaf_ed25519) implementation of the Olaf protocol.
+
+[Olaf](https://eprint.iacr.org/2023/899) is composed of the Distributed Key Generation (DKG) protocol SimplPedPoP and the Threshold Signing protocol FROST.
+
+This command allows to create threshold accounts and sign transactions with them using **out-of-band** communication between parties, meaning networking for exchange of messages between participants is not yet implemented.
+
+An example of an execution of the Olaf protocol with 2-of-2 as parameters is the following:
+
+1. Create two new accounts, which will be the recipients of the SimplPedPoP protocol:
+
+**Input**:
+```txt
+near account create-account sponsor-by-faucet-service frost_signer1.testnet autogenerate-new-keypair print-to-terminal network-config testnet create
+```
+
+**Output**:
+```txt
+Public Key: ed25519:1yUP9q4aQhawbQspNrFpMtoLbGB8SbfoCPbVqSfJUBy
+SECRET KEYPAIR: ed25519:35PUY6rzVLU484tPdmydxJfnZ6C9MvwRAWBY1haL7Exe
+```
+
+**Input**:
+```txt
+near account create-account sponsor-by-faucet-service frost_signer2.testnet autogenerate-new-keypair print-to-terminal network-config testnet create
+```
+
+**Output**:
+```txt
+Public Key: ed25519:Chi9jEUA4SfbR4JgDGspBU913N8b6gRcPkxRmVDbNnCf
+SECRET KEYPAIR: ed25519:3iSQg1pwGHpTAN9EMRqWmF2V3bYVYCQG7rU9oCtkhLG1
+```
+
+2. Create the “contributor_secret_key.json” file with the secret key of the contributor in base 64. This can be one of the recicipients or not. For this example we will use the secret key of the first recipient, so the content of “contributor_secret_key.json” is: ```"35PUY6rzVLU484tPdmydxJfnZ6C9MvwRAWBY1haL7Exe"```
+
+3. Create the “recipients.json” file with the public keys of the recipients in base 64. The content is the following:
+
+```txt
+[
+  "1yUP9q4aQhawbQspNrFpMtoLbGB8SbfoCPbVqSfJUBy",
+  "Chi9jEUA4SfbR4JgDGspBU913N8b6gRcPkxRmVDbNnCf"
+]
+```
+
+The files_path is the path to the folder where we stored the previous files and the threshold is 2 in this example, so we run the following command to execute round 1 of the SimplPedPoP protocol:
+
+**Input**:
+```txt
+near olaf simplpedpop-round1 --threshold 2 --files src/commands/olaf
+```
+
+**Output**:
+This produces the file "all_messages.json" with one message intended to all the recipients.
+
+4. We need to run the same command again (using the same contributor or a different one, and in the same machine or a different one), because we need the same number of messages as the number of recipients for round 2 of the SimplPedPoP protocol. Add all messages (2, in this case) to “all_messages.json”. The content of the file is the following:
+
+```txt
+[
+  [
+    0, 63, 218, 107, 242, 216, 129, 18, 9, 49, 128, 90, 246, 231, 73, 132, 17,
+    212, 13, 20, 150, 31, 227, 163, 149, 37, 59, 174, 26, 10, 58, 240, 246, 193,
+    159, 86, 124, 178, 129, 80, 10, 21, 162, 181, 2, 0, 2, 0, 29, 2, 227, 28,
+    73, 35, 216, 176, 240, 224, 115, 162, 176, 176, 112, 2, 195, 82, 17, 52,
+    153, 37, 164, 118, 228, 190, 53, 89, 195, 15, 154, 101, 158, 215, 57, 97,
+    52, 220, 202, 204, 173, 212, 143, 212, 220, 181, 170, 86, 141, 182, 109,
+    255, 211, 200, 220, 155, 235, 66, 5, 253, 228, 81, 98, 152, 42, 123, 57, 97,
+    90, 27, 178, 221, 207, 57, 59, 169, 200, 17, 126, 50, 43, 33, 76, 108, 75,
+    125, 165, 62, 135, 7, 176, 35, 143, 192, 193, 246, 89, 253, 1, 86, 96, 214,
+    78, 47, 187, 108, 13, 6, 119, 238, 50, 10, 132, 131, 239, 217, 122, 246,
+    148, 126, 151, 9, 38, 232, 19, 156, 156, 120, 249, 144, 226, 60, 125, 217,
+    102, 193, 41, 144, 116, 228, 129, 152, 20, 3, 92, 134, 64, 251, 185, 205,
+    177, 12, 85, 223, 80, 79, 240, 126, 111, 55, 206, 214, 212, 223, 15, 88, 99,
+    183, 49, 209, 235, 186, 161, 121, 247, 109, 167, 76, 235, 81, 241, 154, 124,
+    208, 93, 28, 15, 51, 147, 77, 4, 94, 208, 1, 145, 135, 241, 71, 25, 118,
+    159, 91, 20, 57, 173, 193, 147, 60, 34, 88, 23, 116, 211, 212, 36, 157, 202,
+    239, 217, 86, 109, 7, 127, 106, 182, 197, 59, 116, 166, 152, 217, 217, 203,
+    126, 11, 111, 157, 250, 8, 0
+  ],
+  [
+    0, 63, 218, 107, 242, 216, 129, 18, 9, 49, 128, 90, 246, 231, 73, 132, 17,
+    212, 13, 20, 150, 31, 227, 163, 149, 37, 59, 174, 26, 10, 58, 240, 173, 125,
+    15, 135, 215, 180, 94, 114, 195, 12, 174, 217, 2, 0, 2, 0, 29, 2, 227, 28,
+    73, 35, 216, 176, 240, 224, 115, 162, 176, 176, 112, 2, 176, 23, 218, 162,
+    145, 156, 158, 35, 189, 109, 41, 94, 227, 19, 69, 19, 99, 72, 135, 32, 112,
+    216, 206, 232, 166, 99, 156, 55, 64, 78, 187, 212, 246, 24, 40, 222, 75,
+    221, 54, 45, 97, 113, 29, 120, 106, 80, 236, 35, 80, 12, 144, 65, 73, 134,
+    179, 112, 245, 9, 155, 169, 161, 143, 33, 91, 179, 85, 141, 196, 186, 226,
+    90, 75, 170, 163, 182, 165, 130, 190, 138, 60, 154, 210, 221, 87, 191, 44,
+    249, 91, 147, 141, 121, 70, 62, 166, 27, 2, 60, 215, 84, 239, 71, 22, 85,
+    171, 206, 36, 195, 227, 125, 34, 127, 163, 13, 82, 56, 225, 13, 105, 199,
+    151, 139, 168, 151, 57, 41, 221, 88, 5, 156, 133, 157, 194, 233, 11, 234,
+    14, 38, 160, 30, 157, 20, 155, 249, 204, 207, 45, 242, 195, 244, 116, 180,
+    239, 75, 211, 220, 217, 77, 80, 77, 207, 209, 222, 82, 39, 177, 187, 203,
+    70, 1, 217, 107, 83, 137, 37, 232, 184, 114, 239, 127, 50, 253, 25, 186,
+    185, 49, 246, 222, 137, 180, 242, 24, 105, 16, 241, 13, 82, 31, 51, 225,
+    158, 194, 218, 82, 195, 126, 73, 29, 145, 40, 143, 166, 47, 5, 156, 87, 131,
+    198, 251, 182, 128, 143, 7, 69, 9
+  ]
+]
+```
+
+5. Create the “recipient_secret_key.json” file with one of the recipients' secret key (e.g.: "35PUY6rzVLU484tPdmydxJfnZ6C9MvwRAWBY1haL7Exe") and run the following command to execute round 2 of the SimplPedPoP protocol:
+
+**Input**:
+```txt
+near olaf simplpedpop-round2 —files src/commands/olaf
+```
+
+**Output**:
+The files “threshold_public_key.json”, "spp_output.json" and "signing_share" are created. If you run the same command for the other recipient you should get the same results, except for the signing share, which is unique (and secret) to each recipient/signer. The threshold public key is the shared public key between the recipients/signers. No one knows its corresponding secret key, but jointly they can sign with it. The spp_output contains other needed information for the execution of the FROST protocol.
+
+6. Create an account from the threshold public key with the following command (named threshold_public_key.testnet in this example):
+
+```txt
+near account create-account sponsor-by-faucet-service threshold_public_key.testnet use-manually-provided-public-key ed25519:5XLW9GT1a3Zo7bs1T7CGVbnrdRKJ4saNYPUjNFx7MLB1 network-config testnet create
+```
+
+7. Create an example transaction that transfers 1 near from threshold_public_key.testnet to receiver.testnet that is saved to “src/commands/olaf/unsigned-transaction-info.json”:
+
+```txt
+near transaction construct-transaction threshold_public_key.testnet receiver.testnet add-action transfer '1 NEAR' skip network-config testnet sign-later --signer-public-key ed25519:5XLW9GT1a3Zo7bs1T7CGVbnrdRKJ4saNYPUjNFx7MLB1 --nonce 165343658000001 --block-hash A8RUWHtHqDrSHz7Q3AQrc11ABMYcYMXERiPCWRgYKTcU save-to-file src/commands/olaf/unsigned-transaction-info.json
+```
+
+Note 1: A valid block hash can be retrieved by running the following command:
+
+```txt
+near account view-account-summary threshold_public_key.testnet network-config testnet now
+```
+
+Note 2: the nonce must be account[access_key].nonce + 1 to be valid, but I do not know how to get that value besides seeing it in the error message.
+
+Ouptut of the transaction:
+
+```txt
+{
+  "Transaction hash to sign": "2b86f8fe06cf1645f08547dccec18db666922a5ca89c65b9a707621536839675",
+  "Unsigned transaction (serialized as base64)": "HAAAAHRocmVzaG9sZF9wdWJsaWNfa2V5LnRlc3RuZXQAQzQ5NcBUhyjI5N92iynmVm9w7FDqimfqTAcCWjH5VtCBPgASYZYAABAAAAByZWNlaXZlci50ZXN0bmV0h5/rzNnPIMJwMK3ZIgOBi6YlbDl9gYJQWiIypCKgdlEBAAAAAwAAAKHtzM4bwtMAAAAAAAA="
+}
+```
+
+8. Create the file “tx_hash.json” and paste in it the transaction hash to sign ```txt“2b86f8fe06cf1645f08547dccec18db666922a5ca89c65b9a707621536839675”```.
+
+9. Create the file “unsigned_tx.json” and paste in it the the unsigned transaction ```txt“HAAAAHRocmVzaG9sZF9wdWJsaWNfa2V5LnRlc3RuZXQAQzQ5NcBUhyjI5N92iynmVm9w7FDqimfqTAcCWjH5VtCBPgASYZYAABAAAAByZWNlaXZlci50ZXN0bmV0h5/rzNnPIMJwMK3ZIgOBi6YlbDl9gYJQWiIypCKgdlEBAAAAAwAAAKHtzM4bwtMAAAAAAAA=“```. Run the following command for each signer with the corresponding "signing_share.json":
+
+```txt
+near olaf frost-round1 —files src/commands/olaf/
+```
+
+10. Add the content of “signing_commitments.json” of all signers (2, in this case) to “signing_commitments.json”, so that it contains one set of commitments from each signer, just like we did for the “all_messages.json”. Run the following command for each signer with the corresponding "signing_nonces.json" and "signing_share.json":
+
+```txt
+near olaf frost-round2 —files src/commands/olaf/
+```
+
+11. Add the content of “signing_packages.json” of all signers (2, in this case) to “signing_packages.json”, so that it contains one package from each signer, just like we did for the “all_messages.json”:
+
+```txt
+near olaf frost-aggregate —files src/commands/olaf/
+```

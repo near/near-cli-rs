@@ -4,6 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 pub mod account;
 mod config;
 pub mod contract;
+pub mod olaf;
 mod staking;
 mod tokens;
 pub mod transaction;
@@ -39,10 +40,15 @@ pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
     /// Use this to construct transactions or view a transaction status.
     Transaction(self::transaction::TransactionCommands),
+    /// Use this to construct threshold signed transactions.
+    #[strum_discriminants(strum(
+        message = "olaf        - Manage the execution of the Olaf protocol"
+    ))]
+    Olaf(self::olaf::OlafCommands),
+    /// Use this to manage connections in a configuration file (config.toml).
     #[strum_discriminants(strum(
         message = "config      - Manage connections in a configuration file (config.toml)"
     ))]
-    /// Use this to manage connections in a configuration file (config.toml).
     Config(self::config::ConfigCommands),
     #[cfg(feature = "self-update")]
     #[strum_discriminants(strum(message = "extension   - Manage near CLI and extensions"))]

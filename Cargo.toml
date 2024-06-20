@@ -39,7 +39,8 @@ openssl = { version = "0.10", features = ["vendored"] }
 
 bip39 = { version = "2.0.0", features = ["rand"] }
 bs58 = "0.5"
-ed25519-dalek = { version = "1" }
+olaf = { git = "https://github.com/Fiono11/Olaf_ed25519" }
+ed25519-dalek = "2.1.1"
 hex = "0.4.2"
 linked-hash-map = { version = "0.5", features = ["serde_impl"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -78,6 +79,9 @@ near-crypto = "0.23"
 near-primitives = "0.23"
 near-jsonrpc-client = "0.10.1"
 near-jsonrpc-primitives = "0.23"
+
+curve25519-dalek = "4.1.2"
+zeroize = "1.5.7"
 
 near-gas = { version = "0.2.3", features = [
     "serde",
@@ -131,7 +135,7 @@ windows-archive = ".tar.gz"
 unix-archive = ".tar.gz"
 # Publish jobs to run in CI
 pr-run-mode = "upload"
-# XXX: In order to use custom GITHUB_TOKEN to trigger npm-publish workflow, 
+# XXX: In order to use custom GITHUB_TOKEN to trigger npm-publish workflow,
 # we allow dirty CI scripts to avoid cargo-dist complains.
 allow-dirty = ["ci"]
 

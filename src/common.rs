@@ -455,17 +455,12 @@ pub fn get_key_pair_properties_from_seed_phrase(
         ))
     })?;
 
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
-
+    let secret_keypair = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
     let implicit_account_id =
-        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
+        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.verifying_key()))?;
     let public_key_str = format!(
         "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
+        bs58::encode(&secret_keypair.verifying_key()).into_string()
     );
     let secret_keypair_str = format!(
         "ed25519:{}",
@@ -494,14 +489,10 @@ pub fn get_public_key_from_seed_phrase(
                     err
                 ))
             })?;
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let secret_keypair = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
     let public_key_str = format!(
         "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
+        bs58::encode(&secret_keypair.verifying_key()).into_string()
     );
     Ok(near_crypto::PublicKey::from_str(&public_key_str)?)
 }
@@ -534,17 +525,13 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         ))
     })?;
 
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let secret_keypair = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
     let implicit_account_id =
-        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
+        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.verifying_key()))?;
     let public_key_str = format!(
         "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
+        bs58::encode(&secret_keypair.verifying_key()).into_string()
     );
     let secret_keypair_str = format!(
         "ed25519:{}",
