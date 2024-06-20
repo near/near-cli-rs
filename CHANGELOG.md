@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0](https://github.com/near/near-cli-rs/compare/v0.10.2...v0.11.0) - 2024-06-19
+
+### Added
+- Added loading indicators to wait for the view-account-summary command ([#349](https://github.com/near/near-cli-rs/pull/349))
+- Added loading indicators to wait for the create-account (sponsor-by-faucet-service) command ([#339](https://github.com/near/near-cli-rs/pull/339))
+
+### Fixed
+- Do not fail view-account-summary command if we could not retrieve access keys list ([#344](https://github.com/near/near-cli-rs/pull/344))
+
+### Other
+- [**breaking**] upgraded near-dependencies to the 0.23 version ([#350](https://github.com/near/near-cli-rs/pull/350))
+- Provide instructions that help to resolve a problem with missing keychain ([#347](https://github.com/near/near-cli-rs/pull/347))
+
 ## [0.10.2](https://github.com/near/near-cli-rs/compare/v0.10.1...v0.10.2) - 2024-05-21
 
 ### Fixed
