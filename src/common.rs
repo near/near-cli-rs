@@ -213,6 +213,7 @@ pub async fn get_account_transfer_allowance(
     })
 }
 
+#[tracing::instrument(name = "Account access key verification ...", skip_all)]
 pub fn verify_account_access_key(
     account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
@@ -2084,6 +2085,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         tracing::Span::current().pb_set_message(&format!(
             "the '{method_name}' method of the <{account_id}> contract ..."
         ));
+        std::thread::sleep(std::time::Duration::from_secs(5));
         let query_view_method_response = self
             .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference,
@@ -2110,6 +2112,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         >,
     > {
         tracing::Span::current().pb_set_message(&format!("{public_key} ..."));
+        std::thread::sleep(std::time::Duration::from_secs(5));
         self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccessKey {
