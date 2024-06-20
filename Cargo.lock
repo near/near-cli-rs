@@ -2540,7 +2540,6 @@ dependencies = [
  "cargo-util",
  "clap",
  "color-eyre",
- "curve25519-dalek 4.1.3",
  "derive_more",
  "dirs",
  "easy-ext 1.0.2",
@@ -2587,7 +2586,6 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "wasmparser",
- "zeroize",
  "zstd",
 ]
 
