@@ -2,7 +2,7 @@
 #[interactive_clap(input_context = super::super::UpdateSocialProfileContext)]
 #[interactive_clap(output_context = JsonArgsContext)]
 pub struct JsonArgs {
-    /// Enter valid JSON arguments (e.g. {\"token_id\": \"42\"})":
+    /// Enter valid JSON arguments (e.g. {"name": "NEAR", "description": "NEAR is fun"}):
     data: crate::types::json::Json,
     #[interactive_clap(named_arg)]
     /// Specify signer account ID

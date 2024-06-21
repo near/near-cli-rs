@@ -213,6 +213,7 @@ pub async fn get_account_transfer_allowance(
     })
 }
 
+#[tracing::instrument(name = "Account access key verification ...", skip_all)]
 pub fn verify_account_access_key(
     account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
