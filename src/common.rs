@@ -288,10 +288,12 @@ pub fn is_account_exist(
     false
 }
 
+#[tracing::instrument(name = "Searching for a network where an account exists for", skip_all)]
 pub fn find_network_where_account_exist(
     context: &crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
 ) -> Option<crate::config::NetworkConfig> {
+    tracing::Span::current().pb_set_message(new_account_id.as_str());
     for (_, network_config) in context.config.network_connection.iter() {
         if tokio::runtime::Runtime::new()
             .unwrap()

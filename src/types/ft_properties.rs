@@ -151,6 +151,7 @@ pub struct FtMetadata {
     pub decimals: u8,
 }
 
+#[tracing::instrument(name = "Getting FT metadata ...", skip_all)]
 pub fn params_ft_metadata(
     ft_contract_account_id: near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
