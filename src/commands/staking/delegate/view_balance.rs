@@ -18,10 +18,6 @@ pub struct ViewBalance {
 pub struct ViewBalanceContext(crate::network_view_at_block::ArgsForViewContext);
 
 impl ViewBalanceContext {
-    #[tracing::instrument(
-        name = "View the delegated stake balance for your account ...",
-        skip_all
-    )]
     pub fn from_previous_context(
         previous_context: super::StakeDelegationContext,
         scope: &<ViewBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -33,22 +29,8 @@ impl ViewBalanceContext {
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
 
-            move |network_config, block_reference| {
-                let user_staked_balance: u128 = get_user_staked_balance(network_config, block_reference, &validator_account_id, &account_id)?;
-                let user_unstaked_balance: u128 = get_user_unstaked_balance(network_config, block_reference, &validator_account_id, &account_id)?;
-                let user_total_balance: u128 = get_user_total_balance(network_config, block_reference, &validator_account_id, &account_id)?;
-                let withdrawal_availability_message = match is_account_unstaked_balance_available_for_withdrawal(network_config, &validator_account_id, &account_id)? {
-                    true if user_unstaked_balance > 0  => "(available for withdrawal)",
-                    false if user_unstaked_balance > 0 => "(not available for withdrawal in the current epoch)",
-                    _ => ""
-                };
-
-                eprintln!("Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:");
-                eprintln!("      Staked balance:     {:>38}", near_token::NearToken::from_yoctonear(user_staked_balance).to_string());
-                eprintln!("      Unstaked balance:   {:>38} {withdrawal_availability_message}", near_token::NearToken::from_yoctonear(user_unstaked_balance).to_string());
-                eprintln!("      Total balance:      {:>38}", near_token::NearToken::from_yoctonear(user_total_balance).to_string());
-
-                Ok(())
+            move |network_config: &crate::config::NetworkConfig, block_reference: &near_primitives::types::BlockReference| {
+                get_account_inquiry(&account_id, &validator_account_id, network_config, block_reference)
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -71,6 +53,61 @@ impl ViewBalance {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_staking_pool_validator_account_id(&context.global_context.config)
     }
+}
+
+#[tracing::instrument(name = "Receiving an inquiry about your account ...", skip_all)]
+fn get_account_inquiry(
+    account_id: &near_primitives::types::AccountId,
+    validator_account_id: &near_primitives::types::AccountId,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: &near_primitives::types::BlockReference,
+) -> crate::CliResult {
+    let user_staked_balance: u128 = get_user_staked_balance(
+        network_config,
+        block_reference,
+        validator_account_id,
+        account_id,
+    )?;
+    let user_unstaked_balance: u128 = get_user_unstaked_balance(
+        network_config,
+        block_reference,
+        validator_account_id,
+        account_id,
+    )?;
+    let user_total_balance: u128 = get_user_total_balance(
+        network_config,
+        block_reference,
+        validator_account_id,
+        account_id,
+    )?;
+    let withdrawal_availability_message =
+        match is_account_unstaked_balance_available_for_withdrawal(
+            network_config,
+            validator_account_id,
+            account_id,
+        )? {
+            true if user_unstaked_balance > 0 => "(available for withdrawal)",
+            false if user_unstaked_balance > 0 => {
+                "(not available for withdrawal in the current epoch)"
+            }
+            _ => "",
+        };
+
+    eprintln!("Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:");
+    eprintln!(
+        "      Staked balance:     {:>38}",
+        near_token::NearToken::from_yoctonear(user_staked_balance).to_string()
+    );
+    eprintln!(
+        "      Unstaked balance:   {:>38} {withdrawal_availability_message}",
+        near_token::NearToken::from_yoctonear(user_unstaked_balance).to_string()
+    );
+    eprintln!(
+        "      Total balance:      {:>38}",
+        near_token::NearToken::from_yoctonear(user_total_balance).to_string()
+    );
+
+    Ok(())
 }
 
 #[tracing::instrument(name = "Getting the staked balance for the user ...", skip_all)]
@@ -157,6 +194,10 @@ pub fn get_user_total_balance(
         .parse::<u128>()?)
 }
 
+#[tracing::instrument(
+    name = "Getting account unstaked balance available for withdrawal ...",
+    skip_all
+)]
 pub fn is_account_unstaked_balance_available_for_withdrawal(
     network_config: &crate::config::NetworkConfig,
     validator_account_id: &near_primitives::types::AccountId,

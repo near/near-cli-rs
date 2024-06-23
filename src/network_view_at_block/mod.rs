@@ -88,7 +88,10 @@ pub struct Now;
 pub struct NowContext;
 
 impl NowContext {
-    #[tracing::instrument(name = "Receiving an inquiry about your account ...", skip_all)]
+    #[tracing::instrument(
+        name = "View the delegated stake balance for your account ...",
+        skip_all
+    )]
     pub fn from_previous_context(
         previous_context: NetworkViewAtBlockArgsContext,
         _scope: &<Now as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -115,7 +118,10 @@ pub struct AtBlockHeight {
 pub struct AtBlockHeightContext;
 
 impl AtBlockHeightContext {
-    #[tracing::instrument(name = "Receiving an inquiry about your account ...", skip_all)]
+    #[tracing::instrument(
+        name = "View the delegated stake balance for your account ...",
+        skip_all
+    )]
     pub fn from_previous_context(
         previous_context: NetworkViewAtBlockArgsContext,
         scope: &<AtBlockHeight as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -142,7 +148,10 @@ pub struct BlockIdHash {
 pub struct BlockIdHashContext;
 
 impl BlockIdHashContext {
-    #[tracing::instrument(name = "Receiving an inquiry about your account ...", skip_all)]
+    #[tracing::instrument(
+        name = "View the delegated stake balance for your account ...",
+        skip_all
+    )]
     pub fn from_previous_context(
         previous_context: NetworkViewAtBlockArgsContext,
         scope: &<BlockIdHash as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
