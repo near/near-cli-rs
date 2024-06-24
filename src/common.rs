@@ -1433,6 +1433,10 @@ pub fn get_delegated_validator_list_from_mainnet(
         .collect())
 }
 
+#[tracing::instrument(
+    name = "Retrieving a list of delegated validators from \"mainnet\" ...",
+    skip_all
+)]
 pub fn get_used_delegated_validator_list(
     config: &crate::config::Config,
 ) -> color_eyre::eyre::Result<VecDeque<near_primitives::types::AccountId>> {
