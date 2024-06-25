@@ -1552,6 +1552,7 @@ struct StakingResponse {
     pools: Vec<StakingPool>,
 }
 
+#[tracing::instrument(name = "Getting historically delegated staking pools ...", skip_all)]
 pub fn fetch_historically_delegated_staking_pools(
     fastnear_url: &url::Url,
     account_id: &near_primitives::types::AccountId,
@@ -1567,6 +1568,7 @@ pub fn fetch_historically_delegated_staking_pools(
         .collect())
 }
 
+#[tracing::instrument(name = "Getting currently active staking pools ...", skip_all)]
 pub fn fetch_currently_active_staking_pools(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     staking_pools_factory_account_id: &near_primitives::types::AccountId,

@@ -30,7 +30,7 @@ impl ViewBalanceContext {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
 
             move |network_config: &crate::config::NetworkConfig, block_reference: &near_primitives::types::BlockReference| {
-                get_account_inquiry(&account_id, &validator_account_id, network_config, block_reference)
+                calculation_delegated_stake_balance(&account_id, &validator_account_id, network_config, block_reference)
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -55,8 +55,11 @@ impl ViewBalance {
     }
 }
 
-#[tracing::instrument(name = "Receiving an inquiry about your account ...", skip_all)]
-fn get_account_inquiry(
+#[tracing::instrument(
+    name = "Calculation of the delegated stake balance for your account ...",
+    skip_all
+)]
+fn calculation_delegated_stake_balance(
     account_id: &near_primitives::types::AccountId,
     validator_account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
