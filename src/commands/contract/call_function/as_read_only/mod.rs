@@ -77,39 +77,7 @@ impl FunctionContext {
             let function_name = scope.function_name.clone();
 
             move |network_config, block_reference| {
-                let args = super::call_function_args_type::function_args(
-                    function_args.clone(),
-                    function_args_type.clone(),
-                )?;
-
-                let call_result = network_config
-                .json_rpc_client()
-                .blocking_call_view_function(
-                    &account_id,
-                    &function_name,
-                    args,
-                    block_reference.clone(),
-                )
-                .wrap_err_with(|| {
-                    format!("Failed to fetch query for view method: '{}' (contract <{}> on network <{}>)",
-                        function_name,
-                        account_id,
-                        network_config.network_name
-                    )
-                })?;
-                call_result.print_logs();
-                eprintln!("Result:");
-                if call_result.result.is_empty() {
-                    eprintln!("Empty result");
-                } else if let Ok(json_result) = call_result.parse_result_from_json::<serde_json::Value>() {
-                    println!("{}", serde_json::to_string_pretty(&json_result)?);
-                } else if let Ok(string_result) = String::from_utf8(call_result.result) {
-                    println!("{string_result}");
-                } else {
-                    eprintln!("The returned value is not printable (binary data)");
-                }
-                eprintln!("--------------");
-                Ok(())
+                call_view_function(network_config, &account_id, &function_name, function_args.clone(), function_args_type.clone(), block_reference)
             }
         });
 
@@ -139,4 +107,38 @@ impl Function {
     ) -> color_eyre::eyre::Result<Option<String>> {
         super::input_view_function_name(&context.global_context, &context.contract_account_id)
     }
+}
+
+#[tracing::instrument(name = "Getting a response to a view method ...", skip_all)]
+fn call_view_function(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    function_name: &str,
+    function_args: String,
+    function_args_type: super::call_function_args_type::FunctionArgsType,
+    block_reference: &near_primitives::types::BlockReference,
+) -> crate::CliResult {
+    let args = super::call_function_args_type::function_args(function_args, function_args_type)?;
+    let call_result = network_config
+        .json_rpc_client()
+        .blocking_call_view_function(account_id, function_name, args, block_reference.clone())
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch query for view method: '{}' (contract <{}> on network <{}>)",
+                function_name, account_id, network_config.network_name
+            )
+        })?;
+    call_result.print_logs();
+    eprintln!("Result:");
+    if call_result.result.is_empty() {
+        eprintln!("Empty result");
+    } else if let Ok(json_result) = call_result.parse_result_from_json::<serde_json::Value>() {
+        println!("{}", serde_json::to_string_pretty(&json_result)?);
+    } else if let Ok(string_result) = String::from_utf8(call_result.result) {
+        println!("{string_result}");
+    } else {
+        eprintln!("The returned value is not printable (binary data)");
+    }
+    eprintln!("--------------");
+    Ok(())
 }
