@@ -86,25 +86,16 @@ impl CreateAccountArgs {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use clap::Parser;
  
     #[test]
     fn create_account_using_faucet_testnet() {
-        let create_account_args = CreateAccountArgs {
-            account_id: "bob.testnet".to_string(),
-            use_faucet: true,
-            initial_balance: None,
-            master_account: None,
-            seed_phrase: None,
-            public_key: None,
-            use_ledger: false,
-            ledger_path: None,
-            network_id: None,
-            _unknown_args: [].to_vec(),
-        };
+        let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", "--use-faucet"]);
         let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
-            "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create".to_string()
+            "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create"
         )
     }
  
