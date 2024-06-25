@@ -5,6 +5,7 @@ use color_eyre::{
     owo_colors::OwoColorize,
 };
 use thiserror::Error;
+use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 use near_primitives::types::{BlockId, BlockReference};
 
@@ -47,19 +48,7 @@ impl ContractContext {
             let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
 
             move |network_config, block_reference| {
-                let view_code_response = network_config
-                    .json_rpc_client()
-                    .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                        block_reference: block_reference.clone(),
-                        request: near_primitives::views::QueryRequest::ViewCode {
-                            account_id: account_id.clone(),
-                        },
-                    })
-                    .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}> on network <{}>", &account_id, network_config.network_name))?;
-
-                tokio::runtime::Runtime::new()
-                    .unwrap()
-                    .block_on(display_inspect_contract(&account_id, network_config, view_code_response))
+                inspect_contract(&account_id, network_config, block_reference)
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -76,6 +65,46 @@ impl From<ContractContext> for crate::network_view_at_block::ArgsForViewContext 
     }
 }
 
+#[tracing::instrument(name = "Contract inspection ...", skip_all)]
+fn inspect_contract(
+    account_id: &near_primitives::types::AccountId,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: &near_primitives::types::BlockReference,
+) -> crate::CliResult {
+    let view_code_response = get_contract_code(account_id, network_config, block_reference)?;
+
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(display_inspect_contract(
+            account_id,
+            network_config,
+            view_code_response,
+        ))
+}
+
+#[tracing::instrument(name = "Obtaining the contract code ...", skip_all)]
+fn get_contract_code(
+    account_id: &near_primitives::types::AccountId,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: &near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::query::RpcQueryResponse> {
+    network_config
+        .json_rpc_client()
+        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: block_reference.clone(),
+            request: near_primitives::views::QueryRequest::ViewCode {
+                account_id: account_id.clone(),
+            },
+        })
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch query ViewCode for <{}> on network <{}>",
+                &account_id, network_config.network_name
+            )
+        })
+}
+
+#[tracing::instrument(name = "Analysis of contract data ...", skip_all)]
 async fn display_inspect_contract(
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
@@ -345,12 +374,14 @@ async fn display_inspect_contract(
     Ok(())
 }
 
+#[tracing::instrument(name = "Getting information about", skip_all)]
 async fn get_account_view(
     network_name: &str,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<near_primitives::views::AccountView> {
+    tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
     for _ in 0..5 {
         let account_view_response = json_rpc_client
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
@@ -381,12 +412,14 @@ async fn get_account_view(
     )))
 }
 
+#[tracing::instrument(name = "Getting a list of", skip_all)]
 async fn get_access_keys(
     network_name: &str,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Vec<near_primitives::views::AccessKeyInfoView>> {
+    tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
     for _ in 0..5 {
         let access_keys_response = json_rpc_client
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
@@ -432,6 +465,7 @@ pub enum FetchContractSourceMetadataError {
     ContractSourceMetadataUnknownFormat(Report),
 }
 
+#[tracing::instrument(name = "Getting contract source metadata", skip_all)]
 async fn get_contract_source_metadata(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
@@ -498,6 +532,7 @@ pub enum FetchAbiError {
     ),
 }
 
+#[tracing::instrument(name = "Obtaining the ABI for the contract ...", skip_all)]
 pub async fn get_contract_abi(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
