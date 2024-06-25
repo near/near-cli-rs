@@ -1433,6 +1433,10 @@ pub fn get_delegated_validator_list_from_mainnet(
         .collect())
 }
 
+#[tracing::instrument(
+    name = "Retrieving a list of delegated validators from \"mainnet\" ...",
+    skip_all
+)]
 pub fn get_used_delegated_validator_list(
     config: &crate::config::Config,
 ) -> color_eyre::eyre::Result<VecDeque<near_primitives::types::AccountId>> {
@@ -1548,6 +1552,7 @@ struct StakingResponse {
     pools: Vec<StakingPool>,
 }
 
+#[tracing::instrument(name = "Getting historically delegated staking pools ...", skip_all)]
 pub fn fetch_historically_delegated_staking_pools(
     fastnear_url: &url::Url,
     account_id: &near_primitives::types::AccountId,
@@ -1563,6 +1568,7 @@ pub fn fetch_historically_delegated_staking_pools(
         .collect())
 }
 
+#[tracing::instrument(name = "Getting currently active staking pools ...", skip_all)]
 pub fn fetch_currently_active_staking_pools(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     staking_pools_factory_account_id: &near_primitives::types::AccountId,
