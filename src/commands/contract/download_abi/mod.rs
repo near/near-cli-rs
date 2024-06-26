@@ -69,7 +69,7 @@ impl DownloadContractContext {
             let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
             move |network_config, block_reference| {
-                download_contract(&account_id, &file_path, network_config, block_reference)
+                download_contract_abi(&account_id, &file_path, network_config, block_reference)
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -101,8 +101,8 @@ impl DownloadContractAbi {
     }
 }
 
-#[tracing::instrument(name = "Download contract code ...", skip_all)]
-fn download_contract(
+#[tracing::instrument(name = "Download the ABI for the contract ...", skip_all)]
+fn download_contract_abi(
     account_id: &near_primitives::types::AccountId,
     file_path: &std::path::PathBuf,
     network_config: &crate::config::NetworkConfig,
