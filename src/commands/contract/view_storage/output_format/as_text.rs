@@ -1,7 +1,5 @@
 use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 
-use crate::common::JsonRpcClientExt;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::keys_to_view::KeysContext)]
 #[interactive_clap(output_context = AsTextContext)]
@@ -24,33 +22,25 @@ impl AsTextContext {
             let prefix = previous_context.prefix;
 
             move |network_config, block_reference| {
-                let query_view_method_response = network_config
-                    .json_rpc_client()
-                    .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                        block_reference: block_reference.clone(),
-                        request: near_primitives::views::QueryRequest::ViewState {
-                            account_id: contract_account_id.clone(),
-                            prefix: prefix.clone(),
-                            include_proof: false,
-                        },
-                    })
-                    .wrap_err_with(|| format!("Failed to fetch query ViewState for <{contract_account_id}> on network <{}>", network_config.network_name))?;
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
-                        query_view_method_response.kind
-                    {
-                        eprintln!("Contract state (values):");
-                        for value in &result.values {
-                            eprintln!("key:\n{}", key_value_to_string(&value.key)?.green());
-                            eprintln!("value:\n{}", key_value_to_string(&value.value)?.yellow());
-                            eprintln!("--------------------------------");
-                        }
-                        eprintln!(
-                            "\nContract state (proof):\n{:#?}\n",
-                            &result.proof
-                        );
-                    } else {
-                        return Err(color_eyre::Report::msg("Error call result".to_string()));
-                    };
+                let query_view_method_response =
+                    super::get_contract_state(&contract_account_id, prefix.clone(), network_config, block_reference.clone())?;
+
+                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
+                    query_view_method_response.kind
+                {
+                    eprintln!("Contract state (values):");
+                    for value in &result.values {
+                        eprintln!("key:\n{}", key_value_to_string(&value.key)?.green());
+                        eprintln!("value:\n{}", key_value_to_string(&value.value)?.yellow());
+                        eprintln!("--------------------------------");
+                    }
+                    eprintln!(
+                        "\nContract state (proof):\n{:#?}\n",
+                        &result.proof
+                    );
+                } else {
+                    return Err(color_eyre::Report::msg("Error call result".to_string()));
+                };
                 Ok(())
             }
         });

@@ -71,32 +71,7 @@ impl DownloadContractContext {
             let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
             move |network_config, block_reference| {
-                let query_view_method_response = network_config
-                    .json_rpc_client()
-                    .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                        block_reference: block_reference.clone(),
-                        request: near_primitives::views::QueryRequest::ViewCode {
-                            account_id: account_id.clone(),
-                        },
-                    })
-                    .wrap_err_with(|| format!("Failed to fetch query ViewCode for <{}> on network <{}>", &account_id, network_config.network_name))?;
-                let call_access_view =
-                    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-                        query_view_method_response.kind
-                    {
-                        result
-                    } else {
-                        return Err(color_eyre::Report::msg("Error call result".to_string()));
-                    };
-                std::fs::File::create(&file_path)
-                    .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
-                    .write(&call_access_view.code)
-                    .wrap_err_with(|| {
-                        format!("Failed to write to file: {:?}", &file_path)
-                    })?;
-                eprintln!("\nThe file {:?} was downloaded successfully", &file_path);
-
-                Ok(())
+                download_contract_code(&account_id, &file_path, network_config, block_reference.clone())
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -126,4 +101,42 @@ impl DownloadContract {
                 .prompt()?,
         ))
     }
+}
+
+#[tracing::instrument(name = "Download contract code ...", skip_all)]
+fn download_contract_code(
+    account_id: &near_primitives::types::AccountId,
+    file_path: &std::path::PathBuf,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: near_primitives::types::BlockReference,
+) -> crate::CliResult {
+    let query_view_method_response = network_config
+        .json_rpc_client()
+        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewCode {
+                account_id: account_id.clone(),
+            },
+        })
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch query ViewCode for <{}> on network <{}>",
+                account_id, network_config.network_name
+            )
+        })?;
+    let call_access_view =
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
+            query_view_method_response.kind
+        {
+            result
+        } else {
+            return Err(color_eyre::Report::msg("Error call result".to_string()));
+        };
+    std::fs::File::create(file_path)
+        .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
+        .write(&call_access_view.code)
+        .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
+    eprintln!("\nThe file {:?} was downloaded successfully", file_path);
+
+    Ok(())
 }
