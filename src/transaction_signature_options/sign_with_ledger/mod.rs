@@ -54,7 +54,7 @@ impl SignLedgerContext {
         scope: &<SignLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
-        let seed_phrase_hd_path: slip10::BIP32Path = scope.seed_phrase_hd_path.clone().into();
+        let seed_phrase_hd_path: slipped10::BIP32Path = scope.seed_phrase_hd_path.clone().into();
         let public_key: near_crypto::PublicKey = scope.signer_public_key.clone().into();
 
         let (nonce, block_hash) = if previous_context.global_context.offline {
