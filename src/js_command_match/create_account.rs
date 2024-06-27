@@ -57,7 +57,7 @@ impl CreateAccountArgs {
 
         if !self.seed_phrase.is_some() && !self.public_key.is_some() && !self.use_ledger {
             command.push("autogenerate-new-keypair".to_owned());
-            command.push("save-to-legacy-keychain".to_owned());
+            command.push("save-to-keychain".to_owned());
         };
  
         if !self.use_faucet {
@@ -75,7 +75,7 @@ impl CreateAccountArgs {
         if self.use_faucet {
           command.push("create".to_owned());
         } else {
-          command.push("sign-with-legacy-keychain".to_owned()); // TODO There may be a problem depends how master account was created (by new CLI or old one). New CLI will use just keychain, not legacy one
+          command.push("sign-with-keychain".to_owned()); // TODO There may be a problem depends how master account was created (by new CLI or old one). New CLI will use just keychain, not legacy one
           command.push("send".to_owned());
         }
  
@@ -90,33 +90,33 @@ mod tests {
     use clap::Parser;
  
     #[test]
-    fn create_account_using_faucet_testnet() {
+    fn create_account_using_faucet_testnet_0() {
+        let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", "--useFaucet"]);
+        let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"
+        )
+    }
+
+    #[test]
+    fn create_account_using_faucet_testnet_1() {
         let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", "--use-faucet"]);
         let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
-            "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create"
+            "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"
         )
     }
  
     #[test]
     fn create_account_using_master_account_testnet() {
-        let create_account_args = CreateAccountArgs {
-            account_id: "bob.testnet".to_string(),
-            master_account: Some("alice.testnet".to_string()),
-            use_faucet: false,
-            seed_phrase: None,
-            public_key: None,
-            use_ledger: false,
-            ledger_path: None,
-            initial_balance: Some("100".to_owned()),
-            network_id: None,
-            _unknown_args: [].to_vec(),
-        };
+        let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", "--masterAccount", "alice.testnet", "--initialBalance", "0.1"]);
+
         let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
-            "account create-account fund-myself bob.testnet \"100 NEAR\" autogenerate-new-keypair save-to-legacy-keychain sign-as alice.testnet network-config testnet create".to_string()
+            "account create-account fund-myself bob.testnet 0.1 NEAR autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send".to_string()
         )
     }
  
