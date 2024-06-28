@@ -1,13 +1,15 @@
 /// This is a legacy `create-account` command. Once you run it with the specified arguments, new syntax command will be suggested.
 
-const USE_FAUCET_ALIASES: [&str; 2] = ["useFaucet", "use-faucet"];
-const MASTER_ACCOUNT_ALIASES: [&str; 6] = ["masterAccount", "master-account", "useAccount", "use-account", "accountId", "account_id"];
-const SEED_PHRASE_ALIASES: [&str; 2] = ["seedPhrase", "seed-phrase"];
-const PUBLIC_KEY_ALIASES: [&str; 2] = ["publicKey", "public-key"];
-const USE_LEDGER_ALIASES: [&str; 4] = ["signWithLedger", "sign-with-ledger", "useLedgerKey", "use-ledger-key"];
-const LEDGER_PATH_ALIASES: [&str; 2] = ["ledgerPath", "ledger-path"];
-const INITIAL_BALANCE_ALIASES: [&str; 2] = ["initialBalance", "initial-balance"];
-const NETWORK_ID_ALIASES: [&str; 2] = ["networkId", "network-id"];
+use crate::js_command_match::parameter_aliases::{
+    MASTER_ACCOUNT_ALIASES,
+    USE_FAUCET_ALIASES,
+    SEED_PHRASE_ALIASES,
+    PUBLIC_KEY_ALIASES,
+    USE_LEDGER_ALIASES,
+    LEDGER_PATH_ALIASES,
+    INITIAL_BALANCE_ALIASES,
+    NETWORK_ID_ALIASES
+};
 
 #[derive(Debug, Clone, clap::Parser)]
 pub struct CreateAccountArgs {
@@ -92,32 +94,40 @@ impl CreateAccountArgs {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use clap::Parser;
  
     #[test]
     fn create_account_using_faucet_testnet() {
-      for i in 0..USE_FAUCET_ALIASES.len() {
-        let use_faucet_parameter_alias = &format!("--{}", &USE_FAUCET_ALIASES[i]);
-        let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", use_faucet_parameter_alias]);
-        let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
-        assert_eq!(
-            result.join(" "),
-            "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"
-        )
-      }
+        for i in 0..USE_FAUCET_ALIASES.len() {
+          let use_faucet_parameter_alias = &format!("--{}", &USE_FAUCET_ALIASES[i]);
+          let create_account_args = CreateAccountArgs::parse_from(&[
+              "near",
+              "bob.testnet",
+              use_faucet_parameter_alias,
+          ]);
+          let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
+          assert_eq!(
+              result.join(" "),
+              "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"
+          )
+        }
     }
 
     #[test]
     fn create_account_using_master_account_without_initial_balance_testnet() {
         for i in 0..MASTER_ACCOUNT_ALIASES.len() {
           let master_account_parameter_alias = &format!("--{}", &MASTER_ACCOUNT_ALIASES[i]);
-          let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", master_account_parameter_alias, "alice.testnet"]);
+          let create_account_args = CreateAccountArgs::parse_from(&[
+              "near",
+              "bob.testnet",
+              master_account_parameter_alias,
+              "alice.testnet",
+          ]);
 
           let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
           assert_eq!(
               result.join(" "),
-              "account create-account fund-myself bob.testnet 0.1 NEAR autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send".to_string()
+              "account create-account fund-myself bob.testnet 0.1 NEAR autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
           )
         }
     }
@@ -127,12 +137,19 @@ mod tests {
         for i in 0..INITIAL_BALANCE_ALIASES.len() {
           let initial_balance_parameter_alias = &format!("--{}", &INITIAL_BALANCE_ALIASES[i]);
           let master_account_parameter_alias = &format!("--{}", &MASTER_ACCOUNT_ALIASES[0]);
-          let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", master_account_parameter_alias, "alice.testnet", initial_balance_parameter_alias, "0.1"]);
+          let create_account_args = CreateAccountArgs::parse_from(&[
+              "near",
+              "bob.testnet",
+              master_account_parameter_alias,
+              "alice.testnet",
+              initial_balance_parameter_alias,
+              "0.1",
+          ]);
 
           let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
           assert_eq!(
               result.join(" "),
-              "account create-account fund-myself bob.testnet 0.1 NEAR autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send".to_string()
+              "account create-account fund-myself bob.testnet 0.1 NEAR autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
           )
         }
     }
@@ -142,12 +159,18 @@ mod tests {
         for i in 0..SEED_PHRASE_ALIASES.len() {
           let seed_phrase_parameter_alias = &format!("--{}", &SEED_PHRASE_ALIASES[i]);
           let use_faucet_parameter_alias = &format!("--{}", &USE_FAUCET_ALIASES[0]);
-          let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", seed_phrase_parameter_alias, "crisp clump stay mean dynamic become fashion mail bike disorder chronic sight", use_faucet_parameter_alias]);
+          let create_account_args = CreateAccountArgs::parse_from(&[
+              "near",
+              "bob.testnet",
+              seed_phrase_parameter_alias,
+              "crisp clump stay mean dynamic become fashion mail bike disorder chronic sight",
+              use_faucet_parameter_alias,
+          ]);
 
           let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
           assert_eq!(
               result.join(" "),
-              "account create-account sponsor-by-faucet-service bob.testnet use-manually-provided-seed-phrase crisp clump stay mean dynamic become fashion mail bike disorder chronic sight network-config testnet create".to_string()
+              "account create-account sponsor-by-faucet-service bob.testnet use-manually-provided-seed-phrase crisp clump stay mean dynamic become fashion mail bike disorder chronic sight network-config testnet create"
           )
         }
     }
@@ -158,12 +181,21 @@ mod tests {
           let public_key_parameter_alias = &format!("--{}", &PUBLIC_KEY_ALIASES[i]);
           let master_account_parameter_alias = &format!("--{}", &MASTER_ACCOUNT_ALIASES[0]);
           let initial_balance_parameter_alias = &format!("--{}", &INITIAL_BALANCE_ALIASES[0]);
-          let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", master_account_parameter_alias, "alice.testnet", public_key_parameter_alias, "78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV", initial_balance_parameter_alias, "0.1"]);
+          let create_account_args = CreateAccountArgs::parse_from(&[
+              "near",
+              "bob.testnet",
+              master_account_parameter_alias,
+              "alice.testnet",
+              public_key_parameter_alias,
+              "78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV",
+              initial_balance_parameter_alias,
+              "0.1",
+          ]);
 
           let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
           assert_eq!(
               result.join(" "),
-              "account create-account fund-myself bob.testnet 0.1 NEAR use-manually-provided-public-key 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV sign-as alice.testnet network-config testnet sign-with-keychain send".to_string()
+              "account create-account fund-myself bob.testnet 0.1 NEAR use-manually-provided-public-key 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV sign-as alice.testnet network-config testnet sign-with-keychain send"
           )
         }
     }
@@ -173,12 +205,17 @@ mod tests {
         for i in 0..USE_LEDGER_ALIASES.len() {
           let use_ledger_parameter_alias = &format!("--{}", &USE_LEDGER_ALIASES[i]);
           let use_faucet_parameter_alias = &format!("--{}", &USE_FAUCET_ALIASES[0]);
-          let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", use_ledger_parameter_alias, use_faucet_parameter_alias]);
+          let create_account_args = CreateAccountArgs::parse_from(&[
+              "near",
+              "bob.testnet",
+              use_ledger_parameter_alias,
+              use_faucet_parameter_alias,
+          ]);
 
           let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
           assert_eq!(
               result.join(" "),
-              "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create".to_string()
+              "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
           )
         }
     }
@@ -190,12 +227,20 @@ mod tests {
           let master_account_parameter_alias = &format!("--{}", &MASTER_ACCOUNT_ALIASES[0]);
           let use_ledger_parameter_alias = &format!("--{}", &USE_LEDGER_ALIASES[0]);
 
-          let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.testnet", master_account_parameter_alias, "alice.testnet", use_ledger_parameter_alias, network_id_parameter_alias, "testnet"]);
+          let create_account_args = CreateAccountArgs::parse_from(&[
+              "near",
+              "bob.testnet",
+              master_account_parameter_alias,
+              "alice.testnet",
+              use_ledger_parameter_alias,
+              network_id_parameter_alias,
+              "testnet",
+          ]);
 
           let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
           assert_eq!(
               result.join(" "),
-              "account create-account fund-myself bob.testnet 0.1 NEAR use-ledger sign-as alice.testnet network-config testnet sign-with-keychain send".to_string()
+              "account create-account fund-myself bob.testnet 0.1 NEAR use-ledger sign-as alice.testnet network-config testnet sign-with-keychain send"
           )
         }
     }
@@ -207,12 +252,20 @@ mod tests {
           let master_account_parameter_alias = &format!("--{}", &MASTER_ACCOUNT_ALIASES[0]);
           let use_ledger_parameter_alias = &format!("--{}", &USE_LEDGER_ALIASES[0]);
 
-          let create_account_args = CreateAccountArgs::parse_from(&["near", "bob.near", master_account_parameter_alias, "alice.near", use_ledger_parameter_alias, network_id_parameter_alias, "mainnet"]);
+          let create_account_args = CreateAccountArgs::parse_from(&[
+              "near",
+              "bob.near",
+              master_account_parameter_alias,
+              "alice.near",
+              use_ledger_parameter_alias,
+              network_id_parameter_alias,
+              "mainnet",
+          ]);
 
           let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
           assert_eq!(
               result.join(" "),
-              "account create-account fund-myself bob.near 0.1 NEAR use-ledger sign-as alice.near network-config mainnet sign-with-keychain send".to_string()
+              "account create-account fund-myself bob.near 0.1 NEAR use-ledger sign-as alice.near network-config mainnet sign-with-keychain send"
           )
         }
     }
