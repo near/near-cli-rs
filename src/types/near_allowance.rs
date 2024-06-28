@@ -42,7 +42,9 @@ impl NearAllowance {
     }
 
     pub fn from_yoctonear(value: u128) -> Self {
-        Self(Some(crate::types::near_token::NearToken::from_yoctonear(value)))
+        Self(Some(crate::types::near_token::NearToken::from_yoctonear(
+            value,
+        )))
     }
 }
 
