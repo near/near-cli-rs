@@ -56,9 +56,8 @@ impl AddKeyArgs {
 
 #[cfg(test)]
 mod tests {
-    use clap::Parser;
-
     use super::*;
+    use clap::Parser;
 
     #[test]
     fn add_function_call_access_key_for_all_methods_testnet() {

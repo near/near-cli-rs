@@ -1,4 +1,5 @@
 // Accounts and contracts
+pub const ACCOUNT_ID_ALIASES: [&str; 3] = ["accountId", "account-id", "account_id"];
 pub const MASTER_ACCOUNT_ALIASES: [&str; 6] = ["masterAccount", "master-account", "useAccount", "use-account", "accountId", "account_id"];
 pub const CONTRACT_ID_ALIASES: [&str; 2] = ["contractId", "contract-id"];
 pub const METHOD_NAMES_ALIASES: [&str; 2] = ["methodNames", "method-names"];
