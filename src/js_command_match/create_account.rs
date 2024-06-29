@@ -1,6 +1,4 @@
-/// This is a legacy `create-account` command. Once you run it with the specified arguments, new syntax command will be suggested.
-
-use crate::js_command_match::parameter_aliases::{
+use crate::js_command_match::constants::{
     MASTER_ACCOUNT_ALIASES,
     USE_FAUCET_ALIASES,
     SEED_PHRASE_ALIASES,
@@ -8,10 +6,12 @@ use crate::js_command_match::parameter_aliases::{
     USE_LEDGER_ALIASES,
     LEDGER_PATH_ALIASES,
     INITIAL_BALANCE_ALIASES,
-    NETWORK_ID_ALIASES
+    NETWORK_ID_ALIASES,
+    DEFAULT_SEED_PHRASE_PATH
 };
 
 #[derive(Debug, Clone, clap::Parser)]
+/// This is a legacy `create-account` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct CreateAccountArgs {
     account_id: String,
     #[clap(long, aliases = MASTER_ACCOUNT_ALIASES, default_value = None)]
@@ -24,7 +24,7 @@ pub struct CreateAccountArgs {
     public_key: Option<String>,
     #[clap(long, aliases = USE_LEDGER_ALIASES, default_value_t = false, conflicts_with = "public_key")]
     use_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_missing_value = Some("44'/397'/0'/0'/1'"), num_args=0..=1)]
+    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_missing_value = Some(DEFAULT_SEED_PHRASE_PATH), num_args=0..=1)]
     ledger_path: Option<String>,
     #[clap(long, aliases = INITIAL_BALANCE_ALIASES, default_value = Some("0.1"))]
     initial_balance: Option<String>,

@@ -1,10 +1,9 @@
-use crate::js_command_match::parameter_aliases::{
+use crate::js_command_match::constants::{
     SEED_PHRASE_ALIASES,
     SECRET_KEY_ALIASES,
-    NETWORK_ID_ALIASES
+    NETWORK_ID_ALIASES,
+    DEFAULT_SEED_PHRASE_PATH
 };
-
-const DEFAULT_SEED_PHRASE_PATH: &str = "m/44'/397'/0'";
 
 #[derive(Debug, Clone, clap::Parser)]
 /// This is a legacy `legacy` command. Once you run it with the specified arguments, new syntax command will be suggested.

@@ -8,6 +8,7 @@ pub const METHOD_NAMES_ALIASES: [&str; 2] = ["methodNames", "method-names"];
 pub const PUBLIC_KEY_ALIASES: [&str; 2] = ["publicKey", "public-key"];
 pub const SECRET_KEY_ALIASES: [&str; 2] = ["secretKey", "secret-key"];
 pub const SEED_PHRASE_ALIASES: [&str; 2] = ["seedPhrase", "seed-phrase"];
+pub const DEFAULT_SEED_PHRASE_PATH: &str = "44'/397'/0'/0'/1'";
 
 // Ledger
 pub const USE_LEDGER_ALIASES: [&str; 4] = ["signWithLedger", "sign-with-ledger", "useLedgerKey", "use-ledger-key"];

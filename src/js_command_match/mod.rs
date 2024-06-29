@@ -25,7 +25,7 @@ mod tx_status;
 mod validators;
 mod view;
 mod view_state;
-mod parameter_aliases;
+mod constants;
 
 #[derive(Debug, Clone, clap::Parser)]
 /// Legacy CLI commands are only supported at best-effort

@@ -1,6 +1,6 @@
-use crate::js_command_match::parameter_aliases::{
-  ACCOUNT_ID_ALIASES,
-  NETWORK_ID_ALIASES
+use crate::js_command_match::constants::{
+    ACCOUNT_ID_ALIASES,
+    NETWORK_ID_ALIASES
 };
 
 #[derive(Debug, Clone, clap::Parser)]

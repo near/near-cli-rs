@@ -1,7 +1,7 @@
-use crate::js_command_match::parameter_aliases::{
-  CONTRACT_ID_ALIASES,
-  METHOD_NAMES_ALIASES,
-  NETWORK_ID_ALIASES
+use crate::js_command_match::constants::{
+    CONTRACT_ID_ALIASES,
+    METHOD_NAMES_ALIASES,
+    NETWORK_ID_ALIASES
 };
 
 #[derive(Debug, Clone, clap::Parser)]
