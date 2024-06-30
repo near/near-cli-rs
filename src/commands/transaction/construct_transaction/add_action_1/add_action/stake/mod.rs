@@ -4,7 +4,7 @@
 pub struct StakeAction {
     /// Enter the amount to stake: (example: 10000NEAR)
     stake_amount: crate::types::near_token::NearToken,
-    /// Validator key which will be used to sign transactions on behalf of signer_id:
+    /// Enter the public key of the validator key pair used on your NEAR node (see validator_key.json):
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_2::NextAction,
