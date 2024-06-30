@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use color_eyre::eyre::{Context, ContextCompat};
 use interactive_clap::ToCliArgs;
 
@@ -267,10 +269,20 @@ fn get_access_key_permission(
         ) => Ok(Some(
             add_key::CliAccessKeyPermission::GrantFunctionCallAccess(
                 add_key::access_key_type::CliFunctionCallType {
-                    allowance: allowance
-                        .map(crate::types::near_allowance::NearAllowance::from_yoctonear),
-                    receiver_account_id: Some(receiver_id.parse()?),
-                    method_names: Some(crate::types::vec_string::VecString(method_names)),
+                    allowance: {
+                        match allowance {
+                            Some(yoctonear) => {
+                                Some(crate::types::near_allowance::NearAllowance::from_yoctonear(
+                                    yoctonear,
+                                ))
+                            }
+                            None => Some(crate::types::near_allowance::NearAllowance::from_str(
+                                "unlimited",
+                            )?),
+                        }
+                    },
+                    contract_account_id: Some(receiver_id.parse()?),
+                    function_names: Some(crate::types::vec_string::VecString(method_names)),
                     access_key_mode: Some(add_key::CliAccessKeyMode::UseManuallyProvidedPublicKey(
                         add_key::use_public_key::CliAddAccessKeyAction {
                             public_key: Some(public_key.into()),
