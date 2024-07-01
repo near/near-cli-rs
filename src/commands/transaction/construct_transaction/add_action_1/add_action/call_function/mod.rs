@@ -4,6 +4,7 @@ use inquire::CustomType;
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
 #[interactive_clap(output_context = FunctionCallActionContext)]
 pub struct FunctionCallAction {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is the name of the function?
     function_name: String,
     #[interactive_clap(value_enum)]
@@ -56,6 +57,15 @@ impl FunctionCallAction {
         Option<crate::commands::contract::call_function::call_function_args_type::FunctionArgsType>,
     > {
         crate::commands::contract::call_function::call_function_args_type::input_function_args_type(
+        )
+    }
+
+    fn input_function_name(
+        context: &super::super::super::ConstructTransactionContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        crate::commands::contract::call_function::input_call_function_name(
+            &context.global_context,
+            &context.receiver_account_id,
         )
     }
 }
