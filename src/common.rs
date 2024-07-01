@@ -446,9 +446,9 @@ pub fn get_key_pair_properties_from_seed_phrase(
     master_seed_phrase: String,
 ) -> color_eyre::eyre::Result<KeyPairProperties> {
     let master_seed = bip39::Mnemonic::parse(&master_seed_phrase)?.to_seed("");
-    let derived_private_key = slip10::derive_key_from_path(
+    let derived_private_key = slipped10::derive_key_from_path(
         &master_seed,
-        slip10::Curve::Ed25519,
+        slipped10::Curve::Ed25519,
         &seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -458,21 +458,14 @@ pub fn get_key_pair_properties_from_seed_phrase(
         ))
     })?;
 
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
-    let implicit_account_id =
-        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
-    let public_key_str = format!(
-        "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
-    );
+    let public_key = signing_key.verifying_key();
+    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public_key))?;
+    let public_key_str = format!("ed25519:{}", bs58::encode(&public_key).into_string());
     let secret_keypair_str = format!(
         "ed25519:{}",
-        bs58::encode(secret_keypair.to_bytes()).into_string()
+        bs58::encode(signing_key.to_keypair_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
         seed_phrase_hd_path,
@@ -485,26 +478,25 @@ pub fn get_key_pair_properties_from_seed_phrase(
 }
 
 pub fn get_public_key_from_seed_phrase(
-    seed_phrase_hd_path: slip10::BIP32Path,
+    seed_phrase_hd_path: slipped10::BIP32Path,
     master_seed_phrase: &str,
 ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
     let master_seed = bip39::Mnemonic::parse(master_seed_phrase)?.to_seed("");
-    let derived_private_key =
-        slip10::derive_key_from_path(&master_seed, slip10::Curve::Ed25519, &seed_phrase_hd_path)
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to derive a key from the master key: {}",
-                    err
-                ))
-            })?;
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let derived_private_key = slipped10::derive_key_from_path(
+        &master_seed,
+        slipped10::Curve::Ed25519,
+        &seed_phrase_hd_path,
+    )
+    .map_err(|err| {
+        color_eyre::Report::msg(format!(
+            "Failed to derive a key from the master key: {}",
+            err
+        ))
+    })?;
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
     let public_key_str = format!(
         "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
+        bs58::encode(&signing_key.verifying_key()).into_string()
     );
     Ok(near_crypto::PublicKey::from_str(&public_key_str)?)
 }
@@ -525,9 +517,9 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
             (master_seed_phrase, mnemonic.to_seed(""))
         };
 
-    let derived_private_key = slip10::derive_key_from_path(
+    let derived_private_key = slipped10::derive_key_from_path(
         &master_seed,
-        slip10::Curve::Ed25519,
+        slipped10::Curve::Ed25519,
         &generate_keypair.seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -537,21 +529,14 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         ))
     })?;
 
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
-    let implicit_account_id =
-        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
-    let public_key_str = format!(
-        "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
-    );
+    let public = signing_key.verifying_key();
+    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public))?;
+    let public_key_str = format!("ed25519:{}", bs58::encode(&public).into_string());
     let secret_keypair_str = format!(
         "ed25519:{}",
-        bs58::encode(secret_keypair.to_bytes()).into_string()
+        bs58::encode(signing_key.to_keypair_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
         seed_phrase_hd_path: generate_keypair.seed_phrase_hd_path,
