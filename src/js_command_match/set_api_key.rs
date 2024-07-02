@@ -14,40 +14,42 @@ impl SetApiKeyArgs {
             Some(network_config) => network_config,
             None => {
                 return Ok(vec![
-                    "config".to_owned(),
-                    "add-connection".to_owned(),
-                    "--network-name".to_owned(),
+                    "config".to_string(),
+                    "add-connection".to_string(),
+                    "--network-name".to_string(),
                     network_name.to_owned(),
-                    "--connection-name".to_owned(),
+                    "--connection-name".to_string(),
                     network_name,
-                    "--rpc-url".to_owned(),
+                    "--rpc-url".to_string(),
                     self.rpc_server.to_owned(),
-                    "--rpc-api-key".to_owned(),
+                    "--rpc-api-key".to_string(),
                     self.x_api_key.to_owned(),
                 ])
             }
         }
         .clone();
         let mut args = vec![
-            "config".to_owned(),
-            "add-connection".to_owned(),
-            "--network-name".to_owned(),
+            "config".to_string(),
+            "add-connection".to_string(),
+            "--network-name".to_string(),
             network_name.to_owned(),
-            "--connection-name".to_owned(),
+            "--connection-name".to_string(),
             network_name,
-            "--rpc-url".to_owned(),
+            "--rpc-url".to_string(),
             self.rpc_server.to_owned(),
-            "--wallet-url".to_owned(),
+            "--wallet-url".to_string(),
             network_config.wallet_url.to_string(),
-            "--explorer-transaction-url".to_owned(),
+            "--explorer-transaction-url".to_string(),
             network_config.explorer_transaction_url.to_string(),
-            "--rpc-api-key".to_owned(),
+            "--rpc-api-key".to_string(),
             self.x_api_key.to_owned(),
         ];
         if let Some(linkdrop_account_id) = network_config.linkdrop_account_id {
-            args.push("--linkdrop-account-id".to_owned());
+            args.push("--linkdrop-account-id".to_string());
             args.push(linkdrop_account_id.to_string())
         }
         Ok(args)
     }
 }
+
+// The command is deprecated on near-cli-js
