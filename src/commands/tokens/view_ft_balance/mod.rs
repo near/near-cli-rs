@@ -31,6 +31,7 @@ impl ViewFtBalanceContext {
 
             move |network_config, block_reference| {
                 let crate::types::ft_properties::FtMetadata { decimals, symbol } = crate::types::ft_properties::params_ft_metadata(
+                    previous_context.global_context.teach_me,
                     ft_contract_account_id.clone(),
                     network_config,
                     block_reference.clone(),
@@ -38,7 +39,14 @@ impl ViewFtBalanceContext {
                 let args = serde_json::to_vec(&json!({
                     "account_id": owner_account_id.to_string(),
                     }))?;
-                let call_result = get_ft_balance(network_config, &ft_contract_account_id, args, block_reference.clone())?;
+                let call_result =
+                    get_ft_balance(
+                        previous_context.global_context.teach_me,
+                        network_config,
+                        &ft_contract_account_id,
+                        args,
+                        block_reference.clone()
+                    )?;
                 call_result.print_logs();
                 let amount: String = call_result.parse_result_from_json()?;
                 let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
@@ -83,6 +91,7 @@ impl ViewFtBalance {
 
 #[tracing::instrument(name = "Getting FT balance ...", skip_all)]
 fn get_ft_balance(
+    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     ft_contract_account_id: &near_primitives::types::AccountId,
     args: Vec<u8>,
@@ -91,6 +100,7 @@ fn get_ft_balance(
     network_config
         .json_rpc_client()
         .blocking_call_view_function(
+            teach_me,
             ft_contract_account_id,
             "ft_balance_of",
             args,

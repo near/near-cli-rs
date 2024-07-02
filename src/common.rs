@@ -2011,6 +2011,7 @@ pub trait JsonRpcClientExt {
     /// arguments and function return value.
     fn blocking_call_view_function(
         &self,
+        teach_me: bool,
         account_id: &near_primitives::types::AccountId,
         method_name: &str,
         args: Vec<u8>,
@@ -2070,6 +2071,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     #[tracing::instrument(name = "Getting the result of executing", skip_all)]
     fn blocking_call_view_function(
         &self,
+        teach_me: bool,
         account_id: &near_primitives::types::AccountId,
         method_name: &str,
         args: Vec<u8>,
@@ -2078,16 +2080,27 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         tracing::Span::current().pb_set_message(&format!(
             "the '{method_name}' method of the <{account_id}> contract ..."
         ));
+        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: account_id.clone(),
+                method_name: method_name.to_owned(),
+                args: near_primitives::types::FunctionArgs::from(args),
+            },
+        };
+        let request_payload = near_jsonrpc_client::methods::to_json(&query_view_method_request)?;
+
         let query_view_method_response = self
-            .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference,
-                request: near_primitives::views::QueryRequest::CallFunction {
-                    account_id: account_id.clone(),
-                    method_name: method_name.to_owned(),
-                    args: near_primitives::types::FunctionArgs::from(args),
-                },
-            })
+            .blocking_call(query_view_method_request)
             .wrap_err("Failed to make a view-function call")?;
+
+        let response_payload = serde_json::to_value(&query_view_method_response)?;
+
+        if teach_me {
+            eprintln!("\nJSON-BODY:\n{:#}", request_payload);
+            eprintln!("RESPONSE:\n{}", response_payload);
+        }
+
         query_view_method_response.call_result()
     }
 

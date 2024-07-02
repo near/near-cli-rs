@@ -32,7 +32,14 @@ impl AccountContext {
                 move |network_config, block_reference| {
                     let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
 
-                    let storage_balance = get_storage_balance(network_config, &contract_account_id, &account_id, block_reference)?;
+                    let storage_balance =
+                        get_storage_balance(
+                            previous_context.global_context.teach_me,
+                            network_config,
+                            &contract_account_id,
+                            &account_id,
+                            block_reference
+                        )?;
                     eprintln!("storage balance for <{account_id}>:");
                     eprintln!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
                         "available:",
@@ -78,6 +85,7 @@ impl Account {
 
 #[tracing::instrument(name = "Getting storage balance for", skip_all)]
 fn get_storage_balance(
+    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     contract_account_id: &near_primitives::types::AccountId,
     account_id: &crate::types::account_id::AccountId,
@@ -87,6 +95,7 @@ fn get_storage_balance(
     network_config
         .json_rpc_client()
         .blocking_call_view_function(
+            teach_me,
             contract_account_id,
             "storage_balance_of",
             serde_json::to_vec(&serde_json::json!({
