@@ -33,7 +33,14 @@ impl ViewNftAssetsContext {
                 let args = serde_json::to_vec(&json!({
                         "account_id": owner_account_id.to_string(),
                     }))?;
-                let call_result = get_nft_balance(network_config, &nft_contract_account_id, args, block_reference.clone())?;
+                let call_result =
+                    get_nft_balance(
+                        previous_context.global_context.teach_me,
+                        network_config,
+                        &nft_contract_account_id,
+                        args,
+                        block_reference.clone()
+                    )?;
                 call_result.print_logs();
                 let serde_call_result: serde_json::Value = call_result.parse_result_from_json()?;
 
@@ -72,6 +79,7 @@ impl ViewNftAssets {
 
 #[tracing::instrument(name = "Getting NFT balance ...", skip_all)]
 fn get_nft_balance(
+    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     nft_contract_account_id: &near_primitives::types::AccountId,
     args: Vec<u8>,
@@ -80,6 +88,7 @@ fn get_nft_balance(
     network_config
         .json_rpc_client()
         .blocking_call_view_function(
+            teach_me,
             nft_contract_account_id,
             "nft_tokens_for_owner",
             args,

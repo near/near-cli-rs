@@ -153,6 +153,7 @@ pub struct FtMetadata {
 
 #[tracing::instrument(name = "Getting FT metadata ...", skip_all)]
 pub fn params_ft_metadata(
+    teach_me: bool,
     ft_contract_account_id: near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
@@ -160,6 +161,7 @@ pub fn params_ft_metadata(
     let ft_metadata: FtMetadata = network_config
         .json_rpc_client()
         .blocking_call_view_function(
+            teach_me,
             &ft_contract_account_id,
             "ft_metadata",
             vec![],

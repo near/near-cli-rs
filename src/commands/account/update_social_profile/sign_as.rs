@@ -49,7 +49,13 @@ impl From<SignerContext> for crate::commands::ActionContext {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             Arc::new({
                 move |network_config| {
-                    get_prepopulated_transaction(network_config, &account_id, &signer_id, &data)
+                    get_prepopulated_transaction(
+                        item.global_context.teach_me,
+                        network_config,
+                        &account_id,
+                        &signer_id,
+                        &data
+                    )
                 }
             });
 
@@ -149,6 +155,7 @@ impl Signer {
     skip_all
 )]
 fn get_prepopulated_transaction(
+    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     signer_id: &near_primitives::types::AccountId,
@@ -162,8 +169,12 @@ fn get_prepopulated_transaction(
     };
 
     let local_profile: serde_json::Value = serde_json::from_slice(data)?;
-    let remote_profile =
-        get_remote_profile(network_config, &contract_account_id, account_id.clone())?;
+    let remote_profile = get_remote_profile(
+        teach_me,
+        network_config,
+        &contract_account_id,
+        account_id.clone(),
+    )?;
 
     let deposit = required_deposit(
         &network_config.json_rpc_client(),
@@ -243,6 +254,7 @@ fn get_deposit(
 
 #[tracing::instrument(name = "Getting data about a remote profile ...", skip_all)]
 fn get_remote_profile(
+    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     near_social_account_id: &near_primitives::types::AccountId,
     account_id: near_primitives::types::AccountId,
@@ -250,6 +262,7 @@ fn get_remote_profile(
     match network_config
         .json_rpc_client()
         .blocking_call_view_function(
+            teach_me,
             near_social_account_id,
             "get",
             serde_json::to_vec(&serde_json::json!({

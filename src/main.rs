@@ -1,4 +1,8 @@
-#![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
+#![allow(
+    clippy::enum_variant_names,
+    clippy::large_enum_variant,
+    clippy::too_many_arguments
+)]
 use clap::Parser;
 #[cfg(feature = "self-update")]
 use color_eyre::eyre::WrapErr;
@@ -33,6 +37,9 @@ struct Cmd {
     /// Offline mode
     #[interactive_clap(long)]
     offline: bool,
+    /// TEACH-ME mode
+    #[interactive_clap(long)]
+    teach_me: bool,
     #[interactive_clap(subcommand)]
     top_level: crate::commands::TopLevelCommand,
 }
@@ -48,6 +55,7 @@ impl CmdContext {
         Ok(Self(crate::GlobalContext {
             config: previous_context.0,
             offline: scope.offline,
+            teach_me: scope.teach_me,
         }))
     }
 }
@@ -206,6 +214,7 @@ fn main() -> crate::common::CliResult {
                 );
                 let self_update_cli_cmd = CliCmd {
                     offline: false,
+                    teach_me: false,
                     top_level:
                         Some(crate::commands::CliTopLevelCommand::Extensions(
                             crate::commands::extensions::CliExtensionsCommands {
