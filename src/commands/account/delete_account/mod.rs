@@ -1,3 +1,4 @@
+use color_eyre::owo_colors::OwoColorize;
 use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -123,6 +124,11 @@ impl BeneficiaryAccount {
             } else {
                 return Ok(None);
             };
+
+            if beneficiary_account_id.0 == context.account_id {
+                eprintln!("{}", "You have selected a beneficiary account ID that will now be deleted. This will result in the loss of your funds. So make your choice again.".red());
+                continue;
+            }
 
             if context.global_context.offline {
                 return Ok(Some(beneficiary_account_id));

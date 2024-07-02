@@ -1,4 +1,5 @@
-use inquire::{CustomType, Select};
+use color_eyre::owo_colors::OwoColorize;
+use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
@@ -46,8 +47,20 @@ impl DeleteAccountAction {
         context: &super::super::super::ConstructTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
-            let beneficiary_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the beneficiary account ID?").prompt()?;
+            let beneficiary_account_id = if let Some(account_id) =
+                crate::common::input_non_signer_account_id_from_used_account_list(
+                    &context.global_context.config.credentials_home_dir,
+                    "What is the beneficiary account ID?",
+                )? {
+                account_id
+            } else {
+                return Ok(None);
+            };
+
+            if beneficiary_account_id.0 == context.signer_account_id {
+                eprintln!("{}", "You have selected a beneficiary account ID that will now be deleted. This will result in the loss of your funds. So make your choice again.".red());
+                continue;
+            }
 
             if context.global_context.offline {
                 return Ok(Some(beneficiary_account_id));
