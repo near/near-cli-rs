@@ -1,7 +1,7 @@
+use std::str::FromStr;
+
 use color_eyre::eyre::{Context, ContextCompat};
 use interactive_clap::ToCliArgs;
-
-use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -27,34 +27,14 @@ impl TransactionInfoContext {
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let transaction_hash = scope.transaction_hash;
+                let tx_hash: near_primitives::hash::CryptoHash = scope.transaction_hash.into();
 
                 move |network_config| {
-                    let query_view_transaction_status = network_config
-                        .json_rpc_client()
-                        .blocking_call(
-                            near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
-                                transaction_info:
-                                    near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
-                                        tx_hash: transaction_hash.into(),
-                                        sender_account_id: "near".parse::<near_primitives::types::AccountId>()?,
-                                    },
-                                    wait_until: near_primitives::views::TxExecutionStatus::Final
-                            },
-                        )
-                        .wrap_err_with(|| {
-                            format!(
-                                "Failed to fetch query for view transaction on network <{}>",
-                                network_config.network_name
-                            )
-                        })?;
-
-                    let query_view_transaction_status = query_view_transaction_status
+                    let query_view_transaction_status = super::view_status::get_transaction_info(network_config, tx_hash)?
                         .final_execution_outcome
                         .wrap_err_with(|| {
                             format!(
-                                "Failed to get the final execution outcome for the transaction {}",
-                                transaction_hash
+                                "Failed to get the final execution outcome for the transaction {tx_hash}"
                             )
                         })?
                         .into_outcome();
@@ -289,9 +269,20 @@ fn get_access_key_permission(
         ) => Ok(Some(
             add_key::CliAccessKeyPermission::GrantFunctionCallAccess(
                 add_key::access_key_type::CliFunctionCallType {
-                    allowance: allowance.map(crate::types::near_token::NearToken::from_yoctonear),
-                    receiver_account_id: Some(receiver_id.parse()?),
-                    method_names: Some(crate::types::vec_string::VecString(method_names)),
+                    allowance: {
+                        match allowance {
+                            Some(yoctonear) => {
+                                Some(crate::types::near_allowance::NearAllowance::from_yoctonear(
+                                    yoctonear,
+                                ))
+                            }
+                            None => Some(crate::types::near_allowance::NearAllowance::from_str(
+                                "unlimited",
+                            )?),
+                        }
+                    },
+                    contract_account_id: Some(receiver_id.parse()?),
+                    function_names: Some(crate::types::vec_string::VecString(method_names)),
                     access_key_mode: Some(add_key::CliAccessKeyMode::UseManuallyProvidedPublicKey(
                         add_key::use_public_key::CliAddAccessKeyAction {
                             public_key: Some(public_key.into()),
