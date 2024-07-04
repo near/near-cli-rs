@@ -6,8 +6,6 @@ pub struct StateArgs {
     account_id: String,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
     network_id: Option<String>,
-    #[clap(allow_hyphen_values = true, num_args = 0..)]
-    _unknown_args: Vec<String>,
 }
 
 impl StateArgs {
@@ -35,10 +33,7 @@ mod tests {
     #[test]
     fn state_testnet() {
         let account_id = "contract.testnet";
-        let state_args = StateArgs::parse_from(&[
-            "near",
-            account_id,
-        ]);
+        let state_args = StateArgs::parse_from(&["near", account_id]);
         let result = StateArgs::to_cli_args(&state_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
@@ -60,15 +55,14 @@ mod tests {
                 "near",
                 account_id,
                 network_id_parameter_alias,
-                network_id
+                network_id,
             ]);
             let result = StateArgs::to_cli_args(&state_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
                 format!(
                     "account view-account-summary {} network-config {} now",
-                    account_id,
-                    network_id,
+                    account_id, network_id,
                 )
             )
         }

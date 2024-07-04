@@ -44,20 +44,13 @@ mod tests {
         let contract_account_id = "counter.near-examples.testnet";
         let method_name = "get";
         let args = "{\"account_id\": \"bob.testnet\"}";
-        let view_args = ViewArgs::parse_from(&[
-            "near",
-            contract_account_id,
-            method_name,
-            args
-        ]);
+        let view_args = ViewArgs::parse_from(&["near", contract_account_id, method_name, args]);
         let result = ViewArgs::to_cli_args(&view_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
             format!(
                 "contract call-function as-read-only {} {} text-args {} network-config testnet now",
-                contract_account_id,
-                method_name,
-                args
+                contract_account_id, method_name, args
             )
         )
     }
@@ -67,7 +60,7 @@ mod tests {
         let contract_account_id = "counter.near-examples.testnet";
         let method_name = "get";
         let network_id = "mainnet";
-        
+
         for i in 0..NETWORK_ID_ALIASES.len() {
             let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
             let view_args = ViewArgs::parse_from(&[
@@ -82,9 +75,7 @@ mod tests {
                 result.join(" "),
                 format!(
                     "contract call-function as-read-only {} {} text-args  network-config {} now",
-                    contract_account_id,
-                    method_name,
-                    network_id
+                    contract_account_id, method_name, network_id
                 )
             )
         }

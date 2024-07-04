@@ -35,7 +35,7 @@ impl DeleteKeyArgs {
 mod tests {
     use super::*;
     use clap::Parser;
- 
+
     #[test]
     fn delete_key_testnet() {
         let account_id = "bob.testnet";
@@ -49,7 +49,7 @@ mod tests {
                 account_id,
                 access_key,
                 network_id_parameter_alias,
-                network_id
+                network_id,
             ]);
             let result = DeleteKeyArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
@@ -76,16 +76,14 @@ mod tests {
             account_id,
             access_key,
             network_id_parameter_alias,
-            network_id
+            network_id,
         ]);
         let result = DeleteKeyArgs::to_cli_args(&delete_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
             format!(
                 "account delete-keys {} public-keys {} network-config {} sign-with-keychain send",
-                account_id,
-                access_key,
-                network_id
+                account_id, access_key, network_id
             )
         )
     }

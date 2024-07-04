@@ -1,8 +1,5 @@
 use crate::js_command_match::constants::{
-  USE_LEDGER_ALIASES,
-  LEDGER_PATH_ALIASES,
-  DEFAULT_SEED_PHRASE_PATH,
-  NETWORK_ID_ALIASES,
+    DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, USE_LEDGER_ALIASES,
 };
 
 #[derive(Debug, Clone, clap::Parser)]
@@ -34,7 +31,7 @@ impl SendArgs {
             "network-config".to_string(),
             network_id,
         ];
-        
+
         if self.use_ledger {
             command.push("sign-with-ledger".to_string());
             command.push("--seed-phrase-hd-path".to_string());
@@ -72,7 +69,7 @@ mod tests {
                     amount,
                     use_ledger_parameter_alias,
                     ledger_path_parameter_alias,
-                    custom_ledger_path
+                    custom_ledger_path,
                 ]);
                 let result = SendArgs::to_cli_args(&send_args, "testnet".to_string());
                 assert_eq!(
@@ -110,7 +107,7 @@ mod tests {
                 ledger_path_parameter_alias,
                 custom_ledger_path,
                 network_id_parameter_alias,
-                network_id
+                network_id,
             ]);
             let result = SendArgs::to_cli_args(&send_args, "testnet".to_string());
             assert_eq!(

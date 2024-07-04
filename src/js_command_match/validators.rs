@@ -13,7 +13,7 @@ pub struct ValidatorsArgs {
 impl ValidatorsArgs {
     pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
         let network_id = self.network_id.clone().unwrap_or(network_config);
-        
+
         let mut command = vec![
             "validator".to_string(),
             "validators".to_string(),

@@ -1,8 +1,5 @@
 use crate::js_command_match::constants::{
-    USE_LEDGER_ALIASES,
-    LEDGER_PATH_ALIASES,
-    NETWORK_ID_ALIASES,
-    DEFAULT_SEED_PHRASE_PATH
+    DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, USE_LEDGER_ALIASES,
 };
 
 #[derive(Debug, Clone, clap::Parser)]
@@ -30,7 +27,7 @@ impl DeleteAccountArgs {
             "delete-account".to_string(),
             self.account_id.to_owned(),
             "beneficiary".to_string(),
-            self.beneficiary_id.to_owned()
+            self.beneficiary_id.to_owned(),
         ];
 
         command.push("network-config".to_string());
@@ -45,7 +42,7 @@ impl DeleteAccountArgs {
         }
 
         command.push("send".to_string());
-        
+
         command
     }
 }
@@ -54,7 +51,7 @@ impl DeleteAccountArgs {
 mod tests {
     use super::*;
     use clap::Parser;
- 
+
     #[test]
     fn delete_account_using_ledger_testnet() {
         let account_id = "bob.testnet";
@@ -66,7 +63,7 @@ mod tests {
                 "near",
                 account_id,
                 beneficiary_id,
-                use_ledger_parameter_alias
+                use_ledger_parameter_alias,
             ]);
             let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
@@ -124,7 +121,7 @@ mod tests {
                 beneficiary_id,
                 use_ledger_parameter_alias,
                 network_id_parameter_alias,
-                network_id
+                network_id,
             ]);
             let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
@@ -143,11 +140,7 @@ mod tests {
     fn delete_account_using_keychain_testnet() {
         let account_id = "bob.testnet";
         let beneficiary_id = "alice.testnet";
-        let delete_args = DeleteAccountArgs::parse_from(&[
-            "near",
-            account_id,
-            beneficiary_id,
-        ]);
+        let delete_args = DeleteAccountArgs::parse_from(&["near", account_id, beneficiary_id]);
         let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),

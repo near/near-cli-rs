@@ -1,10 +1,6 @@
 use crate::js_command_match::constants::{
-    SAVE_IMPLICIT_ALIASES,
-    SEED_PHRASE_ALIASES,
-    USE_LEDGER_ALIASES,
-    LEDGER_PATH_ALIASES,
-    NETWORK_ID_ALIASES,
-    DEFAULT_SEED_PHRASE_PATH
+    DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, SAVE_IMPLICIT_ALIASES,
+    SEED_PHRASE_ALIASES, USE_LEDGER_ALIASES,
 };
 
 #[derive(Debug, Clone, clap::Parser)]
@@ -28,13 +24,13 @@ pub struct GenerateKeyArgs {
 impl GenerateKeyArgs {
     pub fn to_cli_args(&self, network_config: String) -> color_eyre::eyre::Result<Vec<String>> {
         let network_id = self.network_id.clone().unwrap_or(network_config);
-        
+
         let mut command = vec![
             "account".to_string(),
             "create-account".to_string(),
             "fund-later".to_string(),
         ];
-          
+
         let config = crate::config::Config::get_config_toml()?;
         let mut generation_method = "use-auto-generation".to_string();
 
@@ -51,10 +47,17 @@ impl GenerateKeyArgs {
                     config.credentials_home_dir.to_string_lossy(),
                     network_id,
                     account_id
+                )
+                .as_str(),
             )
-            .as_str()).as_ref().parse()?;
+            .as_ref()
+            .parse()?;
         } else {
-            folder_path = shellexpand::tilde(format!("{}/implicit", config.credentials_home_dir.to_string_lossy()).as_str()).as_ref().parse()?;
+            folder_path = shellexpand::tilde(
+                format!("{}/implicit", config.credentials_home_dir.to_string_lossy()).as_str(),
+            )
+            .as_ref()
+            .parse()?;
         }
 
         if let Some(seed_phrase) = self.seed_phrase.as_deref() {
@@ -67,7 +70,7 @@ impl GenerateKeyArgs {
 
             return Ok(command);
         }
-        
+
         command.push(generation_method);
         command.push("save-to-folder".to_string());
         command.push(folder_path);
@@ -80,13 +83,16 @@ impl GenerateKeyArgs {
 mod tests {
     use super::*;
     use clap::Parser;
- 
+
     #[test]
     fn generate_key_implicit_testnet() {
         let network_id = "testnet";
 
         let config = crate::config::Config::get_config_toml();
-        let folder_path = format!("{}/implicit", config.unwrap().credentials_home_dir.to_string_lossy());
+        let folder_path = format!(
+            "{}/implicit",
+            config.unwrap().credentials_home_dir.to_string_lossy()
+        );
 
         for i in 0..NETWORK_ID_ALIASES.len() {
             let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
@@ -97,9 +103,10 @@ mod tests {
                     "near",
                     save_implicit_parameter_alias,
                     network_id_parameter_alias,
-                    network_id
+                    network_id,
                 ]);
-                let result = GenerateKeyArgs::to_cli_args(&generate_key_args, "testnet".to_string());
+                let result =
+                    GenerateKeyArgs::to_cli_args(&generate_key_args, "testnet".to_string());
                 assert_eq!(
                     result.unwrap().join(" "),
                     format!(
@@ -108,23 +115,22 @@ mod tests {
                     )
                 );
             }
-            
-
         }
     }
 
     #[test]
     fn generate_key_with_ledger_testnet() {
         let account_id = "new-account.testnet";
-        let seed_phrase = "crisp clump stay mean dynamic become fashion mail bike disorder chronic sight";
+        let seed_phrase =
+            "crisp clump stay mean dynamic become fashion mail bike disorder chronic sight";
         let network_id = "testnet";
 
         let config = crate::config::Config::get_config_toml();
         let folder_path = format!(
-          "{}/{}/{}",
-          config.unwrap().credentials_home_dir.to_string_lossy(),
-          network_id,
-          account_id
+            "{}/{}/{}",
+            config.unwrap().credentials_home_dir.to_string_lossy(),
+            network_id,
+            account_id
         );
 
         for i in 0..SEED_PHRASE_ALIASES.len() {
@@ -133,7 +139,7 @@ mod tests {
                 "near",
                 account_id,
                 seed_phrase_parameter_alias,
-                seed_phrase
+                seed_phrase,
             ]);
             let result = GenerateKeyArgs::to_cli_args(&generate_key_args, "testnet".to_string());
             assert_eq!(

@@ -1,10 +1,6 @@
 use crate::js_command_match::constants::{
-    WASM_FILE_ALIASES,
-    INIT_FUNCTION_ALIASES,
-    INIT_ARGS_ALIASES,
-    INIT_GAS_ALIASES,
-    INIT_DEPOSIT_ALIASES,
-    NETWORK_ID_ALIASES,
+    INIT_ARGS_ALIASES, INIT_DEPOSIT_ALIASES, INIT_FUNCTION_ALIASES, INIT_GAS_ALIASES,
+    NETWORK_ID_ALIASES, WASM_FILE_ALIASES,
 };
 
 #[derive(Debug, Clone, clap::Parser)]
@@ -33,10 +29,7 @@ pub struct DeployArgs {
 impl DeployArgs {
     pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
         let network_id = self.network_id.clone().unwrap_or(network_config);
-        let mut command = vec![
-            "contract".to_string(),
-            "deploy".to_string(),
-        ];
+        let mut command = vec!["contract".to_string(), "deploy".to_string()];
 
         // let contract_account_id = if let Some(account_id) = &self.contract_account_id {
         //     account_id
@@ -58,7 +51,7 @@ impl DeployArgs {
 
         command.push("use-file".to_string());
         command.push(wasm_file.to_owned());
-        
+
         if self.init_function.is_some() {
             command.push("with-init-call".to_string());
             command.push(self.init_function.as_deref().unwrap_or("new").to_owned());
@@ -85,17 +78,13 @@ impl DeployArgs {
 mod tests {
     use super::*;
     use clap::Parser;
- 
+
     #[test]
     fn deploy_testnet() {
         let contract_account_id = "bob.testnet";
         let wasm_file_path = "build/hello_near.wasm";
 
-        let deploy_args = DeployArgs::parse_from(&[
-            "near",
-            contract_account_id,
-            wasm_file_path
-        ]);
+        let deploy_args = DeployArgs::parse_from(&["near", contract_account_id, wasm_file_path]);
         let result = DeployArgs::to_cli_args(&deploy_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
@@ -120,7 +109,7 @@ mod tests {
                 contract_account_id,
                 wasm_file_path,
                 network_id_parameter_alias,
-                network_id
+                network_id,
             ]);
             let result = DeployArgs::to_cli_args(&deploy_args, "testnet".to_string());
             assert_eq!(
@@ -140,7 +129,10 @@ mod tests {
         let contract_account_id = "bob.testnet";
         let wasm_file_path = "build/hello_near.wasm";
         let init_function = "new";
-        let args = format!("{}{}{}{}", "{\"owner_id\":\"", contract_account_id, "}", ",\"total_supply\":\"1000000\"}");
+        let args = format!(
+            "{}{}{}{}",
+            "{\"owner_id\":\"", contract_account_id, "}", ",\"total_supply\":\"1000000\"}"
+        );
 
         for i in 0..INIT_FUNCTION_ALIASES.len() {
             let init_function_parameter_alias = &format!("--{}", &INIT_FUNCTION_ALIASES[i]);
@@ -154,7 +146,7 @@ mod tests {
                     init_function_parameter_alias,
                     init_function,
                     init_args_parameter_alias,
-                    &args
+                    &args,
                 ]);
                 let result = DeployArgs::to_cli_args(&deploy_args, "testnet".to_string());
                 assert_eq!(
@@ -170,13 +162,16 @@ mod tests {
             }
         }
     }
-    
+
     #[test]
     fn deploy_with_init_and_gas_testnet() {
         let contract_account_id = "bob.testnet";
         let wasm_file_path = "build/hello_near.wasm";
         let init_function = "new";
-        let args = format!("{}{}{}{}", "{\"owner_id\":\"", contract_account_id, "}", ",\"total_supply\":\"1000000\"}");
+        let args = format!(
+            "{}{}{}{}",
+            "{\"owner_id\":\"", contract_account_id, "}", ",\"total_supply\":\"1000000\"}"
+        );
         let init_gas: i64 = 60000000000000;
 
         for i in 0..INIT_GAS_ALIASES.len() {
@@ -193,7 +188,7 @@ mod tests {
                 init_args_parameter_alias,
                 &args,
                 init_gas_parameter_alias,
-                &init_gas.to_string()
+                &init_gas.to_string(),
             ]);
             let result = DeployArgs::to_cli_args(&deploy_args, "testnet".to_string());
             assert_eq!(
@@ -215,15 +210,18 @@ mod tests {
         let contract_account_id = "bob.testnet";
         let wasm_file_path = "build/hello_near.wasm";
         let init_function = "new";
-        let args = format!("{}{}{}{}", "{\"owner_id\":\"", contract_account_id, "}", ",\"total_supply\":\"1000000\"}");
+        let args = format!(
+            "{}{}{}{}",
+            "{\"owner_id\":\"", contract_account_id, "}", ",\"total_supply\":\"1000000\"}"
+        );
         let init_gas: i64 = 60000000000000;
         let init_deposit = 1;
 
         for i in 0..INIT_DEPOSIT_ALIASES.len() {
-          let init_deposit_parameter_alias = &format!("--{}", &INIT_DEPOSIT_ALIASES[i]);
-          let init_function_parameter_alias = &format!("--{}", &INIT_FUNCTION_ALIASES[0]);
-          let init_args_parameter_alias = &format!("--{}", &INIT_ARGS_ALIASES[0]);
-          let init_gas_parameter_alias = &format!("--{}", &INIT_GAS_ALIASES[0]);
+            let init_deposit_parameter_alias = &format!("--{}", &INIT_DEPOSIT_ALIASES[i]);
+            let init_function_parameter_alias = &format!("--{}", &INIT_FUNCTION_ALIASES[0]);
+            let init_args_parameter_alias = &format!("--{}", &INIT_ARGS_ALIASES[0]);
+            let init_gas_parameter_alias = &format!("--{}", &INIT_GAS_ALIASES[0]);
 
             let deploy_args = DeployArgs::parse_from(&[
                 "near",
@@ -236,7 +234,7 @@ mod tests {
                 init_gas_parameter_alias,
                 &init_gas.to_string(),
                 init_deposit_parameter_alias,
-                &init_deposit.to_string()
+                &init_deposit.to_string(),
             ]);
             let result = DeployArgs::to_cli_args(&deploy_args, "testnet".to_string());
             assert_eq!(

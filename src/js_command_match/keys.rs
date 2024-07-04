@@ -31,7 +31,7 @@ impl KeysArgs {
 mod tests {
     use super::*;
     use clap::Parser;
- 
+
     #[test]
     fn list_keys_testnet() {
         let account_id = "bob.testnet";
@@ -39,19 +39,14 @@ mod tests {
 
         for i in 0..NETWORK_ID_ALIASES.len() {
             let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
-            let keys_args = KeysArgs::parse_from(&[
-                "near",
-                account_id,
-                network_id_parameter_alias,
-                network_id
-            ]);
+            let keys_args =
+                KeysArgs::parse_from(&["near", account_id, network_id_parameter_alias, network_id]);
             let result = KeysArgs::to_cli_args(&keys_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
                 format!(
                     "account list-keys {} network-config {} now",
-                    account_id,
-                    network_id,
+                    account_id, network_id,
                 )
             );
         }
@@ -63,19 +58,14 @@ mod tests {
         let network_id = "mainnet";
 
         let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[0]);
-        let keys_args = KeysArgs::parse_from(&[
-            "near",
-            account_id,
-            network_id_parameter_alias,
-            network_id
-        ]);
+        let keys_args =
+            KeysArgs::parse_from(&["near", account_id, network_id_parameter_alias, network_id]);
         let result = KeysArgs::to_cli_args(&keys_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
             format!(
                 "account list-keys {} network-config {} now",
-                account_id,
-                network_id,
+                account_id, network_id,
             )
         );
     }

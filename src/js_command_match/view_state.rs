@@ -1,7 +1,4 @@
-use crate::js_command_match::constants::{
-    BLOCK_ID_ALIASES,
-    NETWORK_ID_ALIASES
-};
+use crate::js_command_match::constants::{BLOCK_ID_ALIASES, NETWORK_ID_ALIASES};
 
 #[derive(Debug, Clone, clap::Parser)]
 /// This is a legacy `view-state` command. Once you run it with the specified arguments, new syntax command will be suggested.
@@ -28,16 +25,19 @@ impl ViewStateArgs {
         let mut command = vec![
             "contract".to_string(),
             "view-storage".to_string(),
-            self.contract_account_id.to_owned()
+            self.contract_account_id.to_owned(),
         ];
 
         let output_format = if self.utf8 { "as-text" } else { "as-json" };
 
         if self.prefix.is_some() {
-            let prefix = self.prefix.to_owned().expect("You must provide valid prefix");
+            let prefix = self
+                .prefix
+                .to_owned()
+                .expect("You must provide valid prefix");
             let prefix_type = match near_primitives::serialize::from_base64(&prefix[..]) {
                 Ok(_) => "keys-start-with-bytes-as-base64".to_string(),
-                Err(_) => "keys-start-with-string".to_string()
+                Err(_) => "keys-start-with-string".to_string(),
             };
 
             command.push(prefix_type);
@@ -53,7 +53,10 @@ impl ViewStateArgs {
         if self.finality.is_some() {
             command.push("now".to_string());
         } else if self.block_id.is_some() {
-            let block_id = self.block_id.to_owned().expect("You must provide valid blockId");
+            let block_id = self
+                .block_id
+                .to_owned()
+                .expect("You must provide valid blockId");
 
             match block_id.parse::<i32>() {
                 Ok(_) => {
@@ -80,7 +83,7 @@ mod tests {
         let contract_account_id = "counter.near-examples.testnet";
         let prefix = "U1RBVEU=";
         let block_id = "167860267";
-        
+
         for i in 0..BLOCK_ID_ALIASES.len() {
             let block_id_parameter_alias = &format!("--{}", &BLOCK_ID_ALIASES[i]);
             let view_state_args = ViewStateArgs::parse_from(&[
@@ -110,7 +113,7 @@ mod tests {
         let prefix = "STATE";
         let finality = "final";
         let network_id = "mainnet";
-        
+
         for i in 0..NETWORK_ID_ALIASES.len() {
             let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
             let view_state_args = ViewStateArgs::parse_from(&[
@@ -122,7 +125,7 @@ mod tests {
                 "--finality",
                 finality,
                 network_id_parameter_alias,
-                network_id
+                network_id,
             ]);
             let result = ViewStateArgs::to_cli_args(&view_state_args, "testnet".to_string());
             assert_eq!(

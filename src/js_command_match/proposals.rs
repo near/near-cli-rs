@@ -28,45 +28,33 @@ impl ProposalsArgs {
 mod tests {
     use super::*;
     use clap::Parser;
- 
+
     #[test]
     fn proposals_testnet() {
-      let network_id = "testnet";
+        let network_id = "testnet";
 
         for i in 0..NETWORK_ID_ALIASES.len() {
             let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
-            let proposals_args = ProposalsArgs::parse_from(&[
-                "near",
-                network_id_parameter_alias,
-                network_id
-            ]);
+            let proposals_args =
+                ProposalsArgs::parse_from(&["near", network_id_parameter_alias, network_id]);
             let result = ProposalsArgs::to_cli_args(&proposals_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
-                format!(
-                    "validator proposals network-config {}",
-                    network_id,
-                )
+                format!("validator proposals network-config {}", network_id,)
             );
         }
     }
 
     #[test]
     fn proposals_mainnet() {
-      let network_id = "mainnet";
-      let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[0]);
-      let proposals_args = ProposalsArgs::parse_from(&[
-          "near",
-          network_id_parameter_alias,
-          network_id
-      ]);
-      let result = ProposalsArgs::to_cli_args(&proposals_args, "testnet".to_string());
-      assert_eq!(
-          result.join(" "),
-          format!(
-              "validator proposals network-config {}",
-              network_id,
-          )
-      );
+        let network_id = "mainnet";
+        let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[0]);
+        let proposals_args =
+            ProposalsArgs::parse_from(&["near", network_id_parameter_alias, network_id]);
+        let result = ProposalsArgs::to_cli_args(&proposals_args, "testnet".to_string());
+        assert_eq!(
+            result.join(" "),
+            format!("validator proposals network-config {}", network_id,)
+        );
     }
 }

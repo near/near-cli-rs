@@ -1,7 +1,5 @@
 use crate::js_command_match::constants::{
-    CONTRACT_ID_ALIASES,
-    METHOD_NAMES_ALIASES,
-    NETWORK_ID_ALIASES
+    CONTRACT_ID_ALIASES, METHOD_NAMES_ALIASES, NETWORK_ID_ALIASES,
 };
 
 #[derive(Debug, Clone, clap::Parser)]
@@ -42,7 +40,7 @@ impl AddKeyArgs {
         } else {
             command.push("grant-full-access".to_string());
         }
-          
+
         command.push("use-manually-provided-public-key".to_string());
         command.push(self.access_key.to_owned());
         command.push("network-config".to_string());
@@ -99,7 +97,7 @@ mod tests {
                 contract_id_parameter_alias,
                 contract_id,
                 method_names_parameter_alias,
-                method_names
+                method_names,
             ]);
             let result = AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string());
             assert_eq!(
@@ -121,7 +119,7 @@ mod tests {
                 account_id,
                 access_key,
                 network_id_parameter_alias,
-                "testnet"
+                "testnet",
             ]);
             let result = AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string());
             assert_eq!(
@@ -144,7 +142,7 @@ mod tests {
                 account_id,
                 access_key,
                 network_id_parameter_alias,
-                network_id
+                network_id,
             ]);
             let result = AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string());
             assert_eq!(

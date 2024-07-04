@@ -1,7 +1,4 @@
-use crate::js_command_match::constants::{
-    ACCOUNT_ID_ALIASES,
-    NETWORK_ID_ALIASES,
-};
+use crate::js_command_match::constants::{ACCOUNT_ID_ALIASES, NETWORK_ID_ALIASES};
 
 #[derive(Debug, Clone, clap::Parser)]
 /// This is a legacy `tx-status` command. Once you run it with the specified arguments, new syntax command will be suggested.
@@ -40,11 +37,7 @@ mod tests {
     fn tx_status_testnet() {
         let account_id = "relay.aurora";
         let transaction_hash = "4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo";
-        let state_args = TxStatusArgs::parse_from(&[
-            "near",
-            transaction_hash,
-            account_id
-        ]);
+        let state_args = TxStatusArgs::parse_from(&["near", transaction_hash, account_id]);
         let result = TxStatusArgs::to_cli_args(&state_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
@@ -66,15 +59,14 @@ mod tests {
                 "near",
                 transaction_hash,
                 network_id_parameter_alias,
-                network_id
+                network_id,
             ]);
             let result = TxStatusArgs::to_cli_args(&state_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
                 format!(
                     "transaction view-status {} network-config {}",
-                    transaction_hash,
-                    network_id
+                    transaction_hash, network_id
                 )
             )
         }
