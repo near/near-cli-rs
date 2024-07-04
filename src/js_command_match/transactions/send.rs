@@ -1,21 +1,19 @@
 use crate::js_command_match::constants::{
-    DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, USE_LEDGER_ALIASES,
+    DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, SIGN_WITH_LEDGER_ALIASES,
 };
 
 #[derive(Debug, Clone, clap::Parser)]
-/// This is a legacy `send` command. Once you run it with the specified arguments, new syntax command will be suggested.
+#[clap(alias("send-near"))]
 pub struct SendArgs {
-    pub sender_account_id: String,
-    pub receiver_account_id: String,
+    pub sender: String,
+    pub receiver: String,
     pub amount: String,
-    #[clap(long, aliases = USE_LEDGER_ALIASES, default_value_t = false)]
-    use_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_missing_value = Some(DEFAULT_SEED_PHRASE_PATH), num_args=0..=1)]
+    #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
+    sign_with_ledger: bool,
+    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = Some(DEFAULT_SEED_PHRASE_PATH))]
     ledger_path: Option<String>,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
     pub network_id: Option<String>,
-    #[clap(allow_hyphen_values = true, num_args = 0..)]
-    pub _unknown_args: Vec<String>,
 }
 
 impl SendArgs {
@@ -24,18 +22,20 @@ impl SendArgs {
 
         let mut command = vec![
             "tokens".to_string(),
-            self.sender_account_id.to_owned(),
+            self.sender.to_owned(),
             "send-near".to_string(),
-            self.receiver_account_id.to_owned(),
+            self.receiver.to_owned(),
             format!("{} NEAR", self.amount),
             "network-config".to_string(),
             network_id,
         ];
 
-        if self.use_ledger {
+        if self.sign_with_ledger {
             command.push("sign-with-ledger".to_string());
-            command.push("--seed-phrase-hd-path".to_string());
-            command.push(self.ledger_path.to_owned().unwrap_or_default());
+            command.push(format!(
+                "--seed-phrase-hd-path {}",
+                self.ledger_path.to_owned().unwrap_or_default()
+            ));
         } else {
             command.push("sign-with-keychain".to_string());
         }
@@ -57,8 +57,8 @@ mod tests {
         let amount = "1";
         let custom_ledger_path = "m/44'/397'/0'/0'/2'";
 
-        for i in 0..USE_LEDGER_ALIASES.len() {
-            let use_ledger_parameter_alias = &format!("--{}", &USE_LEDGER_ALIASES[i]);
+        for i in 0..SIGN_WITH_LEDGER_ALIASES.len() {
+            let use_ledger_parameter_alias = &format!("--{}", &SIGN_WITH_LEDGER_ALIASES[i]);
 
             for j in 0..LEDGER_PATH_ALIASES.len() {
                 let ledger_path_parameter_alias = &format!("--{}", &LEDGER_PATH_ALIASES[j]);
@@ -93,7 +93,7 @@ mod tests {
         let amount = "1";
         let custom_ledger_path = "m/44'/397'/0'/0'/2'";
         let network_id = "mainnet";
-        let use_ledger_parameter_alias = &format!("--{}", &USE_LEDGER_ALIASES[0]);
+        let use_ledger_parameter_alias = &format!("--{}", &SIGN_WITH_LEDGER_ALIASES[0]);
         let ledger_path_parameter_alias = &format!("--{}", &LEDGER_PATH_ALIASES[0]);
 
         for i in 0..NETWORK_ID_ALIASES.len() {
@@ -124,13 +124,12 @@ mod tests {
         }
 
         let send_args = SendArgs {
-            sender_account_id: "bob.testnet".to_string(),
-            receiver_account_id: "alice.testnet".to_string(),
+            sender: "bob.testnet".to_string(),
+            receiver: "alice.testnet".to_string(),
             amount: "1".to_string(),
-            use_ledger: true,
+            sign_with_ledger: true,
             ledger_path: Some("m/44'/397'/0'/0'/2'".to_string()),
             network_id: Some("mainnet".to_string()),
-            _unknown_args: [].to_vec(),
         };
         let result = SendArgs::to_cli_args(&send_args, "testnet".to_string());
         assert_eq!(
@@ -142,13 +141,12 @@ mod tests {
     #[test]
     fn send_with_keychain_testnet() {
         let send_args = SendArgs {
-            sender_account_id: "bob.testnet".to_string(),
-            receiver_account_id: "alice.testnet".to_string(),
+            sender: "bob.testnet".to_string(),
+            receiver: "alice.testnet".to_string(),
             amount: "1".to_string(),
-            use_ledger: false,
+            sign_with_ledger: false,
             ledger_path: None,
             network_id: None,
-            _unknown_args: [].to_vec(),
         };
         let result = SendArgs::to_cli_args(&send_args, "testnet".to_string());
         assert_eq!(

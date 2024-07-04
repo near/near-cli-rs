@@ -1,15 +1,12 @@
-use crate::js_command_match::constants::{ACCOUNT_ID_ALIASES, NETWORK_ID_ALIASES};
+use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 
 #[derive(Debug, Clone, clap::Parser)]
-/// This is a legacy `tx-status` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct TxStatusArgs {
-    transaction_hash: String,
-    #[clap(long, aliases = ACCOUNT_ID_ALIASES, default_value = "near")]
-    account_id: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
-    network_id: Option<String>,
+    hash: String,
     #[clap(allow_hyphen_values = true, num_args = 0..)]
     _unknown_args: Vec<String>,
+    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    network_id: Option<String>,
 }
 
 impl TxStatusArgs {
@@ -19,7 +16,7 @@ impl TxStatusArgs {
         let command = vec![
             "transaction".to_string(),
             "view-status".to_string(),
-            self.transaction_hash.to_owned(),
+            self.hash.to_owned(),
             "network-config".to_string(),
             network_id,
         ];
@@ -35,9 +32,8 @@ mod tests {
 
     #[test]
     fn tx_status_testnet() {
-        let account_id = "relay.aurora";
         let transaction_hash = "4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo";
-        let state_args = TxStatusArgs::parse_from(&["near", transaction_hash, account_id]);
+        let state_args = TxStatusArgs::parse_from(&["near", transaction_hash]);
         let result = TxStatusArgs::to_cli_args(&state_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),

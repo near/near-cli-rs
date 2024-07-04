@@ -1,21 +1,18 @@
 use crate::js_command_match::constants::{
-    DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, USE_LEDGER_ALIASES,
+    DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, SIGN_WITH_LEDGER_ALIASES,
 };
 
 #[derive(Debug, Clone, clap::Parser)]
-/// This is a legacy `create-account` command. Once you run it with the specified arguments, new syntax command will be suggested.
+#[clap(alias("delete"))]
 pub struct DeleteAccountArgs {
     account_id: String,
     beneficiary_id: String,
-    // TODO Rename ledger variables the same way as it is for create_account
-    #[clap(long, aliases = USE_LEDGER_ALIASES, default_value_t = false)]
-    use_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_missing_value = Some(DEFAULT_SEED_PHRASE_PATH), num_args=0..=1)]
+    #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
+    sign_with_ledger: bool,
+    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = Some(DEFAULT_SEED_PHRASE_PATH))]
     ledger_path: Option<String>,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
     network_id: Option<String>,
-    #[clap(allow_hyphen_values = true, num_args = 0..)]
-    _unknown_args: Vec<String>,
 }
 
 impl DeleteAccountArgs {
@@ -33,7 +30,7 @@ impl DeleteAccountArgs {
         command.push("network-config".to_string());
         command.push(network_id);
 
-        if self.use_ledger {
+        if self.sign_with_ledger {
             command.push("sign-with-ledger".to_string());
             command.push("--seed-phrase-hd-path".to_string());
             command.push(self.ledger_path.to_owned().unwrap_or_default());
@@ -57,8 +54,8 @@ mod tests {
         let account_id = "bob.testnet";
         let beneficiary_id = "alice.testnet";
 
-        for i in 0..USE_LEDGER_ALIASES.len() {
-            let use_ledger_parameter_alias = &format!("--{}", &USE_LEDGER_ALIASES[i]);
+        for i in 0..SIGN_WITH_LEDGER_ALIASES.len() {
+            let use_ledger_parameter_alias = &format!("--{}", &SIGN_WITH_LEDGER_ALIASES[i]);
             let delete_args = DeleteAccountArgs::parse_from(&[
                 "near",
                 account_id,
@@ -69,9 +66,10 @@ mod tests {
             assert_eq!(
                 result.join(" "),
                 format!(
-                    "account delete-account {} beneficiary {} network-config testnet sign-with-ledger --seed-phrase-hd-path  send",
+                    "account delete-account {} beneficiary {} network-config testnet sign-with-ledger --seed-phrase-hd-path {} send",
                     account_id,
-                    beneficiary_id
+                    beneficiary_id,
+                    DEFAULT_SEED_PHRASE_PATH
                 )
             )
         }
@@ -84,7 +82,7 @@ mod tests {
 
         for i in 0..LEDGER_PATH_ALIASES.len() {
             let ledger_path_parameter_alias = &format!("--{}", &LEDGER_PATH_ALIASES[i]);
-            let use_ledger_parameter_alias = &format!("--{}", &USE_LEDGER_ALIASES[0]);
+            let use_ledger_parameter_alias = &format!("--{}", &SIGN_WITH_LEDGER_ALIASES[0]);
             let delete_args = DeleteAccountArgs::parse_from(&[
                 "near",
                 account_id,
@@ -114,7 +112,7 @@ mod tests {
 
         for i in 0..NETWORK_ID_ALIASES.len() {
             let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
-            let use_ledger_parameter_alias = &format!("--{}", &USE_LEDGER_ALIASES[0]);
+            let use_ledger_parameter_alias = &format!("--{}", &SIGN_WITH_LEDGER_ALIASES[0]);
             let delete_args = DeleteAccountArgs::parse_from(&[
                 "near",
                 account_id,
@@ -127,10 +125,11 @@ mod tests {
             assert_eq!(
                 result.join(" "),
                 format!(
-                    "account delete-account {} beneficiary {} network-config {} sign-with-ledger --seed-phrase-hd-path  send",
+                    "account delete-account {} beneficiary {} network-config {} sign-with-ledger --seed-phrase-hd-path {} send",
                     account_id,
                     beneficiary_id,
-                    network_id
+                    network_id,
+                    DEFAULT_SEED_PHRASE_PATH
                 )
             )
         }

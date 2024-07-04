@@ -3,14 +3,12 @@ use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 #[derive(Debug, Clone, clap::Parser)]
 /// This is a legacy `view` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct ViewArgs {
-    contract_account_id: String,
+    contract_name: String,
     method_name: String,
     #[clap(default_value = "")]
     args: String,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
     network_id: Option<String>,
-    #[clap(allow_hyphen_values = true, num_args = 0..)]
-    _unknown_args: Vec<String>,
 }
 
 impl ViewArgs {
@@ -21,7 +19,7 @@ impl ViewArgs {
             "contract".to_string(),
             "call-function".to_string(),
             "as-read-only".to_string(),
-            self.contract_account_id.to_owned(),
+            self.contract_name.to_owned(),
             self.method_name.to_owned(),
             "text-args".to_string(),
             self.args.to_owned(),

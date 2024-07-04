@@ -1,6 +1,5 @@
 // Accounts and contracts
-pub const ACCOUNT_ID_ALIASES: [&str; 3] = ["accountId", "account-id", "account_id"];
-pub const MASTER_ACCOUNT_ALIASES: [&str; 6] = [
+pub const USE_ACCOUNT_ALIASES: [&str; 6] = [
     "masterAccount",
     "master-account",
     "useAccount",
@@ -13,21 +12,20 @@ pub const METHOD_NAMES_ALIASES: [&str; 2] = ["methodNames", "method-names"];
 
 // Keys
 pub const PUBLIC_KEY_ALIASES: [&str; 2] = ["publicKey", "public-key"];
-pub const SECRET_KEY_ALIASES: [&str; 2] = ["secretKey", "secret-key"];
 pub const SEED_PHRASE_ALIASES: [&str; 2] = ["seedPhrase", "seed-phrase"];
-pub const SAVE_IMPLICIT_ALIASES: [&str; 2] = ["saveImplicit", "save-implicit"];
-pub const DEFAULT_SEED_PHRASE_PATH: &str = "44'/397'/0'/0'/1'";
 
 // Ledger
-pub const USE_LEDGER_ALIASES: [&str; 6] = [
-    "signWithLedger",
-    "sign-with-ledger",
-    "useLedgerKey",
-    "use-ledger-key",
-    "useLedgerPK",
-    "use-ledger-pk",
-];
 pub const LEDGER_PATH_ALIASES: [&str; 2] = ["ledgerPath", "ledger-path"];
+pub const DEFAULT_SEED_PHRASE_PATH: &str = "44'/397'/0'/0'/1'";
+pub const SIGN_WITH_LEDGER_ALIASES: [&str; 1] = [
+    "signWithLedger",
+];
+pub const USE_LEDGER_PK_ALIASES: [&str; 3] = [
+    "UseLedgerPK",
+    "newLedgerKey",
+    "new-ledger-key",
+];
+pub const PK_LEDGER_PATH_ALIASES: [&str; 2] = ["pkLedgerPath", "pk-ledger-path"];
 
 // Balance and faucet
 pub const INITIAL_BALANCE_ALIASES: [&str; 2] = ["initialBalance", "initial-balance"];

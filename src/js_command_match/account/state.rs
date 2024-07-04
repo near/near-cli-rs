@@ -1,7 +1,6 @@
 use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 
 #[derive(Debug, Clone, clap::Parser)]
-/// This is a legacy `stake` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct StateArgs {
     account_id: String,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]

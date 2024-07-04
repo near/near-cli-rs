@@ -29,13 +29,9 @@ mod tests {
     use clap::Parser;
 
     #[test]
-    fn login_testnet() {
-        let network_id = "testnet";
-
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
-            let login_args =
-                LoginArgs::parse_from(&["near", network_id_parameter_alias, network_id]);
+    fn login() {
+        for network_id in vec!["testnet", "mainnet"] {
+            let login_args = LoginArgs::parse_from(&["near", "--networkId", network_id]);
             let result = LoginArgs::to_cli_args(&login_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
@@ -45,21 +41,5 @@ mod tests {
                 )
             );
         }
-    }
-
-    #[test]
-    fn login_mainnet() {
-        let network_id = "mainnet";
-
-        let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[0]);
-        let login_args = LoginArgs::parse_from(&["near", network_id_parameter_alias, network_id]);
-        let result = LoginArgs::to_cli_args(&login_args, "testnet".to_string());
-        assert_eq!(
-            result.join(" "),
-            format!(
-                "account import-account using-web-wallet network-config {}",
-                network_id,
-            )
-        );
     }
 }

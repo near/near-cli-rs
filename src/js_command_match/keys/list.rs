@@ -1,13 +1,12 @@
 use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 
 #[derive(Debug, Clone, clap::Parser)]
+#[clap(alias("list-keys"))]
 /// This is a legacy `keys` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct KeysArgs {
     account_id: String,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
     network_id: Option<String>,
-    #[clap(allow_hyphen_values = true, num_args = 0..)]
-    _unknown_args: Vec<String>,
 }
 
 impl KeysArgs {

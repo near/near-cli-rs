@@ -1,9 +1,9 @@
 use crate::js_command_match::constants::{BLOCK_ID_ALIASES, NETWORK_ID_ALIASES};
 
 #[derive(Debug, Clone, clap::Parser)]
-/// This is a legacy `view-state` command. Once you run it with the specified arguments, new syntax command will be suggested.
+#[clap(alias("storage"))]
 pub struct ViewStateArgs {
-    contract_account_id: String,
+    account_id: String,
     #[clap(long, default_value = None)]
     prefix: Option<String>,
     #[clap(long, default_value_t = false)]
@@ -14,8 +14,6 @@ pub struct ViewStateArgs {
     finality: Option<String>,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
     network_id: Option<String>,
-    #[clap(allow_hyphen_values = true, num_args = 0..)]
-    _unknown_args: Vec<String>,
 }
 
 impl ViewStateArgs {
@@ -25,7 +23,7 @@ impl ViewStateArgs {
         let mut command = vec![
             "contract".to_string(),
             "view-storage".to_string(),
-            self.contract_account_id.to_owned(),
+            self.account_id.to_owned(),
         ];
 
         let output_format = if self.utf8 { "as-text" } else { "as-json" };

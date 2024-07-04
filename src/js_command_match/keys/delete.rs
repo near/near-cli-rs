@@ -1,4 +1,4 @@
-use crate::js_command_match::constants::NETWORK_ID_ALIASES;
+use crate::js_command_match::constants::{DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, SIGN_WITH_LEDGER_ALIASES};
 
 #[derive(Debug, Clone, clap::Parser)]
 /// This is a legacy `delete-key` command. Once you run it with the specified arguments, new syntax command will be suggested.
@@ -7,15 +7,17 @@ pub struct DeleteKeyArgs {
     access_key: String,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
     network_id: Option<String>,
-    #[clap(allow_hyphen_values = true, num_args = 0..)]
-    _unknown_args: Vec<String>,
+    #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
+    sign_with_ledger: bool,
+    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = Some(DEFAULT_SEED_PHRASE_PATH))]
+    ledger_path: Option<String>,
 }
 
 impl DeleteKeyArgs {
     pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
         let network_id = self.network_id.clone().unwrap_or(network_config);
 
-        let command = vec![
+        let mut command = vec![
             "account".to_string(),
             "delete-keys".to_string(),
             self.account_id.to_owned(),
@@ -23,9 +25,19 @@ impl DeleteKeyArgs {
             self.access_key.to_owned(),
             "network-config".to_string(),
             network_id,
-            "sign-with-keychain".to_string(),
-            "send".to_string(),
         ];
+
+        if self.sign_with_ledger {
+            command.push("sign-with-ledger".to_string());
+            command.push(format!(
+                "--seed-phrase-hd-path {}",
+                self.ledger_path.to_owned().unwrap_or_default()
+            ));
+        } else {
+            command.push("sign-with-keychain".to_string());
+        }
+
+        command.push("send".to_string());
 
         command
     }

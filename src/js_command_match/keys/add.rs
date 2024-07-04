@@ -1,22 +1,24 @@
 use crate::js_command_match::constants::{
-    CONTRACT_ID_ALIASES, METHOD_NAMES_ALIASES, NETWORK_ID_ALIASES,
+    CONTRACT_ID_ALIASES, DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, METHOD_NAMES_ALIASES,
+    NETWORK_ID_ALIASES, SIGN_WITH_LEDGER_ALIASES,
 };
 
 #[derive(Debug, Clone, clap::Parser)]
-/// This is a legacy `add-key` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct AddKeyArgs {
     account_id: String,
-    access_key: String,
+    public_key: String,
     #[clap(long, aliases = CONTRACT_ID_ALIASES, default_value = None)]
     contract_id: Option<String>,
     #[clap(long, aliases = METHOD_NAMES_ALIASES, requires = "contract_id", value_delimiter = ',', num_args = 1..)]
     method_names: Vec<String>,
     #[clap(long, default_value = "0")]
     allowance: String,
+    #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
+    sign_with_ledger: bool,
+    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = Some(DEFAULT_SEED_PHRASE_PATH))]
+    ledger_path: Option<String>,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
     network_id: Option<String>,
-    #[clap(allow_hyphen_values = true, num_args = 0..)]
-    _unknown_args: Vec<String>,
 }
 
 impl AddKeyArgs {
@@ -42,10 +44,19 @@ impl AddKeyArgs {
         }
 
         command.push("use-manually-provided-public-key".to_string());
-        command.push(self.access_key.to_owned());
+        command.push(self.public_key.to_owned());
         command.push("network-config".to_string());
         command.push(network_id);
-        command.push("sign-with-keychain".to_string());
+
+        if self.sign_with_ledger {
+            command.push("sign-with-ledger".to_string());
+            command.push(format!(
+                "--seed-phrase-hd-path {}",
+                self.ledger_path.to_owned().unwrap_or_default()
+            ));
+        } else {
+            command.push("sign-with-keychain".to_string());
+        }
         command.push("send".to_string());
 
         command
