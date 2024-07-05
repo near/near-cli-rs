@@ -10,29 +10,29 @@ pub struct CreateAccountArgs {
     new_account_id: String,
     #[clap(long, aliases = USE_FAUCET_ALIASES, default_value_t = false)]
     use_faucet: bool,
-    #[clap(long, aliases = USE_ACCOUNT_ALIASES, default_value = None, conflicts_with = "use_faucet")]
+    #[clap(long, aliases = USE_ACCOUNT_ALIASES, conflicts_with = "use_faucet")]
     use_account: Option<String>,
-    #[clap(long, aliases = INITIAL_BALANCE_ALIASES, default_value = Some("1"))]
-    initial_balance: Option<String>,
-    #[clap(long, aliases = PUBLIC_KEY_ALIASES, default_value = None)]
+    #[clap(long, aliases = INITIAL_BALANCE_ALIASES, default_value = "1")]
+    initial_balance: String,
+    #[clap(long, aliases = PUBLIC_KEY_ALIASES)]
     public_key: Option<String>,
-    #[clap(long, aliases = SEED_PHRASE_ALIASES, default_value = None, conflicts_with = "public_key")]
+    #[clap(long, aliases = SEED_PHRASE_ALIASES, conflicts_with = "public_key")]
     seed_phrase: Option<String>,
     #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false, conflicts_with="use_faucet")]
     sign_with_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = Some(DEFAULT_SEED_PHRASE_PATH))]
-    ledger_path: Option<String>,
+    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    ledger_path: String,
     #[clap(long, aliases = USE_LEDGER_PK_ALIASES, default_value_t = false, conflicts_with = "public_key")]
     use_ledger_pk: bool,
-    #[clap(long, aliases = PK_LEDGER_PATH_ALIASES, default_value = Some(DEFAULT_SEED_PHRASE_PATH))]
-    pk_ledger_path: Option<String>,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = PK_LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    pk_ledger_path: String,
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 
 impl CreateAccountArgs {
     pub fn to_cli_args(&self, network_config: String) -> Vec<String> {
-        let network_id = self.network_id.clone().unwrap_or(network_config.to_owned());
+        let network_id = self.network_id.clone().unwrap_or(network_config);
 
         let mut command = vec!["account".to_string(), "create-account".to_string()];
 
@@ -42,10 +42,7 @@ impl CreateAccountArgs {
         } else {
             command.push("fund-myself".to_string());
             command.push(self.new_account_id.to_owned());
-            command.push(format!(
-                "{} NEAR",
-                self.initial_balance.to_owned().unwrap_or_default()
-            ));
+            command.push(format!("{} NEAR", self.initial_balance));
         }
 
         if self.use_ledger_pk {
@@ -53,22 +50,16 @@ impl CreateAccountArgs {
 
             // add after issue with ledger key is resolved
             // command.push(format!("--seed-phrase-hd-path {}", self.pk_ledger_path.clone().unwrap()));
-        };
-
-        if let Some(seed_phrase) = self.seed_phrase.to_owned() {
+        } else if let Some(seed_phrase) = &self.seed_phrase {
             command.push("use-manually-provided-seed-phrase".to_string());
-            command.push(seed_phrase);
-        };
-
-        if let Some(public_key) = self.public_key.to_owned() {
+            command.push(seed_phrase.clone());
+        } else if let Some(public_key) = &self.public_key {
             command.push("use-manually-provided-public-key".to_string());
-            command.push(public_key);
-        };
-
-        if self.seed_phrase.is_none() && self.public_key.is_none() && !self.use_ledger_pk {
+            command.push(public_key.clone());
+        } else {
             command.push("autogenerate-new-keypair".to_string());
             command.push("save-to-keychain".to_string());
-        };
+        }
 
         if !self.use_faucet {
             command.push("sign-as".to_string());
@@ -88,7 +79,7 @@ impl CreateAccountArgs {
             if self.sign_with_ledger {
                 command.push("sign-with-ledger".to_string());
                 command.push("--seed-phrase-hd-path".to_string());
-                command.push(self.ledger_path.to_owned().unwrap_or_default());
+                command.push(self.ledger_path.to_owned());
             } else {
                 command.push("sign-with-keychain".to_string());
             }
@@ -101,165 +92,111 @@ impl CreateAccountArgs {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::JsCmd;
     use super::*;
     use clap::Parser;
 
     #[test]
-    fn create_account_using_faucet_testnet() {
-        for use_faucet_alias in USE_FAUCET_ALIASES {
-            let create_account_args = CreateAccountArgs::parse_from(&[
-                "near",
-                "bob.testnet",
-                &format!("--{use_faucet_alias}"),
-            ]);
-            let result =
-                CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
+    fn create_account_v1() {
+        for (input, expected_output) in [
+            (
+                format!("near create bob.testnet --{}", USE_FAUCET_ALIASES[0]),
+                "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"
+            ),
+            (
+                format!("near create bob.testnet --{}", USE_FAUCET_ALIASES[1]),
+                "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"
+            ),
+            (
+                format!("near create bob.testnet --{} alice.testnet", USE_ACCOUNT_ALIASES[0]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ),
+            (
+                format!("near create bob.testnet --useAccount alice.testnet --{} 0.1", INITIAL_BALANCE_ALIASES[0]),
+                "account create-account fund-myself bob.testnet '0.1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ),
+            (
+                format!("near create bob.testnet --{} 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' --useFaucet", SEED_PHRASE_ALIASES[0]),
+                "account create-account sponsor-by-faucet-service bob.testnet use-manually-provided-seed-phrase 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' network-config testnet create"
+            ),
+            (
+                format!("near create bob.testnet --useAccount alice.testnet --{} 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV --initialBalance 0.1", PUBLIC_KEY_ALIASES[0]),
+                "account create-account fund-myself bob.testnet '0.1 NEAR' use-manually-provided-public-key 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ),
+            (
+                format!("near create bob.testnet --{} --useFaucet", USE_LEDGER_PK_ALIASES[0]),
+                "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
+            ),
+            (
+                "near create bob.testnet --useAccount alice.testnet --signWithLedger --networkId testnet".to_string(),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+            ),
+            (
+                "near create bob.near --useAccount alice.near --signWithLedger --ledgerPath \"44'/397'/0'/0'/2'\" --networkId mainnet".to_string(),
+                "account create-account fund-myself bob.near '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.near network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+            )
+        ] {
+            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let JsCmd::CreateAccount(create_account_args) = JsCmd::parse_from(&input_cmd) else {
+                panic!("CreateAccount command was expected, but something else was parsed out from {input}");
+            };
             assert_eq!(
-              result.join(" "),
-              "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"
-          )
+                shell_words::join(CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string())),
+                expected_output
+            );
         }
     }
 
     #[test]
-    fn create_account_using_master_account_without_initial_balance_testnet() {
-        for use_account_alias in USE_ACCOUNT_ALIASES {
-            let create_account_args = CreateAccountArgs::parse_from(&[
-                "near",
-                "bob.testnet",
-                &format!("--{use_account_alias}"),
-                "alice.testnet",
-            ]);
-
-            let result =
-                CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
+    fn create_account_v2() {
+        for (input, expected_output) in [
+            (
+                "near create bob.testnet --useAccount alice.testnet --signWithLedger --networkId testnet".to_string(),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+            ),
+            (
+                "near create bob.near --useAccount alice.near --signWithLedger --ledgerPath \"44'/397'/0'/0'/2'\" --networkId mainnet".to_string(),
+                "account create-account fund-myself bob.near '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.near network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+            )
+        ].into_iter().chain(
+            USE_FAUCET_ALIASES.iter().map(|use_faucet_alias| (
+                format!("near create bob.testnet --{use_faucet_alias}"),
+                "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"
+            ))
+        ).chain(
+            USE_ACCOUNT_ALIASES.iter().map(|use_account_alias| (
+                format!("near create bob.testnet --{use_account_alias} alice.testnet"),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ))
+        ).chain(
+            INITIAL_BALANCE_ALIASES.iter().map(|initial_balance_alias| (
+                format!("near create bob.testnet --useAccount alice.testnet --{initial_balance_alias} 0.1"),
+                "account create-account fund-myself bob.testnet '0.1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ))
+        ).chain(
+            SEED_PHRASE_ALIASES.iter().map(|seed_phrase_alias| (
+                format!("near create bob.testnet --{seed_phrase_alias} 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' --useFaucet"),
+                "account create-account sponsor-by-faucet-service bob.testnet use-manually-provided-seed-phrase 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' network-config testnet create"
+            ))
+        ).chain(
+            PUBLIC_KEY_ALIASES.iter().map(|public_key_alias| (
+                format!("near create bob.testnet --useAccount alice.testnet --{public_key_alias} 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV --initialBalance 0.1"),
+                "account create-account fund-myself bob.testnet '0.1 NEAR' use-manually-provided-public-key 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ))
+        ).chain(
+            USE_LEDGER_PK_ALIASES.iter().map(|use_ledger_pk_alias| (
+                format!("near create bob.testnet --{use_ledger_pk_alias} --useFaucet"),
+                "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
+            ))
+        ) {
+            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let JsCmd::CreateAccount(create_account_args) = JsCmd::parse_from(&input_cmd) else {
+                panic!("CreateAccount command was expected, but something else was parsed out from {input}");
+            };
             assert_eq!(
-              result.join(" "),
-              "account create-account fund-myself bob.testnet 1 NEAR autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
-          )
+                shell_words::join(CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string())),
+                expected_output
+            );
         }
-    }
-
-    #[test]
-    fn create_account_using_master_account_with_init_balance_testnet() {
-        for initial_balance_parameter_alias in INITIAL_BALANCE_ALIASES {
-            let create_account_args = CreateAccountArgs::parse_from(&[
-                "near",
-                "bob.testnet",
-                "--useAccount",
-                "alice.testnet",
-                &format!("--{initial_balance_parameter_alias}"),
-                "0.1",
-            ]);
-
-            let result =
-                CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
-            assert_eq!(
-              result.join(" "),
-              "account create-account fund-myself bob.testnet 0.1 NEAR autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
-          )
-        }
-    }
-
-    #[test]
-    fn create_account_using_seed_phrase_and_faucet_testnet() {
-        for seed_phrase_parameter_alias in SEED_PHRASE_ALIASES {
-            let create_account_args = CreateAccountArgs::parse_from(&[
-                "near",
-                "bob.testnet",
-                &format!("--{seed_phrase_parameter_alias}"),
-                "crisp clump stay mean dynamic become fashion mail bike disorder chronic sight",
-                "--useFaucet",
-            ]);
-
-            let result =
-                CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
-            assert_eq!(
-              result.join(" "),
-              "account create-account sponsor-by-faucet-service bob.testnet use-manually-provided-seed-phrase crisp clump stay mean dynamic become fashion mail bike disorder chronic sight network-config testnet create"
-          )
-        }
-    }
-
-    #[test]
-    fn create_account_using_public_key_master_key_and_initial_balance_testnet() {
-        for pk_parameter_alias in PUBLIC_KEY_ALIASES {
-            let create_account_args = CreateAccountArgs::parse_from(&[
-                "near",
-                "bob.testnet",
-                "--useAccount",
-                "alice.testnet",
-                &format!("--{pk_parameter_alias}"),
-                "78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV",
-                "--initialBalance",
-                "0.1",
-            ]);
-
-            let result =
-                CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
-            assert_eq!(
-              result.join(" "),
-              "account create-account fund-myself bob.testnet 0.1 NEAR use-manually-provided-public-key 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV sign-as alice.testnet network-config testnet sign-with-keychain send"
-          )
-        }
-    }
-
-    #[test]
-    fn create_account_using_ledger_testnet() {
-        for use_ledger_alias in USE_LEDGER_PK_ALIASES {
-            let create_account_args = CreateAccountArgs::parse_from(&[
-                "near",
-                "bob.testnet",
-                &format!("--{use_ledger_alias}"),
-                "--useFaucet",
-            ]);
-
-            let result =
-                CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
-            assert_eq!(
-              result.join(" "),
-              "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
-          )
-        }
-    }
-
-    #[test]
-    fn create_account_using_master_account_and_ledger_testnet() {
-        let create_account_args = CreateAccountArgs::parse_from(&[
-            "near",
-            "bob.testnet",
-            "--useAccount",
-            "alice.testnet",
-            "--signWithLedger",
-            "--networkId",
-            "testnet",
-        ]);
-
-        let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
-        assert_eq!(
-            result.join(" "),
-            "account create-account fund-myself bob.testnet 1 NEAR autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path 44'/397'/0'/0'/1' send"
-        )
-    }
-
-    #[test]
-    fn create_account_using_master_account_and_ledger_mainnet() {
-        let create_account_args = CreateAccountArgs::parse_from(&[
-            "near",
-            "bob.near",
-            "--useAccount",
-            "alice.near",
-            "--signWithLedger",
-            "--ledgerPath",
-            "44'/397'/0'/0'/2'",
-            "--networkId",
-            "mainnet",
-        ]);
-
-        let result = CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
-        assert_eq!(
-              result.join(" "),
-              "account create-account fund-myself bob.near 1 NEAR autogenerate-new-keypair save-to-keychain sign-as alice.near network-config mainnet sign-with-ledger --seed-phrase-hd-path 44'/397'/0'/0'/2' send"
-          )
     }
 }
