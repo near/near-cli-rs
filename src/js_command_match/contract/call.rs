@@ -69,7 +69,7 @@ impl CallArgs {
             command.push("sign-with-ledger".to_string());
             command.push("--seed-phrase-hd-path".to_string());
             command.push(self.ledger_path.to_owned().unwrap_or_default());
-        } else if let Some(private_key) = self.private_key {
+        } else if let Some(private_key) = self.private_key.to_owned() {
             command.push("sign-with-plaintext-private-key".to_string());
             command.push(private_key.clone());
         } else {
@@ -106,10 +106,7 @@ mod tests {
         assert_eq!(
                 result.join(" "),
                 format!(
-                    "contract call-function as-transaction {} flip_coin json-args {} prepaid-gas 30000000000000 gas attached-deposit 0 NEAR sign-as {} network-config testnet sign-with-keychain send",
-                    contract_account_id,
-                    args,
-                    account_id,
+                    "contract call-function as-transaction {contract_account_id} flip_coin json-args {args} prepaid-gas 30 Tgas attached-deposit 0 NEAR sign-as {account_id} network-config testnet sign-with-keychain send",
                 )
             )
     }
@@ -136,11 +133,7 @@ mod tests {
         assert_eq!(
                 result.join(" "),
                 format!(
-                    "contract call-function as-transaction {} flip_coin json-args {} prepaid-gas 30000000000000 gas attached-deposit 0 NEAR sign-as {} network-config {} sign-with-keychain send",
-                    contract_account_id,
-                    args,
-                    account_id,
-                    network_id,
+                    "contract call-function as-transaction {contract_account_id} flip_coin json-args {args} prepaid-gas 30 Tgas attached-deposit 0 NEAR sign-as {account_id} network-config {network_id} sign-with-keychain send",
                 )
             )
     }
@@ -165,10 +158,7 @@ mod tests {
         assert_eq!(
                 result.join(" "),
                 format!(
-                    "contract call-function as-transaction {} flip_coin base64-args {} prepaid-gas 30000000000000 gas attached-deposit 0 NEAR sign-as {} network-config testnet sign-with-keychain send",
-                    contract_account_id,
-                    args,
-                    account_id,
+                    "contract call-function as-transaction {contract_account_id} flip_coin base64-args {args} prepaid-gas 30 Tgas attached-deposit 0 NEAR sign-as {account_id} network-config testnet sign-with-keychain send",
                 )
             )
     }

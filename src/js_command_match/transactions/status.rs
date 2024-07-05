@@ -37,10 +37,7 @@ mod tests {
         let result = TxStatusArgs::to_cli_args(&state_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
-            format!(
-                "transaction view-status {} network-config testnet",
-                transaction_hash
-            )
+            format!("transaction view-status {transaction_hash} network-config testnet",)
         )
     }
 
@@ -49,11 +46,11 @@ mod tests {
         let transaction_hash = "4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo";
         let network_id = "mainnet";
 
-        for network_id_alias in NETWORK_ID_ALIASES {
+        for network_id_parameter_alias in NETWORK_ID_ALIASES {
             let state_args = TxStatusArgs::parse_from(&[
                 "near",
                 transaction_hash,
-                &format!("--{}", &network_id_alias),
+                &format!("--{network_id_parameter_alias}"),
                 network_id,
             ]);
             let result = TxStatusArgs::to_cli_args(&state_args, "testnet".to_string());

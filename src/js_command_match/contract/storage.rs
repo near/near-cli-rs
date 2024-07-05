@@ -28,11 +28,7 @@ impl ViewStateArgs {
 
         let output_format = if self.utf8 { "as-text" } else { "as-json" };
 
-        if self.prefix.is_some() {
-            let prefix = self
-                .prefix
-                .to_owned()
-                .expect("You must provide valid prefix");
+        if let Some(prefix) = self.prefix.to_owned() {
             let prefix_type = match near_primitives::serialize::from_base64(&prefix[..]) {
                 Ok(_) => "keys-start-with-bytes-as-base64".to_string(),
                 Err(_) => "keys-start-with-string".to_string(),
@@ -50,12 +46,7 @@ impl ViewStateArgs {
 
         if self.finality.is_some() {
             command.push("now".to_string());
-        } else if self.block_id.is_some() {
-            let block_id = self
-                .block_id
-                .to_owned()
-                .expect("You must provide valid blockId");
-
+        } else if let Some(block_id) = self.block_id.to_owned() {
             match block_id.parse::<i32>() {
                 Ok(_) => {
                     command.push("at-block-height".to_string());
@@ -82,24 +73,20 @@ mod tests {
         let prefix = "U1RBVEU=";
         let block_id = "167860267";
 
-        for i in 0..BLOCK_ID_ALIASES.len() {
-            let block_id_parameter_alias = &format!("--{}", &BLOCK_ID_ALIASES[i]);
+        for block_id_parameter_alias in BLOCK_ID_ALIASES {
             let view_state_args = ViewStateArgs::parse_from(&[
                 "near",
                 contract_account_id,
                 "--prefix",
                 prefix,
-                block_id_parameter_alias,
+                &format!("--{block_id_parameter_alias}"),
                 block_id,
             ]);
             let result = ViewStateArgs::to_cli_args(&view_state_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
                 format!(
-                    "contract view-storage {} keys-start-with-bytes-as-base64 {} as-json network-config testnet at-block-height {}",
-                    contract_account_id,
-                    prefix,
-                    block_id
+                    "contract view-storage {contract_account_id} keys-start-with-bytes-as-base64 {prefix} as-json network-config testnet at-block-height {block_id}",
                 )
             )
         }
@@ -112,8 +99,7 @@ mod tests {
         let finality = "final";
         let network_id = "mainnet";
 
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
+        for network_id_parameter_alias in NETWORK_ID_ALIASES {
             let view_state_args = ViewStateArgs::parse_from(&[
                 "near",
                 contract_account_id,
@@ -122,17 +108,14 @@ mod tests {
                 "--utf8",
                 "--finality",
                 finality,
-                network_id_parameter_alias,
+                &format!("--{network_id_parameter_alias}"),
                 network_id,
             ]);
             let result = ViewStateArgs::to_cli_args(&view_state_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
                 format!(
-                    "contract view-storage {} keys-start-with-string {} as-text network-config {} now",
-                    contract_account_id,
-                    prefix,
-                    network_id,
+                    "contract view-storage {contract_account_id} keys-start-with-string {prefix} as-text network-config {network_id} now",
                 )
             )
         }

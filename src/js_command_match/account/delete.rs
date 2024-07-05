@@ -58,23 +58,19 @@ mod tests {
         let account_id = "bob.testnet";
         let beneficiary_id = "alice.testnet";
 
-        for i in 0..SIGN_WITH_LEDGER_ALIASES.len() {
-            let use_ledger_parameter_alias = &format!("--{}", &SIGN_WITH_LEDGER_ALIASES[i]);
+        for use_ledger_parameter_alias in SIGN_WITH_LEDGER_ALIASES {
             let delete_args = DeleteAccountArgs::parse_from(&[
                 "near",
                 account_id,
                 beneficiary_id,
-                use_ledger_parameter_alias,
+                &format!("--{use_ledger_parameter_alias}"),
                 "--force",
             ]);
             let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
                 format!(
-                    "account delete-account {} beneficiary {} network-config testnet sign-with-ledger --seed-phrase-hd-path {} send",
-                    account_id,
-                    beneficiary_id,
-                    DEFAULT_SEED_PHRASE_PATH
+                    "account delete-account {account_id} beneficiary {beneficiary_id} network-config testnet sign-with-ledger --seed-phrase-hd-path {DEFAULT_SEED_PHRASE_PATH} send",
                 )
             )
         }
@@ -85,15 +81,13 @@ mod tests {
         let account_id = "bob.testnet";
         let beneficiary_id = "alice.testnet";
 
-        for i in 0..LEDGER_PATH_ALIASES.len() {
-            let ledger_path_parameter_alias = &format!("--{}", &LEDGER_PATH_ALIASES[i]);
-            let use_ledger_parameter_alias = &format!("--{}", &SIGN_WITH_LEDGER_ALIASES[0]);
+        for use_ledger_alias in SIGN_WITH_LEDGER_ALIASES {
             let delete_args = DeleteAccountArgs::parse_from(&[
                 "near",
                 account_id,
                 beneficiary_id,
-                use_ledger_parameter_alias,
-                ledger_path_parameter_alias,
+                &format!("--{use_ledger_alias}"),
+                "--ledgerPath",
                 DEFAULT_SEED_PHRASE_PATH,
                 "--force",
             ]);
@@ -101,10 +95,7 @@ mod tests {
             assert_eq!(
                 result.join(" "),
                 format!(
-                    "account delete-account {} beneficiary {} network-config testnet sign-with-ledger --seed-phrase-hd-path {} send",
-                    account_id,
-                    beneficiary_id,
-                    DEFAULT_SEED_PHRASE_PATH
+                    "account delete-account {account_id} beneficiary {beneficiary_id} network-config testnet sign-with-ledger --seed-phrase-hd-path {DEFAULT_SEED_PHRASE_PATH} send",
                 )
             )
         }
@@ -116,30 +107,22 @@ mod tests {
         let beneficiary_id = "alice.testnet";
         let network_id = "mainnet";
 
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
-            let use_ledger_parameter_alias = &format!("--{}", &SIGN_WITH_LEDGER_ALIASES[0]);
-            let delete_args = DeleteAccountArgs::parse_from(&[
-                "near",
-                account_id,
-                beneficiary_id,
-                use_ledger_parameter_alias,
-                network_id_parameter_alias,
-                network_id,
-                "--force",
-            ]);
-            let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
-            assert_eq!(
+        let delete_args = DeleteAccountArgs::parse_from(&[
+            "near",
+            account_id,
+            beneficiary_id,
+            "--signWithLedger",
+            "--networkId",
+            network_id,
+            "--force",
+        ]);
+        let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
+        assert_eq!(
                 result.join(" "),
                 format!(
-                    "account delete-account {} beneficiary {} network-config {} sign-with-ledger --seed-phrase-hd-path {} send",
-                    account_id,
-                    beneficiary_id,
-                    network_id,
-                    DEFAULT_SEED_PHRASE_PATH
+                    "account delete-account {account_id} beneficiary {beneficiary_id} network-config {network_id} sign-with-ledger --seed-phrase-hd-path {DEFAULT_SEED_PHRASE_PATH} send",
                 )
             )
-        }
     }
 
     #[test]
@@ -152,9 +135,7 @@ mod tests {
         assert_eq!(
             result.join(" "),
             format!(
-                "account delete-account {} beneficiary {} network-config testnet sign-with-keychain send",
-                account_id,
-                beneficiary_id
+                "account delete-account {account_id} beneficiary {beneficiary_id} network-config testnet sign-with-keychain send",
             )
         );
     }

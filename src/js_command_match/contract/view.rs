@@ -47,8 +47,7 @@ mod tests {
         assert_eq!(
             result.join(" "),
             format!(
-                "contract call-function as-read-only {} {} text-args {} network-config testnet now",
-                contract_account_id, method_name, args
+                "contract call-function as-read-only {contract_account_id} {method_name} text-args {args} network-config testnet now",
             )
         )
     }
@@ -59,21 +58,19 @@ mod tests {
         let method_name = "get";
         let network_id = "mainnet";
 
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
+        for network_id_parameter_alias in NETWORK_ID_ALIASES {
             let view_args = ViewArgs::parse_from(&[
                 "near",
                 contract_account_id,
                 method_name,
-                network_id_parameter_alias,
+                &format!("--{network_id_parameter_alias}"),
                 network_id,
             ]);
             let result = ViewArgs::to_cli_args(&view_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
                 format!(
-                    "contract call-function as-read-only {} {} text-args  network-config {} now",
-                    contract_account_id, method_name, network_id
+                    "contract call-function as-read-only {contract_account_id} {method_name} text-args  network-config {network_id} now",
                 )
             )
         }

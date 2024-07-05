@@ -35,17 +35,17 @@ mod tests {
         let account_id = "bob.testnet";
         let network_id = "testnet";
 
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
-            let keys_args =
-                KeysArgs::parse_from(&["near", account_id, network_id_parameter_alias, network_id]);
+        for network_id_parameter_alias in NETWORK_ID_ALIASES {
+            let keys_args = KeysArgs::parse_from(&[
+                "near",
+                account_id,
+                &format!("--{network_id_parameter_alias}"),
+                network_id,
+            ]);
             let result = KeysArgs::to_cli_args(&keys_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
-                format!(
-                    "account list-keys {} network-config {} now",
-                    account_id, network_id,
-                )
+                format!("account list-keys {account_id} network-config {network_id} now",)
             );
         }
     }
@@ -61,10 +61,7 @@ mod tests {
         let result = KeysArgs::to_cli_args(&keys_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
-            format!(
-                "account list-keys {} network-config {} now",
-                account_id, network_id,
-            )
+            format!("account list-keys {account_id} network-config {network_id} now",)
         );
     }
 }

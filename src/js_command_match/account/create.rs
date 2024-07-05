@@ -55,14 +55,14 @@ impl CreateAccountArgs {
             // command.push(format!("--seed-phrase-hd-path {}", self.pk_ledger_path.clone().unwrap()));
         };
 
-        if self.seed_phrase.is_some() {
+        if let Some(seed_phrase) = self.seed_phrase.to_owned() {
             command.push("use-manually-provided-seed-phrase".to_string());
-            command.push(self.seed_phrase.clone().unwrap());
+            command.push(seed_phrase);
         };
 
-        if self.public_key.is_some() {
+        if let Some(public_key) = self.public_key.to_owned() {
             command.push("use-manually-provided-public-key".to_string());
-            command.push(self.public_key.clone().unwrap());
+            command.push(public_key);
         };
 
         if self.seed_phrase.is_none() && self.public_key.is_none() && !self.use_ledger_pk {
@@ -106,10 +106,12 @@ mod tests {
 
     #[test]
     fn create_account_using_faucet_testnet() {
-        for i in 0..USE_FAUCET_ALIASES.len() {
-            let use_faucet_parameter_alias = &format!("--{}", &USE_FAUCET_ALIASES[i]);
-            let create_account_args =
-                CreateAccountArgs::parse_from(&["near", "bob.testnet", use_faucet_parameter_alias]);
+        for use_faucet_alias in USE_FAUCET_ALIASES {
+            let create_account_args = CreateAccountArgs::parse_from(&[
+                "near",
+                "bob.testnet",
+                &format!("--{use_faucet_alias}"),
+            ]);
             let result =
                 CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string());
             assert_eq!(
@@ -121,12 +123,11 @@ mod tests {
 
     #[test]
     fn create_account_using_master_account_without_initial_balance_testnet() {
-        for i in 0..USE_ACCOUNT_ALIASES.len() {
-            let master_account_parameter_alias = &format!("--{}", &USE_ACCOUNT_ALIASES[i]);
+        for use_account_alias in USE_ACCOUNT_ALIASES {
             let create_account_args = CreateAccountArgs::parse_from(&[
                 "near",
                 "bob.testnet",
-                master_account_parameter_alias,
+                &format!("--{use_account_alias}"),
                 "alice.testnet",
             ]);
 
@@ -141,15 +142,13 @@ mod tests {
 
     #[test]
     fn create_account_using_master_account_with_init_balance_testnet() {
-        for i in 0..INITIAL_BALANCE_ALIASES.len() {
-            let initial_balance_parameter_alias = &format!("--{}", &INITIAL_BALANCE_ALIASES[i]);
-            let master_account_parameter_alias = &format!("--{}", &USE_ACCOUNT_ALIASES[0]);
+        for initial_balance_parameter_alias in INITIAL_BALANCE_ALIASES {
             let create_account_args = CreateAccountArgs::parse_from(&[
                 "near",
                 "bob.testnet",
-                master_account_parameter_alias,
+                "--useAccount",
                 "alice.testnet",
-                initial_balance_parameter_alias,
+                &format!("--{initial_balance_parameter_alias}"),
                 "0.1",
             ]);
 
@@ -164,15 +163,13 @@ mod tests {
 
     #[test]
     fn create_account_using_seed_phrase_and_faucet_testnet() {
-        for i in 0..SEED_PHRASE_ALIASES.len() {
-            let seed_phrase_parameter_alias = &format!("--{}", &SEED_PHRASE_ALIASES[i]);
-            let use_faucet_parameter_alias = &format!("--{}", &USE_FAUCET_ALIASES[0]);
+        for seed_phrase_parameter_alias in SEED_PHRASE_ALIASES {
             let create_account_args = CreateAccountArgs::parse_from(&[
                 "near",
                 "bob.testnet",
-                seed_phrase_parameter_alias,
+                &format!("--{seed_phrase_parameter_alias}"),
                 "crisp clump stay mean dynamic become fashion mail bike disorder chronic sight",
-                use_faucet_parameter_alias,
+                "--useFaucet",
             ]);
 
             let result =
@@ -186,18 +183,15 @@ mod tests {
 
     #[test]
     fn create_account_using_public_key_master_key_and_initial_balance_testnet() {
-        for i in 0..PUBLIC_KEY_ALIASES.len() {
-            let public_key_parameter_alias = &format!("--{}", &PUBLIC_KEY_ALIASES[i]);
-            let master_account_parameter_alias = &format!("--{}", &USE_ACCOUNT_ALIASES[0]);
-            let initial_balance_parameter_alias = &format!("--{}", &INITIAL_BALANCE_ALIASES[0]);
+        for pk_parameter_alias in PUBLIC_KEY_ALIASES {
             let create_account_args = CreateAccountArgs::parse_from(&[
                 "near",
                 "bob.testnet",
-                master_account_parameter_alias,
+                "--useAccount",
                 "alice.testnet",
-                public_key_parameter_alias,
+                &format!("--{pk_parameter_alias}"),
                 "78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV",
-                initial_balance_parameter_alias,
+                "--initialBalance",
                 "0.1",
             ]);
 
@@ -212,12 +206,11 @@ mod tests {
 
     #[test]
     fn create_account_using_ledger_testnet() {
-        for i in 0..USE_LEDGER_PK_ALIASES.len() {
-            let use_ledger_parameter_alias = &format!("--{}", &USE_LEDGER_PK_ALIASES[i]);
+        for use_ledger_alias in USE_LEDGER_PK_ALIASES {
             let create_account_args = CreateAccountArgs::parse_from(&[
                 "near",
                 "bob.testnet",
-                use_ledger_parameter_alias,
+                &format!("--{use_ledger_alias}"),
                 "--useFaucet",
             ]);
 

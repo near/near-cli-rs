@@ -31,7 +31,7 @@ impl AddKeyArgs {
             self.account_id.to_owned(),
         ];
 
-        if let Some(contract_id) = self.contract_id.as_deref() {
+        if let Some(contract_id) = self.contract_id.to_owned() {
             let allowance = if self.allowance != "0" {
                 format!("{} NEAR", self.allowance)
             } else {
@@ -78,19 +78,18 @@ mod tests {
         let access_key = "ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq";
         let contract_id = "example.testnet";
 
-        for i in 0..CONTRACT_ID_ALIASES.len() {
-            let contract_id_parameter_alias = &format!("--{}", &CONTRACT_ID_ALIASES[i]);
+        for contract_id_parameter_alias in CONTRACT_ID_ALIASES {
             let add_key_args = AddKeyArgs::parse_from(&[
                 "near",
                 account_id,
                 access_key,
-                contract_id_parameter_alias,
+                &format!("--{contract_id_parameter_alias}"),
                 contract_id,
             ]);
             let result = AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
-                format!("account add-key {} grant-function-call-access --allowance unlimited --contract-account-id {} --function-names  use-manually-provided-public-key {} network-config testnet sign-with-keychain send", account_id, contract_id, access_key)
+                format!("account add-key {account_id} grant-function-call-access --allowance unlimited --contract-account-id {contract_id} --function-names  use-manually-provided-public-key {access_key} network-config testnet sign-with-keychain send")
             )
         }
     }
@@ -102,8 +101,7 @@ mod tests {
         let contract_id = "example.testnet";
         let method_names = "get,set";
 
-        for i in 0..METHOD_NAMES_ALIASES.len() {
-            let method_names_parameter_alias = &format!("--{}", &METHOD_NAMES_ALIASES[i]);
+        for method_names_parameter_alias in METHOD_NAMES_ALIASES {
             let contract_id_parameter_alias = &format!("--{}", &CONTRACT_ID_ALIASES[0]);
             let add_key_args = AddKeyArgs::parse_from(&[
                 "near",
@@ -111,7 +109,7 @@ mod tests {
                 access_key,
                 contract_id_parameter_alias,
                 contract_id,
-                method_names_parameter_alias,
+                &format!("--{method_names_parameter_alias}"),
                 method_names,
             ]);
             let result = AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string());
@@ -127,19 +125,18 @@ mod tests {
         let account_id = "bob.testnet";
         let access_key = "ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq";
 
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
+        for network_id_parameter_alias in NETWORK_ID_ALIASES {
             let add_key_args = AddKeyArgs::parse_from(&[
                 "near",
                 account_id,
                 access_key,
-                network_id_parameter_alias,
+                &format!("--{network_id_parameter_alias}"),
                 "testnet",
             ]);
             let result = AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
-                format!("account add-key {} grant-full-access use-manually-provided-public-key {} network-config testnet sign-with-keychain send", account_id, access_key)
+                format!("account add-key {account_id} grant-full-access use-manually-provided-public-key {access_key} network-config testnet sign-with-keychain send")
             )
         }
     }
@@ -150,19 +147,18 @@ mod tests {
         let access_key = "ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq";
         let network_id = "mainnet";
 
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
+        for network_id_parameter_alias in NETWORK_ID_ALIASES {
             let add_key_args = AddKeyArgs::parse_from(&[
                 "near",
                 account_id,
                 access_key,
-                network_id_parameter_alias,
+                &format!("--{network_id_parameter_alias}"),
                 network_id,
             ]);
             let result = AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
-                format!("account add-key {} grant-full-access use-manually-provided-public-key {} network-config {} sign-with-keychain send", account_id, access_key, network_id)
+                format!("account add-key {account_id} grant-full-access use-manually-provided-public-key {access_key} network-config {network_id} sign-with-keychain send")
             )
         }
     }

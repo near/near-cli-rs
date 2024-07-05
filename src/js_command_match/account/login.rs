@@ -35,10 +35,7 @@ mod tests {
             let result = LoginArgs::to_cli_args(&login_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
-                format!(
-                    "account import-account using-web-wallet network-config {}",
-                    network_id,
-                )
+                format!("account import-account using-web-wallet network-config {network_id}",)
             );
         }
     }

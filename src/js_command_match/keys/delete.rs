@@ -54,23 +54,19 @@ mod tests {
         let access_key = "ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq";
         let network_id = "testnet";
 
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
+        for network_id_parameter_alias in NETWORK_ID_ALIASES {
             let delete_args = DeleteKeyArgs::parse_from(&[
                 "near",
                 account_id,
                 access_key,
-                network_id_parameter_alias,
+                &format!("--{network_id_parameter_alias}"),
                 network_id,
             ]);
             let result = DeleteKeyArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
                 format!(
-                    "account delete-keys {} public-keys {} network-config {} sign-with-keychain send",
-                    account_id,
-                    access_key,
-                    network_id
+                    "account delete-keys {account_id} public-keys {access_key} network-config {network_id} sign-with-keychain send",
                 )
             )
         }
@@ -94,8 +90,7 @@ mod tests {
         assert_eq!(
             result.join(" "),
             format!(
-                "account delete-keys {} public-keys {} network-config {} sign-with-keychain send",
-                account_id, access_key, network_id
+                "account delete-keys {account_id} public-keys {access_key} network-config {network_id} sign-with-keychain send",
             )
         )
     }

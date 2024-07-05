@@ -36,10 +36,7 @@ mod tests {
         let result = StateArgs::to_cli_args(&state_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
-            format!(
-                "account view-account-summary {} network-config testnet now",
-                account_id,
-            )
+            format!("account view-account-summary {account_id} network-config testnet now",)
         )
     }
 
@@ -48,20 +45,18 @@ mod tests {
         let account_id = "contract.testnet";
         let network_id = "mainnet";
 
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
+        for network_alias in NETWORK_ID_ALIASES {
             let state_args = StateArgs::parse_from(&[
                 "near",
                 account_id,
-                network_id_parameter_alias,
+                &format!("--{network_alias}"),
                 network_id,
             ]);
             let result = StateArgs::to_cli_args(&state_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
                 format!(
-                    "account view-account-summary {} network-config {} now",
-                    account_id, network_id,
+                    "account view-account-summary {account_id} network-config {network_id} now",
                 )
             )
         }

@@ -55,29 +55,22 @@ mod tests {
         let amount = "1";
         let custom_ledger_path = "m/44'/397'/0'/0'/2'";
 
-        for i in 0..SIGN_WITH_LEDGER_ALIASES.len() {
-            let use_ledger_parameter_alias = &format!("--{}", &SIGN_WITH_LEDGER_ALIASES[i]);
-
-            for j in 0..LEDGER_PATH_ALIASES.len() {
-                let ledger_path_parameter_alias = &format!("--{}", &LEDGER_PATH_ALIASES[j]);
+        for use_ledger_parameter_alias in SIGN_WITH_LEDGER_ALIASES {
+            for ledger_path_parameter_alias in LEDGER_PATH_ALIASES {
                 let send_args = SendArgs::parse_from(&[
                     "near",
                     sender_account_id,
                     receiver_account_id,
                     amount,
-                    use_ledger_parameter_alias,
-                    ledger_path_parameter_alias,
+                    &format!("--{use_ledger_parameter_alias}"),
+                    &format!("--{ledger_path_parameter_alias}"),
                     custom_ledger_path,
                 ]);
                 let result = SendArgs::to_cli_args(&send_args, "testnet".to_string());
                 assert_eq!(
                     result.join(" "),
                     format!(
-                        "tokens {} send-near {} {} NEAR network-config testnet sign-with-ledger --seed-phrase-hd-path {} send",
-                        sender_account_id,
-                        receiver_account_id,
-                        amount,
-                        custom_ledger_path
+                        "tokens {sender_account_id} send-near {receiver_account_id} {amount} NEAR network-config testnet sign-with-ledger --seed-phrase-hd-path {custom_ledger_path} send",
                     )
                 )
             }
@@ -94,8 +87,7 @@ mod tests {
         let use_ledger_parameter_alias = &format!("--{}", &SIGN_WITH_LEDGER_ALIASES[0]);
         let ledger_path_parameter_alias = &format!("--{}", &LEDGER_PATH_ALIASES[0]);
 
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
+        for network_id_parameter_alias in NETWORK_ID_ALIASES {
             let send_args = SendArgs::parse_from(&[
                 "near",
                 sender_account_id,
@@ -104,19 +96,14 @@ mod tests {
                 use_ledger_parameter_alias,
                 ledger_path_parameter_alias,
                 custom_ledger_path,
-                network_id_parameter_alias,
+                &format!("--{network_id_parameter_alias}"),
                 network_id,
             ]);
             let result = SendArgs::to_cli_args(&send_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
                 format!(
-                    "tokens {} send-near {} {} NEAR network-config {} sign-with-ledger --seed-phrase-hd-path {} send",
-                    sender_account_id,
-                    receiver_account_id,
-                    amount,
-                    network_id,
-                    custom_ledger_path
+                    "tokens {sender_account_id} send-near {receiver_account_id} {amount} NEAR network-config {network_id} sign-with-ledger --seed-phrase-hd-path {custom_ledger_path} send",
                 )
             )
         }
