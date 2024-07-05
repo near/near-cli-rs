@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1](https://github.com/near/near-cli-rs/compare/v0.11.0...v0.11.1) - 2024-07-01
+
+### Added
+- Added loading indicators for "contract" group commands  ([#357](https://github.com/near/near-cli-rs/pull/357))
+- Added loading indicators for "staking" group commands ([#356](https://github.com/near/near-cli-rs/pull/356))
+- Added loading indicators for "tokens" group commands ([#355](https://github.com/near/near-cli-rs/pull/355))
+- Added loading indicators for "accounts" group commands ([#352](https://github.com/near/near-cli-rs/pull/352))
+
+### Other
+- replace `ed25519-dalek` 1 -> 2 major version ([#359](https://github.com/near/near-cli-rs/pull/359))
+
+## [0.11.0](https://github.com/near/near-cli-rs/compare/v0.10.2...v0.11.0) - 2024-06-19
+
+### Added
+- Added loading indicators to wait for the view-account-summary command ([#349](https://github.com/near/near-cli-rs/pull/349))
+- Added loading indicators to wait for the create-account (sponsor-by-faucet-service) command ([#339](https://github.com/near/near-cli-rs/pull/339))
+
+### Fixed
+- Do not fail view-account-summary command if we could not retrieve access keys list ([#344](https://github.com/near/near-cli-rs/pull/344))
+
+### Other
+- [**breaking**] upgraded near-dependencies to the 0.23 version ([#350](https://github.com/near/near-cli-rs/pull/350))
+- Provide instructions that help to resolve a problem with missing keychain ([#347](https://github.com/near/near-cli-rs/pull/347))
+
+## [0.10.2](https://github.com/near/near-cli-rs/compare/v0.10.1...v0.10.2) - 2024-05-21
+
+### Fixed
+- Wrong console command for adding Function-Call key with unlimited allowance ([#342](https://github.com/near/near-cli-rs/pull/342))
+- Fallback to non-auto-suggesting input of the keys to be deleted in interactive mode in offline mode or if there is a connectivity issue ([#338](https://github.com/near/near-cli-rs/pull/338))
+
 ## [0.10.1](https://github.com/near/near-cli-rs/compare/v0.10.0...v0.10.1) - 2024-05-07
 
 ### Added

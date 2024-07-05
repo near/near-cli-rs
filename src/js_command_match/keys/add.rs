@@ -9,7 +9,7 @@ pub struct AddKeyArgs {
     public_key: String,
     #[clap(long, aliases = CONTRACT_ID_ALIASES, default_value = None)]
     contract_id: Option<String>,
-    #[clap(long, aliases = METHOD_NAMES_ALIASES, requires = "contract_id", value_delimiter = ',', num_args = 1..)]
+    #[clap(long, aliases = METHOD_NAMES_ALIASES, requires = "contract_id", default_value="", value_delimiter = ',', num_args = 0..)]
     method_names: Vec<String>,
     #[clap(long, default_value = "0")]
     allowance: String,
@@ -32,12 +32,19 @@ impl AddKeyArgs {
         ];
 
         if let Some(contract_id) = self.contract_id.as_deref() {
+
+            let allowance = if self.allowance != "0" {
+                format!("{} NEAR", self.allowance)
+            } else {
+                "unlimited".to_string()
+            };
+
             command.push("grant-function-call-access".to_string());
             command.push("--allowance".to_string());
-            command.push(format!("{} NEAR", self.allowance));
-            command.push("--receiver-account-id".to_string());
+            command.push(allowance);
+            command.push("--contract-account-id".to_string());
             command.push(contract_id.to_owned());
-            command.push("--method-names".to_string());
+            command.push("--function-names".to_string());
             command.push(self.method_names.join(","));
         } else {
             command.push("grant-full-access".to_string());
@@ -84,7 +91,7 @@ mod tests {
             let result = AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
-                format!("account add-key {} grant-function-call-access --allowance 0 NEAR --receiver-account-id {} --method-names  use-manually-provided-public-key {} network-config testnet sign-with-keychain send", account_id, contract_id, access_key)
+                format!("account add-key {} grant-function-call-access --allowance unlimited --contract-account-id {} --function-names  use-manually-provided-public-key {} network-config testnet sign-with-keychain send", account_id, contract_id, access_key)
             )
         }
     }
@@ -111,7 +118,7 @@ mod tests {
             let result = AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
-                format!("account add-key {} grant-function-call-access --allowance 0 NEAR --receiver-account-id {} --method-names {} use-manually-provided-public-key {} network-config testnet sign-with-keychain send", account_id, contract_id, method_names, access_key)
+                format!("account add-key {} grant-function-call-access --allowance unlimited --contract-account-id {} --function-names {} use-manually-provided-public-key {} network-config testnet sign-with-keychain send", account_id, contract_id, method_names, access_key)
             )
         }
     }

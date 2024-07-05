@@ -40,7 +40,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
     fn from(item: SignerAccountIdContext) -> Self {
         let global_context = item.global_context.clone();
 
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let new_account_id = item.account_properties.new_account_id.clone();
                 let signer_id = item.signer_account_id.clone();
@@ -149,7 +149,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 item.signer_account_id,
                 item.account_properties.new_account_id,
             ],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
@@ -178,49 +178,43 @@ impl SignerAccountId {
     }
 }
 
+#[tracing::instrument(name = "Validation new account_id ...", skip_all)]
 fn validate_new_account_id(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> crate::CliResult {
-    for _ in 0..3 {
-        let account_state =
-            tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(crate::common::get_account_state(
-                    network_config,
-                    account_id,
-                    near_primitives::types::BlockReference::latest(),
-                ));
-        if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
-            near_jsonrpc_client::errors::RpcTransportError::SendError(_),
-        )) = account_state
-        {
-            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
-            std::thread::sleep(std::time::Duration::from_millis(100))
-        } else {
-            match account_state {
-                Ok(_) => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                        "\nAccount <{}> already exists in network <{}>. Therefore, it is not possible to create an account with this name.",
-                        account_id,
-                        network_config.network_name
-                    ));
-                }
-                Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                            ..
-                        },
-                    ),
-                )) => {
-                    return Ok(());
-                }
-                Err(err) => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string()))
-                }
-            }
+    let account_state =
+        tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(crate::common::get_account_state(
+                network_config,
+                account_id,
+                near_primitives::types::BlockReference::latest(),
+            ));
+    match account_state {
+        Ok(_) => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "\nAccount <{}> already exists in network <{}>. Therefore, it is not possible to create an account with this name.",
+                account_id,
+                network_config.network_name
+            ))
+        }
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                    ..
+                },
+            ),
+        )) => {
+            eprintln!("\nServer error.\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.");
+            Ok(())
+        }
+        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+            eprintln!("\nTransport error.\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.");
+            Ok(())
+        }
+        Err(err) => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string()))
         }
     }
-    eprintln!("\nTransport error.\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.");
-    Ok(())
 }

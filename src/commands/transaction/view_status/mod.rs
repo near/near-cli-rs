@@ -1,4 +1,5 @@
 use color_eyre::eyre::Context;
+use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 use crate::common::JsonRpcClientExt;
 
@@ -23,27 +24,12 @@ impl TransactionInfoContext {
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let transaction_hash = scope.transaction_hash;
+                let tx_hash: near_primitives::hash::CryptoHash = scope.transaction_hash.into();
 
                 move |network_config| {
-                    let query_view_transaction_status = network_config
-                    .json_rpc_client()
-                    .blocking_call(
-                        near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
-                            transaction_info:
-                                near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
-                                    tx_hash: transaction_hash.into(),
-                                    sender_account_id: "near".parse::<near_primitives::types::AccountId>()?,
-                                },
-                        },
-                    )
-                    .wrap_err_with(|| {
-                        format!(
-                            "Failed to fetch query for view transaction on network <{}>",
-                            network_config.network_name
-                        )
-                    })?;
-                    eprintln!("Transaction status: {:#?}", query_view_transaction_status);
+                    let query_view_transaction_status =
+                        get_transaction_info(network_config, tx_hash)?;
+                    eprintln!("\nTransaction status: {:#?}", query_view_transaction_status);
                     Ok(())
                 }
             });
@@ -60,4 +46,30 @@ impl From<TransactionInfoContext> for crate::network::NetworkContext {
     fn from(item: TransactionInfoContext) -> Self {
         item.0
     }
+}
+
+#[tracing::instrument(name = "Getting information about transaction", skip_all)]
+pub fn get_transaction_info(
+    network_config: &crate::config::NetworkConfig,
+    tx_hash: near_primitives::hash::CryptoHash,
+) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::tx::RpcTransactionResponse> {
+    tracing::Span::current().pb_set_message(&format!("{tx_hash} ..."));
+    network_config
+        .json_rpc_client()
+        .blocking_call(
+            near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
+                transaction_info:
+                    near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
+                        tx_hash,
+                        sender_account_id: "near".parse::<near_primitives::types::AccountId>()?,
+                    },
+                wait_until: near_primitives::views::TxExecutionStatus::Final,
+            },
+        )
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch query for view transaction on network <{}>",
+                network_config.network_name
+            )
+        })
 }

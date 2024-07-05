@@ -57,7 +57,7 @@ pub type OnBeforeSigningCallback = std::sync::Arc<
     ) -> crate::CliResult,
 >;
 
-pub type OnAfterGettingNetworkCallback = std::sync::Arc<
+pub type GetPrepopulatedTransactionAfterGettingNetworkCallback = std::sync::Arc<
     dyn Fn(&crate::config::NetworkConfig) -> color_eyre::eyre::Result<PrepopulatedTransaction>,
 >;
 
@@ -82,7 +82,8 @@ impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction
 pub struct ActionContext {
     pub global_context: crate::GlobalContext,
     pub interacting_with_account_ids: Vec<near_primitives::types::AccountId>,
-    pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
+    pub get_prepopulated_transaction_after_getting_network_callback:
+        GetPrepopulatedTransactionAfterGettingNetworkCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,
     pub on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,

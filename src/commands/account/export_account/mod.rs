@@ -79,6 +79,10 @@ pub fn get_account_key_pair_from_keychain(
     account_key_pair.wrap_err("Error reading data")
 }
 
+#[tracing::instrument(
+    name = "Receiving the account key pair from the keychain ...",
+    skip_all
+)]
 pub fn get_password_from_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
@@ -147,6 +151,10 @@ fn get_account_key_pair_data_path(
     )
 }
 
+#[tracing::instrument(
+    name = "Receiving the account key pair from a legacy keychain ...",
+    skip_all
+)]
 pub fn get_account_properties_data_path(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,

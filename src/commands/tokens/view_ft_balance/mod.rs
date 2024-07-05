@@ -38,20 +38,7 @@ impl ViewFtBalanceContext {
                 let args = serde_json::to_vec(&json!({
                     "account_id": owner_account_id.to_string(),
                     }))?;
-                let call_result = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_function(
-                        &ft_contract_account_id,
-                        "ft_balance_of",
-                        args,
-                        block_reference.clone(),
-                    )
-                    .wrap_err_with(||{
-                        format!("Failed to fetch query for view method: 'ft_balance_of' (contract <{}> on network <{}>)",
-                            ft_contract_account_id,
-                            network_config.network_name
-                        )
-                    })?;
+                let call_result = get_ft_balance(network_config, &ft_contract_account_id, args, block_reference.clone())?;
                 call_result.print_logs();
                 let amount: String = call_result.parse_result_from_json()?;
                 let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
@@ -92,4 +79,27 @@ impl ViewFtBalance {
             "What is the ft-contract account ID?",
         )
     }
+}
+
+#[tracing::instrument(name = "Getting FT balance ...", skip_all)]
+fn get_ft_balance(
+    network_config: &crate::config::NetworkConfig,
+    ft_contract_account_id: &near_primitives::types::AccountId,
+    args: Vec<u8>,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    network_config
+        .json_rpc_client()
+        .blocking_call_view_function(
+            ft_contract_account_id,
+            "ft_balance_of",
+            args,
+            block_reference,
+        )
+        .wrap_err_with(||{
+            format!("Failed to fetch query for view method: 'ft_balance_of' (contract <{}> on network <{}>)",
+                ft_contract_account_id,
+                network_config.network_name
+            )
+        })
 }

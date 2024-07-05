@@ -24,7 +24,7 @@ impl AddAccessWithSeedPhraseActionContext {
         previous_context: super::access_key_type::AccessTypeContext,
         scope: &<AddAccessWithSeedPhraseAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let seed_phrase_hd_path_default = slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
+        let seed_phrase_hd_path_default = slipped10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
         let public_key = crate::common::get_public_key_from_seed_phrase(
             seed_phrase_hd_path_default,
             &scope.master_seed_phrase,
@@ -40,7 +40,7 @@ impl AddAccessWithSeedPhraseActionContext {
 
 impl From<AddAccessWithSeedPhraseActionContext> for crate::commands::ActionContext {
     fn from(item: AddAccessWithSeedPhraseActionContext) -> Self {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = item.signer_account_id.clone();
 
@@ -64,12 +64,12 @@ impl From<AddAccessWithSeedPhraseActionContext> for crate::commands::ActionConte
         Self {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.signer_account_id],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),

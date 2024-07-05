@@ -1,5 +1,5 @@
-use color_eyre::{eyre::Context, owo_colors::OwoColorize};
-use inquire::{formatter::MultiOptionFormatter, MultiSelect};
+use color_eyre::owo_colors::OwoColorize;
+use inquire::{formatter::MultiOptionFormatter, CustomType, MultiSelect};
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -38,7 +38,7 @@ impl PublicKeyListContext {
 
 impl From<PublicKeyListContext> for crate::commands::ActionContext {
     fn from(item: PublicKeyListContext) -> Self {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let owner_account_id = item.owner_account_id.clone();
 
@@ -63,12 +63,12 @@ impl From<PublicKeyListContext> for crate::commands::ActionContext {
         Self {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.owner_account_id],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
@@ -78,45 +78,58 @@ impl From<PublicKeyListContext> for crate::commands::ActionContext {
 }
 
 impl PublicKeyList {
+    fn input_public_keys_manually(
+    ) -> color_eyre::eyre::Result<Option<crate::types::public_key_list::PublicKeyList>> {
+        Ok(Some(
+                CustomType::new("Enter a comma-separated list of public keys you want to delete (for example, ed25519:FAXX...RUQa, ed25519:FgVF...oSWJ, ...):")
+                    .prompt()?,
+            ))
+    }
+
     pub fn input_public_keys(
         context: &super::DeleteKeysCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::public_key_list::PublicKeyList>> {
+        if context.global_context.offline {
+            return Self::input_public_keys_manually();
+        }
         let mut access_key_list: Vec<AccessKeyInfo> = vec![];
         let mut processed_network: Vec<String> = vec![];
+        let mut errors: Vec<String> = vec![];
         for (_, network_config) in context.global_context.config.network_connection.iter() {
             if processed_network.contains(&network_config.network_name) {
                 continue;
             }
-            let access_key_list_for_network = network_config
+            match network_config
                 .json_rpc_client()
                 .blocking_call_view_access_key_list(
                     &context.owner_account_id,
                     near_primitives::types::Finality::Final.into(),
-                )
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch query AccessKeyList for {}",
-                        &context.owner_account_id
-                    )
-                })?
-                .access_key_list_view()?;
-
-            access_key_list.extend(access_key_list_for_network.keys.iter().map(
-                |access_key_info_view| AccessKeyInfo {
-                    public_key: access_key_info_view.public_key.clone(),
-                    permission: access_key_info_view.access_key.permission.clone(),
-                    network_name: network_config.network_name.clone(),
-                },
-            ));
-            processed_network.push(network_config.network_name.to_string());
+                ) {
+                Ok(rpc_query_response) => {
+                    let access_key_list_for_network = rpc_query_response.access_key_list_view()?;
+                    access_key_list.extend(access_key_list_for_network.keys.iter().map(
+                        |access_key_info_view| AccessKeyInfo {
+                            public_key: access_key_info_view.public_key.clone(),
+                            permission: access_key_info_view.access_key.permission.clone(),
+                            network_name: network_config.network_name.clone(),
+                        },
+                    ));
+                    processed_network.push(network_config.network_name.to_string());
+                }
+                Err(err) => {
+                    errors.push(err.to_string());
+                }
+            }
         }
 
         if access_key_list.is_empty() {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Access keys for <{}> were not found on [{}] network(s)",
+            for error in errors {
+                println!("WARNING! {error}");
+            }
+            println!("Automatic search of access keys for <{}> is not possible on [{}] network(s).\nYou can enter access keys to remove manually.",
                 context.owner_account_id,
-                context.global_context.config.network_names().join(", ")
-            ));
+                context.global_context.config.network_names().join(", "));
+            return Self::input_public_keys_manually();
         }
 
         let formatter: MultiOptionFormatter<'_, AccessKeyInfo> = &|a| {

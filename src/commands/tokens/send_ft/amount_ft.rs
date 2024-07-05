@@ -180,67 +180,24 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = previous_context.signer_account_id.clone();
                 let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let deposit = scope.deposit;
                 let amount_ft = previous_context.amount_ft.clone();
-                let action_ft_transfer = near_primitives::transaction::Action::FunctionCall(
-                    Box::new(near_primitives::transaction::FunctionCallAction {
-                        method_name: "ft_transfer".to_string(),
-                        args: serde_json::to_vec(&json!({
-                            "receiver_id": receiver_account_id.to_string(),
-                            "amount": amount_ft.amount().to_string()
-                        }))?,
-                        gas: previous_context.gas.as_gas(),
-                        deposit: deposit.as_yoctonear(),
-                    }),
-                );
 
                 move |network_config| {
-                    let args = serde_json::to_vec(&json!({
-                    "account_id": receiver_account_id.to_string(),
-                    }))?;
-                    let call_result = network_config
-                        .json_rpc_client()
-                        .blocking_call_view_function(
-                            &ft_contract_account_id,
-                            "storage_balance_of",
-                            args.clone(),
-                            near_primitives::types::Finality::Final.into(),
-                        )
-                        .wrap_err_with(||{
-                            format!("Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
-                                ft_contract_account_id,
-                                network_config.network_name
-                            )
-                        })?;
-
-                    if call_result.parse_result_from_json::<Value>()?.is_null() {
-                        let action_storage_deposit =
-                            near_primitives::transaction::Action::FunctionCall(Box::new(
-                                near_primitives::transaction::FunctionCallAction {
-                                    method_name: "storage_deposit".to_string(),
-                                    args,
-                                    gas: previous_context.gas.as_gas(),
-                                    deposit: near_token::NearToken::from_millinear(100)
-                                        .as_yoctonear(),
-                                },
-                            ));
-                        return Ok(crate::commands::PrepopulatedTransaction {
-                            signer_id: signer_account_id.clone(),
-                            receiver_id: ft_contract_account_id.clone(),
-                            actions: vec![action_storage_deposit, action_ft_transfer.clone()],
-                        });
-                    }
-
-                    Ok(crate::commands::PrepopulatedTransaction {
-                        signer_id: signer_account_id.clone(),
-                        receiver_id: ft_contract_account_id.clone(),
-                        actions: vec![action_ft_transfer.clone()],
-                    })
+                    get_prepopulated_transaction(
+                        network_config,
+                        &ft_contract_account_id,
+                        &receiver_account_id,
+                        &signer_account_id,
+                        &amount_ft,
+                        &deposit,
+                        &previous_context.gas
+                    )
                 }
             });
 
@@ -267,12 +224,12 @@ impl DepositContext {
                 previous_context.signer_account_id,
                 previous_context.receiver_account_id,
             ],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback,
         }))
@@ -296,4 +253,69 @@ impl Deposit {
                 .prompt()?
         ))
     }
+}
+
+#[tracing::instrument(
+    name = "Creating a pre-populated transaction for signature ...",
+    skip_all
+)]
+fn get_prepopulated_transaction(
+    network_config: &crate::config::NetworkConfig,
+    ft_contract_account_id: &near_primitives::types::AccountId,
+    receiver_account_id: &near_primitives::types::AccountId,
+    signer_id: &near_primitives::types::AccountId,
+    amount_ft: &crate::types::ft_properties::FungibleToken,
+    deposit: &crate::types::near_token::NearToken,
+    gas: &crate::common::NearGas,
+) -> color_eyre::eyre::Result<crate::commands::PrepopulatedTransaction> {
+    let action_ft_transfer = near_primitives::transaction::Action::FunctionCall(Box::new(
+        near_primitives::transaction::FunctionCallAction {
+            method_name: "ft_transfer".to_string(),
+            args: serde_json::to_vec(&json!({
+                "receiver_id": receiver_account_id.to_string(),
+                "amount": amount_ft.amount().to_string()
+            }))?,
+            gas: gas.as_gas(),
+            deposit: deposit.as_yoctonear(),
+        },
+    ));
+
+    let args = serde_json::to_vec(&json!({"account_id": receiver_account_id.to_string()}))?;
+
+    let call_result = network_config
+            .json_rpc_client()
+            .blocking_call_view_function(
+                ft_contract_account_id,
+                "storage_balance_of",
+                args.clone(),
+                near_primitives::types::Finality::Final.into(),
+            )
+            .wrap_err_with(||{
+                format!("Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
+                    ft_contract_account_id,
+                    network_config.network_name
+                )
+            })?;
+
+    if call_result.parse_result_from_json::<Value>()?.is_null() {
+        let action_storage_deposit = near_primitives::transaction::Action::FunctionCall(Box::new(
+            near_primitives::transaction::FunctionCallAction {
+                method_name: "storage_deposit".to_string(),
+                args,
+                gas: gas.as_gas(),
+                deposit: near_token::NearToken::from_millinear(100).as_yoctonear(),
+            },
+        ));
+        return Ok(crate::commands::PrepopulatedTransaction {
+            signer_id: signer_id.clone(),
+            receiver_id: ft_contract_account_id.clone(),
+            actions: vec![action_storage_deposit, action_ft_transfer.clone()],
+        });
+    }
+
+    Ok(crate::commands::PrepopulatedTransaction {
+        signer_id: signer_id.clone(),
+        receiver_id: ft_contract_account_id.clone(),
+        actions: vec![action_ft_transfer.clone()],
+    })
 }

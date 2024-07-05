@@ -14,7 +14,7 @@ pub enum ProfileArgsType {
     /// Interactive input of arguments
     Manually(self::manually::Manually),
     #[strum_discriminants(strum(
-        message = "json-args    - Valid JSON arguments (e.g. {\"token_id\": \"42\"})"
+        message = "json-args    - Valid JSON arguments (e.g. {\"name\": \"NEAR\", \"description\": \"NEAR is fun\"})"
     ))]
     /// Valid JSON arguments (e.g. {"token_id": "42"})
     JsonArgs(self::json_args::JsonArgs),

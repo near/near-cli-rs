@@ -21,7 +21,7 @@ impl AddAccessWithSeedPhraseActionContext {
     ) -> color_eyre::eyre::Result<Self> {
         // This is the HD path that is used in NEAR Wallet for plaintext seed phrase generation and, subsequently, for account recovery by a seed phrase.
         let near_wallet_seed_phrase_hd_path_default =
-            slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
+            slipped10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
         let public_key = crate::common::get_public_key_from_seed_phrase(
             near_wallet_seed_phrase_hd_path_default,
             &scope.master_seed_phrase,
@@ -36,7 +36,7 @@ impl AddAccessWithSeedPhraseActionContext {
             global_context: previous_context.global_context,
             account_properties,
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
         }))
     }

@@ -69,17 +69,7 @@ impl DownloadContractContext {
             let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
             move |network_config, block_reference| {
-                let abi_root = tokio::runtime::Runtime::new()
-                    .unwrap()
-                    .block_on(super::inspect::get_contract_abi(&network_config.json_rpc_client(), block_reference, &account_id))?;
-                std::fs::File::create(&file_path)
-                    .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
-                    .write(&serde_json::to_vec_pretty(&abi_root)?)
-                    .wrap_err_with(|| {
-                        format!("Failed to write to file: {:?}", &file_path)
-                    })?;
-                eprintln!("\nThe file {:?} was downloaded successfully", &file_path);
-                Ok(())
+                download_contract_abi(&account_id, &file_path, network_config, block_reference)
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -109,4 +99,27 @@ impl DownloadContractAbi {
                 .prompt()?,
         ))
     }
+}
+
+#[tracing::instrument(name = "Download the ABI for the contract ...", skip_all)]
+fn download_contract_abi(
+    account_id: &near_primitives::types::AccountId,
+    file_path: &std::path::PathBuf,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: &near_primitives::types::BlockReference,
+) -> crate::CliResult {
+    let abi_root =
+        tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(super::inspect::get_contract_abi(
+                &network_config.json_rpc_client(),
+                block_reference,
+                account_id,
+            ))?;
+    std::fs::File::create(file_path)
+        .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
+        .write(&serde_json::to_vec_pretty(&abi_root)?)
+        .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
+    eprintln!("\nThe file {:?} was downloaded successfully", file_path);
+    Ok(())
 }

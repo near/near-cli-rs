@@ -4,6 +4,7 @@ use std::io::Write;
 use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
+use color_eyre::owo_colors::OwoColorize;
 use futures::{StreamExt, TryStreamExt};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
@@ -212,6 +213,7 @@ pub async fn get_account_transfer_allowance(
     })
 }
 
+#[tracing::instrument(name = "Account access key verification ...", skip_all)]
 pub fn verify_account_access_key(
     account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
@@ -286,10 +288,12 @@ pub fn is_account_exist(
     false
 }
 
+#[tracing::instrument(name = "Searching for a network where an account exists for", skip_all)]
 pub fn find_network_where_account_exist(
     context: &crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
 ) -> Option<crate::config::NetworkConfig> {
+    tracing::Span::current().pb_set_message(new_account_id.as_str());
     for (_, network_config) in context.config.network_connection.iter() {
         if tokio::runtime::Runtime::new()
             .unwrap()
@@ -442,9 +446,9 @@ pub fn get_key_pair_properties_from_seed_phrase(
     master_seed_phrase: String,
 ) -> color_eyre::eyre::Result<KeyPairProperties> {
     let master_seed = bip39::Mnemonic::parse(&master_seed_phrase)?.to_seed("");
-    let derived_private_key = slip10::derive_key_from_path(
+    let derived_private_key = slipped10::derive_key_from_path(
         &master_seed,
-        slip10::Curve::Ed25519,
+        slipped10::Curve::Ed25519,
         &seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -454,21 +458,14 @@ pub fn get_key_pair_properties_from_seed_phrase(
         ))
     })?;
 
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
-    let implicit_account_id =
-        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
-    let public_key_str = format!(
-        "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
-    );
+    let public_key = signing_key.verifying_key();
+    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public_key))?;
+    let public_key_str = format!("ed25519:{}", bs58::encode(&public_key).into_string());
     let secret_keypair_str = format!(
         "ed25519:{}",
-        bs58::encode(secret_keypair.to_bytes()).into_string()
+        bs58::encode(signing_key.to_keypair_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
         seed_phrase_hd_path,
@@ -481,26 +478,25 @@ pub fn get_key_pair_properties_from_seed_phrase(
 }
 
 pub fn get_public_key_from_seed_phrase(
-    seed_phrase_hd_path: slip10::BIP32Path,
+    seed_phrase_hd_path: slipped10::BIP32Path,
     master_seed_phrase: &str,
 ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
     let master_seed = bip39::Mnemonic::parse(master_seed_phrase)?.to_seed("");
-    let derived_private_key =
-        slip10::derive_key_from_path(&master_seed, slip10::Curve::Ed25519, &seed_phrase_hd_path)
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to derive a key from the master key: {}",
-                    err
-                ))
-            })?;
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let derived_private_key = slipped10::derive_key_from_path(
+        &master_seed,
+        slipped10::Curve::Ed25519,
+        &seed_phrase_hd_path,
+    )
+    .map_err(|err| {
+        color_eyre::Report::msg(format!(
+            "Failed to derive a key from the master key: {}",
+            err
+        ))
+    })?;
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
     let public_key_str = format!(
         "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
+        bs58::encode(&signing_key.verifying_key()).into_string()
     );
     Ok(near_crypto::PublicKey::from_str(&public_key_str)?)
 }
@@ -521,9 +517,9 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
             (master_seed_phrase, mnemonic.to_seed(""))
         };
 
-    let derived_private_key = slip10::derive_key_from_path(
+    let derived_private_key = slipped10::derive_key_from_path(
         &master_seed,
-        slip10::Curve::Ed25519,
+        slipped10::Curve::Ed25519,
         &generate_keypair.seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -533,21 +529,14 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         ))
     })?;
 
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
-    let implicit_account_id =
-        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
-    let public_key_str = format!(
-        "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
-    );
+    let public = signing_key.verifying_key();
+    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public))?;
+    let public_key_str = format!("ed25519:{}", bs58::encode(&public).into_string());
     let secret_keypair_str = format!(
         "ed25519:{}",
-        bs58::encode(secret_keypair.to_bytes()).into_string()
+        bs58::encode(signing_key.to_keypair_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
         seed_phrase_hd_path: generate_keypair.seed_phrase_hd_path,
@@ -995,6 +984,9 @@ pub fn convert_action_error_to_cli_result(
             upper_bound,
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}"))
+        },
+        near_primitives::errors::ActionErrorKind::NonRefundableTransferToExistingAccount { account_id } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Non-refundable storage transfer to an existing account <{account_id}> is not allowed according to NEP-491."))
         }
     }
 }
@@ -1175,7 +1167,12 @@ pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
 ) -> crate::CliResult {
-    eprintln!("--- Logs ---------------------------");
+    let near_usd_exchange_rate: Option<Result<f64, color_eyre::eyre::Error>> = network_config
+        .coingecko_url
+        .as_ref()
+        .map(get_near_usd_exchange_rate);
+
+    eprintln!("\n--- Logs ---------------------------"); // "\n" - required for correct display after {span_name}
 
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
@@ -1227,10 +1224,6 @@ pub fn print_transaction_status(
 
     eprintln!();
     eprintln!("Gas burned: {}", NearGas::from_gas(total_gas_burnt));
-    let near_usd_exchange_rate = network_config
-        .coingecko_url
-        .as_ref()
-        .map(get_near_usd_exchange_rate);
     eprintln!(
         "Transaction fee: {}{}",
         crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
@@ -1266,7 +1259,7 @@ pub fn save_access_key_to_keychain(
     keyring::Entry::new(&service_name, &format!("{}:{}", account_id, public_key_str))
         .wrap_err("Failed to open keychain")?
         .set_password(key_pair_properties_buf)
-        .wrap_err("Failed to save password to keychain")?;
+        .wrap_err("Failed to save password to keychain. You may need to install the secure keychain package by following this instruction: https://github.com/jaraco/keyring#using-keyring-on-headless-linux-systems")?;
 
     Ok("The data for the access key is saved in the keychain".to_string())
 }
@@ -1425,6 +1418,10 @@ pub fn get_delegated_validator_list_from_mainnet(
         .collect())
 }
 
+#[tracing::instrument(
+    name = "Retrieving a list of delegated validators from \"mainnet\" ...",
+    skip_all
+)]
 pub fn get_used_delegated_validator_list(
     config: &crate::config::Config,
 ) -> color_eyre::eyre::Result<VecDeque<near_primitives::types::AccountId>> {
@@ -1540,6 +1537,7 @@ struct StakingResponse {
     pools: Vec<StakingPool>,
 }
 
+#[tracing::instrument(name = "Getting historically delegated staking pools ...", skip_all)]
 pub fn fetch_historically_delegated_staking_pools(
     fastnear_url: &url::Url,
     account_id: &near_primitives::types::AccountId,
@@ -1555,6 +1553,7 @@ pub fn fetch_historically_delegated_staking_pools(
         .collect())
 }
 
+#[tracing::instrument(name = "Getting currently active staking pools ...", skip_all)]
 pub fn fetch_currently_active_staking_pools(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     staking_pools_factory_account_id: &near_primitives::types::AccountId,
@@ -1707,9 +1706,10 @@ pub fn display_account_info(
         near_token::NearToken,
     >,
     account_view: &near_primitives::views::AccountView,
-    access_keys: &[near_primitives::views::AccessKeyInfoView],
+    access_key_list: Option<&near_primitives::views::AccessKeyList>,
     optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
+    eprintln!();
     let mut table: Table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
@@ -1752,24 +1752,32 @@ pub fn display_account_info(
         Fy->contract_status
     ]);
 
-    let access_keys_summary = if access_keys.is_empty() {
-        "Account is locked (no access keys)".to_string()
+    let access_keys_summary = if let Some(info) = access_key_list {
+        let keys = &info.keys;
+        if keys.is_empty() {
+            "Account is locked (no access keys)".to_string()
+        } else {
+            let full_access_keys_count = keys
+                .iter()
+                .filter(|access_key| {
+                    matches!(
+                        access_key.access_key.permission,
+                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                    )
+                })
+                .count();
+            format!(
+                "{} full access keys and {} function-call-only access keys",
+                full_access_keys_count,
+                keys.len() - full_access_keys_count
+            )
+        }
     } else {
-        let full_access_keys_count = access_keys
-            .iter()
-            .filter(|access_key| {
-                matches!(
-                    access_key.access_key.permission,
-                    near_primitives::views::AccessKeyPermissionView::FullAccess
-                )
-            })
-            .count();
-        format!(
-            "{} full access keys and {} function-call-only access keys",
-            full_access_keys_count,
-            access_keys.len() - full_access_keys_count
-        )
+        "Warning: Failed to retrieve access keys. Retry later."
+            .red()
+            .to_string()
     };
+
     table.add_row(prettytable::row![
         Fg->"Access keys",
         Fy->access_keys_summary
@@ -1886,6 +1894,13 @@ fn profile_table(
             Fy->account_id,
             format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
         ]);
+        table.add_row(prettytable::row![
+            Fd->"NEAR Social profile unavailable",
+            Fd->format!("The profile can be edited at {}\nor using the cli command: {}\n(https://github.com/bos-cli-rs/bos-cli-rs)",
+                "https://near.social".blue(),
+                "bos social-db manage-profile".blue()
+            )
+        ]);
     }
 }
 
@@ -1984,8 +1999,60 @@ pub fn input_network_name(
     }
 }
 
-#[easy_ext::ext(JsonRpcClientExt)]
-pub impl near_jsonrpc_client::JsonRpcClient {
+pub trait JsonRpcClientExt {
+    fn blocking_call<M>(
+        &self,
+        method: M,
+    ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
+    where
+        M: near_jsonrpc_client::methods::RpcMethod;
+
+    /// A helper function to make a view-funcation call using JSON encoding for the function
+    /// arguments and function return value.
+    fn blocking_call_view_function(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        method_name: &str,
+        args: Vec<u8>,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error>;
+
+    fn blocking_call_view_access_key(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        public_key: &near_crypto::PublicKey,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    >;
+
+    fn blocking_call_view_access_key_list(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    >;
+
+    fn blocking_call_view_account(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    >;
+}
+
+impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     fn blocking_call<M>(
         &self,
         method: M,
@@ -2000,6 +2067,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
 
     /// A helper function to make a view-funcation call using JSON encoding for the function
     /// arguments and function return value.
+    #[tracing::instrument(name = "Getting the result of executing", skip_all)]
     fn blocking_call_view_function(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2007,6 +2075,9 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         args: Vec<u8>,
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
+        tracing::Span::current().pb_set_message(&format!(
+            "the '{method_name}' method of the <{account_id}> contract ..."
+        ));
         let query_view_method_response = self
             .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference,
@@ -2020,6 +2091,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         query_view_method_response.call_result()
     }
 
+    #[tracing::instrument(name = "Getting access key information:", skip_all)]
     fn blocking_call_view_access_key(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2031,6 +2103,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     > {
+        tracing::Span::current().pb_set_message(&format!("{public_key} ..."));
         self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccessKey {
@@ -2040,6 +2113,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         })
     }
 
+    #[tracing::instrument(name = "Getting a list of", skip_all)]
     fn blocking_call_view_access_key_list(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2050,6 +2124,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     > {
+        tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
         self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccessKeyList {
@@ -2058,6 +2133,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         })
     }
 
+    #[tracing::instrument(name = "Getting information about", skip_all)]
     fn blocking_call_view_account(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2068,6 +2144,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     > {
+        tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
         self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccount {
