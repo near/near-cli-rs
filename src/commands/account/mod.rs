@@ -1,15 +1,15 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-pub mod add_key;
-pub mod create_account;
-pub mod delete_account;
-pub mod delete_key;
-pub mod export_account;
-pub mod import_account;
-pub mod list_keys;
-pub mod storage_management;
-pub mod update_social_profile;
-pub mod view_account_summary;
+mod add_key;
+mod create_account;
+mod delete_account;
+mod delete_key;
+mod export_account;
+mod import_account;
+mod list_keys;
+mod storage_management;
+mod update_social_profile;
+mod view_account_summary;
 
 pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
 
