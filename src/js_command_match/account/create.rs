@@ -65,7 +65,7 @@ impl CreateAccountArgs {
             command.push(self.public_key.clone().unwrap());
         };
 
-        if !self.seed_phrase.is_some() && !self.public_key.is_some() && !self.use_ledger_pk {
+        if self.seed_phrase.is_none() && self.public_key.is_none() && !self.use_ledger_pk {
             command.push("autogenerate-new-keypair".to_string());
             command.push("save-to-keychain".to_string());
         };

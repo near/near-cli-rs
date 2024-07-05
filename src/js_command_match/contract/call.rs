@@ -76,7 +76,7 @@ impl CallArgs {
             command.push(self.private_key.clone().unwrap());
         }
 
-        if !self.sign_with_ledger && !self.private_key.is_some() {
+        if !self.sign_with_ledger && self.private_key.is_none() {
             command.push("sign-with-keychain".to_string());
         }
 

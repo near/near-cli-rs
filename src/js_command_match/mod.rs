@@ -26,8 +26,8 @@ pub enum JsCmd {
     Send(self::transactions::send::SendArgs),
     TxStatus(self::transactions::status::TxStatusArgs),
 
-    Stake(self::validators::stake::StakeArgs),
-    Validators(self::validators::validators::ValidatorsArgs),
+    Stake(self::validators::StakeArgs),
+    Validators(self::validators::ValidatorsArgs),
 }
 
 impl JsCmd {
@@ -40,7 +40,7 @@ impl JsCmd {
         match self {
             Self::CreateAccount(args) => Ok((args.to_cli_args(network), message)),
             Self::DeleteAccount(args) => Ok((args.to_cli_args(network), message)),
-            Self::Login(args) => Ok((args.to_cli_args(network).into(), message)),
+            Self::Login(args) => Ok((args.to_cli_args(network), message)),
             Self::State(args) => Ok((args.to_cli_args(network), message)),
 
             Self::Call(args) => Ok((args.to_cli_args(network), message)),
