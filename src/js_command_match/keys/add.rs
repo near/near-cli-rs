@@ -117,7 +117,7 @@ mod tests {
             let result = AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
-                format!("account add-key {} grant-function-call-access --allowance unlimited --contract-account-id {} --function-names {} use-manually-provided-public-key {} network-config testnet sign-with-keychain send", account_id, contract_id, method_names, access_key)
+                format!("account add-key {account_id} grant-function-call-access --allowance unlimited --contract-account-id {contract_id} --function-names {method_names} use-manually-provided-public-key {access_key} network-config testnet sign-with-keychain send")
             )
         }
     }

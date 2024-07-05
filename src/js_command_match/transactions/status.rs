@@ -3,10 +3,10 @@ use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 #[derive(Debug, Clone, clap::Parser)]
 pub struct TxStatusArgs {
     hash: String,
-    #[clap(allow_hyphen_values = true, num_args = 0..)]
-    _unknown_args: Vec<String>,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
     network_id: Option<String>,
+    #[clap(allow_hyphen_values = true, num_args = 0..)]
+    _unknown_args: Vec<String>,
 }
 
 impl TxStatusArgs {
@@ -49,12 +49,11 @@ mod tests {
         let transaction_hash = "4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo";
         let network_id = "mainnet";
 
-        for i in 0..NETWORK_ID_ALIASES.len() {
-            let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[i]);
+        for network_id_alias in NETWORK_ID_ALIASES {
             let state_args = TxStatusArgs::parse_from(&[
                 "near",
                 transaction_hash,
-                network_id_parameter_alias,
+                &format!("--{}", &network_id_alias),
                 network_id,
             ]);
             let result = TxStatusArgs::to_cli_args(&state_args, "testnet".to_string());

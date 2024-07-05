@@ -1,7 +1,6 @@
 use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 
 #[derive(Debug, Clone, clap::Parser)]
-#[clap(alias("list-keys"))]
 /// This is a legacy `keys` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct KeysArgs {
     account_id: String,

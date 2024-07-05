@@ -69,14 +69,10 @@ impl CallArgs {
             command.push("sign-with-ledger".to_string());
             command.push("--seed-phrase-hd-path".to_string());
             command.push(self.ledger_path.to_owned().unwrap_or_default());
-        }
-
-        if self.private_key.is_some() {
+        } else if let Some(private_key) = self.private_key {
             command.push("sign-with-plaintext-private-key".to_string());
-            command.push(self.private_key.clone().unwrap());
-        }
-
-        if !self.sign_with_ledger && self.private_key.is_none() {
+            command.push(private_key.clone());
+        } else {
             command.push("sign-with-keychain".to_string());
         }
 
