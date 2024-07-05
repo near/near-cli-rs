@@ -65,7 +65,7 @@ mod tests {
                 account_id,
                 beneficiary_id,
                 use_ledger_parameter_alias,
-                "--force"
+                "--force",
             ]);
             let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
@@ -95,7 +95,7 @@ mod tests {
                 use_ledger_parameter_alias,
                 ledger_path_parameter_alias,
                 DEFAULT_SEED_PHRASE_PATH,
-                "--force"
+                "--force",
             ]);
             let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
@@ -126,7 +126,7 @@ mod tests {
                 use_ledger_parameter_alias,
                 network_id_parameter_alias,
                 network_id,
-                "--force"
+                "--force",
             ]);
             let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
@@ -146,7 +146,8 @@ mod tests {
     fn delete_account_using_keychain_testnet() {
         let account_id = "bob.testnet";
         let beneficiary_id = "alice.testnet";
-        let delete_args = DeleteAccountArgs::parse_from(&["near", account_id, beneficiary_id, "--force"]);
+        let delete_args =
+            DeleteAccountArgs::parse_from(&["near", account_id, beneficiary_id, "--force"]);
         let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),

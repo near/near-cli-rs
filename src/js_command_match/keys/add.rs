@@ -32,7 +32,6 @@ impl AddKeyArgs {
         ];
 
         if let Some(contract_id) = self.contract_id.as_deref() {
-
             let allowance = if self.allowance != "0" {
                 format!("{} NEAR", self.allowance)
             } else {
@@ -59,7 +58,7 @@ impl AddKeyArgs {
             command.push("sign-with-ledger".to_string());
             command.push("--seed-phrase-hd-path".to_string());
             command.push(self.ledger_path.to_owned().unwrap_or_default());
-    } else {
+        } else {
             command.push("sign-with-keychain".to_string());
         }
         command.push("send".to_string());

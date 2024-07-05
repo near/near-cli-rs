@@ -8,7 +8,7 @@ use crate::js_command_match::constants::{
 #[derive(Debug, Clone, clap::Parser)]
 pub struct DeployArgs {
     account_id: String,
-    #[clap(required_unless_present = "wasm_file" )]
+    #[clap(required_unless_present = "wasm_file")]
     wasm_file_path: Option<String>,
     #[clap(long, aliases = WASM_FILE_ALIASES )]
     wasm_file: Option<String>,
@@ -32,8 +32,10 @@ impl DeployArgs {
         command.push(self.account_id.to_owned());
 
         let wasm_file = self
-            .wasm_file_path.to_owned()
-            .or(self.wasm_file.to_owned()).unwrap();
+            .wasm_file_path
+            .to_owned()
+            .or(self.wasm_file.to_owned())
+            .unwrap();
 
         command.push("use-file".to_string());
         command.push(wasm_file.to_owned());
@@ -44,7 +46,10 @@ impl DeployArgs {
             command.push("json-args".to_string());
             command.push(self.init_args.to_owned());
             command.push("prepaid-gas".to_string());
-            command.push(format!("{} tgas", NearGas::from_gas(self.init_gas).as_tgas()));
+            command.push(format!(
+                "{} tgas",
+                NearGas::from_gas(self.init_gas).as_tgas()
+            ));
             command.push("attached-deposit".to_string());
             command.push(format!("{} NEAR", self.init_deposit));
         } else {
@@ -87,7 +92,8 @@ mod tests {
         let contract_account_id = "bob.testnet";
         let wasm_file_path = "build/hello_near.wasm";
 
-        let deploy_args = DeployArgs::parse_from(&["near", contract_account_id, "--wasmFile", wasm_file_path]);
+        let deploy_args =
+            DeployArgs::parse_from(&["near", contract_account_id, "--wasmFile", wasm_file_path]);
         let result = DeployArgs::to_cli_args(&deploy_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),

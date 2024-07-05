@@ -1,4 +1,6 @@
-use crate::js_command_match::constants::{DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, SIGN_WITH_LEDGER_ALIASES};
+use crate::js_command_match::constants::{
+    DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, SIGN_WITH_LEDGER_ALIASES,
+};
 
 #[derive(Debug, Clone, clap::Parser)]
 /// This is a legacy `delete-key` command. Once you run it with the specified arguments, new syntax command will be suggested.

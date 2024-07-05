@@ -31,9 +31,7 @@ pub enum JsCmd {
 }
 
 impl JsCmd {
-    pub fn rust_command_generation(
-        &self,
-    ) -> Result<(Vec<String>, String), String> {
+    pub fn rust_command_generation(&self) -> Result<(Vec<String>, String), String> {
         let network = std::env::var("NEAR_NETWORK")
             .unwrap_or_else(|_| std::env::var("NEAR_ENV").unwrap_or_else(|_| "testnet".to_owned()));
         let message = "The command you tried to run is deprecated in the new NEAR CLI, but we tried our best to match the old command with the new syntax, try it instead:".to_string();
