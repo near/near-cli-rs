@@ -32,10 +32,8 @@ impl SendArgs {
 
         if self.sign_with_ledger {
             command.push("sign-with-ledger".to_string());
-            command.push(format!(
-                "--seed-phrase-hd-path {}",
-                self.ledger_path.to_owned().unwrap_or_default()
-            ));
+            command.push("--seed-phrase-hd-path".to_string());
+            command.push(self.ledger_path.to_owned().unwrap_or_default());
         } else {
             command.push("sign-with-keychain".to_string());
         }

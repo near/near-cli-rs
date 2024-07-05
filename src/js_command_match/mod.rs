@@ -33,50 +33,32 @@ pub enum JsCmd {
 impl JsCmd {
     pub fn rust_command_generation(
         &self,
-    ) -> color_eyre::eyre::Result<(Vec<String>, String), String> {
-        eprintln!("{:?}", self);
-
-        let network_config = std::env::var("NEAR_NETWORK")
+    ) -> Result<(Vec<String>, String), String> {
+        let network = std::env::var("NEAR_NETWORK")
             .unwrap_or_else(|_| std::env::var("NEAR_ENV").unwrap_or_else(|_| "testnet".to_owned()));
         let message = "The command you tried to run is deprecated in the new NEAR CLI, but we tried our best to match the old command with the new syntax, try it instead:".to_string();
-        let near_validator_extension_message = "The command you tried to run has been moved into its own CLI extension called near-validator.\nPlease, follow the installation instructions here: https://github.com/near-cli-rs/near-validator-cli-rs/blob/master/README.md".to_string();
+        let validator_extension_message = "The command you tried to run has been moved into its own CLI extension called near-validator.\nPlease, follow the installation instructions here: https://github.com/near-cli-rs/near-validator-cli-rs/blob/master/README.md".to_string();
 
         match self {
-            Self::CreateAccount(create_account_args) => {
-                Ok((create_account_args.to_cli_args(network_config), message))
-            }
-            Self::DeleteAccount(delete_account_args) => {
-                Ok((delete_account_args.to_cli_args(network_config), message))
-            }
-            Self::Login(login_args) => Ok((login_args.to_cli_args(network_config).into(), message)),
-            Self::State(state_args) => Ok((state_args.to_cli_args(network_config), message)),
+            Self::CreateAccount(args) => Ok((args.to_cli_args(network), message)),
+            Self::DeleteAccount(args) => Ok((args.to_cli_args(network), message)),
+            Self::Login(args) => Ok((args.to_cli_args(network).into(), message)),
+            Self::State(args) => Ok((args.to_cli_args(network), message)),
 
-            Self::Call(call_args) => Ok((call_args.to_cli_args(network_config), message)),
-            Self::Deploy(deploy_args) => Ok((deploy_args.to_cli_args(network_config), message)),
-            Self::ViewState(view_state_args) => {
-                Ok((view_state_args.to_cli_args(network_config), message))
-            }
-            Self::View(view_args) => Ok((view_args.to_cli_args(network_config), message)),
+            Self::Call(args) => Ok((args.to_cli_args(network), message)),
+            Self::Deploy(args) => Ok((args.to_cli_args(network), message)),
+            Self::ViewState(args) => Ok((args.to_cli_args(network), message)),
+            Self::View(args) => Ok((args.to_cli_args(network), message)),
 
-            Self::AddKey(add_key_args) => Ok((add_key_args.to_cli_args(network_config), message)),
-            Self::DeleteKey(delete_key_args) => {
-                Ok((delete_key_args.to_cli_args(network_config), message))
-            }
-            Self::ListKeys(keys_args) => Ok((keys_args.to_cli_args(network_config), message)),
+            Self::AddKey(args) => Ok((args.to_cli_args(network), message)),
+            Self::DeleteKey(args) => Ok((args.to_cli_args(network), message)),
+            Self::ListKeys(args) => Ok((args.to_cli_args(network), message)),
 
-            Self::Send(send_args) => Ok((send_args.to_cli_args(network_config), message)),
-            Self::TxStatus(tx_status_args) => {
-                Ok((tx_status_args.to_cli_args(network_config), message))
-            }
+            Self::Send(args) => Ok((args.to_cli_args(network), message)),
+            Self::TxStatus(args) => Ok((args.to_cli_args(network), message)),
 
-            Self::Stake(_stake_args) => Ok((
-                vec![],
-                near_validator_extension_message,
-            )),
-            Self::Validators(_validators_args) => Ok((
-                vec![],
-                near_validator_extension_message,
-            )),
+            Self::Stake(_args) => Ok((vec![], validator_extension_message)),
+            Self::Validators(_args) => Ok((vec![], validator_extension_message)),
         }
     }
 }

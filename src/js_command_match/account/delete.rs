@@ -13,6 +13,8 @@ pub struct DeleteAccountArgs {
     ledger_path: Option<String>,
     #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
     network_id: Option<String>,
+    #[clap(long, default_value_t = false)]
+    force: bool,
 }
 
 impl DeleteAccountArgs {
@@ -38,7 +40,9 @@ impl DeleteAccountArgs {
             command.push("sign-with-keychain".to_string());
         }
 
-        command.push("send".to_string());
+        if self.force {
+            command.push("send".to_string());
+        }
 
         command
     }
@@ -61,6 +65,7 @@ mod tests {
                 account_id,
                 beneficiary_id,
                 use_ledger_parameter_alias,
+                "--force"
             ]);
             let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
@@ -90,6 +95,7 @@ mod tests {
                 use_ledger_parameter_alias,
                 ledger_path_parameter_alias,
                 DEFAULT_SEED_PHRASE_PATH,
+                "--force"
             ]);
             let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
@@ -120,6 +126,7 @@ mod tests {
                 use_ledger_parameter_alias,
                 network_id_parameter_alias,
                 network_id,
+                "--force"
             ]);
             let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
             assert_eq!(
@@ -139,7 +146,7 @@ mod tests {
     fn delete_account_using_keychain_testnet() {
         let account_id = "bob.testnet";
         let beneficiary_id = "alice.testnet";
-        let delete_args = DeleteAccountArgs::parse_from(&["near", account_id, beneficiary_id]);
+        let delete_args = DeleteAccountArgs::parse_from(&["near", account_id, beneficiary_id, "--force"]);
         let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),

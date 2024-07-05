@@ -1,3 +1,5 @@
+use near_gas::NearGas;
+
 use crate::js_command_match::constants::{
     DEFAULT_SEED_PHRASE_PATH, LEDGER_PATH_ALIASES, NETWORK_ID_ALIASES, SIGN_WITH_LEDGER_ALIASES,
     USE_ACCOUNT_ALIASES,
@@ -21,7 +23,7 @@ pub struct CallArgs {
     gas: u64,
     #[clap(long, default_value = "0")]
     deposit: String,
-    #[clap(long, default_value = "0", conflicts_with = "deposit")]
+    #[clap(long, default_value = "0", conflicts_with = "deposit", aliases = ["depositYocto"])]
     deposit_yocto: String,
     #[clap(long, default_value_t = false)]
     base64: bool,
@@ -49,7 +51,7 @@ impl CallArgs {
 
         command.push(self.args.to_owned());
         command.push("prepaid-gas".to_string());
-        command.push(format!("{} gas", self.gas));
+        command.push(format!("{} Tgas", NearGas::from_gas(self.gas).as_tgas()));
         command.push("attached-deposit".to_string());
 
         if self.deposit_yocto != "0" {
@@ -65,10 +67,8 @@ impl CallArgs {
 
         if self.sign_with_ledger {
             command.push("sign-with-ledger".to_string());
-            command.push(format!(
-                "--seed-phrase-hd-path {}",
-                self.ledger_path.to_owned().unwrap_or_default()
-            ));            
+            command.push("--seed-phrase-hd-path".to_string());
+            command.push(self.ledger_path.to_owned().unwrap_or_default());
         }
 
         if self.private_key.is_some() {

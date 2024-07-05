@@ -1,3 +1,5 @@
+use near_gas::NearGas;
+
 use crate::js_command_match::constants::{
     INIT_ARGS_ALIASES, INIT_DEPOSIT_ALIASES, INIT_FUNCTION_ALIASES, INIT_GAS_ALIASES,
     NETWORK_ID_ALIASES, WASM_FILE_ALIASES,
@@ -42,7 +44,7 @@ impl DeployArgs {
             command.push("json-args".to_string());
             command.push(self.init_args.to_owned());
             command.push("prepaid-gas".to_string());
-            command.push(format!("{} gas", self.init_gas));
+            command.push(format!("{} tgas", NearGas::from_gas(self.init_gas).as_tgas()));
             command.push("attached-deposit".to_string());
             command.push(format!("{} NEAR", self.init_deposit));
         } else {
