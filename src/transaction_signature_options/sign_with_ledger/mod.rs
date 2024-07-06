@@ -167,7 +167,7 @@ impl interactive_clap::FromCli for SignLedger {
         let mut clap_variant = optional_clap_variant.unwrap_or_default();
 
         if clap_variant.seed_phrase_hd_path.is_none() {
-            clap_variant.seed_phrase_hd_path = match Self::input_seed_phrase_hd_path() {
+            clap_variant.seed_phrase_hd_path = match Self::input_seed_phrase_hd_path(&context) {
                 Ok(Some(seed_phrase_hd_path)) => Some(seed_phrase_hd_path),
                 Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
@@ -245,12 +245,9 @@ impl interactive_clap::FromCli for SignLedger {
 
 impl SignLedger {
     pub fn input_seed_phrase_hd_path(
+        _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
-        Ok(Some(
-            CustomType::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
-                .with_starting_input("44'/397'/0'/0'/1'")
-                .prompt()?,
-        ))
+        input_seed_phrase_hd_path()
     }
 
     fn input_nonce(
@@ -277,4 +274,13 @@ impl SignLedger {
         }
         Ok(None)
     }
+}
+
+pub fn input_seed_phrase_hd_path(
+) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
+    Ok(Some(
+        CustomType::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
+            .with_starting_input("44'/397'/0'/0'/1'")
+            .prompt()?,
+    ))
 }
