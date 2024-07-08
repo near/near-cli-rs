@@ -4,15 +4,15 @@ use crate::js_command_match::constants::{BLOCK_ID_ALIASES, NETWORK_ID_ALIASES};
 #[clap(alias("storage"))]
 pub struct ViewStateArgs {
     account_id: String,
-    #[clap(long, default_value = None)]
+    #[clap(long)]
     prefix: Option<String>,
     #[clap(long, default_value_t = false)]
     utf8: bool,
-    #[clap(long, aliases = BLOCK_ID_ALIASES, default_value = None)]
+    #[clap(long, aliases = BLOCK_ID_ALIASES)]
     block_id: Option<String>,
     #[clap(long, default_value = None, conflicts_with = "block_id")]
     finality: Option<String>,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 
@@ -28,14 +28,14 @@ impl ViewStateArgs {
 
         let output_format = if self.utf8 { "as-text" } else { "as-json" };
 
-        if let Some(prefix) = self.prefix.to_owned() {
+        if let Some(prefix) = &self.prefix {
             let prefix_type = match near_primitives::serialize::from_base64(&prefix[..]) {
                 Ok(_) => "keys-start-with-bytes-as-base64".to_string(),
                 Err(_) => "keys-start-with-string".to_string(),
             };
 
             command.push(prefix_type);
-            command.push(prefix);
+            command.push(prefix.to_string());
         } else {
             command.push("all".to_string());
         }
@@ -46,7 +46,7 @@ impl ViewStateArgs {
 
         if self.finality.is_some() {
             command.push("now".to_string());
-        } else if let Some(block_id) = self.block_id.to_owned() {
+        } else if let Some(block_id) = &self.block_id {
             match block_id.parse::<i32>() {
                 Ok(_) => {
                     command.push("at-block-height".to_string());
@@ -55,7 +55,7 @@ impl ViewStateArgs {
                     command.push("at-block-hash".to_string());
                 }
             }
-            command.push(block_id);
+            command.push(block_id.to_string());
         }
 
         command

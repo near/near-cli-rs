@@ -15,9 +15,9 @@ pub struct CallArgs {
     use_account: String,
     #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
     sign_with_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = Some(DEFAULT_SEED_PHRASE_PATH))]
-    ledger_path: Option<String>,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    ledger_path: String,
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
     #[clap(long, default_value_t = 30_000_000_000_000)]
     gas: u64,
@@ -27,7 +27,7 @@ pub struct CallArgs {
     deposit_yocto: String,
     #[clap(long, default_value_t = false)]
     base64: bool,
-    #[clap(long, aliases = ["privateKey"], default_value=None)]
+    #[clap(long, aliases = ["privateKey"])]
     private_key: Option<String>,
 }
 
@@ -68,10 +68,10 @@ impl CallArgs {
         if self.sign_with_ledger {
             command.push("sign-with-ledger".to_string());
             command.push("--seed-phrase-hd-path".to_string());
-            command.push(self.ledger_path.to_owned().unwrap_or_default());
-        } else if let Some(private_key) = self.private_key.to_owned() {
+            command.push(self.ledger_path.to_owned());
+        } else if let Some(private_key) = &self.private_key {
             command.push("sign-with-plaintext-private-key".to_string());
-            command.push(private_key.clone());
+            command.push(private_key.to_string());
         } else {
             command.push("sign-with-keychain".to_string());
         }

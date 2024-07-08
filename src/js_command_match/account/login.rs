@@ -3,7 +3,7 @@ use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 #[derive(Debug, Clone, clap::Parser)]
 /// This is a legacy `legacy` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct LoginArgs {
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 

@@ -7,7 +7,7 @@ pub struct ViewArgs {
     method_name: String,
     #[clap(default_value = "")]
     args: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 

@@ -7,7 +7,7 @@ use crate::js_command_match::constants::{
 pub struct AddKeyArgs {
     account_id: String,
     public_key: String,
-    #[clap(long, aliases = CONTRACT_ID_ALIASES, default_value = None)]
+    #[clap(long, aliases = CONTRACT_ID_ALIASES)]
     contract_id: Option<String>,
     #[clap(long, aliases = METHOD_NAMES_ALIASES, requires = "contract_id", default_value="", value_delimiter = ',', num_args = 0..)]
     method_names: Vec<String>,
@@ -15,9 +15,9 @@ pub struct AddKeyArgs {
     allowance: String,
     #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
     sign_with_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = Some(DEFAULT_SEED_PHRASE_PATH))]
-    ledger_path: Option<String>,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    ledger_path: String,
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 
@@ -31,7 +31,7 @@ impl AddKeyArgs {
             self.account_id.to_owned(),
         ];
 
-        if let Some(contract_id) = self.contract_id.to_owned() {
+        if let Some(contract_id) = &self.contract_id {
             let allowance = if self.allowance != "0" {
                 format!("{} NEAR", self.allowance)
             } else {
@@ -42,7 +42,7 @@ impl AddKeyArgs {
             command.push("--allowance".to_string());
             command.push(allowance);
             command.push("--contract-account-id".to_string());
-            command.push(contract_id.to_owned());
+            command.push(contract_id.to_string());
             command.push("--function-names".to_string());
             command.push(self.method_names.join(","));
         } else {
@@ -57,7 +57,7 @@ impl AddKeyArgs {
         if self.sign_with_ledger {
             command.push("sign-with-ledger".to_string());
             command.push("--seed-phrase-hd-path".to_string());
-            command.push(self.ledger_path.to_owned().unwrap_or_default());
+            command.push(self.ledger_path.to_owned());
         } else {
             command.push("sign-with-keychain".to_string());
         }

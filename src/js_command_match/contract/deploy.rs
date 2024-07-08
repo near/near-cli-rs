@@ -12,7 +12,7 @@ pub struct DeployArgs {
     wasm_file_path: Option<String>,
     #[clap(long, aliases = WASM_FILE_ALIASES )]
     wasm_file: Option<String>,
-    #[clap(long, aliases = INIT_FUNCTION_ALIASES, default_value=None)]
+    #[clap(long, aliases = INIT_FUNCTION_ALIASES)]
     init_function: Option<String>,
     #[clap(long, aliases = INIT_ARGS_ALIASES, default_value = "{}")]
     init_args: String,
@@ -20,7 +20,7 @@ pub struct DeployArgs {
     init_gas: u64,
     #[clap(long, aliases = INIT_DEPOSIT_ALIASES, default_value = "0")]
     init_deposit: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 
@@ -40,9 +40,9 @@ impl DeployArgs {
         command.push("use-file".to_string());
         command.push(wasm_file.to_owned());
 
-        if let Some(init_function) = self.init_function.to_owned() {
+        if let Some(init_function) = &self.init_function {
             command.push("with-init-call".to_string());
-            command.push(init_function);
+            command.push(init_function.to_string());
             command.push("json-args".to_string());
             command.push(self.init_args.to_owned());
             command.push("prepaid-gas".to_string());

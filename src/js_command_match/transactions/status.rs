@@ -3,7 +3,7 @@ use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 #[derive(Debug, Clone, clap::Parser)]
 pub struct TxStatusArgs {
     hash: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
     #[clap(allow_hyphen_values = true, num_args = 0..)]
     _unknown_args: Vec<String>,
@@ -37,7 +37,7 @@ mod tests {
         let result = TxStatusArgs::to_cli_args(&state_args, "testnet".to_string());
         assert_eq!(
             result.join(" "),
-            format!("transaction view-status {transaction_hash} network-config testnet",)
+            format!("transaction view-status {transaction_hash} network-config testnet")
         )
     }
 
@@ -56,10 +56,7 @@ mod tests {
             let result = TxStatusArgs::to_cli_args(&state_args, "testnet".to_string());
             assert_eq!(
                 result.join(" "),
-                format!(
-                    "transaction view-status {} network-config {}",
-                    transaction_hash, network_id
-                )
+                format!("transaction view-status {transaction_hash} network-config {network_id}")
             )
         }
     }

@@ -10,9 +10,9 @@ pub struct SendArgs {
     pub amount: String,
     #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
     sign_with_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = Some(DEFAULT_SEED_PHRASE_PATH))]
-    ledger_path: Option<String>,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    ledger_path: String,
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     pub network_id: Option<String>,
 }
 
@@ -33,7 +33,7 @@ impl SendArgs {
         if self.sign_with_ledger {
             command.push("sign-with-ledger".to_string());
             command.push("--seed-phrase-hd-path".to_string());
-            command.push(self.ledger_path.to_owned().unwrap_or_default());
+            command.push(self.ledger_path.to_owned());
         } else {
             command.push("sign-with-keychain".to_string());
         }
@@ -113,7 +113,7 @@ mod tests {
             receiver: "alice.testnet".to_string(),
             amount: "1".to_string(),
             sign_with_ledger: true,
-            ledger_path: Some("m/44'/397'/0'/0'/2'".to_string()),
+            ledger_path: "m/44'/397'/0'/0'/2'".to_string(),
             network_id: Some("mainnet".to_string()),
         };
         let result = SendArgs::to_cli_args(&send_args, "testnet".to_string());
@@ -130,7 +130,7 @@ mod tests {
             receiver: "alice.testnet".to_string(),
             amount: "1".to_string(),
             sign_with_ledger: false,
-            ledger_path: None,
+            ledger_path: DEFAULT_SEED_PHRASE_PATH.to_string(),
             network_id: None,
         };
         let result = SendArgs::to_cli_args(&send_args, "testnet".to_string());

@@ -52,10 +52,10 @@ impl CreateAccountArgs {
             // command.push(format!("--seed-phrase-hd-path {}", self.pk_ledger_path.clone().unwrap()));
         } else if let Some(seed_phrase) = &self.seed_phrase {
             command.push("use-manually-provided-seed-phrase".to_string());
-            command.push(seed_phrase.clone());
+            command.push(seed_phrase.to_string());
         } else if let Some(public_key) = &self.public_key {
             command.push("use-manually-provided-public-key".to_string());
-            command.push(public_key.clone());
+            command.push(public_key.to_string());
         } else {
             command.push("autogenerate-new-keypair".to_string());
             command.push("save-to-keychain".to_string());

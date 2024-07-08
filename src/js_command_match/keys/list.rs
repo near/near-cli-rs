@@ -4,7 +4,7 @@ use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 /// This is a legacy `keys` command. Once you run it with the specified arguments, new syntax command will be suggested.
 pub struct KeysArgs {
     account_id: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 

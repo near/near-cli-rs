@@ -7,12 +7,12 @@ use crate::js_command_match::constants::{
 pub struct DeleteKeyArgs {
     account_id: String,
     access_key: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
     #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
     sign_with_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = Some(DEFAULT_SEED_PHRASE_PATH))]
-    ledger_path: Option<String>,
+    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    ledger_path: String,
 }
 
 impl DeleteKeyArgs {
@@ -32,7 +32,7 @@ impl DeleteKeyArgs {
         if self.sign_with_ledger {
             command.push("sign-with-ledger".to_string());
             command.push("--seed-phrase-hd-path".to_string());
-            command.push(self.ledger_path.to_owned().unwrap_or_default());
+            command.push(self.ledger_path.to_owned());
         } else {
             command.push("sign-with-keychain".to_string());
         }

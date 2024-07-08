@@ -3,7 +3,7 @@ use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 #[derive(Debug, Clone, clap::Parser)]
 pub struct StateArgs {
     account_id: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES, default_value=None)]
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 
