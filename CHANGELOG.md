@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0](https://github.com/near/near-cli-rs/compare/v0.11.1...v0.12.0) - 2024-07-09
+
+### Added
+- Cover *all* commands from near-cli JS with the new near-cli-rs suggestions for full compatibility  ([#345](https://github.com/near/near-cli-rs/pull/345))
+- Added the ability to select HD Path from the ledger ([#362](https://github.com/near/near-cli-rs/pull/362))
+- Added loading indicators for "transaction" group commands and improved the prompt messages  ([#358](https://github.com/near/near-cli-rs/pull/358))
+
 ## [0.11.1](https://github.com/near/near-cli-rs/compare/v0.11.0...v0.11.1) - 2024-07-01
 
 ### Added
