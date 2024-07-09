@@ -17,8 +17,18 @@ pub const SEED_PHRASE_ALIASES: [&str; 2] = ["seedPhrase", "seed-phrase"];
 // Ledger
 pub const LEDGER_PATH_ALIASES: [&str; 2] = ["ledgerPath", "ledger-path"];
 pub const DEFAULT_SEED_PHRASE_PATH: &str = "44'/397'/0'/0'/1'";
-pub const SIGN_WITH_LEDGER_ALIASES: [&str; 4] = ["signWithLedger", "sign-with-ledger", "useLedgerKey", "use-ledger-key"];
-pub const USE_LEDGER_PK_ALIASES: [&str; 4] = ["useLedgerPK", "use-ledger-pk", "newLedgerKey", "new-ledger-key"];
+pub const SIGN_WITH_LEDGER_ALIASES: [&str; 4] = [
+    "signWithLedger",
+    "sign-with-ledger",
+    "useLedgerKey",
+    "use-ledger-key",
+];
+pub const USE_LEDGER_PK_ALIASES: [&str; 4] = [
+    "useLedgerPK",
+    "use-ledger-pk",
+    "newLedgerKey",
+    "new-ledger-key",
+];
 pub const PK_LEDGER_PATH_ALIASES: [&str; 2] = ["pkLedgerPath", "pk-ledger-path"];
 
 // Balance and faucet
