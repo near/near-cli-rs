@@ -17,8 +17,8 @@ pub const SEED_PHRASE_ALIASES: [&str; 2] = ["seedPhrase", "seed-phrase"];
 // Ledger
 pub const LEDGER_PATH_ALIASES: [&str; 2] = ["ledgerPath", "ledger-path"];
 pub const DEFAULT_SEED_PHRASE_PATH: &str = "44'/397'/0'/0'/1'";
-pub const SIGN_WITH_LEDGER_ALIASES: [&str; 2] = ["signWithLedger", "useLedgerKey"];
-pub const USE_LEDGER_PK_ALIASES: [&str; 3] = ["useLedgerPK", "newLedgerKey", "new-ledger-key"];
+pub const SIGN_WITH_LEDGER_ALIASES: [&str; 4] = ["signWithLedger", "sign-with-ledger", "useLedgerKey", "use-ledger-key"];
+pub const USE_LEDGER_PK_ALIASES: [&str; 4] = ["useLedgerPK", "use-ledger-pk", "newLedgerKey", "new-ledger-key"];
 pub const PK_LEDGER_PATH_ALIASES: [&str; 2] = ["pkLedgerPath", "pk-ledger-path"];
 
 // Balance and faucet
@@ -27,11 +27,11 @@ pub const USE_FAUCET_ALIASES: [&str; 2] = ["useFaucet", "use-faucet"];
 
 // SETTINGS
 pub const NETWORK_ID_ALIASES: [&str; 2] = ["networkId", "network-id"];
-pub const BLOCK_ID_ALIASES: [&str; 2] = ["blockId", "block_id"];
+pub const BLOCK_ID_ALIASES: [&str; 2] = ["blockId", "block-id"];
 
 // Deploy
-pub const WASM_FILE_ALIASES: [&str; 3] = ["wasm_file", "wasmFile", "wasm-file"];
-pub const INIT_FUNCTION_ALIASES: [&str; 3] = ["init_function", "initFunction", "init-function"];
-pub const INIT_ARGS_ALIASES: [&str; 3] = ["init_args", "initArgs", "init-args"];
-pub const INIT_GAS_ALIASES: [&str; 3] = ["init_gas", "initGas", "init-gas"];
-pub const INIT_DEPOSIT_ALIASES: [&str; 3] = ["init_deposit", "initDeposit", "init-deposit"];
+pub const WASM_FILE_ALIASES: [&str; 2] = ["wasmFile", "wasm-file"];
+pub const INIT_FUNCTION_ALIASES: [&str; 2] = ["initFunction", "init-function"];
+pub const INIT_ARGS_ALIASES: [&str; 2] = ["initArgs", "init-args"];
+pub const INIT_GAS_ALIASES: [&str; 2] = ["initGas", "init-gas"];
+pub const INIT_DEPOSIT_ALIASES: [&str; 2] = ["initDeposit", "init-deposit"];

@@ -36,20 +36,29 @@ mod tests {
         for (input, expected_output) in [
             (
                 "near list-keys bob.testnet".to_string(),
-                "account list-keys bob.testnet network-config testnet now".to_string()
+                "account list-keys bob.testnet network-config testnet now".to_string(),
             ),
             (
-                format!("near list-keys bob.testnet --{} testnet", NETWORK_ID_ALIASES[0]),
-                "account list-keys bob.testnet network-config testnet now".to_string()
+                format!(
+                    "near list-keys bob.testnet --{} testnet",
+                    NETWORK_ID_ALIASES[0]
+                ),
+                "account list-keys bob.testnet network-config testnet now".to_string(),
             ),
             (
-                format!("near list-keys bob.testnet --{} mainnet", NETWORK_ID_ALIASES[1]),
-                "account list-keys bob.testnet network-config mainnet now".to_string()
+                format!(
+                    "near list-keys bob.testnet --{} mainnet",
+                    NETWORK_ID_ALIASES[1]
+                ),
+                "account list-keys bob.testnet network-config mainnet now".to_string(),
             ),
         ] {
-            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let input_cmd =
+                shell_words::split(&input).expect("Input command must be a valid shell command");
             let JsCmd::ListKeys(keys_args) = JsCmd::parse_from(&input_cmd) else {
-                panic!("ListKeys command was expected, but something else was parsed out from {input}");
+                panic!(
+                    "ListKeys command was expected, but something else was parsed out from {input}"
+                );
             };
             assert_eq!(
                 shell_words::join(KeysArgs::to_cli_args(&keys_args, "testnet".to_string())),

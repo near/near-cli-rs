@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn deploy() {
-      let args = "{\"owner_id\":\"contract.testnet\",\"total_supply\":\"1000000\"}";
+        let args = "{\"owner_id\":\"contract.testnet\",\"total_supply\":\"1000000\"}";
 
         for (input, expected_output) in [
             (
