@@ -172,15 +172,15 @@ mod tests {
             ),
             (
                 format!("near create bob.testnet --{} --useFaucet", USE_LEDGER_PK_ALIASES[0]),
-                "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
+                "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' network-config testnet create"
             ),
             (
                 format!("near create bob.testnet --{} --useFaucet", USE_LEDGER_PK_ALIASES[1]),
-                "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
+                "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' network-config testnet create"
             ),
             (
                 format!("near create bob.testnet --{} --useFaucet", USE_LEDGER_PK_ALIASES[2]),
-                "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
+                "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' network-config testnet create"
             ),
             (
                 format!("near create bob.testnet --useLedgerPK --{} \"44'/397'/0'/0'/2'\" --useFaucet", PK_LEDGER_PATH_ALIASES[0]),
