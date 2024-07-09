@@ -46,10 +46,9 @@ impl CreateAccountArgs {
         }
 
         if self.use_ledger_pk {
-            command.push("use-ledger".to_owned());
-
-            // add after issue with ledger key is resolved
-            // command.push(format!("--seed-phrase-hd-path {}", self.pk_ledger_path.clone().unwrap()));
+            command.push("use-ledger".to_string());
+            command.push("--seed-phrase-hd-path".to_string());
+            command.push(self.pk_ledger_path.to_owned());
         } else if let Some(seed_phrase) = &self.seed_phrase {
             command.push("use-manually-provided-seed-phrase".to_string());
             command.push(seed_phrase.to_string());
@@ -183,15 +182,14 @@ mod tests {
                 format!("near create bob.testnet --{} --useFaucet", USE_LEDGER_PK_ALIASES[2]),
                 "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
             ),
-            // Following two test cases should be tested on real Ledger device
-            // (
-            //     format!("near create bob.testnet --useLedgerPK --{} \"44'/397'/0'/0'/2'\" --useFaucet", PK_LEDGER_PATH_ALIASES[0]),
-            //     "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' network-config testnet create"
-            // ),
-            // (
-            //     format!("near create bob.testnet --useLedgerPK --{} \"44'/397'/0'/0'/2'\" --useFaucet", PK_LEDGER_PATH_ALIASES[1]),
-            //     "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' network-config testnet create"
-            // ),
+            (
+                format!("near create bob.testnet --useLedgerPK --{} \"44'/397'/0'/0'/2'\" --useFaucet", PK_LEDGER_PATH_ALIASES[0]),
+                "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' network-config testnet create"
+            ),
+            (
+                format!("near create bob.testnet --useLedgerPK --{} \"44'/397'/0'/0'/2'\" --useFaucet", PK_LEDGER_PATH_ALIASES[1]),
+                "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' network-config testnet create"
+            ),
             (
                 format!("near create bob.near --useAccount alice.near --signWithLedger --ledgerPath \"44'/397'/0'/0'/2'\" --{} mainnet", NETWORK_ID_ALIASES[0]),
                 "account create-account fund-myself bob.near '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.near network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
