@@ -6,6 +6,9 @@ use color_eyre::eyre::Context;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = SaveWithLedgerContext)]
 pub struct SaveWithLedger {
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     #[interactive_clap(named_arg)]
     /// Specify a folder to save the implicit account file
     save_to_folder: super::SaveToFolder,
@@ -17,12 +20,12 @@ pub struct SaveWithLedgerContext(super::SaveImplicitAccountContext);
 impl SaveWithLedgerContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
-        _scope: &<SaveWithLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<SaveWithLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_folder_path_callback: super::OnAfterGettingFolderPathCallback =
             std::sync::Arc::new({
+                let seed_phrase_hd_path = scope.seed_phrase_hd_path.clone();
                 move |folder_path| {
-                    let seed_phrase_hd_path = crate::transaction_signature_options::sign_with_ledger::SignLedger::input_seed_phrase_hd_path()?.unwrap();
                     eprintln!(
                         "Please allow getting the PublicKey on Ledger device (HD Path: {})",
                         seed_phrase_hd_path
@@ -70,5 +73,13 @@ impl SaveWithLedgerContext {
 impl From<SaveWithLedgerContext> for super::SaveImplicitAccountContext {
     fn from(item: SaveWithLedgerContext) -> Self {
         item.0
+    }
+}
+
+impl SaveWithLedger {
+    pub fn input_seed_phrase_hd_path(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
+        crate::transaction_signature_options::sign_with_ledger::input_seed_phrase_hd_path()
     }
 }

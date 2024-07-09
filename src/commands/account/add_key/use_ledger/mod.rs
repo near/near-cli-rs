@@ -2,6 +2,9 @@
 #[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]
 #[interactive_clap(output_context = AddLedgerKeyActionContext)]
 pub struct AddLedgerKeyAction {
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -18,9 +21,9 @@ pub struct AddLedgerKeyActionContext {
 impl AddLedgerKeyActionContext {
     pub fn from_previous_context(
         previous_context: super::access_key_type::AccessTypeContext,
-        _scope: &<AddLedgerKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<AddLedgerKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let seed_phrase_hd_path = crate::transaction_signature_options::sign_with_ledger::SignLedger::input_seed_phrase_hd_path()?.unwrap();
+        let seed_phrase_hd_path = scope.seed_phrase_hd_path.clone();
         eprintln!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path
@@ -83,5 +86,13 @@ impl From<AddLedgerKeyActionContext> for crate::commands::ActionContext {
                 |_outcome_view, _network_config| Ok(()),
             ),
         }
+    }
+}
+
+impl AddLedgerKeyAction {
+    pub fn input_seed_phrase_hd_path(
+        _context: &super::access_key_type::AccessTypeContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
+        crate::transaction_signature_options::sign_with_ledger::input_seed_phrase_hd_path()
     }
 }
