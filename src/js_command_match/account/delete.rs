@@ -70,6 +70,14 @@ mod tests {
                 format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
             ),
             (
+                format!("near delete-account bob.testnet alice.testnet --{} --force", SIGN_WITH_LEDGER_ALIASES[2]),
+                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+            ),
+            (
+                format!("near delete-account bob.testnet alice.testnet --{} --force", SIGN_WITH_LEDGER_ALIASES[3]),
+                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+            ),
+            (
                 format!("near delete-account bob.testnet alice.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\" --force", LEDGER_PATH_ALIASES[0]),
                 format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send")
             ),

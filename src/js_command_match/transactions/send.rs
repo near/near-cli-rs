@@ -61,6 +61,14 @@ mod tests {
                 "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
             ),
             (
+                format!("near send-near bob.testnet alice.testnet 1 --{}", SIGN_WITH_LEDGER_ALIASES[2]),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+            ),
+            (
+                format!("near send-near bob.testnet alice.testnet 1 --{}", SIGN_WITH_LEDGER_ALIASES[3]),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+            ),
+            (
                 format!("near send-near bob.testnet alice.testnet 1 --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[0]),
                 "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
             ),

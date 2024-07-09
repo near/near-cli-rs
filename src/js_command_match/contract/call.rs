@@ -131,6 +131,14 @@ mod tests {
                 format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
             ),
             (
+                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}", SIGN_WITH_LEDGER_ALIASES[2]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}", SIGN_WITH_LEDGER_ALIASES[3]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+            ),
+            (
                 format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[0]),
                 format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send")
             ),

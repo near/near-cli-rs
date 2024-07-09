@@ -163,6 +163,14 @@ mod tests {
                 "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
             ),
             (
+                format!("near create bob.testnet --useAccount alice.testnet --{} --networkId testnet", SIGN_WITH_LEDGER_ALIASES[2]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+            ),
+            (
+                format!("near create bob.testnet --useAccount alice.testnet --{} --networkId testnet", SIGN_WITH_LEDGER_ALIASES[3]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+            ),
+            (
                 format!("near create bob.testnet --useAccount alice.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[0]),
                 "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
             ),
@@ -180,6 +188,10 @@ mod tests {
             ),
             (
                 format!("near create bob.testnet --{} --useFaucet", USE_LEDGER_PK_ALIASES[2]),
+                "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' network-config testnet create"
+            ),
+            (
+                format!("near create bob.testnet --{} --useFaucet", USE_LEDGER_PK_ALIASES[3]),
                 "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' network-config testnet create"
             ),
             (
