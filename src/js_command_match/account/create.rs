@@ -5,7 +5,6 @@ use crate::js_command_match::constants::{
 };
 
 #[derive(Debug, Clone, clap::Parser)]
-#[clap(alias("create"))]
 pub struct CreateAccountArgs {
     new_account_id: String,
     #[clap(long, aliases = USE_FAUCET_ALIASES, default_value_t = false)]
@@ -98,6 +97,10 @@ mod tests {
     #[test]
     fn create_account() {
         for (input, expected_output) in [
+            (
+                format!("near create-account bob.testnet --{}", USE_FAUCET_ALIASES[0]),
+                "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"
+            ),
             (
                 format!("near create bob.testnet --{}", USE_FAUCET_ALIASES[0]),
                 "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"

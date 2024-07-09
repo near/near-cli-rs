@@ -33,6 +33,10 @@ mod tests {
     fn login() {
         for (input, expected_output) in [
             (
+                "near import-account".to_string(),
+                "account import-account using-web-wallet network-config testnet".to_string(),
+            ),
+            (
                 "near login".to_string(),
                 "account import-account using-web-wallet network-config testnet".to_string(),
             ),

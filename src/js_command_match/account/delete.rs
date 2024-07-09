@@ -3,7 +3,6 @@ use crate::js_command_match::constants::{
 };
 
 #[derive(Debug, Clone, clap::Parser)]
-#[clap(alias("delete"))]
 pub struct DeleteAccountArgs {
     account_id: String,
     beneficiary_id: String,
@@ -57,6 +56,10 @@ mod tests {
     #[test]
     fn delete_account() {
         for (input, expected_output) in [
+            (
+                format!("near delete bob.testnet alice.testnet --force"),
+                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-keychain send")
+            ),
             (
                 format!("near delete-account bob.testnet alice.testnet --force"),
                 format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-keychain send")

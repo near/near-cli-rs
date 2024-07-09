@@ -9,23 +9,30 @@ mod validators;
 #[derive(Debug, Clone, clap::Parser)]
 /// Legacy CLI commands are only supported at best-effort
 pub enum JsCmd {
+    #[clap(alias("create"))]
     CreateAccount(self::account::create::CreateAccountArgs),
+    #[clap(alias("delete"))]
     DeleteAccount(self::account::delete::DeleteAccountArgs),
+    #[clap(alias("import-account"))]
     Login(self::account::login::LoginArgs),
     State(self::account::state::StateArgs),
 
     Call(self::contract::call::CallArgs),
     Deploy(self::contract::deploy::DeployArgs),
+    #[clap(alias("storage"))]
     ViewState(self::contract::storage::ViewStateArgs),
     View(self::contract::view::ViewArgs),
 
     AddKey(self::keys::add::AddKeyArgs),
     DeleteKey(self::keys::delete::DeleteKeyArgs),
+    #[clap(alias("keys"))]
     ListKeys(self::keys::list::KeysArgs),
 
+    #[clap(alias("send-near"))]
     Send(self::transactions::send::SendArgs),
     TxStatus(self::transactions::status::TxStatusArgs),
 
+    #[clap(alias("validator-stake"))]
     Stake(self::validators::StakeArgs),
     Validators(self::validators::ValidatorsArgs),
 }

@@ -3,7 +3,6 @@ use crate::js_command_match::constants::{
 };
 
 #[derive(Debug, Clone, clap::Parser)]
-#[clap(alias("send-near"))]
 pub struct SendArgs {
     pub sender: String,
     pub receiver: String,
@@ -52,6 +51,10 @@ mod tests {
     #[test]
     fn send() {
         for (input, expected_output) in [
+            (
+                format!("near send bob.testnet alice.testnet 1 --{}", SIGN_WITH_LEDGER_ALIASES[0]),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+            ),
             (
                 format!("near send-near bob.testnet alice.testnet 1 --{}", SIGN_WITH_LEDGER_ALIASES[0]),
                 "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"

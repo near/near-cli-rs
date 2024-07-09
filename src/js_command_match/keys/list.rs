@@ -35,6 +35,10 @@ mod tests {
     fn list_keys() {
         for (input, expected_output) in [
             (
+                "near keys bob.testnet".to_string(),
+                "account list-keys bob.testnet network-config testnet now".to_string(),
+            ),
+            (
                 "near list-keys bob.testnet".to_string(),
                 "account list-keys bob.testnet network-config testnet now".to_string(),
             ),
