@@ -34,45 +34,36 @@ impl ViewArgs {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::JsCmd;
     use super::*;
     use clap::Parser;
 
     #[test]
-    fn view_testnet() {
-        let contract_account_id = "counter.near-examples.testnet";
-        let method_name = "get";
+    fn view() {
         let args = "{\"account_id\": \"bob.testnet\"}";
-        let view_args = ViewArgs::parse_from(&["near", contract_account_id, method_name, args]);
-        let result = ViewArgs::to_cli_args(&view_args, "testnet".to_string());
-        assert_eq!(
-            result.join(" "),
-            format!(
-                "contract call-function as-read-only {contract_account_id} {method_name} text-args {args} network-config testnet now",
-            )
-        )
-    }
 
-    #[test]
-    fn view_mainnet() {
-        let contract_account_id = "counter.near-examples.testnet";
-        let method_name = "get";
-        let network_id = "mainnet";
-
-        for network_id_parameter_alias in NETWORK_ID_ALIASES {
-            let view_args = ViewArgs::parse_from(&[
-                "near",
-                contract_account_id,
-                method_name,
-                &format!("--{network_id_parameter_alias}"),
-                network_id,
-            ]);
-            let result = ViewArgs::to_cli_args(&view_args, "testnet".to_string());
+        for (input, expected_output) in [
+            (
+                format!("near view counter.near-examples.testnet get '{args}'"),
+                format!("contract call-function as-read-only counter.near-examples.testnet get text-args '{args}' network-config testnet now")
+            ),
+            (
+                format!("near view counter.near-examples.testnet get '{args}' --{} testnet", NETWORK_ID_ALIASES[0]),
+                format!("contract call-function as-read-only counter.near-examples.testnet get text-args '{args}' network-config testnet now")
+            ),
+            (
+                format!("near view counter.near-examples.testnet get '{args}' --{} mainnet", NETWORK_ID_ALIASES[1]),
+                format!("contract call-function as-read-only counter.near-examples.testnet get text-args '{args}' network-config mainnet now")
+            ),
+        ] {
+            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let JsCmd::View(view_args) = JsCmd::parse_from(&input_cmd) else {
+                panic!("View command was expected, but something else was parsed out from {input}");
+            };
             assert_eq!(
-                result.join(" "),
-                format!(
-                    "contract call-function as-read-only {contract_account_id} {method_name} text-args  network-config {network_id} now",
-                )
-            )
+                shell_words::join(ViewArgs::to_cli_args(&view_args, "testnet".to_string())),
+                expected_output
+            );
         }
     }
 }

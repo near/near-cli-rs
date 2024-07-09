@@ -10,7 +10,7 @@ pub struct ViewStateArgs {
     utf8: bool,
     #[clap(long, aliases = BLOCK_ID_ALIASES)]
     block_id: Option<String>,
-    #[clap(long, default_value = None, conflicts_with = "block_id")]
+    #[clap(long, conflicts_with = "block_id")]
     finality: Option<String>,
     #[clap(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
@@ -64,60 +64,38 @@ impl ViewStateArgs {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::JsCmd;
     use super::*;
     use clap::Parser;
 
     #[test]
-    fn view_state_testnet() {
-        let contract_account_id = "counter.near-examples.testnet";
-        let prefix = "U1RBVEU=";
-        let block_id = "167860267";
-
-        for block_id_parameter_alias in BLOCK_ID_ALIASES {
-            let view_state_args = ViewStateArgs::parse_from(&[
-                "near",
-                contract_account_id,
-                "--prefix",
-                prefix,
-                &format!("--{block_id_parameter_alias}"),
-                block_id,
-            ]);
-            let result = ViewStateArgs::to_cli_args(&view_state_args, "testnet".to_string());
+    fn view_state() {
+        for (input, expected_output) in [
+            (
+                format!("near view-state counter.near-examples.testnet --prefix U1RBVEU= --{} 167860267", BLOCK_ID_ALIASES[0]),
+                "contract view-storage counter.near-examples.testnet keys-start-with-bytes-as-base64 'U1RBVEU=' as-json network-config testnet at-block-height 167860267"
+            ),
+            (
+                format!("near view-state counter.near-examples.testnet --prefix U1RBVEU= --{} 167860267", BLOCK_ID_ALIASES[1]),
+                "contract view-storage counter.near-examples.testnet keys-start-with-bytes-as-base64 'U1RBVEU=' as-json network-config testnet at-block-height 167860267"
+            ),
+            (
+                format!("near view-state counter.near-examples.testnet --prefix STATE --utf8 --finality final --{} mainnet", NETWORK_ID_ALIASES[0]),
+                "contract view-storage counter.near-examples.testnet keys-start-with-string STATE as-text network-config mainnet now"
+            ),
+            (
+                format!("near view-state counter.near-examples.testnet --prefix STATE --utf8 --finality final --{} mainnet", NETWORK_ID_ALIASES[1]),
+                "contract view-storage counter.near-examples.testnet keys-start-with-string STATE as-text network-config mainnet now"
+            ),
+        ] {
+            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let JsCmd::ViewState(view_state_args) = JsCmd::parse_from(&input_cmd) else {
+                panic!("ViewState command was expected, but something else was parsed out from {input}");
+            };
             assert_eq!(
-                result.join(" "),
-                format!(
-                    "contract view-storage {contract_account_id} keys-start-with-bytes-as-base64 {prefix} as-json network-config testnet at-block-height {block_id}",
-                )
-            )
-        }
-    }
-
-    #[test]
-    fn view_state_mainnet() {
-        let contract_account_id = "counter.near-examples.testnet";
-        let prefix = "STATE";
-        let finality = "final";
-        let network_id = "mainnet";
-
-        for network_id_parameter_alias in NETWORK_ID_ALIASES {
-            let view_state_args = ViewStateArgs::parse_from(&[
-                "near",
-                contract_account_id,
-                "--prefix",
-                prefix,
-                "--utf8",
-                "--finality",
-                finality,
-                &format!("--{network_id_parameter_alias}"),
-                network_id,
-            ]);
-            let result = ViewStateArgs::to_cli_args(&view_state_args, "testnet".to_string());
-            assert_eq!(
-                result.join(" "),
-                format!(
-                    "contract view-storage {contract_account_id} keys-start-with-string {prefix} as-text network-config {network_id} now",
-                )
-            )
+                shell_words::join(ViewStateArgs::to_cli_args(&view_state_args, "testnet".to_string())),
+                expected_output
+            );
         }
     }
 }

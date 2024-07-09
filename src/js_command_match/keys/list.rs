@@ -27,41 +27,34 @@ impl KeysArgs {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::JsCmd;
     use super::*;
     use clap::Parser;
 
     #[test]
-    fn list_keys_testnet() {
-        let account_id = "bob.testnet";
-        let network_id = "testnet";
-
-        for network_id_parameter_alias in NETWORK_ID_ALIASES {
-            let keys_args = KeysArgs::parse_from(&[
-                "near",
-                account_id,
-                &format!("--{network_id_parameter_alias}"),
-                network_id,
-            ]);
-            let result = KeysArgs::to_cli_args(&keys_args, "testnet".to_string());
+    fn list_keys() {
+        for (input, expected_output) in [
+            (
+                "near list-keys bob.testnet".to_string(),
+                "account list-keys bob.testnet network-config testnet now".to_string()
+            ),
+            (
+                format!("near list-keys bob.testnet --{} testnet", NETWORK_ID_ALIASES[0]),
+                "account list-keys bob.testnet network-config testnet now".to_string()
+            ),
+            (
+                format!("near list-keys bob.testnet --{} mainnet", NETWORK_ID_ALIASES[1]),
+                "account list-keys bob.testnet network-config mainnet now".to_string()
+            ),
+        ] {
+            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let JsCmd::ListKeys(keys_args) = JsCmd::parse_from(&input_cmd) else {
+                panic!("ListKeys command was expected, but something else was parsed out from {input}");
+            };
             assert_eq!(
-                result.join(" "),
-                format!("account list-keys {account_id} network-config {network_id} now",)
+                shell_words::join(KeysArgs::to_cli_args(&keys_args, "testnet".to_string())),
+                expected_output
             );
         }
-    }
-
-    #[test]
-    fn list_keys_mainnet() {
-        let account_id = "bob.testnet";
-        let network_id = "mainnet";
-
-        let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[0]);
-        let keys_args =
-            KeysArgs::parse_from(&["near", account_id, network_id_parameter_alias, network_id]);
-        let result = KeysArgs::to_cli_args(&keys_args, "testnet".to_string());
-        assert_eq!(
-            result.join(" "),
-            format!("account list-keys {account_id} network-config {network_id} now",)
-        );
     }
 }

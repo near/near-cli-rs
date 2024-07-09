@@ -7,12 +7,12 @@ use crate::js_command_match::constants::{
 pub struct DeleteKeyArgs {
     account_id: String,
     access_key: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES)]
-    network_id: Option<String>,
     #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
     sign_with_ledger: bool,
     #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
     ledger_path: String,
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
+    network_id: Option<String>,
 }
 
 impl DeleteKeyArgs {
@@ -45,53 +45,50 @@ impl DeleteKeyArgs {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::JsCmd;
     use super::*;
     use clap::Parser;
 
     #[test]
-    fn delete_key_testnet() {
-        let account_id = "bob.testnet";
-        let access_key = "ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq";
-        let network_id = "testnet";
-
-        for network_id_parameter_alias in NETWORK_ID_ALIASES {
-            let delete_args = DeleteKeyArgs::parse_from(&[
-                "near",
-                account_id,
-                access_key,
-                &format!("--{network_id_parameter_alias}"),
-                network_id,
-            ]);
-            let result = DeleteKeyArgs::to_cli_args(&delete_args, "testnet".to_string());
+    fn delete_key() {
+        for (input, expected_output) in [
+            (
+                "near delete-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq".to_string(),
+                "account delete-keys bob.testnet public-keys ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send".to_string()
+            ),
+            (
+                format!("near delete-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{}", SIGN_WITH_LEDGER_ALIASES[0]),
+                "account delete-keys bob.testnet public-keys ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send".to_string()
+            ),
+            (
+                format!("near delete-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{}", SIGN_WITH_LEDGER_ALIASES[1]),
+                "account delete-keys bob.testnet public-keys ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send".to_string()
+            ),
+            (
+                format!("near delete-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[0]),
+                "account delete-keys bob.testnet public-keys ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send".to_string()
+            ),
+            (
+                format!("near delete-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[1]),
+                "account delete-keys bob.testnet public-keys ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send".to_string()
+            ),
+            (
+                format!("near delete-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{} testnet", NETWORK_ID_ALIASES[0]),
+                "account delete-keys bob.testnet public-keys ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send".to_string()
+            ),
+            (
+                format!("near delete-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{} mainnet", NETWORK_ID_ALIASES[1]),
+                "account delete-keys bob.testnet public-keys ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config mainnet sign-with-keychain send".to_string()
+            ),
+        ] {
+            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let JsCmd::DeleteKey(delete_key_args) = JsCmd::parse_from(&input_cmd) else {
+                panic!("DeleteKey command was expected, but something else was parsed out from {input}");
+            };
             assert_eq!(
-                result.join(" "),
-                format!(
-                    "account delete-keys {account_id} public-keys {access_key} network-config {network_id} sign-with-keychain send",
-                )
-            )
+                shell_words::join(DeleteKeyArgs::to_cli_args(&delete_key_args, "testnet".to_string())),
+                expected_output
+            );
         }
-    }
-
-    #[test]
-    fn delete_key_mainnet() {
-        let account_id = "bob.testnet";
-        let access_key = "ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq";
-        let network_id = "mainnet";
-
-        let network_id_parameter_alias = &format!("--{}", &NETWORK_ID_ALIASES[0]);
-        let delete_args = DeleteKeyArgs::parse_from(&[
-            "near",
-            account_id,
-            access_key,
-            network_id_parameter_alias,
-            network_id,
-        ]);
-        let result = DeleteKeyArgs::to_cli_args(&delete_args, "testnet".to_string());
-        assert_eq!(
-            result.join(" "),
-            format!(
-                "account delete-keys {account_id} public-keys {access_key} network-config {network_id} sign-with-keychain send",
-            )
-        )
     }
 }

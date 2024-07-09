@@ -27,37 +27,34 @@ impl TxStatusArgs {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::JsCmd;
     use super::*;
     use clap::Parser;
 
     #[test]
-    fn tx_status_testnet() {
-        let transaction_hash = "4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo";
-        let state_args = TxStatusArgs::parse_from(&["near", transaction_hash]);
-        let result = TxStatusArgs::to_cli_args(&state_args, "testnet".to_string());
-        assert_eq!(
-            result.join(" "),
-            format!("transaction view-status {transaction_hash} network-config testnet")
-        )
-    }
-
-    #[test]
-    fn tx_status_mainnet() {
-        let transaction_hash = "4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo";
-        let network_id = "mainnet";
-
-        for network_id_parameter_alias in NETWORK_ID_ALIASES {
-            let state_args = TxStatusArgs::parse_from(&[
-                "near",
-                transaction_hash,
-                &format!("--{network_id_parameter_alias}"),
-                network_id,
-            ]);
-            let result = TxStatusArgs::to_cli_args(&state_args, "testnet".to_string());
+    fn tx_status() {
+        for (input, expected_output) in [
+            (
+                "near tx-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo".to_string(),
+                "transaction view-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo network-config testnet"
+            ),
+            (
+                format!("near tx-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo --{} testnet", NETWORK_ID_ALIASES[0]),
+                "transaction view-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo network-config testnet"
+            ),
+            (
+                format!("near tx-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo --{} mainnet", NETWORK_ID_ALIASES[1]),
+                "transaction view-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo network-config mainnet"
+            ),
+        ] {
+            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let JsCmd::TxStatus(tx_status_args) = JsCmd::parse_from(&input_cmd) else {
+                panic!("TxStatus command was expected, but something else was parsed out from {input}");
+            };
             assert_eq!(
-                result.join(" "),
-                format!("transaction view-status {transaction_hash} network-config {network_id}")
-            )
+                shell_words::join(TxStatusArgs::to_cli_args(&tx_status_args, "testnet".to_string())),
+                expected_output
+            );
         }
     }
 }

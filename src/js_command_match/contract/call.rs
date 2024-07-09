@@ -17,8 +17,6 @@ pub struct CallArgs {
     sign_with_ledger: bool,
     #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
     ledger_path: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES)]
-    network_id: Option<String>,
     #[clap(long, default_value_t = 30_000_000_000_000)]
     gas: u64,
     #[clap(long, default_value = "0")]
@@ -29,6 +27,8 @@ pub struct CallArgs {
     base64: bool,
     #[clap(long, aliases = ["privateKey"])]
     private_key: Option<String>,
+    #[clap(long, aliases = NETWORK_ID_ALIASES)]
+    network_id: Option<String>,
 }
 
 impl CallArgs {
@@ -84,82 +84,77 @@ impl CallArgs {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::JsCmd;
     use super::*;
     use clap::Parser;
 
     #[test]
-    fn call_with_json_args_testnet() {
-        let contract_account_id = "contract.testnet";
-        let method_name = "flip_coin";
-        let args = "{\"player_guess\": \"tail\"}";
-        let account_id = "bob.testnet";
+    fn call() {
+        let json_args = "{\"player_guess\": \"tail\"}";
+        let base64_args = "eyJwbGF5ZXJfZ3Vlc3MiOiAidGFpbCJ9";
 
-        let call_args = CallArgs::parse_from(&[
-            "near",
-            contract_account_id,
-            method_name,
-            args,
-            "--useAccount",
-            account_id,
-        ]);
-        let result = CallArgs::to_cli_args(&call_args, "testnet".to_string());
-        assert_eq!(
-                result.join(" "),
-                format!(
-                    "contract call-function as-transaction {contract_account_id} flip_coin json-args {args} prepaid-gas 30 Tgas attached-deposit 0 NEAR sign-as {account_id} network-config testnet sign-with-keychain send",
-                )
-            )
-    }
-
-    #[test]
-    fn call_with_json_args_mainnet() {
-        let contract_account_id = "contract.testnet";
-        let method_name = "flip_coin";
-        let args = "{\"player_guess\": \"tail\"}";
-        let account_id = "bob.testnet";
-        let network_id = "mainnet";
-
-        let call_args = CallArgs::parse_from(&[
-            "near",
-            contract_account_id,
-            method_name,
-            args,
-            "--useAccount",
-            account_id,
-            "--networkId",
-            network_id,
-        ]);
-        let result = CallArgs::to_cli_args(&call_args, "testnet".to_string());
-        assert_eq!(
-                result.join(" "),
-                format!(
-                    "contract call-function as-transaction {contract_account_id} flip_coin json-args {args} prepaid-gas 30 Tgas attached-deposit 0 NEAR sign-as {account_id} network-config {network_id} sign-with-keychain send",
-                )
-            )
-    }
-
-    #[test]
-    fn call_with_base64_args_testnet() {
-        let contract_account_id = "contract.testnet";
-        let method_name = "flip_coin";
-        let args = "{\"player_guess\": \"tail\"}";
-        let account_id = "bob.testnet";
-
-        let call_args = CallArgs::parse_from(&[
-            "near",
-            contract_account_id,
-            method_name,
-            args,
-            "--useAccount",
-            account_id,
-            "--base64",
-        ]);
-        let result = CallArgs::to_cli_args(&call_args, "testnet".to_string());
-        assert_eq!(
-                result.join(" "),
-                format!(
-                    "contract call-function as-transaction {contract_account_id} flip_coin base64-args {args} prepaid-gas 30 Tgas attached-deposit 0 NEAR sign-as {account_id} network-config testnet sign-with-keychain send",
-                )
-            )
+        for (input, expected_output) in [
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[0]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[1]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[2]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[3]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[4]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[5]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin {base64_args} --useAccount bob.testnet --base64"),
+                format!("contract call-function as-transaction contract.testnet flip_coin base64-args {base64_args} prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}", SIGN_WITH_LEDGER_ALIASES[0]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}", SIGN_WITH_LEDGER_ALIASES[1]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[0]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[1]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{} mainnet", NETWORK_ID_ALIASES[0]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config mainnet sign-with-keychain send")
+            ),
+            (
+                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{} mainnet", NETWORK_ID_ALIASES[1]),
+                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config mainnet sign-with-keychain send")
+            ),
+        ] {
+            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let JsCmd::Call(call_args) = JsCmd::parse_from(&input_cmd) else {
+                panic!("Call command was expected, but something else was parsed out from {input}");
+            };
+            assert_eq!(
+                shell_words::join(CallArgs::to_cli_args(&call_args, "testnet".to_string())),
+                expected_output
+            );
+        }
     }
 }

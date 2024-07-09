@@ -50,93 +50,50 @@ impl DeleteAccountArgs {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::JsCmd;
     use super::*;
     use clap::Parser;
 
     #[test]
-    fn delete_account_using_ledger_testnet() {
-        let account_id = "bob.testnet";
-        let beneficiary_id = "alice.testnet";
-
-        for use_ledger_parameter_alias in SIGN_WITH_LEDGER_ALIASES {
-            let delete_args = DeleteAccountArgs::parse_from(&[
-                "near",
-                account_id,
-                beneficiary_id,
-                &format!("--{use_ledger_parameter_alias}"),
-                "--force",
-            ]);
-            let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
+    fn delete_account() {
+        for (input, expected_output) in [
+            (
+                format!("near delete-account bob.testnet alice.testnet --force"),
+                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-keychain send")
+            ),
+            (
+                format!("near delete-account bob.testnet alice.testnet --{} --force", SIGN_WITH_LEDGER_ALIASES[0]),
+                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+            ),
+            (
+                format!("near delete-account bob.testnet alice.testnet --{} --force", SIGN_WITH_LEDGER_ALIASES[1]),
+                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+            ),
+            (
+                format!("near delete-account bob.testnet alice.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\" --force", LEDGER_PATH_ALIASES[0]),
+                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send")
+            ),
+            (
+                format!("near delete-account bob.testnet alice.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\" --force", LEDGER_PATH_ALIASES[1]),
+                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send")
+            ),
+            (
+                format!("near delete-account bob.testnet alice.testnet --signWithLedger --{} mainnet --force", NETWORK_ID_ALIASES[0]),
+                format!("account delete-account bob.testnet beneficiary alice.testnet network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+            ),
+            (
+                format!("near delete-account bob.testnet alice.testnet --signWithLedger --{} mainnet --force", NETWORK_ID_ALIASES[1]),
+                format!("account delete-account bob.testnet beneficiary alice.testnet network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+            )
+        ] {
+            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let JsCmd::DeleteAccount(delete_account_args) = JsCmd::parse_from(&input_cmd) else {
+                panic!("DeleteAccount command was expected, but something else was parsed out from {input}");
+            };
             assert_eq!(
-                result.join(" "),
-                format!(
-                    "account delete-account {account_id} beneficiary {beneficiary_id} network-config testnet sign-with-ledger --seed-phrase-hd-path {DEFAULT_SEED_PHRASE_PATH} send",
-                )
-            )
+                shell_words::join(DeleteAccountArgs::to_cli_args(&delete_account_args, "testnet".to_string())),
+                expected_output
+            );
         }
-    }
-
-    #[test]
-    fn delete_account_using_ledger_and_custom_path_testnet() {
-        let account_id = "bob.testnet";
-        let beneficiary_id = "alice.testnet";
-
-        for use_ledger_alias in SIGN_WITH_LEDGER_ALIASES {
-            let delete_args = DeleteAccountArgs::parse_from(&[
-                "near",
-                account_id,
-                beneficiary_id,
-                &format!("--{use_ledger_alias}"),
-                "--ledgerPath",
-                DEFAULT_SEED_PHRASE_PATH,
-                "--force",
-            ]);
-            let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
-            assert_eq!(
-                result.join(" "),
-                format!(
-                    "account delete-account {account_id} beneficiary {beneficiary_id} network-config testnet sign-with-ledger --seed-phrase-hd-path {DEFAULT_SEED_PHRASE_PATH} send",
-                )
-            )
-        }
-    }
-
-    #[test]
-    fn delete_account_using_ledger_mainnet() {
-        let account_id = "bob.testnet";
-        let beneficiary_id = "alice.testnet";
-        let network_id = "mainnet";
-
-        let delete_args = DeleteAccountArgs::parse_from(&[
-            "near",
-            account_id,
-            beneficiary_id,
-            "--signWithLedger",
-            "--networkId",
-            network_id,
-            "--force",
-        ]);
-        let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
-        assert_eq!(
-                result.join(" "),
-                format!(
-                    "account delete-account {account_id} beneficiary {beneficiary_id} network-config {network_id} sign-with-ledger --seed-phrase-hd-path {DEFAULT_SEED_PHRASE_PATH} send",
-                )
-            )
-    }
-
-    #[test]
-    fn delete_account_using_keychain_testnet() {
-        let account_id = "bob.testnet";
-        let beneficiary_id = "alice.testnet";
-        let delete_args =
-            DeleteAccountArgs::parse_from(&["near", account_id, beneficiary_id, "--force"]);
-        let result = DeleteAccountArgs::to_cli_args(&delete_args, "testnet".to_string());
-        assert_eq!(
-            result.join(" "),
-            format!(
-                "account delete-account {account_id} beneficiary {beneficiary_id} network-config testnet sign-with-keychain send",
-            )
-        );
     }
 }

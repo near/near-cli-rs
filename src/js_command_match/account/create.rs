@@ -97,7 +97,7 @@ mod tests {
     use clap::Parser;
 
     #[test]
-    fn create_account_v1() {
+    fn create_account() {
         for (input, expected_output) in [
             (
                 format!("near create bob.testnet --{}", USE_FAUCET_ALIASES[0]),
@@ -112,83 +112,95 @@ mod tests {
                 "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
             ),
             (
+                format!("near create bob.testnet --{} alice.testnet", USE_ACCOUNT_ALIASES[1]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ),
+            (
+                format!("near create bob.testnet --{} alice.testnet", USE_ACCOUNT_ALIASES[2]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ),
+            (
+                format!("near create bob.testnet --{} alice.testnet", USE_ACCOUNT_ALIASES[3]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ),
+            (
+                format!("near create bob.testnet --{} alice.testnet", USE_ACCOUNT_ALIASES[4]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ),
+            (
+                format!("near create bob.testnet --{} alice.testnet", USE_ACCOUNT_ALIASES[5]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ),
+            (
                 format!("near create bob.testnet --useAccount alice.testnet --{} 0.1", INITIAL_BALANCE_ALIASES[0]),
                 "account create-account fund-myself bob.testnet '0.1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
             ),
             (
-                format!("near create bob.testnet --{} 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' --useFaucet", SEED_PHRASE_ALIASES[0]),
-                "account create-account sponsor-by-faucet-service bob.testnet use-manually-provided-seed-phrase 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' network-config testnet create"
+                format!("near create bob.testnet --useAccount alice.testnet --{} 0.1", INITIAL_BALANCE_ALIASES[1]),
+                "account create-account fund-myself bob.testnet '0.1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
             ),
             (
                 format!("near create bob.testnet --useAccount alice.testnet --{} 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV --initialBalance 0.1", PUBLIC_KEY_ALIASES[0]),
                 "account create-account fund-myself bob.testnet '0.1 NEAR' use-manually-provided-public-key 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV sign-as alice.testnet network-config testnet sign-with-keychain send"
             ),
             (
+                format!("near create bob.testnet --useAccount alice.testnet --{} 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV --initialBalance 0.1", PUBLIC_KEY_ALIASES[1]),
+                "account create-account fund-myself bob.testnet '0.1 NEAR' use-manually-provided-public-key 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV sign-as alice.testnet network-config testnet sign-with-keychain send"
+            ),
+            (
+                format!("near create bob.testnet --{} 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' --useFaucet", SEED_PHRASE_ALIASES[0]),
+                "account create-account sponsor-by-faucet-service bob.testnet use-manually-provided-seed-phrase 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' network-config testnet create"
+            ),
+            (
+                format!("near create bob.testnet --{} 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' --useFaucet", SEED_PHRASE_ALIASES[1]),
+                "account create-account sponsor-by-faucet-service bob.testnet use-manually-provided-seed-phrase 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' network-config testnet create"
+            ),
+            (
+                format!("near create bob.testnet --useAccount alice.testnet --{} --networkId testnet", SIGN_WITH_LEDGER_ALIASES[0]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+            ),
+            (
+                format!("near create bob.testnet --useAccount alice.testnet --{} --networkId testnet", SIGN_WITH_LEDGER_ALIASES[1]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+            ),
+            (
+                format!("near create bob.testnet --useAccount alice.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[0]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+            ),
+            (
+                format!("near create bob.testnet --useAccount alice.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[1]),
+                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+            ),
+            (
                 format!("near create bob.testnet --{} --useFaucet", USE_LEDGER_PK_ALIASES[0]),
                 "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
             ),
             (
-                "near create bob.testnet --useAccount alice.testnet --signWithLedger --networkId testnet".to_string(),
-                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                format!("near create bob.testnet --{} --useFaucet", USE_LEDGER_PK_ALIASES[1]),
+                "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
             ),
             (
-                "near create bob.near --useAccount alice.near --signWithLedger --ledgerPath \"44'/397'/0'/0'/2'\" --networkId mainnet".to_string(),
+                format!("near create bob.testnet --{} --useFaucet", USE_LEDGER_PK_ALIASES[2]),
+                "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
+            ),
+            // Following two test cases should be tested on real Ledger device
+            // (
+            //     format!("near create bob.testnet --useLedgerPK --{} \"44'/397'/0'/0'/2'\" --useFaucet", PK_LEDGER_PATH_ALIASES[0]),
+            //     "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' network-config testnet create"
+            // ),
+            // (
+            //     format!("near create bob.testnet --useLedgerPK --{} \"44'/397'/0'/0'/2'\" --useFaucet", PK_LEDGER_PATH_ALIASES[1]),
+            //     "account create-account sponsor-by-faucet-service bob.testnet use-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' network-config testnet create"
+            // ),
+            (
+                format!("near create bob.near --useAccount alice.near --signWithLedger --ledgerPath \"44'/397'/0'/0'/2'\" --{} mainnet", NETWORK_ID_ALIASES[0]),
+                "account create-account fund-myself bob.near '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.near network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+            ),
+            (
+                format!("near create bob.near --useAccount alice.near --signWithLedger --ledgerPath \"44'/397'/0'/0'/2'\" --{} mainnet", NETWORK_ID_ALIASES[1]),
                 "account create-account fund-myself bob.near '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.near network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
             )
         ] {
-            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
-            let JsCmd::CreateAccount(create_account_args) = JsCmd::parse_from(&input_cmd) else {
-                panic!("CreateAccount command was expected, but something else was parsed out from {input}");
-            };
-            assert_eq!(
-                shell_words::join(CreateAccountArgs::to_cli_args(&create_account_args, "testnet".to_string())),
-                expected_output
-            );
-        }
-    }
-
-    #[test]
-    fn create_account_v2() {
-        for (input, expected_output) in [
-            (
-                "near create bob.testnet --useAccount alice.testnet --signWithLedger --networkId testnet".to_string(),
-                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
-            ),
-            (
-                "near create bob.near --useAccount alice.near --signWithLedger --ledgerPath \"44'/397'/0'/0'/2'\" --networkId mainnet".to_string(),
-                "account create-account fund-myself bob.near '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.near network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
-            )
-        ].into_iter().chain(
-            USE_FAUCET_ALIASES.iter().map(|use_faucet_alias| (
-                format!("near create bob.testnet --{use_faucet_alias}"),
-                "account create-account sponsor-by-faucet-service bob.testnet autogenerate-new-keypair save-to-keychain network-config testnet create"
-            ))
-        ).chain(
-            USE_ACCOUNT_ALIASES.iter().map(|use_account_alias| (
-                format!("near create bob.testnet --{use_account_alias} alice.testnet"),
-                "account create-account fund-myself bob.testnet '1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
-            ))
-        ).chain(
-            INITIAL_BALANCE_ALIASES.iter().map(|initial_balance_alias| (
-                format!("near create bob.testnet --useAccount alice.testnet --{initial_balance_alias} 0.1"),
-                "account create-account fund-myself bob.testnet '0.1 NEAR' autogenerate-new-keypair save-to-keychain sign-as alice.testnet network-config testnet sign-with-keychain send"
-            ))
-        ).chain(
-            SEED_PHRASE_ALIASES.iter().map(|seed_phrase_alias| (
-                format!("near create bob.testnet --{seed_phrase_alias} 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' --useFaucet"),
-                "account create-account sponsor-by-faucet-service bob.testnet use-manually-provided-seed-phrase 'crisp clump stay mean dynamic become fashion mail bike disorder chronic sight' network-config testnet create"
-            ))
-        ).chain(
-            PUBLIC_KEY_ALIASES.iter().map(|public_key_alias| (
-                format!("near create bob.testnet --useAccount alice.testnet --{public_key_alias} 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV --initialBalance 0.1"),
-                "account create-account fund-myself bob.testnet '0.1 NEAR' use-manually-provided-public-key 78MziB9aTNsu19MHHVrfWy762S5mAqXgCB6Vgvrv9uGV sign-as alice.testnet network-config testnet sign-with-keychain send"
-            ))
-        ).chain(
-            USE_LEDGER_PK_ALIASES.iter().map(|use_ledger_pk_alias| (
-                format!("near create bob.testnet --{use_ledger_pk_alias} --useFaucet"),
-                "account create-account sponsor-by-faucet-service bob.testnet use-ledger network-config testnet create"
-            ))
-        ) {
             let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
             let JsCmd::CreateAccount(create_account_args) = JsCmd::parse_from(&input_cmd) else {
                 panic!("CreateAccount command was expected, but something else was parsed out from {input}");

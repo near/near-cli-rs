@@ -25,17 +25,33 @@ impl LoginArgs {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::JsCmd;
     use super::*;
     use clap::Parser;
 
     #[test]
     fn login() {
-        for network_id in vec!["testnet", "mainnet"] {
-            let login_args = LoginArgs::parse_from(&["near", "--networkId", network_id]);
-            let result = LoginArgs::to_cli_args(&login_args, "testnet".to_string());
+        for (input, expected_output) in [
+            (
+                "near login".to_string(),
+                "account import-account using-web-wallet network-config testnet".to_string()
+            ),
+            (
+                format!("near login --{} testnet", NETWORK_ID_ALIASES[0]),
+                "account import-account using-web-wallet network-config testnet".to_string()
+            ),
+            (
+                format!("near login --{} mainnet", NETWORK_ID_ALIASES[1]),
+                "account import-account using-web-wallet network-config mainnet".to_string()
+            )
+        ] {
+            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let JsCmd::Login(login_args) = JsCmd::parse_from(&input_cmd) else {
+                panic!("Login command was expected, but something else was parsed out from {input}");
+            };
             assert_eq!(
-                result.join(" "),
-                format!("account import-account using-web-wallet network-config {network_id}",)
+                shell_words::join(LoginArgs::to_cli_args(&login_args, "testnet".to_string())),
+                expected_output
             );
         }
     }
