@@ -92,15 +92,6 @@ fn main() -> crate::common::CliResult {
             ]),
         )
         .with_span_child_prefix_symbol("↳ ");
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer().with_writer(indicatif_layer.get_stderr_writer()))
-        .with(indicatif_layer)
-        .with(
-            EnvFilter::from_default_env()
-                .add_directive(tracing::Level::WARN.into())
-                .add_directive("near_cli_rs=info".parse()?),
-        )
-        .init();
 
     #[cfg(feature = "self-update")]
     let handle = std::thread::spawn(|| -> color_eyre::eyre::Result<String> {
@@ -161,6 +152,22 @@ fn main() -> crate::common::CliResult {
             error.exit();
         }
     };
+    let env_filter = if cli.teach_me {
+        EnvFilter::from_default_env()
+            .add_directive(tracing::Level::WARN.into())
+            .add_directive("near_teach_me=info".parse()?)
+    } else {
+        EnvFilter::from_default_env()
+            .add_directive(tracing::Level::WARN.into())
+            .add_directive("near_cli_rs=info".parse()?)
+    };
+
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer().with_writer(indicatif_layer.get_stderr_writer()))
+        .with(indicatif_layer)
+        .with(env_filter)
+        .init();
 
     let cli_cmd = match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli), (config,)) {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
