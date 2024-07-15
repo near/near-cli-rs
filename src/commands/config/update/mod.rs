@@ -1,6 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod explorer_transaction_url;
+mod linkdrop_account_id;
 mod rpc_url;
 mod wallet_url;
 
@@ -31,4 +32,9 @@ pub enum NetworkConnectionOptions {
     ))]
     /// Update the explorer transaction URL to connect
     ExplorerTransactionUrl(self::explorer_transaction_url::ExplorerTransactionUrl),
+    #[strum_discriminants(strum(
+        message = "linkdrop-account-id          - Update the linkdrop account ID to connect"
+    ))]
+    /// Update the linkdrop account ID to connect
+    LinkdropAccountId(self::linkdrop_account_id::LinkdropAccountId),
 }
