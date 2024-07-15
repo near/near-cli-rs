@@ -1563,7 +1563,7 @@ pub fn fetch_currently_active_staking_pools(
             block_reference: near_primitives::types::Finality::Final.into(),
             request: near_primitives::views::QueryRequest::ViewState {
                 account_id: staking_pools_factory_account_id.clone(),
-                prefix: near_primitives::types::StoreKey::from(Vec::new()),
+                prefix: near_primitives::types::StoreKey::from(b"se".to_vec()),
                 include_proof: false,
             },
         })
@@ -1574,9 +1574,7 @@ pub fn fetch_currently_active_staking_pools(
         Ok(result
             .values
             .into_iter()
-            .filter(|item| &item.key[..2] == b"se")
-            .filter_map(|item| String::from_utf8(item.value.into()).ok())
-            .filter_map(|result| result.parse().ok())
+            .filter_map(|item| near_primitives::borsh::from_slice(&item.value).ok())
             .collect())
     } else {
         Err(color_eyre::Report::msg("Error call result".to_string()))
