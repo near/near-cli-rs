@@ -128,7 +128,18 @@ fn main() -> crate::common::CliResult {
                     }
                     Err(error) => {
                         if let clap::error::ErrorKind::DisplayHelp = error.kind() {
-                            error.exit()
+                            error.exit();
+                        }
+                        if let Some(cmd) = std::env::args().nth(1) {
+                            match cmd.as_str() {
+                                "add-credentials" | "add-key" | "call" | "create"
+                                | "create-account" | "delete" | "delete-account" | "delete-key"
+                                | "deploy" | "generate-key" | "import-account" | "keys"
+                                | "list-keys" | "login" | "send" | "send-near" | "stake"
+                                | "state" | "storage" | "tx-status" | "validator-stake"
+                                | "validators" | "view" | "view-storage" => error.exit(),
+                                _ => {}
+                            }
                         }
                     }
                 },
