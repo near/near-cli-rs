@@ -144,6 +144,17 @@ pub struct NetworkConfig {
 }
 
 impl NetworkConfig {
+    pub fn get_fields(&self) -> color_eyre::eyre::Result<Vec<String>> {
+        let network_config_value: serde_json::Value =
+            serde_json::from_slice(serde_json::to_string(self)?.as_bytes())?;
+        Ok(network_config_value
+            .as_object()
+            .wrap_err("Internal error")?
+            .iter()
+            .map(|(key, value)| format!("{key}: {value}"))
+            .collect())
+    }
+
     #[tracing::instrument(name = "Connecting to RPC", skip_all)]
     pub fn json_rpc_client(&self) -> near_jsonrpc_client::JsonRpcClient {
         tracing::Span::current().pb_set_message(self.rpc_url.as_str());

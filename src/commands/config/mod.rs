@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod add_connection;
 mod delete_connection;
-mod update;
+mod edit_connection;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -26,11 +26,9 @@ pub enum ConfigActions {
     #[strum_discriminants(strum(message = "add-connection         - Add a network connection"))]
     /// Add a network connection
     AddConnection(self::add_connection::AddNetworkConnection),
-    #[strum_discriminants(strum(
-        message = "update                 - Update the network connection option"
-    ))]
-    /// Update the network connection option
-    Update(self::update::Update),
+    #[strum_discriminants(strum(message = "edit-connection        - Edit a network connection"))]
+    /// Edit a network connection
+    EditConnection(self::edit_connection::EditConnection),
     #[strum_discriminants(strum(
         message = "delete-connection      - Delete a network connection"
     ))]
