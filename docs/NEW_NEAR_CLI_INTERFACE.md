@@ -6,7 +6,7 @@ NEAR CLI is built for:
 - **Validators**
 
 NEAR CLI is using extensions to satisfy all groups of users.
-- **Core NEAR CLI** commands should be usefull for all groups of users.
+- **Core NEAR CLI** commands should be useful for all groups of users.
 - **Extensions** are used by a particular group or several groups of users.
 - **Core NEAR CLI** is a single binary, there is no extensions that are installed *by default*.
 - Each extension is a separate binary that can be installed and executed from **NEAR CLI**.
