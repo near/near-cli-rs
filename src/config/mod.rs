@@ -144,9 +144,9 @@ pub struct NetworkConfig {
 }
 
 impl NetworkConfig {
-    pub fn get_fields(&self) -> color_eyre::eyre::Result<Vec<String>> {
+    pub(crate) fn get_fields(&self) -> color_eyre::eyre::Result<Vec<String>> {
         let network_config_value: serde_json::Value =
-            serde_json::from_slice(serde_json::to_string(self)?.as_bytes())?;
+            serde_json::from_str(&serde_json::to_string(self)?)?;
         Ok(network_config_value
             .as_object()
             .wrap_err("Internal error")?

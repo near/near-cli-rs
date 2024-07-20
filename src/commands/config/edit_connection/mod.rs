@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use inquire::{Select, Text};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -76,84 +74,93 @@ impl ParameterContext {
         scope: &<Parameter as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let mut config = previous_context.global_context.config;
-        if let Some(network_config) = config
+        let Some(network_config) = config
             .network_connection
             .get_mut(&previous_context.connection_name)
-        {
-            if scope.key.contains("network_name") {
-                network_config.network_name.clone_from(&scope.value)
-            } else if scope.key.contains("rpc_url") {
-                network_config.rpc_url = scope.value.clone().parse()?;
-            } else if scope.key.contains("rpc_api_key") {
-                network_config.rpc_api_key = if &scope.value == "null" {
-                    None
-                } else {
-                    Some(crate::types::api_key::ApiKey::from_str(&scope.value)?)
-                };
-            } else if scope.key.contains("wallet_url") {
-                network_config.wallet_url = scope.value.clone().parse()?;
-            } else if scope.key.contains("explorer_transaction_url") {
-                network_config.explorer_transaction_url = scope.value.clone().parse()?;
-            } else if scope.key.contains("linkdrop_account_id") {
-                network_config.linkdrop_account_id = if &scope.value == "null" {
-                    None
-                } else {
-                    Some(near_primitives::types::AccountId::from_str(&scope.value)?)
-                };
-            } else if scope.key.contains("near_social_db_contract_account_id") {
-                network_config.near_social_db_contract_account_id = if &scope.value == "null" {
-                    None
-                } else {
-                    Some(near_primitives::types::AccountId::from_str(&scope.value)?)
-                };
-            } else if scope.key.contains("faucet_url") {
-                network_config.faucet_url = if &scope.value == "null" {
-                    None
-                } else {
-                    Some(scope.value.clone().parse()?)
-                };
-            } else if scope.key.contains("meta_transaction_relayer_url") {
-                network_config.meta_transaction_relayer_url = if &scope.value == "null" {
-                    None
-                } else {
-                    Some(scope.value.clone().parse()?)
-                };
-            } else if scope.key.contains("fastnear_url") {
-                network_config.fastnear_url = if &scope.value == "null" {
-                    None
-                } else {
-                    Some(scope.value.clone().parse()?)
-                };
-            } else if scope.key.contains("staking_pools_factory_account_id") {
-                network_config.staking_pools_factory_account_id = if &scope.value == "null" {
-                    None
-                } else {
-                    Some(near_primitives::types::AccountId::from_str(&scope.value)?)
-                };
-            } else if scope.key.contains("coingecko_url") {
-                network_config.coingecko_url = if &scope.value == "null" {
-                    None
-                } else {
-                    Some(scope.value.clone().parse()?)
-                };
-            } else {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                    "Parameter <{}> not found",
-                    &scope.key
-                ));
-            }
-        } else {
+        else {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Network connection \"{}\" not found",
                 &previous_context.connection_name
             ));
         };
+        match scope.key.as_str() {
+            "network_name" => network_config.network_name.clone_from(&scope.value),
+            "rpc_url" => network_config.rpc_url = scope.value.parse()?,
+            "rpc_api_key" => {
+                network_config.rpc_api_key = if scope.value == "null" {
+                    None
+                } else {
+                    Some(scope.value.parse()?)
+                };
+            }
+            "wallet_url" => {
+                network_config.wallet_url = scope.value.parse()?;
+            }
+            "explorer_transaction_url" => {
+                network_config.explorer_transaction_url = scope.value.parse()?;
+            }
+            "linkdrop_account_id" => {
+                network_config.linkdrop_account_id = if scope.value == "null" {
+                    None
+                } else {
+                    Some(scope.value.parse()?)
+                };
+            }
+            "near_social_db_contract_account_id" => {
+                network_config.near_social_db_contract_account_id = if &scope.value == "null" {
+                    None
+                } else {
+                    Some(scope.value.parse()?)
+                };
+            }
+            "faucet_url" => {
+                network_config.faucet_url = if scope.value == "null" {
+                    None
+                } else {
+                    Some(scope.value.parse()?)
+                };
+            }
+            "meta_transaction_relayer_url" => {
+                network_config.meta_transaction_relayer_url = if &scope.value == "null" {
+                    None
+                } else {
+                    Some(scope.value.parse()?)
+                };
+            }
+            "fastnear_url" => {
+                network_config.fastnear_url = if &scope.value == "null" {
+                    None
+                } else {
+                    Some(scope.value.parse()?)
+                };
+            }
+            "staking_pools_factory_account_id" => {
+                network_config.staking_pools_factory_account_id = if &scope.value == "null" {
+                    None
+                } else {
+                    Some(scope.value.parse()?)
+                };
+            }
+            "coingecko_url" => {
+                network_config.coingecko_url = if &scope.value == "null" {
+                    None
+                } else {
+                    Some(scope.value.parse()?)
+                };
+            }
+            _ => {
+                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                    "Configuration key <{}> not found",
+                    &scope.key
+                ));
+            }
+        }
 
         eprintln!();
         config.write_config_toml()?;
         eprintln!(
-            "Parameter <{}> successfully updated for Network connection \"{}\"",
-            &scope.key, &previous_context.connection_name
+            "Network connection \"{}\" was successfully updated with the new value for <{}>",
+            &previous_context.connection_name, &scope.key
         );
         Ok(Self)
     }
@@ -163,8 +170,7 @@ impl Parameter {
     fn input_key(context: &EditConnectionContext) -> color_eyre::eyre::Result<Option<String>> {
         let variants = context.network_config.get_fields()?;
 
-        let select_submit =
-            Select::new("Whitch of the parametrs do you want to change?", variants).prompt();
+        let select_submit = Select::new("Which setting do you want to change?", variants).prompt();
         match select_submit {
             Ok(value) => Ok(Some(
                 value.split_once(':').expect("Internal error").0.to_string(),
@@ -181,8 +187,7 @@ impl Parameter {
         _context: &EditConnectionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         let value: String =
-            Text::new("Enter a new value for this parameter (If you want to remove this optional parameter, leave \"null\"):")
-                .with_initial_value("null")
+            Text::new("Enter a new value for this parameter (if you want to remove an optional parameter, use \"null\"):")
                 .prompt()?;
         Ok(Some(value))
     }
