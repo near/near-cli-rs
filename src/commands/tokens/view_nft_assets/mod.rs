@@ -35,7 +35,6 @@ impl ViewNftAssetsContext {
                     }))?;
                 let call_result =
                     get_nft_balance(
-                        previous_context.global_context.teach_me,
                         network_config,
                         &nft_contract_account_id,
                         args,
@@ -79,7 +78,6 @@ impl ViewNftAssets {
 
 #[tracing::instrument(name = "Getting NFT balance ...", skip_all)]
 fn get_nft_balance(
-    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     nft_contract_account_id: &near_primitives::types::AccountId,
     args: Vec<u8>,
@@ -88,7 +86,6 @@ fn get_nft_balance(
     network_config
         .json_rpc_client()
         .blocking_call_view_function(
-            teach_me,
             nft_contract_account_id,
             "nft_tokens_for_owner",
             args,

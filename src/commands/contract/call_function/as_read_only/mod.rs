@@ -78,7 +78,6 @@ impl FunctionContext {
 
             move |network_config, block_reference| {
                 call_view_function(
-                    previous_context.global_context.teach_me,
                     network_config,
                     &account_id,
                     &function_name,
@@ -119,7 +118,6 @@ impl Function {
 
 #[tracing::instrument(name = "Getting a response to a view method ...", skip_all)]
 fn call_view_function(
-    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     function_name: &str,
@@ -130,13 +128,7 @@ fn call_view_function(
     let args = super::call_function_args_type::function_args(function_args, function_args_type)?;
     let call_result = network_config
         .json_rpc_client()
-        .blocking_call_view_function(
-            teach_me,
-            account_id,
-            function_name,
-            args,
-            block_reference.clone(),
-        )
+        .blocking_call_view_function(account_id, function_name, args, block_reference.clone())
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch query for view method: '{}' (contract <{}> on network <{}>)",

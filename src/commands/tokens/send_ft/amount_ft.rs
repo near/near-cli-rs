@@ -44,7 +44,6 @@ impl AmountFtContext {
             )
         })?;
         let ft_metadata = crate::types::ft_properties::params_ft_metadata(
-            previous_context.global_context.teach_me,
             previous_context.ft_contract_account_id.clone(),
             &network_config,
             near_primitives::types::Finality::Final.into(),
@@ -76,7 +75,6 @@ impl AmountFt {
         })?;
 
         let ft_metadata = crate::types::ft_properties::params_ft_metadata(
-            context.global_context.teach_me,
             context.ft_contract_account_id.clone(),
             &network_config,
             near_primitives::types::Finality::Final.into(),
@@ -194,7 +192,6 @@ impl DepositContext {
 
                 move |network_config| {
                     get_prepopulated_transaction(
-                        previous_context.global_context.teach_me,
                         network_config,
                         &ft_contract_account_id,
                         &receiver_account_id,
@@ -265,7 +262,6 @@ impl Deposit {
     skip_all
 )]
 fn get_prepopulated_transaction(
-    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     ft_contract_account_id: &near_primitives::types::AccountId,
     receiver_account_id: &near_primitives::types::AccountId,
@@ -291,7 +287,6 @@ fn get_prepopulated_transaction(
     let call_result = network_config
             .json_rpc_client()
             .blocking_call_view_function(
-                teach_me,
                 ft_contract_account_id,
                 "storage_balance_of",
                 args.clone(),

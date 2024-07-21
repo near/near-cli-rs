@@ -29,7 +29,6 @@ impl ViewAccountSummaryContext {
 
             move |network_config, block_reference| {
                 get_account_inquiry(
-                    previous_context.teach_me,
                     &account_id, network_config,
                     block_reference
                 )
@@ -62,7 +61,6 @@ impl ViewAccountSummary {
 
 #[tracing::instrument(name = "Receiving an inquiry about your account ...", skip_all)]
 fn get_account_inquiry(
-    teach_me: bool,
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
@@ -156,10 +154,9 @@ fn get_account_inquiry(
             .try_collect(),
     )?;
 
-    let optional_account_profile =
-        get_account_profile(teach_me, account_id, network_config, block_reference)
-            .ok()
-            .flatten();
+    let optional_account_profile = get_account_profile(account_id, network_config, block_reference)
+        .ok()
+        .flatten();
 
     crate::common::display_account_info(
         &rpc_query_response.block_hash,
@@ -221,7 +218,6 @@ async fn get_delegated_staked_balance(
 
 #[tracing::instrument(name = "Getting an account profile ...", skip_all)]
 fn get_account_profile(
-    teach_me: bool,
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
@@ -230,7 +226,6 @@ fn get_account_profile(
         let mut social_db = network_config
             .json_rpc_client()
             .blocking_call_view_function(
-                teach_me,
                 &contract_account_id,
                 "get",
                 serde_json::to_vec(&serde_json::json!({

@@ -2009,7 +2009,6 @@ pub trait JsonRpcClientExt {
     /// arguments and function return value.
     fn blocking_call_view_function(
         &self,
-        teach_me: bool,
         account_id: &near_primitives::types::AccountId,
         method_name: &str,
         args: Vec<u8>,
@@ -2069,7 +2068,6 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     #[tracing::instrument(name = "Getting the result of executing", skip_all)]
     fn blocking_call_view_function(
         &self,
-        teach_me: bool,
         account_id: &near_primitives::types::AccountId,
         method_name: &str,
         args: Vec<u8>,
@@ -2087,6 +2085,14 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             },
         };
         let request_payload = near_jsonrpc_client::methods::to_json(&query_view_method_request)?;
+        tracing::info!(
+            target: "near_teach_me",
+            "\nTEACH-ME: Getting the result of executing the '{}' method of the <{}> contract\nHTTP POST {}\nJSON-BODY:\n{:#}",
+            method_name,
+            account_id,
+            self.server_addr(),
+            request_payload,
+        );
 
         let query_view_method_response = self
             .blocking_call(query_view_method_request)
@@ -2094,10 +2100,13 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         let response_payload = serde_json::to_value(&query_view_method_response)?;
 
-        if teach_me {
-            eprintln!("\nJSON-BODY:\n{:#}", request_payload);
-            eprintln!("RESPONSE:\n{}", response_payload);
-        }
+        tracing::info!(
+            target: "near_teach_me",
+            "\nTEACH-ME: Getting the result of executing the '{}' method of the <{}> contract\nRESPONSE:\n{:#}",
+            method_name,
+            account_id,
+            response_payload
+        );
 
         query_view_method_response.call_result()
     }
@@ -2129,6 +2138,14 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             ))
         })?;
 
+        tracing::info!(
+            target: "near_teach_me",
+            "\nTEACH-ME: Getting access key information for public_key: {}\nHTTP POST {}\nJSON-BODY:\n{:#}",
+            public_key,
+            self.server_addr(),
+            request_payload,
+        );
+
         let query_view_method_response = self.blocking_call(query_view_method_request)?;
 
         let response_payload = serde_json::to_value(&query_view_method_response).map_err(|err| {
@@ -2139,10 +2156,8 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         tracing::info!(
             target: "near_teach_me",
-            "\nTEACH-ME: Getting access key information for public_key: {}\nHTTP POST {}\nJSON-BODY:\n{:#}\nRESPONSE:\n{:#}",
+            "\nTEACH-ME: Getting access key information for public_key: {}\nRESPONSE:\n{:#}",
             public_key,
-            self.server_addr(),
-            request_payload,
             response_payload
         );
 

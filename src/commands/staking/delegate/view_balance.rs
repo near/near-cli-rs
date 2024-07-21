@@ -31,7 +31,6 @@ impl ViewBalanceContext {
 
             move |network_config: &crate::config::NetworkConfig, block_reference: &near_primitives::types::BlockReference| {
                 calculation_delegated_stake_balance(
-                    previous_context.global_context.teach_me,
                     &account_id,
                     &validator_account_id,
                     network_config,
@@ -66,28 +65,24 @@ impl ViewBalance {
     skip_all
 )]
 fn calculation_delegated_stake_balance(
-    teach_me: bool,
     account_id: &near_primitives::types::AccountId,
     validator_account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> crate::CliResult {
     let user_staked_balance: u128 = get_user_staked_balance(
-        teach_me,
         network_config,
         block_reference,
         validator_account_id,
         account_id,
     )?;
     let user_unstaked_balance: u128 = get_user_unstaked_balance(
-        teach_me,
         network_config,
         block_reference,
         validator_account_id,
         account_id,
     )?;
     let user_total_balance: u128 = get_user_total_balance(
-        teach_me,
         network_config,
         block_reference,
         validator_account_id,
@@ -95,7 +90,6 @@ fn calculation_delegated_stake_balance(
     )?;
     let withdrawal_availability_message =
         match is_account_unstaked_balance_available_for_withdrawal(
-            teach_me,
             network_config,
             validator_account_id,
             account_id,
@@ -126,7 +120,6 @@ fn calculation_delegated_stake_balance(
 
 #[tracing::instrument(name = "Getting the staked balance for the user ...", skip_all)]
 pub fn get_user_staked_balance(
-    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
     validator_account_id: &near_primitives::types::AccountId,
@@ -135,7 +128,6 @@ pub fn get_user_staked_balance(
     Ok(network_config
         .json_rpc_client()
         .blocking_call_view_function(
-            teach_me,
             validator_account_id,
             "get_account_staked_balance",
             serde_json::to_vec(&serde_json::json!({
@@ -156,7 +148,6 @@ pub fn get_user_staked_balance(
 
 #[tracing::instrument(name = "Getting the unstaked balance for the user ...", skip_all)]
 pub fn get_user_unstaked_balance(
-    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
     validator_account_id: &near_primitives::types::AccountId,
@@ -165,7 +156,6 @@ pub fn get_user_unstaked_balance(
     Ok(network_config
         .json_rpc_client()
         .blocking_call_view_function(
-            teach_me,
             validator_account_id,
             "get_account_unstaked_balance",
             serde_json::to_vec(&serde_json::json!({
@@ -186,7 +176,6 @@ pub fn get_user_unstaked_balance(
 
 #[tracing::instrument(name = "Getting the total balance for the user ...", skip_all)]
 pub fn get_user_total_balance(
-    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
     validator_account_id: &near_primitives::types::AccountId,
@@ -195,7 +184,6 @@ pub fn get_user_total_balance(
     Ok(network_config
         .json_rpc_client()
         .blocking_call_view_function(
-            teach_me,
             validator_account_id,
             "get_account_total_balance",
             serde_json::to_vec(&serde_json::json!({
@@ -219,7 +207,6 @@ pub fn get_user_total_balance(
     skip_all
 )]
 pub fn is_account_unstaked_balance_available_for_withdrawal(
-    teach_me: bool,
     network_config: &crate::config::NetworkConfig,
     validator_account_id: &near_primitives::types::AccountId,
     account_id: &near_primitives::types::AccountId,
@@ -227,7 +214,6 @@ pub fn is_account_unstaked_balance_available_for_withdrawal(
     network_config
         .json_rpc_client()
         .blocking_call_view_function(
-            teach_me,
             validator_account_id,
             "is_account_unstaked_balance_available",
             serde_json::to_vec(&serde_json::json!({
