@@ -2098,14 +2098,17 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             .blocking_call(query_view_method_request)
             .wrap_err("Failed to make a view-function call")?;
 
-        let response_payload = serde_json::to_value(&query_view_method_response)?;
+        let call_result = query_view_method_response.call_result()?;
 
         tracing::info!(
             target: "near_teach_me",
-            "\nTEACH-ME: Getting the result of executing the '{}' method of the <{}> contract\nRESPONSE:\n{:#}",
+            "\nTEACH-ME: Getting the result of executing the '{}' method of the <{}> contract\nRESPONSE:\n{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
             method_name,
             account_id,
-            response_payload
+            query_view_method_response.block_hash,
+            query_view_method_response.block_height,
+            call_result.logs,
+            call_result.result
         );
 
         query_view_method_response.call_result()
@@ -2132,11 +2135,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                 public_key: public_key.clone(),
             },
         };
-        let request_payload = near_jsonrpc_client::methods::to_json(&query_view_method_request).map_err(|err| {
-            near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::SendError(
-                near_jsonrpc_client::errors::JsonRpcTransportSendError::PayloadSerializeError(err),
-            ))
-        })?;
+        let request_payload = request_payload(&query_view_method_request)?;
 
         tracing::info!(
             target: "near_teach_me",
@@ -2146,13 +2145,10 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             request_payload,
         );
 
-        let query_view_method_response = self.blocking_call(query_view_method_request)?;
+        let query_view_method_response: near_jsonrpc_client::methods::query::RpcQueryResponse =
+            self.blocking_call(query_view_method_request)?;
 
-        let response_payload = serde_json::to_value(&query_view_method_response).map_err(|err| {
-            near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::SendError(
-                near_jsonrpc_client::errors::JsonRpcTransportSendError::PayloadSerializeError(err.into()),
-            ))
-        })?;
+        let response_payload = response_payload(&query_view_method_response)?;
 
         tracing::info!(
             target: "near_teach_me",
@@ -2176,12 +2172,35 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         >,
     > {
         tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
-        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+
+        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccessKeyList {
                 account_id: account_id.clone(),
             },
-        })
+        };
+        let request_payload = request_payload(&query_view_method_request)?;
+
+        tracing::info!(
+            target: "near_teach_me",
+            "\nTEACH-ME: Getting a list of {} access keys\nHTTP POST {}\nJSON-BODY:\n{:#}",
+            account_id,
+            self.server_addr(),
+            request_payload,
+        );
+
+        let query_view_method_response = self.blocking_call(query_view_method_request)?;
+
+        let response_payload = response_payload(&query_view_method_response)?;
+
+        tracing::info!(
+            target: "near_teach_me",
+            "\nTEACH-ME: Getting a list of {} access keys\nRESPONSE:\n{:#}",
+            account_id,
+            response_payload
+        );
+
+        Ok(query_view_method_response)
     }
 
     #[tracing::instrument(name = "Getting information about", skip_all)]
@@ -2196,13 +2215,68 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         >,
     > {
         tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
-        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+
+        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccount {
                 account_id: account_id.clone(),
             },
-        })
+        };
+        let request_payload = request_payload(&query_view_method_request)?;
+
+        tracing::info!(
+            target: "near_teach_me",
+            "\nTEACH-ME: Getting information about {}\nHTTP POST {}\nJSON-BODY:\n{:#}",
+            account_id,
+            self.server_addr(),
+            request_payload,
+        );
+
+        let query_view_method_response = self.blocking_call(query_view_method_request)?;
+
+        let response_payload = response_payload(&query_view_method_response)?;
+
+        tracing::info!(
+            target: "near_teach_me",
+            "\nTEACH-ME: Getting information about {}\nRESPONSE:\n{:#}",
+            account_id,
+            response_payload
+        );
+
+        Ok(query_view_method_response)
     }
+}
+
+fn request_payload(
+    query_view_method_request: &near_jsonrpc_client::methods::query::RpcQueryRequest,
+) -> Result<
+    serde_json::Value,
+    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+> {
+    near_jsonrpc_client::methods::to_json(query_view_method_request).map_err(|err| {
+        near_jsonrpc_client::errors::JsonRpcError::TransportError(
+            near_jsonrpc_client::errors::RpcTransportError::SendError(
+                near_jsonrpc_client::errors::JsonRpcTransportSendError::PayloadSerializeError(err),
+            ),
+        )
+    })
+}
+
+fn response_payload(
+    query_view_method_response: &near_jsonrpc_client::methods::query::RpcQueryResponse,
+) -> Result<
+    serde_json::Value,
+    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+> {
+    serde_json::to_value(query_view_method_response).map_err(|err| {
+        near_jsonrpc_client::errors::JsonRpcError::TransportError(
+            near_jsonrpc_client::errors::RpcTransportError::SendError(
+                near_jsonrpc_client::errors::JsonRpcTransportSendError::PayloadSerializeError(
+                    err.into(),
+                ),
+            ),
+        )
+    })
 }
 
 #[easy_ext::ext(RpcQueryResponseExt)]
