@@ -15,6 +15,158 @@ near --offline tokens \
     sign-later
 ```
 
+_near CLI_ — отличный инструмент для обучения разработчиков NEAR, как и все, что работает в NEAR. Например, если вы хотите просмотреть более подробную информацию о выполняемых вызовах RPC и их параметрах, просто запустите CLI с флагом --teach-me:
+```txt
+near --teach-me tokens \
+    fro_volod.testnet \
+    send-near volodymyr.testnet 0.1NEAR \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+2024-07-23T12:29:46.494692Z  INFO Signing the transaction with a key saved in the secure keychain ...:Trying to sign with the legacy keychain ...:Signing the transaction with a key saved in legacy keychain ...:Getting access key information:: near_teach_me: 
+TEACH-ME: Getting access key information for public_key: ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx
+HTTP POST https://archival-rpc.testnet.near.org/
+JSON-BODY:
+{
+  "id": "Ky9vRhGq8",
+  "jsonrpc": "2.0",
+  "method": "query",
+  "params": {
+    "account_id": "fro_volod.testnet",
+    "finality": "optimistic",
+    "public_key": "ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx",
+    "request_type": "view_access_key"
+  }
+}
+2024-07-23T12:29:46.644841Z  INFO Signing the transaction with a key saved in the secure keychain ...:Trying to sign with the legacy keychain ...:Signing the transaction with a key saved in legacy keychain ...:Getting access key information:: near_teach_me: 
+TEACH-ME: Getting access key information for public_key: ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx
+RESPONSE:
+{
+  "block_hash": "BjYtcgF1ynmbCk7xxiq4gSbR9gz5M6HkjVW2EYBMZXVQ",
+  "block_height": 169663524,
+  "nonce": 147781057000102,
+  "permission": "FullAccess"
+}
+
+Your transaction was signed successfully.
+Public key: ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx
+Signature: ed25519:37mbDV7DutzcfjRsNE5A42ZxKw6BVodPb5siHGRpBzCoS9hZtAwYLmpEn9nZ9SuDL5WjxUEDbf29SztMFYyd8q69
+2024-07-23T12:29:46.648690Z  INFO Sending transaction ...:Broadcasting transaction via RPC: near_teach_me: 
+TEACH-ME: Broadcasting transaction
+HTTP POST https://archival-rpc.testnet.near.org/
+JSON-BODY:
+{
+  "id": "uiBiMwggW",
+  "jsonrpc": "2.0",
+  "method": "broadcast_tx_commit",
+  "params": [
+    "EQAAAGZyb192b2xvZC50ZXN0bmV0AGYjuraPK0UBuPn9vFOErFp7IcGKqhQ5AqH8v2LHNdzhpzJo9WeGAAARAAAAdm9sb2R5bXlyLnRlc3RuZXSfe1I/45KUz3forrObVqRfwEiUMAgc5HX4Rb4CX6GgZwEAAAADAACA9krhxwItFQAAAAAAAABp3wNpB74/a7r/4KgEtSGfQ6QcMI6znGuExxgMQbVKfs+v8wdznrDx0Lc+swUE7fkusoO+msfMH/fhAElOkUMC"
+  ]
+}
+2024-07-23T12:29:50.307444Z  INFO Sending transaction ...:Broadcasting transaction via RPC: near_teach_me: 
+TEACH-ME: Broadcasting transaction
+HTTP POST https://archival-rpc.testnet.near.org/
+RESPONSE:
+{
+  "receipts_outcome": [
+    {
+      "block_hash": "7GJfCwNBB8TUQX7HmdEFGy1eeWbAskA5nxUTQ7naVAR8",
+      "id": "B3HdGyGGJSKDDWMeoyoRVGHM9JSweVSmEkukBd1S5Niq",
+      "outcome": {
+        "executor_id": "volodymyr.testnet",
+        "gas_burnt": 223182562500,
+        "logs": [],
+        "metadata": {
+          "gas_profile": [],
+          "version": 3
+        },
+        "receipt_ids": [
+          "4DJdfaFNSWCQnXoTVcuhB421hV316u2phg4px8B4vgos"
+        ],
+        "status": {
+          "SuccessValue": ""
+        },
+        "tokens_burnt": "22318256250000000000"
+      },
+      "proof": [
+        {
+          "direction": "Left",
+          "hash": "HpiLaQSivM8bKvc9Ea6ifvgrV9F1R7ejiMJowGudHFWp"
+        }
+      ]
+    }
+  ],
+  "status": {
+    "SuccessValue": ""
+  },
+  "transaction": {
+    "actions": [
+      {
+        "Transfer": {
+          "deposit": "100000000000000000000000"
+        }
+      }
+    ],
+    "hash": "E7ME6GPYb6DxoBFY9H5EQT4CauZKmcNNgyc3G7eDqs6J",
+    "nonce": 147781057000103,
+    "public_key": "ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx",
+    "receiver_id": "volodymyr.testnet",
+    "signature": "ed25519:37mbDV7DutzcfjRsNE5A42ZxKw6BVodPb5siHGRpBzCoS9hZtAwYLmpEn9nZ9SuDL5WjxUEDbf29SztMFYyd8q69",
+    "signer_id": "fro_volod.testnet"
+  },
+  "transaction_outcome": {
+    "block_hash": "GZ8nNshNRyr9FqdKL3zn2o7cFEXhKWRctQC5hXEyJzV9",
+    "id": "E7ME6GPYb6DxoBFY9H5EQT4CauZKmcNNgyc3G7eDqs6J",
+    "outcome": {
+      "executor_id": "fro_volod.testnet",
+      "gas_burnt": 223182562500,
+      "logs": [],
+      "metadata": {
+        "gas_profile": null,
+        "version": 1
+      },
+      "receipt_ids": [
+        "B3HdGyGGJSKDDWMeoyoRVGHM9JSweVSmEkukBd1S5Niq"
+      ],
+      "status": {
+        "SuccessReceiptId": "B3HdGyGGJSKDDWMeoyoRVGHM9JSweVSmEkukBd1S5Niq"
+      },
+      "tokens_burnt": "22318256250000000000"
+    },
+    "proof": [
+      {
+        "direction": "Right",
+        "hash": "CxokG8nzMMQ8bpbs9HXAE8pmrWpexz7mk84geksmjW7"
+      },
+      {
+        "direction": "Right",
+        "hash": "jLXQeFWfC5oK6EAEjgYHxo148yBfA52Hn2HfhTNEheZ"
+      }
+    ]
+  }
+}
+
+--- Logs ---------------------------
+Logs [volodymyr.testnet]:   No logs
+--- Result -------------------------
+Empty result
+------------------------------------
+
+<fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
+
+Gas burned: 0.447 Tgas
+Transaction fee: 0.0000446365125 NEAR (approximately $0.00026424 USD, using $5.92 USD/NEAR exchange rate)
+Transaction ID: E7ME6GPYb6DxoBFY9H5EQT4CauZKmcNNgyc3G7eDqs6J
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactionsE7ME6GPYb6DxoBFY9H5EQT4CauZKmcNNgyc3G7eDqs6J
+```
+</details>
+
 Прежде, чем перейти к описанию конкретных команд, необходимо рассмотреть два общих для этих команд пункта:
 
 1. Подпись транзакции
