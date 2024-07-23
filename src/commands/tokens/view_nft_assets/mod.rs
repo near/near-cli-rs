@@ -33,13 +33,7 @@ impl ViewNftAssetsContext {
                 let args = serde_json::to_vec(&json!({
                         "account_id": owner_account_id.to_string(),
                     }))?;
-                let call_result =
-                    get_nft_balance(
-                        network_config,
-                        &nft_contract_account_id,
-                        args,
-                        block_reference.clone()
-                    )?;
+                let call_result = get_nft_balance(network_config, &nft_contract_account_id, args, block_reference.clone())?;
                 call_result.print_logs();
                 let serde_call_result: serde_json::Value = call_result.parse_result_from_json()?;
 

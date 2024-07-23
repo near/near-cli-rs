@@ -1,5 +1,3 @@
-#![allow(clippy::too_many_arguments)]
-
 use color_eyre::eyre::{Context, ContextCompat};
 use inquire::CustomType;
 use serde_json::{json, Value};

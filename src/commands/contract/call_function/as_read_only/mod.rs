@@ -77,14 +77,7 @@ impl FunctionContext {
             let function_name = scope.function_name.clone();
 
             move |network_config, block_reference| {
-                call_view_function(
-                    network_config,
-                    &account_id,
-                    &function_name,
-                    function_args.clone(),
-                    function_args_type.clone(),
-                    block_reference
-                )
+                call_view_function(network_config, &account_id, &function_name, function_args.clone(), function_args_type.clone(), block_reference)
             }
         });
 

@@ -38,13 +38,7 @@ impl ViewFtBalanceContext {
                 let args = serde_json::to_vec(&json!({
                     "account_id": owner_account_id.to_string(),
                     }))?;
-                let call_result =
-                    get_ft_balance(
-                        network_config,
-                        &ft_contract_account_id,
-                        args,
-                        block_reference.clone()
-                    )?;
+                let call_result = get_ft_balance(network_config, &ft_contract_account_id, args, block_reference.clone())?;
                 call_result.print_logs();
                 let amount: String = call_result.parse_result_from_json()?;
                 let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(

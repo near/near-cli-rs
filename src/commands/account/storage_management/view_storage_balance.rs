@@ -32,13 +32,7 @@ impl AccountContext {
                 move |network_config, block_reference| {
                     let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
 
-                    let storage_balance =
-                        get_storage_balance(
-                            network_config,
-                            &contract_account_id,
-                            &account_id,
-                            block_reference
-                        )?;
+                    let storage_balance = get_storage_balance(network_config, &contract_account_id, &account_id, block_reference)?;
                     eprintln!("storage balance for <{account_id}>:");
                     eprintln!(" {:<13} {:>10}   ({} [{:>28} yoctoNEAR])",
                         "available:",

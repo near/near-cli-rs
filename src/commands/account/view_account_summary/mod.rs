@@ -28,10 +28,7 @@ impl ViewAccountSummaryContext {
             let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {
-                get_account_inquiry(
-                    &account_id, network_config,
-                    block_reference
-                )
+                get_account_inquiry(&account_id, network_config, block_reference)
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {

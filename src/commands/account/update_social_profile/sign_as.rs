@@ -49,12 +49,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             Arc::new({
                 move |network_config| {
-                    get_prepopulated_transaction(
-                        network_config,
-                        &account_id,
-                        &signer_id,
-                        &data
-                    )
+                    get_prepopulated_transaction(network_config, &account_id, &signer_id, &data)
                 }
             });
 
