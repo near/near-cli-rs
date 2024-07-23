@@ -17,7 +17,7 @@ near --offline tokens \
     sign-later
 ```
 
-The _near CLI_ is a great tool for training NEAR developers, as is everything that works in NEAR. For example, if you want to view more detailed information about the RPC calls being made and their parameters, simply run the CLI with the --teach-me flag:
+_near CLI_ is a great tool for understanding NEAR on the low level. For example, if you want to view more detailed information about the RPC calls being made and their parameters, simply run the CLI with the `--teach-me` flag:
 ```txt
 near --teach-me tokens \
     fro_volod.testnet \
