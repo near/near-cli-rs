@@ -103,12 +103,12 @@ fn main() -> crate::common::CliResult {
 
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
-        Err(error) => match error.kind() {
+        Err(cmd_error) => match cmd_error.kind() {
             clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {
-                error.exit()
+                cmd_error.exit()
             }
-            clap::error::ErrorKind::InvalidSubcommand => {
-                match crate::js_command_match::JsCmd::try_parse() {
+            _ => {
+                match crate::js_command_match::JsCmd::try_parse() {                  
                     Ok(js_cmd) => {
                         let vec_cmd = js_cmd.rust_command_generation();
                         let cmd = &shell_words::join(
@@ -116,15 +116,21 @@ fn main() -> crate::common::CliResult {
                         );
                         Cmd::try_parse_from(cmd).unwrap()
                     }
-                    Err(error) => {
-                        if let clap::error::ErrorKind::InvalidSubcommand = error.kind() {
-                            return crate::common::try_external_subcommand_execution(error);
+                    Err(js_cmd_error) => {
+                        // js and rust both don't understand the subcommand
+                        if cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand && js_cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand {
+                            return crate::common::try_external_subcommand_execution(cmd_error);
                         }
-                        error.exit();
+
+                        // js understand the subcommand
+                        if js_cmd_error.kind() != clap::error::ErrorKind::InvalidSubcommand {
+                            js_cmd_error.exit();
+                        }
+
+                        cmd_error.exit();
                     }
                 }
             }
-            _ => error.exit(),
         },
     };
 
