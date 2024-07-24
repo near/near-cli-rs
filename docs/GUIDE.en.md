@@ -1381,10 +1381,10 @@ near staking \
 - [deposit-and-stake](#deposit-and-stake---Delegate-NEAR-tokens-to-a-validator's-staking-pool)
 - [stake](#stake---Delegate-a-certain-amount-of-previously-deposited-or-unstaked-NEAR-tokens-to-a-validator's-staking-pool)
 - [stake-all](#stake-all---Delegate-all-previously-deposited-or-unstaked-NEAR-tokens-to-a-validator's-staking-pool)
-- [unstake](#unstake---Unstake-a-certain-amount-of-delegated-NEAR-tokens-from-a-avalidator's-staking-pool)
-- [unstake-all](#unstake-all---Unstake-all-delegated-NEAR-tokens-from-a-avalidator's-staking-pool)
-- [withdraw](#withdraw---Withdraw-a-certain-amount-of-unstaked-NEAR-tokens-from-a-avalidator's-staking-pool)
-- [withdraw-all](#withdraw-all---Withdraw-all-unstaked-NEAR-tokens-from-a-avalidator's-staking-pool)
+- [unstake](#unstake---Unstake-a-certain-amount-of-delegated-NEAR-tokens-from-a-validator's-staking-pool)
+- [unstake-all](#unstake-all---Unstake-all-delegated-NEAR-tokens-from-a-validator's-staking-pool)
+- [withdraw](#withdraw---Withdraw-a-certain-amount-of-unstaked-NEAR-tokens-from-a-validator's-staking-pool)
+- [withdraw-all](#withdraw-all---Withdraw-all-unstaked-NEAR-tokens-from-a-validator's-staking-pool)
 
 ##### view-balance - View the delegated stake balance for a given account
 
@@ -1488,7 +1488,7 @@ near staking \
 </a>
 </details>
 
-##### unstake - Unstake a certain amount of delegated NEAR tokens from a avalidator's staking pool
+##### unstake - Unstake a certain amount of delegated NEAR tokens from a validator's staking pool
 
 To unstake your delegated NEAR tokens from a staking pool, you can use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to unstake, and choose the staking pool account id):
 ```txt
@@ -1513,7 +1513,7 @@ near staking \
 </a>
 </details>
 
-##### unstake-all - Unstake all delegated NEAR tokens from a avalidator's staking pool
+##### unstake-all - Unstake all delegated NEAR tokens from a validator's staking pool
 
 To unstake your delegated NEAR tokens from a staking pool, you can use the following command (note that you need to use your own account id, and choose the staking pool account id):
 ```txt
@@ -1538,7 +1538,7 @@ near staking \
 </a>
 </details>
 
-##### withdraw - Withdraw a certain amount of unstaked NEAR tokens from a avalidator's staking pool
+##### withdraw - Withdraw a certain amount of unstaked NEAR tokens from a validator's staking pool
 
 To withdraw your delegated NEAR tokens from a staking pool after you unstaked and waited for 4 epochs, you can use the following command (note that you need to use your own account id, adjust the amount of NEAR tokens to withdraw, and choose the staking pool account id):
 ```txt
@@ -1563,7 +1563,7 @@ near staking \
 </a>
 </details>
 
-##### withdraw-all - Withdraw all unstaked NEAR tokens from a avalidator's staking pool
+##### withdraw-all - Withdraw all unstaked NEAR tokens from a validator's staking pool
 
 To withdraw all your delegated NEAR tokens from a staking pool after you unstaked them and waited for 4 epochs, you can use the following command (note that you need to use your own account id, and choose the staking pool account id):
 ```txt

@@ -1494,7 +1494,7 @@ near staking \
 </a>
 </details>
 
-##### unstake - Unstake a certain amount of delegated NEAR tokens from a avalidator's staking pool
+##### unstake - Unstake a certain amount of delegated NEAR tokens from a validator's staking pool
 
 Чтобы отменить определённую часть ставки, совершённую через общий фонд валидатора, используйте следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, указать желаемое количество NEAR токенов, а также выбрать идентификатор аккаунта валидатора):
 
@@ -1520,7 +1520,7 @@ near staking \
 </a>
 </details>
 
-##### unstake-all - Unstake all delegated NEAR tokens from a avalidator's staking pool
+##### unstake-all - Unstake all delegated NEAR tokens from a validator's staking pool
 
 Чтобы отменить всю ставку, совершённую через общий фонд валидатора, используйте следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, а также выбрать идентификатор аккаунта валидатора):
 
@@ -1546,7 +1546,7 @@ near staking \
 </a>
 </details>
 
-##### withdraw - Withdraw a certain amount of unstaked NEAR tokens from a avalidator's staking pool
+##### withdraw - Withdraw a certain amount of unstaked NEAR tokens from a validator's staking pool
 
 Чтобы получить ваши раннее порученные NEAR токены и награды из общего фонда валидатора после того как ставка была снята и прошло 4 эпохи, используйте следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, указать желаемое количество NEAR токенов, а также выбрать идентификатор аккаунта валидатора):
 
@@ -1573,7 +1573,7 @@ Error:
 </a>
 </details>
 
-##### withdraw-all - Withdraw all unstaked NEAR tokens from a avalidator's staking pool
+##### withdraw-all - Withdraw all unstaked NEAR tokens from a validator's staking pool
 
 Чтобы получить все ваши раннее порученные NEAR токены и награды из общего фонда валидатора после того как ставка была снята и прошло 4 эпохи, используйте следующую командну в терминале (обратите внимание, что вам необходимо использовать свой собственный идентификатор аккаунта, а также выбрать идентификатор аккаунта валидатора):
 
