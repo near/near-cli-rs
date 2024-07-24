@@ -108,7 +108,7 @@ fn main() -> crate::common::CliResult {
                 cmd_error.exit()
             }
             _ => {
-                match crate::js_command_match::JsCmd::try_parse() {                  
+                match crate::js_command_match::JsCmd::try_parse() {
                     Ok(js_cmd) => {
                         let vec_cmd = js_cmd.rust_command_generation();
                         let cmd = std::iter::once(near_cli_exec_path.to_owned()).chain(vec_cmd);
@@ -116,7 +116,9 @@ fn main() -> crate::common::CliResult {
                     }
                     Err(js_cmd_error) => {
                         // js and rust both don't understand the subcommand
-                        if cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand && js_cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand {
+                        if cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
+                            && js_cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
+                        {
                             return crate::common::try_external_subcommand_execution(cmd_error);
                         }
 
