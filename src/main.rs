@@ -111,10 +111,8 @@ fn main() -> crate::common::CliResult {
                 match crate::js_command_match::JsCmd::try_parse() {                  
                     Ok(js_cmd) => {
                         let vec_cmd = js_cmd.rust_command_generation();
-                        let cmd = &shell_words::join(
-                            std::iter::once(near_cli_exec_path.to_owned()).chain(vec_cmd),
-                        );
-                        Cmd::try_parse_from(cmd).unwrap()
+                        let cmd = std::iter::once(near_cli_exec_path.to_owned()).chain(vec_cmd);
+                        Parser::parse_from(cmd)
                     }
                     Err(js_cmd_error) => {
                         // js and rust both don't understand the subcommand
