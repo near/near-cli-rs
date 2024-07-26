@@ -137,9 +137,14 @@ fn main() -> crate::common::CliResult {
     if cli.teach_me {
         let env_filter = EnvFilter::from_default_env()
             .add_directive(tracing::Level::WARN.into())
-            .add_directive("near=info".parse()?);
+            .add_directive("near_teach_me=info".parse()?)
+            .add_directive("near_cli_rs=info".parse()?);
         tracing_subscriber::registry()
-            .with(tracing_subscriber::fmt::layer())
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .without_time()
+                    .with_target(false),
+            )
             .with(env_filter)
             .init();
     } else {
@@ -164,7 +169,11 @@ fn main() -> crate::common::CliResult {
             .add_directive(tracing::Level::WARN.into())
             .add_directive("near_cli_rs=info".parse()?);
         tracing_subscriber::registry()
-            .with(tracing_subscriber::fmt::layer().with_writer(indicatif_layer.get_stderr_writer()))
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .without_time()
+                    .with_writer(indicatif_layer.get_stderr_writer()),
+            )
             .with(indicatif_layer)
             .with(env_filter)
             .init();

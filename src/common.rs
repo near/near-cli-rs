@@ -2076,6 +2076,8 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         tracing::Span::current().pb_set_message(&format!(
             "the '{method_name}' method of the <{account_id}> contract ..."
         ));
+        tracing::info!(target: "near_teach_me", "the '{method_name}' method of the <{account_id}> contract ...");
+
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::CallFunction {
@@ -2085,13 +2087,25 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             },
         };
         let request_payload = near_jsonrpc_client::methods::to_json(&query_view_method_request)?;
+
         tracing::info!(
             target: "near_teach_me",
-            "\nTEACH-ME: Getting the result of executing the '{}' method of the <{}> contract\nHTTP POST {}\nJSON-BODY:\n{:#}",
+            parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to call a read-only function {} on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
             method_name,
-            account_id,
-            self.server_addr(),
-            request_payload,
+            account_id
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "HTTP POST {}",
+            self.server_addr()
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "JSON Body:\n{}",
+            indent_payload(&format!("{:#}", request_payload))
         );
 
         let query_view_method_response = self
@@ -2102,13 +2116,21 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         tracing::info!(
             target: "near_teach_me",
-            "\nTEACH-ME: Getting the result of executing the '{}' method of the <{}> contract\nRESPONSE:\n{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
-            method_name,
-            account_id,
-            query_view_method_response.block_hash,
-            query_view_method_response.block_height,
-            call_result.logs,
-            call_result.result
+            parent: &tracing::Span::none(),
+            "JSON RPC Response:\n{}",
+            indent_payload(&format!(
+                "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
+                query_view_method_response.block_hash,
+                query_view_method_response.block_height,
+                call_result.logs,
+                call_result.result
+            ))
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "Decoding the \"result\" array of bytes as UTF-8 string (tip: here is a Python snippet: `\"\".join([chr(c) for c in result])`):\n{}",
+            indent_payload(&String::from_utf8(call_result.result.clone()).unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned()))
         );
 
         query_view_method_response.call_result()
@@ -2126,7 +2148,9 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     > {
-        tracing::Span::current().pb_set_message(&format!("{public_key} ..."));
+        tracing::Span::current()
+            .pb_set_message(&format!("{public_key} on {account_id} account ..."));
+        tracing::info!(target: "near_teach_me", "{public_key} on {account_id} account ...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2139,10 +2163,22 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         tracing::info!(
             target: "near_teach_me",
-            "\nTEACH-ME: Getting access key information for public_key: {}\nHTTP POST {}\nJSON-BODY:\n{:#}",
+            parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to get an access key {} details on `{}` account, learn more https://docs.near.org/api/rpc/access-keys#view-access-key",
             public_key,
-            self.server_addr(),
-            request_payload,
+            account_id
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "HTTP POST {}",
+            self.server_addr()
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "JSON Body:\n{}",
+            indent_payload(&format!("{:#}", request_payload))
         );
 
         let query_view_method_response: near_jsonrpc_client::methods::query::RpcQueryResponse =
@@ -2152,9 +2188,9 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         tracing::info!(
             target: "near_teach_me",
-            "\nTEACH-ME: Getting access key information for public_key: {}\nRESPONSE:\n{:#}",
-            public_key,
-            response_payload
+            parent: &tracing::Span::none(),
+            "JSON RPC Response:\n{}",
+            indent_payload(&format!("{:#}", response_payload))
         );
 
         Ok(query_view_method_response)
@@ -2172,6 +2208,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         >,
     > {
         tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
+        tracing::info!(target: "near_teach_me", "{account_id} access keys ...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2183,10 +2220,21 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         tracing::info!(
             target: "near_teach_me",
-            "\nTEACH-ME: Getting a list of {} access keys\nHTTP POST {}\nJSON-BODY:\n{:#}",
-            account_id,
-            self.server_addr(),
-            request_payload,
+            parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to get a list of keys for `{}` account, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
+            account_id
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "HTTP POST {}",
+            self.server_addr()
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "JSON Body:\n{}",
+            indent_payload(&format!("{:#}", request_payload))
         );
 
         let query_view_method_response = self.blocking_call(query_view_method_request)?;
@@ -2195,9 +2243,9 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         tracing::info!(
             target: "near_teach_me",
-            "\nTEACH-ME: Getting a list of {} access keys\nRESPONSE:\n{:#}",
-            account_id,
-            response_payload
+            parent: &tracing::Span::none(),
+            "JSON RPC Response:\n{}",
+            indent_payload(&format!("{:#}", response_payload))
         );
 
         Ok(query_view_method_response)
@@ -2215,6 +2263,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         >,
     > {
         tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
+        tracing::info!(target: "near_teach_me", "{account_id} ...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2226,10 +2275,21 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         tracing::info!(
             target: "near_teach_me",
-            "\nTEACH-ME: Getting information about {}\nHTTP POST {}\nJSON-BODY:\n{:#}",
-            account_id,
-            self.server_addr(),
-            request_payload,
+            parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to query information about `{}` account, learn more https://docs.near.org/api/rpc/contracts#view-account",
+            account_id
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "HTTP POST {}",
+            self.server_addr()
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "JSON Body:\n{}",
+            indent_payload(&format!("{:#}", request_payload))
         );
 
         let query_view_method_response = self.blocking_call(query_view_method_request)?;
@@ -2238,9 +2298,9 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         tracing::info!(
             target: "near_teach_me",
-            "\nTEACH-ME: Getting information about {}\nRESPONSE:\n{:#}",
-            account_id,
-            response_payload
+            parent: &tracing::Span::none(),
+            "JSON RPC Response:\n{}",
+            indent_payload(&format!("{:#}", response_payload))
         );
 
         Ok(query_view_method_response)
@@ -2277,6 +2337,17 @@ fn response_payload(
             ),
         )
     })
+}
+
+pub(crate) fn indent_payload(s: &str) -> String {
+    use std::fmt::Write;
+
+    let mut indented_string = String::new();
+    indenter::indented(&mut indented_string)
+        .with_str(" |    ")
+        .write_str(s)
+        .ok();
+    indented_string
 }
 
 #[easy_ext::ext(RpcQueryResponseExt)]

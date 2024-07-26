@@ -586,6 +586,6 @@ pub async fn get_contract_abi(
                 .map_err(FetchAbiError::AbiUnknownFormat);
             }
         }
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     }
 }

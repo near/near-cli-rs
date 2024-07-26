@@ -2487,6 +2487,7 @@ dependencies = [
  "ed25519-dalek",
  "futures",
  "hex 0.4.3",
+ "indenter",
  "indicatif",
  "inquire",
  "interactive-clap",
