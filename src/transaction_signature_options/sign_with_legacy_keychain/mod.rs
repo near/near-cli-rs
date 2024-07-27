@@ -107,7 +107,7 @@ impl SignLegacyKeychainContext {
                     );
                     path.push(dir_name);
                     path.push(
-                        &previous_context
+                        previous_context
                             .prepopulated_transaction
                             .signer_id
                             .to_string(),
