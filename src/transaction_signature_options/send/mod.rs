@@ -78,14 +78,36 @@ pub fn sending_signed_transaction(
     signed_transaction: &near_primitives::transaction::SignedTransaction,
 ) -> color_eyre::Result<near_primitives::views::FinalExecutionOutcomeView> {
     tracing::Span::current().pb_set_message(network_config.rpc_url.as_str());
+    tracing::info!(target: "near_teach_me", "{}", network_config.rpc_url.as_str());
+
     let retries_number = 5;
     let mut retries = (1..=retries_number).rev();
     let transaction_info = loop {
-        let transaction_info_result = network_config.json_rpc_client().blocking_call(
+        let request =
             near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
                 signed_transaction: signed_transaction.clone(),
-            },
+            };
+        let request_payload = near_jsonrpc_client::methods::to_json(&request)?;
+
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to broadcast a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx"
         );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "HTTP POST {}",
+            network_config.rpc_url.as_str(),
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "JSON Body:\n{}",
+            crate::common::indent_payload(&format!("{:#}", request_payload))
+        );
+
+        let transaction_info_result = network_config.json_rpc_client().blocking_call(request);
         match transaction_info_result {
             Ok(response) => {
                 break response;
@@ -107,6 +129,16 @@ pub fn sending_signed_transaction(
             },
         };
     };
+
+    let response_payload = serde_json::to_value(&transaction_info)?;
+
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "JSON RPC Response:\n{}",
+        crate::common::indent_payload(&format!("{:#}", response_payload))
+    );
+
     Ok(transaction_info)
 }
 
@@ -125,14 +157,43 @@ fn sending_delegate_action(
     meta_transaction_relayer_url: url::Url,
 ) -> Result<reqwest::blocking::Response, reqwest::Error> {
     tracing::Span::current().pb_set_message(meta_transaction_relayer_url.as_str());
+    tracing::info!(target: "near_teach_me", "{}", meta_transaction_relayer_url.as_str());
+
     let client = reqwest::blocking::Client::new();
-    let json_payload = serde_json::json!({
+    let request_payload = serde_json::json!({
         "signed_delegate_action": crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
             signed_delegate_action
         ).to_string()
     });
-    client
-        .post(meta_transaction_relayer_url)
-        .json(&json_payload)
-        .send()
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "I am making HTTP call to NEAR JSON RPC to broadcast a transaction, learn more https://docs.near.org/concepts/abstraction/relayers"
+    );
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "HTTP POST {}",
+        meta_transaction_relayer_url.as_str()
+    );
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "JSON Body:\n{}",
+        crate::common::indent_payload(&format!("{:#}", request_payload))
+    );
+
+    let response = client
+        .post(meta_transaction_relayer_url.clone())
+        .json(&request_payload)
+        .send()?;
+
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "JSON RPC Response:\n{}",
+        crate::common::indent_payload(&format!("{:#?}", response))
+    );
+
+    Ok(response)
 }

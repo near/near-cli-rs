@@ -15,6 +15,244 @@ near --offline tokens \
     sign-later
 ```
 
+_near CLI_ — отличный инструмент для глубокого понимания NEAR. Например, если вы хотите просмотреть более подробную информацию о выполняемых вызовах RPC и их параметрах, просто запустите CLI с флагом `--teach-me`:
+```txt
+near --teach-me tokens \
+    fro_volod.testnet \
+    send-near volodymyr.testnet 0.1NEAR \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Unsigned transaction:
+
+signer_id:    fro_volod.testnet
+receiver_id:  volodymyr.testnet
+actions:
+   -- transfer deposit:    0.1 NEAR
+
+ INFO Signing the transaction with a key saved in the secure keychain ...:Getting a list of: fro_volod.testnet access keys ...
+ INFO I am making HTTP call to NEAR JSON RPC to get a list of keys for `fro_volod.testnet` account, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list
+ INFO HTTP POST https://archival-rpc.testnet.near.org/
+ INFO JSON Body:
+ |    {
+ |      "id": "RSDcGn4WP",
+ |      "jsonrpc": "2.0",
+ |      "method": "query",
+ |      "params": {
+ |        "account_id": "fro_volod.testnet",
+ |        "finality": "final",
+ |        "request_type": "view_access_key_list"
+ |      }
+ |    }
+ INFO JSON RPC Response:
+ |    {
+ |      "block_hash": "DaoWCSVSMVS6d5rLsYBgVKwSKb8XxZWN2KpEg2dQEbEY",
+ |      "block_height": 169978024,
+ |      "keys": [
+ |        {
+ |          "access_key": {
+ |            "nonce": 116133598000035,
+ |            "permission": "FullAccess"
+ |          },
+ |          "public_key": "ed25519:1TprKa4burMqDMjDHyBSUaFQQczF7NamhxTx2yEXe9P"
+ |        },
+ |        {
+ |          "access_key": {
+ |            "nonce": 94982716000000,
+ |            "permission": {
+ |              "FunctionCall": {
+ |                "allowance": "250000000000000000000000",
+ |                "method_names": [],
+ |                "receiver_id": "mintspace2.testnet"
+ |              }
+ |            }
+ |          },
+ |          "public_key": "ed25519:7YCfA1KrToJtAYGTBgAMe4LWfQEi4iwLGcH2q5SvGKzD"
+ |        },
+ |        {
+ |          "access_key": {
+ |            "nonce": 147781057000109,
+ |            "permission": "FullAccess"
+ |          },
+ |          "public_key": "ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx"
+ |        },
+ |        {
+ |          "access_key": {
+ |            "nonce": 101493245000000,
+ |            "permission": {
+ |              "FunctionCall": {
+ |                "allowance": "10000000000000000000000000",
+ |                "method_names": [
+ |                  "set_a",
+ |                  "set_b"
+ |                ],
+ |                "receiver_id": "meta.pool.testnet"
+ |              }
+ |            }
+ |          },
+ |          "public_key": "ed25519:8KHRkmpWbAp6wHZ5imAGFZzRAHzha2cZoz7cc3J42Bz8"
+ |        },
+ |        {
+ |          "access_key": {
+ |            "nonce": 98944792000000,
+ |            "permission": "FullAccess"
+ |          },
+ |          "public_key": "ed25519:8dGkLiLD285Pzgp6v4mhaUbJyFvwEMvzjss1u9xZokTz"
+ |        },
+ |        {
+ |          "access_key": {
+ |            "nonce": 105032344000005,
+ |            "permission": "FullAccess"
+ |          },
+ |          "public_key": "ed25519:J5uajy3m24sEQdw1uWA5kD2i3PDcxRxcFYotVZqRyrm6"
+ |        }
+ |      ]
+ |    }
+ INFO Signing the transaction with a key saved in the secure keychain ...:Trying to sign with the legacy keychain ...:Signing the transaction with a key saved in legacy keychain ...:Getting access key information:: ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx on fro_volod.testnet account ...
+ INFO I am making HTTP call to NEAR JSON RPC to get an access key ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx details on `fro_volod.testnet` account, learn more https://docs.near.org/api/rpc/access-keys#view-access-key
+ INFO HTTP POST https://archival-rpc.testnet.near.org/
+ INFO JSON Body:
+ |    {
+ |      "id": "3DCGHrjRK",
+ |      "jsonrpc": "2.0",
+ |      "method": "query",
+ |      "params": {
+ |        "account_id": "fro_volod.testnet",
+ |        "finality": "optimistic",
+ |        "public_key": "ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx",
+ |        "request_type": "view_access_key"
+ |      }
+ |    }
+ INFO JSON RPC Response:
+ |    {
+ |      "block_hash": "BDT76QHmdMC5yKHBuJBi3vgAC1j4hPSHoX5oVFpx1SG2",
+ |      "block_height": 169978028,
+ |      "nonce": 147781057000109,
+ |      "permission": "FullAccess"
+ |    }
+
+Your transaction was signed successfully.
+Public key: ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx
+Signature: ed25519:4r8YNLMkqhxSTFLejMf8JvZw6q8ue9BuQHf7JEycamAWCqLckfE5zNG7ceWoUfagQaJLTunD59ig4LuecYyVk8Qe
+ INFO Sending transaction ...:Broadcasting transaction via RPC: https://archival-rpc.testnet.near.org/
+ INFO I am making HTTP call to NEAR JSON RPC to broadcast a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx
+ INFO HTTP POST https://archival-rpc.testnet.near.org/
+ INFO JSON Body:
+ |    {
+ |      "id": "1ARLaDA3J",
+ |      "jsonrpc": "2.0",
+ |      "method": "broadcast_tx_commit",
+ |      "params": [
+ |        "EQAAAGZyb192b2xvZC50ZXN0bmV0AGYjuraPK0UBuPn9vFOErFp7IcGKqhQ5AqH8v2LHNdzhrjJo9WeGAAARAAAAdm9sb2R5bXlyLnRlc3RuZXSXxVsmKUVo0lmnzQ013O+bqjznbnB5g/3biI+j62VuOwEAAAADAACA9krhxwItFQAAAAAAAADAazoMP0kIphzt/zQ7Z97rr64FLGGsXMJDS8sXpuX8WwQdEgF6GZX+fz8hvKx5GqB4nrxnwrxbZScTQcs9mcEP"
+ |      ]
+ |    }
+ INFO JSON RPC Response:
+ |    {
+ |      "receipts_outcome": [
+ |        {
+ |          "block_hash": "7rKeJTzfty8YKWmxjCSAi3YB3AYkTs6b6BbrN3TfbzSu",
+ |          "id": "HgDAs4D8SCe7RxgH9Knomg99N9LF92b7nUCC6FRbC7Eo",
+ |          "outcome": {
+ |            "executor_id": "volodymyr.testnet",
+ |            "gas_burnt": 223182562500,
+ |            "logs": [],
+ |            "metadata": {
+ |              "gas_profile": [],
+ |              "version": 3
+ |            },
+ |            "receipt_ids": [
+ |              "5LTPntJ4CDmnHCjb4URXqmnCxudBhmPHDv7kpuEWY8U4"
+ |            ],
+ |            "status": {
+ |              "SuccessValue": ""
+ |            },
+ |            "tokens_burnt": "22318256250000000000"
+ |          },
+ |          "proof": [
+ |            {
+ |              "direction": "Right",
+ |              "hash": "3sWdNsYk1wmbuQBJtWFuxVTViYjhqHrd7oahLAtGK6xC"
+ |            }
+ |          ]
+ |        }
+ |      ],
+ |      "status": {
+ |        "SuccessValue": ""
+ |      },
+ |      "transaction": {
+ |        "actions": [
+ |          {
+ |            "Transfer": {
+ |              "deposit": "100000000000000000000000"
+ |            }
+ |          }
+ |        ],
+ |        "hash": "F3eZmhtFekCrzKMbc3uk5UbKkMsuuecj6WbK9spcz8bW",
+ |        "nonce": 147781057000110,
+ |        "public_key": "ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx",
+ |        "receiver_id": "volodymyr.testnet",
+ |        "signature": "ed25519:4r8YNLMkqhxSTFLejMf8JvZw6q8ue9BuQHf7JEycamAWCqLckfE5zNG7ceWoUfagQaJLTunD59ig4LuecYyVk8Qe",
+ |        "signer_id": "fro_volod.testnet"
+ |      },
+ |      "transaction_outcome": {
+ |        "block_hash": "4Ctk97bpxgY3npmU41n5t7ZviKcVDD2sK6N9E1RvanER",
+ |        "id": "F3eZmhtFekCrzKMbc3uk5UbKkMsuuecj6WbK9spcz8bW",
+ |        "outcome": {
+ |          "executor_id": "fro_volod.testnet",
+ |          "gas_burnt": 223182562500,
+ |          "logs": [],
+ |          "metadata": {
+ |            "gas_profile": null,
+ |            "version": 1
+ |          },
+ |          "receipt_ids": [
+ |            "HgDAs4D8SCe7RxgH9Knomg99N9LF92b7nUCC6FRbC7Eo"
+ |          ],
+ |          "status": {
+ |            "SuccessReceiptId": "HgDAs4D8SCe7RxgH9Knomg99N9LF92b7nUCC6FRbC7Eo"
+ |          },
+ |          "tokens_burnt": "22318256250000000000"
+ |        },
+ |        "proof": [
+ |          {
+ |            "direction": "Right",
+ |            "hash": "2ktmkisPC2M6uXFKc6XuAWGA1WbtewS2L6ugkLv92K6T"
+ |          },
+ |          {
+ |            "direction": "Right",
+ |            "hash": "HLHeyozXBSqN7Tz1JV3bxQ8J9z9dhAUSbKc5tXHDzHh2"
+ |          }
+ |        ]
+ |      }
+ |    }
+
+--- Logs ---------------------------
+Logs [volodymyr.testnet]:   No logs
+--- Result -------------------------
+Empty result
+------------------------------------
+
+<fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
+
+Gas burned: 0.447 Tgas
+Transaction fee: 0.0000446365125 NEAR (approximately $0.00025308 USD, using $5.67 USD/NEAR exchange rate)
+Transaction ID: F3eZmhtFekCrzKMbc3uk5UbKkMsuuecj6WbK9spcz8bW
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactionsF3eZmhtFekCrzKMbc3uk5UbKkMsuuecj6WbK9spcz8bW
+
+
+
+
+Here is your console command if you need to script it or re-run:
+    ./target/debug/near --teach-me tokens fro_volod.testnet send-near volodymyr.testnet '0.1 NEAR' network-config testnet sign-with-keychain send
+```
+</details>
+
 Прежде, чем перейти к описанию конкретных команд, необходимо рассмотреть два общих для этих команд пункта:
 
 1. Подпись транзакции

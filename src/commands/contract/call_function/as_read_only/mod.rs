@@ -109,7 +109,7 @@ impl Function {
     }
 }
 
-#[tracing::instrument(name = "Getting a response to a view method ...", skip_all)]
+#[tracing::instrument(name = "Getting a response to a read-only function call ...", skip_all)]
 fn call_view_function(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
@@ -124,7 +124,7 @@ fn call_view_function(
         .blocking_call_view_function(account_id, function_name, args, block_reference.clone())
         .wrap_err_with(|| {
             format!(
-                "Failed to fetch query for view method: '{}' (contract <{}> on network <{}>)",
+                "Failed to fetch query for read-only function call: '{}' (contract <{}> on network <{}>)",
                 function_name, account_id, network_config.network_name
             )
         })?;

@@ -53,6 +53,7 @@ open = "5"
 shell-words = "1"
 cargo-util = "0.1.1"
 indicatif = "0.17.8"
+indenter = "0.3"
 tracing = "0.1.40"
 tracing-indicatif = "0.3.6"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
