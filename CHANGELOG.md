@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0](https://github.com/near/near-cli-rs/compare/v0.12.0...v0.13.0) - 2024-07-30
+
+### Added
+- Automatically exec legacy JS CLI commands for full backward compatibility ([#366](https://github.com/near/near-cli-rs/pull/366))
+- Added the ability to use the TEACH-ME mode ([#360](https://github.com/near/near-cli-rs/pull/360))
+- Added a new subcommand to edit configuration parameters ([#367](https://github.com/near/near-cli-rs/pull/367))
+
+### Fixed
+- Fixed the fallback implementation of fetching active staking pools ([#369](https://github.com/near/near-cli-rs/pull/369))
+
+### Other
+- Fixed typos in user prompts and the guide ([#372](https://github.com/near/near-cli-rs/pull/372))
+
 ## [0.12.0](https://github.com/near/near-cli-rs/compare/v0.11.1...v0.12.0) - 2024-07-09
 
 ### Added
