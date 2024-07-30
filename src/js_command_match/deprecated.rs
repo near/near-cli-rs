@@ -17,14 +17,14 @@ const DEPRECATED: &str = "The command you tried to run has been moved into its o
 
 impl ValidatorsArgs {
     pub fn to_cli_args(&self, _network_config: String) -> Vec<String> {
-      eprintln!("\n{}\n", DEPRECATED.to_string().yellow());
-      vec!["near-validator".to_string()]
+        eprintln!("\n{}\n", DEPRECATED.to_string().yellow());
+        vec!["near-validator".to_string()]
     }
 }
 
 impl StakeArgs {
     pub fn to_cli_args(&self, _network_config: String) -> Vec<String> {
-      eprintln!("\n{}\n", DEPRECATED.to_string().yellow());
-      vec!["near-validator".to_string()]
+        eprintln!("\n{}\n", DEPRECATED.to_string().yellow());
+        vec!["near-validator".to_string()]
     }
 }
