@@ -45,15 +45,15 @@ mod tests {
         for (input, expected_output) in [
             (
                 format!("near view counter.near-examples.testnet get '{args}'"),
-                format!("contract call-function as-read-only counter.near-examples.testnet get text-args '{args}' network-config testnet now")
+                format!("contract call-function as-read-only counter.near-examples.testnet get json-args '{args}' network-config testnet now")
             ),
             (
                 format!("near view counter.near-examples.testnet get '{args}' --{} testnet", NETWORK_ID_ALIASES[0]),
-                format!("contract call-function as-read-only counter.near-examples.testnet get text-args '{args}' network-config testnet now")
+                format!("contract call-function as-read-only counter.near-examples.testnet get json-args '{args}' network-config testnet now")
             ),
             (
                 format!("near view counter.near-examples.testnet get '{args}' --{} mainnet", NETWORK_ID_ALIASES[1]),
-                format!("contract call-function as-read-only counter.near-examples.testnet get text-args '{args}' network-config mainnet now")
+                format!("contract call-function as-read-only counter.near-examples.testnet get json-args '{args}' network-config mainnet now")
             ),
         ] {
             let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
