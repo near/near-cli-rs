@@ -33,6 +33,7 @@ pub enum JsCmd {
     TxStatus(self::transactions::status::TxStatusArgs),
 
     Validators(self::deprecated::ValidatorsArgs),
+    #[clap(alias("validator-stake"))]
     Stake(self::deprecated::StakeArgs),
 }
 
