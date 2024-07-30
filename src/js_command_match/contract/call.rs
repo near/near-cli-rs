@@ -9,7 +9,7 @@ use crate::js_command_match::constants::{
 pub struct CallArgs {
     contract_name: String,
     method_name: String,
-    #[clap(default_value = "")]
+    #[clap(default_value = "{}")]
     args: String,
     #[clap(long, aliases = USE_ACCOUNT_ALIASES)]
     use_account: String,

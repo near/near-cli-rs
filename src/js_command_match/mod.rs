@@ -2,6 +2,7 @@ mod constants;
 
 mod account;
 mod contract;
+mod deprecated;
 mod keys;
 mod transactions;
 
@@ -30,6 +31,9 @@ pub enum JsCmd {
     #[clap(alias("send-near"))]
     Send(self::transactions::send::SendArgs),
     TxStatus(self::transactions::status::TxStatusArgs),
+
+    Validators(self::deprecated::ValidatorsArgs),
+    Stake(self::deprecated::StakeArgs),
 }
 
 impl JsCmd {
@@ -55,6 +59,9 @@ impl JsCmd {
 
             Self::Send(args) => args.to_cli_args(network),
             Self::TxStatus(args) => args.to_cli_args(network),
+
+            Self::Validators(args) => args.to_cli_args(network),
+            Self::Stake(args) => args.to_cli_args(network),
         }
     }
 }
