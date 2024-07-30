@@ -84,55 +84,35 @@ fn main() -> crate::common::CliResult {
 
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
-        Err(error) => {
-            match error.kind() {
-                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {}
-                _ => match crate::js_command_match::JsCmd::try_parse() {
+        Err(cmd_error) => match cmd_error.kind() {
+            clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {
+                cmd_error.exit()
+            }
+            _ => {
+                match crate::js_command_match::JsCmd::try_parse() {
                     Ok(js_cmd) => {
-                        match js_cmd.rust_command_generation() {
-                            Ok((vec_cmd, success_message)) => {
-                                eprintln!("{success_message}");
-                                eprintln!();
-                                eprintln!(
-                                    "    {}",
-                                    shell_words::join(
-                                        std::iter::once(near_cli_exec_path).chain(vec_cmd)
-                                    )
-                                    .yellow()
-                                );
-                            }
-                            Err(err) => {
-                                eprintln!("{}", err);
-                            }
-                        }
-                        std::process::exit(1);
+                        let vec_cmd = js_cmd.rust_command_generation();
+                        let cmd = std::iter::once(near_cli_exec_path.to_owned()).chain(vec_cmd);
+                        Parser::parse_from(cmd)
                     }
-                    Err(error) => {
-                        if let clap::error::ErrorKind::DisplayHelp = error.kind() {
-                            error.exit();
+                    Err(js_cmd_error) => {
+                        // js and rust both don't understand the subcommand
+                        if cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
+                            && js_cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
+                        {
+                            return crate::common::try_external_subcommand_execution(cmd_error);
                         }
-                        if let Some(cmd) = std::env::args().nth(1) {
-                            match cmd.as_str() {
-                                "add-credentials" | "add-key" | "call" | "create"
-                                | "create-account" | "delete" | "delete-account" | "delete-key"
-                                | "deploy" | "generate-key" | "import-account" | "keys"
-                                | "list-keys" | "login" | "send" | "send-near" | "stake"
-                                | "state" | "storage" | "tx-status" | "validator-stake"
-                                | "validators" | "view" | "view-storage" => error.exit(),
-                                _ => {}
-                            }
-                        }
-                    }
-                },
-            }
 
-            if let clap::error::ErrorKind::UnknownArgument
-            | clap::error::ErrorKind::InvalidSubcommand = error.kind()
-            {
-                return crate::common::try_external_subcommand_execution(error);
+                        // js understand the subcommand
+                        if js_cmd_error.kind() != clap::error::ErrorKind::InvalidSubcommand {
+                            js_cmd_error.exit();
+                        }
+
+                        cmd_error.exit();
+                    }
+                }
             }
-            error.exit();
-        }
+        },
     };
     if cli.teach_me {
         let env_filter = EnvFilter::from_default_env()
