@@ -520,9 +520,9 @@ async fn get_contract_source_metadata(
 
 #[derive(Error, Debug)]
 pub enum FetchAbiError {
-    #[error("Contact does not support NEAR ABI (https://github.com/near/abi), so there is no way to get details about the function argument and return values.")]
+    #[error("Contract does not support NEAR ABI (https://github.com/near/abi), so there is no way to get details about the function argument and return values.")]
     AbiNotSupported,
-    #[error("The contact has unknown NEAR ABI format (https://github.com/near/abi), so there is no way to get details about the function argument and return values. See more details about the error:\n\n{0}")]
+    #[error("The contract has unknown NEAR ABI format (https://github.com/near/abi), so there is no way to get details about the function argument and return values. See more details about the error:\n\n{0}")]
     AbiUnknownFormat(Report),
     #[error("'__contract_abi' function call failed due to RPC error, so there is no way to get details about the function argument and return values. See more details about the error:\n\n{0}")]
     RpcError(
