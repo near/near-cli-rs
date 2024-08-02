@@ -18,25 +18,19 @@ Visit [Releases page](https://github.com/near/near-cli-rs/releases/) to see the 
 ```sh
 irm https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.ps1 | iex
 ```
-<video controls width="1200">
-  <source src="docs/media/install-powershell-script-small.mp4" type="video/mp4">
-</video>
+https://github.com/user-attachments/assets/62272564-115f-46d8-ab35-22a767a4f8a5
 </details>
 
 <details>
   <summary>Installing precompiled binaries using Windows Installer</summary>
 
-<video controls width="1200">
-  <source src="docs/media/install-windows-msvc-msi-small.mp4" type="video/mp4">
-</video>
+  https://github.com/user-attachments/assets/5b4aab14-c161-47a3-a20b-3d1cd07663b8
 </details>
 
 <details>
   <summary>Installing precompiled binaries using an archive file (Windows)</summary>
 
-<video controls width="1200">
-  <source src="docs/media/install-windows-msvc-tar-gz-small.mp4" type="video/mp4">
-</video>
+  https://github.com/user-attachments/assets/5888ae4f-8a6e-4c0b-a1ae-02ce6d0d7fbe
 </details>
 
 <details>
