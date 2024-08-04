@@ -78,9 +78,11 @@ fn input_function_name(
                 .filter(|function| function_kind == function.kind)
                 .map(|function| function.name)
                 .collect::<Vec<String>>();
-            return Ok(Some(
-                Select::new(message, function_names).prompt()?.to_string(),
-            ));
+            if !function_names.is_empty() {
+                return Ok(Some(
+                    Select::new(message, function_names).prompt()?.to_string(),
+                ));
+            }
         }
     }
 
