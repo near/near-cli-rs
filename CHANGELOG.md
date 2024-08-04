@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1](https://github.com/near/near-cli-rs/compare/v0.13.0...v0.13.1) - 2024-08-04
+
+### Fixed
+- Entering the name of the function in interactive mode ([#379](https://github.com/near/near-cli-rs/pull/379))
+- Fixed a typo in `inspect` output about missing ABI support ([#374](https://github.com/near/near-cli-rs/pull/374))
+
 ## [0.13.0](https://github.com/near/near-cli-rs/compare/v0.12.0...v0.13.0) - 2024-07-30
 
 ### Added
