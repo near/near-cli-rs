@@ -13,15 +13,34 @@ Just run `near` and let it guide you through!
 Visit [Releases page](https://github.com/near/near-cli-rs/releases/) to see the latest updates.
 
 <details>
-  <summary>Install prebuilt binaries via shell script (macOS, Linux, WSL)</summary>
+  <summary>Install prebuilt binaries via powershell script (Windows)</summary>
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
+irm https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.ps1 | iex
 ```
+
+https://github.com/user-attachments/assets/7d5d090e-4885-4c27-9d0f-045905952071
+
 </details>
 
 <details>
-  <summary>Install prebuilt binaries via powershell script (Windows)</summary>
+  <summary>Installing precompiled binaries using Windows Installer</summary>
+
+  
+https://github.com/user-attachments/assets/607f797b-0412-4741-984b-6b6032d05262
+
+</details>
+
+<details>
+  <summary>Installing precompiled binaries using an archive file (Windows)</summary>
+
+  
+https://github.com/user-attachments/assets/4a7e4633-1957-4dc2-a032-827fa9c06c29
+
+</details>
+
+<details>
+  <summary>Install prebuilt binaries via shell script (macOS, Linux, WSL)</summary>
 
 ```sh
 irm https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.ps1 | iex
