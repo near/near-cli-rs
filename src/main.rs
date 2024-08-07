@@ -73,7 +73,13 @@ fn main() -> crate::common::CliResult {
         crate::common::create_used_account_list_from_keychain(&config.credentials_home_dir)?;
     }
 
-    color_eyre::install()?;
+    #[cfg(not(debug_assertions))]
+    let display_env_section = false;
+    #[cfg(debug_assertions)]
+    let display_env_section = true;
+    color_eyre::config::HookBuilder::default()
+        .display_env_section(display_env_section)
+        .install()?;
 
     #[cfg(feature = "self-update")]
     let handle = std::thread::spawn(|| -> color_eyre::eyre::Result<String> {
