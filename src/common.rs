@@ -559,9 +559,9 @@ pub fn print_full_unsigned_transaction(transaction: near_primitives::transaction
         transaction.get_hash_and_size().0
     );
 
-    eprintln!("{:<13} {}", "public_key:", &transaction.public_key);
-    eprintln!("{:<13} {}", "nonce:", &transaction.nonce);
-    eprintln!("{:<13} {}", "block_hash:", &transaction.block_hash);
+    eprintln!("{:<13} {}", "public_key:", &transaction.public_key());
+    eprintln!("{:<13} {}", "nonce:", &transaction.nonce());
+    eprintln!("{:<13} {}", "block_hash:", &transaction.block_hash());
 
     let prepopulated = crate::commands::PrepopulatedTransaction::from(transaction);
     print_unsigned_transaction(&prepopulated);
@@ -1104,7 +1104,7 @@ pub fn convert_invalid_tx_error_to_cli_result(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The attached amount of gas in a FunctionCall action has to be a positive number."))
                 }
                 near_primitives::errors::ActionsValidationError::DelegateActionMustBeOnlyOne => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateActionMustBeOnlyOne"))
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The transaction contains more than one delegation action"))
                 }
                 near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Protocol Feature {} is unsupported in version {}", protocol_feature, version))
@@ -1114,6 +1114,19 @@ pub fn convert_invalid_tx_error_to_cli_result(
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The size ({}) of serialized transaction exceeded the limit ({}).", size, limit))
         }
+        near_primitives::errors::InvalidTxError::InvalidTransactionVersion => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid transaction version"))
+        },
+        near_primitives::errors::InvalidTxError::StorageError(error) => match error {
+            near_primitives::errors::StorageError::StorageInternalError => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Internal storage error")),
+            near_primitives::errors::StorageError::MissingTrieValue(_, _) => todo!(),
+            near_primitives::errors::StorageError::UnexpectedTrieValue => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Unexpected trie value")),
+            near_primitives::errors::StorageError::StorageInconsistentState(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The storage is in the incosistent state: {}", message)),
+            near_primitives::errors::StorageError::FlatStorageBlockNotSupported(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The block is not supported by flat storage: {}", message)),
+            near_primitives::errors::StorageError::MemTrieLoadingError(message) =>  color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The trie is not loaded in memory: {}", message)),
+        },
+        near_primitives::errors::InvalidTxError::ShardCongested { shard_id, congestion_level } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is too congested ({congestion_level:.2}/1.00) and can't accept new transaction")),
+        near_primitives::errors::InvalidTxError::ShardStuck { shard_id, missed_chunks } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is {missed_chunks} blocks behind and can't accept new transaction until it will be in the sync")),
     }
 }
 

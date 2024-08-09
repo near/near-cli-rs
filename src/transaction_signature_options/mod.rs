@@ -141,26 +141,29 @@ pub fn get_signed_delegate_action(
 ) -> near_primitives::action::delegate::SignedDelegateAction {
     use near_primitives::signable_message::{SignableMessage, SignableMessageType};
 
-    let actions = unsigned_transaction
-        .actions
+    let mut delegate_action = near_primitives::action::delegate::DelegateAction {
+        sender_id: unsigned_transaction.signer_id().clone(),
+        receiver_id: unsigned_transaction.receiver_id().clone(),
+        actions: vec![],
+        nonce: unsigned_transaction.nonce(),
+        max_block_height,
+        public_key: unsigned_transaction.public_key().clone(),
+    };
+
+    delegate_action.actions = unsigned_transaction
+        .take_actions()
         .into_iter()
         .map(near_primitives::action::delegate::NonDelegateAction::try_from)
         .collect::<Result<_, _>>()
         .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).");
-    let delegate_action = near_primitives::action::delegate::DelegateAction {
-        sender_id: unsigned_transaction.signer_id.clone(),
-        receiver_id: unsigned_transaction.receiver_id,
-        actions,
-        nonce: unsigned_transaction.nonce,
-        max_block_height,
-        public_key: unsigned_transaction.public_key,
-    };
 
     // create a new signature here signing the delegate action + discriminant
     let signable = SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
-    let signer =
-        near_crypto::InMemorySigner::from_secret_key(unsigned_transaction.signer_id, private_key);
-    let signature = signable.sign(&signer);
+    let signer = near_crypto::InMemorySigner::from_secret_key(
+        delegate_action.sender_id.clone(),
+        private_key,
+    );
+    let signature = signable.sign(&near_crypto::Signer::InMemory(signer));
 
     eprintln!("\nYour delegating action was signed successfully.");
     eprintln!("Note that the signed transaction is valid until block {max_block_height}. You can change the validity of a transaction by setting a flag in the command: --meta-transaction-valid-for 2000");

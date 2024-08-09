@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::{CustomType, Select};
+use near_primitives::transaction::TransactionV0;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -195,14 +196,15 @@ impl SignLegacyKeychainContext {
             )
         };
 
-        let mut unsigned_transaction = near_primitives::transaction::Transaction {
-            public_key: account_json.public_key.clone(),
-            block_hash,
-            nonce,
-            signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
-            receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: previous_context.prepopulated_transaction.actions,
-        };
+        let mut unsigned_transaction =
+            near_primitives::transaction::Transaction::V0(TransactionV0 {
+                public_key: account_json.public_key.clone(),
+                block_hash,
+                nonce,
+                signer_id: previous_context.prepopulated_transaction.signer_id,
+                receiver_id: previous_context.prepopulated_transaction.receiver_id,
+                actions: previous_context.prepopulated_transaction.actions,
+            });
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 

@@ -71,9 +71,9 @@ pub struct PrepopulatedTransaction {
 impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction {
     fn from(value: near_primitives::transaction::Transaction) -> Self {
         Self {
-            signer_id: value.signer_id,
-            receiver_id: value.receiver_id,
-            actions: value.actions,
+            signer_id: value.signer_id().clone(),
+            receiver_id: value.receiver_id().clone(),
+            actions: value.take_actions(),
         }
     }
 }
