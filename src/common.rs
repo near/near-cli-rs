@@ -1567,7 +1567,12 @@ pub fn fetch_currently_active_staking_pools(
                 include_proof: false,
             },
         })
-        .context("Failed to fetch query ViewState for <poolv1.near> on the selected network")?;
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch query ViewState for <{}> on the selected network",
+                staking_pools_factory_account_id
+            )
+        })?;
     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
         query_view_method_response.kind
     {
@@ -1695,13 +1700,14 @@ async fn get_staking_pool_info(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn display_account_info(
+    network_config: &crate::config::NetworkConfig,
     viewed_at_block_hash: &CryptoHash,
     viewed_at_block_height: &near_primitives::types::BlockHeight,
     account_id: &near_primitives::types::AccountId,
-    delegated_stake: &std::collections::BTreeMap<
-        near_primitives::types::AccountId,
-        near_token::NearToken,
+    delegated_stake: Option<
+        &std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
     >,
     account_view: &near_primitives::views::AccountView,
     access_key_list: Option<&near_primitives::views::AccessKeyList>,
@@ -1728,10 +1734,21 @@ pub fn display_account_info(
         Fy->near_token::NearToken::from_yoctonear(account_view.locked)
     ]);
 
-    for (validator_id, stake) in delegated_stake {
+    if let Some(delegated_stake) = delegated_stake {
+        for (validator_id, stake) in delegated_stake {
+            table.add_row(prettytable::row![
+                Fg->format!("Delegated stake with <{validator_id}>"),
+                Fy->stake
+            ]);
+        }
+    } else {
         table.add_row(prettytable::row![
-            Fg->format!("Delegated stake with <{validator_id}>"),
-            Fy->stake
+            Fg->"Delegated stake",
+            Fr->format!(
+                "Warning: Failed to fetch query ViewState for <{}> on network <{}>.",
+                network_config.staking_pools_factory_account_id.clone().unwrap_or("poolv1.near".parse().unwrap()),
+                network_config.network_name
+            )
         ]);
     }
 
