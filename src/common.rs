@@ -1557,7 +1557,7 @@ pub fn fetch_historically_delegated_staking_pools(
 pub fn fetch_currently_active_staking_pools(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     staking_pools_factory_account_id: &near_primitives::types::AccountId,
-) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+) -> Result<std::collections::BTreeSet<near_primitives::types::AccountId>, String> {
     let query_view_method_response = json_rpc_client
         .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),
@@ -1567,12 +1567,7 @@ pub fn fetch_currently_active_staking_pools(
                 include_proof: false,
             },
         })
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch query ViewState for <{}> on the selected network",
-                staking_pools_factory_account_id
-            )
-        })?;
+        .map_err(|err| err.to_string())?;
     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
         query_view_method_response.kind
     {
@@ -1582,7 +1577,7 @@ pub fn fetch_currently_active_staking_pools(
             .filter_map(|item| near_primitives::borsh::from_slice(&item.value).ok())
             .collect())
     } else {
-        Err(color_eyre::Report::msg("Error call result".to_string()))
+        Err("Error call result".to_string())
     }
 }
 
@@ -1706,8 +1701,9 @@ pub fn display_account_info(
     viewed_at_block_hash: &CryptoHash,
     viewed_at_block_height: &near_primitives::types::BlockHeight,
     account_id: &near_primitives::types::AccountId,
-    delegated_stake: Option<
-        &std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
+    delegated_stake: Result<
+        std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
+        String,
     >,
     account_view: &near_primitives::views::AccountView,
     access_key_list: Option<&near_primitives::views::AccessKeyList>,
@@ -1734,22 +1730,26 @@ pub fn display_account_info(
         Fy->near_token::NearToken::from_yoctonear(account_view.locked)
     ]);
 
-    if let Some(delegated_stake) = delegated_stake {
-        for (validator_id, stake) in delegated_stake {
+    match delegated_stake {
+        Ok(delegated_stake) => {
+            for (validator_id, stake) in delegated_stake {
+                table.add_row(prettytable::row![
+                    Fg->format!("Delegated stake with <{validator_id}>"),
+                    Fy->stake
+                ]);
+            }
+        }
+        Err(err) => {
             table.add_row(prettytable::row![
-                Fg->format!("Delegated stake with <{validator_id}>"),
-                Fy->stake
+                Fg->"Delegated stake",
+                Fr->format!(
+                    "Warning: Failed to fetch query ViewState for <{}> on network <{}>\n{}",
+                    network_config.staking_pools_factory_account_id.clone().unwrap_or("poolv1.near".parse().unwrap()),
+                    network_config.network_name,
+                    err
+                )
             ]);
         }
-    } else {
-        table.add_row(prettytable::row![
-            Fg->"Delegated stake",
-            Fr->format!(
-                "Warning: Failed to fetch query ViewState for <{}> on network <{}>.",
-                network_config.staking_pools_factory_account_id.clone().unwrap_or("poolv1.near".parse().unwrap()),
-                network_config.network_name
-            )
-        ]);
     }
 
     table.add_row(prettytable::row![
