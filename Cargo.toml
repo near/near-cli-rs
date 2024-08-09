@@ -73,24 +73,24 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-ledger = { version = "0.7.1", optional = true }
+near-ledger = { version = "0.7.2", optional = true }
 
-near-crypto = "0.23"
-near-primitives = "0.23"
-near-jsonrpc-client = "0.10.1"
-near-jsonrpc-primitives = "0.23"
+near-crypto = "0.24"
+near-primitives = "0.24"
+near-jsonrpc-client = "0.10.2"
+near-jsonrpc-primitives = "0.24"
 
 near-gas = { version = "0.2.3", features = [
     "serde",
     "borsh",
     "interactive-clap",
 ] }
-near-token = { version = "0.2.0", features = [
+near-token = { version = "0.2.1", features = [
     "serde",
     "borsh",
     "interactive-clap",
 ] }
-near-socialdb-client = "0.3.1"
+near-socialdb-client = "0.3.2"
 
 near-abi = "0.4.2"
 zstd = "0.13"
@@ -132,7 +132,7 @@ windows-archive = ".tar.gz"
 unix-archive = ".tar.gz"
 # Publish jobs to run in CI
 pr-run-mode = "upload"
-# XXX: In order to use custom GITHUB_TOKEN to trigger npm-publish workflow, 
+# XXX: In order to use custom GITHUB_TOKEN to trigger npm-publish workflow,
 # we allow dirty CI scripts to avoid cargo-dist complains.
 allow-dirty = ["ci"]
 

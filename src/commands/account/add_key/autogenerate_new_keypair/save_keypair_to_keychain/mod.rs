@@ -47,7 +47,7 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                     let account_id = match transaction {
                         crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                             signed_transaction,
-                        ) => signed_transaction.transaction.signer_id.clone(),
+                        ) => signed_transaction.transaction.signer_id().clone(),
                         crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                             signed_delegate_action,
                         ) => signed_delegate_action.delegate_action.sender_id.clone()

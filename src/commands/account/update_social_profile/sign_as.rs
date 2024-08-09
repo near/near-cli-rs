@@ -58,17 +58,19 @@ impl From<SignerContext> for crate::commands::ActionContext {
             let account_id = item.account_id.clone();
             move |prepopulated_unsigned_transaction, network_config| {
                 let json_rpc_client = network_config.json_rpc_client();
+                let public_key = prepopulated_unsigned_transaction.public_key().clone();
+                let receiver_id = prepopulated_unsigned_transaction.receiver_id().clone();
 
-                if let near_primitives::transaction::Action::FunctionCall(action) =
-                    &mut prepopulated_unsigned_transaction.actions[0]
+                if let Some(near_primitives::transaction::Action::FunctionCall(action)) =
+                    prepopulated_unsigned_transaction.actions_mut().get_mut(0)
                 {
                     action.deposit = get_deposit(
                         &json_rpc_client,
                         &signer_account_id,
-                        &prepopulated_unsigned_transaction.public_key,
+                        &public_key,
                         &account_id,
                         "profile",
-                        &prepopulated_unsigned_transaction.receiver_id,
+                        &receiver_id,
                         near_token::NearToken::from_yoctonear(action.deposit),
                     )?
                     .as_yoctonear();

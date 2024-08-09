@@ -2,6 +2,7 @@ use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
 use near_ledger::NEARLedgerError;
 use near_primitives::borsh;
+use near_primitives::transaction::TransactionV0;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -86,14 +87,15 @@ impl SignLedgerContext {
             (current_nonce + 1, rpc_query_response.block_hash)
         };
 
-        let mut unsigned_transaction = near_primitives::transaction::Transaction {
-            public_key: scope.signer_public_key.clone().into(),
-            block_hash,
-            nonce,
-            signer_id: previous_context.prepopulated_transaction.signer_id,
-            receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: previous_context.prepopulated_transaction.actions,
-        };
+        let mut unsigned_transaction =
+            near_primitives::transaction::Transaction::V0(TransactionV0 {
+                public_key: scope.signer_public_key.clone().into(),
+                block_hash,
+                nonce,
+                signer_id: previous_context.prepopulated_transaction.signer_id,
+                receiver_id: previous_context.prepopulated_transaction.receiver_id,
+                actions: previous_context.prepopulated_transaction.actions,
+            });
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 

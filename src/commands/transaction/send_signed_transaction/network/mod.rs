@@ -43,7 +43,7 @@ impl Network {
     ) -> color_eyre::eyre::Result<Option<String>> {
         crate::common::input_network_name(
             &context.config,
-            &[context.signed_transaction.transaction.receiver_id.clone()],
+            &[context.signed_transaction.transaction.receiver_id().clone()],
         )
     }
 }
