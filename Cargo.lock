@@ -2620,9 +2620,9 @@ dependencies = [
 
 [[package]]
 name = "near-jsonrpc-client"
-version = "0.10.2"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b75b260d9aef022b50fb140c473a47c6acf8afcc1484c6e546a1e77b33cfb258"
+checksum = "0e60cee17ae276bfa0d463032231902d866b58ff93f9ff4ff6cd0fdd9efcb9c4"
 dependencies = [
  "borsh",
  "lazy_static",
@@ -2820,9 +2820,9 @@ dependencies = [
 
 [[package]]
 name = "near-socialdb-client"
-version = "0.3.3"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "088cf26e5378c30459355a3d4f6e8d9265ac77c566327b8c7d0fbf6a7ae8b23e"
+checksum = "0ef52c771682a27178115f1e054a68300e3a484fdaa551709380c0809b4fd28a"
 dependencies = [
  "color-eyre",
  "near-crypto",
@@ -4049,9 +4049,9 @@ dependencies = [
 
 [[package]]
 name = "self_update"
-version = "0.40.0"
+version = "0.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e4997484b55df069a4773d822715695b2cc27b23829eca2a4b41690e948bdeb"
+checksum = "469a3970061380c19852269f393e74c0fe607a4e23d85267382cf25486aa8de5"
 dependencies = [
  "either",
  "flate2",
