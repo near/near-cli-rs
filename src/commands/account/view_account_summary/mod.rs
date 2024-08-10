@@ -125,9 +125,8 @@ fn get_account_inquiry(
         .enable_all()
         .build()?;
     let concurrency = 10;
-    let delegated_stake: Result<
+    let delegated_stake: color_eyre::Result<
         std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
-        String,
     > = match validators {
         Ok(validators) => Ok(runtime.block_on(
             futures::stream::iter(validators)
@@ -159,7 +158,6 @@ fn get_account_inquiry(
         .flatten();
 
     crate::common::display_account_info(
-        network_config,
         &rpc_query_response.block_hash,
         &rpc_query_response.block_height,
         account_id,
