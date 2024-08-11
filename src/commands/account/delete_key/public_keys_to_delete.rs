@@ -145,6 +145,19 @@ impl PublicKeyList {
             access_key_list,
         )
         .with_formatter(formatter)
+        .with_validator(
+            |list: &[inquire::list_option::ListOption<&AccessKeyInfo>]| {
+                if list.is_empty() {
+                    Ok(inquire::validator::Validation::Invalid(
+                        inquire::validator::ErrorMessage::Custom(
+                            "At least one key must be selected (use space to select)".to_string(),
+                        ),
+                    ))
+                } else {
+                    Ok(inquire::validator::Validation::Valid)
+                }
+            },
+        )
         .prompt()?
         .iter()
         .map(|access_key_info| access_key_info.public_key.clone())
