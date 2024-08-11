@@ -109,47 +109,49 @@ fn get_account_inquiry(
                     .ok()
             });
     let validators = if let Some(validators) = historically_delegated_validators {
-        validators
+        Ok(validators)
     } else if let Some(staking_pools_factory_account_id) =
         &network_config.staking_pools_factory_account_id
     {
         crate::common::fetch_currently_active_staking_pools(
             &json_rpc_client,
             staking_pools_factory_account_id,
-        )?
+        )
     } else {
-        Default::default()
+        Ok(Default::default())
     };
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?;
     let concurrency = 10;
-    let delegated_stake: std::collections::BTreeMap<
-        near_primitives::types::AccountId,
-        near_token::NearToken,
-    > = runtime.block_on(
-        futures::stream::iter(validators)
-            .map(|validator_account_id| async {
-                let balance = get_delegated_staked_balance(
-                    &json_rpc_client,
-                    block_reference,
-                    &validator_account_id,
-                    account_id,
-                )
-                .await?;
-                Ok::<_, color_eyre::eyre::Report>((validator_account_id, balance))
-            })
-            .buffer_unordered(concurrency)
-            .filter(|balance_result| {
-                futures::future::ready(if let Ok((_, balance)) = balance_result {
-                    !balance.is_zero()
-                } else {
-                    true
+    let delegated_stake: color_eyre::Result<
+        std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
+    > = match validators {
+        Ok(validators) => Ok(runtime.block_on(
+            futures::stream::iter(validators)
+                .map(|validator_account_id| async {
+                    let balance = get_delegated_staked_balance(
+                        &json_rpc_client,
+                        block_reference,
+                        &validator_account_id,
+                        account_id,
+                    )
+                    .await?;
+                    Ok::<_, color_eyre::eyre::Report>((validator_account_id, balance))
                 })
-            })
-            .try_collect(),
-    )?;
+                .buffer_unordered(concurrency)
+                .filter(|balance_result| {
+                    futures::future::ready(if let Ok((_, balance)) = balance_result {
+                        !balance.is_zero()
+                    } else {
+                        true
+                    })
+                })
+                .try_collect(),
+        )?),
+        Err(err) => Err(err),
+    };
 
     let optional_account_profile = get_account_profile(account_id, network_config, block_reference)
         .ok()
@@ -159,7 +161,7 @@ fn get_account_inquiry(
         &rpc_query_response.block_hash,
         &rpc_query_response.block_height,
         account_id,
-        &delegated_stake,
+        delegated_stake,
         &account_view,
         access_key_list.as_ref(),
         optional_account_profile.as_ref(),

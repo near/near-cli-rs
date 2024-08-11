@@ -1567,7 +1567,7 @@ pub fn fetch_currently_active_staking_pools(
                 include_proof: false,
             },
         })
-        .context("Failed to fetch query ViewState for <poolv1.near> on the selected network")?;
+        .map_err(color_eyre::Report::msg)?;
     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
         query_view_method_response.kind
     {
@@ -1699,9 +1699,8 @@ pub fn display_account_info(
     viewed_at_block_hash: &CryptoHash,
     viewed_at_block_height: &near_primitives::types::BlockHeight,
     account_id: &near_primitives::types::AccountId,
-    delegated_stake: &std::collections::BTreeMap<
-        near_primitives::types::AccountId,
-        near_token::NearToken,
+    delegated_stake: color_eyre::Result<
+        std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
     >,
     account_view: &near_primitives::views::AccountView,
     access_key_list: Option<&near_primitives::views::AccessKeyList>,
@@ -1728,11 +1727,21 @@ pub fn display_account_info(
         Fy->near_token::NearToken::from_yoctonear(account_view.locked)
     ]);
 
-    for (validator_id, stake) in delegated_stake {
-        table.add_row(prettytable::row![
-            Fg->format!("Delegated stake with <{validator_id}>"),
-            Fy->stake
-        ]);
+    match delegated_stake {
+        Ok(delegated_stake) => {
+            for (validator_id, stake) in delegated_stake {
+                table.add_row(prettytable::row![
+                    Fg->format!("Delegated stake with <{validator_id}>"),
+                    Fy->stake
+                ]);
+            }
+        }
+        Err(err) => {
+            table.add_row(prettytable::row![
+                Fg->"Delegated stake",
+                Fr->err
+            ]);
+        }
     }
 
     table.add_row(prettytable::row![
