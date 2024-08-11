@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1](https://github.com/near/near-cli-rs/compare/v0.13.0...v0.13.1) - 2024-08-11
+
+### Fixed
+- Handle delegated stake errors gracefully and display a warning message instead of failing the view-account-summary command completely ([#382](https://github.com/near/near-cli-rs/pull/382))
+- Entering the name of the function in interactive mode ([#379](https://github.com/near/near-cli-rs/pull/379))
+- Fixed a typo in `inspect` output about missing ABI support ([#374](https://github.com/near/near-cli-rs/pull/374))
+
+### Other
+- Added videos to the README for installation process on Windows ([#378](https://github.com/near/near-cli-rs/pull/378))
+- Cleaned up error message reporting by disabling env section of color_eyre report ([#380](https://github.com/near/near-cli-rs/pull/380))
+
 ## [0.13.0](https://github.com/near/near-cli-rs/compare/v0.12.0...v0.13.0) - 2024-07-30
 
 ### Added
