@@ -150,7 +150,7 @@ impl PublicKeyList {
                 if list.is_empty() {
                     Ok(inquire::validator::Validation::Invalid(
                         inquire::validator::ErrorMessage::Custom(
-                            "At least one value must be entered".to_string(),
+                            "At least one key must be selected (use space to select)".to_string(),
                         ),
                     ))
                 } else {
