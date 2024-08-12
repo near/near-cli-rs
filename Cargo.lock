@@ -2228,9 +2228,9 @@ dependencies = [
 
 [[package]]
 name = "near-gas"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef4daafd86053c81f53a91da72642293a91894cbb13afbbc9074e90ba253d752"
+checksum = "e77fe604b3daa66266abc973d9d1600f0cd14ab8dcfd0a750273af17b975bf54"
 dependencies = [
  "borsh",
  "interactive-clap",
@@ -2474,9 +2474,9 @@ dependencies = [
 
 [[package]]
 name = "near-token"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be6d32752f6772f2e821b3b3eac7da4916d7df5c0fae185f3d1315bf1e9a5a42"
+checksum = "b388fae484b6a078cafbc243288fb514342c87daa9be0a6f7f9b69fbbac606ad"
 dependencies = [
  "borsh",
  "interactive-clap",
