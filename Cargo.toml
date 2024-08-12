@@ -138,7 +138,3 @@ allow-dirty = ["ci"]
 
 [workspace.metadata.dist.dependencies.apt]
 libudev-dev = { version = "*", targets = ["x86_64-unknown-linux-gnu"] }
-
-[patch.crates-io]
-near-token = { path = "../near-token-rs" }
-near-gas = { path = "../near-gas-rs" }
