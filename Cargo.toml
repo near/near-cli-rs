@@ -8,6 +8,8 @@ homepage = "https://near.cli.rs"
 repository = "https://github.com/near/near-cli-rs"
 description = "human-friendly console utility that helps to interact with NEAR Protocol from command line."
 
+exclude = ["docs/media"]
+
 [package.metadata.wix]
 upgrade-guid = "A6432354-8256-45E3-9E10-53C117EE22B4"
 path-guid = "3A5A99B6-61EC-4DFB-AA36-763EE316AF18"
@@ -19,6 +21,7 @@ eula = false
 [[bin]]
 name = "near"
 path = "src/main.rs"
+
 
 [dependencies]
 clap = { version = "4.0.18", features = ["derive"] }
