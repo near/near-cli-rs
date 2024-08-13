@@ -2152,7 +2152,7 @@ dependencies = [
  "near-ledger",
  "near-primitives",
  "near-socialdb-client",
- "near-token",
+ "near-token 0.3.0",
  "open",
  "openssl",
  "prettytable",
@@ -2228,9 +2228,9 @@ dependencies = [
 
 [[package]]
 name = "near-gas"
-version = "0.2.7"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e77fe604b3daa66266abc973d9d1600f0cd14ab8dcfd0a750273af17b975bf54"
+checksum = "180edcc7dc2fac41f93570d0c7b759c1b6d492f6ad093d749d644a40b4310a97"
 dependencies = [
  "borsh",
  "interactive-clap",
@@ -2448,7 +2448,7 @@ dependencies = [
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
  "near-primitives",
- "near-token",
+ "near-token 0.2.3",
  "serde",
  "serde_json",
  "url",
@@ -2477,6 +2477,12 @@ name = "near-token"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b388fae484b6a078cafbc243288fb514342c87daa9be0a6f7f9b69fbbac606ad"
+
+[[package]]
+name = "near-token"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd3e60aa26a74dc514b1b6408fdd06cefe2eb0ff029020956c1c6517594048fd"
 dependencies = [
  "borsh",
  "interactive-clap",

@@ -80,12 +80,12 @@ near-primitives = "0.24"
 near-jsonrpc-client = "0.11"
 near-jsonrpc-primitives = "0.24"
 
-near-gas = { version = "0.2.3", features = [
+near-gas = { version = "0.3", features = [
     "serde",
     "borsh",
     "interactive-clap",
 ] }
-near-token = { version = "0.2.1", features = [
+near-token = { version = "0.3", features = [
     "serde",
     "borsh",
     "interactive-clap",
