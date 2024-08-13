@@ -51,7 +51,7 @@ slipped10 = { version = "0.4.6" }
 url = { version = "2", features = ["serde"] }
 open = "5"
 shell-words = "1"
-cargo-util = "0.1.1"
+cargo-util = "0.2"
 indicatif = "0.17.8"
 indenter = "0.3"
 tracing = "0.1.40"
@@ -61,7 +61,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 wasmparser = "0.211"
 
 semver = { version = "1.0.4", optional = true }
-self_update = { version = "0.40.0", features = [
+self_update = { version = "0.41.0", features = [
     "archive-tar",
     "compression-flate2",
 ], optional = true }
@@ -73,31 +73,31 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-ledger = { version = "0.7.1", optional = true }
+near-ledger = { version = "0.7.2", optional = true }
 
-near-crypto = "0.23"
-near-primitives = "0.23"
-near-jsonrpc-client = "0.10.1"
-near-jsonrpc-primitives = "0.23"
+near-crypto = "0.24"
+near-primitives = "0.24"
+near-jsonrpc-client = "0.11"
+near-jsonrpc-primitives = "0.24"
 
-near-gas = { version = "0.2.3", features = [
+near-gas = { version = "0.3", features = [
     "serde",
     "borsh",
     "interactive-clap",
 ] }
-near-token = { version = "0.2.0", features = [
+near-token = { version = "0.3", features = [
     "serde",
     "borsh",
     "interactive-clap",
 ] }
-near-socialdb-client = "0.3.1"
+near-socialdb-client = "0.5"
 
 near-abi = "0.4.2"
 zstd = "0.13"
 
-keyring = "2.0.5"
-interactive-clap = "0.2.10"
-interactive-clap-derive = "0.2.10"
+keyring = "3.0.5"
+interactive-clap = "0.3"
+interactive-clap-derive = "0.3"
 
 rust_decimal = "1.35.0"
 
@@ -132,7 +132,7 @@ windows-archive = ".tar.gz"
 unix-archive = ".tar.gz"
 # Publish jobs to run in CI
 pr-run-mode = "upload"
-# XXX: In order to use custom GITHUB_TOKEN to trigger npm-publish workflow, 
+# XXX: In order to use custom GITHUB_TOKEN to trigger npm-publish workflow,
 # we allow dirty CI scripts to avoid cargo-dist complains.
 allow-dirty = ["ci"]
 
