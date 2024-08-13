@@ -2149,7 +2149,7 @@ dependencies = [
  "near-ledger",
  "near-primitives",
  "near-socialdb-client",
- "near-token 0.3.0",
+ "near-token",
  "open",
  "openssl",
  "prettytable",
@@ -2436,16 +2436,16 @@ dependencies = [
 
 [[package]]
 name = "near-socialdb-client"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ef52c771682a27178115f1e054a68300e3a484fdaa551709380c0809b4fd28a"
+checksum = "cfb11a7c0fdd8b22ec806cf1703a0aa65550a7d0dc2237125b7e8436a5e9fcd2"
 dependencies = [
  "color-eyre",
  "near-crypto",
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
  "near-primitives",
- "near-token 0.2.1",
+ "near-token",
  "serde",
  "serde_json",
  "url",
@@ -2468,12 +2468,6 @@ dependencies = [
  "time",
  "tokio",
 ]
-
-[[package]]
-name = "near-token"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3b497804ec8f603fd11edc3d3b7b19f07c0beb9fe47c8a536eea1867097fd40"
 
 [[package]]
 name = "near-token"
@@ -4215,15 +4209,15 @@ dependencies = [
 
 [[package]]
 name = "tower-layer"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c20c8dbed6283a09604c3e69b4b7eeb54e298b8a600d4d5ecb5ad39de609f1d0"
+checksum = "121c2a6cda46980bb0fcd1647ffaf6cd3fc79a013de288782836f6df9c48780e"
 
 [[package]]
 name = "tower-service"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6bc1c9ce2b5135ac7f93c72918fc37feb872bdc6a5533a8b85eb4b86bfdae52"
+checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 
 [[package]]
 name = "tracing"

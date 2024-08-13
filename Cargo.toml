@@ -90,7 +90,7 @@ near-token = { version = "0.3", features = [
     "borsh",
     "interactive-clap",
 ] }
-near-socialdb-client = "0.4"
+near-socialdb-client = "0.5"
 
 near-abi = "0.4.2"
 zstd = "0.13"
