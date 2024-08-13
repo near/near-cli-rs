@@ -22,7 +22,6 @@ eula = false
 name = "near"
 path = "src/main.rs"
 
-
 [dependencies]
 clap = { version = "4.0.18", features = ["derive"] }
 inquire = "0.7"
