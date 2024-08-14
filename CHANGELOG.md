@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a typo in `inspect` output about missing ABI support ([#374](https://github.com/near/near-cli-rs/pull/374))
 
 ### Other
+- removed media from the package ([#388](https://github.com/near/near-cli-rs/pull/388))
 - updated near-* to 0.24.0, bumped up rust version ([#381](https://github.com/near/near-cli-rs/pull/381))
 - Added videos to the README for installation process on Windows ([#378](https://github.com/near/near-cli-rs/pull/378))
 - Cleaned up error message reporting by disabling env section of color_eyre report ([#380](https://github.com/near/near-cli-rs/pull/380))
