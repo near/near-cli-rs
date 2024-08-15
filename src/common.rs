@@ -417,7 +417,6 @@ async fn view_account(
             account_id: account_id.clone(),
         },
     };
-    // let request_payload = request_payload(&query_view_method_request)?;
 
     tracing::info!(
         target: "near_teach_me",
@@ -425,29 +424,54 @@ async fn view_account(
         "I am making HTTP call to NEAR JSON RPC to query information about `{}` account, learn more https://docs.near.org/api/rpc/contracts#view-account",
         account_id
     );
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "HTTP POST {}",
-        json_rpc_client.server_addr()
-    );
-    // tracing::info!(
-    //     target: "near_teach_me",
-    //     parent: &tracing::Span::none(),
-    //     "JSON Body:\n{}",
-    //     indent_payload(&format!("{:#}", request_payload))
-    // );
 
-    let query_view_method_response = json_rpc_client.call(query_view_method_request).await;
+    if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&query_view_method_request) {
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "HTTP POST {}",
+            json_rpc_client.server_addr()
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "JSON Request Body:\n{}",
+            indent_payload(&format!("{:#}", request_payload))
+        );
+    }
 
-    // let response_payload = response_payload(&query_view_method_response)?;
-
-    // tracing::info!(
-    //     target: "near_teach_me",
-    //     parent: &tracing::Span::none(),
-    //     "JSON RPC Response:\n{}",
-    //     indent_payload(&format!("{:#}", response_payload))
-    // );
+    let query_view_method_response = json_rpc_client
+        .call(query_view_method_request)
+        .await
+        .inspect_err(|err| match err {
+            near_jsonrpc_client::errors::JsonRpcError::TransportError(transport_error) => {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Request failed due to connectivity issue:\n{}",
+                    indent_payload(&format!("{:#?}", transport_error))
+                );
+            }
+            near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(handler_error),
+            ) => {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Request returned a handling error:\n{}",
+                    indent_payload(&serde_json::to_string_pretty(handler_error).unwrap_or_else(|_| handler_error.to_string()))
+                );
+            }
+            near_jsonrpc_client::errors::JsonRpcError::ServerError(server_error) => {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Request returned a generic server error:\n{}",
+                    indent_payload(&format!("{:#?}", server_error))
+                );
+            }
+        })
+        .inspect(teach_me_call_response);
 
     query_view_method_response
 }
@@ -2273,6 +2297,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         );
 
         self.blocking_call(query_view_method_request)
+            .inspect(teach_me_call_response)
     }
 
     #[tracing::instrument(name = "Getting a list of", skip_all)]
@@ -2305,6 +2330,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         );
 
         self.blocking_call(query_view_method_request)
+            .inspect(teach_me_call_response)
     }
 
     #[tracing::instrument(name = "Getting information about", skip_all)]
