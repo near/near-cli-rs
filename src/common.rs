@@ -2152,7 +2152,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to call a read-only function {} on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
+            "I am making HTTP call to NEAR JSON RPC to call a read-only `{}` function on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
             method_name,
             account_id
         );
@@ -2169,30 +2169,46 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             indent_payload(&format!("{:#}", request_payload))
         );
 
-        let query_view_method_response = self
-            .blocking_call(query_view_method_request)
-            .wrap_err("Failed to make a view-function call")?;
+        let query_view_method_response = match self.blocking_call(query_view_method_request) {
+            Ok(response) => response,
+            Err(err) => {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Response:\n{}",
+                    indent_payload(&err.to_string())
+                );
+                color_eyre::eyre::bail!("Failed to make a view-function call.\n{err}")
+            }
+        };
 
-        let call_result = query_view_method_response.call_result()?;
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON RPC Response:\n{}",
-            indent_payload(&format!(
-                "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
-                query_view_method_response.block_hash,
-                query_view_method_response.block_height,
-                call_result.logs,
-                call_result.result
-            ))
-        );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "Decoding the \"result\" array of bytes as UTF-8 string (tip: here is a Python snippet: `\"\".join([chr(c) for c in result])`):\n{}",
-            indent_payload(&String::from_utf8(call_result.result.clone()).unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned()))
-        );
+        if let Ok(call_result) = query_view_method_response.call_result() {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON RPC Response:\n{}",
+                indent_payload(&format!(
+                    "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
+                    query_view_method_response.block_hash,
+                    query_view_method_response.block_height,
+                    call_result.logs,
+                    call_result.result
+                ))
+            );
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "Decoding the \"result\" array of bytes as UTF-8 string (tip: here is a Python snippet: `\"\".join([chr(c) for c in result])`):\n{}",
+                indent_payload(&String::from_utf8(call_result.result.clone()).unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned()))
+            );
+        } else {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON RPC Response:\n{}",
+                indent_payload("Internal error: Received unexpected query kind in response to a view-function query call")
+            );
+        }
 
         query_view_method_response.call_result()
     }
