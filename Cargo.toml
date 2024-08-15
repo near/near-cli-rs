@@ -97,7 +97,7 @@ near-socialdb-client = "0.5"
 near-abi = "0.4.2"
 zstd = "0.13"
 
-keyring = { version = "3.0.5", features = ["sync-secret-service"] }
+keyring = { version = "3.0.5", features = ["apple-native", "windows-native", "sync-secret-service"] }
 interactive-clap = "0.3"
 interactive-clap-derive = "0.3"
 
@@ -140,3 +140,4 @@ allow-dirty = ["ci"]
 
 [workspace.metadata.dist.dependencies.apt]
 libudev-dev = { version = "*", targets = ["x86_64-unknown-linux-gnu"] }
+libdbus-1-dev = { version = "*", targets = ["x86_64-unknown-linux-gnu"] }
