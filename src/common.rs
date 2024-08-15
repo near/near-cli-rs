@@ -417,7 +417,7 @@ async fn view_account(
             account_id: account_id.clone(),
         },
     };
-    let request_payload = request_payload(&query_view_method_request)?;
+    // let request_payload = request_payload(&query_view_method_request)?;
 
     tracing::info!(
         target: "near_teach_me",
@@ -431,23 +431,23 @@ async fn view_account(
         "HTTP POST {}",
         json_rpc_client.server_addr()
     );
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "JSON Body:\n{}",
-        indent_payload(&format!("{:#}", request_payload))
-    );
+    // tracing::info!(
+    //     target: "near_teach_me",
+    //     parent: &tracing::Span::none(),
+    //     "JSON Body:\n{}",
+    //     indent_payload(&format!("{:#}", request_payload))
+    // );
 
     let query_view_method_response = json_rpc_client.call(query_view_method_request).await;
 
-    let response_payload = response_payload(&query_view_method_response)?;
+    // let response_payload = response_payload(&query_view_method_response)?;
 
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "JSON RPC Response:\n{}",
-        indent_payload(&format!("{:#}", response_payload))
-    );
+    // tracing::info!(
+    //     target: "near_teach_me",
+    //     parent: &tracing::Span::none(),
+    //     "JSON RPC Response:\n{}",
+    //     indent_payload(&format!("{:#}", response_payload))
+    // );
 
     query_view_method_response
 }
@@ -2064,7 +2064,8 @@ pub trait JsonRpcClientExt {
         method: M,
     ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
     where
-        M: near_jsonrpc_client::methods::RpcMethod;
+        M: near_jsonrpc_client::methods::RpcMethod,
+        M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display;
 
     /// A helper function to make a view-funcation call using JSON encoding for the function
     /// arguments and function return value.
@@ -2118,10 +2119,54 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
     where
         M: near_jsonrpc_client::methods::RpcMethod,
+        M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
     {
+        if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method) {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "HTTP POST {}",
+                self.server_addr()
+            );
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON Request Body:\n{}",
+                indent_payload(&format!("{:#}", request_payload))
+            );
+        }
+
         tokio::runtime::Runtime::new()
             .unwrap()
             .block_on(self.call(method))
+            .inspect_err(|err| match err {
+                near_jsonrpc_client::errors::JsonRpcError::TransportError(transport_error) => {
+                    tracing::info!(
+                        target: "near_teach_me",
+                        parent: &tracing::Span::none(),
+                        "JSON RPC Request failed due to connectivity issue:\n{}",
+                        indent_payload(&format!("{:#?}", transport_error))
+                    );
+                }
+                near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(handler_error),
+                ) => {
+                    tracing::info!(
+                        target: "near_teach_me",
+                        parent: &tracing::Span::none(),
+                        "JSON RPC Request returned a handling error:\n{}",
+                        indent_payload(&serde_json::to_string_pretty(handler_error).unwrap_or_else(|_| handler_error.to_string()))
+                    );
+                }
+                near_jsonrpc_client::errors::JsonRpcError::ServerError(server_error) => {
+                    tracing::info!(
+                        target: "near_teach_me",
+                        parent: &tracing::Span::none(),
+                        "JSON RPC Request returned a generic server error:\n{}",
+                        indent_payload(&format!("{:#?}", server_error))
+                    );
+                }
+            })
     }
 
     /// A helper function to make a view-funcation call using JSON encoding for the function
@@ -2130,87 +2175,68 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     fn blocking_call_view_function(
         &self,
         account_id: &near_primitives::types::AccountId,
-        method_name: &str,
+        function_name: &str,
         args: Vec<u8>,
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
         tracing::Span::current().pb_set_message(&format!(
-            "the '{method_name}' method of the <{account_id}> contract ..."
+            "a read-only function '{function_name}' of the <{account_id}> contract ..."
         ));
-        tracing::info!(target: "near_teach_me", "the '{method_name}' method of the <{account_id}> contract ...");
+        tracing::info!(target: "near_teach_me", "a read-only function '{function_name}' of the <{account_id}> contract ...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::CallFunction {
                 account_id: account_id.clone(),
-                method_name: method_name.to_owned(),
+                method_name: function_name.to_owned(),
                 args: near_primitives::types::FunctionArgs::from(args),
             },
         };
-        let request_payload = near_jsonrpc_client::methods::to_json(&query_view_method_request)?;
 
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to call a read-only `{}` function on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
-            method_name,
+            "I am making HTTP call to NEAR JSON RPC to call a read-only function `{}` on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
+            function_name,
             account_id
         );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "HTTP POST {}",
-            self.server_addr()
-        );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON Body:\n{}",
-            indent_payload(&format!("{:#}", request_payload))
-        );
 
-        let query_view_method_response = match self.blocking_call(query_view_method_request) {
-            Ok(response) => response,
-            Err(err) => {
+        let query_view_method_response = self
+            .blocking_call(query_view_method_request)
+            .wrap_err("Read-only function execution failed")?;
+
+        query_view_method_response.call_result()
+            .inspect(|call_result| {
                 tracing::info!(
                     target: "near_teach_me",
                     parent: &tracing::Span::none(),
                     "JSON RPC Response:\n{}",
-                    indent_payload(&err.to_string())
+                    indent_payload(&format!(
+                        "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
+                        query_view_method_response.block_hash,
+                        query_view_method_response.block_height,
+                        call_result.logs,
+                        call_result.result
+                    ))
                 );
-                color_eyre::eyre::bail!("Failed to make a view-function call.\n{err}")
-            }
-        };
-
-        if let Ok(call_result) = query_view_method_response.call_result() {
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "JSON RPC Response:\n{}",
-                indent_payload(&format!(
-                    "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
-                    query_view_method_response.block_hash,
-                    query_view_method_response.block_height,
-                    call_result.logs,
-                    call_result.result
-                ))
-            );
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "Decoding the \"result\" array of bytes as UTF-8 string (tip: here is a Python snippet: `\"\".join([chr(c) for c in result])`):\n{}",
-                indent_payload(&String::from_utf8(call_result.result.clone()).unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned()))
-            );
-        } else {
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "JSON RPC Response:\n{}",
-                indent_payload("Internal error: Received unexpected query kind in response to a view-function query call")
-            );
-        }
-
-        query_view_method_response.call_result()
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
+                    indent_payload(
+                        &String::from_utf8(call_result.result.clone())
+                            .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
+                    )
+                );
+            })
+            .inspect_err(|_| {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Response:\n{}",
+                    indent_payload("Internal error: Received unexpected query kind in response to a view-function query call")
+                );
+            })
     }
 
     #[tracing::instrument(name = "Getting access key information:", skip_all)]
@@ -2225,9 +2251,10 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     > {
-        tracing::Span::current()
-            .pb_set_message(&format!("{public_key} on {account_id} account ..."));
-        tracing::info!(target: "near_teach_me", "{public_key} on {account_id} account ...");
+        tracing::Span::current().pb_set_message(&format!(
+            "public key {public_key} on account <{account_id}>..."
+        ));
+        tracing::info!(target: "near_teach_me", "public key {public_key} on account <{account_id}>...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2236,45 +2263,16 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                 public_key: public_key.clone(),
             },
         };
-        let request_payload = request_payload(&query_view_method_request)?;
 
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to get an access key {} details on `{}` account, learn more https://docs.near.org/api/rpc/access-keys#view-access-key",
+            "I am making HTTP call to NEAR JSON RPC to get an access key details for public key {} on account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key",
             public_key,
             account_id
         );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "HTTP POST {}",
-            self.server_addr()
-        );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON Body:\n{}",
-            indent_payload(&format!("{:#}", request_payload))
-        );
 
-        let query_view_method_response: Result<
-            near_jsonrpc_client::methods::query::RpcQueryResponse,
-            near_jsonrpc_client::errors::JsonRpcError<
-                near_jsonrpc_client::methods::query::RpcQueryError,
-            >,
-        > = self.blocking_call(query_view_method_request);
-
-        let response_payload = response_payload(&query_view_method_response)?;
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON RPC Response:\n{}",
-            indent_payload(&format!("{:#}", response_payload))
-        );
-
-        query_view_method_response
+        self.blocking_call(query_view_method_request)
     }
 
     #[tracing::instrument(name = "Getting a list of", skip_all)]
@@ -2288,8 +2286,9 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     > {
-        tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
-        tracing::info!(target: "near_teach_me", "{account_id} access keys ...");
+        tracing::Span::current()
+            .pb_set_message(&format!("access keys on account <{account_id}>..."));
+        tracing::info!(target: "near_teach_me", "access keys on account <{account_id}>...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2297,39 +2296,15 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                 account_id: account_id.clone(),
             },
         };
-        let request_payload = request_payload(&query_view_method_request)?;
 
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to get a list of keys for `{}` account, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
+            "I am making HTTP call to NEAR JSON RPC to get a list of keys for account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
             account_id
         );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "HTTP POST {}",
-            self.server_addr()
-        );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON Body:\n{}",
-            indent_payload(&format!("{:#}", request_payload))
-        );
 
-        let query_view_method_response = self.blocking_call(query_view_method_request);
-
-        let response_payload = response_payload(&query_view_method_response)?;
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON RPC Response:\n{}",
-            indent_payload(&format!("{:#}", response_payload))
-        );
-
-        query_view_method_response
+        self.blocking_call(query_view_method_request)
     }
 
     #[tracing::instrument(name = "Getting information about", skip_all)]
@@ -2343,8 +2318,8 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     > {
-        tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
-        tracing::info!(target: "near_teach_me", "{account_id} ...");
+        tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
+        tracing::info!(target: "near_teach_me", "account <{account_id}>...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2352,91 +2327,27 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                 account_id: account_id.clone(),
             },
         };
-        let request_payload = request_payload(&query_view_method_request)?;
 
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to query information about `{}` account, learn more https://docs.near.org/api/rpc/contracts#view-account",
+            "I am making HTTP call to NEAR JSON RPC to query information about account <{}>, learn more https://docs.near.org/api/rpc/contracts#view-account",
             account_id
         );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "HTTP POST {}",
-            self.server_addr()
-        );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON Body:\n{}",
-            indent_payload(&format!("{:#}", request_payload))
-        );
 
-        let query_view_method_response = self.blocking_call(query_view_method_request);
+        self.blocking_call(query_view_method_request)
+            .inspect(teach_me_call_response)
+    }
+}
 
-        let response_payload = response_payload(&query_view_method_response)?;
-
+fn teach_me_call_response(response: &impl serde::Serialize) {
+    if let Ok(response_payload) = serde_json::to_value(response) {
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
             "JSON RPC Response:\n{}",
             indent_payload(&format!("{:#}", response_payload))
         );
-
-        query_view_method_response
-    }
-}
-
-pub fn request_payload(
-    query_view_method_request: &near_jsonrpc_client::methods::query::RpcQueryRequest,
-) -> Result<
-    serde_json::Value,
-    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
-> {
-    near_jsonrpc_client::methods::to_json(query_view_method_request).map_err(|err| {
-        near_jsonrpc_client::errors::JsonRpcError::TransportError(
-            near_jsonrpc_client::errors::RpcTransportError::SendError(
-                near_jsonrpc_client::errors::JsonRpcTransportSendError::PayloadSerializeError(err),
-            ),
-        )
-    })
-}
-
-pub fn response_payload(
-    query_view_method_response: &Result<
-        near_jsonrpc_client::methods::query::RpcQueryResponse,
-        near_jsonrpc_client::errors::JsonRpcError<
-            near_jsonrpc_client::methods::query::RpcQueryError,
-        >,
-    >,
-) -> Result<
-    serde_json::Value,
-    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
-> {
-    match query_view_method_response {
-        Ok(query_view_method_response) => {
-            serde_json::to_value(query_view_method_response).map_err(|err| {
-                near_jsonrpc_client::errors::JsonRpcError::TransportError(
-                    near_jsonrpc_client::errors::RpcTransportError::SendError(
-                        near_jsonrpc_client::errors::JsonRpcTransportSendError::PayloadSerializeError(
-                            err.into(),
-                        ),
-                    ),
-                )
-            })
-        }
-        Err(json_rpc_error) => {
-            serde_json::to_value(json_rpc_error.to_string()).map_err(|err| {
-                near_jsonrpc_client::errors::JsonRpcError::TransportError(
-                    near_jsonrpc_client::errors::RpcTransportError::SendError(
-                        near_jsonrpc_client::errors::JsonRpcTransportSendError::PayloadSerializeError(
-                            err.into(),
-                        ),
-                    ),
-                )
-            })
-        }
     }
 }
 
