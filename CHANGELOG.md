@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1](https://github.com/near/near-cli-rs/compare/v0.14.0...v0.14.1) - 2024-08-15
+
+### Fixed
+- Fixed native operating system keychain support that got broken with 0.14.0 release ([#392](https://github.com/near/near-cli-rs/pull/392))
+
 ## [0.14.0](https://github.com/near/near-cli-rs/compare/v0.13.0...v0.14.0) - 2024-08-13
 
 ### Fixed
