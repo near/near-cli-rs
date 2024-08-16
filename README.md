@@ -35,7 +35,7 @@ https://github.com/user-attachments/assets/7d5d090e-4885-4c27-9d0f-045905952071
   <summary>Install via shell script (macOS, Linux, Windows/WSL)</summary>
 
 ```sh
-irm https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.ps1 | iex
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
 ```
 </details>
 
