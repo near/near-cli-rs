@@ -55,24 +55,18 @@ impl SignLegacyKeychainContext {
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
-        let file_name = format!(
-            "{}.json",
-            &previous_context.prepopulated_transaction.signer_id
-        );
         let mut path =
             std::path::PathBuf::from(&previous_context.global_context.config.credentials_home_dir);
-
+        let dir_name = network_config.network_name.clone();
+        path.push(&dir_name);
+        path.push(
+            previous_context
+                .prepopulated_transaction
+                .signer_id
+                .to_string(),
+        );
         let data_path: std::path::PathBuf = {
-            let dir_name = network_config.network_name.clone();
-            path.push(&dir_name);
-
             if previous_context.global_context.offline {
-                path.push(
-                    previous_context
-                        .prepopulated_transaction
-                        .signer_id
-                        .to_string(),
-                );
                 path.push(&format!(
                     "{}.json",
                     scope
@@ -85,71 +79,67 @@ impl SignLegacyKeychainContext {
                         .replace(':', "_")
                 ));
                 path
-            } else {
-                path.push(file_name);
-                if path.exists() {
-                    path
-                } else {
-                    let access_key_list = network_config
-                        .json_rpc_client()
-                        .blocking_call_view_access_key_list(
-                            &previous_context.prepopulated_transaction.signer_id,
-                            near_primitives::types::Finality::Final.into(),
+            } else if path.exists() {
+                let access_key_list = network_config
+                    .json_rpc_client()
+                    .blocking_call_view_access_key_list(
+                        &previous_context.prepopulated_transaction.signer_id,
+                        near_primitives::types::Finality::Final.into(),
+                    )
+                    .wrap_err_with(|| {
+                        format!(
+                            "Failed to fetch access KeyList for {}",
+                            previous_context.prepopulated_transaction.signer_id
                         )
-                        .wrap_err_with(|| {
-                            format!(
-                                "Failed to fetch access KeyList for {}",
-                                previous_context.prepopulated_transaction.signer_id
-                            )
-                        })?
-                        .access_key_list_view()?;
-                    let mut path = std::path::PathBuf::from(
-                        &previous_context.global_context.config.credentials_home_dir,
-                    );
-                    path.push(dir_name);
-                    path.push(
-                        previous_context
-                            .prepopulated_transaction
-                            .signer_id
-                            .to_string(),
-                    );
-                    let mut data_path = std::path::PathBuf::new();
-                    'outer: for access_key in access_key_list.keys {
-                        let account_public_key = access_key.public_key.to_string();
-                        let is_full_access_key: bool = match &access_key.access_key.permission {
-                            near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                            near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                                allowance: _,
-                                receiver_id: _,
-                                method_names: _,
-                            } => false,
+                    })?
+                    .access_key_list_view()?;
+                let mut data_path = std::path::PathBuf::new();
+                'outer: for access_key in access_key_list.keys {
+                    let account_public_key = access_key.public_key.to_string();
+                    let is_full_access_key: bool = match &access_key.access_key.permission {
+                        near_primitives::views::AccessKeyPermissionView::FullAccess => true,
+                        near_primitives::views::AccessKeyPermissionView::FunctionCall {
+                            allowance: _,
+                            receiver_id: _,
+                            method_names: _,
+                        } => false,
+                    };
+                    let dir = path
+                            .read_dir()
+                            .wrap_err("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.")?;
+                    for entry in dir {
+                        if let Ok(entry) = entry {
+                            if entry
+                                .path()
+                                .file_stem()
+                                .unwrap()
+                                .to_str()
+                                .unwrap()
+                                .contains(account_public_key.rsplit(':').next().unwrap())
+                                && is_full_access_key
+                            {
+                                data_path.push(entry.path());
+                                break 'outer;
+                            }
+                        } else {
+                            return Err(color_eyre::Report::msg(
+                                    "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain."
+                                ));
                         };
-                        let dir = path
-                        .read_dir()
-                        .wrap_err("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.")?;
-                        for entry in dir {
-                            if let Ok(entry) = entry {
-                                if entry
-                                    .path()
-                                    .file_stem()
-                                    .unwrap()
-                                    .to_str()
-                                    .unwrap()
-                                    .contains(account_public_key.rsplit(':').next().unwrap())
-                                    && is_full_access_key
-                                {
-                                    data_path.push(entry.path());
-                                    break 'outer;
-                                }
-                            } else {
-                                return Err(color_eyre::Report::msg(
-                                "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain."
-                            ));
-                            };
-                        }
                     }
-                    data_path
                 }
+                data_path
+            } else {
+                let file_name = format!(
+                    "{}.json",
+                    &previous_context.prepopulated_transaction.signer_id
+                );
+                let mut path = std::path::PathBuf::from(
+                    &previous_context.global_context.config.credentials_home_dir,
+                );
+                path.push(&dir_name);
+                path.push(file_name);
+                path
             }
         };
         let data = std::fs::read_to_string(&data_path).wrap_err_with(|| {
