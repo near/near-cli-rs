@@ -93,53 +93,43 @@ impl SignLegacyKeychainContext {
                         )
                     })?
                     .access_key_list_view()?;
-                let mut data_path = std::path::PathBuf::new();
-                'outer: for access_key in access_key_list.keys {
-                    let account_public_key = access_key.public_key.to_string();
-                    let is_full_access_key: bool = match &access_key.access_key.permission {
-                        near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                        near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                            allowance: _,
-                            receiver_id: _,
-                            method_names: _,
-                        } => false,
-                    };
-                    let dir = path
+
+                let full_access_keys = access_key_list
+                    .keys
+                    .into_iter()
+                    .filter_map(
+                        |access_key_info| match access_key_info.access_key.permission {
+                            near_primitives::views::AccessKeyPermissionView::FullAccess => {
+                                Some(access_key_info.public_key)
+                            }
+                            near_primitives::views::AccessKeyPermissionView::FunctionCall {
+                                ..
+                            } => None,
+                        },
+                    )
+                    .collect::<Vec<_>>();
+
+                let signer_dir = path
                             .read_dir()
                             .wrap_err("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.")?;
-                    for entry in dir {
-                        if let Ok(entry) = entry {
-                            if entry
-                                .path()
-                                .file_stem()
-                                .unwrap()
-                                .to_str()
-                                .unwrap()
-                                .contains(account_public_key.rsplit(':').next().unwrap())
-                                && is_full_access_key
-                            {
-                                data_path.push(entry.path());
-                                break 'outer;
-                            }
+
+                let data_path = signer_dir.filter_map(|entry| entry.ok()).find(|entry| {
+                    let optional_file_name_str = entry.file_name().into_string().ok();
+                    full_access_keys.iter().any(|public_key| {
+                        if let Some(file_name_str) = &optional_file_name_str {
+                            file_name_str.starts_with(&public_key.to_string().replace(':', "_"))
                         } else {
-                            return Err(color_eyre::Report::msg(
-                                    "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain."
-                                ));
-                        };
-                    }
+                            false
+                        }
+                    })
+                });
+
+                match data_path {
+                    Some(data_path) => data_path.path(),
+                    None => get_file_path(&previous_context, &dir_name),
                 }
-                data_path
             } else {
-                let file_name = format!(
-                    "{}.json",
-                    &previous_context.prepopulated_transaction.signer_id
-                );
-                let mut path = std::path::PathBuf::from(
-                    &previous_context.global_context.config.credentials_home_dir,
-                );
-                path.push(&dir_name);
-                path.push(file_name);
-                path
+                get_file_path(&previous_context, &dir_name)
             }
         };
         let data = std::fs::read_to_string(&data_path).wrap_err_with(|| {
@@ -331,4 +321,19 @@ impl SignLegacyKeychain {
         }
         Ok(None)
     }
+}
+
+fn get_file_path(
+    previous_context: &crate::commands::TransactionContext,
+    dir_name: &str,
+) -> std::path::PathBuf {
+    let file_name = format!(
+        "{}.json",
+        &previous_context.prepopulated_transaction.signer_id
+    );
+    let mut path =
+        std::path::PathBuf::from(&previous_context.global_context.config.credentials_home_dir);
+    path.push(dir_name);
+    path.push(file_name);
+    path
 }
