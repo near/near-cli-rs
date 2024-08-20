@@ -55,111 +55,90 @@ impl SignLegacyKeychainContext {
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
-        let file_name = format!(
-            "{}.json",
-            &previous_context.prepopulated_transaction.signer_id
-        );
-        let mut path =
-            std::path::PathBuf::from(&previous_context.global_context.config.credentials_home_dir);
-
-        let data_path: std::path::PathBuf = {
-            let dir_name = network_config.network_name.clone();
-            path.push(&dir_name);
-
+        let signer_keychain_folder = previous_context
+            .global_context
+            .config
+            .credentials_home_dir
+            .join(&network_config.network_name)
+            .join(previous_context.prepopulated_transaction.signer_id.as_str());
+        let signer_access_key_file_path: std::path::PathBuf = {
             if previous_context.global_context.offline {
-                path.push(
-                    previous_context
-                        .prepopulated_transaction
-                        .signer_id
-                        .to_string(),
-                );
-                path.push(&format!(
+                signer_keychain_folder.join(format!(
                     "{}.json",
                     scope
                         .signer_public_key
-                        .clone()
+                        .as_ref()
                         .wrap_err(
                             "Signer public key is required to sign a transaction in offline mode"
                         )?
                         .to_string()
                         .replace(':', "_")
-                ));
-                path
-            } else {
-                path.push(file_name);
-                if path.exists() {
-                    path
-                } else {
-                    let access_key_list = network_config
-                        .json_rpc_client()
-                        .blocking_call_view_access_key_list(
-                            &previous_context.prepopulated_transaction.signer_id,
-                            near_primitives::types::Finality::Final.into(),
+                ))
+            } else if signer_keychain_folder.exists() {
+                let full_access_key_filenames = network_config
+                    .json_rpc_client()
+                    .blocking_call_view_access_key_list(
+                        &previous_context.prepopulated_transaction.signer_id,
+                        near_primitives::types::Finality::Final.into(),
+                    )
+                    .wrap_err_with(|| {
+                        format!(
+                            "Failed to fetch access KeyList for {}",
+                            previous_context.prepopulated_transaction.signer_id
                         )
-                        .wrap_err_with(|| {
-                            format!(
-                                "Failed to fetch access KeyList for {}",
-                                previous_context.prepopulated_transaction.signer_id
-                            )
-                        })?
-                        .access_key_list_view()?;
-                    let mut path = std::path::PathBuf::from(
-                        &previous_context.global_context.config.credentials_home_dir,
-                    );
-                    path.push(dir_name);
-                    path.push(
-                        previous_context
-                            .prepopulated_transaction
-                            .signer_id
-                            .to_string(),
-                    );
-                    let mut data_path = std::path::PathBuf::new();
-                    'outer: for access_key in access_key_list.keys {
-                        let account_public_key = access_key.public_key.to_string();
-                        let is_full_access_key: bool = match &access_key.access_key.permission {
+                    })?
+                    .access_key_list_view()?
+                    .keys
+                    .iter()
+                    .filter(
+                        |access_key_info| match access_key_info.access_key.permission {
                             near_primitives::views::AccessKeyPermissionView::FullAccess => true,
                             near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                                allowance: _,
-                                receiver_id: _,
-                                method_names: _,
+                                ..
                             } => false,
-                        };
-                        let dir = path
-                        .read_dir()
-                        .wrap_err("There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain.")?;
-                        for entry in dir {
-                            if let Ok(entry) = entry {
-                                if entry
-                                    .path()
-                                    .file_stem()
-                                    .unwrap()
-                                    .to_str()
-                                    .unwrap()
-                                    .contains(account_public_key.rsplit(':').next().unwrap())
-                                    && is_full_access_key
-                                {
-                                    data_path.push(entry.path());
-                                    break 'outer;
-                                }
-                            } else {
-                                return Err(color_eyre::Report::msg(
-                                "There are no access keys found in the keychain for the signer account. Log in before signing transactions with keychain."
-                            ));
-                            };
-                        }
-                    }
-                    data_path
-                }
+                        },
+                    )
+                    .map(|access_key_info| {
+                        format!(
+                            "{}.json",
+                            access_key_info.public_key.to_string().replace(":", "_")
+                        )
+                        .into()
+                    })
+                    .collect::<std::collections::HashSet<std::ffi::OsString>>();
+
+                signer_keychain_folder
+                    .read_dir()
+                    .wrap_err("There are no access keys found in the keychain for the signer account. Import an access key for an account before signing transactions with keychain.")?
+                    .filter_map(Result::ok)
+                    .find(|entry| full_access_key_filenames.contains(&entry.file_name()))
+                    .map(|signer_access_key| signer_access_key.path())
+                    .unwrap_or_else(|| signer_keychain_folder.join(format!(
+                        "{}.json",
+                        previous_context.prepopulated_transaction.signer_id
+                    )))
+            } else {
+                signer_keychain_folder.join(format!(
+                    "{}.json",
+                    previous_context.prepopulated_transaction.signer_id
+                ))
             }
         };
-        let data = std::fs::read_to_string(&data_path).wrap_err_with(|| {
-            format!(
-                "Access key file for account <{}> on network <{}> not found!",
-                previous_context.prepopulated_transaction.signer_id, network_config.network_name
-            )
-        })?;
-        let account_json: super::AccountKeyPair = serde_json::from_str(&data)
-            .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
+        let signer_access_key_json =
+            std::fs::read(&signer_access_key_file_path).wrap_err_with(|| {
+                format!(
+                    "Access key file for account <{}> on network <{}> not found!",
+                    previous_context.prepopulated_transaction.signer_id,
+                    network_config.network_name
+                )
+            })?;
+        let signer_access_key: super::AccountKeyPair =
+            serde_json::from_slice(&signer_access_key_json).wrap_err_with(|| {
+                format!(
+                    "Error reading data from file: {:?}",
+                    &signer_access_key_file_path
+                )
+            })?;
 
         let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (
@@ -179,7 +158,7 @@ impl SignLegacyKeychainContext {
                 .json_rpc_client()
                 .blocking_call_view_access_key(
                     &previous_context.prepopulated_transaction.signer_id,
-                    &account_json.public_key,
+                    &signer_access_key.public_key,
                     near_primitives::types::BlockReference::latest()
                 )
                 .wrap_err(
@@ -198,7 +177,7 @@ impl SignLegacyKeychainContext {
 
         let mut unsigned_transaction =
             near_primitives::transaction::Transaction::V0(TransactionV0 {
-                public_key: account_json.public_key.clone(),
+                public_key: signer_access_key.public_key.clone(),
                 block_hash,
                 nonce,
                 signer_id: previous_context.prepopulated_transaction.signer_id,
@@ -216,8 +195,8 @@ impl SignLegacyKeychainContext {
 
             let signed_delegate_action = super::get_signed_delegate_action(
                 unsigned_transaction,
-                &account_json.public_key,
-                account_json.private_key,
+                &signer_access_key.public_key,
+                signer_access_key.private_key,
                 max_block_height,
             );
 
@@ -232,7 +211,7 @@ impl SignLegacyKeychainContext {
             });
         }
 
-        let signature = account_json
+        let signature = signer_access_key
             .private_key
             .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
@@ -242,7 +221,7 @@ impl SignLegacyKeychainContext {
         );
 
         eprintln!("\nYour transaction was signed successfully.");
-        eprintln!("Public key: {}", account_json.public_key);
+        eprintln!("Public key: {}", signer_access_key.public_key);
         eprintln!("Signature: {}", signature);
 
         Ok(Self {
