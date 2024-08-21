@@ -55,12 +55,13 @@ impl SignLegacyKeychainContext {
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
 
-        let signer_keychain_folder = previous_context
+        let keychain_folder = previous_context
             .global_context
             .config
             .credentials_home_dir
-            .join(&network_config.network_name)
-            .join(previous_context.prepopulated_transaction.signer_id.as_str());
+            .join(&network_config.network_name);
+        let signer_keychain_folder =
+            keychain_folder.join(previous_context.prepopulated_transaction.signer_id.as_str());
         let signer_access_key_file_path: std::path::PathBuf = {
             if previous_context.global_context.offline {
                 signer_keychain_folder.join(format!(
@@ -113,12 +114,12 @@ impl SignLegacyKeychainContext {
                     .filter_map(Result::ok)
                     .find(|entry| full_access_key_filenames.contains(&entry.file_name()))
                     .map(|signer_access_key| signer_access_key.path())
-                    .unwrap_or_else(|| signer_keychain_folder.join(format!(
+                    .unwrap_or_else(|| keychain_folder.join(format!(
                         "{}.json",
                         previous_context.prepopulated_transaction.signer_id
                     )))
             } else {
-                signer_keychain_folder.join(format!(
+                keychain_folder.join(format!(
                     "{}.json",
                     previous_context.prepopulated_transaction.signer_id
                 ))
