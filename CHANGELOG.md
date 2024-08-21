@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.2](https://github.com/near/near-cli-rs/compare/v0.14.1...v0.14.2) - 2024-08-21
+
+### Added
+- Upgraded cargo-dist to 0.21.1 and enabled Linux ARM64 build ([#397](https://github.com/near/near-cli-rs/pull/397))
+- Prioritize searching an access key in the signer account subfolder (<credentials-dir>/<network>/<account-id>/*.json) in legacy keychain and then fallback to <credentials-dir>/<network>/<account-id>.json instead of the other way around ([#396](https://github.com/near/near-cli-rs/pull/396))
+
+### Other
+- Fixed the one-liner curl installation command
+
 ## [0.14.1](https://github.com/near/near-cli-rs/compare/v0.14.0...v0.14.1) - 2024-08-15
 
 ### Fixed
