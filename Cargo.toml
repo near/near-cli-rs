@@ -116,14 +116,17 @@ lto = "thin"
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.9.0"
+cargo-dist-version = "0.21.1"
 # CI backends to support
-ci = ["github"]
+ci = "github"
 # The installers to generate for each app
 installers = ["shell", "powershell", "npm", "msi"]
+# Enable additional publishing steps
+publish-jobs = ["npm"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = [
     "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
     "x86_64-apple-darwin",
     "x86_64-unknown-linux-gnu",
     "x86_64-pc-windows-msvc",
@@ -132,11 +135,15 @@ targets = [
 windows-archive = ".tar.gz"
 # The archive format to use for non-windows builds (defaults .tar.xz)
 unix-archive = ".tar.gz"
-# Publish jobs to run in CI
+# Which actions to run on pull requests
 pr-run-mode = "upload"
-# XXX: In order to use custom GITHUB_TOKEN to trigger npm-publish workflow,
-# we allow dirty CI scripts to avoid cargo-dist complains.
-allow-dirty = ["ci"]
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
+# Whether to install an updater program
+install-updater = false
+
+[workspace.metadata.dist.github-custom-runners]
+aarch64-unknown-linux-gnu = "ubuntu-arm64-22.04-4core"
 
 [workspace.metadata.dist.dependencies.apt]
-libudev-dev = { version = "*", targets = ["x86_64-unknown-linux-gnu"] }
+libudev-dev = { version = "*", targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"] }
