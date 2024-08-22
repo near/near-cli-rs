@@ -100,7 +100,7 @@ impl SignLedgerContext {
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
         let signature = match near_ledger::sign_transaction(
-            borsh::to_vec(&unsigned_transaction)
+            &borsh::to_vec(&unsigned_transaction)
                 .wrap_err("Transaction is not expected to fail on serialization")?,
             seed_phrase_hd_path.clone(),
         ) {
