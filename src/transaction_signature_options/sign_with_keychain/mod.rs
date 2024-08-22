@@ -145,26 +145,47 @@ impl SignKeychainContext {
         let account_json: super::AccountKeyPair =
             serde_json::from_str(&password).wrap_err("Error reading data")?;
 
-        let rpc_query_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
-                &previous_context.prepopulated_transaction.signer_id,
-                &account_json.public_key,
-                near_primitives::types::BlockReference::latest(),
+        let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
+            (
+                scope
+                    .nonce
+                    .wrap_err("Nonce is required to sign a transaction in offline mode")?,
+                scope
+                    .block_hash
+                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                    .0,
+                scope
+                    .block_height
+                    .wrap_err("Block Height is required to sign a transaction in offline mode")?,
             )
-            .wrap_err_with(||
-                format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
-            )?;
-        let current_nonce = rpc_query_response
-            .access_key_view()
-            .wrap_err("Error current_nonce")?
-            .nonce;
+        } else {
+            let rpc_query_response = network_config
+                .json_rpc_client()
+                .blocking_call_view_access_key(
+                    &previous_context.prepopulated_transaction.signer_id,
+                    &account_json.public_key,
+                    near_primitives::types::BlockReference::latest(),
+                )
+                .wrap_err_with(||
+                    format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
+                )?;
+
+            (
+                rpc_query_response
+                    .access_key_view()
+                    .wrap_err("Error current_nonce")?
+                    .nonce
+                    + 1,
+                rpc_query_response.block_hash,
+                rpc_query_response.block_height,
+            )
+        };
 
         let mut unsigned_transaction =
             near_primitives::transaction::Transaction::V0(TransactionV0 {
                 public_key: account_json.public_key.clone(),
-                block_hash: rpc_query_response.block_hash,
-                nonce: current_nonce + 1,
+                block_hash,
+                nonce,
                 signer_id: previous_context.prepopulated_transaction.signer_id,
                 receiver_id: previous_context.prepopulated_transaction.receiver_id,
                 actions: previous_context.prepopulated_transaction.actions,
@@ -177,7 +198,7 @@ impl SignKeychainContext {
             .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
         if network_config.meta_transaction_relayer_url.is_some() {
-            let max_block_height = rpc_query_response.block_height
+            let max_block_height = block_height
                 + scope
                     .meta_transaction_valid_for
                     .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
