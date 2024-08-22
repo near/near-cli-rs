@@ -184,7 +184,7 @@ impl SignKeychainContext {
         let mut unsigned_transaction =
             near_primitives::transaction::Transaction::V0(TransactionV0 {
                 public_key: account_json.public_key.clone(),
-                block_hash: block_hash,
+                block_hash,
                 nonce,
                 signer_id: previous_context.prepopulated_transaction.signer_id,
                 receiver_id: previous_context.prepopulated_transaction.receiver_id,
