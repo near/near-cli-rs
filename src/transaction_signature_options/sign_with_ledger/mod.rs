@@ -1,6 +1,7 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
 use near_ledger::NEARLedgerError;
+use near_primitives::action::delegate::SignedDelegateAction;
 use near_primitives::borsh;
 use near_primitives::transaction::TransactionV0;
 
@@ -30,6 +31,12 @@ pub struct SignLedger {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    block_height: Option<near_primitives::types::BlockHeight>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_interactive_input)]
+    meta_transaction_valid_for: Option<u64>,
     #[interactive_clap(subcommand)]
     submit: super::Submit,
 }
@@ -58,7 +65,7 @@ impl SignLedgerContext {
         let seed_phrase_hd_path: slipped10::BIP32Path = scope.seed_phrase_hd_path.clone().into();
         let public_key: near_crypto::PublicKey = scope.signer_public_key.clone().into();
 
-        let (nonce, block_hash) = if previous_context.global_context.offline {
+        let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (
                 scope
                     .nonce
@@ -67,6 +74,9 @@ impl SignLedgerContext {
                     .block_hash
                     .wrap_err("Block Hash is required to sign a transaction in offline mode")?
                     .0,
+                scope
+                    .block_height
+                    .wrap_err("Block Height is required to sign a transaction in offline mode")?,
             )
         } else {
             let rpc_query_response = network_config
@@ -74,17 +84,21 @@ impl SignLedgerContext {
                 .blocking_call_view_access_key(
                     &previous_context.prepopulated_transaction.signer_id,
                     &public_key,
-                    near_primitives::types::BlockReference::latest()
+                    near_primitives::types::BlockReference::latest(),
                 )
                 .wrap_err_with(||
                     format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
                 )?;
-            let current_nonce = rpc_query_response
-                .access_key_view()
-                .wrap_err("Error current_nonce")?
-                .nonce;
 
-            (current_nonce + 1, rpc_query_response.block_hash)
+            (
+                rpc_query_response
+                    .access_key_view()
+                    .wrap_err("Error current_nonce")?
+                    .nonce
+                    + 1,
+                rpc_query_response.block_hash,
+                rpc_query_response.block_height,
+            )
         };
 
         let mut unsigned_transaction =
@@ -98,6 +112,65 @@ impl SignLedgerContext {
             });
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
+
+        if network_config.meta_transaction_relayer_url.is_some() {
+            let max_block_height = block_height
+                + scope
+                    .meta_transaction_valid_for
+                    .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
+
+            let mut delegate_action = near_primitives::action::delegate::DelegateAction {
+                sender_id: unsigned_transaction.signer_id().clone(),
+                receiver_id: unsigned_transaction.receiver_id().clone(),
+                actions: vec![],
+                nonce: unsigned_transaction.nonce(),
+                max_block_height,
+                public_key: unsigned_transaction.public_key().clone(),
+            };
+
+            delegate_action.actions = unsigned_transaction
+                        .take_actions()
+                        .into_iter()
+                        .map(near_primitives::action::delegate::NonDelegateAction::try_from)
+                        .collect::<Result<_, _>>()
+                        .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).");
+
+            let signature = match near_ledger::sign_message_nep366_delegate_action(
+                &borsh::to_vec(&delegate_action)
+                    .wrap_err("Delegate action is not expected to fail on serialization")?,
+                seed_phrase_hd_path.clone(),
+            ) {
+                Ok(signature) => {
+                    near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
+                        .wrap_err("Signature is not expected to fail on deserialization")?
+                }
+                Err(NEARLedgerError::APDUExchangeError(msg))
+                    if msg.contains(SW_BUFFER_OVERFLOW) =>
+                {
+                    return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
+                }
+                Err(near_ledger_error) => {
+                    return Err(color_eyre::Report::msg(format!(
+                        "Error occurred while signing the transaction: {:?}",
+                        near_ledger_error
+                    )));
+                }
+            };
+            let signed_delegate_action = SignedDelegateAction {
+                delegate_action,
+                signature,
+            };
+
+            return Ok(Self {
+                network_config: previous_context.network_config,
+                global_context: previous_context.global_context,
+                signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
+                on_before_sending_transaction_callback: previous_context
+                    .on_before_sending_transaction_callback,
+                on_after_sending_transaction_callback: previous_context
+                    .on_after_sending_transaction_callback,
+            });
+        }
 
         let signature = match near_ledger::sign_transaction(
             &borsh::to_vec(&unsigned_transaction)
@@ -118,6 +191,7 @@ impl SignLedgerContext {
                 )));
             }
         };
+
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
             unsigned_transaction,
@@ -220,6 +294,8 @@ impl interactive_clap::FromCli for SignLedger {
             seed_phrase_hd_path,
             nonce,
             block_hash,
+            block_height: clap_variant.block_height,
+            meta_transaction_valid_for: clap_variant.meta_transaction_valid_for,
         };
         let output_context =
             match SignLedgerContext::from_previous_context(context, &new_context_scope) {
