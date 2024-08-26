@@ -440,7 +440,7 @@ async fn view_account(
         );
     }
 
-    let query_view_method_response = json_rpc_client
+    json_rpc_client
         .call(query_view_method_request)
         .await
         .inspect_err(|err| match err {
@@ -471,9 +471,7 @@ async fn view_account(
                 );
             }
         })
-        .inspect(teach_me_call_response);
-
-    query_view_method_response
+        .inspect(teach_me_call_response)
 }
 
 fn need_check_account(message: String) -> bool {
