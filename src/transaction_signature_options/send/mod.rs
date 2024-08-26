@@ -87,27 +87,17 @@ pub fn sending_signed_transaction(
             near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
                 signed_transaction: signed_transaction.clone(),
             };
-        let request_payload = near_jsonrpc_client::methods::to_json(&request)?;
 
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
             "I am making HTTP call to NEAR JSON RPC to broadcast a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx"
         );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "HTTP POST {}",
-            network_config.rpc_url.as_str(),
-        );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON Body:\n{}",
-            crate::common::indent_payload(&format!("{:#}", request_payload))
-        );
 
-        let transaction_info_result = network_config.json_rpc_client().blocking_call(request);
+        let transaction_info_result = network_config
+            .json_rpc_client()
+            .blocking_call(request)
+            .inspect(crate::common::teach_me_call_response);
         match transaction_info_result {
             Ok(response) => {
                 break response;
@@ -130,15 +120,6 @@ pub fn sending_signed_transaction(
         };
     };
 
-    let response_payload = serde_json::to_value(&transaction_info)?;
-
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "JSON RPC Response:\n{}",
-        crate::common::indent_payload(&format!("{:#}", response_payload))
-    );
-
     Ok(transaction_info)
 }
 
@@ -148,6 +129,7 @@ pub fn sending_signed_transaction(
 )]
 pub fn sleep_after_error(additional_message_for_name: String) {
     tracing::Span::current().pb_set_message(&additional_message_for_name);
+    tracing::info!(target: "near_teach_me", "{}", &additional_message_for_name);
     std::thread::sleep(std::time::Duration::from_secs(5));
 }
 

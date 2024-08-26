@@ -2364,7 +2364,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     }
 }
 
-fn teach_me_call_response(response: &impl serde::Serialize) {
+pub(crate) fn teach_me_call_response(response: &impl serde::Serialize) {
     if let Ok(response_payload) = serde_json::to_value(response) {
         tracing::info!(
             target: "near_teach_me",
