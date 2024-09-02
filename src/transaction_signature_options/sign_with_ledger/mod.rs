@@ -254,6 +254,15 @@ impl interactive_clap::FromCli for SignLedger {
             .clone()
             .expect("Unexpected error");
 
+        eprintln!("Opening the NEAR application... Please approve opening the application");
+        if let Err(err) = near_ledger::open_near_application().map_err(|ledger_error| {
+            color_eyre::Report::msg(format!("An error happened while trying to open the NEAR application on the ledger: {ledger_error:?}"))
+        }) {
+            return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
+        }
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         eprintln!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path

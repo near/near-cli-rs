@@ -27,6 +27,14 @@ impl SaveWithLedgerContext {
                 let seed_phrase_hd_path = scope.seed_phrase_hd_path.clone();
                 move |folder_path| {
                     eprintln!(
+                        "Opening the NEAR application... Please approve opening the application"
+                    );
+                    near_ledger::open_near_application().map_err(|ledger_error| {
+                        color_eyre::Report::msg(format!("An error happened while trying to open the NEAR application on the ledger: {ledger_error:?}"))
+                    })?;
+                    std::thread::sleep(std::time::Duration::from_secs(1));
+
+                    eprintln!(
                         "Please allow getting the PublicKey on Ledger device (HD Path: {})",
                         seed_phrase_hd_path
                     );
