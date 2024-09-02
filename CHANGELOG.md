@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0](https://github.com/near/near-cli-rs/compare/v0.14.3...v0.15.0) - 2024-09-02
+
+### Added
+- Extended --teach-me mode: async account details fetching RPC methods are also covered now ([#389](https://github.com/near/near-cli-rs/pull/389))
+
+### Other
+- Updated near-* dependencies to 0.25.0 (matching nearcore 2.1 release) ([#401](https://github.com/near/near-cli-rs/pull/401))
+
 ## [0.14.3](https://github.com/near/near-cli-rs/compare/v0.14.2...v0.14.3) - 2024-08-21
 
 ### Fixed
