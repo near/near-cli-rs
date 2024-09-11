@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.1](https://github.com/near/near-cli-rs/compare/v0.15.0...v0.15.1) - 2024-09-11
+
+### Other
+
+- updates near-* dependencies to 0.26 release ([#405](https://github.com/near/near-cli-rs/pull/405))
+
 ## [0.15.0](https://github.com/near/near-cli-rs/compare/v0.14.3...v0.15.0) - 2024-09-02
 
 ### Added
