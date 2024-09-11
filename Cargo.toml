@@ -60,7 +60,7 @@ tracing = "0.1.40"
 tracing-indicatif = "0.3.6"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-wasmparser = "0.211"
+wasmparser = "0.217"
 
 semver = { version = "1.0.4", optional = true }
 self_update = { version = "0.41.0", features = [
@@ -75,12 +75,13 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-ledger = { version = "0.8.0", optional = true }
+near-crypto = "0.26"
+near-primitives = "0.26"
+near-jsonrpc-client = "0.13"
+near-jsonrpc-primitives = "0.26"
+near-socialdb-client = "0.7"
 
-near-crypto = "0.25"
-near-primitives = "0.25"
-near-jsonrpc-client = "0.12"
-near-jsonrpc-primitives = "0.25"
+near-ledger = { version = "0.8.0", optional = true }
 
 near-gas = { version = "0.3", features = [
     "serde",
@@ -92,7 +93,6 @@ near-token = { version = "0.3", features = [
     "borsh",
     "interactive-clap",
 ] }
-near-socialdb-client = "0.6"
 
 near-abi = "0.4.2"
 zstd = "0.13"
