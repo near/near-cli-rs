@@ -17,15 +17,15 @@ pub struct SignedTransaction {
 /// Select the Base64 signed transaction input method:
 pub enum SignedTransactionType {
     #[strum_discriminants(strum(
-        message = "base64-signed-transaction  - Base64-encoded string (e.g. e30=)"
+        message = "base64-signed-transaction             - Base64-encoded string (e.g. e30=)"
     ))]
     /// Base64-encoded string (e.g. e30=)
     Base64SignedTransaction(Base64SignedTransaction),
     #[strum_discriminants(strum(
-        message = "file                       - Read from file (e.g. reusable JSON or binary data)"
+        message = "file-with-base64-signed-transaction   - Read base64-encoded string from file (e.g. reusable JSON or binary data)"
     ))]
-    /// Read from file (e.g. reusable JSON or binary data)
-    File(File),
+    /// Read base64-encoded string from file (e.g. reusable JSON or binary data)
+    FileWithBase64SignedTransaction(FileWithBase64SignedTransaction),
 }
 
 #[derive(Debug, Clone)]
@@ -68,8 +68,8 @@ impl From<Base64SignedTransactionContext> for SignedTransactionContext {
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = FileContext)]
-pub struct File {
+#[interactive_clap(output_context = FileWithBase64SignedTransactionContext)]
+pub struct FileWithBase64SignedTransaction {
     /// Enter the path to the file with the transaction as a string in base64 encoding:
     file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(named_arg)]
@@ -78,7 +78,7 @@ pub struct File {
 }
 
 #[derive(Debug, Clone)]
-pub struct FileContext(SignedTransactionContext);
+pub struct FileWithBase64SignedTransactionContext(SignedTransactionContext);
 
 #[derive(Debug, serde::Deserialize)]
 struct FileSignedTransaction {
@@ -86,10 +86,10 @@ struct FileSignedTransaction {
     signed_transaction: near_primitives::transaction::SignedTransaction,
 }
 
-impl FileContext {
+impl FileWithBase64SignedTransactionContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
-        scope: &<File as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<FileWithBase64SignedTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let data = std::fs::read_to_string(&scope.file_path)
             .wrap_err_with(|| format!("File {:?} not found!", &scope.file_path))?;
@@ -105,8 +105,8 @@ impl FileContext {
     }
 }
 
-impl From<FileContext> for SignedTransactionContext {
-    fn from(item: FileContext) -> Self {
+impl From<FileWithBase64SignedTransactionContext> for SignedTransactionContext {
+    fn from(item: FileWithBase64SignedTransactionContext) -> Self {
         item.0
     }
 }
