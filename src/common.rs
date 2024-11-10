@@ -2143,18 +2143,80 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         M: near_jsonrpc_client::methods::RpcMethod,
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
     {
-        if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method) {
+        if let Ok(mut request_payload) = near_jsonrpc_client::methods::to_json(&method) {
             tracing::info!(
                 target: "near_teach_me",
                 parent: &tracing::Span::none(),
                 "HTTP POST {}",
                 self.server_addr()
             );
+
+            let mut message_about_saving_payload = String::new();
+
+            if let Some(method) = request_payload.get("method") {
+                if method.to_string().contains("broadcast_tx_commit") {
+                    if let Some(serde_json::Value::Array(array)) = request_payload.get("params") {
+                        let signed_transaction_as_base64 =
+                            array.iter().map(|val| val.to_string()).collect::<String>();
+                        let signed_transaction_as_base64 =
+                            signed_transaction_as_base64.trim_matches('"');
+
+                        if signed_transaction_as_base64.len() > 1000 {
+                            let data_signed_transaction = serde_json::json!(
+                                {"Signed transaction (serialized as base64)": signed_transaction_as_base64});
+
+                            let file_path = std::path::PathBuf::from("broadcast_tx_commit.json");
+
+                            request_payload["params"] = serde_json::json!(format!(
+                                "A transaction in base64 encoding contains {} characters. The entire payload will be stored in `{}`",
+                                signed_transaction_as_base64.len(),
+                                &file_path.display()
+                            ));
+
+                            match std::fs::File::create(&file_path) {
+                                Ok(mut file) => {
+                                    match serde_json::to_vec(&data_signed_transaction) {
+                                        Ok(buf) => match file.write(&buf) {
+                                            Ok(_) => {
+                                                message_about_saving_payload = format!("The file `{}` was created successfully. It has a signed transaction (serialized as base64).", &file_path.display());
+                                            }
+                                            Err(err) => {
+                                                message_about_saving_payload = format!("Failed to save payload to `{}`. Failed to write file:\n{}",
+                                                    &file_path.display(),
+                                                    indent_payload(&format!("{:#?}", err)));
+                                            }
+                                        },
+                                        Err(err) => {
+                                            message_about_saving_payload = format!(
+                                                "Failed to save payload to `{}`. Serialization error:\n{}",
+                                                &file_path.display(),
+                                                indent_payload(&format!("{:#?}", err))
+                                            );
+                                        }
+                                    }
+                                }
+                                Err(err) => {
+                                    message_about_saving_payload = format!(
+                                        "Failed to save payload to `{}`. Failed to create file:\n{}",
+                                        &file_path.display(),
+                                        indent_payload(&format!("{:#?}", err))
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             tracing::info!(
                 target: "near_teach_me",
                 parent: &tracing::Span::none(),
                 "JSON Request Body:\n{}",
                 indent_payload(&format!("{:#}", request_payload))
+            );
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "{}", message_about_saving_payload
             );
         }
 
