@@ -133,6 +133,10 @@ jobs:
       - name: Install dependencies
         run: |
           ${{ matrix.packages_install }}
+      - name: Install Xcode Command Line Tools
+        run: |
+          sudo xcode-select --install || echo "Xcode Command Line Tools already installed"
+          sudo xcode-select -switch /Library/Developer/CommandLineTools
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
