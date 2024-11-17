@@ -4,9 +4,6 @@
     clippy::too_many_arguments
 )]
 
-use std::fs::OpenOptions;
-use std::io::Write;
-
 use clap::Parser;
 #[cfg(feature = "self-update")]
 use color_eyre::eyre::WrapErr;
@@ -31,8 +28,6 @@ pub use near_cli_rs::types;
 pub use near_cli_rs::utils_command;
 
 pub use near_cli_rs::GlobalContext;
-
-const FINAL_COMMAND_FILE_NAME: &str = "near-cli-rs-final-command.log";
 
 type ConfigContext = (crate::config::Config,);
 
@@ -70,21 +65,6 @@ impl From<CmdContext> for crate::GlobalContext {
     fn from(item: CmdContext) -> Self {
         item.0
     }
-}
-
-fn store_cmd(cli_cmd_str: &str) {
-    let tmp_file_path = std::env::temp_dir().join(FINAL_COMMAND_FILE_NAME);
-
-    if let Ok(mut tmp_file) = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(tmp_file_path)
-    {
-        if let Err(err) = writeln!(tmp_file, "{}", cli_cmd_str) {
-            eprintln!("Failed to store final command in a temporary file: {}", err);
-        }
-    };
 }
 
 fn main() -> crate::common::CliResult {
@@ -198,7 +178,7 @@ fn main() -> crate::common::CliResult {
                 cli_cmd_str.yellow()
             );
 
-            store_cmd(&cli_cmd_str);
+            crate::common::save_cli_command(&cli_cmd_str);
 
             Ok(Some(cli_cmd))
         }
@@ -220,7 +200,7 @@ fn main() -> crate::common::CliResult {
                     cli_cmd_str.yellow()
                 );
 
-                store_cmd(&cli_cmd_str);
+                crate::common::save_cli_command(&cli_cmd_str);
             }
             Err(err)
         }
