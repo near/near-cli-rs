@@ -3,6 +3,10 @@
     clippy::large_enum_variant,
     clippy::too_many_arguments
 )]
+
+use std::fs::OpenOptions;
+use std::io::Write;
+
 use clap::Parser;
 #[cfg(feature = "self-update")]
 use color_eyre::eyre::WrapErr;
@@ -27,6 +31,8 @@ pub use near_cli_rs::types;
 pub use near_cli_rs::utils_command;
 
 pub use near_cli_rs::GlobalContext;
+
+const FINAL_COMMAND_FILE_NAME: &str = "near-cli-rs-final-command.log";
 
 type ConfigContext = (crate::config::Config,);
 
@@ -64,6 +70,21 @@ impl From<CmdContext> for crate::GlobalContext {
     fn from(item: CmdContext) -> Self {
         item.0
     }
+}
+
+fn store_cmd(cli_cmd_str: &str) {
+    let tmp_file_path = std::env::temp_dir().join(FINAL_COMMAND_FILE_NAME);
+
+    if let Ok(mut tmp_file) = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(tmp_file_path)
+    {
+        if let Err(err) = writeln!(tmp_file, "{}", cli_cmd_str) {
+            eprintln!("Failed to store final command in a temporary file: {}", err);
+        }
+    };
 }
 
 fn main() -> crate::common::CliResult {
@@ -168,13 +189,17 @@ fn main() -> crate::common::CliResult {
     let cli_cmd = match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli), (config,)) {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
         | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
+            let cli_cmd_str = shell_words::join(
+                std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args()),
+            );
+
             eprintln!(
                 "\n\nHere is your console command if you need to script it or re-run:\n    {}\n",
-                shell_words::join(
-                    std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
-                )
-                .yellow()
+                cli_cmd_str.yellow()
             );
+
+            store_cmd(&cli_cmd_str);
+
             Ok(Some(cli_cmd))
         }
         interactive_clap::ResultFromCli::Cancel(None) => {
@@ -186,13 +211,16 @@ fn main() -> crate::common::CliResult {
         }
         interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
             if let Some(cli_cmd) = optional_cli_cmd {
+                let cli_cmd_str = shell_words::join(
+                    std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args()),
+                );
+
                 eprintln!(
                     "\nHere is your console command if you need to script it or re-run:\n    {}\n",
-                    shell_words::join(
-                        std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
-                    )
-                    .yellow()
+                    cli_cmd_str.yellow()
                 );
+
+                store_cmd(&cli_cmd_str);
             }
             Err(err)
         }
