@@ -574,7 +574,7 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         } else {
             let mnemonic =
                 bip39::Mnemonic::generate(generate_keypair.new_master_seed_phrase_words_count)?;
-            let master_seed_phrase = mnemonic.word_iter().collect::<Vec<&str>>().join(" ");
+            let master_seed_phrase = mnemonic.words().collect::<Vec<&str>>().join(" ");
             (master_seed_phrase, mnemonic.to_seed(""))
         };
 
@@ -902,6 +902,15 @@ pub fn rpc_transaction_error(
                 }
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status))
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::BadRequest => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with a bad request. Please, check your request parameters."))
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TimeoutError => {
+                    Ok("Timeout error while sending a request to the JSON RPC server".to_string())
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::ServiceUnavailable => {
+                    Ok("JSON RPC server is currently unavailable".to_string())
                 }
             }
         }
