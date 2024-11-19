@@ -9,12 +9,6 @@ use color_eyre::eyre::WrapErr;
 use color_eyre::owo_colors::OwoColorize;
 use interactive_clap::ToCliArgs;
 
-use indicatif::ProgressStyle;
-use tracing_indicatif::IndicatifLayer;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
-
 pub use near_cli_rs::commands;
 pub use near_cli_rs::common::{self, CliResult};
 pub use near_cli_rs::config;
@@ -25,7 +19,6 @@ pub use near_cli_rs::network_view_at_block;
 pub use near_cli_rs::transaction_signature_options;
 pub use near_cli_rs::types;
 pub use near_cli_rs::utils_command;
-
 pub use near_cli_rs::GlobalContext;
 
 type ConfigContext = (crate::config::Config,);
@@ -120,50 +113,7 @@ fn main() -> crate::common::CliResult {
             }
         },
     };
-    if cli.teach_me {
-        let env_filter = EnvFilter::from_default_env()
-            .add_directive(tracing::Level::WARN.into())
-            .add_directive("near_teach_me=info".parse()?)
-            .add_directive("near_cli_rs=info".parse()?);
-        tracing_subscriber::registry()
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .without_time()
-                    .with_target(false),
-            )
-            .with(env_filter)
-            .init();
-    } else {
-        let indicatif_layer = IndicatifLayer::new()
-            .with_progress_style(
-                ProgressStyle::with_template(
-                    "{spinner:.blue}{span_child_prefix} {span_name} {msg} {span_fields}",
-                )
-                .unwrap()
-                .tick_strings(&[
-                    "▹▹▹▹▹",
-                    "▸▹▹▹▹",
-                    "▹▸▹▹▹",
-                    "▹▹▸▹▹",
-                    "▹▹▹▸▹",
-                    "▹▹▹▹▸",
-                    "▪▪▪▪▪",
-                ]),
-            )
-            .with_span_child_prefix_symbol("↳ ");
-        let env_filter = EnvFilter::from_default_env()
-            .add_directive(tracing::Level::WARN.into())
-            .add_directive("near_cli_rs=info".parse()?);
-        tracing_subscriber::registry()
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .without_time()
-                    .with_writer(indicatif_layer.get_stderr_writer()),
-            )
-            .with(indicatif_layer)
-            .with(env_filter)
-            .init();
-    };
+    near_cli_rs::setup_tracing(cli.teach_me)?;
 
     let cli_cmd = match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli), (config,)) {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
