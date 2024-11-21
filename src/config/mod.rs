@@ -25,7 +25,8 @@ impl Default for Config {
                 network_name: "mainnet".to_string(),
                 rpc_url: "https://archival-rpc.mainnet.near.org".parse().unwrap(),
                 wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
-                explorer_transaction_url: "https://nearblocks.io/txns/"
+                explorer_transaction_url: 
+                "https://nearblocks.io/txns/"
                     .parse()
                     .unwrap(),
                 rpc_api_key: None,
@@ -44,7 +45,8 @@ impl Default for Config {
                 network_name: "testnet".to_string(),
                 rpc_url: "https://archival-rpc.testnet.near.org".parse().unwrap(),
                 wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
-                explorer_transaction_url: "https://testnet.nearblocks.io/txns/"
+                explorer_transaction_url: 
+                "https://testnet.nearblocks.io/txns/"
                     .parse()
                     .unwrap(),
                 rpc_api_key: None,
