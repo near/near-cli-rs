@@ -1,5 +1,7 @@
-use near_primitives::types::{BlockId, BlockReference, Finality};
 use std::str::FromStr;
+
+use color_eyre::eyre::ContextCompat;
+use near_primitives::types::{BlockId, BlockReference, Finality};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub type OnAfterGettingBlockReferenceCallback =
@@ -37,7 +39,7 @@ impl NetworkViewAtBlockArgsContext {
         let network_connection = previous_context.config.network_connection.clone();
         let network_config = network_connection
             .get(&scope.network_name)
-            .expect("Failed to get network config!")
+            .wrap_err("Failed to get network config!")?
             .clone();
         Ok(Self {
             network_config,

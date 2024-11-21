@@ -1,10 +1,12 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod construct_transaction;
+pub mod construct_transaction;
+mod print_transaction;
+mod reconstruct_transaction;
 mod send_meta_transaction;
 mod send_signed_transaction;
-mod sign_transaction;
+pub mod sign_transaction;
 mod view_status;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -26,6 +28,11 @@ pub enum TransactionActions {
     /// Execute function (contract method)
     ViewStatus(self::view_status::TransactionInfo),
     #[strum_discriminants(strum(
+        message = "reconstruct-transaction  - Use any existing transaction from the chain to construct NEAR CLI command (helpful tool for re-submitting similar transactions)"
+    ))]
+    /// Use any existing transaction from the chain to construct NEAR CLI command (helpful tool for re-submitting similar transactions)
+    ReconstructTransaction(self::reconstruct_transaction::TransactionInfo),
+    #[strum_discriminants(strum(
         message = "construct-transaction    - Construct a new transaction"
     ))]
     /// Construct a new transaction
@@ -35,6 +42,11 @@ pub enum TransactionActions {
     ))]
     /// Sign previously prepared unsigned transaction
     SignTransaction(self::sign_transaction::SignTransaction),
+    #[strum_discriminants(strum(
+        message = "print-transaction        - Print all fields of previously prepared transaction without modification"
+    ))]
+    /// Print previously prepared unsigned transaction without modification
+    PrintTransaction(self::print_transaction::PrintTransactionCommands),
     #[strum_discriminants(strum(
         message = "send-signed-transaction  - Send a signed transaction"
     ))]

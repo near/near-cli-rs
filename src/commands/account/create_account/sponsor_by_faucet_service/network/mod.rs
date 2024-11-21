@@ -1,3 +1,4 @@
+use color_eyre::eyre::ContextCompat;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -28,7 +29,7 @@ impl NetworkContext {
         let networks = previous_context.config.network_connection.clone();
         let network_config = networks
             .get(&scope.network_name)
-            .expect("Failed to get network config!")
+            .wrap_err("Failed to get network config!")?
             .clone();
 
         eprintln!("\nYour transaction:");
@@ -79,32 +80,31 @@ pub enum Submit {
 pub struct SubmitContext;
 
 impl SubmitContext {
+    #[tracing::instrument(name = "Creating a new account ...", skip_all)]
     pub fn from_previous_context(
         previous_context: NetworkContext,
         _scope: &<Submit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let mut storage_message = String::new();
-        (previous_context.on_after_getting_network_callback)(
-            &previous_context.network_config,
-            &mut storage_message,
-        )?;
-        eprintln!("{storage_message}\n");
+        let storage_message =
+            (previous_context.on_after_getting_network_callback)(&previous_context.network_config)?;
         (previous_context.on_before_creating_account_callback)(
             &previous_context.network_config,
             &previous_context.new_account_id,
             &previous_context.public_key,
+            storage_message,
         )?;
         Ok(Self)
     }
 }
 
 pub type OnAfterGettingNetworkCallback =
-    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig, &mut String) -> crate::CliResult>;
+    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig) -> color_eyre::eyre::Result<String>>;
 
 pub type OnBeforeCreatingAccountCallback = std::sync::Arc<
     dyn Fn(
         &crate::config::NetworkConfig,
         &crate::types::account_id::AccountId,
         &near_crypto::PublicKey,
+        String,
     ) -> crate::CliResult,
 >;

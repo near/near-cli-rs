@@ -1,5 +1,4 @@
-use inquire::Text;
-use std::str::FromStr;
+use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -39,7 +38,9 @@ impl LoginFromSeedPhraseContext {
                         config.credentials_home_dir.clone(),
                         &key_pair_properties_buf,
                         &key_pair_properties.public_key_str,
-                        "\nIt is currently not possible to verify the account access key.\nYou may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n",
+                        &format!("\nIt is currently not possible to verify the account access key on network <{}>.\nYou may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n",
+                            network_config.network_name
+                        )
                     )
                 }
             });
@@ -63,13 +64,9 @@ impl LoginFromSeedPhrase {
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
         Ok(Some(
-            crate::types::slip10::BIP32Path::from_str(
-                &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
-                    .with_initial_value("m/44'/397'/0'")
-                    .prompt()
-                    .unwrap(),
-            )
-            .unwrap(),
+            CustomType::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
+                .with_starting_input("m/44'/397'/0'")
+                .prompt()?,
         ))
     }
 }

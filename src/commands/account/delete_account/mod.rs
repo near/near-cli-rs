@@ -1,3 +1,4 @@
+use color_eyre::owo_colors::OwoColorize;
 use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -75,7 +76,7 @@ impl BeneficiaryAccountContext {
 
 impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
     fn from(item: BeneficiaryAccountContext) -> Self {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let account_id = item.account_id.clone();
 
@@ -95,12 +96,12 @@ impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
         Self {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.account_id],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
@@ -115,7 +116,7 @@ impl BeneficiaryAccount {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let beneficiary_account_id = if let Some(account_id) =
-                crate::common::input_signer_account_id_from_used_account_list(
+                crate::common::input_non_signer_account_id_from_used_account_list(
                     &context.global_context.config.credentials_home_dir,
                     "What is the beneficiary account ID?",
                 )? {
@@ -123,6 +124,11 @@ impl BeneficiaryAccount {
             } else {
                 return Ok(None);
             };
+
+            if beneficiary_account_id.0 == context.account_id {
+                eprintln!("{}", "You have selected a beneficiary account ID that will now be deleted. This will result in the loss of your funds. So make your choice again.".red());
+                continue;
+            }
 
             if context.global_context.offline {
                 return Ok(Some(beneficiary_account_id));
@@ -152,7 +158,10 @@ impl BeneficiaryAccount {
                 )
                 .is_none()
                 {
-                    eprintln!("\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{account_id}> as the beneficiary as it does not exist.");
+                    eprintln!("\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{}> as the beneficiary as it does not exist on [{}] networks.",
+                        account_id,
+                        context.global_context.config.network_names().join(", ")
+                    );
                     if !crate::common::ask_if_different_account_id_wanted()? {
                         return Ok(Some(account_id));
                     }

@@ -2,7 +2,7 @@
 #[interactive_clap(input_context = super::access_key_type::AccessKeyPermissionContext)]
 #[interactive_clap(output_context = AddAccessKeyActionContext)]
 pub struct AddAccessKeyAction {
-    /// Enter the public key for this account:
+    /// Enter the public key:
     public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::super::add_action_last::NextAction,
@@ -20,12 +20,12 @@ impl AddAccessKeyActionContext {
             nonce: 0,
             permission: previous_context.access_key_permission,
         };
-        let action = near_primitives::transaction::Action::AddKey(
+        let action = near_primitives::transaction::Action::AddKey(Box::new(
             near_primitives::transaction::AddKeyAction {
                 public_key: scope.public_key.clone().into(),
                 access_key,
             },
-        );
+        ));
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(

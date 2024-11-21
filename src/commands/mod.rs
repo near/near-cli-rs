@@ -3,9 +3,10 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod account;
 mod config;
-mod contract;
+pub mod contract;
+mod staking;
 mod tokens;
-mod transaction;
+pub mod transaction;
 
 #[cfg(feature = "self-update")]
 pub mod extensions;
@@ -25,6 +26,11 @@ pub enum TopLevelCommand {
     ))]
     /// Use this for token actions: send or view balances of NEAR, FT, or NFT
     Tokens(self::tokens::TokensCommands),
+    #[strum_discriminants(strum(
+        message = "staking     - Manage staking: view, add and withdraw stake"
+    ))]
+    /// Use this for manage staking: view, add and withdraw stake
+    Staking(self::staking::Staking),
     #[strum_discriminants(strum(
         message = "contract    - Manage smart-contracts: deploy code, call functions"
     ))]
@@ -51,7 +57,7 @@ pub type OnBeforeSigningCallback = std::sync::Arc<
     ) -> crate::CliResult,
 >;
 
-pub type OnAfterGettingNetworkCallback = std::sync::Arc<
+pub type GetPrepopulatedTransactionAfterGettingNetworkCallback = std::sync::Arc<
     dyn Fn(&crate::config::NetworkConfig) -> color_eyre::eyre::Result<PrepopulatedTransaction>,
 >;
 
@@ -62,11 +68,22 @@ pub struct PrepopulatedTransaction {
     pub actions: Vec<near_primitives::transaction::Action>,
 }
 
+impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction {
+    fn from(value: near_primitives::transaction::Transaction) -> Self {
+        Self {
+            signer_id: value.signer_id().clone(),
+            receiver_id: value.receiver_id().clone(),
+            actions: value.take_actions(),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct ActionContext {
     pub global_context: crate::GlobalContext,
     pub interacting_with_account_ids: Vec<near_primitives::types::AccountId>,
-    pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
+    pub get_prepopulated_transaction_after_getting_network_callback:
+        GetPrepopulatedTransactionAfterGettingNetworkCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,
     pub on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,

@@ -1,3 +1,4 @@
+use color_eyre::eyre::Context;
 use serde_json::json;
 
 use crate::common::CallResultExt;
@@ -29,45 +30,25 @@ impl ViewFtBalanceContext {
                 scope.ft_contract_account_id.clone().into();
 
             move |network_config, block_reference| {
-                let super::FtMetadata { decimals, symbol } = super::params_ft_metadata(
+                let crate::types::ft_properties::FtMetadata { decimals, symbol } = crate::types::ft_properties::params_ft_metadata(
                     ft_contract_account_id.clone(),
                     network_config,
                     block_reference.clone(),
                 )?;
-                let args = json!({
+                let args = serde_json::to_vec(&json!({
                     "account_id": owner_account_id.to_string(),
-                    })
-                    .to_string()
-                    .into_bytes();
-                let call_result = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_function(
-                        &ft_contract_account_id,
-                        "ft_balance_of",
-                        args,
-                        block_reference.clone(),
-                    )?;
+                    }))?;
+                let call_result = get_ft_balance(network_config, &ft_contract_account_id, args, block_reference.clone())?;
                 call_result.print_logs();
                 let amount: String = call_result.parse_result_from_json()?;
-                let amount = amount.parse::<u128>().unwrap();
-                let amount_fmt = {
-                    if amount == 0 {
-                        format!("0 {}", symbol)
-                    } else if (amount % 10u128.pow(decimals as u32)) == 0 {
-                        format!("{} {}", amount / 10u128.pow(decimals as u32), symbol,)
-                    } else {
-                        format!(
-                            "{}.{} {}",
-                            amount / 10u128.pow(decimals as u32),
-                            format!("{:0>24}", amount % 10u128.pow(decimals as u32)).trim_end_matches('0'),
-                            symbol
-                        )
-                    }
-                };
+                let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
+                    amount.parse::<u128>()?,
+                    decimals,
+                    symbol
+                );
 
                 eprintln!(
-                    "\n<{}> account has {}  (FT-contract: {})",
-                    owner_account_id, amount_fmt, ft_contract_account_id
+                    "\n<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})"
                 );
                 Ok(())
             }
@@ -98,4 +79,27 @@ impl ViewFtBalance {
             "What is the ft-contract account ID?",
         )
     }
+}
+
+#[tracing::instrument(name = "Getting FT balance ...", skip_all)]
+fn get_ft_balance(
+    network_config: &crate::config::NetworkConfig,
+    ft_contract_account_id: &near_primitives::types::AccountId,
+    args: Vec<u8>,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    network_config
+        .json_rpc_client()
+        .blocking_call_view_function(
+            ft_contract_account_id,
+            "ft_balance_of",
+            args,
+            block_reference,
+        )
+        .wrap_err_with(||{
+            format!("Failed to fetch query for view method: 'ft_balance_of' (contract <{}> on network <{}>)",
+                ft_contract_account_id,
+                network_config.network_name
+            )
+        })
 }

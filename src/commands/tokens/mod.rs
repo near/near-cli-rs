@@ -1,8 +1,5 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::CallResultExt;
-use crate::common::JsonRpcClientExt;
-
 mod send_ft;
 mod send_near;
 mod send_nft;
@@ -80,27 +77,4 @@ pub enum TokensActions {
     #[strum_discriminants(strum(message = "view-nft-assets   - View the balance of NFT tokens"))]
     /// View the balance of NFT tokens
     ViewNftAssets(self::view_nft_assets::ViewNftAssets),
-}
-
-#[derive(serde::Deserialize)]
-pub struct FtMetadata {
-    symbol: String,
-    decimals: u64,
-}
-
-pub fn params_ft_metadata(
-    ft_contract_account_id: near_primitives::types::AccountId,
-    network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<FtMetadata> {
-    let ft_metadata: FtMetadata = network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
-            &ft_contract_account_id,
-            "ft_metadata",
-            vec![],
-            block_reference,
-        )?
-        .parse_result_from_json()?;
-    Ok(ft_metadata)
 }

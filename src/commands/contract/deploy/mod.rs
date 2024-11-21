@@ -1,6 +1,6 @@
 use color_eyre::eyre::Context;
 
-mod initialize_mode;
+pub mod initialize_mode;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -57,10 +57,10 @@ pub struct ContractFile {
 
 #[derive(Debug, Clone)]
 pub struct ContractFileContext {
-    global_context: crate::GlobalContext,
-    receiver_account_id: near_primitives::types::AccountId,
-    signer_account_id: near_primitives::types::AccountId,
-    code: Vec<u8>,
+    pub global_context: crate::GlobalContext,
+    pub receiver_account_id: near_primitives::types::AccountId,
+    pub signer_account_id: near_primitives::types::AccountId,
+    pub code: Vec<u8>,
 }
 
 impl ContractFileContext {

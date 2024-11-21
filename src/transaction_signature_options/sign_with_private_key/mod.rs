@@ -1,5 +1,6 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
+use near_primitives::transaction::TransactionV0;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -7,7 +8,6 @@ use crate::common::RpcQueryResponseExt;
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
 #[interactive_clap(output_context = SignPrivateKeyContext)]
-#[interactive_clap(skip_default_from_cli)]
 pub struct SignPrivateKey {
     #[interactive_clap(long)]
     /// Enter sender (signer) public key:
@@ -25,7 +25,7 @@ pub struct SignPrivateKey {
     #[interactive_clap(skip_default_input_arg)]
     pub block_height: Option<near_primitives::types::BlockHeight>,
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_input_arg)]
+    #[interactive_clap(skip_interactive_input)]
     meta_transaction_valid_for: Option<u64>,
     #[interactive_clap(subcommand)]
     pub submit: super::Submit,
@@ -43,6 +43,10 @@ pub struct SignPrivateKeyContext {
 }
 
 impl SignPrivateKeyContext {
+    #[tracing::instrument(
+        name = "Signing the transaction with a plaintext private key ...",
+        skip_all
+    )]
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -72,8 +76,8 @@ impl SignPrivateKeyContext {
                     &public_key,
                     near_primitives::types::BlockReference::latest()
                 )
-                .wrap_err(
-                    "Cannot sign a transaction due to an error while fetching the most recent nonce value",
+                .wrap_err_with(||
+                    format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
                 )?;
             (
                 rpc_query_response
@@ -86,14 +90,15 @@ impl SignPrivateKeyContext {
             )
         };
 
-        let mut unsigned_transaction = near_primitives::transaction::Transaction {
-            public_key: public_key.clone(),
-            block_hash,
-            nonce,
-            signer_id: previous_context.prepopulated_transaction.signer_id,
-            receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: previous_context.prepopulated_transaction.actions,
-        };
+        let mut unsigned_transaction =
+            near_primitives::transaction::Transaction::V0(TransactionV0 {
+                public_key: public_key.clone(),
+                block_hash,
+                nonce,
+                signer_id: previous_context.prepopulated_transaction.signer_id,
+                receiver_id: previous_context.prepopulated_transaction.receiver_id,
+                actions: previous_context.prepopulated_transaction.actions,
+            });
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
@@ -157,108 +162,6 @@ impl From<SignPrivateKeyContext> for super::SubmitContext {
     }
 }
 
-impl interactive_clap::FromCli for SignPrivateKey {
-    type FromCliContext = crate::commands::TransactionContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        optional_clap_variant: Option<<SignPrivateKey as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    >
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
-
-        if clap_variant.signer_public_key.is_none() {
-            clap_variant.signer_public_key = match Self::input_signer_public_key(&context) {
-                Ok(Some(signer_public_key)) => Some(signer_public_key),
-                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let signer_public_key = clap_variant
-            .signer_public_key
-            .clone()
-            .expect("Unexpected error");
-        if clap_variant.signer_private_key.is_none() {
-            clap_variant.signer_private_key = match Self::input_signer_private_key(&context) {
-                Ok(Some(signer_private_key)) => Some(signer_private_key),
-                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let signer_private_key = clap_variant
-            .signer_private_key
-            .clone()
-            .expect("Unexpected error");
-        if clap_variant.nonce.is_none() {
-            clap_variant.nonce = match Self::input_nonce(&context) {
-                Ok(optional_nonce) => optional_nonce,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let nonce = clap_variant.nonce;
-        if clap_variant.block_hash.is_none() {
-            clap_variant.block_hash = match Self::input_block_hash(&context) {
-                Ok(optional_block_hash) => optional_block_hash,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let block_hash = clap_variant.block_hash;
-        if clap_variant.block_height.is_none() {
-            clap_variant.block_height = match Self::input_block_height(&context) {
-                Ok(optional_block_height) => optional_block_height,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let block_height = clap_variant.block_height;
-        if clap_variant.meta_transaction_valid_for.is_none() {
-            clap_variant.meta_transaction_valid_for =
-                match Self::input_meta_transaction_valid_for(&context) {
-                    Ok(meta_transaction_valid_for) => meta_transaction_valid_for,
-                    Err(err) => {
-                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-                    }
-                };
-        }
-        let meta_transaction_valid_for = clap_variant.meta_transaction_valid_for;
-
-        let new_context_scope = InteractiveClapContextScopeForSignPrivateKey {
-            signer_public_key,
-            signer_private_key,
-            nonce,
-            block_hash,
-            block_height,
-            meta_transaction_valid_for,
-        };
-        let output_context =
-            match SignPrivateKeyContext::from_previous_context(context, &new_context_scope) {
-                Ok(new_context) => new_context,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-
-        match super::Submit::from_cli(clap_variant.submit.take(), output_context.into()) {
-            interactive_clap::ResultFromCli::Ok(submit) => {
-                clap_variant.submit = Some(submit);
-                interactive_clap::ResultFromCli::Ok(clap_variant)
-            }
-            interactive_clap::ResultFromCli::Cancel(optional_submit) => {
-                clap_variant.submit = optional_submit;
-                interactive_clap::ResultFromCli::Cancel(Some(clap_variant))
-            }
-            interactive_clap::ResultFromCli::Back => interactive_clap::ResultFromCli::Back,
-            interactive_clap::ResultFromCli::Err(optional_submit, err) => {
-                clap_variant.submit = optional_submit;
-                interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-            }
-        }
-    }
-}
-
 impl SignPrivateKey {
     fn input_nonce(
         context: &crate::commands::TransactionContext,
@@ -296,12 +199,6 @@ impl SignPrivateKey {
                 .prompt()?,
             ));
         }
-        Ok(None)
-    }
-
-    fn input_meta_transaction_valid_for(
-        _context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<u64>> {
         Ok(None)
     }
 }

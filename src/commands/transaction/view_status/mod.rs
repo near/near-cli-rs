@@ -1,4 +1,5 @@
 use color_eyre::eyre::Context;
+use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 use crate::common::JsonRpcClientExt;
 
@@ -8,9 +9,6 @@ use crate::common::JsonRpcClientExt;
 pub struct TransactionInfo {
     /// Enter the hash of the transaction you need to view:
     transaction_hash: crate::types::crypto_hash::CryptoHash,
-    #[interactive_clap(skip_default_input_arg)]
-    /// What is the signer account ID?
-    signer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network::Network,
@@ -26,27 +24,19 @@ impl TransactionInfoContext {
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let signer_account_id = scope.signer_account_id.clone();
-                let transaction_hash = scope.transaction_hash;
+                let tx_hash: near_primitives::hash::CryptoHash = scope.transaction_hash.into();
 
                 move |network_config| {
-                    let query_view_transaction_status = network_config
-                        .json_rpc_client()
-                        .blocking_call(near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
-                            transaction_info: near_jsonrpc_client::methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
-                                hash: transaction_hash.into(),
-                                account_id: signer_account_id.clone().into()
-                            }
-                        })
-                        .wrap_err("Failed to fetch query for view transaction")?;
-                    eprintln!("Transaction status: {:#?}", query_view_transaction_status);
+                    let query_view_transaction_status =
+                        get_transaction_info(network_config, tx_hash)?;
+                    eprintln!("\nTransaction status: {:#?}", query_view_transaction_status);
                     Ok(())
                 }
             });
 
         Ok(Self(crate::network::NetworkContext {
             config: previous_context.config,
-            interacting_with_account_ids: vec![scope.signer_account_id.clone().into()],
+            interacting_with_account_ids: vec![],
             on_after_getting_network_callback,
         }))
     }
@@ -58,13 +48,28 @@ impl From<TransactionInfoContext> for crate::network::NetworkContext {
     }
 }
 
-impl TransactionInfo {
-    pub fn input_signer_account_id(
-        context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_signer_account_id_from_used_account_list(
-            &context.config.credentials_home_dir,
-            "What is the signer account ID?",
+#[tracing::instrument(name = "Getting information about transaction", skip_all)]
+pub fn get_transaction_info(
+    network_config: &crate::config::NetworkConfig,
+    tx_hash: near_primitives::hash::CryptoHash,
+) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::tx::RpcTransactionResponse> {
+    tracing::Span::current().pb_set_message(&format!("{tx_hash} ..."));
+    network_config
+        .json_rpc_client()
+        .blocking_call(
+            near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
+                transaction_info:
+                    near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
+                        tx_hash,
+                        sender_account_id: "near".parse::<near_primitives::types::AccountId>()?,
+                    },
+                wait_until: near_primitives::views::TxExecutionStatus::Final,
+            },
         )
-    }
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch query for view transaction on network <{}>",
+                network_config.network_name
+            )
+        })
 }

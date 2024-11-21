@@ -3,7 +3,6 @@ use inquire::{CustomType, Select};
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = AddNetworkConnectionContext)]
-#[interactive_clap(skip_default_from_cli)]
 pub struct AddNetworkConnection {
     #[interactive_clap(long)]
     /// What is the NEAR network? (e.g. mainnet, testnet, shardnet)
@@ -28,10 +27,22 @@ pub struct AddNetworkConnection {
     linkdrop_account_id: Option<crate::types::account_id::AccountId>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
+    near_social_db_contract_account_id: Option<crate::types::account_id::AccountId>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
     faucet_url: Option<crate::types::url::Url>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     meta_transaction_relayer_url: Option<crate::types::url::Url>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    fastnear_url: Option<crate::types::url::Url>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    staking_pools_factory_account_id: Option<crate::types::account_id::AccountId>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    coingecko_url: Option<crate::types::url::Url>,
 }
 
 #[derive(Debug, Clone)]
@@ -55,136 +66,40 @@ impl AddNetworkConnectionContext {
                     .linkdrop_account_id
                     .clone()
                     .map(|linkdrop_account_id| linkdrop_account_id.into()),
+                near_social_db_contract_account_id: scope
+                    .near_social_db_contract_account_id
+                    .clone()
+                    .map(|near_social_db_contract_account_id| {
+                        near_social_db_contract_account_id.into()
+                    }),
                 faucet_url: scope.faucet_url.clone().map(|faucet_url| faucet_url.into()),
                 meta_transaction_relayer_url: scope
                     .meta_transaction_relayer_url
                     .clone()
                     .map(|meta_transaction_relayer_url| meta_transaction_relayer_url.into()),
+                fastnear_url: scope
+                    .fastnear_url
+                    .clone()
+                    .map(|fastnear_url| fastnear_url.into()),
+                staking_pools_factory_account_id: scope
+                    .staking_pools_factory_account_id
+                    .clone()
+                    .map(|staking_pools_factory_account_id| {
+                        staking_pools_factory_account_id.into()
+                    }),
+                coingecko_url: scope
+                    .coingecko_url
+                    .clone()
+                    .map(|coingecko_url| coingecko_url.into()),
             },
         );
         eprintln!();
-        crate::common::write_config_toml(config)?;
+        config.write_config_toml()?;
         eprintln!(
             "Network connection \"{}\" was successfully added to config.toml",
             &scope.connection_name
         );
         Ok(Self)
-    }
-}
-
-impl interactive_clap::FromCli for AddNetworkConnection {
-    type FromCliContext = crate::GlobalContext;
-    type FromCliError = color_eyre::eyre::Error;
-    fn from_cli(
-        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    >
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
-        if clap_variant.network_name.is_none() {
-            clap_variant.network_name = match Self::input_network_name(&context) {
-                Ok(Some(network_name)) => Some(network_name),
-                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        };
-        let network_name = clap_variant.network_name.clone().expect("Unexpected error");
-        if clap_variant.connection_name.is_none() {
-            clap_variant.connection_name = match Self::input_connection_name(&context) {
-                Ok(Some(connection_name)) => Some(connection_name),
-                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        };
-        let connection_name = clap_variant
-            .connection_name
-            .clone()
-            .expect("Unexpected error");
-        if clap_variant.rpc_url.is_none() {
-            clap_variant.rpc_url = match Self::input_rpc_url(&context) {
-                Ok(Some(rpc_url)) => Some(rpc_url),
-                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        };
-        let rpc_url = clap_variant.rpc_url.clone().expect("Unexpected error");
-        if clap_variant.wallet_url.is_none() {
-            clap_variant.wallet_url = match Self::input_wallet_url(&context) {
-                Ok(Some(wallet_url)) => Some(wallet_url),
-                Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        };
-        let wallet_url = clap_variant.wallet_url.clone().expect("Unexpected error");
-        if clap_variant.explorer_transaction_url.is_none() {
-            clap_variant.explorer_transaction_url =
-                match Self::input_explorer_transaction_url(&context) {
-                    Ok(Some(explorer_transaction_url)) => Some(explorer_transaction_url),
-                    Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
-                    Err(err) => {
-                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-                    }
-                };
-        };
-        let explorer_transaction_url = clap_variant
-            .explorer_transaction_url
-            .clone()
-            .expect("Unexpected error");
-        if clap_variant.rpc_api_key.is_none() {
-            clap_variant.rpc_api_key = match Self::input_rpc_api_key(&context) {
-                Ok(optional_api_key) => optional_api_key,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        };
-        let rpc_api_key = clap_variant.rpc_api_key.clone();
-        if clap_variant.linkdrop_account_id.is_none() {
-            clap_variant.linkdrop_account_id = match Self::input_linkdrop_account_id(&context) {
-                Ok(optional_linkdrop_account_id) => optional_linkdrop_account_id,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        };
-        let linkdrop_account_id = clap_variant.linkdrop_account_id.clone();
-        if clap_variant.faucet_url.is_none() {
-            clap_variant.faucet_url = match Self::input_faucet_url(&context) {
-                Ok(optional_faucet_url) => optional_faucet_url,
-                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
-            };
-        };
-        let faucet_url = clap_variant.faucet_url.clone();
-        if clap_variant.meta_transaction_relayer_url.is_none() {
-            clap_variant.meta_transaction_relayer_url =
-                match Self::input_meta_transaction_relayer_url(&context) {
-                    Ok(optional_meta_transaction_relayer_url) => {
-                        optional_meta_transaction_relayer_url
-                    }
-                    Err(err) => {
-                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
-                    }
-                };
-        };
-        let meta_transaction_relayer_url = clap_variant.meta_transaction_relayer_url.clone();
-        let new_context_scope = InteractiveClapContextScopeForAddNetworkConnection {
-            network_name,
-            connection_name,
-            rpc_url,
-            wallet_url,
-            explorer_transaction_url,
-            rpc_api_key,
-            linkdrop_account_id,
-            faucet_url,
-            meta_transaction_relayer_url,
-        };
-        if let Err(err) =
-            AddNetworkConnectionContext::from_previous_context(context, &new_context_scope)
-        {
-            return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
-        };
-        interactive_clap::ResultFromCli::Ok(clap_variant)
     }
 }
 
@@ -241,6 +156,33 @@ impl AddNetworkConnection {
         }
     }
 
+    fn input_near_social_db_contract_account_id(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        eprintln!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, and I want to enter the NEAR Social DB contract account ID")]
+            Yes,
+            #[strum(
+                to_string = "No, I don't want to enter the NEAR Social DB contract account ID"
+            )]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the NEAR Social DB contract account ID on this network?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let account_id: crate::types::account_id::AccountId =
+            CustomType::new("What is the name of the NEAR Social DB contract account ID (e.g. on mainnet it is social.near)").prompt()?;
+            Ok(Some(account_id))
+        } else {
+            Ok(None)
+        }
+    }
+
     fn input_faucet_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
@@ -286,6 +228,83 @@ impl AddNetworkConnection {
             let meta_transaction_relayer_url: crate::types::url::Url =
                 CustomType::new("What is the relayer url?").prompt()?;
             Ok(Some(meta_transaction_relayer_url))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_fastnear_url(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
+        eprintln!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter the fastnear API url")]
+            Yes,
+            #[strum(to_string = "No, I don't want to enter the fastnear API url")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the fastnear API url?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let stake_delegators_api: crate::types::url::Url =
+                CustomType::new("What is the fastnear API url?").prompt()?;
+            Ok(Some(stake_delegators_api))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_staking_pools_factory_account_id(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        eprintln!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter the staking pools factory account ID")]
+            Yes,
+            #[strum(to_string = "No, I don't want to enter the staking pools factory account ID")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the staking pools factory account ID?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let account_id: crate::types::account_id::AccountId =
+                CustomType::new("What is the staking pools factory account ID?").prompt()?;
+            Ok(Some(account_id))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_coingecko_url(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
+        eprintln!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter the coingecko API url")]
+            Yes,
+            #[strum(to_string = "No, I don't want to enter the coingecko API url")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the coingecko API url?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let coingecko_api: crate::types::url::Url =
+                CustomType::new("What is the coingecko API url?")
+                    .with_starting_input("https://api.coingecko.com/")
+                    .prompt()?;
+            Ok(Some(coingecko_api))
         } else {
             Ok(None)
         }

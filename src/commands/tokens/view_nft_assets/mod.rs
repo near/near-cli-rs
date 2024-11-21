@@ -1,3 +1,4 @@
+use color_eyre::eyre::Context;
 use serde_json::json;
 
 use crate::common::CallResultExt;
@@ -29,19 +30,10 @@ impl ViewNftAssetsContext {
                 scope.nft_contract_account_id.clone().into();
 
             move |network_config, block_reference| {
-                let args = json!({
+                let args = serde_json::to_vec(&json!({
                         "account_id": owner_account_id.to_string(),
-                    })
-                    .to_string()
-                    .into_bytes();
-                let call_result = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_function(
-                        &nft_contract_account_id,
-                        "nft_tokens_for_owner",
-                        args,
-                        block_reference.clone(),
-                    )?;
+                    }))?;
+                let call_result = get_nft_balance(network_config, &nft_contract_account_id, args, block_reference.clone())?;
                 call_result.print_logs();
                 let serde_call_result: serde_json::Value = call_result.parse_result_from_json()?;
 
@@ -76,4 +68,27 @@ impl ViewNftAssets {
             "What is the nft-contract account ID?",
         )
     }
+}
+
+#[tracing::instrument(name = "Getting NFT balance ...", skip_all)]
+fn get_nft_balance(
+    network_config: &crate::config::NetworkConfig,
+    nft_contract_account_id: &near_primitives::types::AccountId,
+    args: Vec<u8>,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    network_config
+        .json_rpc_client()
+        .blocking_call_view_function(
+            nft_contract_account_id,
+            "nft_tokens_for_owner",
+            args,
+            block_reference,
+        )
+        .wrap_err_with(||{
+            format!("Failed to fetch query for view method: 'nft_tokens_for_owner' (contract <{}> on network <{}>)",
+                nft_contract_account_id,
+                network_config.network_name
+        )
+})
 }

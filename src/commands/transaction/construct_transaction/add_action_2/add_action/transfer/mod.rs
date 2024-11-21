@@ -3,7 +3,7 @@
 #[interactive_clap(output_context = TransferActionContext)]
 pub struct TransferAction {
     /// How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)
-    amount_in_near: crate::common::NearBalance,
+    amount_in_near: crate::types::near_token::NearToken,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_3::NextAction,
 }
@@ -18,7 +18,7 @@ impl TransferActionContext {
     ) -> color_eyre::eyre::Result<Self> {
         let action = near_primitives::transaction::Action::Transfer(
             near_primitives::transaction::TransferAction {
-                deposit: scope.amount_in_near.to_yoctonear(),
+                deposit: scope.amount_in_near.as_yoctonear(),
             },
         );
         let mut actions = previous_context.actions;

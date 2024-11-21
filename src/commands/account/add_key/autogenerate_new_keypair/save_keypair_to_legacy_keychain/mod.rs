@@ -35,7 +35,7 @@ impl SaveKeypairToLegacyKeychainContext {
 
 impl From<SaveKeypairToLegacyKeychainContext> for crate::commands::ActionContext {
     fn from(item: SaveKeypairToLegacyKeychainContext) -> Self {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = item.signer_account_id.clone();
 
@@ -43,7 +43,7 @@ impl From<SaveKeypairToLegacyKeychainContext> for crate::commands::ActionContext
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: signer_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::AddKey(
+                        actions: vec![near_primitives::transaction::Action::AddKey(Box::new(
                             near_primitives::transaction::AddKeyAction {
                                 public_key: item.public_key.clone(),
                                 access_key: near_primitives::account::AccessKey {
@@ -51,7 +51,7 @@ impl From<SaveKeypairToLegacyKeychainContext> for crate::commands::ActionContext
                                     permission: item.permission.clone(),
                                 },
                             },
-                        )],
+                        ))],
                     })
                 }
             });
@@ -60,29 +60,36 @@ impl From<SaveKeypairToLegacyKeychainContext> for crate::commands::ActionContext
             std::sync::Arc::new({
                 let credentials_home_dir = item.global_context.config.credentials_home_dir.clone();
 
-                move |signed_transaction, network_config, storage_message| {
+                move |transaction, network_config| {
+                    let account_id = match transaction {
+                        crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedTransaction(
+                            signed_transaction,
+                        ) => signed_transaction.transaction.signer_id().clone(),
+                        crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
+                            signed_delegate_action,
+                        ) => signed_delegate_action.delegate_action.sender_id.clone()
+                    };
                     let key_pair_properties_buf = serde_json::to_string(&item.key_pair_properties)?;
-                    *storage_message = crate::common::save_access_key_to_legacy_keychain(
+                    crate::common::save_access_key_to_legacy_keychain(
                         network_config.clone(),
                         credentials_home_dir.clone(),
                         &key_pair_properties_buf,
                         &item.key_pair_properties.public_key_str,
-                        &signed_transaction.transaction.signer_id,
+                        account_id.as_ref(),
                     )
                     .wrap_err_with(|| {
                         format!(
                             "Failed to save a file with access key: {}",
                             &item.key_pair_properties.public_key_str
                         )
-                    })?;
-                    Ok(())
+                    })
                 }
             });
 
         Self {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.signer_account_id],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),

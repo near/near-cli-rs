@@ -33,7 +33,7 @@ impl PrintKeypairToTerminalContext {
 
 impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
     fn from(item: PrintKeypairToTerminalContext) -> Self {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = item.signer_account_id.clone();
 
@@ -41,7 +41,7 @@ impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: signer_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::AddKey(
+                        actions: vec![near_primitives::transaction::Action::AddKey(Box::new(
                             near_primitives::transaction::AddKeyAction {
                                 public_key: item.public_key.clone(),
                                 access_key: near_primitives::account::AccessKey {
@@ -49,7 +49,7 @@ impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
                                     permission: item.permission.clone(),
                                 },
                             },
-                        )],
+                        ))],
                     })
                 }
             });
@@ -57,27 +57,26 @@ impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
         Self {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.signer_account_id],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
-            ),
-            on_after_sending_transaction_callback: std::sync::Arc::new(
-                move |_outcome_view, _network_config| {
-                    eprintln!("\n--------------------  Access key info ------------------\n");
-                    eprintln!(
-                        "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
+                move |_transaction, _network_config| {
+                    Ok(format!(
+                        "\n--------------------  Access key info ------------------
+                        \nMaster Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}
+                        \n--------------------------------------------------------",
                         item.key_pair_properties.master_seed_phrase,
                         item.key_pair_properties.seed_phrase_hd_path,
                         item.key_pair_properties.implicit_account_id,
                         item.key_pair_properties.public_key_str,
                         item.key_pair_properties.secret_keypair_str,
-                    );
-                    eprintln!("\n--------------------------------------------------------");
-                    Ok(())
+                    ))
                 },
+            ),
+            on_after_sending_transaction_callback: std::sync::Arc::new(
+                move |_outcome_view, _network_config| Ok(()),
             ),
         }
     }

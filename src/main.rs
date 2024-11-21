@@ -1,8 +1,19 @@
-#![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
+#![allow(
+    clippy::enum_variant_names,
+    clippy::large_enum_variant,
+    clippy::too_many_arguments
+)]
 use clap::Parser;
 #[cfg(feature = "self-update")]
 use color_eyre::eyre::WrapErr;
+use color_eyre::owo_colors::OwoColorize;
 use interactive_clap::ToCliArgs;
+
+use indicatif::ProgressStyle;
+use tracing_indicatif::IndicatifLayer;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::EnvFilter;
 
 pub use near_cli_rs::commands;
 pub use near_cli_rs::common::{self, CliResult};
@@ -26,6 +37,9 @@ struct Cmd {
     /// Offline mode
     #[interactive_clap(long)]
     offline: bool,
+    /// TEACH-ME mode
+    #[interactive_clap(long)]
+    teach_me: bool,
     #[interactive_clap(subcommand)]
     top_level: crate::commands::TopLevelCommand,
 }
@@ -41,6 +55,7 @@ impl CmdContext {
         Ok(Self(crate::GlobalContext {
             config: previous_context.0,
             offline: scope.offline,
+            teach_me: scope.teach_me,
         }))
     }
 }
@@ -52,13 +67,19 @@ impl From<CmdContext> for crate::GlobalContext {
 }
 
 fn main() -> crate::common::CliResult {
-    let config = crate::common::get_config_toml()?;
+    let config = crate::config::Config::get_config_toml()?;
 
     if !crate::common::is_used_account_list_exist(&config.credentials_home_dir) {
         crate::common::create_used_account_list_from_keychain(&config.credentials_home_dir)?;
     }
 
-    color_eyre::install()?;
+    #[cfg(not(debug_assertions))]
+    let display_env_section = false;
+    #[cfg(debug_assertions)]
+    let display_env_section = true;
+    color_eyre::config::HookBuilder::default()
+        .display_env_section(display_env_section)
+        .install()?;
 
     #[cfg(feature = "self-update")]
     let handle = std::thread::spawn(|| -> color_eyre::eyre::Result<String> {
@@ -69,60 +90,95 @@ fn main() -> crate::common::CliResult {
 
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
-        Err(error) => {
-            match error.kind() {
-                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {}
-                _ => match crate::js_command_match::JsCmd::try_parse() {
+        Err(cmd_error) => match cmd_error.kind() {
+            clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {
+                cmd_error.exit()
+            }
+            _ => {
+                match crate::js_command_match::JsCmd::try_parse() {
                     Ok(js_cmd) => {
-                        match js_cmd.rust_command_generation() {
-                            Ok(vec_cmd) => {
-                                eprintln!("The command you tried to run is deprecated in the new NEAR CLI, but we tried our best to match the old command with the new syntax, try it instead:");
-                                eprintln!();
-                                eprintln!(
-                                    "{}",
-                                    shell_words::join(
-                                        std::iter::once(near_cli_exec_path).chain(vec_cmd)
-                                    )
-                                );
-                            }
-                            Err(err) => {
-                                eprintln!("The command you tried to run is deprecated in the new NEAR CLI and there is no equivalent command in the new NEAR CLI.");
-                                eprintln!();
-                                eprintln!("{}", err);
-                            }
-                        }
-                        std::process::exit(1);
+                        let vec_cmd = js_cmd.rust_command_generation();
+                        let cmd = std::iter::once(near_cli_exec_path.to_owned()).chain(vec_cmd);
+                        Parser::parse_from(cmd)
                     }
-                    Err(error) => {
-                        if let clap::error::ErrorKind::DisplayHelp = error.kind() {
-                            error.exit()
+                    Err(js_cmd_error) => {
+                        // js and rust both don't understand the subcommand
+                        if cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
+                            && js_cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
+                        {
+                            return crate::common::try_external_subcommand_execution(cmd_error);
                         }
-                    }
-                },
-            }
 
-            if let clap::error::ErrorKind::UnknownArgument
-            | clap::error::ErrorKind::InvalidSubcommand = error.kind()
-            {
-                return crate::common::try_external_subcommand_execution(error);
+                        // js understand the subcommand
+                        if js_cmd_error.kind() != clap::error::ErrorKind::InvalidSubcommand {
+                            js_cmd_error.exit();
+                        }
+
+                        cmd_error.exit();
+                    }
+                }
             }
-            error.exit();
-        }
+        },
+    };
+    if cli.teach_me {
+        let env_filter = EnvFilter::from_default_env()
+            .add_directive(tracing::Level::WARN.into())
+            .add_directive("near_teach_me=info".parse()?)
+            .add_directive("near_cli_rs=info".parse()?);
+        tracing_subscriber::registry()
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .without_time()
+                    .with_target(false),
+            )
+            .with(env_filter)
+            .init();
+    } else {
+        let indicatif_layer = IndicatifLayer::new()
+            .with_progress_style(
+                ProgressStyle::with_template(
+                    "{spinner:.blue}{span_child_prefix} {span_name} {msg} {span_fields}",
+                )
+                .unwrap()
+                .tick_strings(&[
+                    "▹▹▹▹▹",
+                    "▸▹▹▹▹",
+                    "▹▸▹▹▹",
+                    "▹▹▸▹▹",
+                    "▹▹▹▸▹",
+                    "▹▹▹▹▸",
+                    "▪▪▪▪▪",
+                ]),
+            )
+            .with_span_child_prefix_symbol("↳ ");
+        let env_filter = EnvFilter::from_default_env()
+            .add_directive(tracing::Level::WARN.into())
+            .add_directive("near_cli_rs=info".parse()?);
+        tracing_subscriber::registry()
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .without_time()
+                    .with_writer(indicatif_layer.get_stderr_writer()),
+            )
+            .with(indicatif_layer)
+            .with(env_filter)
+            .init();
     };
 
     let cli_cmd = match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli), (config,)) {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
         | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
             eprintln!(
-                "Here is your console command if you need to script it or re-run:\n{}",
+                "\n\nHere is your console command if you need to script it or re-run:\n    {}\n",
                 shell_words::join(
                     std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
                 )
+                .yellow()
             );
             Ok(Some(cli_cmd))
         }
         interactive_clap::ResultFromCli::Cancel(None) => {
-            eprintln!("Goodbye!");
+            eprintln!("\nGoodbye!");
             Ok(None)
         }
         interactive_clap::ResultFromCli::Back => {
@@ -131,10 +187,11 @@ fn main() -> crate::common::CliResult {
         interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
             if let Some(cli_cmd) = optional_cli_cmd {
                 eprintln!(
-                    "Here is your console command if you need to script it or re-run:\n{}",
+                    "\nHere is your console command if you need to script it or re-run:\n    {}\n",
                     shell_words::join(
                         std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
                     )
+                    .yellow()
                 );
             }
             Err(err)
@@ -166,12 +223,12 @@ fn main() -> crate::common::CliResult {
                 .wrap_err("Failed to parse latest version of `near` CLI")?;
 
             if current_version < latest_version {
-                eprintln!();
                 eprintln!(
-                    "`near` CLI has a new update available \x1b[2m{current_version}\x1b[0m →  \x1b[32m{latest_version}\x1b[0m"
+                    "\n`near` CLI has a new update available \x1b[2m{current_version}\x1b[0m →  \x1b[32m{latest_version}\x1b[0m"
                 );
                 let self_update_cli_cmd = CliCmd {
                     offline: false,
+                    teach_me: false,
                     top_level:
                         Some(crate::commands::CliTopLevelCommand::Extensions(
                             crate::commands::extensions::CliExtensionsCommands {
@@ -188,6 +245,7 @@ fn main() -> crate::common::CliResult {
                         std::iter::once(near_cli_exec_path)
                             .chain(self_update_cli_cmd.to_cli_args())
                     )
+                    .yellow()
                 );
             }
         }

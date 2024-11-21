@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use inquire::Text;
+use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::ContractFileContext)]
@@ -13,7 +11,7 @@ pub struct CallFunctionAction {
     /// How do you want to pass the function call arguments?
     function_args_type:
         super::super::super::call_function::call_function_args_type::FunctionArgsType,
-    /// Enter the arguments to this function or the path to the arguments file:
+    /// Enter the arguments to this function:
     function_args: String,
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
@@ -96,7 +94,7 @@ impl PrepaidGasContext {
             code: previous_context.code,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
-            gas: scope.gas.clone(),
+            gas: scope.gas,
         })
     }
 }
@@ -106,23 +104,22 @@ impl PrepaidGas {
         _context: &CallFunctionActionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         eprintln!();
-        let gas = loop {
-            match crate::common::NearGas::from_str(
-                &Text::new("Enter gas for function call:")
-                    .with_initial_value("100 TeraGas")
-                    .prompt()?,
-            ) {
-                Ok(input_gas) => {
-                    if input_gas <= near_gas::NearGas::from_tgas(300) {
-                        break input_gas;
+        Ok(Some(
+            CustomType::new("Enter gas for function call:")
+                .with_starting_input("100 TeraGas")
+                .with_validator(move |gas: &crate::common::NearGas| {
+                    if gas > &near_gas::NearGas::from_tgas(300) {
+                        Ok(inquire::validator::Validation::Invalid(
+                            inquire::validator::ErrorMessage::Custom(
+                                "You need to enter a value of no more than 300 TeraGas".to_string(),
+                            ),
+                        ))
                     } else {
-                        eprintln!("You need to enter a value of no more than 300 TERAGAS")
+                        Ok(inquire::validator::Validation::Valid)
                     }
-                }
-                Err(err) => return Err(color_eyre::Report::msg(err)),
-            }
-        };
-        Ok(Some(gas))
+                })
+                .prompt()?,
+        ))
     }
 }
 
@@ -132,7 +129,7 @@ impl PrepaidGas {
 pub struct Deposit {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter deposit for a function call:
-    deposit: crate::common::NearBalance,
+    deposit: crate::types::near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -146,9 +143,9 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let deposit = scope.deposit.clone();
+        let deposit = scope.deposit;
 
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = previous_context.signer_account_id.clone();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
@@ -163,14 +160,14 @@ impl DepositContext {
                                     code: previous_context.code.clone(),
                                 },
                             ),
-                            near_primitives::transaction::Action::FunctionCall(
+                            near_primitives::transaction::Action::FunctionCall(Box::new(
                                 near_primitives::transaction::FunctionCallAction {
                                     method_name: previous_context.function_name.clone(),
                                     args: previous_context.function_args.clone(),
                                     gas: previous_context.gas.as_gas(),
-                                    deposit: deposit.to_yoctonear(),
+                                    deposit: deposit.as_yoctonear(),
                                 },
-                            ),
+                            )),
                         ],
                     })
                 }
@@ -182,12 +179,12 @@ impl DepositContext {
                 previous_context.signer_account_id.clone(),
                 previous_context.receiver_account_id.clone(),
             ],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
@@ -205,17 +202,12 @@ impl From<DepositContext> for crate::commands::ActionContext {
 impl Deposit {
     fn input_deposit(
         _context: &PrepaidGasContext,
-    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         eprintln!();
-        match crate::common::NearBalance::from_str(
-            &Text::new(
-                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
-            )
-            .with_initial_value("0 NEAR")
-            .prompt()?,
-        ) {
-            Ok(deposit) => Ok(Some(deposit)),
-            Err(err) => Err(color_eyre::Report::msg(err)),
-        }
+        Ok(Some(
+            CustomType::new("Enter deposit for a function call (example: 10 NEAR or 0.5 near or 10000 yoctonear):")
+                .with_starting_input("0 NEAR")
+                .prompt()?
+        ))
     }
 }

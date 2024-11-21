@@ -79,6 +79,10 @@ pub fn get_account_key_pair_from_keychain(
     account_key_pair.wrap_err("Error reading data")
 }
 
+#[tracing::instrument(
+    name = "Receiving the account key pair from the keychain ...",
+    skip_all
+)]
 pub fn get_password_from_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
@@ -147,6 +151,10 @@ fn get_account_key_pair_data_path(
     )
 }
 
+#[tracing::instrument(
+    name = "Receiving the account key pair from a legacy keychain ...",
+    skip_all
+)]
 pub fn get_account_properties_data_path(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
@@ -164,7 +172,12 @@ pub fn get_account_properties_data_path(
         if !check_if_seed_phrase_exists {
             return Ok(path);
         }
-        let data = std::fs::read_to_string(&path).wrap_err("Access key file not found!")?;
+        let data = std::fs::read_to_string(&path).wrap_err_with(|| {
+            format!(
+                "Access key file for account <{}> on network <{}> not found!",
+                account_id, network_config.network_name
+            )
+        })?;
         if serde_json::from_str::<crate::common::KeyPairProperties>(&data).is_ok() {
             return Ok(path);
         }
@@ -216,6 +229,7 @@ pub fn get_account_properties_data_path(
         }
     }
     Err(color_eyre::eyre::Report::msg(format!(
-        "There are no access keys in keychain to export for account <{account_id}>."
+        "There are no access keys in keychain to export for account <{account_id}> on network <{}>.",
+        network_config.network_name
     )))
 }

@@ -8,6 +8,7 @@ mod export_account;
 mod import_account;
 mod list_keys;
 pub mod storage_management;
+pub mod update_social_profile;
 mod view_account_summary;
 
 pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
@@ -41,6 +42,11 @@ pub enum AccountActions {
     #[strum_discriminants(strum(message = "create-account          - Create a new account"))]
     /// Create a new account
     CreateAccount(self::create_account::CreateAccount),
+    #[strum_discriminants(strum(
+        message = "update-social-profile   - Update NEAR Social profile"
+    ))]
+    /// Update NEAR Social profile
+    UpdateSocialProfile(self::update_social_profile::UpdateSocialProfile),
     #[strum_discriminants(strum(message = "delete-account          - Delete an account"))]
     /// Delete an account
     DeleteAccount(self::delete_account::DeleteAccount),
@@ -55,10 +61,10 @@ pub enum AccountActions {
     /// Add an access key to an account
     AddKey(self::add_key::AddKeyCommand),
     #[strum_discriminants(strum(
-        message = "delete-key              - Delete an access key from an account"
+        message = "delete-keys             - Delete access keys from an account"
     ))]
-    /// Delete an access key from an account
-    DeleteKey(self::delete_key::DeleteKeyCommand),
+    /// Delete access keys from an account
+    DeleteKeys(self::delete_key::DeleteKeysCommand),
     #[strum_discriminants(strum(
         message = "manage-storage-deposit  - Storage management: deposit, withdrawal, balance review"
     ))]

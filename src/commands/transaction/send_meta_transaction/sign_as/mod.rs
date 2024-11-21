@@ -20,7 +20,7 @@ impl RelayerAccountIdContext {
         previous_context: super::SendMetaTransactionContext,
         scope: &<RelayerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_id: near_primitives::types::AccountId =
                     scope.relayer_account_id.clone().into();
@@ -40,10 +40,10 @@ impl RelayerAccountIdContext {
         let on_before_signing_callback: crate::commands::OnBeforeSigningCallback =
             std::sync::Arc::new({
                 move |prepopulated_unsigned_transaction, _network_config| {
-                    prepopulated_unsigned_transaction.actions =
-                        vec![near_primitives::transaction::Action::Delegate(
+                    *prepopulated_unsigned_transaction.actions_mut() =
+                        vec![near_primitives::transaction::Action::Delegate(Box::new(
                             previous_context.signed_delegate_action.clone(),
-                        )];
+                        ))];
                     Ok(())
                 }
             });
@@ -51,10 +51,10 @@ impl RelayerAccountIdContext {
         Ok(Self(crate::commands::ActionContext {
             global_context: previous_context.global_context,
             interacting_with_account_ids: vec![scope.relayer_account_id.clone().into()],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome, _network_config| Ok(()),
@@ -92,7 +92,10 @@ impl RelayerAccountId {
                 &context.global_context.config.network_connection,
                 relayer_account_id.clone().into(),
             ) {
-                eprintln!("\nThe account <{relayer_account_id}> does not yet exist.");
+                eprintln!(
+                    "\nThe account <{relayer_account_id}> does not exist on [{}] networks.",
+                    context.global_context.config.network_names().join(", ")
+                );
                 #[derive(strum_macros::Display)]
                 enum ConfirmOptions {
                     #[strum(to_string = "Yes, I want to enter a new account name.")]

@@ -1,3 +1,4 @@
+#![allow(clippy::arc_with_non_send_sync)]
 pub use common::CliResult;
 
 pub mod commands;
@@ -15,4 +16,5 @@ pub mod utils_command;
 pub struct GlobalContext {
     pub config: crate::config::Config,
     pub offline: bool,
+    pub teach_me: bool,
 }

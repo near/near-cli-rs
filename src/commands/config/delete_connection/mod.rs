@@ -18,7 +18,7 @@ impl DeleteNetworkConnectionContext {
         let mut config = previous_context.config;
         config.network_connection.remove(&scope.connection_name);
         eprintln!();
-        crate::common::write_config_toml(config)?;
+        config.write_config_toml()?;
         eprintln!(
             "Network connection \"{}\" was successfully removed from config.toml",
             &scope.connection_name

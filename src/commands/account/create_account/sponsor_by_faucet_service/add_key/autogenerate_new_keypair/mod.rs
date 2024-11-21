@@ -46,12 +46,12 @@ impl GenerateKeypairContext {
 /// Save an access key for this account:
 pub enum SaveMode {
     #[strum_discriminants(strum(
-        message = "save-to-keychain   - Save automatically generated key pair to keychain"
+        message = "save-to-keychain         - Save automatically generated key pair to keychain"
     ))]
     /// Save automatically generated key pair to keychain
     SaveToKeychain(SaveKeyPair),
     #[strum_discriminants(strum(
-        message = "save-to-legacy-keychain         - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
+        message = "save-to-legacy-keychain  - Save automatically generated key pair to the legacy keychain (compatible with JS CLI)"
     ))]
     /// Save automatically generated key pair to the legacy keychain (compatible with JS CLI)
     SaveToLegacyKeychain(SaveKeyPair),
@@ -78,43 +78,42 @@ impl SaveModeContext {
                 let key_pair_properties = previous_context.key_pair_properties.clone();
                 let credentials_home_dir = previous_context.config.credentials_home_dir.clone();
 
-                move |network_config, storage_message| {
+                move |network_config| {
                     match scope {
                         SaveModeDiscriminants::SaveToKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            *storage_message = crate::common::save_access_key_to_keychain(
+                            crate::common::save_access_key_to_keychain(
                                 network_config.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
                                 &new_account_id_str,
-                            )?;
+                            )
                         }
                         SaveModeDiscriminants::SaveToLegacyKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            *storage_message = crate::common::save_access_key_to_legacy_keychain(
+                            crate::common::save_access_key_to_legacy_keychain(
                                 network_config.clone(),
                                 credentials_home_dir.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
                                 &new_account_id_str,
-                            )?;
+                            )
                         }
                         SaveModeDiscriminants::PrintToTerminal => {
-                            eprintln!("\n--------------------  Access key info for account <{}> ------------------\n", &new_account_id_str);
-                            eprintln!(
-                                "Master Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}",
+                            Ok(format!(
+                                "\n--------------------  Access key info ------------------
+                                \nMaster Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}
+                                \n--------------------------------------------------------",
                                 key_pair_properties.master_seed_phrase,
                                 key_pair_properties.seed_phrase_hd_path,
                                 key_pair_properties.implicit_account_id,
                                 key_pair_properties.public_key_str,
                                 key_pair_properties.secret_keypair_str,
-                            );
-                            eprintln!("\n------------------------------------------------------------------------------------");
+                            ))
                         }
                     }
-                    Ok(())
                 }
             });
 

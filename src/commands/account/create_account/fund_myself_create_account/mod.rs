@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use inquire::{CustomType, Select, Text};
+use inquire::{CustomType, Select};
 
 use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
 
@@ -16,7 +14,7 @@ pub struct NewAccount {
     new_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
     /// Enter the amount for the account:
-    initial_balance: crate::common::NearBalance,
+    initial_balance: crate::types::near_token::NearToken,
     #[interactive_clap(subcommand)]
     access_key_mode: add_key::AccessKeyMode,
 }
@@ -25,7 +23,7 @@ pub struct NewAccount {
 pub struct NewAccountContext {
     global_context: crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
-    initial_balance: crate::common::NearBalance,
+    initial_balance: crate::types::near_token::NearToken,
 }
 
 impl NewAccountContext {
@@ -36,7 +34,7 @@ impl NewAccountContext {
         Ok(Self {
             global_context: previous_context,
             new_account_id: scope.new_account_id.clone().into(),
-            initial_balance: scope.initial_balance.clone(),
+            initial_balance: scope.initial_balance,
         })
     }
 }
@@ -110,8 +108,11 @@ impl NewAccount {
                         )
                         .is_none()
                         {
-                            eprintln!("\nThe parent account <{}> does not yet exist. Therefore, you cannot create an account <{}>.",
-                                &parent_account_id, &account_id);
+                            eprintln!("\nThe parent account <{}> does not exist on [{}] networks. Therefore, you cannot create an account <{}>.",
+                                parent_account_id,
+                                context.config.network_names().join(", "),
+                                account_id
+                            );
                             if !crate::common::ask_if_different_account_id_wanted()? {
                                 return Ok(Some(account_id));
                             };
@@ -130,17 +131,13 @@ impl NewAccount {
 
     fn input_initial_balance(
         _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         eprintln!();
-        match crate::common::NearBalance::from_str(&Text::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
-            .with_initial_value("0.1 NEAR")
-            .prompt()?
-            ) {
-                Ok(initial_balance) => Ok(Some(initial_balance)),
-                Err(err) => Err(color_eyre::Report::msg(
-                    err,
-                ))
-            }
+        Ok(Some(
+            CustomType::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
+                .with_starting_input("0.1 NEAR")
+                .prompt()?
+        ))
     }
 }
 
@@ -156,5 +153,5 @@ pub struct AccountPropertiesContext {
 pub struct AccountProperties {
     pub new_account_id: near_primitives::types::AccountId,
     pub public_key: near_crypto::PublicKey,
-    pub initial_balance: crate::common::NearBalance,
+    pub initial_balance: crate::types::near_token::NearToken,
 }

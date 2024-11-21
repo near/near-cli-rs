@@ -14,7 +14,7 @@ pub struct SendMetaTransaction {
 #[derive(Debug, Clone)]
 pub struct SendMetaTransactionContext {
     global_context: crate::GlobalContext,
-    signed_delegate_action: near_primitives::delegate_action::SignedDelegateAction,
+    signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
 }
 
 impl SendMetaTransactionContext {

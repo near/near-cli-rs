@@ -8,7 +8,7 @@ pub struct DepositArgs {
     /// Which account ID do you want to add a deposit to?
     receiver_account_id: crate::types::account_id::AccountId,
     /// Enter the amount to deposit into the storage (example: 10NEAR or 0.5near or 10000yoctonear):
-    deposit: crate::common::NearBalance,
+    deposit: crate::types::near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?
     sign_as: SignerAccountId,
@@ -19,7 +19,7 @@ pub struct DepositArgsContext {
     global_context: crate::GlobalContext,
     get_contract_account_id: super::GetContractAccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    deposit: crate::common::NearBalance,
+    deposit: crate::types::near_token::NearToken,
 }
 
 impl DepositArgsContext {
@@ -31,7 +31,7 @@ impl DepositArgsContext {
             global_context: previous_context.global_context,
             get_contract_account_id: previous_context.get_contract_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
-            deposit: scope.deposit.clone(),
+            deposit: scope.deposit,
         })
     }
 }
@@ -59,7 +59,10 @@ impl DepositArgs {
                 &context.global_context.config.network_connection,
                 receiver_account_id.clone().into(),
             ) {
-                eprintln!("\nThe account <{receiver_account_id}> does not yet exist.");
+                eprintln!(
+                    "\nThe account <{receiver_account_id}> does not exist on [{}] networks.",
+                    context.global_context.config.network_names().join(", ")
+                );
                 #[derive(strum_macros::Display)]
                 enum ConfirmOptions {
                     #[strum(to_string = "Yes, I want to enter a new account name.")]
@@ -102,27 +105,27 @@ impl SignerAccountIdContext {
         previous_context: DepositArgsContext,
         scope: &<SignerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id: near_primitives::types::AccountId =
                     scope.signer_account_id.clone().into();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let get_contract_account_id = previous_context.get_contract_account_id.clone();
-                let deposit = previous_context.deposit.clone();
+                let deposit = previous_context.deposit;
 
                 move |network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: get_contract_account_id(network_config)?,
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            near_primitives::transaction::FunctionCallAction {
+                            Box::new(near_primitives::transaction::FunctionCallAction {
                                 method_name: "storage_deposit".to_string(),
-                                args: serde_json::json!({ "account_id": &receiver_account_id })
-                                    .to_string()
-                                    .into_bytes(),
+                                args: serde_json::to_vec(&serde_json::json!({
+                                    "account_id": &receiver_account_id
+                                }))?,
                                 gas: crate::common::NearGas::from_tgas(50).as_gas(),
-                                deposit: deposit.to_yoctonear(),
-                            },
+                                deposit: deposit.as_yoctonear(),
+                            }),
                         )],
                     })
                 }
@@ -151,12 +154,12 @@ impl SignerAccountIdContext {
                 scope.signer_account_id.clone().into(),
                 previous_context.receiver_account_id,
             ],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback,
         }))

@@ -1,11 +1,10 @@
-use std::str::FromStr;
-
-use inquire::Text;
+use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
 #[interactive_clap(output_context = FunctionCallActionContext)]
 pub struct FunctionCallAction {
+    #[interactive_clap(skip_default_input_arg)]
     /// What is the name of the function?
     function_name: String,
     #[interactive_clap(value_enum)]
@@ -13,7 +12,7 @@ pub struct FunctionCallAction {
     /// How do you want to pass the function call arguments?
     function_args_type:
         crate::commands::contract::call_function::call_function_args_type::FunctionArgsType,
-    /// Enter the arguments to this function or the path to the arguments file:
+    /// Enter the arguments to this function:
     function_args: String,
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
@@ -60,6 +59,15 @@ impl FunctionCallAction {
         crate::commands::contract::call_function::call_function_args_type::input_function_args_type(
         )
     }
+
+    fn input_function_name(
+        context: &super::super::super::ConstructTransactionContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        crate::commands::contract::call_function::input_call_function_name(
+            &context.global_context,
+            &context.receiver_account_id,
+        )
+    }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -97,7 +105,7 @@ impl PrepaidGasContext {
             actions: previous_context.actions,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
-            gas: scope.gas.clone(),
+            gas: scope.gas,
         })
     }
 }
@@ -107,23 +115,22 @@ impl PrepaidGas {
         _context: &FunctionCallActionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         eprintln!();
-        let gas = loop {
-            match crate::common::NearGas::from_str(
-                &Text::new("Enter gas for function call:")
-                    .with_initial_value("100 TeraGas")
-                    .prompt()?,
-            ) {
-                Ok(input_gas) => {
-                    if input_gas <= near_gas::NearGas::from_tgas(300) {
-                        break input_gas;
+        Ok(Some(
+            CustomType::new("Enter gas for function call:")
+                .with_starting_input("100 TeraGas")
+                .with_validator(move |gas: &crate::common::NearGas| {
+                    if gas > &near_gas::NearGas::from_tgas(300) {
+                        Ok(inquire::validator::Validation::Invalid(
+                            inquire::validator::ErrorMessage::Custom(
+                                "You need to enter a value of no more than 300 TeraGas".to_string(),
+                            ),
+                        ))
                     } else {
-                        eprintln!("You need to enter a value of no more than 300 TERAGAS")
+                        Ok(inquire::validator::Validation::Valid)
                     }
-                }
-                Err(err) => return Err(color_eyre::Report::msg(err)),
-            }
-        };
-        Ok(Some(gas))
+                })
+                .prompt()?,
+        ))
     }
 }
 
@@ -133,7 +140,7 @@ impl PrepaidGas {
 pub struct Deposit {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter deposit for a function call:
-    deposit: crate::common::NearBalance,
+    deposit: crate::types::near_token::NearToken,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_3::NextAction,
 }
@@ -146,14 +153,14 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::FunctionCall(
+        let action = near_primitives::transaction::Action::FunctionCall(Box::new(
             near_primitives::transaction::FunctionCallAction {
                 method_name: previous_context.function_name,
                 args: previous_context.function_args,
                 gas: previous_context.gas.as_gas(),
-                deposit: scope.deposit.clone().to_yoctonear(),
+                deposit: scope.deposit.clone().as_yoctonear(),
             },
-        );
+        ));
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {
@@ -174,17 +181,12 @@ impl From<DepositContext> for super::super::super::ConstructTransactionContext {
 impl Deposit {
     fn input_deposit(
         _context: &PrepaidGasContext,
-    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         eprintln!();
-        match crate::common::NearBalance::from_str(
-            &Text::new(
-                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
-            )
-            .with_initial_value("0 NEAR")
-            .prompt()?,
-        ) {
-            Ok(deposit) => Ok(Some(deposit)),
-            Err(err) => Err(color_eyre::Report::msg(err)),
-        }
+        Ok(Some(
+            CustomType::new("Enter deposit for a function call (example: 10 NEAR or 0.5 near or 10000 yoctonear):")
+                .with_starting_input("0 NEAR")
+                .prompt()?
+        ))
     }
 }

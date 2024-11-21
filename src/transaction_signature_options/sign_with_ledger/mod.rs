@@ -1,12 +1,18 @@
-use std::str::FromStr;
-
-use color_eyre::eyre::WrapErr;
-use inquire::{CustomType, Text};
-
-use near_primitives::borsh::BorshSerialize;
+use color_eyre::eyre::{ContextCompat, WrapErr};
+use inquire::CustomType;
+use near_ledger::NEARLedgerError;
+use near_primitives::action::delegate::SignedDelegateAction;
+use near_primitives::borsh;
+use near_primitives::transaction::TransactionV0;
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
+
+const SW_BUFFER_OVERFLOW: &str = "0x6990";
+const ERR_OVERFLOW_MEMO: &str = "Buffer overflow on Ledger device occured. \
+Transaction is too large for signature. \
+This is resolved in https://github.com/dj8yfo/app-near-rs . \
+The status is tracked in `About` section.";
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -14,20 +20,23 @@ use crate::common::RpcQueryResponseExt;
 #[interactive_clap(skip_default_from_cli)]
 pub struct SignLedger {
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     #[allow(dead_code)]
     #[interactive_clap(skip)]
     signer_public_key: crate::types::public_key::PublicKey,
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
     nonce: Option<u64>,
     #[interactive_clap(long)]
-    #[interactive_clap(skip_default_from_cli_arg)]
     #[interactive_clap(skip_default_input_arg)]
-    block_hash: Option<String>,
+    pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    block_height: Option<near_primitives::types::BlockHeight>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_interactive_input)]
+    meta_transaction_valid_for: Option<u64>,
     #[interactive_clap(subcommand)]
     submit: super::Submit,
 }
@@ -44,54 +53,136 @@ pub struct SignLedgerContext {
 }
 
 impl SignLedgerContext {
+    #[tracing::instrument(
+        name = "Signing the transaction with Ledger Nano device. Follow the instructions on the ledger ...",
+        skip_all
+    )]
     pub fn from_previous_context(
         previous_context: crate::commands::TransactionContext,
         scope: &<SignLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
-        let seed_phrase_hd_path: slip10::BIP32Path = scope.seed_phrase_hd_path.clone().into();
+        let seed_phrase_hd_path: slipped10::BIP32Path = scope.seed_phrase_hd_path.clone().into();
         let public_key: near_crypto::PublicKey = scope.signer_public_key.clone().into();
 
-        let rpc_query_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
-                &previous_context.prepopulated_transaction.signer_id,
-                &public_key,
-                near_primitives::types::BlockReference::latest()
+        let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
+            (
+                scope
+                    .nonce
+                    .wrap_err("Nonce is required to sign a transaction in offline mode")?,
+                scope
+                    .block_hash
+                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                    .0,
+                scope
+                    .block_height
+                    .wrap_err("Block Height is required to sign a transaction in offline mode")?,
             )
-            .wrap_err(
-                "Cannot sign a transaction due to an error while fetching the most recent nonce value",
-            )?;
-        let current_nonce = rpc_query_response
-            .access_key_view()
-            .wrap_err("Error current_nonce")?
-            .nonce;
+        } else {
+            let rpc_query_response = network_config
+                .json_rpc_client()
+                .blocking_call_view_access_key(
+                    &previous_context.prepopulated_transaction.signer_id,
+                    &public_key,
+                    near_primitives::types::BlockReference::latest(),
+                )
+                .wrap_err_with(||
+                    format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
+                )?;
 
-        let mut unsigned_transaction = near_primitives::transaction::Transaction {
-            public_key: scope.signer_public_key.clone().into(),
-            block_hash: rpc_query_response.block_hash,
-            nonce: current_nonce + 1,
-            signer_id: previous_context.prepopulated_transaction.signer_id,
-            receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: previous_context.prepopulated_transaction.actions,
+            (
+                rpc_query_response
+                    .access_key_view()
+                    .wrap_err("Error current_nonce")?
+                    .nonce
+                    + 1,
+                rpc_query_response.block_hash,
+                rpc_query_response.block_height,
+            )
         };
+
+        let mut unsigned_transaction =
+            near_primitives::transaction::Transaction::V0(TransactionV0 {
+                public_key: scope.signer_public_key.clone().into(),
+                block_hash,
+                nonce,
+                signer_id: previous_context.prepopulated_transaction.signer_id,
+                receiver_id: previous_context.prepopulated_transaction.receiver_id,
+                actions: previous_context.prepopulated_transaction.actions,
+            });
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
-        eprintln!(
-            "Confirm transaction signing on your Ledger device (HD Path: {})",
-            seed_phrase_hd_path,
-        );
+        if network_config.meta_transaction_relayer_url.is_some() {
+            let max_block_height = block_height
+                + scope
+                    .meta_transaction_valid_for
+                    .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
+
+            let mut delegate_action = near_primitives::action::delegate::DelegateAction {
+                sender_id: unsigned_transaction.signer_id().clone(),
+                receiver_id: unsigned_transaction.receiver_id().clone(),
+                actions: vec![],
+                nonce: unsigned_transaction.nonce(),
+                max_block_height,
+                public_key: unsigned_transaction.public_key().clone(),
+            };
+
+            delegate_action.actions = unsigned_transaction
+                        .take_actions()
+                        .into_iter()
+                        .map(near_primitives::action::delegate::NonDelegateAction::try_from)
+                        .collect::<Result<_, _>>()
+                        .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).");
+
+            let signature = match near_ledger::sign_message_nep366_delegate_action(
+                &borsh::to_vec(&delegate_action)
+                    .wrap_err("Delegate action is not expected to fail on serialization")?,
+                seed_phrase_hd_path.clone(),
+            ) {
+                Ok(signature) => {
+                    near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
+                        .wrap_err("Signature is not expected to fail on deserialization")?
+                }
+                Err(NEARLedgerError::APDUExchangeError(msg))
+                    if msg.contains(SW_BUFFER_OVERFLOW) =>
+                {
+                    return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
+                }
+                Err(near_ledger_error) => {
+                    return Err(color_eyre::Report::msg(format!(
+                        "Error occurred while signing the transaction: {:?}",
+                        near_ledger_error
+                    )));
+                }
+            };
+            let signed_delegate_action = SignedDelegateAction {
+                delegate_action,
+                signature,
+            };
+
+            return Ok(Self {
+                network_config: previous_context.network_config,
+                global_context: previous_context.global_context,
+                signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
+                on_before_sending_transaction_callback: previous_context
+                    .on_before_sending_transaction_callback,
+                on_after_sending_transaction_callback: previous_context
+                    .on_after_sending_transaction_callback,
+            });
+        }
 
         let signature = match near_ledger::sign_transaction(
-            unsigned_transaction
-                .try_to_vec()
-                .expect("Transaction is not expected to fail on serialization"),
-            seed_phrase_hd_path,
+            &borsh::to_vec(&unsigned_transaction)
+                .wrap_err("Transaction is not expected to fail on serialization")?,
+            seed_phrase_hd_path.clone(),
         ) {
             Ok(signature) => {
                 near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                    .expect("Signature is not expected to fail on deserialization")
+                    .wrap_err("Signature is not expected to fail on deserialization")?
+            }
+            Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
+                return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
             }
             Err(near_ledger_error) => {
                 return Err(color_eyre::Report::msg(format!(
@@ -100,6 +191,7 @@ impl SignLedgerContext {
                 )));
             }
         };
+
         let signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
             unsigned_transaction,
@@ -151,7 +243,7 @@ impl interactive_clap::FromCli for SignLedger {
         let mut clap_variant = optional_clap_variant.unwrap_or_default();
 
         if clap_variant.seed_phrase_hd_path.is_none() {
-            clap_variant.seed_phrase_hd_path = match Self::input_seed_phrase_hd_path() {
+            clap_variant.seed_phrase_hd_path = match Self::input_seed_phrase_hd_path(&context) {
                 Ok(Some(seed_phrase_hd_path)) => Some(seed_phrase_hd_path),
                 Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
@@ -161,6 +253,15 @@ impl interactive_clap::FromCli for SignLedger {
             .seed_phrase_hd_path
             .clone()
             .expect("Unexpected error");
+
+        eprintln!("Opening the NEAR application... Please approve opening the application");
+        if let Err(err) = near_ledger::open_near_application().map_err(|ledger_error| {
+            color_eyre::Report::msg(format!("An error happened while trying to open the NEAR application on the ledger: {ledger_error:?}"))
+        }) {
+            return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
+        }
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         eprintln!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
@@ -195,13 +296,15 @@ impl interactive_clap::FromCli for SignLedger {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let block_hash = clap_variant.block_hash.clone();
+        let block_hash = clap_variant.block_hash;
 
         let new_context_scope = InteractiveClapContextScopeForSignLedger {
             signer_public_key,
             seed_phrase_hd_path,
             nonce,
             block_hash,
+            block_height: clap_variant.block_height,
+            meta_transaction_valid_for: clap_variant.meta_transaction_valid_for,
         };
         let output_context =
             match SignLedgerContext::from_previous_context(context, &new_context_scope) {
@@ -229,16 +332,9 @@ impl interactive_clap::FromCli for SignLedger {
 
 impl SignLedger {
     pub fn input_seed_phrase_hd_path(
+        _context: &crate::commands::TransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
-        Ok(Some(
-            crate::types::slip10::BIP32Path::from_str(
-                &Text::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
-                    .with_initial_value("44'/397'/0'/0'/1'")
-                    .prompt()
-                    .unwrap(),
-            )
-            .unwrap(),
-        ))
+        input_seed_phrase_hd_path()
     }
 
     fn input_nonce(
@@ -254,10 +350,24 @@ impl SignLedger {
 
     fn input_block_hash(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<String>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
         if context.global_context.offline {
-            return Ok(Some(Text::new("Enter recent block hash:").prompt()?));
+            return Ok(Some(
+                CustomType::<crate::types::crypto_hash::CryptoHash>::new(
+                    "Enter recent block hash:",
+                )
+                .prompt()?,
+            ));
         }
         Ok(None)
     }
+}
+
+pub fn input_seed_phrase_hd_path(
+) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
+    Ok(Some(
+        CustomType::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
+            .with_starting_input("44'/397'/0'/0'/1'")
+            .prompt()?,
+    ))
 }

@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use inquire::Text;
+use inquire::CustomType;
 use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -22,7 +20,7 @@ pub struct SendNftCommand {
     #[interactive_clap(long = "attached-deposit")]
     #[interactive_clap(skip_default_input_arg)]
     /// Enter deposit for a function call:
-    deposit: crate::common::NearBalance,
+    deposit: crate::types::near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -36,7 +34,7 @@ pub struct SendNftCommandContext {
     receiver_account_id: near_primitives::types::AccountId,
     token_id: String,
     gas: crate::common::NearGas,
-    deposit: crate::common::NearBalance,
+    deposit: crate::types::near_token::NearToken,
 }
 
 impl SendNftCommandContext {
@@ -50,15 +48,15 @@ impl SendNftCommandContext {
             nft_contract_account_id: scope.nft_contract_account_id.clone().into(),
             receiver_account_id: scope.receiver_account_id.clone().into(),
             token_id: scope.token_id.clone(),
-            gas: scope.gas.clone(),
-            deposit: scope.deposit.clone(),
+            gas: scope.gas,
+            deposit: scope.deposit,
         })
     }
 }
 
 impl From<SendNftCommandContext> for crate::commands::ActionContext {
     fn from(item: SendNftCommandContext) -> Self {
-        let on_after_getting_network_callback: crate::commands::OnAfterGettingNetworkCallback =
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = item.signer_account_id.clone();
                 let nft_contract_account_id = item.nft_contract_account_id.clone();
@@ -70,17 +68,15 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                         signer_id: signer_account_id.clone(),
                         receiver_id: nft_contract_account_id.clone(),
                         actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            near_primitives::transaction::FunctionCallAction {
+                            Box::new(near_primitives::transaction::FunctionCallAction {
                                 method_name: "nft_transfer".to_string(),
-                                args: json!({
+                                args: serde_json::to_vec(&json!({
                                     "receiver_id": receiver_account_id.to_string(),
                                     "token_id": token_id
-                                })
-                                .to_string()
-                                .into_bytes(),
+                                }))?,
                                 gas: item.gas.as_gas(),
-                                deposit: item.deposit.to_yoctonear(),
-                            },
+                                deposit: item.deposit.as_yoctonear(),
+                            }),
                         )],
                     })
                 }
@@ -109,12 +105,12 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                 item.signer_account_id.clone(),
                 item.receiver_account_id.clone(),
             ],
-            on_after_getting_network_callback,
+            get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
                 |_prepolulated_unsinged_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                |_signed_transaction, _network_config, _message| Ok(()),
+                |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback,
         }
@@ -144,38 +140,32 @@ impl SendNftCommand {
         _context: &super::TokensCommandsContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         eprintln!();
-        let gas = loop {
-            match crate::common::NearGas::from_str(
-                &Text::new("Enter gas for function call:")
-                    .with_initial_value("100 TeraGas")
-                    .prompt()?,
-            ) {
-                Ok(input_gas) => {
-                    if input_gas <= near_gas::NearGas::from_tgas(300) {
-                        break input_gas;
+        Ok(Some(
+            CustomType::new("Enter gas for function call:")
+                .with_starting_input("100 TeraGas")
+                .with_validator(move |gas: &crate::common::NearGas| {
+                    if gas > &near_gas::NearGas::from_tgas(300) {
+                        Ok(inquire::validator::Validation::Invalid(
+                            inquire::validator::ErrorMessage::Custom(
+                                "You need to enter a value of no more than 300 TeraGas".to_string(),
+                            ),
+                        ))
                     } else {
-                        eprintln!("You need to enter a value of no more than 300 TERAGAS")
+                        Ok(inquire::validator::Validation::Valid)
                     }
-                }
-                Err(err) => return Err(color_eyre::Report::msg(err)),
-            }
-        };
-        Ok(Some(gas))
+                })
+                .prompt()?,
+        ))
     }
 
     fn input_deposit(
         _context: &super::TokensCommandsContext,
-    ) -> color_eyre::eyre::Result<Option<crate::common::NearBalance>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         eprintln!();
-        match crate::common::NearBalance::from_str(
-            &Text::new(
-                "Enter deposit for a function call (example: 10NEAR or 0.5near or 10000yoctonear):",
-            )
-            .with_initial_value("1 yoctoNEAR")
-            .prompt()?,
-        ) {
-            Ok(deposit) => Ok(Some(deposit)),
-            Err(err) => Err(color_eyre::Report::msg(err)),
-        }
+        Ok(Some(
+            CustomType::new("Enter deposit for a function call (example: 10 NEAR or 0.5 near or 10000 yoctonear):")
+                .with_starting_input("1 yoctoNEAR")
+                .prompt()?
+        ))
     }
 }

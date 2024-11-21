@@ -1,7 +1,9 @@
+use color_eyre::eyre::ContextCompat;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod add_connection;
 mod delete_connection;
+mod edit_connection;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -24,6 +26,9 @@ pub enum ConfigActions {
     #[strum_discriminants(strum(message = "add-connection         - Add a network connection"))]
     /// Add a network connection
     AddConnection(self::add_connection::AddNetworkConnection),
+    #[strum_discriminants(strum(message = "edit-connection        - Edit a network connection"))]
+    /// Edit a network connection
+    EditConnection(self::edit_connection::EditConnection),
     #[strum_discriminants(strum(
         message = "delete-connection      - Delete a network connection"
     ))]
@@ -44,7 +49,8 @@ impl ShowConnectionsContext {
         previous_context: crate::GlobalContext,
         _scope: &<ShowConnections as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let mut path_config_toml = dirs::config_dir().expect("Impossible to get your config dir!");
+        let mut path_config_toml =
+            dirs::config_dir().wrap_err("Impossible to get your config dir!")?;
         path_config_toml.push("near-cli/config.toml");
         eprintln!(
             "\nConfiguration data is stored in a file {:?}",

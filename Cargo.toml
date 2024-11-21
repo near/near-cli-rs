@@ -1,6 +1,6 @@
 [package]
 name = "near-cli-rs"
-version = "0.5.2"
+version = "0.16.0"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
@@ -8,9 +8,13 @@ homepage = "https://near.cli.rs"
 repository = "https://github.com/near/near-cli-rs"
 description = "human-friendly console utility that helps to interact with NEAR Protocol from command line."
 
+exclude = ["docs/media"]
+
 [package.metadata.wix]
 upgrade-guid = "A6432354-8256-45E3-9E10-53C117EE22B4"
 path-guid = "3A5A99B6-61EC-4DFB-AA36-763EE316AF18"
+license = false
+eula = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,37 +24,46 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.0.18", features = ["derive"] }
-inquire = "0.6"
+inquire = "0.7"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 smart-default = "0.7.1"
 derive_more = "0.99.9"
 easy-ext = "1"
 
-reqwest = { version = "0.11", features = ["blocking", "json"] }
-tokio = { version = "1.0", features = ["rt-multi-thread"] }
+reqwest = { version = "0.12", features = ["blocking", "json"] }
+tokio = { version = "1.0", default-features = false, features = [
+    "rt-multi-thread",
+] }
 futures = "0.3"
 # Ad-hoc fix for compilation errors (rustls is used instead of openssl to ease the deployment avoiding the system dependency on openssl)
 openssl = { version = "0.10", features = ["vendored"] }
 
 bip39 = { version = "2.0.0", features = ["rand"] }
 bs58 = "0.5"
-ed25519-dalek = { version = "1" }
+ed25519-dalek = { version = "2", default-features = false }
 hex = "0.4.2"
 linked-hash-map = { version = "0.5", features = ["serde_impl"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
-toml = "0.7"
+toml = "0.8"
 dirs = "5"
 shellexpand = "3"
-slip10 = "0.4.3"
+slipped10 = { version = "0.4.6" }
 url = { version = "2", features = ["serde"] }
-open = "4"
+open = "5"
 shell-words = "1"
-cargo-util = "0.1.1"
+cargo-util = "0.2"
+indicatif = "0.17.8"
+indenter = "0.3"
+tracing = "0.1.40"
+tracing-indicatif = "0.3.6"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+wasmparser = "0.217"
 
 semver = { version = "1.0.4", optional = true }
-self_update = { version = "0.37.0", features = [
+self_update = { version = "0.41.0", features = [
     "archive-tar",
     "compression-flate2",
 ], optional = true }
@@ -60,24 +73,40 @@ thiserror = "1"
 
 bytesize = "1.1.0"
 prettytable = "0.10.0"
+textwrap = "0.16.1"
 
-near-ledger = { version = "0.2.0", optional = true }
+near-crypto = "0.27"
+near-primitives = "0.27"
+near-jsonrpc-client = "0.14"
+near-jsonrpc-primitives = "0.27"
+near-socialdb-client = "0.8"
 
-near-crypto = "0.17.0"
-near-primitives = "0.17.0"
-near-jsonrpc-client = "0.6.0"
-near-jsonrpc-primitives = "0.17.0"
+near-ledger = { version = "0.8.0", optional = true }
 
-near-gas = { version = "0.2.3", features = [
+near-gas = { version = "0.3", features = [
     "serde",
     "borsh",
-    "schemars",
+    "interactive-clap",
+] }
+near-token = { version = "0.3", features = [
+    "serde",
+    "borsh",
     "interactive-clap",
 ] }
 
-interactive-clap = "0.2.4"
-interactive-clap-derive = "0.2.4"
-keyring = "2.0.5"
+near-abi = "0.4.2"
+zstd = "0.13"
+
+keyring = { version = "3.0.5", features = [
+    "apple-native",
+    "windows-native",
+    "sync-secret-service",
+    "vendored",
+] }
+interactive-clap = "0.3"
+interactive-clap-derive = "0.3"
+
+rust_decimal = "1.35.0"
 
 [features]
 default = ["ledger", "self-update"]
@@ -92,26 +121,37 @@ lto = "thin"
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.3.0"
+cargo-dist-version = "0.21.1"
 # CI backends to support
-ci = ["github"]
+ci = "github"
 # The installers to generate for each app
 installers = ["shell", "powershell", "npm", "msi"]
+# Enable additional publishing steps
+publish-jobs = ["npm"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = [
-    "x86_64-unknown-linux-gnu",
-    "x86_64-apple-darwin",
-    "x86_64-pc-windows-msvc",
     "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-unknown-linux-gnu",
+    "x86_64-pc-windows-msvc",
 ]
 # The archive format to use for windows builds (defaults .zip)
 windows-archive = ".tar.gz"
 # The archive format to use for non-windows builds (defaults .tar.xz)
 unix-archive = ".tar.gz"
-# Publish jobs to run in CI
+# Which actions to run on pull requests
 pr-run-mode = "upload"
-# XXX: In order to install system dependencies, we need to edit the release.yml,
-# so we allow dirty CI scripts to avoid cargo-dist complains.
-# This should not be necessary once the following issue is addressed:
-# https://github.com/axodotdev/cargo-dist/issues/423
-allow-dirty = ["ci"]
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
+# Whether to install an updater program
+install-updater = false
+
+[workspace.metadata.dist.github-custom-runners]
+aarch64-unknown-linux-gnu = "ubuntu-arm64-22.04-4core"
+
+[workspace.metadata.dist.dependencies.apt]
+libudev-dev = { version = "*", targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+] }

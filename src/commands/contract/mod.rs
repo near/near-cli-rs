@@ -1,8 +1,10 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub mod call_function;
-mod deploy;
+pub mod deploy;
+mod download_abi;
 mod download_wasm;
+mod inspect;
 mod view_storage;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -26,9 +28,17 @@ pub enum ContractActions {
     #[strum_discriminants(strum(message = "deploy          - Add a new contract code"))]
     /// Add a contract code
     Deploy(self::deploy::Contract),
+    #[strum_discriminants(strum(
+        message = "inspect         - Get a list of available function names"
+    ))]
+    /// Get a list of available function names
+    Inspect(self::inspect::Contract),
+    #[strum_discriminants(strum(message = "download-abi    - Download contract ABI"))]
+    /// Download contract ABI
+    DownloadAbi(self::download_abi::Contract),
     #[strum_discriminants(strum(message = "download-wasm   - Download wasm"))]
     /// Download wasm
-    DownloadWasm(self::download_wasm::ContractAccount),
+    DownloadWasm(self::download_wasm::Contract),
     #[strum_discriminants(strum(message = "view-storage    - View contract storage state"))]
     /// View contract storage state
     ViewStorage(self::view_storage::ViewStorage),

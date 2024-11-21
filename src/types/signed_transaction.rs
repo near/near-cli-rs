@@ -1,8 +1,14 @@
-use near_primitives::borsh::{BorshDeserialize, BorshSerialize};
+use near_primitives::{borsh, borsh::BorshDeserialize};
 
 #[derive(Debug, Clone)]
 pub struct SignedTransactionAsBase64 {
     pub inner: near_primitives::transaction::SignedTransaction,
+}
+
+impl From<SignedTransactionAsBase64> for near_primitives::transaction::SignedTransaction {
+    fn from(transaction: SignedTransactionAsBase64) -> Self {
+        transaction.inner
+    }
 }
 
 impl std::str::FromStr for SignedTransactionAsBase64 {
@@ -21,9 +27,7 @@ impl std::str::FromStr for SignedTransactionAsBase64 {
 impl std::fmt::Display for SignedTransactionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let base64_signed_transaction = near_primitives::serialize::to_base64(
-            &self
-                .inner
-                .try_to_vec()
+            &borsh::to_vec(&self.inner)
                 .expect("Transaction is not expected to fail on serialization"),
         );
         write!(f, "{}", base64_signed_transaction)

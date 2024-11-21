@@ -28,6 +28,12 @@ impl From<PublicKeyList> for Vec<near_crypto::PublicKey> {
     }
 }
 
+impl From<Vec<near_crypto::PublicKey>> for PublicKeyList {
+    fn from(item: Vec<near_crypto::PublicKey>) -> Self {
+        Self(item)
+    }
+}
+
 impl ToCli for PublicKeyList {
     type CliVariant = PublicKeyList;
 }

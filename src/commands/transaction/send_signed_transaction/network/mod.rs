@@ -1,4 +1,4 @@
-use crate::common::JsonRpcClientExt;
+use color_eyre::eyre::ContextCompat;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -27,7 +27,7 @@ impl NetworkContext {
             .config
             .network_connection
             .get(&scope.network_name)
-            .expect("Failed to get network config!")
+            .wrap_err("Failed to get network config!")?
             .clone();
 
         Ok(Self {
@@ -43,7 +43,7 @@ impl Network {
     ) -> color_eyre::eyre::Result<Option<String>> {
         crate::common::input_network_name(
             &context.config,
-            &[context.signed_transaction.transaction.receiver_id.clone()],
+            &[context.signed_transaction.transaction.receiver_id().clone()],
         )
     }
 }
@@ -62,30 +62,17 @@ pub enum Submit {
 pub struct SubmitContext;
 
 impl SubmitContext {
+    #[tracing::instrument(name = "Sending transaction ...", skip_all)]
     pub fn from_previous_context(
         previous_context: NetworkContext,
         _scope: &<Submit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> crate::CliResult {
-        eprintln!("Transaction sent ...");
-        let transaction_info = loop {
-            let transaction_info_result = previous_context
-                .network_config
-                .json_rpc_client()
-                .blocking_call(
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
-                    signed_transaction: previous_context.signed_transaction.clone(),
-                },
-            );
-            match transaction_info_result {
-                Ok(response) => {
-                    break response;
-                }
-                Err(err) => match crate::common::rpc_transaction_error(err) {
-                    Ok(_) => std::thread::sleep(std::time::Duration::from_millis(100)),
-                    Err(report) => return Err(color_eyre::Report::msg(report)),
-                },
-            };
-        };
+        let transaction_info =
+            crate::transaction_signature_options::send::sending_signed_transaction(
+                &previous_context.network_config,
+                &previous_context.signed_transaction,
+            )?;
+
         crate::common::print_transaction_status(&transaction_info, &previous_context.network_config)
     }
 }

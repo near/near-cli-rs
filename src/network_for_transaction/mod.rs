@@ -1,3 +1,5 @@
+use color_eyre::eyre::ContextCompat;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::ActionContext)]
 #[interactive_clap(output_context = NetworkForTransactionArgsContext)]
@@ -34,10 +36,12 @@ impl NetworkForTransactionArgsContext {
             .clone();
         let network_config = network_connection
             .get(&scope.network_name)
-            .expect("Failed to get network config!")
+            .wrap_err("Failed to get network config!")?
             .clone();
-        let prepopulated_transaction =
-            (previous_context.on_after_getting_network_callback)(&network_config)?;
+        let prepopulated_transaction = (previous_context
+            .get_prepopulated_transaction_after_getting_network_callback)(
+            &network_config
+        )?;
         Ok(Self {
             global_context: previous_context.global_context,
             network_config,

@@ -19,12 +19,14 @@ impl ViewNearBalanceContext {
             let owner_account_id = previous_context.owner_account_id.clone();
 
             move |network_config, block_reference| {
-                let account_transfer_allowance = crate::common::get_account_transfer_allowance(
-                    network_config.clone(),
+                let account_transfer_allowance = tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(crate::common::get_account_transfer_allowance(
+                    network_config,
                     owner_account_id.clone(),
                     block_reference.clone(),
-                )?;
-                eprintln! {"{}", &account_transfer_allowance};
+                ))?;
+                eprintln!("{account_transfer_allowance}");
                 Ok(())
             }
         });

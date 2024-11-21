@@ -3,8 +3,13 @@ use std::convert::{TryFrom, TryInto};
 use std::io::Write;
 use std::str::FromStr;
 
-use color_eyre::eyre::WrapErr;
+use color_eyre::eyre::{ContextCompat, WrapErr};
+use color_eyre::owo_colors::OwoColorize;
+use futures::{StreamExt, TryStreamExt};
 use prettytable::Table;
+use rust_decimal::prelude::FromPrimitive;
+use tracing_indicatif::span_ext::IndicatifSpanExt;
+use tracing_indicatif::suspend_tracing_indicatif;
 
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
 
@@ -68,110 +73,15 @@ impl std::fmt::Display for BlockHashAsBase58 {
     }
 }
 
-const ONE_NEAR: u128 = 10u128.pow(24);
-
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
-pub struct NearBalance {
-    pub yoctonear_amount: u128,
-}
-
-impl NearBalance {
-    pub fn from_yoctonear(yoctonear_amount: u128) -> Self {
-        Self { yoctonear_amount }
-    }
-
-    pub fn to_yoctonear(&self) -> u128 {
-        self.yoctonear_amount
-    }
-
-    pub fn is_zero(&self) -> bool {
-        self == &Self::from_str("0 NEAR").unwrap()
-    }
-}
-
-impl std::fmt::Display for NearBalance {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.yoctonear_amount == 0 {
-            write!(f, "0 NEAR")
-        } else if self.yoctonear_amount % ONE_NEAR == 0 {
-            write!(f, "{} NEAR", self.yoctonear_amount / ONE_NEAR,)
-        } else {
-            write!(
-                f,
-                "{}.{} NEAR",
-                self.yoctonear_amount / ONE_NEAR,
-                format!("{:0>24}", (self.yoctonear_amount % ONE_NEAR)).trim_end_matches('0')
-            )
-        }
-    }
-}
-
-impl std::str::FromStr for NearBalance {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let num = s.trim().trim_end_matches(char::is_alphabetic).trim();
-        let currency = s.trim().trim_start_matches(num).trim().to_uppercase();
-        let yoctonear_amount = match currency.as_str() {
-            "N" | "NEAR" => {
-                let res_split: Vec<&str> = num.split('.').collect();
-                match res_split.len() {
-                    2 => {
-                        let num_int_yocto = res_split[0]
-                            .parse::<u128>()
-                            .map_err(|err| format!("Near Balance: {}", err))?
-                            .checked_mul(10u128.pow(24))
-                            .ok_or("Near Balance: underflow or overflow happens")?;
-                        let len_fract = res_split[1].len() as u32;
-                        let num_fract_yocto = if len_fract <= 24 {
-                            res_split[1]
-                                .parse::<u128>()
-                                .map_err(|err| format!("Near Balance: {}", err))?
-                                .checked_mul(10u128.pow(24 - res_split[1].len() as u32))
-                                .ok_or("Near Balance: underflow or overflow happens")?
-                        } else {
-                            return Err(
-                                "Near Balance: too large fractional part of a number".to_string()
-                            );
-                        };
-                        num_int_yocto
-                            .checked_add(num_fract_yocto)
-                            .ok_or("Near Balance: underflow or overflow happens")?
-                    }
-                    1 => {
-                        if res_split[0].starts_with('0') && res_split[0] != "0" {
-                            return Err("Near Balance: incorrect number entered".to_string());
-                        };
-                        res_split[0]
-                            .parse::<u128>()
-                            .map_err(|err| format!("Near Balance: {}", err))?
-                            .checked_mul(10u128.pow(24))
-                            .ok_or("Near Balance: underflow or overflow happens")?
-                    }
-                    _ => return Err("Near Balance: incorrect number entered".to_string()),
-                }
-            }
-            "YN" | "YNEAR" | "YOCTONEAR" | "YOCTON" => num
-                .parse::<u128>()
-                .map_err(|err| format!("Near Balance: {}", err))?,
-            _ => return Err("Near Balance: incorrect currency value entered".to_string()),
-        };
-        Ok(NearBalance { yoctonear_amount })
-    }
-}
-
-impl interactive_clap::ToCli for NearBalance {
-    type CliVariant = NearBalance;
-}
-
 pub use near_gas::NearGas;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
 pub struct TransferAmount {
-    amount: NearBalance,
+    amount: near_token::NearToken,
 }
 
 impl interactive_clap::ToCli for TransferAmount {
-    type CliVariant = NearBalance;
+    type CliVariant = near_token::NearToken;
 }
 
 impl std::fmt::Display for TransferAmount {
@@ -182,7 +92,7 @@ impl std::fmt::Display for TransferAmount {
 
 impl TransferAmount {
     pub fn from(
-        amount: NearBalance,
+        amount: near_token::NearToken,
         account_transfer_allowance: &AccountTransferAllowance,
     ) -> color_eyre::eyre::Result<Self> {
         if amount <= account_transfer_allowance.transfer_allowance() {
@@ -194,16 +104,16 @@ impl TransferAmount {
         }
     }
 
-    pub fn from_unchecked(amount: NearBalance) -> Self {
+    pub fn from_unchecked(amount: near_token::NearToken) -> Self {
         Self { amount }
     }
 
-    pub fn to_yoctonear(&self) -> u128 {
-        self.amount.to_yoctonear()
+    pub fn as_yoctonear(&self) -> u128 {
+        self.amount.as_yoctonear()
     }
 }
 
-impl From<TransferAmount> for NearBalance {
+impl From<TransferAmount> for near_token::NearToken {
     fn from(item: TransferAmount) -> Self {
         item.amount
     }
@@ -212,86 +122,98 @@ impl From<TransferAmount> for NearBalance {
 #[derive(Debug)]
 pub struct AccountTransferAllowance {
     account_id: near_primitives::types::AccountId,
-    account_liquid_balance: NearBalance,
-    account_locked_balance: NearBalance,
-    storage_stake: NearBalance,
-    pessimistic_transaction_fee: NearBalance,
+    account_liquid_balance: near_token::NearToken,
+    account_locked_balance: near_token::NearToken,
+    storage_stake: near_token::NearToken,
+    pessimistic_transaction_fee: near_token::NearToken,
 }
 
 impl std::fmt::Display for AccountTransferAllowance {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(fmt,
-            "\n{} account has {} available for transfer (the total balance is {}, but {} is locked for storage and the transfer transaction fee is ~{})",
+            "\n{} account has {} available for transfer (the total balance is {}, but {} is locked for storage)",
             self.account_id,
             self.transfer_allowance(),
             self.account_liquid_balance,
             self.liquid_storage_stake(),
-            self.pessimistic_transaction_fee
         )
     }
 }
 
 impl AccountTransferAllowance {
-    pub fn liquid_storage_stake(&self) -> NearBalance {
-        NearBalance::from_yoctonear(
-            self.storage_stake
-                .to_yoctonear()
-                .saturating_sub(self.account_locked_balance.to_yoctonear()),
-        )
+    pub fn liquid_storage_stake(&self) -> near_token::NearToken {
+        self.storage_stake
+            .saturating_sub(self.account_locked_balance)
     }
 
-    pub fn transfer_allowance(&self) -> NearBalance {
-        NearBalance::from_yoctonear(
-            self.account_liquid_balance.to_yoctonear()
-                - self.liquid_storage_stake().to_yoctonear()
-                - self.pessimistic_transaction_fee.to_yoctonear(),
-        )
+    pub fn transfer_allowance(&self) -> near_token::NearToken {
+        self.account_liquid_balance
+            .saturating_sub(self.liquid_storage_stake())
+            .saturating_sub(self.pessimistic_transaction_fee)
     }
 }
-
-pub fn get_account_transfer_allowance(
-    network_config: crate::config::NetworkConfig,
+#[tracing::instrument(name = "Getting the transfer allowance for the account ...", skip_all)]
+pub async fn get_account_transfer_allowance(
+    network_config: &crate::config::NetworkConfig,
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
-    let account_view = if let Ok(account_view) =
-        get_account_state(network_config.clone(), account_id.clone(), block_reference)
-    {
-        account_view
-    } else {
-        return Ok(AccountTransferAllowance {
-            account_id,
-            account_liquid_balance: NearBalance::from_yoctonear(0),
-            account_locked_balance: NearBalance::from_yoctonear(0),
-            storage_stake: NearBalance::from_yoctonear(0),
-            pessimistic_transaction_fee: NearBalance::from_yoctonear(0),
-        });
+    let account_state = get_account_state(network_config, &account_id, block_reference).await;
+    let account_view = match account_state {
+        Ok(account_view) => account_view,
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
+            ),
+        )) if account_id.get_account_type().is_implicit() => {
+            return Ok(AccountTransferAllowance {
+                account_id,
+                account_liquid_balance: near_token::NearToken::from_near(0),
+                account_locked_balance: near_token::NearToken::from_near(0),
+                storage_stake: near_token::NearToken::from_near(0),
+                pessimistic_transaction_fee: near_token::NearToken::from_near(0),
+            });
+        }
+        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
+            return color_eyre::eyre::Result::Err(
+                    color_eyre::eyre::eyre!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.\n{err}",
+                        network_config.network_name
+                    ));
+        }
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
+            return color_eyre::eyre::Result::Err(
+            color_eyre::eyre::eyre!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.\n{err}",
+                network_config.network_name
+            ));
+        }
     };
-    let storage_amount_per_byte = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(network_config.json_rpc_client().call(
+    let storage_amount_per_byte = network_config
+        .json_rpc_client()
+        .call(
             near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
                 block_reference: near_primitives::types::Finality::Final.into(),
             },
-        ))
+        )
+        .await
         .wrap_err("RpcError")?
         .runtime_config
         .storage_amount_per_byte;
 
     Ok(AccountTransferAllowance {
         account_id,
-        account_liquid_balance: NearBalance::from_yoctonear(account_view.amount),
-        account_locked_balance: NearBalance::from_yoctonear(account_view.locked),
-        storage_stake: NearBalance::from_yoctonear(
+        account_liquid_balance: near_token::NearToken::from_yoctonear(account_view.amount),
+        account_locked_balance: near_token::NearToken::from_yoctonear(account_view.locked),
+        storage_stake: near_token::NearToken::from_yoctonear(
             u128::from(account_view.storage_usage) * storage_amount_per_byte,
         ),
         // pessimistic_transaction_fee = 10^21 - this value is set temporarily
         // In the future, its value will be calculated by the function: fn tx_cost(...)
         // https://github.com/near/nearcore/blob/8a377fda0b4ce319385c463f1ae46e4b0b29dcd9/runtime/runtime/src/config.rs#L178-L232
-        pessimistic_transaction_fee: NearBalance::from_yoctonear(10u128.pow(21)),
+        pessimistic_transaction_fee: near_token::NearToken::from_millinear(1),
     })
 }
 
+#[tracing::instrument(name = "Account access key verification ...", skip_all)]
 pub fn verify_account_access_key(
     account_id: near_primitives::types::AccountId,
     public_key: near_crypto::PublicKey,
@@ -333,20 +255,12 @@ pub fn verify_account_access_key(
                 return Err(err);
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
-                    account_id, network_config.network_name
-                );
-                if !need_check_account() {
-                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
-                        err,
-                    ));
+                if !need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.", network_config.network_name)) {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err));
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
-                    account_id, network_config.network_name
-                );
-                if !need_check_account() {
+                if !need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.", network_config.network_name)) {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
                 }
             }
@@ -354,17 +268,20 @@ pub fn verify_account_access_key(
     }
 }
 
+#[tracing::instrument(name = "Checking the existence of the account ...", skip_all)]
 pub fn is_account_exist(
     networks: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
     account_id: near_primitives::types::AccountId,
 ) -> bool {
     for (_, network_config) in networks {
-        if get_account_state(
-            network_config.clone(),
-            account_id.clone(),
-            near_primitives::types::Finality::Final.into(),
-        )
-        .is_ok()
+        if tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(get_account_state(
+                network_config,
+                &account_id,
+                near_primitives::types::Finality::Final.into(),
+            ))
+            .is_ok()
         {
             return true;
         }
@@ -372,17 +289,21 @@ pub fn is_account_exist(
     false
 }
 
+#[tracing::instrument(name = "Searching for a network where an account exists for", skip_all)]
 pub fn find_network_where_account_exist(
     context: &crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
 ) -> Option<crate::config::NetworkConfig> {
+    tracing::Span::current().pb_set_message(new_account_id.as_str());
     for (_, network_config) in context.config.network_connection.iter() {
-        if crate::common::get_account_state(
-            network_config.clone(),
-            new_account_id.clone(),
-            near_primitives::types::BlockReference::latest(),
-        )
-        .is_ok()
+        if tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(get_account_state(
+                network_config,
+                &new_account_id,
+                near_primitives::types::BlockReference::latest(),
+            ))
+            .is_ok()
         {
             return Some(network_config.clone());
         }
@@ -406,18 +327,30 @@ pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
     Ok(select_choose_input == ConfirmOptions::Yes)
 }
 
-pub fn get_account_state(
-    network_config: crate::config::NetworkConfig,
-    account_id: near_primitives::types::AccountId,
+#[tracing::instrument(name = "Getting account status information for", skip_all)]
+pub async fn get_account_state(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<
     near_primitives::views::AccountView,
     near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
     loop {
-        let query_view_method_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_account(&account_id.clone(), block_reference.clone());
+        tracing::Span::current().pb_set_message(&format!(
+            "<{account_id}> on network <{}> ...",
+            network_config.network_name
+        ));
+        tracing::info!(target: "near_teach_me", "<{account_id}> on network <{}> ...", network_config.network_name);
+
+        let query_view_method_response = view_account(
+            format!("{}", network_config.rpc_url),
+            &network_config.json_rpc_client(),
+            account_id,
+            block_reference.clone(),
+        )
+        .await;
+
         match query_view_method_response {
             Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
@@ -445,20 +378,20 @@ pub fn get_account_state(
                 return Err(err);
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to connectivity issue.",
-                    account_id, network_config.network_name
-                );
-                if !need_check_account() {
+                if !suspend_tracing_indicatif::<_, bool>(|| {
+                    need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
+                        network_config.network_name))
+                }) {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(
                         err,
                     ));
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                eprintln!("\nAccount information ({}) cannot be fetched on <{}> network due to server error.",
-                    account_id, network_config.network_name
-                );
-                if !need_check_account() {
+                if !suspend_tracing_indicatif::<_, bool>(|| {
+                    need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.",
+                        network_config.network_name))
+                }) {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err));
                 }
             }
@@ -466,7 +399,82 @@ pub fn get_account_state(
     }
 }
 
-fn need_check_account() -> bool {
+#[tracing::instrument(name = "Receiving request via RPC", skip_all)]
+async fn view_account(
+    instrument_message: String,
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    account_id: &near_primitives::types::AccountId,
+    block_reference: BlockReference,
+) -> Result<
+    near_jsonrpc_primitives::types::query::RpcQueryResponse,
+    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+> {
+    tracing::Span::current().pb_set_message(&instrument_message);
+
+    let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
+        block_reference,
+        request: near_primitives::views::QueryRequest::ViewAccount {
+            account_id: account_id.clone(),
+        },
+    };
+
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "I am making HTTP call to NEAR JSON RPC to query information about `{}` account, learn more https://docs.near.org/api/rpc/contracts#view-account",
+        account_id
+    );
+
+    if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&query_view_method_request) {
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "HTTP POST {}",
+            json_rpc_client.server_addr()
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "JSON Request Body:\n{}",
+            indent_payload(&format!("{:#}", request_payload))
+        );
+    }
+
+    json_rpc_client
+        .call(query_view_method_request)
+        .await
+        .inspect_err(|err| match err {
+            near_jsonrpc_client::errors::JsonRpcError::TransportError(transport_error) => {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Request failed due to connectivity issue:\n{}",
+                    indent_payload(&format!("{:#?}", transport_error))
+                );
+            }
+            near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(handler_error),
+            ) => {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Request returned a handling error:\n{}",
+                    indent_payload(&serde_json::to_string_pretty(handler_error).unwrap_or_else(|_| handler_error.to_string()))
+                );
+            }
+            near_jsonrpc_client::errors::JsonRpcError::ServerError(server_error) => {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Request returned a generic server error:\n{}",
+                    indent_payload(&format!("{:#?}", server_error))
+                );
+            }
+        })
+        .inspect(teach_me_call_response)
+}
+
+fn need_check_account(message: String) -> bool {
     #[derive(strum_macros::Display, PartialEq)]
     enum ConfirmOptions {
         #[strum(to_string = "Yes, I want to check the account again.")]
@@ -475,7 +483,7 @@ fn need_check_account() -> bool {
         No,
     }
     let select_choose_input = Select::new(
-        "Do you want to try again?",
+        &format!("{message}\nDo you want to try again?"),
         vec![ConfirmOptions::Yes, ConfirmOptions::No],
     )
     .prompt()
@@ -499,9 +507,9 @@ pub fn get_key_pair_properties_from_seed_phrase(
     master_seed_phrase: String,
 ) -> color_eyre::eyre::Result<KeyPairProperties> {
     let master_seed = bip39::Mnemonic::parse(&master_seed_phrase)?.to_seed("");
-    let derived_private_key = slip10::derive_key_from_path(
+    let derived_private_key = slipped10::derive_key_from_path(
         &master_seed,
-        slip10::Curve::Ed25519,
+        slipped10::Curve::Ed25519,
         &seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -511,21 +519,14 @@ pub fn get_key_pair_properties_from_seed_phrase(
         ))
     })?;
 
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
-    let implicit_account_id =
-        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
-    let public_key_str = format!(
-        "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
-    );
+    let public_key = signing_key.verifying_key();
+    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public_key))?;
+    let public_key_str = format!("ed25519:{}", bs58::encode(&public_key).into_string());
     let secret_keypair_str = format!(
         "ed25519:{}",
-        bs58::encode(secret_keypair.to_bytes()).into_string()
+        bs58::encode(signing_key.to_keypair_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
         seed_phrase_hd_path,
@@ -538,26 +539,25 @@ pub fn get_key_pair_properties_from_seed_phrase(
 }
 
 pub fn get_public_key_from_seed_phrase(
-    seed_phrase_hd_path: slip10::BIP32Path,
+    seed_phrase_hd_path: slipped10::BIP32Path,
     master_seed_phrase: &str,
 ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
     let master_seed = bip39::Mnemonic::parse(master_seed_phrase)?.to_seed("");
-    let derived_private_key =
-        slip10::derive_key_from_path(&master_seed, slip10::Curve::Ed25519, &seed_phrase_hd_path)
-            .map_err(|err| {
-                color_eyre::Report::msg(format!(
-                    "Failed to derive a key from the master key: {}",
-                    err
-                ))
-            })?;
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let derived_private_key = slipped10::derive_key_from_path(
+        &master_seed,
+        slipped10::Curve::Ed25519,
+        &seed_phrase_hd_path,
+    )
+    .map_err(|err| {
+        color_eyre::Report::msg(format!(
+            "Failed to derive a key from the master key: {}",
+            err
+        ))
+    })?;
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
     let public_key_str = format!(
         "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
+        bs58::encode(&signing_key.verifying_key()).into_string()
     );
     Ok(near_crypto::PublicKey::from_str(&public_key_str)?)
 }
@@ -574,13 +574,13 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         } else {
             let mnemonic =
                 bip39::Mnemonic::generate(generate_keypair.new_master_seed_phrase_words_count)?;
-            let master_seed_phrase = mnemonic.word_iter().collect::<Vec<&str>>().join(" ");
+            let master_seed_phrase = mnemonic.words().collect::<Vec<&str>>().join(" ");
             (master_seed_phrase, mnemonic.to_seed(""))
         };
 
-    let derived_private_key = slip10::derive_key_from_path(
+    let derived_private_key = slipped10::derive_key_from_path(
         &master_seed,
-        slip10::Curve::Ed25519,
+        slipped10::Curve::Ed25519,
         &generate_keypair.seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -590,21 +590,14 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         ))
     })?;
 
-    let secret_keypair = {
-        let secret = ed25519_dalek::SecretKey::from_bytes(&derived_private_key.key)?;
-        let public = ed25519_dalek::PublicKey::from(&secret);
-        ed25519_dalek::Keypair { secret, public }
-    };
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
-    let implicit_account_id =
-        near_primitives::types::AccountId::try_from(hex::encode(secret_keypair.public))?;
-    let public_key_str = format!(
-        "ed25519:{}",
-        bs58::encode(&secret_keypair.public).into_string()
-    );
+    let public = signing_key.verifying_key();
+    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public))?;
+    let public_key_str = format!("ed25519:{}", bs58::encode(&public).into_string());
     let secret_keypair_str = format!(
         "ed25519:{}",
-        bs58::encode(secret_keypair.to_bytes()).into_string()
+        bs58::encode(signing_key.to_keypair_bytes()).into_string()
     );
     let key_pair_properties: KeyPairProperties = KeyPairProperties {
         seed_phrase_hd_path: generate_keypair.seed_phrase_hd_path,
@@ -614,6 +607,25 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         secret_keypair_str,
     };
     Ok(key_pair_properties)
+}
+
+pub fn print_full_signed_transaction(transaction: near_primitives::transaction::SignedTransaction) {
+    eprintln!("{:<25} {}\n", "signature:", transaction.signature);
+    crate::common::print_full_unsigned_transaction(transaction.transaction);
+}
+
+pub fn print_full_unsigned_transaction(transaction: near_primitives::transaction::Transaction) {
+    eprintln!(
+        "Unsigned transaction hash (Base58-encoded SHA-256 hash): {}\n\n",
+        transaction.get_hash_and_size().0
+    );
+
+    eprintln!("{:<13} {}", "public_key:", &transaction.public_key());
+    eprintln!("{:<13} {}", "nonce:", &transaction.nonce());
+    eprintln!("{:<13} {}", "block_hash:", &transaction.block_hash());
+
+    let prepopulated = crate::commands::PrepopulatedTransaction::from(transaction);
+    print_unsigned_transaction(&prepopulated);
 }
 
 pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTransaction) {
@@ -637,8 +649,13 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "--", "create account:", &transaction.receiver_id
                 )
             }
-            near_primitives::transaction::Action::DeployContract(_) => {
-                eprintln!("{:>5} {:<20}", "--", "deploy contract")
+            near_primitives::transaction::Action::DeployContract(code) => {
+                let code_hash = CryptoHash::hash_bytes(&code.code);
+                eprintln!(
+                    "{:>5} {:<70}",
+                    "--",
+                    format!("deploy contract {:?}", code_hash)
+                )
             }
             near_primitives::transaction::Action::FunctionCall(function_call_action) => {
                 eprintln!("{:>5} {:<20}", "--", "function call:");
@@ -657,10 +674,14 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                                 .replace('\n', "\n                                 ")
                         }
                         Err(_) => {
-                            format!(
-                                "<non-printable data ({})>",
-                                bytesize::ByteSize(function_call_action.args.len() as u64)
-                            )
+                            if let Ok(args) = String::from_utf8(function_call_action.args.clone()) {
+                                args
+                            } else {
+                                format!(
+                                    "<non-printable data ({})>",
+                                    bytesize::ByteSize(function_call_action.args.len() as u64)
+                                )
+                            }
                         }
                     }
                 );
@@ -674,7 +695,9 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "deposit:",
-                    crate::common::NearBalance::from_yoctonear(function_call_action.deposit)
+                    crate::types::near_token::NearToken::from_yoctonear(
+                        function_call_action.deposit
+                    )
                 );
             }
             near_primitives::transaction::Action::Transfer(transfer_action) => {
@@ -682,7 +705,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>5} {:<20} {}",
                     "--",
                     "transfer deposit:",
-                    crate::common::NearBalance::from_yoctonear(transfer_action.deposit)
+                    crate::types::near_token::NearToken::from_yoctonear(transfer_action.deposit)
                 );
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
@@ -695,7 +718,7 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     "{:>18} {:<13} {}",
                     "",
                     "stake:",
-                    crate::common::NearBalance::from_yoctonear(stake_action.stake)
+                    crate::types::near_token::NearToken::from_yoctonear(stake_action.stake)
                 );
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
@@ -773,7 +796,7 @@ fn print_value_successful_transaction(
                 eprintln!(
                     "<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
-                    crate::common::NearBalance::from_yoctonear(deposit),
+                    crate::types::near_token::NearToken::from_yoctonear(deposit),
                     transaction_info.transaction.receiver_id,
                 );
             }
@@ -781,11 +804,18 @@ fn print_value_successful_transaction(
                 stake,
                 public_key: _,
             } => {
-                eprintln!(
-                    "Validator <{}> has successfully staked {}.",
-                    transaction_info.transaction.signer_id,
-                    crate::common::NearBalance::from_yoctonear(stake),
-                );
+                if stake == 0 {
+                    eprintln!(
+                        "Validator <{}> successfully unstaked.",
+                        transaction_info.transaction.signer_id,
+                    );
+                } else {
+                    eprintln!(
+                        "Validator <{}> has successfully staked {}.",
+                        transaction_info.transaction.signer_id,
+                        crate::types::near_token::NearToken::from_yoctonear(stake),
+                    );
+                }
             }
             near_primitives::views::ActionView::AddKey {
                 public_key,
@@ -822,61 +852,74 @@ fn print_value_successful_transaction(
 }
 
 pub fn rpc_transaction_error(
-    err: near_jsonrpc_client::errors::JsonRpcError<
+    err: &near_jsonrpc_client::errors::JsonRpcError<
         near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError,
     >,
-) -> CliResult {
+) -> color_eyre::Result<String> {
     match &err {
         near_jsonrpc_client::errors::JsonRpcError::TransportError(_rpc_transport_error) => {
-            eprintln!("Transport error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+            Ok("Transport error transaction".to_string())
         }
         near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::TimeoutError => {
-                    eprintln!("Timeout error transaction.\nPlease wait. The next try to send this transaction is happening right now ...");
+                    Ok("Timeout error transaction".to_string())
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
-                    return handler_invalid_tx_error(context);
+                    match convert_invalid_tx_error_to_cli_result(context) {
+                        Ok(_) => Ok("".to_string()),
+                        Err(err) => Err(err)
+                    }
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err))
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::RequestRouted{transaction_hash} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", transaction_hash, err));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", transaction_hash, err))
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::UnknownTransaction{requested_transaction_hash} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", requested_transaction_hash, err));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", requested_transaction_hash, err))
                 }
                 near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InternalError{debug_info} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", debug_info));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", debug_info))
                 }
             }
             near_jsonrpc_client::errors::JsonRpcServerError::RequestValidationError(rpc_request_validation_error) => {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Incompatible request with the server: {:#?}",  rpc_request_validation_error));
+                color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Incompatible request with the server: {:#?}",  rpc_request_validation_error))
             }
             near_jsonrpc_client::errors::JsonRpcServerError::InternalError{ info } => {
-                eprintln!("Internal server error: {}.\nPlease wait. The next try to send this transaction is happening right now ...", info.clone().unwrap_or_default());
+                Ok(format!("Internal server error: {}", info.clone().unwrap_or_default()))
             }
             near_jsonrpc_client::errors::JsonRpcServerError::NonContextualError(rpc_error) => {
-                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Unexpected response: {}", rpc_error));
+                color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Unexpected response: {}", rpc_error))
             }
             near_jsonrpc_client::errors::JsonRpcServerError::ResponseStatusError(json_rpc_server_response_status_error) => match json_rpc_server_response_status_error {
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unauthorized => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use."));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use."))
                 }
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TooManyRequests => {
-                    eprintln!("JSON RPC server is currently busy.\nPlease wait. The next try to send this transaction is happening right now ...");
+                    Ok("JSON RPC server is currently busy".to_string())
                 }
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
-                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status));
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status))
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::BadRequest => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with a bad request. Please, check your request parameters."))
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TimeoutError => {
+                    Ok("Timeout error while sending a request to the JSON RPC server".to_string())
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::ServiceUnavailable => {
+                    Ok("JSON RPC server is currently unavailable".to_string())
                 }
             }
         }
     }
-    Ok(())
 }
 
-pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -> crate::CliResult {
+pub fn convert_action_error_to_cli_result(
+    action_error: &near_primitives::errors::ActionError,
+) -> crate::CliResult {
     match &action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id))
@@ -933,7 +976,7 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(*amount)
+                crate::types::near_token::NearToken::from_yoctonear(*amount)
             ))
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -951,8 +994,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                crate::common::NearBalance::from_yoctonear(*balance),
-                crate::common::NearBalance::from_yoctonear(*stake)
+                crate::types::near_token::NearToken::from_yoctonear(*balance),
+                crate::types::near_token::NearToken::from_yoctonear(*stake)
             ))
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -962,8 +1005,8 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                crate::common::NearBalance::from_yoctonear(*stake),
-                crate::common::NearBalance::from_yoctonear(*minimum_stake)
+                crate::types::near_token::NearToken::from_yoctonear(*stake),
+                crate::types::near_token::NearToken::from_yoctonear(*minimum_stake)
             ))
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -1011,11 +1054,14 @@ pub fn print_action_error(action_error: &near_primitives::errors::ActionError) -
             upper_bound,
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}"))
+        },
+        near_primitives::errors::ActionErrorKind::NonRefundableTransferToExistingAccount { account_id } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Non-refundable storage transfer to an existing account <{account_id}> is not allowed according to NEP-491."))
         }
     }
 }
 
-pub fn handler_invalid_tx_error(
+pub fn convert_invalid_tx_error_to_cli_result(
     invalid_tx_error: &near_primitives::errors::InvalidTxError,
 ) -> crate::CliResult {
     match invalid_tx_error {
@@ -1037,8 +1083,8 @@ pub fn handler_invalid_tx_error(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        crate::common::NearBalance::from_yoctonear(*allowance),
-                        crate::common::NearBalance::from_yoctonear(*cost)
+                        crate::types::near_token::NearToken::from_yoctonear(*allowance),
+                        crate::types::near_token::NearToken::from_yoctonear(*cost)
                     ))
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -1067,14 +1113,14 @@ pub fn handler_invalid_tx_error(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(*balance),
-                crate::common::NearBalance::from_yoctonear(*cost)
+                crate::types::near_token::NearToken::from_yoctonear(*balance),
+                crate::types::near_token::NearToken::from_yoctonear(*cost)
             ))
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                crate::common::NearBalance::from_yoctonear(*amount)
+                crate::types::near_token::NearToken::from_yoctonear(*amount)
             ))
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
@@ -1128,7 +1174,7 @@ pub fn handler_invalid_tx_error(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The attached amount of gas in a FunctionCall action has to be a positive number."))
                 }
                 near_primitives::errors::ActionsValidationError::DelegateActionMustBeOnlyOne => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateActionMustBeOnlyOne"))
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The transaction contains more than one delegation action"))
                 }
                 near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Protocol Feature {} is unsupported in version {}", protocol_feature, version))
@@ -1138,29 +1184,86 @@ pub fn handler_invalid_tx_error(
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The size ({}) of serialized transaction exceeded the limit ({}).", size, limit))
         }
+        near_primitives::errors::InvalidTxError::InvalidTransactionVersion => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid transaction version"))
+        },
+        near_primitives::errors::InvalidTxError::StorageError(error) => match error {
+            near_primitives::errors::StorageError::StorageInternalError => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Internal storage error")),
+            near_primitives::errors::StorageError::MissingTrieValue(_, _) => todo!(),
+            near_primitives::errors::StorageError::UnexpectedTrieValue => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Unexpected trie value")),
+            near_primitives::errors::StorageError::StorageInconsistentState(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The storage is in the incosistent state: {}", message)),
+            near_primitives::errors::StorageError::FlatStorageBlockNotSupported(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The block is not supported by flat storage: {}", message)),
+            near_primitives::errors::StorageError::MemTrieLoadingError(message) =>  color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The trie is not loaded in memory: {}", message)),
+        },
+        near_primitives::errors::InvalidTxError::ShardCongested { shard_id, congestion_level } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is too congested ({congestion_level:.2}/1.00) and can't accept new transaction")),
+        near_primitives::errors::InvalidTxError::ShardStuck { shard_id, missed_chunks } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is {missed_chunks} blocks behind and can't accept new transaction until it will be in the sync")),
     }
 }
 
-pub fn print_transaction_error(
-    tx_execution_error: &near_primitives::errors::TxExecutionError,
-) -> crate::CliResult {
-    eprintln!("Failed transaction");
-    match tx_execution_error {
-        near_primitives::errors::TxExecutionError::ActionError(action_error) => {
-            print_action_error(action_error)
-        }
-        near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
-            handler_invalid_tx_error(invalid_tx_error)
-        }
+fn get_near_usd_exchange_rate(coingecko_url: &url::Url) -> color_eyre::Result<f64> {
+    #[derive(serde::Deserialize)]
+    struct CoinGeckoResponse {
+        near: CoinGeckoNearData,
     }
+
+    #[derive(serde::Deserialize)]
+    struct CoinGeckoNearData {
+        usd: f64,
+    }
+
+    let coingecko_exchange_rate_api_url =
+        coingecko_url.join("api/v3/simple/price?ids=near&vs_currencies=usd")?;
+    let mut last_error_message = String::new();
+
+    for _ in 0..10 {
+        match reqwest::blocking::get(coingecko_exchange_rate_api_url.clone()) {
+            Ok(response) => match response.json::<CoinGeckoResponse>() {
+                Ok(parsed_body) => return Ok(parsed_body.near.usd),
+                Err(err) => {
+                    last_error_message =
+                        format!("Failed to parse the response from Coingecko API as JSON: {err}");
+                }
+            },
+            Err(err) => {
+                last_error_message =
+                    format!("Failed to get the response from Coingecko API: {err}");
+            }
+        }
+
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+
+    Err(color_eyre::eyre::eyre!(last_error_message))
+}
+
+fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decimal> {
+    let tokens_decimal = rust_decimal::Decimal::from_u128(tokens)?;
+    let price_decimal = rust_decimal::Decimal::from_f64(price)?;
+
+    let divisor = rust_decimal::Decimal::from_u128(10u128.pow(24))?;
+    let tokens_decimal = tokens_decimal / divisor;
+
+    Some(tokens_decimal * price_decimal)
 }
 
 pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
 ) -> crate::CliResult {
-    eprintln!("--- Logs ---------------------------");
+    let near_usd_exchange_rate: Option<Result<f64, color_eyre::eyre::Error>> = network_config
+        .coingecko_url
+        .as_ref()
+        .map(get_near_usd_exchange_rate);
+
+    eprintln!("\n--- Logs ---------------------------"); // "\n" - required for correct display after {span_name}
+
+    let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
+    let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
+
     for receipt in transaction_info.receipts_outcome.iter() {
+        total_gas_burnt += receipt.outcome.gas_burnt;
+        total_tokens_burnt += receipt.outcome.tokens_burnt;
+
         if receipt.outcome.logs.is_empty() {
             eprintln!("Logs [{}]:   No logs", receipt.outcome.executor_id);
         } else {
@@ -1168,11 +1271,20 @@ pub fn print_transaction_status(
             eprintln!("  {}", receipt.outcome.logs.join("\n  "));
         };
     }
-    match &transaction_info.status {
+
+    let return_value = match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-            return print_transaction_error(tx_execution_error);
+            eprintln!("--- Transaction failed ------------");
+            match tx_execution_error {
+                near_primitives::errors::TxExecutionError::ActionError(action_error) => {
+                    convert_action_error_to_cli_result(action_error)
+                }
+                near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
+                    convert_invalid_tx_error_to_cli_result(invalid_tx_error)
+                }
+            }
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
             eprintln!("--- Result -------------------------");
@@ -1188,14 +1300,32 @@ pub fn print_transaction_status(
                 eprintln!("The returned value is not printable (binary data)");
             }
             eprintln!("------------------------------------\n");
-            print_value_successful_transaction(transaction_info.clone())
+            print_value_successful_transaction(transaction_info.clone());
+            Ok(())
         }
     };
+
+    eprintln!();
+    eprintln!("Gas burned: {}", NearGas::from_gas(total_gas_burnt));
+    eprintln!(
+        "Transaction fee: {}{}",
+        crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
+        match near_usd_exchange_rate {
+            Some(Ok(exchange_rate)) => calculate_usd_amount(total_tokens_burnt, exchange_rate).map_or_else(
+                || format!(" (USD equivalent is too big to be displayed, using ${:.2} USD/NEAR exchange rate)", exchange_rate),
+                |amount| format!(" (approximately ${:.8} USD, using ${:.2} USD/NEAR exchange rate)", amount, exchange_rate)
+            ),
+            Some(Err(err)) => format!(" (USD equivalent is unavailable due to an error: {})", err),
+            None => String::new(),
+        }
+    );
+
     eprintln!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
         id=transaction_info.transaction_outcome.id,
         path=network_config.explorer_transaction_url
     );
-    Ok(())
+
+    return_value
 }
 
 pub fn save_access_key_to_keychain(
@@ -1212,7 +1342,7 @@ pub fn save_access_key_to_keychain(
     keyring::Entry::new(&service_name, &format!("{}:{}", account_id, public_key_str))
         .wrap_err("Failed to open keychain")?
         .set_password(key_pair_properties_buf)
-        .wrap_err("Failed to save password to keychain")?;
+        .wrap_err("Failed to save password to keychain. You may need to install the secure keychain package by following this instruction: https://github.com/jaraco/keyring#using-keyring-on-headless-linux-systems")?;
 
     Ok("The data for the access key is saved in the keychain".to_string())
 }
@@ -1269,39 +1399,6 @@ pub fn save_access_key_to_legacy_keychain(
             &path_with_account_name.display()
         ))
     }
-}
-
-pub fn get_config_toml() -> color_eyre::eyre::Result<crate::config::Config> {
-    if let Some(mut path_config_toml) = dirs::config_dir() {
-        path_config_toml.extend(&["near-cli", "config.toml"]);
-
-        if !path_config_toml.is_file() {
-            write_config_toml(crate::config::Config::default())?;
-        };
-        let config_toml = std::fs::read_to_string(&path_config_toml)?;
-        toml::from_str(&config_toml).or_else(|err| {
-            eprintln!("Warning: `near` CLI configuration file stored at {path_config_toml:?} could not be parsed due to: {err}");
-            eprintln!("Note: The default configuration printed below will be used instead:\n");
-            let default_config = crate::config::Config::default();
-            eprintln!("{}", toml::to_string(&default_config)?);
-            Ok(default_config)
-        })
-    } else {
-        Ok(crate::config::Config::default())
-    }
-}
-pub fn write_config_toml(config: crate::config::Config) -> CliResult {
-    let config_toml = toml::to_string(&config)?;
-    let mut path_config_toml = dirs::config_dir().expect("Impossible to get your config dir!");
-    path_config_toml.push("near-cli");
-    std::fs::create_dir_all(&path_config_toml)?;
-    path_config_toml.push("config.toml");
-    std::fs::File::create(&path_config_toml)
-        .wrap_err_with(|| format!("Failed to create file: {path_config_toml:?}"))?
-        .write(config_toml.as_bytes())
-        .wrap_err_with(|| format!("Failed to write to file: {path_config_toml:?}"))?;
-    eprintln!("Note: `near` CLI configuration is stored in {path_config_toml:?}");
-    Ok(())
 }
 
 pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
@@ -1362,35 +1459,374 @@ fn is_executable<P: AsRef<std::path::Path>>(path: P) -> bool {
 }
 
 fn path_directories() -> Vec<std::path::PathBuf> {
-    let mut dirs = vec![];
     if let Some(val) = std::env::var_os("PATH") {
-        dirs.extend(std::env::split_paths(&val));
+        std::env::split_paths(&val).collect()
+    } else {
+        Vec::new()
     }
-    dirs
+}
+
+pub fn get_delegated_validator_list_from_mainnet(
+    network_connection: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
+) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let network_config = network_connection
+        .get("mainnet")
+        .wrap_err("There is no 'mainnet' network in your configuration.")?;
+
+    let epoch_validator_info = network_config
+        .json_rpc_client()
+        .blocking_call(
+            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
+                epoch_reference: near_primitives::types::EpochReference::Latest,
+            },
+        )
+        .wrap_err("Failed to get epoch validators information request.")?;
+
+    Ok(epoch_validator_info
+        .current_proposals
+        .into_iter()
+        .map(|current_proposal| current_proposal.take_account_id())
+        .chain(
+            epoch_validator_info
+                .current_validators
+                .into_iter()
+                .map(|current_validator| current_validator.account_id),
+        )
+        .chain(
+            epoch_validator_info
+                .next_validators
+                .into_iter()
+                .map(|next_validator| next_validator.account_id),
+        )
+        .collect())
+}
+
+#[tracing::instrument(
+    name = "Retrieving a list of delegated validators from \"mainnet\" ...",
+    skip_all
+)]
+pub fn get_used_delegated_validator_list(
+    config: &crate::config::Config,
+) -> color_eyre::eyre::Result<VecDeque<near_primitives::types::AccountId>> {
+    let used_account_list: VecDeque<UsedAccount> =
+        get_used_account_list(&config.credentials_home_dir);
+    let mut delegated_validator_list =
+        get_delegated_validator_list_from_mainnet(&config.network_connection)?;
+    let mut used_delegated_validator_list: VecDeque<near_primitives::types::AccountId> =
+        VecDeque::new();
+
+    for used_account in used_account_list {
+        if delegated_validator_list.remove(&used_account.account_id) {
+            used_delegated_validator_list.push_back(used_account.account_id);
+        }
+    }
+
+    used_delegated_validator_list.extend(delegated_validator_list);
+    Ok(used_delegated_validator_list)
+}
+
+pub fn input_staking_pool_validator_account_id(
+    config: &crate::config::Config,
+) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+    let used_delegated_validator_list = get_used_delegated_validator_list(config)?
+        .into_iter()
+        .map(String::from)
+        .collect::<Vec<_>>();
+    let validator_account_id_str = match Text::new("What is delegated validator account ID?")
+        .with_autocomplete(move |val: &str| {
+            Ok(used_delegated_validator_list
+                .iter()
+                .filter(|s| s.contains(val))
+                .cloned()
+                .collect())
+        })
+        .with_validator(|account_id_str: &str| {
+            match near_primitives::types::AccountId::validate(account_id_str) {
+                Ok(_) => Ok(inquire::validator::Validation::Valid),
+                Err(err) => Ok(inquire::validator::Validation::Invalid(
+                    inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
+                )),
+            }
+        })
+        .prompt()
+    {
+        Ok(value) => value,
+        Err(
+            inquire::error::InquireError::OperationCanceled
+            | inquire::error::InquireError::OperationInterrupted,
+        ) => return Ok(None),
+        Err(err) => return Err(err.into()),
+    };
+    let validator_account_id =
+        crate::types::account_id::AccountId::from_str(&validator_account_id_str)?;
+    update_used_account_list_as_non_signer(
+        &config.credentials_home_dir,
+        validator_account_id.as_ref(),
+    );
+    Ok(Some(validator_account_id))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StakingPoolInfo {
+    pub validator_id: near_primitives::types::AccountId,
+    pub fee: Option<RewardFeeFraction>,
+    pub delegators: Option<u64>,
+    pub stake: near_primitives::types::Balance,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+pub struct RewardFeeFraction {
+    pub numerator: u32,
+    pub denominator: u32,
+}
+
+#[tracing::instrument(name = "Getting a list of validators ...", skip_all)]
+pub fn get_validator_list(
+    network_config: &crate::config::NetworkConfig,
+) -> color_eyre::eyre::Result<Vec<StakingPoolInfo>> {
+    let json_rpc_client = network_config.json_rpc_client();
+
+    let validators_stake = get_validators_stake(&json_rpc_client)?;
+
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?;
+    let concurrency = 10;
+
+    let mut validator_list = runtime.block_on(
+        futures::stream::iter(validators_stake.iter())
+            .map(|(validator_account_id, stake)| async {
+                get_staking_pool_info(
+                    &json_rpc_client.clone(),
+                    validator_account_id.clone(),
+                    *stake,
+                )
+                .await
+            })
+            .buffer_unordered(concurrency)
+            .try_collect::<Vec<_>>(),
+    )?;
+    validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
+    Ok(validator_list)
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct StakingPool {
+    pool_id: near_primitives::types::AccountId,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct StakingResponse {
+    pools: Vec<StakingPool>,
+}
+
+#[tracing::instrument(name = "Getting historically delegated staking pools ...", skip_all)]
+pub fn fetch_historically_delegated_staking_pools(
+    fastnear_url: &url::Url,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let request =
+        reqwest::blocking::get(fastnear_url.join(&format!("v1/account/{}/staking", account_id))?)?;
+    let response: StakingResponse = request.json()?;
+
+    Ok(response
+        .pools
+        .into_iter()
+        .map(|pool| pool.pool_id)
+        .collect())
+}
+
+#[tracing::instrument(name = "Getting currently active staking pools ...", skip_all)]
+pub fn fetch_currently_active_staking_pools(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    staking_pools_factory_account_id: &near_primitives::types::AccountId,
+) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    let query_view_method_response = json_rpc_client
+        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::ViewState {
+                account_id: staking_pools_factory_account_id.clone(),
+                prefix: near_primitives::types::StoreKey::from(b"se".to_vec()),
+                include_proof: false,
+            },
+        })
+        .map_err(color_eyre::Report::msg)?;
+    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
+        query_view_method_response.kind
+    {
+        Ok(result
+            .values
+            .into_iter()
+            .filter_map(|item| near_primitives::borsh::from_slice(&item.value).ok())
+            .collect())
+    } else {
+        Err(color_eyre::Report::msg("Error call result".to_string()))
+    }
+}
+
+#[tracing::instrument(name = "Getting a stake of validators ...", skip_all)]
+pub fn get_validators_stake(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+) -> color_eyre::eyre::Result<
+    std::collections::HashMap<near_primitives::types::AccountId, near_primitives::types::Balance>,
+> {
+    let epoch_validator_info = json_rpc_client
+        .blocking_call(
+            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
+                epoch_reference: near_primitives::types::EpochReference::Latest,
+            },
+        )
+        .wrap_err("Failed to get epoch validators information request.")?;
+
+    Ok(epoch_validator_info
+        .current_proposals
+        .into_iter()
+        .map(|validator_stake_view| {
+            let validator_stake = validator_stake_view.into_validator_stake();
+            validator_stake.account_and_stake()
+        })
+        .chain(epoch_validator_info.current_validators.into_iter().map(
+            |current_epoch_validator_info| {
+                (
+                    current_epoch_validator_info.account_id,
+                    current_epoch_validator_info.stake,
+                )
+            },
+        ))
+        .chain(
+            epoch_validator_info
+                .next_validators
+                .into_iter()
+                .map(|next_epoch_validator_info| {
+                    (
+                        next_epoch_validator_info.account_id,
+                        next_epoch_validator_info.stake,
+                    )
+                }),
+        )
+        .collect())
+}
+
+async fn get_staking_pool_info(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    validator_account_id: near_primitives::types::AccountId,
+    stake: u128,
+) -> color_eyre::Result<StakingPoolInfo> {
+    let fee = match json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: validator_account_id.clone(),
+                method_name: "get_reward_fee_fraction".to_string(),
+                args: near_primitives::types::FunctionArgs::from(vec![]),
+            },
+        })
+        .await
+    {
+        Ok(response) => Some(
+            response
+                .call_result()?
+                .parse_result_from_json::<RewardFeeFraction>()
+                .wrap_err(
+                    "Failed to parse return value of view function call for RewardFeeFraction.",
+                )?,
+        ),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
+                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
+                    ..
+                },
+            ),
+        )) => None,
+        Err(err) => return Err(err.into()),
+    };
+
+    let delegators = match json_rpc_client
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: validator_account_id.clone(),
+                method_name: "get_number_of_accounts".to_string(),
+                args: near_primitives::types::FunctionArgs::from(vec![]),
+            },
+        })
+        .await
+    {
+        Ok(response) => Some(
+            response
+                .call_result()?
+                .parse_result_from_json::<u64>()
+                .wrap_err("Failed to parse return value of view function call for u64.")?,
+        ),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
+                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
+                    ..
+                },
+            ),
+        )) => None,
+        Err(err) => return Err(err.into()),
+    };
+
+    Ok(StakingPoolInfo {
+        validator_id: validator_account_id.clone(),
+        fee,
+        delegators,
+        stake,
+    })
 }
 
 pub fn display_account_info(
     viewed_at_block_hash: &CryptoHash,
     viewed_at_block_height: &near_primitives::types::BlockHeight,
     account_id: &near_primitives::types::AccountId,
+    delegated_stake: color_eyre::Result<
+        std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
+    >,
     account_view: &near_primitives::views::AccountView,
-    access_keys: &[near_primitives::views::AccessKeyInfoView],
+    access_key_list: Option<&near_primitives::views::AccessKeyList>,
+    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
-    let mut table = Table::new();
+    eprintln!();
+    let mut table: Table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
-    table.add_row(prettytable::row![
-        Fy->account_id,
-        format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
-    ]);
+    profile_table(
+        viewed_at_block_hash,
+        viewed_at_block_height,
+        account_id,
+        optional_account_profile,
+        &mut table,
+    );
+
     table.add_row(prettytable::row![
         Fg->"Native account balance",
-        Fy->NearBalance::from_yoctonear(account_view.amount)
+        Fy->near_token::NearToken::from_yoctonear(account_view.amount)
     ]);
     table.add_row(prettytable::row![
         Fg->"Validator stake",
-        Fy->NearBalance::from_yoctonear(account_view.locked)
+        Fy->near_token::NearToken::from_yoctonear(account_view.locked)
     ]);
+
+    match delegated_stake {
+        Ok(delegated_stake) => {
+            for (validator_id, stake) in delegated_stake {
+                table.add_row(prettytable::row![
+                    Fg->format!("Delegated stake with <{validator_id}>"),
+                    Fy->stake
+                ]);
+            }
+        }
+        Err(err) => {
+            table.add_row(prettytable::row![
+                Fg->"Delegated stake",
+                Fr->err
+            ]);
+        }
+    }
+
     table.add_row(prettytable::row![
         Fg->"Storage used by the account",
         Fy->bytesize::ByteSize(account_view.storage_usage),
@@ -1406,33 +1842,155 @@ pub fn display_account_info(
         Fy->contract_status
     ]);
 
-    let access_keys_summary = if access_keys.is_empty() {
-        "Account is locked (no access keys)".to_string()
+    let access_keys_summary = if let Some(info) = access_key_list {
+        let keys = &info.keys;
+        if keys.is_empty() {
+            "Account is locked (no access keys)".to_string()
+        } else {
+            let full_access_keys_count = keys
+                .iter()
+                .filter(|access_key| {
+                    matches!(
+                        access_key.access_key.permission,
+                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                    )
+                })
+                .count();
+            format!(
+                "{} full access keys and {} function-call-only access keys",
+                full_access_keys_count,
+                keys.len() - full_access_keys_count
+            )
+        }
     } else {
-        let full_access_keys_count = access_keys
-            .iter()
-            .filter(|access_key| {
-                matches!(
-                    access_key.access_key.permission,
-                    near_primitives::views::AccessKeyPermissionView::FullAccess
-                )
-            })
-            .count();
-        format!(
-            "{} full access keys and {} function-call-only access keys",
-            full_access_keys_count,
-            access_keys.len() - full_access_keys_count
-        )
+        "Warning: Failed to retrieve access keys. Retry later."
+            .red()
+            .to_string()
     };
+
     table.add_row(prettytable::row![
         Fg->"Access keys",
         Fy->access_keys_summary
     ]);
-
     table.printstd();
+}
 
-    if !access_keys.is_empty() {
-        display_access_key_list(access_keys);
+pub fn display_account_profile(
+    viewed_at_block_hash: &CryptoHash,
+    viewed_at_block_height: &near_primitives::types::BlockHeight,
+    account_id: &near_primitives::types::AccountId,
+    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
+) {
+    let mut table = Table::new();
+    table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
+    profile_table(
+        viewed_at_block_hash,
+        viewed_at_block_height,
+        account_id,
+        optional_account_profile,
+        &mut table,
+    );
+    table.printstd();
+}
+
+fn profile_table(
+    viewed_at_block_hash: &CryptoHash,
+    viewed_at_block_height: &near_primitives::types::BlockHeight,
+    account_id: &near_primitives::types::AccountId,
+    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
+    table: &mut Table,
+) {
+    if let Some(account_profile) = optional_account_profile {
+        if let Some(name) = &account_profile.profile.name {
+            table.add_row(prettytable::row![
+                Fy->format!("{account_id} ({name})"),
+                format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
+            ]);
+        } else {
+            table.add_row(prettytable::row![
+                Fy->account_id,
+                format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
+            ]);
+        }
+        if let Some(image) = &account_profile.profile.image {
+            if let Some(url) = &image.url {
+                table.add_row(prettytable::row![
+                    Fg->"Image (url)",
+                    Fy->url
+                ]);
+            }
+            if let Some(ipfs_cid) = &image.ipfs_cid {
+                table.add_row(prettytable::row![
+                    Fg->"Image (ipfs_cid)",
+                    Fy->ipfs_cid
+                ]);
+            }
+        }
+        if let Some(background_image) = &account_profile.profile.background_image {
+            if let Some(url) = &background_image.url {
+                table.add_row(prettytable::row![
+                    Fg->"Background image (url)",
+                    Fy->url
+                ]);
+            }
+            if let Some(ipfs_cid) = &background_image.ipfs_cid {
+                table.add_row(prettytable::row![
+                    Fg->"Background image (ipfs_cid)",
+                    Fy->ipfs_cid
+                ]);
+            }
+        }
+        if let Some(description) = &account_profile.profile.description {
+            table.add_row(prettytable::row![
+                Fg->"Description",
+                Fy->format!("{}", description)
+            ]);
+        }
+        if let Some(linktree) = &account_profile.profile.linktree {
+            table.add_row(prettytable::row![
+                Fg->"Linktree",
+                Fy->""
+            ]);
+            for (key, optional_value) in linktree.iter() {
+                if let Some(value) = &optional_value {
+                    if key == "github" {
+                        table.add_row(prettytable::row![
+                            Fg->"",
+                            Fy->format!("https://github.com/{value}")
+                        ]);
+                    } else if key == "twitter" {
+                        table.add_row(prettytable::row![
+                            Fg->"",
+                            Fy->format!("https://twitter.com/{value}")
+                        ]);
+                    } else if key == "telegram" {
+                        table.add_row(prettytable::row![
+                            Fg->"",
+                            Fy->format!("https://t.me/{value}")
+                        ]);
+                    }
+                }
+            }
+        }
+        if let Some(tags) = &account_profile.profile.tags {
+            let keys = tags.keys().cloned().collect::<Vec<String>>().join(", ");
+            table.add_row(prettytable::row![
+                Fg->"Tags",
+                Fy->keys
+            ]);
+        }
+    } else {
+        table.add_row(prettytable::row![
+            Fy->account_id,
+            format!("At block #{}\n({})", viewed_at_block_height, viewed_at_block_hash)
+        ]);
+        table.add_row(prettytable::row![
+            Fd->"NEAR Social profile unavailable",
+            Fd->format!("The profile can be edited at {}\nor using the cli command: {}\n(https://github.com/bos-cli-rs/bos-cli-rs)",
+                "https://near.social".blue(),
+                "bos social-db manage-profile".blue()
+            )
+        ]);
     }
 }
 
@@ -1451,7 +2009,7 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                 let allowance_message = match allowance {
                     Some(amount) => format!(
                         "with an allowance of {}",
-                        NearBalance::from_yoctonear(*amount)
+                        near_token::NearToken::from_yoctonear(*amount)
                     ),
                     None => "with no limit".to_string(),
                 };
@@ -1489,6 +2047,9 @@ pub fn input_network_name(
     config: &crate::config::Config,
     account_ids: &[near_primitives::types::AccountId],
 ) -> color_eyre::eyre::Result<Option<String>> {
+    if config.network_connection.len() == 1 {
+        return Ok(config.network_names().pop());
+    }
     let variants = if !account_ids.is_empty() {
         let (mut matches, non_matches): (Vec<_>, Vec<_>) = config
             .network_connection
@@ -1528,19 +2089,14 @@ pub fn input_network_name(
     }
 }
 
-#[easy_ext::ext(JsonRpcClientExt)]
-pub impl near_jsonrpc_client::JsonRpcClient {
+pub trait JsonRpcClientExt {
     fn blocking_call<M>(
         &self,
         method: M,
     ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
     where
         M: near_jsonrpc_client::methods::RpcMethod,
-    {
-        tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(self.call(method))
-    }
+        M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display;
 
     /// A helper function to make a view-funcation call using JSON encoding for the function
     /// arguments and function return value.
@@ -1550,19 +2106,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         method_name: &str,
         args: Vec<u8>,
         block_reference: near_primitives::types::BlockReference,
-    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
-        let query_view_method_response = self
-            .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference,
-                request: near_primitives::views::QueryRequest::CallFunction {
-                    account_id: account_id.clone(),
-                    method_name: method_name.to_owned(),
-                    args: near_primitives::types::FunctionArgs::from(args),
-                },
-            })
-            .wrap_err("Failed to make a view-function call")?;
-        query_view_method_response.call_result()
-    }
+    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error>;
 
     fn blocking_call_view_access_key(
         &self,
@@ -1574,15 +2118,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         near_jsonrpc_client::errors::JsonRpcError<
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
-    > {
-        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccessKey {
-                account_id: account_id.clone(),
-                public_key: public_key.clone(),
-            },
-        })
-    }
+    >;
 
     fn blocking_call_view_access_key_list(
         &self,
@@ -1593,14 +2129,7 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         near_jsonrpc_client::errors::JsonRpcError<
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
-    > {
-        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                account_id: account_id.clone(),
-            },
-        })
-    }
+    >;
 
     fn blocking_call_view_account(
         &self,
@@ -1611,33 +2140,259 @@ pub impl near_jsonrpc_client::JsonRpcClient {
         near_jsonrpc_client::errors::JsonRpcError<
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
+    >;
+}
+
+impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
+    fn blocking_call<M>(
+        &self,
+        method: M,
+    ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
+    where
+        M: near_jsonrpc_client::methods::RpcMethod,
+        M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
+    {
+        if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method) {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "HTTP POST {}",
+                self.server_addr()
+            );
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON Request Body:\n{}",
+                indent_payload(&format!("{:#}", request_payload))
+            );
+        }
+
+        tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(self.call(method))
+            .inspect_err(|err| match err {
+                near_jsonrpc_client::errors::JsonRpcError::TransportError(transport_error) => {
+                    tracing::info!(
+                        target: "near_teach_me",
+                        parent: &tracing::Span::none(),
+                        "JSON RPC Request failed due to connectivity issue:\n{}",
+                        indent_payload(&format!("{:#?}", transport_error))
+                    );
+                }
+                near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(handler_error),
+                ) => {
+                    tracing::info!(
+                        target: "near_teach_me",
+                        parent: &tracing::Span::none(),
+                        "JSON RPC Request returned a handling error:\n{}",
+                        indent_payload(&serde_json::to_string_pretty(handler_error).unwrap_or_else(|_| handler_error.to_string()))
+                    );
+                }
+                near_jsonrpc_client::errors::JsonRpcError::ServerError(server_error) => {
+                    tracing::info!(
+                        target: "near_teach_me",
+                        parent: &tracing::Span::none(),
+                        "JSON RPC Request returned a generic server error:\n{}",
+                        indent_payload(&format!("{:#?}", server_error))
+                    );
+                }
+            })
+    }
+
+    /// A helper function to make a view-funcation call using JSON encoding for the function
+    /// arguments and function return value.
+    #[tracing::instrument(name = "Getting the result of executing", skip_all)]
+    fn blocking_call_view_function(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        function_name: &str,
+        args: Vec<u8>,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
+        tracing::Span::current().pb_set_message(&format!(
+            "a read-only function '{function_name}' of the <{account_id}> contract ..."
+        ));
+        tracing::info!(target: "near_teach_me", "a read-only function '{function_name}' of the <{account_id}> contract ...");
+
+        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: account_id.clone(),
+                method_name: function_name.to_owned(),
+                args: near_primitives::types::FunctionArgs::from(args),
+            },
+        };
+
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to call a read-only function `{}` on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
+            function_name,
+            account_id
+        );
+
+        let query_view_method_response = self
+            .blocking_call(query_view_method_request)
+            .wrap_err("Read-only function execution failed")?;
+
+        query_view_method_response.call_result()
+            .inspect(|call_result| {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Response:\n{}",
+                    indent_payload(&format!(
+                        "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
+                        query_view_method_response.block_hash,
+                        query_view_method_response.block_height,
+                        call_result.logs,
+                        call_result.result
+                    ))
+                );
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
+                    indent_payload(
+                        &String::from_utf8(call_result.result.clone())
+                            .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
+                    )
+                );
+            })
+            .inspect_err(|_| {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Response:\n{}",
+                    indent_payload("Internal error: Received unexpected query kind in response to a view-function query call")
+                );
+            })
+    }
+
+    #[tracing::instrument(name = "Getting access key information:", skip_all)]
+    fn blocking_call_view_access_key(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        public_key: &near_crypto::PublicKey,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
     > {
-        self.blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+        tracing::Span::current().pb_set_message(&format!(
+            "public key {public_key} on account <{account_id}>..."
+        ));
+        tracing::info!(target: "near_teach_me", "public key {public_key} on account <{account_id}>...");
+
+        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewAccessKey {
+                account_id: account_id.clone(),
+                public_key: public_key.clone(),
+            },
+        };
+
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to get an access key details for public key {} on account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key",
+            public_key,
+            account_id
+        );
+
+        self.blocking_call(query_view_method_request)
+            .inspect(teach_me_call_response)
+    }
+
+    #[tracing::instrument(name = "Getting a list of", skip_all)]
+    fn blocking_call_view_access_key_list(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    > {
+        tracing::Span::current()
+            .pb_set_message(&format!("access keys on account <{account_id}>..."));
+        tracing::info!(target: "near_teach_me", "access keys on account <{account_id}>...");
+
+        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                account_id: account_id.clone(),
+            },
+        };
+
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to get a list of keys for account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
+            account_id
+        );
+
+        self.blocking_call(query_view_method_request)
+            .inspect(teach_me_call_response)
+    }
+
+    #[tracing::instrument(name = "Getting information about", skip_all)]
+    fn blocking_call_view_account(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> Result<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_client::errors::JsonRpcError<
+            near_jsonrpc_primitives::types::query::RpcQueryError,
+        >,
+    > {
+        tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
+        tracing::info!(target: "near_teach_me", "account <{account_id}>...");
+
+        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
             request: near_primitives::views::QueryRequest::ViewAccount {
                 account_id: account_id.clone(),
             },
-        })
+        };
+
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to query information about account <{}>, learn more https://docs.near.org/api/rpc/contracts#view-account",
+            account_id
+        );
+
+        self.blocking_call(query_view_method_request)
+            .inspect(teach_me_call_response)
     }
 }
 
-use serde::de::{Deserialize, Deserializer};
-
-#[derive(Debug, Clone, serde::Deserialize)]
-pub struct StorageBalance {
-    #[serde(deserialize_with = "parse_u128_string")]
-    pub available: u128,
-    #[serde(deserialize_with = "parse_u128_string")]
-    pub total: u128,
+pub(crate) fn teach_me_call_response(response: &impl serde::Serialize) {
+    if let Ok(response_payload) = serde_json::to_value(response) {
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "JSON RPC Response:\n{}",
+            indent_payload(&format!("{:#}", response_payload))
+        );
+    }
 }
 
-fn parse_u128_string<'de, D>(deserializer: D) -> color_eyre::eyre::Result<u128, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    <std::string::String as Deserialize>::deserialize(deserializer)?
-        .parse::<u128>()
-        .map_err(serde::de::Error::custom)
+pub fn indent_payload(s: &str) -> String {
+    use std::fmt::Write;
+
+    let mut indented_string = String::new();
+    indenter::indented(&mut indented_string)
+        .with_str(" |    ")
+        .write_str(s)
+        .ok();
+    indented_string
 }
 
 #[easy_ext::ext(RpcQueryResponseExt)]
@@ -1889,288 +2644,4 @@ fn input_account_id_from_used_account_list(
     let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;
     update_used_account_list(credentials_home_dir, account_id.as_ref(), account_is_signer);
     Ok(Some(account_id))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::str::FromStr;
-
-    #[test]
-    fn near_balance_to_string_0_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 0
-            }
-            .to_string(),
-            "0 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_0dot02_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 20000000000000000000000 // 23 digits
-            }
-            .to_string(),
-            "0.02 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_0dot1_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 100000000000000000000000 // 24 digits
-            }
-            .to_string(),
-            "0.1 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_0dot00001230045600789_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 12300456007890000000 // 20 digits
-            }
-            .to_string(),
-            "0.00001230045600789 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_10_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 digits
-            }
-            .to_string(),
-            "10 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_10dot02_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 10020000000000000000000000 // 26 digits
-            }
-            .to_string(),
-            "10.02 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_1yocto_near() {
-        let yocto_near = NearBalance::from_yoctonear(1);
-        assert_eq!(
-            yocto_near.to_string(),
-            "0.000000000000000000000001 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_1_yocto_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 1
-            }
-            .to_string(),
-            "0.000000000000000000000001 NEAR".to_string()
-        )
-    }
-    #[test]
-    fn near_balance_to_string_100_yocto_near() {
-        assert_eq!(
-            NearBalance {
-                yoctonear_amount: 100
-            }
-            .to_string(),
-            "0.0000000000000000000001 NEAR".to_string()
-        )
-    }
-
-    #[test]
-    fn near_balance_from_str_currency_near() {
-        assert_eq!(
-            NearBalance::from_str("10 near").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 digits
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("10.055NEAR").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10055000000000000000000000 // 26 digits
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_currency_n() {
-        assert_eq!(
-            NearBalance::from_str("10 n").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 digits
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("10N ").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10000000000000000000000000 // 26 digits
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_f64_near() {
-        assert_eq!(
-            NearBalance::from_str("0.000001 near").unwrap(),
-            NearBalance {
-                yoctonear_amount: 1000000000000000000 // 18 digits
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_0_near() {
-        assert_eq!(
-            NearBalance::from_str("0 near").unwrap(),
-            NearBalance {
-                yoctonear_amount: 0
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_f64_near_without_int() {
-        let near_balance = NearBalance::from_str(".055NEAR");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: cannot parse integer from empty string".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_05_near() {
-        let near_balance = NearBalance::from_str("05NEAR");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: incorrect number entered".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_currency_ynear() {
-        assert_eq!(
-            NearBalance::from_str("100 ynear").unwrap(),
-            NearBalance {
-                yoctonear_amount: 100
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("100YNEAR ").unwrap(),
-            NearBalance {
-                yoctonear_amount: 100
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_currency_yn() {
-        assert_eq!(
-            NearBalance::from_str("9000 YN  ").unwrap(),
-            NearBalance {
-                yoctonear_amount: 9000
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("0 yn").unwrap(),
-            NearBalance {
-                yoctonear_amount: 0
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_currency_yoctonear() {
-        assert_eq!(
-            NearBalance::from_str("111YOCTONEAR").unwrap(),
-            NearBalance {
-                yoctonear_amount: 111
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("333 yoctonear").unwrap(),
-            NearBalance {
-                yoctonear_amount: 333
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_currency_yocton() {
-        assert_eq!(
-            NearBalance::from_str("10YOCTON").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10
-            }
-        );
-        assert_eq!(
-            NearBalance::from_str("10 yocton      ").unwrap(),
-            NearBalance {
-                yoctonear_amount: 10
-            }
-        );
-    }
-    #[test]
-    fn near_balance_from_str_f64_ynear() {
-        let near_balance = NearBalance::from_str("0.055yNEAR");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: invalid digit found in string".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_without_currency() {
-        let near_balance = NearBalance::from_str("100");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: incorrect currency value entered".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_incorrect_currency() {
-        let near_balance = NearBalance::from_str("100 UAH");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: incorrect currency value entered".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_invalid_double_dot() {
-        let near_balance = NearBalance::from_str("100.55.");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: incorrect currency value entered".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_large_fractional_part() {
-        let near_balance = NearBalance::from_str("100.1111122222333334444455555 n"); // 25 digits after "."
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: too large fractional part of a number".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_large_int_part() {
-        let near_balance = NearBalance::from_str("1234567890123456.0 n");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: underflow or overflow happens".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_without_fractional_part() {
-        let near_balance = NearBalance::from_str("100. n");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: cannot parse integer from empty string".to_string())
-        );
-    }
-    #[test]
-    fn near_balance_from_str_negative_value() {
-        let near_balance = NearBalance::from_str("-100 n");
-        assert_eq!(
-            near_balance,
-            Err("Near Balance: invalid digit found in string".to_string())
-        );
-    }
 }
