@@ -37,7 +37,7 @@ Successful transaction
 <volodymyr.testnet> has transferred 1 NEAR to <fro_volod.testnet> successfully.
 Transaction ID: G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaqmj8Nup2TaAg
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaqmj8Nup2TaAg
+https://testnet.nearblocks.io/txns/G4t6Sgz2FjnNpruYjPP1ZJAKfRmBffVaqmj8Nup2TaAg
 ```
 
 Набирая эту или другую команду вручную, Вы можете допустить ошибку, либо забыть последовательность набора команды.  

@@ -243,7 +243,7 @@ Gas burned: 0.447 Tgas
 Transaction fee: 0.0000446365125 NEAR (approximately $0.00025308 USD, using $5.67 USD/NEAR exchange rate)
 Transaction ID: F3eZmhtFekCrzKMbc3uk5UbKkMsuuecj6WbK9spcz8bW
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactionsF3eZmhtFekCrzKMbc3uk5UbKkMsuuecj6WbK9spcz8bW
+https://testnet.nearblocks.io/txnsF3eZmhtFekCrzKMbc3uk5UbKkMsuuecj6WbK9spcz8bW
 
 
 
@@ -659,7 +659,7 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 New account <test_fro.testnet> created successfully.
 Transaction ID: FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
+https://testnet.nearblocks.io/txns/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
 ```
 </details>
 
@@ -687,7 +687,7 @@ near account \
 New account <test_fro1.testnet> created successfully.
 Transaction ID: D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
+https://testnet.nearblocks.io/txns/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
 ```
 </details>
 
@@ -715,7 +715,7 @@ near account \
 New account <test_fro2.testnet> created successfully.
 Transaction ID: E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
+https://testnet.nearblocks.io/txns/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
 ```
 </details>
 
@@ -743,7 +743,7 @@ near account \
 New account <test_fro3.testnet> created successfully.
 Transaction ID: BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
+https://testnet.nearblocks.io/txns/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
 ```
 </details>
 
@@ -783,7 +783,7 @@ Transaction sent ...
 New account <new.fro_volod.testnet> created successfully.
 Transaction ID: DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
+https://testnet.nearblocks.io/txns/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 
 The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json
 The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet.json"
@@ -815,7 +815,7 @@ Transaction sent ...
 New account <new7.testnet> created successfully.
 Transaction ID: GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
+https://testnet.nearblocks.io/txns/GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
 
 The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new7.testnet/ed25519_EX1qK1S1T4WxXJFLH7qZvKxnGQtcKfEEsiA4BNxAZ6mP.json"
 The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already exists! Therefore it was not overwritten.
@@ -849,7 +849,7 @@ Transaction sent ...
 New account <seed.volodymyr.testnet> created successfully.
 Transaction ID: 31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
+https://testnet.nearblocks.io/txns/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
 ```
 </details>
 
@@ -880,7 +880,7 @@ Transaction sent ...
 New account <pk.volodymyr.testnet> created successfully.
 Transaction ID: CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
+https://testnet.nearblocks.io/txns/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
 ```
 </details>
 
@@ -911,7 +911,7 @@ Transaction sent ...
 New account <ledger1.volodymyr.testnet> created successfully.
 Transaction ID: BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
+https://testnet.nearblocks.io/txns/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
 ```
 </details>
 
@@ -1118,7 +1118,7 @@ Successful transaction
 Account <2.fro_volod.testnet> has been successfully deleted.
 Transaction ID: EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
+https://testnet.nearblocks.io/txns/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
 ```
 </details>
 
@@ -1194,7 +1194,7 @@ Successful transaction
 Added access key = ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 to fro_volod.testnet.
 Transaction ID: 2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
+https://testnet.nearblocks.io/txns/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
 ```
 </details>
 
@@ -1234,7 +1234,7 @@ Successful transaction
 Added access key = ed25519:27R66L6yevyHbsk4fESZDC8QUQBwCdx6vvkk1uQmG7NY to fro_volod.testnet.
 Transaction ID: DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
+https://testnet.nearblocks.io/txns/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
 ```
 </details>
 
@@ -1264,7 +1264,7 @@ Successful transaction
 Access key <ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3> for account <fro_volod.testnet> has been successfully deleted.
 Transaction ID: 6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
+https://testnet.nearblocks.io/txns/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
 ```
 </details>
 
@@ -1390,7 +1390,7 @@ Successful transaction
 <fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
 Transaction ID: 8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
+https://testnet.nearblocks.io/txns/8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
 ```
 </details>
 
@@ -1423,7 +1423,7 @@ Successful transaction
 The "ft_transfer" call to <usdn.testnet> on behalf of <fro_volod.testnet> succeeded.
 Transaction ID: 5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
+https://testnet.nearblocks.io/txns/5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
 ```
 </details>
 
@@ -1456,7 +1456,7 @@ Successful transaction
 The "nft_transfer" call to <paras-token-v2.testnet> on behalf of <fro_volod.testnet> succeeded.
 Transaction ID: 9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
+https://testnet.nearblocks.io/txns/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
 ```
 </details>
 
@@ -1921,7 +1921,7 @@ Successful transaction
 The "rate" call to <turbo.volodymyr.testnet> on behalf of <fro_volod.testnet> succeeded.
 Transaction ID: 7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
+https://testnet.nearblocks.io/txns/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
 ```
 </details>
 
@@ -1957,7 +1957,7 @@ Contract code has been successfully deployed.
 The "increment" call to <262.volodymyr.testnet> on behalf of <262.volodymyr.testnet> succeeded.
 Transaction ID: 4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
+https://testnet.nearblocks.io/txns/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
 ```
 </details>
 
@@ -2336,14 +2336,14 @@ credentials_home_dir = "/Users/frovolod/.near-credentials"
 network_name = "mainnet"
 rpc_url = "https://archival-rpc.mainnet.near.org/"
 wallet_url = "https://wallet.near.org/"
-explorer_transaction_url = "https://explorer.near.org/transactions/"
+explorer_transaction_url = "https://nearblocks.io/txns/"
 linkdrop_account_id = "near"
 
 [network_connection.testnet]
 network_name = "testnet"
 rpc_url = "https://archival-rpc.testnet.near.org/"
 wallet_url = "https://wallet.testnet.near.org/"
-explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+explorer_transaction_url = "https://testnet.nearblocks.io/txns/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
 
@@ -2352,7 +2352,7 @@ network_name = "testnet"
 rpc_url = "https://near-testnet.api.pagoda.co/rpc/v1/"
 rpc_api_key = "c0a25b3c-39c2-4f62-a621-50e208b88e64"
 wallet_url = "https://wallet.testnet.near.org/"
-explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+explorer_transaction_url = "https://testnet.nearblocks.io/txns/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
 meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
@@ -2369,7 +2369,7 @@ near config \
         --connection-name pagoda-testnet \
         --rpc-url https://near-testnet.api.pagoda.co/rpc/v1/ \
         --wallet-url https://wallet.testnet.near.org/ \
-        --explorer-transaction-url https://explorer.testnet.near.org/transactions/ \
+        --explorer-transaction-url https://testnet.nearblocks.io/txns/ \
         --rpc-api-key 'c0a25b3c-39c2-4f62-a621-50e208b88e64' \
         --linkdrop-account-id testnet \
         --faucet-url https://helper.nearprotocol.com/account \
