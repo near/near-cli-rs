@@ -260,10 +260,10 @@ near account \
     import-account \
     using-web-wallet \
     network-config testnet\
-    --wallet-url 'https://wallet.testnet.near.org/'
+    --wallet-url 'https://testnet.mynearwallet.com/'
 ```
 
-After successful authorization in _[NEAR Wallet](https://wallet.near.org/)_, you need to return to the terminal and enter your login.
+After successful authorization in _[My NEAR Wallet](https://app.mynearwallet.com/)_, you need to return to the terminal and enter your login.
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
@@ -355,7 +355,7 @@ near account \
     export-account volodymyr.testnet \
     using-web-wallet \
     network-config testnet\
-    --wallet-url 'https://wallet.testnet.near.org/'
+    --wallet-url 'https://testnet.mynearwallet.com/'
 ```
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1782,14 +1782,14 @@ credentials_home_dir = "/Users/frovolod/.near-credentials"
 [network_connection.mainnet]
 network_name = "mainnet"
 rpc_url = "https://archival-rpc.mainnet.near.org/"
-wallet_url = "https://wallet.near.org/"
+wallet_url = "https://app.mynearwallet.com/"
 explorer_transaction_url = "https://nearblocks.io/txns/"
 linkdrop_account_id = "near"
 
 [network_connection.testnet]
 network_name = "testnet"
 rpc_url = "https://archival-rpc.testnet.near.org/"
-wallet_url = "https://wallet.testnet.near.org/"
+wallet_url = "https://testnet.mynearwallet.com/"
 explorer_transaction_url = "https://testnet.nearblocks.io/txns/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
@@ -1798,7 +1798,7 @@ faucet_url = "https://helper.nearprotocol.com/account"
 network_name = "testnet"
 rpc_url = "https://near-testnet.api.pagoda.co/rpc/v1/"
 rpc_api_key = "c0a25b3c-39c2-4f62-a621-50e208b88e64"
-wallet_url = "https://wallet.testnet.near.org/"
+wallet_url = "https://testnet.mynearwallet.com/"
 explorer_transaction_url = "https://testnet.nearblocks.io/txns/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
@@ -1817,7 +1817,7 @@ near config \
         --network-name testnet \
         --connection-name pagoda-testnet \
         --rpc-url https://near-testnet.api.pagoda.co/rpc/v1/ \
-        --wallet-url https://wallet.testnet.near.org/ \
+        --wallet-url https://testnet.mynearwallet.com/ \
         --explorer-transaction-url https://testnet.nearblocks.io/txns/ \
         --rpc-api-key 'c0a25b3c-39c2-4f62-a621-50e208b88e64' \
         --linkdrop-account-id testnet \
