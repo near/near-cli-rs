@@ -3,10 +3,11 @@
 Это руководство предназначено для того, чтобы дать подробное описание утилиты _near CLI_ и
 обзор её возможностей. Предполагается, что утилита _near CLI_
 [установлена](README.ru.md#installation)
-и пользователи знакомы с использованием инструментов командной строки. Также предполагается Unix-подобная система, хотя большинство команд, вероятно, легко переводимы в любую среду оболочки командной строки.  
+и пользователи знакомы с использованием инструментов командной строки. Также предполагается Unix-подобная система, хотя большинство команд, вероятно, легко переводимы в любую среду оболочки командной строки.
 
 Спомощью _near CLI_ можно создать, подписать и отправить транзакцию в режиме _online_, который включен по умолчанию.
-В режиме _offline_ можно создать и подписать транзакцию. Транзакция, кодированная в base64 может быть [подписана](#sign-transaction---sign-previously-prepared-unsigned-transaction) или [отправлена](#send-signed-transaction---send-a-signed-transaction) позже (даже с другого компьютера). Для входа в режим _offline_ необходимо в команде установить флаг ```--offline```:  
+В режиме _offline_ можно создать и подписать транзакцию. Транзакция, кодированная в base64 может быть [подписана](#sign-transaction---sign-previously-prepared-unsigned-transaction) или [отправлена](#send-signed-transaction---send-a-signed-transaction) позже (даже с другого компьютера). Для входа в режим _offline_ необходимо в команде установить флаг `--offline`:
+
 ```txt
 near --offline tokens \
     fro_volod.testnet \
@@ -21,54 +22,55 @@ near --offline tokens \
 
    _near CLI_ предполагает несколько способов подписи созданной транзакции. Рассмотрим подробнее каждый.
 
-    - _sign-with-macos-keychain - Sign the transaction with a key saved in macOS keychain_
+   - _sign-with-macos-keychain - Sign the transaction with a key saved in macOS keychain_
 
-        Операционная система _MacOS_ имеет собственное приложение _[Keychain Access](https://support.apple.com/ru-ru/guide/keychain-access/welcome/mac)_, с помощью которого _near CLI_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
+     Операционная система _MacOS_ имеет собственное приложение _[Keychain Access](https://support.apple.com/ru-ru/guide/keychain-access/welcome/mac)_, с помощью которого _near CLI_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
 
-    - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
+   - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
 
-        _near CLI_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
-        Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).  
-        Ключи доступа должны находиться в файле _публичный-ключ.json_, расположенном в _/Users/user/.near-credentials/имя-сети/имя-пользователя/_.  
-        Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
+     _near CLI_ самостоятельно найдет ключи доступа и подпишет созданную транзакцию.
+     Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).  
+      Ключи доступа должны находиться в файле _публичный-ключ.json_, расположенном в _/Users/user/.near-credentials/имя-сети/имя-пользователя/_.  
+      Например, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
-        <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-        <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
-            <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
-        </a>
-        </details>
+       <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+       <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
+           <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
+       </a>
+       </details>
 
-    - _sign-with-ledger - Sign the transaction with Ledger Nano device_
+   - _sign-with-ledger - Sign the transaction with Ledger Nano device_
 
-        Этот вариант предполагает подписание созданной транзакции при помощи леджера.
+     Этот вариант предполагает подписание созданной транзакции при помощи леджера.
 
-    - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
+   - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
 
-        При выборе этого варианта подписи _near CLI_ попросит пользователя ввести ключи доступа:
-        - "public_key":"ed25519:Ebx7...",
-        - "private_key":"ed25519:2qM8..."
+     При выборе этого варианта подписи _near CLI_ попросит пользователя ввести ключи доступа:
 
-    - _sign-with-access-key-file - Sign the transaction using the account access key file (access-key-file.json)_
+     - "public_key":"ed25519:Ebx7...",
+     - "private_key":"ed25519:2qM8..."
 
-        При выборе этого варианта подписи _near CLI_ попросит пользователя ввести путь к файлу, в котором находится информация о ключах доступа к аккаунту.
+   - _sign-with-access-key-file - Sign the transaction using the account access key file (access-key-file.json)_
 
-    - _sign-with-seed-phrase - Sign the transaction using the seed phrase_
+     При выборе этого варианта подписи _near CLI_ попросит пользователя ввести путь к файлу, в котором находится информация о ключах доступа к аккаунту.
 
-        При выборе этого варианта подписи _near CLI_ попросит пользователя ввести мнемоническую фразу, связанную с аккаунтом.
+   - _sign-with-seed-phrase - Sign the transaction using the seed phrase_
 
-    - _sign-later - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)_
+     При выборе этого варианта подписи _near CLI_ попросит пользователя ввести мнемоническую фразу, связанную с аккаунтом.
 
-        Этот вариант предполагает подписание созданной транзакции [позже](#sign-transaction---sign-previously-prepared-unsigned-transaction).
+   - _sign-later - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)_
 
+     Этот вариант предполагает подписание созданной транзакции [позже](#sign-transaction---sign-previously-prepared-unsigned-transaction).
 
 2. Действия с подписанной транзакцией
 
-    _near CLI_ поддерживает мета-транзакции, описанные в спецификации [NEP-366](https://near.github.io/nearcore/architecture/how/meta-tx.html#meta-transactions). Для её создания достаточно указать _network_, поддерживающую мета-транзакции. Узнать о такой поддержке можно в [конфигурационном файле](#show-connections---Show-a-list-of-network-connections). За возможность поддержки мета-транзакции отвечает поле *meta_transaction_relayer_url*. Например:  
-    ```txt
-    meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
-    ```
+   _near CLI_ поддерживает мета-транзакции, описанные в спецификации [NEP-366](https://near.github.io/nearcore/architecture/how/meta-tx.html#meta-transactions). Для её создания достаточно указать _network_, поддерживающую мета-транзакции. Узнать о такой поддержке можно в [конфигурационном файле](#show-connections---Show-a-list-of-network-connections). За возможность поддержки мета-транзакции отвечает поле _meta_transaction_relayer_url_. Например:
 
-    Подписанную транзакцию / мета-транзакцию можно либо немедленно отправить на выполнение:
+   ```txt
+   meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
+   ```
+
+   Подписанную транзакцию / мета-транзакцию можно либо немедленно отправить на выполнение:
 
    - _send - Send the transaction to the network_
 
@@ -78,15 +80,15 @@ near --offline tokens \
 
 ### Группы команд
 
-- [account     - Manage accounts](#account---Manage-accounts)
-- [tokens      - Manage token assets such as NEAR, FT, NFT](#tokens---Manage-token-assets-such-as-NEAR-FT-NFT)
-- [contract    - Manage smart-contracts: deploy code, call functions](#contract---Manage-smart-contracts-deploy-code-call-functions)
+- [account - Manage accounts](#account---Manage-accounts)
+- [tokens - Manage token assets such as NEAR, FT, NFT](#tokens---Manage-token-assets-such-as-NEAR-FT-NFT)
+- [contract - Manage smart-contracts: deploy code, call functions](#contract---Manage-smart-contracts-deploy-code-call-functions)
 - [transaction - Operate transactions](#transaction---Operate-transactions)
-- [config      - Manage connections in a configuration file](#config---Manage-connections-in-a-configuration-file)
+- [config - Manage connections in a configuration file](#config---Manage-connections-in-a-configuration-file)
 
 ### account - Manage accounts
 
-Просмотреть сведения об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)) и просмотреть ключи доступа к аккаунту ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***). На примерах ниже показаны варианты применения этих режимов.
+Просмотреть сведения об аккаунте ([View properties for an account](#view-account-summary---view-properties-for-an-account)) и просмотреть ключи доступа к аккаунту ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) возможно на текущий момент времени (**_now_**) и на определеный момент в прошлом, указав блок (**_at-block-height_** или **_at-block-hash_**). На примерах ниже показаны варианты применения этих режимов.
 
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
 - [import-account](#import-account---Import-existing-account-aka-sign-in)
@@ -139,6 +141,7 @@ Number of access keys: 14
   13. ed25519:EYtsL67TpgfpE1udnga2m41vDoBqeZ2DB32onhsxsVUb (nonce: 72251760000002) is granted to full access
   14. ed25519:G2U7aZ91pgG3TS96gCWov5L1DkNWSi3756RRkwuspZ4L (nonce: 72251684000002) is granted to full access
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -150,6 +153,7 @@ Number of access keys: 14
 ##### at-block-height - View properties in a height-selected block
 
 Для просмотра сведений об аккаунте на конктретном блоке можно указать высоту данного блока. Для этого нужно ввести в командной строке терминала:
+
 ```txt
 near account \
     view-account-summary fro_volod.testnet \
@@ -179,6 +183,7 @@ Number of access keys: 12
   11. ed25519:HXHM2GTqDzCZnd7UQzPtL7VwcFfcm7n8Z8voo1ArE4Tr (nonce: 72263503000002) is granted to full access
   12. ed25519:HjzSeCGdWT15iSj2TybmKV2dZteu1VYYAaYvNYVNZY2W (nonce: 72253750000000) is granted to full access
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -190,12 +195,13 @@ Number of access keys: 12
 ##### at-block-hash - View properties in a hash-selected block
 
 Для просмотра сведений об аккаунте необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     view-account-summary fro_volod.testnet \
     network-config testnet \
     at-block-hash HCUJq3vQ3ztyCZAhmRmHR3cwSDcoE4zEbaWkhAjFuxUY
-````
+```
 
 <details><summary><i>Результат выполнения команды</i></summary>
 
@@ -219,6 +225,7 @@ Number of access keys: 12
   11. ed25519:HXHM2GTqDzCZnd7UQzPtL7VwcFfcm7n8Z8voo1ArE4Tr (nonce: 72263503000002) is granted to full access
   12. ed25519:HjzSeCGdWT15iSj2TybmKV2dZteu1VYYAaYvNYVNZY2W (nonce: 72253750000000) is granted to full access
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -233,10 +240,10 @@ Number of access keys: 12
 - [using-seed-phrase](#using-seed-phrase---Import-existing-account-using-a-seed-phrase)
 - [using-private-key](#using-private-key---Import-existing-account-using-a-private-key)
 
-
 #### using-web-wallet - Import existing account using NEAR Wallet (a.k.a. "sign in")
 
 Для авторизации пользователя необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     import-account \
@@ -246,6 +253,7 @@ near account \
 
 Вы будете перенаправлены браузер для авторизации.  
 По умолчанию - это https://app.mynearwallet.com/ (для testnet - https://testnet.mynearwallet.com/). Но вы можете изменить адрес для авторизации с помощью флага `--wallet-url`:
+
 ```txt
 near account \
     import-account \
@@ -255,11 +263,13 @@ near account \
 ```
 
 После успешной авторизации в _[NEAR Wallet](https://wallet.near.org/)_ необходимо вернуться в терминал и ввести имя пользователя.
+
 <details><summary><i>Результат выполнения команды</i></summary>
 
 ```txt
 The data for the access key is saved in macOS Keychain
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -271,6 +281,7 @@ The data for the access key is saved in macOS Keychain
 #### using-seed-phrase - Import existing account using a seed phrase
 
 Для авторизации пользователя необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     import-account \
@@ -284,6 +295,7 @@ near account \
 ```txt
 The data for the access key is saved in macOS Keychain
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -295,6 +307,7 @@ The data for the access key is saved in macOS Keychain
 #### using-private-key - Import existing account using a private key
 
 Для авторизации пользователя необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     import-account \
@@ -307,6 +320,7 @@ near account \
 ```txt
 The data for the access key is saved in macOS Keychain
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -321,10 +335,10 @@ The data for the access key is saved in macOS Keychain
 - [using-seed-phrase](#using-seed-phrase---Export-existing-account-using-a-seed-phrase)
 - [using-private-key](#using-private-key---Export-existing-account-using-a-private-key)
 
-
 #### using-web-wallet - Export existing account using NEAR Wallet
 
 Для экспорта существующего аккаунта необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     export-account volodymyr.testnet \
@@ -334,6 +348,7 @@ near account \
 
 Вы будете перенаправлены браузер.  
 По умолчанию - это https://app.mynearwallet.com/ (для testnet - https://testnet.mynearwallet.com/). Но вы можете изменить адрес для авторизации с помощью флага `--wallet-url`:
+
 ```txt
 near account \
     export-account volodymyr.testnet \
@@ -341,6 +356,7 @@ near account \
     network-config testnet\
     --wallet-url 'https://wallet.testnet.near.org/'
 ```
+
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/QqVhhVaBP4MP7XFDeb6arIB3S?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/QqVhhVaBP4MP7XFDeb6arIB3S.png" width="836"/>
@@ -350,6 +366,7 @@ near account \
 #### using-seed-phrase - Export existing account using a seed phrase
 
 Для экспорта существующего аккаунта необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     export-account volodymyr.testnet \
@@ -362,11 +379,13 @@ near account \
 ```txt
 Here is the secret recovery seed phrase for account <volodymyr.testnet>: "feature army carpet ..." (HD Path: m/44'/397'/0').
 ```
+
 </details>
 
 #### using-private-key - Export existing account using a private key
 
 Для экспорта существующего аккаунта необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     export-account volodymyr.testnet \
@@ -379,6 +398,7 @@ near account \
 ```txt
 Here is the private key for account <volodymyr.testnet>: ed25519:4TKr1c7p...y7p8BvGdB
 ```
+
 </details>
 
 #### create-account - Create a new account
@@ -390,9 +410,10 @@ Here is the private key for account <volodymyr.testnet>: ed25519:4TKr1c7p...y7p8
 
 #### sponsor-by-faucet-service - I would like the faucet service sponsor to cover the cost of creating an account (testnet only for now)
 
-С помощью этой команды можно создать аккаунт при помощи вспомогательного сервиса, который может спонсировать создание учетной записи (пока только testnet). 
-При добавлении собственной сети в конфигураторе [add-connection](#add-connection---Add-a-network-connection) можете указать свой сервис в поле *faucet_url*.  
-Ключи доступа к создаваемому аккаунту можно добавить несколькими способами:  
+С помощью этой команды можно создать аккаунт при помощи вспомогательного сервиса, который может спонсировать создание учетной записи (пока только testnet).
+При добавлении собственной сети в конфигураторе [add-connection](#add-connection---Add-a-network-connection) можете указать свой сервис в поле _faucet_url_.  
+Ключи доступа к создаваемому аккаунту можно добавить несколькими способами:
+
 - [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
 - [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
 - [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
@@ -401,6 +422,7 @@ Here is the private key for account <volodymyr.testnet>: ed25519:4TKr1c7p...y7p8
 ##### autogenerate-new-keypair - Automatically generate a key pair
 
 Для создания аккаунта необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account sponsor-by-faucet-service test_fro.testnet \
@@ -419,8 +441,9 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 New account <test_fro.testnet> created successfully.
 Transaction ID: FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
+https://testnet.nearblocks.io/txns/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -433,6 +456,7 @@ https://explorer.testnet.near.org/transactions/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgR
 
 Данная команда добавляет аккаунту заранее известную мнемоническую фразу.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account sponsor-by-faucet-service test_fro1.testnet \
@@ -447,8 +471,9 @@ near account \
 New account <test_fro1.testnet> created successfully.
 Transaction ID: D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
+https://testnet.nearblocks.io/txns/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -461,6 +486,7 @@ https://explorer.testnet.near.org/transactions/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUA
 
 Данная команда добавляет аккаунту заранее известный публичный ключ доступа.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account sponsor-by-faucet-service test_fro2.testnet \
@@ -475,8 +501,9 @@ near account \
 New account <test_fro2.testnet> created successfully.
 Transaction ID: E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
+https://testnet.nearblocks.io/txns/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -489,6 +516,7 @@ https://explorer.testnet.near.org/transactions/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5
 
 Данная команда с помощью леджера добавляет ключи доступа аккаунту.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account sponsor-by-faucet-service test_fro3.testnet \
@@ -503,8 +531,9 @@ near account \
 New account <test_fro3.testnet> created successfully.
 Transaction ID: BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
+https://testnet.nearblocks.io/txns/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -516,7 +545,8 @@ https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTb
 #### fund-myself - I would like fund myself to cover the cost of creating an account
 
 С помощью этой команды можно создать как суб-аккаунт, так и аккаунт с коротким именем, например, alice.near или alice.testnet (в сети testnet).  
-Ключи доступа к создаваемому аккаунту можно добавить несколькими способами:  
+Ключи доступа к создаваемому аккаунту можно добавить несколькими способами:
+
 - [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
 - [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
 - [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
@@ -525,6 +555,7 @@ https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTb
 ##### autogenerate-new-keypair - Automatically generate a key pair
 
 Для создания суб-аккаунта необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account fund-myself new.fro_volod.testnet '1 NEAR' \
@@ -543,11 +574,12 @@ Transaction sent ...
 New account <new.fro_volod.testnet> created successfully.
 Transaction ID: DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
+https://testnet.nearblocks.io/txns/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json 
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json
 The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet.json"
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -557,6 +589,7 @@ The data for the access key is saved in a file "/Users/frovolod/.near-credential
 </details>
 
 Для создания аккаунта с коротким именем необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account fund-myself new7.testnet '0.1 NEAR' \
@@ -575,11 +608,12 @@ Transaction sent ...
 New account <new7.testnet> created successfully.
 Transaction ID: GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
+https://testnet.nearblocks.io/txns/GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
 
 The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new7.testnet/ed25519_EX1qK1S1T4WxXJFLH7qZvKxnGQtcKfEEsiA4BNxAZ6mP.json"
 The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already exists! Therefore it was not overwritten.
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -592,6 +626,7 @@ The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already ex
 
 Данная команда добавляет аккаунту заранее известную мнемоническую фразу.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account fund-myself seed.volodymyr.testnet '0.1 NEAR' \
@@ -609,8 +644,9 @@ Transaction sent ...
 New account <seed.volodymyr.testnet> created successfully.
 Transaction ID: 31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
+https://testnet.nearblocks.io/txns/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -623,6 +659,7 @@ https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZb
 
 Данная команда добавляет аккаунту заранее известный публичный ключ доступа.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account fund-myself pk.volodymyr.testnet '0.1 NEAR' \
@@ -640,8 +677,9 @@ Transaction sent ...
 New account <pk.volodymyr.testnet> created successfully.
 Transaction ID: CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
+https://testnet.nearblocks.io/txns/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -654,6 +692,7 @@ https://explorer.testnet.near.org/transactions/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2t
 
 Данная команда с помощью леджера добавляет ключи доступа аккаунту.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account fund-myself ledger1.volodymyr.testnet '0.1 NEAR' \
@@ -671,8 +710,9 @@ Transaction sent ...
 New account <ledger1.volodymyr.testnet> created successfully.
 Transaction ID: BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
+https://testnet.nearblocks.io/txns/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -691,6 +731,7 @@ https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqAD
 
 Данная команда автоматически генерирует ключи доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account \
@@ -704,6 +745,7 @@ near account \
 ```txt
 The file "/Users/frovolod/.near-credentials/implicit/1573066d3fa7a2d56357aa5ddbc84295d94c61590390000981f5900b04e2f55f.json" was saved successfully
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -716,6 +758,7 @@ The file "/Users/frovolod/.near-credentials/implicit/1573066d3fa7a2d56357aa5ddbc
 
 Данная команда с помощью леджера генерирует ключи доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account \
@@ -729,6 +772,7 @@ near account \
 ```txt
 The file "/Users/frovolod/.near-credentials/implicit/ledger/739c872c3057cd5d812c49345248b9fdd318c8ad33ace6cf0468109eae972c8e.json" was saved successfully
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -741,6 +785,7 @@ The file "/Users/frovolod/.near-credentials/implicit/ledger/739c872c3057cd5d812c
 
 Данная команда с помощью мнемонической фразы генерирует ключи доступа и сохраняет их в файле с именем _implicit-account-id_.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     create-account \
@@ -755,6 +800,7 @@ near account \
 ```txt
 The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa6508f90f98e646836647ecd883d1d2b1989e5.json" was saved successfully
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -767,6 +813,7 @@ The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa
 
 Данная команда предназначена для удаления текущего аккаунта. Важно помнить, что все средства удаляемого аккаунта перейдут на счет "_beneficiary_".
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     delete-account 2.fro_volod.testnet \
@@ -784,8 +831,9 @@ Successful transaction
 Account <2.fro_volod.testnet> has been successfully deleted.
 Transaction ID: EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
+https://testnet.nearblocks.io/txns/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -796,10 +844,11 @@ https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MG
 
 #### list-keys - View a list of access keys of an account
 
-Просмотр ключей доступа аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотр ключей доступа аккаунта возможен на текущий момент времени (**_now_**) и на определеный момент в прошлом, указав блок (**_at-block-height_** или **_at-block-hash_**).  
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра списка ключей доступа необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     list-keys fro_volod.testnet \
@@ -826,6 +875,7 @@ Number of access keys: 14
   13. ed25519:EYtsL67TpgfpE1udnga2m41vDoBqeZ2DB32onhsxsVUb (nonce: 72251760000002) is granted to full access
   14. ed25519:G2U7aZ91pgG3TS96gCWov5L1DkNWSi3756RRkwuspZ4L (nonce: 72251684000002) is granted to full access
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -837,11 +887,13 @@ Number of access keys: 14
 #### add-key - Add an access key to an account
 
 Выполним команду добавления новой пары ключей доступа аккаунту с такими условиями:
-  - публичный ключ доступа будет введен вручную
-  - ключи будут иметь полный доступ
-  - транзакция будет подписана автоматически (при наличии файла с ключами доступа)
+
+- публичный ключ доступа будет введен вручную
+- ключи будут иметь полный доступ
+- транзакция будет подписана автоматически (при наличии файла с ключами доступа)
 
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     add-key fro_volod.testnet \
@@ -860,8 +912,9 @@ Successful transaction
 Added access key = ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 to fro_volod.testnet.
 Transaction ID: 2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
+https://testnet.nearblocks.io/txns/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -871,11 +924,13 @@ https://explorer.testnet.near.org/transactions/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jS
 </details>
 
 Изменим наши парамерты для добавления кючей доступа:
-  - ключи будут сгенерированы автоматически
-  - будут иметь функциональный доступ
-  - транзакция будет подписана вручную
+
+- ключи будут сгенерированы автоматически
+- будут иметь функциональный доступ
+- транзакция будет подписана вручную
 
 Для этого введем следующую команду:
+
 ```txt
 near account \
     add-key fro_volod.testnet \
@@ -900,8 +955,9 @@ Successful transaction
 Added access key = ed25519:27R66L6yevyHbsk4fESZDC8QUQBwCdx6vvkk1uQmG7NY to fro_volod.testnet.
 Transaction ID: DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
+https://testnet.nearblocks.io/txns/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -913,6 +969,7 @@ https://explorer.testnet.near.org/transactions/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvn
 #### delete-key - Delete an access key from an account
 
 Для удаления ключей доступа необходимо ввести в командной строке терминала:
+
 ```txt
 near account \
     delete-key fro_volod.testnet \
@@ -930,8 +987,9 @@ Successful transaction
 Access key <ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3> for account <fro_volod.testnet> has been successfully deleted.
 Transaction ID: 6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
+https://testnet.nearblocks.io/txns/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -965,6 +1023,7 @@ storage balance for <volodymyr.testnet>:
  available:        1.6 MB   (15.878059999854543210876557 NEAR [  15878059999854543210876557 yoctoNEAR])
  total:            1.6 MB   (16.238949999854543210876557 NEAR [  16238949999854543210876557 yoctoNEAR])
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -992,6 +1051,7 @@ near account \
 ```txt
 <fro_volod.testnet> has successfully added a deposit of 1 NEAR to <volodymyr.testnet> on contract <v1.social08.testnet>.
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1019,6 +1079,7 @@ near account \
 ```txt
 <volodymyr.testnet> has successfully withdraw 0.5 NEAR from <v1.social08.testnet>.
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1028,6 +1089,7 @@ near account \
 </details>
 
 ### tokens - Manage token assets such as NEAR, FT, NFT
+
 - [send-near](#send-near---The-transfer-is-carried-out-in-NEAR-tokens)
 - [send-ft](#send-ft---The-transfer-is-carried-out-in-FT-tokens)
 - [send-nft](#send-nft---The-transfer-is-carried-out-in-NFT-tokens)
@@ -1039,6 +1101,7 @@ near account \
 
 Данная команда служит для перевода средств NEAR токенах между аккаунтами. Обратите внимание, что количество пересылаемых токенов указывается совместно с размерной единицей (это NEAR либо yoctoNEAR).
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1056,8 +1119,9 @@ Successful transaction
 <fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
 Transaction ID: 8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
+https://testnet.nearblocks.io/txns/8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1070,6 +1134,7 @@ https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWe
 
 Данная команда служит для перевода средств в FT токенах между аккаунтами. Обратите внимание, что количество пересылаемых токенов указывается в безразмерных единицах.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1089,8 +1154,9 @@ Successful transaction
 The "ft_transfer" call to <usdn.testnet> on behalf of <fro_volod.testnet> succeeded.
 Transaction ID: 5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
+https://testnet.nearblocks.io/txns/5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1103,6 +1169,7 @@ https://explorer.testnet.near.org/transactions/5a7YmANdpimiqUm6WC6n4dd91b6A9PafN
 
 Данная команда служит для перевода средств в NFT токенах между аккаунтами.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1122,8 +1189,9 @@ Successful transaction
 The "nft_transfer" call to <paras-token-v2.testnet> on behalf of <fro_volod.testnet> succeeded.
 Transaction ID: 9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
+https://testnet.nearblocks.io/txns/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1134,10 +1202,11 @@ https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7
 
 #### view-near-balance - View the balance of Near tokens
 
-Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотр баланса аккаунта возможен на текущий момент времени (**_now_**) и на определеный момент в прошлом, указав блок (**_at-block-height_** или **_at-block-hash_**).  
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в NEAR токенах на счету аккаунта необходимо ввести в командной строке терминала:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1151,6 +1220,7 @@ near tokens \
 ```txt
 fro_volod.testnet account has 169.589001320890476999999994 NEAR available for transfer (the total balance is 172.482461320890476999999994 NEAR, but 2.89246 NEAR is locked for storage and the transfer transaction fee is ~0.001 NEAR)
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1161,10 +1231,11 @@ fro_volod.testnet account has 169.589001320890476999999994 NEAR available for tr
 
 #### view-ft-balance - View the balance of FT tokens
 
-Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотр баланса аккаунта возможен на текущий момент времени (**_now_**) и на определеный момент в прошлом, указав блок (**_at-block-height_** или **_at-block-hash_**).  
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в FT токенах на счету аккаунта необходимо ввести в командной строке терминала:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1178,6 +1249,7 @@ near tokens \
 ```txt
 fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usdn.testnet)
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1188,10 +1260,11 @@ fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usd
 
 #### view-nft-assets - View the balance of NFT tokens
 
-Просмотр баланса аккаунта возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотр баланса аккаунта возможен на текущий момент времени (**_now_**) и на определеный момент в прошлом, указав блок (**_at-block-height_** или **_at-block-hash_**).  
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для просмотра средств в NFT токенах на счету аккаунта необходимо ввести в командной строке терминала:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1226,6 +1299,7 @@ fro_volod.testnet account has NFT tokens:
   }
 ]
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1248,10 +1322,11 @@ fro_volod.testnet account has NFT tokens:
 
 ##### as-read-only - Calling a view method
 
-Просмотр данных возможен на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотр данных возможен на текущий момент времени (**_now_**) и на определеный момент в прошлом, указав блок (**_at-block-height_** или **_at-block-hash_**).  
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near contract \
     call-function \
@@ -1285,6 +1360,7 @@ near contract \
   }
 ]
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1296,6 +1372,7 @@ near contract \
 ##### as-transaction - Calling a change method
 
 Для выполнения этой команды необходимо ввести в командной строке терминала:
+
 ```txt
 near contract \
     call-function \
@@ -1317,8 +1394,9 @@ Successful transaction
 The "rate" call to <turbo.volodymyr.testnet> on behalf of <fro_volod.testnet> succeeded.
 Transaction ID: 7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
+https://testnet.nearblocks.io/txns/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1330,6 +1408,7 @@ https://explorer.testnet.near.org/transactions/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUC
 #### deploy - Add a new contract code
 
 Для добавления нового контракта необходимо ввести в командной строке терминала:
+
 ```txt
 near contract \
     deploy \
@@ -1353,8 +1432,9 @@ Contract code has been successfully deployed.
 The "increment" call to <262.volodymyr.testnet> on behalf of <262.volodymyr.testnet> succeeded.
 Transaction ID: 4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
+https://testnet.nearblocks.io/txns/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1365,7 +1445,7 @@ https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7
 
 #### download-wasm - Download wasm
 
-Скачать файл контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Скачать файл контракта возможно на текущий момент времени (**_now_**) и на определеный момент в прошлом, указав блок (**_at-block-height_** или **_at-block-hash_**).  
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
 
 Для получения файла контракта необходимо ввести в командной строке терминала:
@@ -1392,9 +1472,9 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 
 #### view-storage - View contract storage state
 
-Просмотреть значения ключей контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).  
+Просмотреть значения ключей контракта возможно на текущий момент времени (**_now_**) и на определеный момент в прошлом, указав блок (**_at-block-height_** или **_at-block-hash_**).  
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).  
-Сами же ключи можно просмотреть все (***all***) или отфильтрованные с помощью  ***keys-start-with-string*** или ***keys-start-with-bytes-as-base64***.
+Сами же ключи можно просмотреть все (**_all_**) или отфильтрованные с помощью **_keys-start-with-string_** или **_keys-start-with-bytes-as-base64_**.
 
 Для просмотра ключей контракта необходимо ввести в командной строке терминала:
 
@@ -1450,6 +1530,7 @@ Contract state (proof):
 #### view-status - View a transaction status
 
 Для просмотра статуса желаемой транзакции необходимо ввести в командной строке терминала её хэш:
+
 ```txt
 near transaction \
     view-status GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank \
@@ -1610,6 +1691,7 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
     ],
 }
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1619,8 +1701,9 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </details>
 
 #### construct-transaction - Construct a new transaction
-  
+
 Рассмотрим пример, когда необходимо выполнить несколько действий в рамках одной транзакции:
+
 1. Создать аккаунт
 2. Добавить созданному аккаунту ключи доступа
 3. Осуществить перевод токенов на созданный аккаунт
@@ -1634,8 +1717,9 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </details>
 
 #### sign-transaction - Sign previously prepared unsigned transaction
-  
+
 Рассмотрим пример, применив возможность создания транзакции в режиме _offline_:
+
 1. Создать транзакцию.
 2. При выборе средств подписи транзакции указать пункт _sign-later_ и следовать дальнейшим инструкциям.
 3. Выведенная на экран транзакция в формате base64 может быть использована здесь для её подписи и/или последующей отправки.
@@ -1647,8 +1731,9 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </details>
 
 #### send-signed-transaction - Send a signed transaction
-  
+
 Рассмотрим предыдущий пример, применив возможности отправки подписанной транзакции транзакции:
+
 1. Создать транзакцию.
 2. Подписать транзакцию своими ключами доступа.
 3. Вывести подписанную транзакцию на экран в формате base64.
@@ -1661,8 +1746,9 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </details>
 
 #### send-meta-transaction - Act as a relayer to send a signed delegate action (meta-transaction)
-  
+
 Рассмотрим пример, применив возможности мета-транзакции:
+
 1. Создать транзакцию.
 2. Указать _network_ с поддержкой мета-транзакции.
 3. Подписать транзакцию своими ключами доступа.
@@ -1685,6 +1771,7 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 #### show-connections - Show a list of network connections
 
 Для просмотра данных конфигурационного файла (_config.toml_) можно воспользоваться интерактивным режимом либо ввести в командной строке терминала:
+
 ```txt
 near config show-connections
 ```
@@ -1697,14 +1784,14 @@ credentials_home_dir = "/Users/frovolod/.near-credentials"
 network_name = "mainnet"
 rpc_url = "https://archival-rpc.mainnet.near.org/"
 wallet_url = "https://wallet.near.org/"
-explorer_transaction_url = "https://explorer.near.org/transactions/"
+explorer_transaction_url = "https://nearblocks.io/txns/"
 linkdrop_account_id = "near"
 
 [network_connection.testnet]
 network_name = "testnet"
 rpc_url = "https://archival-rpc.testnet.near.org/"
 wallet_url = "https://wallet.testnet.near.org/"
-explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+explorer_transaction_url = "https://testnet.nearblocks.io/txns/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
 
@@ -1713,16 +1800,18 @@ network_name = "testnet"
 rpc_url = "https://near-testnet.api.pagoda.co/rpc/v1/"
 rpc_api_key = "c0a25b3c-39c2-4f62-a621-50e208b88e64"
 wallet_url = "https://wallet.testnet.near.org/"
-explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+explorer_transaction_url = "https://testnet.nearblocks.io/txns/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
 meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
 ```
+
 </details>
 
 #### add-connection - Add a network connection
 
 Для добавления данных о сети в конфигурационный файл (_config.toml_) можно воспользоваться интерактивным режимом либо ввести в командной строке терминала:
+
 ```txt
 near config \
     add-connection \
@@ -1730,7 +1819,7 @@ near config \
         --connection-name pagoda-testnet \
         --rpc-url https://near-testnet.api.pagoda.co/rpc/v1/ \
         --wallet-url https://wallet.testnet.near.org/ \
-        --explorer-transaction-url https://explorer.testnet.near.org/transactions/ \
+        --explorer-transaction-url https://testnet.nearblocks.io/txns/ \
         --rpc-api-key 'c0a25b3c-39c2-4f62-a621-50e208b88e64' \
         --linkdrop-account-id testnet \
         --faucet-url https://helper.nearprotocol.com/account \
@@ -1743,6 +1832,7 @@ near config \
 Configuration data is stored in a file "/Users/frovolod/Library/Application Support/near-cli/config.toml"
 Network connection "pagoda-testnet" was successfully added to config.toml
 ```
+
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
@@ -1754,6 +1844,7 @@ Network connection "pagoda-testnet" was successfully added to config.toml
 #### delete-connection - Delete a network connection
 
 Для удаления сети из конфигурационного файла (_config.toml_) можно воспользоваться интерактивным режимом либо ввести в командной строке терминала:
+
 ```txt
 near config delete-connection pagoda-testnet
 ```
@@ -1764,4 +1855,5 @@ near config delete-connection pagoda-testnet
 Configuration data is stored in a file "/Users/frovolod/Library/Application Support/near-cli/config.toml"
 Network connection "pagoda-testnet" was successfully removed from config.toml
 ```
+
 </details>

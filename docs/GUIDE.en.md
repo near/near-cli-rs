@@ -5,10 +5,11 @@ overview of its capabilities. This guide assumes that _near CLI_ is
 [installed](README.md#installation)
 and that readers have passing familiarity with using command line tools. This
 also assumes a Unix-like system, although most commands are probably easily
-translatable to any command line shell environment.  
+translatable to any command line shell environment.
 
 With _near CLI_ you can create, sign and send transactions in _online_ mode, which is enabled by default.
-In _offline_ mode, you can create and sign a transaction. The base64 encoding transaction can be [signed](#sign-transaction---sign-previously-prepared-unsigned-transaction) or [sent](#send-signed-transaction---send-a-signed-transaction) later (even from another computer). To enter the _offline_ mode, you need to set the ```--offline``` flag in the command: 
+In _offline_ mode, you can create and sign a transaction. The base64 encoding transaction can be [signed](#sign-transaction---sign-previously-prepared-unsigned-transaction) or [sent](#send-signed-transaction---send-a-signed-transaction) later (even from another computer). To enter the _offline_ mode, you need to set the `--offline` flag in the command:
+
 ```txt
 near --offline tokens \
     fro_volod.testnet \
@@ -21,55 +22,56 @@ Before proceeding to the description of specific commands, it is necessary to co
 
 1. Sign transaction
 
-    _near CLI_ offers several ways to sign the created transaction. Let's take a closer look at each.
+   _near CLI_ offers several ways to sign the created transaction. Let's take a closer look at each.
 
-    - _sign-with-macos-keychain - Sign the transaction with a key saved in macOS keychain_
+   - _sign-with-macos-keychain - Sign the transaction with a key saved in macOS keychain_
 
-        The operating system _MacOS_ has its own application _[Keychain Access](https://support.apple.com/guide/keychain-access/welcome/mac)_, with the help of which _near CLI_ will independently find access keys and sign the created transaction.
+     The operating system _MacOS_ has its own application _[Keychain Access](https://support.apple.com/guide/keychain-access/welcome/mac)_, with the help of which _near CLI_ will independently find access keys and sign the created transaction.
 
+   - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
 
-    - _sign-with-keychain - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)_
+     _near CLI_ will independently find access keys and sign the created transaction.  
+      Directory with access keys defined in [config](#config---manage-connections-in-a-configuration-file).
+     The access keys must be in the _public-key.json_ file located in _/Users/user/.near-credentials/network-name/user-name/_  
+      For example, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
-        _near CLI_ will independently find access keys and sign the created transaction.  
-        Directory with access keys defined in [config](#config---manage-connections-in-a-configuration-file).
-        The access keys must be in the _public-key.json_ file located in _/Users/user/.near-credentials/network-name/user-name/_  
-        For example, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
+       <details><summary><i>Demonstration of the command in interactive mode</i></summary>
+       <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
+           <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
+       </a>
+       </details>
 
-        <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-        <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
-            <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
-        </a>
-        </details>
+   - _sign-with-ledger - Sign the transaction with Ledger Nano device_
 
-    - _sign-with-ledger - Sign the transaction with Ledger Nano device_
-    
-        This option involves signing the created transaction using a ledger.
+     This option involves signing the created transaction using a ledger.
 
-    - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
+   - _sign-with-plaintext-private-key - Sign the transaction with a plaintext private key_
 
-        When choosing this signature option, _near CLI_ will ask the user to enter access keys:
-        - "public_key":"ed25519:Ebx7...",
-        - "private_key":"ed25519:2qM8..."
+     When choosing this signature option, _near CLI_ will ask the user to enter access keys:
 
-    - _sign-with-access-key-file - Sign the transaction using the account access key file (access-key-file.json)_
+     - "public_key":"ed25519:Ebx7...",
+     - "private_key":"ed25519:2qM8..."
 
-        When choosing this signature option, _near CLI_ will ask the user to enter the path to a file that contains information about account access keys.
+   - _sign-with-access-key-file - Sign the transaction using the account access key file (access-key-file.json)_
 
-    - _sign-with-seed-phrase - Sign the transaction using the seed phrase_
+     When choosing this signature option, _near CLI_ will ask the user to enter the path to a file that contains information about account access keys.
 
-        When choosing this signature option, _near CLI_ will ask the user to enter the mnemonic phrase associated with the account.
+   - _sign-with-seed-phrase - Sign the transaction using the seed phrase_
 
-    - _sign-later - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)_
+     When choosing this signature option, _near CLI_ will ask the user to enter the mnemonic phrase associated with the account.
 
-        This option involves signing the created transaction [later](#sign-transaction---sign-previously-prepared-unsigned-transaction).
+   - _sign-later - Prepare unsigned transaction (we'll use base64 encoding to simplify copy-pasting)_
+
+     This option involves signing the created transaction [later](#sign-transaction---sign-previously-prepared-unsigned-transaction).
 
 2. Actions with a signed transaction
 
-   _near CLI_ support for meta transactions as specified in [NEP-366](https://near.github.io/nearcore/architecture/how/meta-tx.html#meta-transactions). To create it, you just need to specify a _network_ that supports meta transactions. You can find out about such support in [config](#show-connections---Show-a-list-of-network-connections). The *meta_transaction_relayer_url* field is responsible for the ability to support meta transactions. For example:  
+   _near CLI_ support for meta transactions as specified in [NEP-366](https://near.github.io/nearcore/architecture/how/meta-tx.html#meta-transactions). To create it, you just need to specify a _network_ that supports meta transactions. You can find out about such support in [config](#show-connections---Show-a-list-of-network-connections). The _meta_transaction_relayer_url_ field is responsible for the ability to support meta transactions. For example:
+
    ```txt
    meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
    ```
-   
+
    A signed transaction / meta transactions can be sent for immediate execution:
 
    - _send - Send the transaction to the network_
@@ -80,15 +82,15 @@ Before proceeding to the description of specific commands, it is necessary to co
 
 ### Command groups
 
-- [account     - Manage accounts](#account---Manage-accounts)
-- [tokens      - Manage token assets such as NEAR, FT, NFT](#tokens---Manage-token-assets-such-as-NEAR-FT-NFT)
-- [contract    - Manage smart-contracts: deploy code, call functions](#contract---Manage-smart-contracts-deploy-code-call-functions)
+- [account - Manage accounts](#account---Manage-accounts)
+- [tokens - Manage token assets such as NEAR, FT, NFT](#tokens---Manage-token-assets-such-as-NEAR-FT-NFT)
+- [contract - Manage smart-contracts: deploy code, call functions](#contract---Manage-smart-contracts-deploy-code-call-functions)
 - [transaction - Operate transactions](#transaction---Operate-transactions)
-- [config      - Manage connections in a configuration file](#config---Manage-connections-in-a-configuration-file)
+- [config - Manage connections in a configuration file](#config---Manage-connections-in-a-configuration-file)
 
 ### account - Manage accounts
 
-View account details ([View properties for an account](#view-account-summary---view-properties-for-an-account)) and view account access keys ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) is possible at the current time (***now***) and at a certain point in the past by specifying the block (***at-block-height*** or ***at-block-hash***). The examples below show how these modes can be used.
+View account details ([View properties for an account](#view-account-summary---view-properties-for-an-account)) and view account access keys ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) is possible at the current time (**_now_**) and at a certain point in the past by specifying the block (**_at-block-height_** or **_at-block-hash_**). The examples below show how these modes can be used.
 
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
 - [import-account](#import-account---import-existing-account-aka-sign-in)
@@ -140,6 +142,7 @@ Number of access keys: 14
   13. ed25519:EYtsL67TpgfpE1udnga2m41vDoBqeZ2DB32onhsxsVUb (nonce: 72251760000002) is granted to full access
   14. ed25519:G2U7aZ91pgG3TS96gCWov5L1DkNWSi3756RRkwuspZ4L (nonce: 72251684000002) is granted to full access
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -151,6 +154,7 @@ Number of access keys: 14
 ##### at-block-height - View properties in a height-selected block
 
 To view an account summary for a specific block, you can specify the height of that block. To do this, at the terminal command line, type:
+
 ```txt
 near account \
     view-account-summary fro_volod.testnet \
@@ -180,6 +184,7 @@ Number of access keys: 12
   11. ed25519:HXHM2GTqDzCZnd7UQzPtL7VwcFfcm7n8Z8voo1ArE4Tr (nonce: 72263503000002) is granted to full access
   12. ed25519:HjzSeCGdWT15iSj2TybmKV2dZteu1VYYAaYvNYVNZY2W (nonce: 72253750000000) is granted to full access
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -191,12 +196,13 @@ Number of access keys: 12
 ##### at-block-hash - View properties in a hash-selected block
 
 To view an account summary for a specific block, you can specify the hash of that block. To do this, at the terminal command line, type:
+
 ```txt
 near account \
     view-account-summary fro_volod.testnet \
     network-config testnet \
     at-block-hash HCUJq3vQ3ztyCZAhmRmHR3cwSDcoE4zEbaWkhAjFuxUY
-````
+```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
@@ -220,6 +226,7 @@ Number of access keys: 12
   11. ed25519:HXHM2GTqDzCZnd7UQzPtL7VwcFfcm7n8Z8voo1ArE4Tr (nonce: 72263503000002) is granted to full access
   12. ed25519:HjzSeCGdWT15iSj2TybmKV2dZteu1VYYAaYvNYVNZY2W (nonce: 72253750000000) is granted to full access
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -237,6 +244,7 @@ Number of access keys: 12
 #### using-web-wallet - Import existing account using NEAR Wallet (a.k.a. "sign in")
 
 To authorize the user, in the terminal command line type:
+
 ```txt
 near account \
     import-account \
@@ -246,6 +254,7 @@ near account \
 
 You will be redirected to the browser for authorization.  
 Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testnet.mynearwallet.com/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
+
 ```txt
 near account \
     import-account \
@@ -255,11 +264,13 @@ near account \
 ```
 
 After successful authorization in _[NEAR Wallet](https://wallet.near.org/)_, you need to return to the terminal and enter your login.
+
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
 The data for the access key is saved in macOS Keychain
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -271,6 +282,7 @@ The data for the access key is saved in macOS Keychain
 #### using-seed-phrase - Import existing account using a seed phrase
 
 To authorize the user, in the terminal command line type:
+
 ```txt
 near account \
     import-account \
@@ -284,6 +296,7 @@ near account \
 ```txt
 The data for the access key is saved in macOS Keychain
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -295,6 +308,7 @@ The data for the access key is saved in macOS Keychain
 #### using-private-key - Import existing account using a private key
 
 To authorize the user, in the terminal command line type:
+
 ```txt
 near account \
     import-account \
@@ -307,6 +321,7 @@ near account \
 ```txt
 The data for the access key is saved in macOS Keychain
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -321,10 +336,10 @@ The data for the access key is saved in macOS Keychain
 - [using-seed-phrase](#using-seed-phrase---Export-existing-account-using-a-seed-phrase)
 - [using-private-key](#using-private-key---Export-existing-account-using-a-private-key)
 
-
 #### using-web-wallet - Export existing account using NEAR Wallet
 
 To export an existing account, enter in the terminal command line:
+
 ```txt
 near account \
     export-account volodymyr.testnet \
@@ -334,6 +349,7 @@ near account \
 
 You will be redirected to the browser for authorization.  
 Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testnet.mynearwallet.com/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
+
 ```txt
 near account \
     export-account volodymyr.testnet \
@@ -341,6 +357,7 @@ near account \
     network-config testnet\
     --wallet-url 'https://wallet.testnet.near.org/'
 ```
+
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/QqVhhVaBP4MP7XFDeb6arIB3S?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/QqVhhVaBP4MP7XFDeb6arIB3S.png" width="836"/>
@@ -350,6 +367,7 @@ near account \
 #### using-seed-phrase - Export existing account using a seed phrase
 
 To export an existing account, enter in the terminal command line:
+
 ```txt
 near account \
     export-account volodymyr.testnet \
@@ -362,11 +380,13 @@ near account \
 ```txt
 Here is the secret recovery seed phrase for account <volodymyr.testnet>: "feature army carpet ..." (HD Path: m/44'/397'/0').
 ```
+
 </details>
 
 #### using-private-key - Export existing account using a private key
 
 To export an existing account, enter in the terminal command line:
+
 ```txt
 near account \
     export-account volodymyr.testnet \
@@ -379,6 +399,7 @@ near account \
 ```txt
 Here is the private key for account <volodymyr.testnet>: ed25519:4TKr1c7p...y7p8BvGdB
 ```
+
 </details>
 
 #### create-account - Create a new account
@@ -391,8 +412,9 @@ Here is the private key for account <volodymyr.testnet>: ed25519:4TKr1c7p...y7p8
 #### sponsor-by-faucet-service - I would like the faucet service sponsor to cover the cost of creating an account (testnet only for now)
 
 testnet has a faucet (helper service) that can sponsor account creation.  
-When adding your own network in the [add-connection](#add-connection---Add-a-network-connection) configurator, you can specify your service in the *faucet_url* field.  
-Access keys to the created account can be added in several ways:  
+When adding your own network in the [add-connection](#add-connection---Add-a-network-connection) configurator, you can specify your service in the _faucet_url_ field.  
+Access keys to the created account can be added in several ways:
+
 - [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
 - [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
 - [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
@@ -401,6 +423,7 @@ Access keys to the created account can be added in several ways:
 ##### autogenerate-new-keypair - Automatically generate a key pair
 
 In order to create an account, in the terminal command line type:
+
 ```txt
 near account \
     create-account sponsor-by-faucet-service test_fro.testnet \
@@ -419,8 +442,9 @@ The data for the access key is saved in a file /Users/frovolod/.near-credentials
 New account <test_fro.testnet> created successfully.
 Transaction ID: FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
+https://testnet.nearblocks.io/txns/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -433,6 +457,7 @@ https://explorer.testnet.near.org/transactions/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgR
 
 This command adds a previously known mnemonic phrase to the account.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     create-account sponsor-by-faucet-service test_fro1.testnet \
@@ -447,8 +472,9 @@ near account \
 New account <test_fro1.testnet> created successfully.
 Transaction ID: D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
+https://testnet.nearblocks.io/txns/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -461,6 +487,7 @@ https://explorer.testnet.near.org/transactions/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUA
 
 This command adds a pre-known public access key to the account.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     create-account sponsor-by-faucet-service test_fro2.testnet \
@@ -475,8 +502,9 @@ near account \
 New account <test_fro2.testnet> created successfully.
 Transaction ID: E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
+https://testnet.nearblocks.io/txns/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -489,6 +517,7 @@ https://explorer.testnet.near.org/transactions/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5
 
 This command adds access keys to an account using a ledger.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     create-account sponsor-by-faucet-service test_fro3.testnet \
@@ -503,8 +532,9 @@ near account \
 New account <test_fro3.testnet> created successfully.
 Transaction ID: BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
+https://testnet.nearblocks.io/txns/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -516,7 +546,8 @@ https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTb
 #### fund-myself - I would like fund myself to cover the cost of creating an account
 
 With this command, you can create both a sub account and a "short name" account.  
-Access keys to the created account can be added in several ways:  
+Access keys to the created account can be added in several ways:
+
 - [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
 - [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
 - [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
@@ -525,6 +556,7 @@ Access keys to the created account can be added in several ways:
 ##### autogenerate-new-keypair - Automatically generate a key pair
 
 In order to create a sub-account, in the terminal command line type:
+
 ```txt
 near account \
     create-account fund-myself new.fro_volod.testnet '1 NEAR' \
@@ -543,11 +575,12 @@ Transaction sent ...
 New account <new.fro_volod.testnet> created successfully.
 Transaction ID: DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
+https://testnet.nearblocks.io/txns/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
 
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json 
+The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json
 The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet.json"
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -557,6 +590,7 @@ The data for the access key is saved in a file "/Users/frovolod/.near-credential
 </details>
 
 In order to create a "short name" account, in the terminal command line type:
+
 ```txt
 near account \
     create-account fund-myself new7.testnet '0.1 NEAR' \
@@ -575,11 +609,12 @@ Transaction sent ...
 New account <new7.testnet> created successfully.
 Transaction ID: GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
+https://testnet.nearblocks.io/txns/GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
 
 The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new7.testnet/ed25519_EX1qK1S1T4WxXJFLH7qZvKxnGQtcKfEEsiA4BNxAZ6mP.json"
 The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already exists! Therefore it was not overwritten.
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -592,6 +627,7 @@ The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already ex
 
 This command adds a previously known mnemonic phrase to the account.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     create-account fund-myself seed.volodymyr.testnet '0.1 NEAR' \
@@ -609,8 +645,9 @@ Transaction sent ...
 New account <seed.volodymyr.testnet> created successfully.
 Transaction ID: 31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
+https://testnet.nearblocks.io/txns/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZboNQih9bZuDt
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -623,6 +660,7 @@ https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZb
 
 This command adds a pre-known public access key to the account.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     create-account fund-myself pk.volodymyr.testnet '0.1 NEAR' \
@@ -640,8 +678,9 @@ Transaction sent ...
 New account <pk.volodymyr.testnet> created successfully.
 Transaction ID: CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
+https://testnet.nearblocks.io/txns/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -654,6 +693,7 @@ https://explorer.testnet.near.org/transactions/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2t
 
 This command adds access keys to an account using a ledger.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     create-account fund-myself ledger1.volodymyr.testnet '0.1 NEAR' \
@@ -671,8 +711,9 @@ Transaction sent ...
 New account <ledger1.volodymyr.testnet> created successfully.
 Transaction ID: BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
+https://testnet.nearblocks.io/txns/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -690,7 +731,8 @@ https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqAD
 ##### use-auto-generation - Use auto-generation to create an implicit account
 
 This command automatically generates access keys and saves them to a file named _implicit-account-id_.
-In order to execute this command, in the terminal command line type: 
+In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     create-account \
@@ -704,6 +746,7 @@ near account \
 ```txt
 The file "/Users/frovolod/.near-credentials/implicit/1573066d3fa7a2d56357aa5ddbc84295d94c61590390000981f5900b04e2f55f.json" was saved successfully
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -716,6 +759,7 @@ The file "/Users/frovolod/.near-credentials/implicit/1573066d3fa7a2d56357aa5ddbc
 
 This command generates access keys using the ledger and saves them in a file named _implicit-account-id_.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     create-account \
@@ -729,6 +773,7 @@ near account \
 ```txt
 The file "/Users/frovolod/.near-credentials/implicit/ledger/739c872c3057cd5d812c49345248b9fdd318c8ad33ace6cf0468109eae972c8e.json" was saved successfully
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -741,6 +786,7 @@ The file "/Users/frovolod/.near-credentials/implicit/ledger/739c872c3057cd5d812c
 
 This command generates access keys using a mnemonic phrase and saves them in a file named _implicit-account-id_.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     create-account \
@@ -755,6 +801,7 @@ near account \
 ```txt
 The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa6508f90f98e646836647ecd883d1d2b1989e5.json" was saved successfully
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -767,6 +814,7 @@ The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa
 
 This command is designed to delete the current account. It is important to remember that all tokens of the deleted account will be transferred to the "_beneficiary_" account.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     delete-account 2.fro_volod.testnet \
@@ -784,8 +832,9 @@ Successful transaction
 Account <2.fro_volod.testnet> has been successfully deleted.
 Transaction ID: EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
+https://testnet.nearblocks.io/txns/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -796,10 +845,11 @@ https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MG
 
 #### list-keys - View a list of access keys of an account
 
-Viewing account access keys is possible at the current time (***now***) and at a certain point in the past by specifying a block (***at-block-height*** or ***at-block-hash***).  
+Viewing account access keys is possible at the current time (**_now_**) and at a certain point in the past by specifying a block (**_at-block-height_** or **_at-block-hash_**).  
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view the list of access keys, type the following in the terminal command line:
+
 ```txt
 near account \
     list-keys fro_volod.testnet \
@@ -826,6 +876,7 @@ Number of access keys: 14
   13. ed25519:EYtsL67TpgfpE1udnga2m41vDoBqeZ2DB32onhsxsVUb (nonce: 72251760000002) is granted to full access
   14. ed25519:G2U7aZ91pgG3TS96gCWov5L1DkNWSi3756RRkwuspZ4L (nonce: 72251684000002) is granted to full access
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -837,10 +888,12 @@ Number of access keys: 14
 #### add-key - Add an access key to an account
 
 Let's execute the command to add a new pair of access keys to the account with the following conditions:
-  - the public key will be entered manually
-  - keys will have full access
-  - the transaction will be signed automatically (if there is a file with access keys)
-In order to execute this command, in the terminal command line type:
+
+- the public key will be entered manually
+- keys will have full access
+- the transaction will be signed automatically (if there is a file with access keys)
+  In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     add-key fro_volod.testnet \
@@ -859,8 +912,9 @@ Successful transaction
 Added access key = ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 to fro_volod.testnet.
 Transaction ID: 2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
+https://testnet.nearblocks.io/txns/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -870,10 +924,12 @@ https://explorer.testnet.near.org/transactions/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jS
 </details>
 
 Let's change our parameters to add access keys:
-  - keys will be generated automatically
-  - keys will have functional access
-  - the transaction will be signed with key pair
-In order to execute this command, in the terminal command line type:
+
+- keys will be generated automatically
+- keys will have functional access
+- the transaction will be signed with key pair
+  In order to execute this command, in the terminal command line type:
+
 ```txt
 near account \
     add-key fro_volod.testnet \
@@ -898,8 +954,9 @@ Successful transaction
 Added access key = ed25519:27R66L6yevyHbsk4fESZDC8QUQBwCdx6vvkk1uQmG7NY to fro_volod.testnet.
 Transaction ID: DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
+https://testnet.nearblocks.io/txns/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -911,6 +968,7 @@ https://explorer.testnet.near.org/transactions/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvn
 #### delete-key - Delete an access key from an account
 
 In order to remove access keys, in the terminal command line type:
+
 ```txt
 near account \
     delete-key fro_volod.testnet \
@@ -928,8 +986,9 @@ Successful transaction
 Access key <ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3> for account <fro_volod.testnet> has been successfully deleted.
 Transaction ID: 6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
+https://testnet.nearblocks.io/txns/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -963,6 +1022,7 @@ storage balance for <volodymyr.testnet>:
  available:        1.6 MB   (15.878059999854543210876557 NEAR [  15878059999854543210876557 yoctoNEAR])
  total:            1.6 MB   (16.238949999854543210876557 NEAR [  16238949999854543210876557 yoctoNEAR])
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -990,6 +1050,7 @@ near account \
 ```txt
 <fro_volod.testnet> has successfully added a deposit of 1 NEAR to <volodymyr.testnet> on contract <v1.social08.testnet>.
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1017,6 +1078,7 @@ near account \
 ```txt
 <volodymyr.testnet> has successfully withdraw 0.5 NEAR from <v1.social08.testnet>.
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1026,6 +1088,7 @@ near account \
 </details>
 
 ### tokens - Manage token assets such as NEAR, FT, NFT
+
 - [send-near](#send-near---The-transfer-is-carried-out-in-NEAR-tokens)
 - [send-ft](#send-ft---The-transfer-is-carried-out-in-FT-tokens)
 - [send-nft](#send-nft---The-transfer-is-carried-out-in-NFT-tokens)
@@ -1037,6 +1100,7 @@ near account \
 
 This command is used to transfer tokens between accounts. Please note that the amount of tokens forwarded is indicated together with the dimensional unit (this is NEAR or yoctoNEAR).
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1054,8 +1118,9 @@ Successful transaction
 <fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
 Transaction ID: 8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
+https://testnet.nearblocks.io/txns/8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1068,6 +1133,7 @@ https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWe
 
 This command is used to transfer FT tokens between accounts. Please note that the amount of tokens forwarded is indicated together in dimensionless units.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1087,8 +1153,9 @@ Successful transaction
 The "ft_transfer" call to <usdn.testnet> on behalf of <fro_volod.testnet> succeeded.
 Transaction ID: 5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
+https://testnet.nearblocks.io/txns/5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1101,6 +1168,7 @@ https://explorer.testnet.near.org/transactions/5a7YmANdpimiqUm6WC6n4dd91b6A9PafN
 
 This command is used to transfer NFT tokens between accounts.
 In order to execute this command, in the terminal command line type:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1120,8 +1188,9 @@ Successful transaction
 The "nft_transfer" call to <paras-token-v2.testnet> on behalf of <fro_volod.testnet> succeeded.
 Transaction ID: 9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
+https://testnet.nearblocks.io/txns/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1132,10 +1201,11 @@ https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7
 
 #### view-near-balance - View the balance of Near tokens
 
-Viewing the account balance is possible at the current time (***now***) and at a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).  
+Viewing the account balance is possible at the current time (**_now_**) and at a certain moment in the past by specifying the block (**_at-block-height_** or **_at-block-hash_**).  
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view the amount in NEAR tokens on the account, type the following in the terminal command line:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1149,6 +1219,7 @@ near tokens \
 ```txt
 fro_volod.testnet account has 169.589001320890476999999994 NEAR available for transfer (the total balance is 172.482461320890476999999994 NEAR, but 2.89246 NEAR is locked for storage and the transfer transaction fee is ~0.001 NEAR)
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1159,10 +1230,11 @@ fro_volod.testnet account has 169.589001320890476999999994 NEAR available for tr
 
 #### view-ft-balance - View the balance of FT tokens
 
-Viewing the account balance is possible at the current time (***now***) and at a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).  
+Viewing the account balance is possible at the current time (**_now_**) and at a certain moment in the past by specifying the block (**_at-block-height_** or **_at-block-hash_**).  
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view funds in FT tokens on the account, type the following in the terminal command line:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1176,6 +1248,7 @@ near tokens \
 ```txt
 fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usdn.testnet)
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1186,10 +1259,11 @@ fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usd
 
 #### view-nft-assets - View the balance of NFT tokens
 
-Viewing the account balance is possible at the current time (***now***) and at a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).  
+Viewing the account balance is possible at the current time (**_now_**) and at a certain moment in the past by specifying the block (**_at-block-height_** or **_at-block-hash_**).  
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To view funds in NFT tokens on the account, type the following in the terminal command line:
+
 ```txt
 near tokens \
     fro_volod.testnet \
@@ -1224,6 +1298,7 @@ fro_volod.testnet account has NFT tokens:
   }
 ]
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1246,10 +1321,11 @@ fro_volod.testnet account has NFT tokens:
 
 ##### as-read-only - Calling a view method
 
-Viewing data is possible at the current time (***now***) and at a certain point in the past by specifying a block (***at-block-height*** or ***at-block-hash***).  
+Viewing data is possible at the current time (**_now_**) and at a certain point in the past by specifying a block (**_at-block-height_** or **_at-block-hash_**).  
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 To run this command, type the following in the terminal command line:
+
 ```txt
 near contract \
     call-function \
@@ -1283,6 +1359,7 @@ near contract \
   }
 ]
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1294,6 +1371,7 @@ near contract \
 ##### as-transaction - Calling a change method
 
 To run this command, type the following in the terminal command line:
+
 ```txt
 near contract \
     call-function \
@@ -1315,8 +1393,9 @@ Successful transaction
 The "rate" call to <turbo.volodymyr.testnet> on behalf of <fro_volod.testnet> succeeded.
 Transaction ID: 7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
+https://testnet.nearblocks.io/txns/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1328,6 +1407,7 @@ https://explorer.testnet.near.org/transactions/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUC
 #### deploy - Add a new contract code
 
 In order to add a new contract, in the terminal command line type:
+
 ```txt
 near contract \
     deploy \
@@ -1351,8 +1431,9 @@ Contract code has been successfully deployed.
 The "increment" call to <262.volodymyr.testnet> on behalf of <262.volodymyr.testnet> succeeded.
 Transaction ID: 4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
+https://testnet.nearblocks.io/txns/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1363,7 +1444,7 @@ https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7
 
 #### download-wasm - Download wasm
 
-You can download the contract file for the current moment (***now***) and for a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).  
+You can download the contract file for the current moment (**_now_**) and for a certain moment in the past by specifying the block (**_at-block-height_** or **_at-block-hash_**).  
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
 
 In order to get the contract file, type the following in the terminal command line:
@@ -1390,9 +1471,9 @@ The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was dow
 
 #### view-storage - View contract storage state
 
-You can view the contract key values at the current moment in time (***now***) and at a certain point in the past by specifying a block (***at-block-height*** or ***at-block-hash***).  
+You can view the contract key values at the current moment in time (**_now_**) and at a certain point in the past by specifying a block (**_at-block-height_** or **_at-block-hash_**).  
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).  
-The keys themselves can be viewed all (***all***) or filtered using ***keys-start-with-string*** or ***keys-start-with-bytes-as-base64***.
+The keys themselves can be viewed all (**_all_**) or filtered using **_keys-start-with-string_** or **_keys-start-with-bytes-as-base64_**.
 
 To view contract keys, enter at the terminal command line:
 
@@ -1448,6 +1529,7 @@ Contract state (proof):
 #### view-status - View a transaction status
 
 To view the status of the desired transaction, type its hash in the terminal command line:
+
 ```txt
 near transaction \
     view-status GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank \
@@ -1608,6 +1690,7 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
     ],
 }
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1617,8 +1700,9 @@ Transaction status: FinalExecutionOutcomeWithReceiptView {
 </details>
 
 #### construct-transaction - Construct a new transaction
-  
+
 Let's consider an example when it is necessary to perform several actions within one transaction:
+
 1. Create an account
 2. Add access keys to the created account
 3. Transfer tokens to the created account
@@ -1632,8 +1716,9 @@ To do this, we will use the transaction constructor:
 </details>
 
 #### sign-transaction - Sign previously prepared unsigned transaction
-  
+
 Consider an example of using the ability to create a transaction in _offline_:
+
 1. Create a transaction.
 2. When choosing how to sign a transaction, select the _sign later_ option and follow the instructions.
 3. The displayed transaction in base64 format can be used here to sign it and/or send it later.
@@ -1645,8 +1730,9 @@ Consider an example of using the ability to create a transaction in _offline_:
 </details>
 
 #### send-signed-transaction - Send a signed transaction
-  
+
 Let's look at the previous example, using the capabilities of sending a signed transaction:
+
 1. Create a transaction.
 2. Sign the transaction with your access keys.
 3. Display the transaction on the screen in base64 format.
@@ -1659,8 +1745,9 @@ Let's look at the previous example, using the capabilities of sending a signed t
 </details>
 
 #### send-meta-transaction - Act as a relayer to send a signed delegate action (meta-transaction)
-  
+
 Consider an example of using metatransaction functions:
+
 1. Create a transaction.
 2. Specify a _network_ that supports meta-transactions.
 3. Sign the transaction with your access keys.
@@ -1683,6 +1770,7 @@ Send signed delegated transaction:
 #### show-connections - Show a list of network connections
 
 To view the data of the configuration file (_config.toml_), you can use the interactive mode or type in the terminal command line:
+
 ```txt
 near config show-connections
 ```
@@ -1695,14 +1783,14 @@ credentials_home_dir = "/Users/frovolod/.near-credentials"
 network_name = "mainnet"
 rpc_url = "https://archival-rpc.mainnet.near.org/"
 wallet_url = "https://wallet.near.org/"
-explorer_transaction_url = "https://explorer.near.org/transactions/"
+explorer_transaction_url = "https://nearblocks.io/txns/"
 linkdrop_account_id = "near"
 
 [network_connection.testnet]
 network_name = "testnet"
 rpc_url = "https://archival-rpc.testnet.near.org/"
 wallet_url = "https://wallet.testnet.near.org/"
-explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+explorer_transaction_url = "https://testnet.nearblocks.io/txns/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
 
@@ -1711,16 +1799,18 @@ network_name = "testnet"
 rpc_url = "https://near-testnet.api.pagoda.co/rpc/v1/"
 rpc_api_key = "c0a25b3c-39c2-4f62-a621-50e208b88e64"
 wallet_url = "https://wallet.testnet.near.org/"
-explorer_transaction_url = "https://explorer.testnet.near.org/transactions/"
+explorer_transaction_url = "https://testnet.nearblocks.io/txns/"
 linkdrop_account_id = "testnet"
 faucet_url = "https://helper.nearprotocol.com/account"
 meta_transaction_relayer_url = "https://near-testnet.api.pagoda.co/relay"
 ```
+
 </details>
 
 #### add-connection - Add a network connection
 
 To add network details to the configuration file (_config.toml_), you can use interactive mode or type in the terminal command line:
+
 ```txt
 near config \
     add-connection \
@@ -1728,7 +1818,7 @@ near config \
         --connection-name pagoda-testnet \
         --rpc-url https://near-testnet.api.pagoda.co/rpc/v1/ \
         --wallet-url https://wallet.testnet.near.org/ \
-        --explorer-transaction-url https://explorer.testnet.near.org/transactions/ \
+        --explorer-transaction-url https://testnet.nearblocks.io/txns/ \
         --rpc-api-key 'c0a25b3c-39c2-4f62-a621-50e208b88e64' \
         --linkdrop-account-id testnet \
         --faucet-url https://helper.nearprotocol.com/account \
@@ -1741,6 +1831,7 @@ near config \
 Configuration data is stored in a file "/Users/frovolod/Library/Application Support/near-cli/config.toml"
 Network connection "pagoda-testnet" was successfully added to config.toml
 ```
+
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
@@ -1752,6 +1843,7 @@ Network connection "pagoda-testnet" was successfully added to config.toml
 #### delete-connection - Delete a network connection
 
 To remove the network from the configuration file (_config.toml_), you can use interactive mode or type in the terminal command line:
+
 ```txt
 near config delete-connection pagoda-testnet
 ```
@@ -1762,4 +1854,5 @@ near config delete-connection pagoda-testnet
 Configuration data is stored in a file "/Users/frovolod/Library/Application Support/near-cli/config.toml"
 Network connection "pagoda-testnet" was successfully removed from config.toml
 ```
+
 </details>
