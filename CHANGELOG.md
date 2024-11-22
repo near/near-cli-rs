@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.1](https://github.com/near/near-cli-rs/compare/v0.16.0...v0.16.1) - 2024-11-22
+
+### Added
+
+- add to devtools workflow
+
 ## [0.16.0](https://github.com/near/near-cli-rs/compare/v0.15.1...v0.16.0) - 2024-11-18
 
 ### Other
