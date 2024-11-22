@@ -18,3 +18,57 @@ pub struct GlobalContext {
     pub offline: bool,
     pub teach_me: bool,
 }
+
+pub fn setup_tracing(teach_me_flag_is_set: bool) -> CliResult {
+    use indicatif::ProgressStyle;
+    use tracing_indicatif::IndicatifLayer;
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+    use tracing_subscriber::EnvFilter;
+
+    if teach_me_flag_is_set {
+        let env_filter = EnvFilter::from_default_env()
+            .add_directive(tracing::Level::WARN.into())
+            .add_directive("near_teach_me=info".parse()?)
+            .add_directive("near_cli_rs=info".parse()?);
+        tracing_subscriber::registry()
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .without_time()
+                    .with_target(false),
+            )
+            .with(env_filter)
+            .init();
+    } else {
+        let indicatif_layer = IndicatifLayer::new()
+            .with_progress_style(
+                ProgressStyle::with_template(
+                    "{spinner:.blue}{span_child_prefix} {span_name} {msg} {span_fields}",
+                )
+                .unwrap()
+                .tick_strings(&[
+                    "▹▹▹▹▹",
+                    "▸▹▹▹▹",
+                    "▹▸▹▹▹",
+                    "▹▹▸▹▹",
+                    "▹▹▹▸▹",
+                    "▹▹▹▹▸",
+                    "▪▪▪▪▪",
+                ]),
+            )
+            .with_span_child_prefix_symbol("↳ ");
+        let env_filter = EnvFilter::from_default_env()
+            .add_directive(tracing::Level::WARN.into())
+            .add_directive("near_cli_rs=info".parse()?);
+        tracing_subscriber::registry()
+            .with(
+                tracing_subscriber::fmt::layer()
+                    .without_time()
+                    .with_writer(indicatif_layer.get_stderr_writer()),
+            )
+            .with(indicatif_layer)
+            .with(env_filter)
+            .init();
+    };
+    Ok(())
+}
