@@ -81,11 +81,30 @@ pub fn before_creating_account(
         )))
     };
     tracing::Span::current().pb_set_message(faucet_service_url.as_str());
+    tracing::info!(target: "near_teach_me", "{}", faucet_service_url.as_str());
     let mut data = std::collections::HashMap::new();
     data.insert("newAccountId", new_account_id.to_string());
     data.insert("newAccountPublicKey", public_key.to_string());
 
     let client = reqwest::blocking::Client::new();
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "I am making HTTP call to create an account"
+    );
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "HTTP POST {}",
+        faucet_service_url.as_str()
+    );
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "JSON Body:\n{}",
+        crate::common::indent_payload(&format!("{:#?}", data))
+    );
+
     let result = client.post(faucet_service_url.clone()).json(&data).send();
 
     print_account_creation_status(
@@ -107,6 +126,12 @@ fn print_account_creation_status(
     eprintln!();
     match result {
         Ok(response) => {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON RPC Response:\n{}",
+                crate::common::indent_payload(&format!("{:#?}", response))
+            );
             if response.status() >= reqwest::StatusCode::BAD_REQUEST {
                 eprintln!("WARNING! The new account <{new_account_id}> could not be created successfully.\n{storage_message}\n");
                 return Err(color_eyre::Report::msg(format!(
@@ -163,6 +188,12 @@ fn print_account_creation_status(
             Ok(())
         }
         Err(err) => {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON RPC Response:\n{}",
+                crate::common::indent_payload(&err.to_string())
+            );
             eprintln!("WARNING! The new account <{new_account_id}> could not be created successfully.\n{storage_message}\n");
             Err(color_eyre::Report::msg(err.to_string()))
         }
