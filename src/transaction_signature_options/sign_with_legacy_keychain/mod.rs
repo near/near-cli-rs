@@ -128,9 +128,9 @@ impl SignLegacyKeychainContext {
         let signer_access_key_json =
             std::fs::read(&signer_access_key_file_path).wrap_err_with(|| {
                 format!(
-                    "Access key file for account <{}> on network <{}> not found!",
+                    "Access key file for account <{}> on network <{}> not found! \nSearch location: {:?}",
                     previous_context.prepopulated_transaction.signer_id,
-                    network_config.network_name
+                    network_config.network_name, signer_access_key_file_path
                 )
             })?;
         let signer_access_key: super::AccountKeyPair =
