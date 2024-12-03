@@ -3,6 +3,7 @@
     clippy::large_enum_variant,
     clippy::too_many_arguments
 )]
+
 use clap::Parser;
 #[cfg(feature = "self-update")]
 use color_eyre::eyre::WrapErr;
@@ -118,13 +119,17 @@ fn main() -> crate::common::CliResult {
     let cli_cmd = match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli), (config,)) {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
         | interactive_clap::ResultFromCli::Cancel(Some(cli_cmd)) => {
+            let cli_cmd_str = shell_words::join(
+                std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args()),
+            );
+
             eprintln!(
                 "\n\nHere is your console command if you need to script it or re-run:\n    {}\n",
-                shell_words::join(
-                    std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
-                )
-                .yellow()
+                cli_cmd_str.yellow()
             );
+
+            crate::common::save_cli_command(&cli_cmd_str);
+
             Ok(Some(cli_cmd))
         }
         interactive_clap::ResultFromCli::Cancel(None) => {
@@ -136,13 +141,16 @@ fn main() -> crate::common::CliResult {
         }
         interactive_clap::ResultFromCli::Err(optional_cli_cmd, err) => {
             if let Some(cli_cmd) = optional_cli_cmd {
+                let cli_cmd_str = shell_words::join(
+                    std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args()),
+                );
+
                 eprintln!(
                     "\nHere is your console command if you need to script it or re-run:\n    {}\n",
-                    shell_words::join(
-                        std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args())
-                    )
-                    .yellow()
+                    cli_cmd_str.yellow()
                 );
+
+                crate::common::save_cli_command(&cli_cmd_str);
             }
             Err(err)
         }
