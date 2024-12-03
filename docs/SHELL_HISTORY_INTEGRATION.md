@@ -73,8 +73,6 @@ function near
                 set history_file "$HOME/.fish_history"
             end
 
-            echo "$history_file"
-
             echo "- cmd: $final_command" >> $history_file
             echo "  when: "(date +%s) >> $history_file
 
