@@ -2156,18 +2156,43 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
     {
         if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method) {
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "HTTP POST {}",
-                self.server_addr()
-            );
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "JSON Request Body:\n{}",
-                indent_payload(&format!("{:#}", request_payload))
-            );
+            if tracing::enabled!(target: "near_teach_me", tracing::Level::INFO) {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "HTTP POST {}",
+                    self.server_addr()
+                );
+
+                let (request_payload, message_about_saving_payload) =
+                    check_request_payload_for_broadcast_tx_commit(request_payload);
+
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON Request Body:\n{}",
+                    indent_payload(&format!("{:#}", request_payload))
+                );
+                match message_about_saving_payload {
+                    Ok(Some(message)) => {
+                        tracing::event!(
+                            target: "near_teach_me",
+                            parent: &tracing::Span::none(),
+                            tracing::Level::INFO,
+                            "{}", message
+                        );
+                    }
+                    Err(message) => {
+                        tracing::event!(
+                            target: "near_teach_me",
+                            parent: &tracing::Span::none(),
+                            tracing::Level::WARN,
+                            "{}", message
+                        );
+                    }
+                    _ => {}
+                }
+            }
         }
 
         tokio::runtime::Runtime::new()
@@ -2373,6 +2398,92 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         self.blocking_call(query_view_method_request)
             .inspect(teach_me_call_response)
+    }
+}
+
+fn check_request_payload_for_broadcast_tx_commit(
+    mut request_payload: serde_json::Value,
+) -> (serde_json::Value, Result<Option<String>, String>) {
+    let mut message_about_saving_payload = Ok(None);
+    let method = request_payload.get("method").cloned();
+    let params_value = request_payload.get("params").cloned();
+    if let Some(method) = method {
+        if method.to_string().contains("broadcast_tx_commit") {
+            if let Some(params_value) = params_value {
+                message_about_saving_payload =
+                    replace_params_with_file(&mut request_payload, params_value);
+            }
+        }
+    }
+    (request_payload, message_about_saving_payload)
+}
+
+fn replace_params_with_file(
+    request_payload: &mut serde_json::Value,
+    params_value: serde_json::Value,
+) -> Result<Option<String>, String> {
+    let file_path = std::path::PathBuf::from("broadcast_tx_commit__params_field.json");
+
+    let total_params_length = {
+        match serde_json::to_vec_pretty(&params_value) {
+            Ok(serialized) => serialized.len(),
+            // this branch is supposed to be unreachable
+            Err(err) => {
+                return Err(format!(
+                    "Failed to save payload to `{}`. Serialization error:\n{}",
+                    &file_path.display(),
+                    indent_payload(&format!("{:#?}", err))
+                ));
+            }
+        }
+    };
+
+    if total_params_length > 1000 {
+        let file_content = {
+            let mut map = serde_json::Map::new();
+            map.insert(
+                "original `params` field of JSON Request Body".into(),
+                params_value,
+            );
+
+            serde_json::Value::Object(map)
+        };
+
+        let result = match std::fs::File::create(&file_path) {
+            Ok(mut file) => match serde_json::to_vec_pretty(&file_content) {
+                Ok(buf) => match file.write(&buf) {
+                    Ok(_) => {
+                        Ok(Some(format!("The file `{}` was created successfully. It has a signed transaction (serialized as base64).", &file_path.display())))
+                    }
+                    Err(err) => Err(format!(
+                        "Failed to save payload to `{}`. Failed to write file:\n{}",
+                        &file_path.display(),
+                        indent_payload(&format!("{:#?}", err))
+                    )),
+                },
+                Err(err) => Err(format!(
+                    "Failed to save payload to `{}`. Serialization error:\n{}",
+                    &file_path.display(),
+                    indent_payload(&format!("{:#?}", err))
+                )),
+            },
+            Err(err) => Err(format!(
+                "Failed to save payload to `{}`. Failed to create file:\n{}",
+                &file_path.display(),
+                indent_payload(&format!("{:#?}", err))
+            )),
+        };
+
+        if result.is_ok() {
+            request_payload["params"] = serde_json::json!(format!(
+                "`params` field serialization contains {} characters. Current field will be stored in `{}`",
+                total_params_length,
+                &file_path.display()
+            ));
+        }
+        result
+    } else {
+        Ok(None)
     }
 }
 
