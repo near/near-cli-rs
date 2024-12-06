@@ -2156,40 +2156,42 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
     {
         if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method) {
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "HTTP POST {}",
-                self.server_addr()
-            );
+            if tracing::enabled!(target: "near_teach_me", tracing::Level::INFO) {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "HTTP POST {}",
+                    self.server_addr()
+                );
 
-            let (request_payload, message_about_saving_payload) =
-                check_request_payload_for_broadcast_tx_commit(request_payload);
+                let (request_payload, message_about_saving_payload) =
+                    check_request_payload_for_broadcast_tx_commit(request_payload);
 
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "JSON Request Body:\n{}",
-                indent_payload(&format!("{:#}", request_payload))
-            );
-            match message_about_saving_payload {
-                Ok(Some(message)) => {
-                    tracing::event!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        tracing::Level::INFO,
-                        "{}", message
-                    );
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON Request Body:\n{}",
+                    indent_payload(&format!("{:#}", request_payload))
+                );
+                match message_about_saving_payload {
+                    Ok(Some(message)) => {
+                        tracing::event!(
+                            target: "near_teach_me",
+                            parent: &tracing::Span::none(),
+                            tracing::Level::INFO,
+                            "{}", message
+                        );
+                    }
+                    Err(message) => {
+                        tracing::event!(
+                            target: "near_teach_me",
+                            parent: &tracing::Span::none(),
+                            tracing::Level::WARN,
+                            "{}", message
+                        );
+                    }
+                    _ => {}
                 }
-                Err(message) => {
-                    tracing::event!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        tracing::Level::ERROR,
-                        "{}", message
-                    );
-                }
-                _ => {}
             }
         }
 
