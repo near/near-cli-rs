@@ -2422,12 +2422,19 @@ fn replace_params_with_file(
     request_payload: &mut serde_json::Value,
     params_value: serde_json::Value,
 ) -> Result<Option<String>, String> {
+    let file_path = std::path::PathBuf::from("broadcast_tx_commit__params_field.json");
+
     let total_params_length = {
         match serde_json::to_vec_pretty(&params_value) {
             Ok(serialized) => serialized.len(),
-            // skipping logic with replacing request's field, though
             // this branch is supposed to be unreachable
-            Err(_err) => 0,
+            Err(err) => {
+                return Err(format!(
+                    "Failed to save payload to `{}`. Serialization error:\n{}",
+                    &file_path.display(),
+                    indent_payload(&format!("{:#?}", err))
+                ));
+            }
         }
     };
 
@@ -2441,8 +2448,6 @@ fn replace_params_with_file(
 
             serde_json::Value::Object(map)
         };
-
-        let file_path = std::path::PathBuf::from("broadcast_tx_commit__params_field.json");
 
         let result = match std::fs::File::create(&file_path) {
             Ok(mut file) => match serde_json::to_vec_pretty(&file_content) {
