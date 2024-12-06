@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::str::FromStr;
 
@@ -17,6 +18,8 @@ pub type CliResult = color_eyre::eyre::Result<()>;
 
 use inquire::{Select, Text};
 use strum::IntoEnumIterator;
+
+const FINAL_COMMAND_FILE_NAME: &str = "near-cli-rs-final-command.log";
 
 pub fn get_near_exec_path() -> String {
     std::env::args()
@@ -574,7 +577,7 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         } else {
             let mnemonic =
                 bip39::Mnemonic::generate(generate_keypair.new_master_seed_phrase_words_count)?;
-            let master_seed_phrase = mnemonic.word_iter().collect::<Vec<&str>>().join(" ");
+            let master_seed_phrase = mnemonic.words().collect::<Vec<&str>>().join(" ");
             (master_seed_phrase, mnemonic.to_seed(""))
         };
 
@@ -902,6 +905,15 @@ pub fn rpc_transaction_error(
                 }
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status))
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::BadRequest => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with a bad request. Please, check your request parameters."))
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TimeoutError => {
+                    Ok("Timeout error while sending a request to the JSON RPC server".to_string())
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::ServiceUnavailable => {
+                    Ok("JSON RPC server is currently unavailable".to_string())
                 }
             }
         }
@@ -2706,4 +2718,22 @@ fn input_account_id_from_used_account_list(
     let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;
     update_used_account_list(credentials_home_dir, account_id.as_ref(), account_is_signer);
     Ok(Some(account_id))
+}
+
+pub fn save_cli_command(cli_cmd_str: &str) {
+    let tmp_file_path = std::env::temp_dir().join(FINAL_COMMAND_FILE_NAME);
+
+    let Ok(mut tmp_file) = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(tmp_file_path)
+    else {
+        eprintln!("Failed to open a temporary file to store a cli command");
+        return;
+    };
+
+    if let Err(err) = writeln!(tmp_file, "{}", cli_cmd_str) {
+        eprintln!("Failed to store a cli command in a temporary file: {}", err);
+    }
 }
