@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.1](https://github.com/near/near-cli-rs/compare/v0.16.0...v0.16.1) - 2024-12-06
+
+### Added
+
+- Added the ability to save payload for broadcast_tx_commit ([#413](https://github.com/near/near-cli-rs/pull/413))
+- Get the final CLI command into the shell history with a small helper setup ([#415](https://github.com/near/near-cli-rs/pull/415))
+- Trace configuration for loading wait indicators and --teach-me flag moved to library ([#417](https://github.com/near/near-cli-rs/pull/417))
+- add to devtools workflow
+
 ## [0.16.0](https://github.com/near/near-cli-rs/compare/v0.15.1...v0.16.0) - 2024-11-18
 
 ### Other
