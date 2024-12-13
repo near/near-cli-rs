@@ -19,7 +19,7 @@ impl From<near_primitives::transaction::Transaction> for TransactionAsBase64 {
                 nonce: value.nonce(),
                 signer_id: value.signer_id().clone(),
                 receiver_id: value.receiver_id().clone(),
-                block_hash: value.block_hash().clone(),
+                block_hash: *value.block_hash(),
                 actions: value.take_actions(),
             },
         }
