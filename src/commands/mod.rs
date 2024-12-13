@@ -52,7 +52,7 @@ pub enum TopLevelCommand {
 
 pub type OnBeforeSigningCallback = std::sync::Arc<
     dyn Fn(
-        &mut near_primitives::transaction::Transaction,
+        &mut near_primitives::transaction::TransactionV0,
         &crate::config::NetworkConfig,
     ) -> crate::CliResult,
 >;
@@ -66,6 +66,16 @@ pub struct PrepopulatedTransaction {
     pub signer_id: near_primitives::types::AccountId,
     pub receiver_id: near_primitives::types::AccountId,
     pub actions: Vec<near_primitives::transaction::Action>,
+}
+
+impl From<near_primitives::transaction::TransactionV0> for PrepopulatedTransaction {
+    fn from(value: near_primitives::transaction::TransactionV0) -> Self {
+        Self {
+            signer_id: value.signer_id,
+            receiver_id: value.receiver_id,
+            actions: value.actions,
+        }
+    }
 }
 
 impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction {
