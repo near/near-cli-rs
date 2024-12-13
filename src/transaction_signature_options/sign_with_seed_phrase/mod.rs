@@ -97,15 +97,18 @@ impl SignSeedPhraseContext {
             )
         };
 
-        let mut unsigned_transaction = Transaction::V0(TransactionV0 {
+        let mut unsigned_transaction = TransactionV0 {
             public_key: signer_public_key.clone(),
             block_hash,
             nonce,
             signer_id: previous_context.prepopulated_transaction.signer_id,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             actions: previous_context.prepopulated_transaction.actions,
-        });
+        };
+
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
+
+        let unsigned_transaction = Transaction::V0(unsigned_transaction);
 
         let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
