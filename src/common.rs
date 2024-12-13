@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::str::FromStr;
 
@@ -17,6 +18,8 @@ pub type CliResult = color_eyre::eyre::Result<()>;
 
 use inquire::{Select, Text};
 use strum::IntoEnumIterator;
+
+const FINAL_COMMAND_FILE_NAME: &str = "near-cli-rs-final-command.log";
 
 pub fn get_near_exec_path() -> String {
     std::env::args()
@@ -574,7 +577,7 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         } else {
             let mnemonic =
                 bip39::Mnemonic::generate(generate_keypair.new_master_seed_phrase_words_count)?;
-            let master_seed_phrase = mnemonic.word_iter().collect::<Vec<&str>>().join(" ");
+            let master_seed_phrase = mnemonic.words().collect::<Vec<&str>>().join(" ");
             (master_seed_phrase, mnemonic.to_seed(""))
         };
 
@@ -903,6 +906,15 @@ pub fn rpc_transaction_error(
                 near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status))
                 }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::BadRequest => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with a bad request. Please, check your request parameters."))
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TimeoutError => {
+                    Ok("Timeout error while sending a request to the JSON RPC server".to_string())
+                }
+                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::ServiceUnavailable => {
+                    Ok("JSON RPC server is currently unavailable".to_string())
+                }
             }
         }
     }
@@ -1180,11 +1192,12 @@ pub fn convert_invalid_tx_error_to_cli_result(
         },
         near_primitives::errors::InvalidTxError::StorageError(error) => match error {
             near_primitives::errors::StorageError::StorageInternalError => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Internal storage error")),
-            near_primitives::errors::StorageError::MissingTrieValue(_, _) => todo!(),
+            near_primitives::errors::StorageError::MissingTrieValue(_, hash) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Requested trie value by its hash ({hash}) which is missing in the storage",)),
             near_primitives::errors::StorageError::UnexpectedTrieValue => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Unexpected trie value")),
             near_primitives::errors::StorageError::StorageInconsistentState(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The storage is in the incosistent state: {}", message)),
             near_primitives::errors::StorageError::FlatStorageBlockNotSupported(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The block is not supported by flat storage: {}", message)),
             near_primitives::errors::StorageError::MemTrieLoadingError(message) =>  color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The trie is not loaded in memory: {}", message)),
+            near_primitives::errors::StorageError::FlatStorageReshardingAlreadyInProgress => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Flat storage resharding is already in progress")),
         },
         near_primitives::errors::InvalidTxError::ShardCongested { shard_id, congestion_level } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is too congested ({congestion_level:.2}/1.00) and can't accept new transaction")),
         near_primitives::errors::InvalidTxError::ShardStuck { shard_id, missed_chunks } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is {missed_chunks} blocks behind and can't accept new transaction until it will be in the sync")),
@@ -2144,18 +2157,43 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
     {
         if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method) {
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "HTTP POST {}",
-                self.server_addr()
-            );
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "JSON Request Body:\n{}",
-                indent_payload(&format!("{:#}", request_payload))
-            );
+            if tracing::enabled!(target: "near_teach_me", tracing::Level::INFO) {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "HTTP POST {}",
+                    self.server_addr()
+                );
+
+                let (request_payload, message_about_saving_payload) =
+                    check_request_payload_for_broadcast_tx_commit(request_payload);
+
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON Request Body:\n{}",
+                    indent_payload(&format!("{:#}", request_payload))
+                );
+                match message_about_saving_payload {
+                    Ok(Some(message)) => {
+                        tracing::event!(
+                            target: "near_teach_me",
+                            parent: &tracing::Span::none(),
+                            tracing::Level::INFO,
+                            "{}", message
+                        );
+                    }
+                    Err(message) => {
+                        tracing::event!(
+                            target: "near_teach_me",
+                            parent: &tracing::Span::none(),
+                            tracing::Level::WARN,
+                            "{}", message
+                        );
+                    }
+                    _ => {}
+                }
+            }
         }
 
         tokio::runtime::Runtime::new()
@@ -2361,6 +2399,92 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         self.blocking_call(query_view_method_request)
             .inspect(teach_me_call_response)
+    }
+}
+
+fn check_request_payload_for_broadcast_tx_commit(
+    mut request_payload: serde_json::Value,
+) -> (serde_json::Value, Result<Option<String>, String>) {
+    let mut message_about_saving_payload = Ok(None);
+    let method = request_payload.get("method").cloned();
+    let params_value = request_payload.get("params").cloned();
+    if let Some(method) = method {
+        if method.to_string().contains("broadcast_tx_commit") {
+            if let Some(params_value) = params_value {
+                message_about_saving_payload =
+                    replace_params_with_file(&mut request_payload, params_value);
+            }
+        }
+    }
+    (request_payload, message_about_saving_payload)
+}
+
+fn replace_params_with_file(
+    request_payload: &mut serde_json::Value,
+    params_value: serde_json::Value,
+) -> Result<Option<String>, String> {
+    let file_path = std::path::PathBuf::from("broadcast_tx_commit__params_field.json");
+
+    let total_params_length = {
+        match serde_json::to_vec_pretty(&params_value) {
+            Ok(serialized) => serialized.len(),
+            // this branch is supposed to be unreachable
+            Err(err) => {
+                return Err(format!(
+                    "Failed to save payload to `{}`. Serialization error:\n{}",
+                    &file_path.display(),
+                    indent_payload(&format!("{:#?}", err))
+                ));
+            }
+        }
+    };
+
+    if total_params_length > 1000 {
+        let file_content = {
+            let mut map = serde_json::Map::new();
+            map.insert(
+                "original `params` field of JSON Request Body".into(),
+                params_value,
+            );
+
+            serde_json::Value::Object(map)
+        };
+
+        let result = match std::fs::File::create(&file_path) {
+            Ok(mut file) => match serde_json::to_vec_pretty(&file_content) {
+                Ok(buf) => match file.write(&buf) {
+                    Ok(_) => {
+                        Ok(Some(format!("The file `{}` was created successfully. It has a signed transaction (serialized as base64).", &file_path.display())))
+                    }
+                    Err(err) => Err(format!(
+                        "Failed to save payload to `{}`. Failed to write file:\n{}",
+                        &file_path.display(),
+                        indent_payload(&format!("{:#?}", err))
+                    )),
+                },
+                Err(err) => Err(format!(
+                    "Failed to save payload to `{}`. Serialization error:\n{}",
+                    &file_path.display(),
+                    indent_payload(&format!("{:#?}", err))
+                )),
+            },
+            Err(err) => Err(format!(
+                "Failed to save payload to `{}`. Failed to create file:\n{}",
+                &file_path.display(),
+                indent_payload(&format!("{:#?}", err))
+            )),
+        };
+
+        if result.is_ok() {
+            request_payload["params"] = serde_json::json!(format!(
+                "`params` field serialization contains {} characters. Current field will be stored in `{}`",
+                total_params_length,
+                &file_path.display()
+            ));
+        }
+        result
+    } else {
+        Ok(None)
     }
 }
 
@@ -2635,4 +2759,22 @@ fn input_account_id_from_used_account_list(
     let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;
     update_used_account_list(credentials_home_dir, account_id.as_ref(), account_is_signer);
     Ok(Some(account_id))
+}
+
+pub fn save_cli_command(cli_cmd_str: &str) {
+    let tmp_file_path = std::env::temp_dir().join(FINAL_COMMAND_FILE_NAME);
+
+    let Ok(mut tmp_file) = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(tmp_file_path)
+    else {
+        eprintln!("Failed to open a temporary file to store a cli command");
+        return;
+    };
+
+    if let Err(err) = writeln!(tmp_file, "{}", cli_cmd_str) {
+        eprintln!("Failed to store a cli command in a temporary file: {}", err);
+    }
 }

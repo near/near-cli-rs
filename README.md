@@ -137,7 +137,7 @@ $ near
 [↑↓ to move, enter to select, type to filter]
 ```
 
-The CLI interactively guides you through some pretty complex topics, helping you make informed decisions along the way.
+The CLI interactively guides you through some pretty complex topics, helping you make informed decisions along the way. Also, you can enable [shell history integration](docs/SHELL_HISTORY_INTEGRATION.md)
 
 ## [Read more in English](docs/README.en.md)  
   - [Usage](docs/README.en.md#usage)

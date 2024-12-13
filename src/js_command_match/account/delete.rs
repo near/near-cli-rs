@@ -57,44 +57,44 @@ mod tests {
     fn delete_account() {
         for (input, expected_output) in [
             (
-                format!("near delete bob.testnet alice.testnet --force"),
-                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-keychain send")
+                "near delete bob.testnet alice.testnet --force".to_string(),
+                "account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-keychain send".to_string()
             ),
             (
-                format!("near delete-account bob.testnet alice.testnet --force"),
-                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-keychain send")
+                "near delete-account bob.testnet alice.testnet --force".to_string(),
+                "account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-keychain send".to_string()
             ),
             (
                 format!("near delete-account bob.testnet alice.testnet --{} --force", SIGN_WITH_LEDGER_ALIASES[0]),
-                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+                "account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send".to_string()
             ),
             (
                 format!("near delete-account bob.testnet alice.testnet --{} --force", SIGN_WITH_LEDGER_ALIASES[1]),
-                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+                "account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send".to_string()
             ),
             (
                 format!("near delete-account bob.testnet alice.testnet --{} --force", SIGN_WITH_LEDGER_ALIASES[2]),
-                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+                "account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send".to_string()
             ),
             (
                 format!("near delete-account bob.testnet alice.testnet --{} --force", SIGN_WITH_LEDGER_ALIASES[3]),
-                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+                "account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send".to_string()
             ),
             (
                 format!("near delete-account bob.testnet alice.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\" --force", LEDGER_PATH_ALIASES[0]),
-                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send")
+                "account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send".to_string()
             ),
             (
                 format!("near delete-account bob.testnet alice.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\" --force", LEDGER_PATH_ALIASES[1]),
-                format!("account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send")
+                "account delete-account bob.testnet beneficiary alice.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send".to_string()
             ),
             (
                 format!("near delete-account bob.testnet alice.testnet --signWithLedger --{} mainnet --force", NETWORK_ID_ALIASES[0]),
-                format!("account delete-account bob.testnet beneficiary alice.testnet network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+                "account delete-account bob.testnet beneficiary alice.testnet network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send".to_string()
             ),
             (
                 format!("near delete-account bob.testnet alice.testnet --signWithLedger --{} mainnet --force", NETWORK_ID_ALIASES[1]),
-                format!("account delete-account bob.testnet beneficiary alice.testnet network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+                "account delete-account bob.testnet beneficiary alice.testnet network-config mainnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send".to_string()
             )
         ] {
             let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
