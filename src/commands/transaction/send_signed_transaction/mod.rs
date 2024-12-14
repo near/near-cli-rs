@@ -80,10 +80,10 @@ pub struct FileWithBase64SignedTransaction {
 #[derive(Debug, Clone)]
 pub struct FileWithBase64SignedTransactionContext(SignedTransactionContext);
 
-#[derive(Debug, serde::Deserialize)]
-struct FileSignedTransaction {
-    #[serde(alias = "signedTransactionAsBase64")]
-    signed_transaction: near_primitives::transaction::SignedTransaction,
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct FileSignedTransaction {
+    #[serde(rename = "signed_transaction_as_base64")]
+    pub signed_transaction: near_primitives::transaction::SignedTransaction,
 }
 
 impl FileWithBase64SignedTransactionContext {
