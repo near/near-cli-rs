@@ -82,7 +82,7 @@ pub struct FileWithBase64SignedTransactionContext(SignedTransactionContext);
 
 #[derive(Debug, serde::Deserialize)]
 struct FileSignedTransaction {
-    #[serde(alias = "Signed transaction (serialized as base64)")]
+    #[serde(alias = "signedTransactionAsBase64")]
     signed_transaction: near_primitives::transaction::SignedTransaction,
 }
 

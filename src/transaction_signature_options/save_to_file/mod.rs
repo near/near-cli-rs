@@ -39,7 +39,7 @@ impl SaveToFileContext {
                     .to_string();
 
                 let data_signed_transaction = serde_json::json!(
-                    {"Signed transaction (serialized as base64)": signed_transaction_as_base64});
+                    {"signedTransactionAsBase64": signed_transaction_as_base64});
 
                 std::fs::File::create(&file_path)
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
