@@ -3,6 +3,8 @@ use std::io::Write;
 use color_eyre::eyre::Context;
 use inquire::CustomType;
 
+use super::super::commands::transaction::send_signed_transaction::FileSignedTransaction;
+
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
 #[interactive_clap(output_context = SaveToFileContext)]
@@ -32,14 +34,8 @@ impl SaveToFileContext {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                 signed_transaction,
             ) => {
-                let signed_transaction_as_base64 =
-                    crate::types::signed_transaction::SignedTransactionAsBase64::from(
-                        signed_transaction,
-                    )
-                    .to_string();
-
-                let data_signed_transaction = serde_json::json!(
-                    {"Signed transaction (serialized as base64)": signed_transaction_as_base64});
+                let data_signed_transaction =
+                    serde_json::to_value(FileSignedTransaction { signed_transaction })?;
 
                 std::fs::File::create(&file_path)
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
@@ -63,7 +59,7 @@ impl SaveToFileContext {
                     .to_string();
 
                 let data_signed_delegate_action = serde_json::json!(
-                    {"Signed delegate action (serialized as base64)": signed_delegate_action_as_base64});
+                    {"signed_delegate_action_as_base64": signed_delegate_action_as_base64});
 
                 std::fs::File::create(&file_path)
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
