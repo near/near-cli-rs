@@ -3,6 +3,7 @@ use std::io::Write;
 use color_eyre::eyre::Context;
 use inquire::CustomType;
 
+use super::super::commands::transaction::send_meta_transaction::FileSignedMetaTransaction;
 use super::super::commands::transaction::send_signed_transaction::FileSignedTransaction;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
@@ -52,14 +53,10 @@ impl SaveToFileContext {
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
             ) => {
-                let signed_delegate_action_as_base64 =
-                    crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
-                        signed_delegate_action,
-                    )
-                    .to_string();
-
-                let data_signed_delegate_action = serde_json::json!(
-                    {"signed_delegate_action_as_base64": signed_delegate_action_as_base64});
+                let data_signed_delegate_action =
+                    serde_json::to_value(&FileSignedMetaTransaction {
+                        signed_delegate_action: signed_delegate_action.into(),
+                    })?;
 
                 std::fs::File::create(&file_path)
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
@@ -80,13 +77,21 @@ impl SaveToFileContext {
 
 impl SaveToFile {
     fn input_file_path(
-        _context: &super::SubmitContext,
+        context: &super::SubmitContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
+        let starting_input = match &context.signed_transaction_or_signed_delegate_action {
+            super::SignedTransactionOrSignedDelegateAction::SignedTransaction(_) => {
+                "signed-transaction-info.json"
+            }
+            super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(_) => {
+                "signed-meta-transaction-info.json"
+            }
+        };
         Ok(Some(
             CustomType::new(
                 "What is the location of the file to save the transaction information?",
             )
-            .with_starting_input("signed-transaction-info.json")
+            .with_starting_input(starting_input)
             .prompt()?,
         ))
     }
