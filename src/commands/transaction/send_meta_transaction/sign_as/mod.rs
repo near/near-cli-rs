@@ -1,7 +1,7 @@
 use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::SendMetaTransactionContext)]
+#[interactive_clap(input_context = super::SignedMetaTransactionContext)]
 #[interactive_clap(output_context = RelayerAccountIdContext)]
 pub struct RelayerAccountId {
     #[interactive_clap(skip_default_input_arg)]
@@ -17,7 +17,7 @@ pub struct RelayerAccountIdContext(crate::commands::ActionContext);
 
 impl RelayerAccountIdContext {
     pub fn from_previous_context(
-        previous_context: super::SendMetaTransactionContext,
+        previous_context: super::SignedMetaTransactionContext,
         scope: &<RelayerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
@@ -71,7 +71,7 @@ impl From<RelayerAccountIdContext> for crate::commands::ActionContext {
 
 impl RelayerAccountId {
     fn input_relayer_account_id(
-        context: &super::SendMetaTransactionContext,
+        context: &super::SignedMetaTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let relayer_account_id = if let Some(account_id) =

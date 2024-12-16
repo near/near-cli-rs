@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 pub mod construct_transaction;
 mod print_transaction;
 mod reconstruct_transaction;
-mod send_meta_transaction;
+pub mod send_meta_transaction;
 pub mod send_signed_transaction;
 pub mod sign_transaction;
 mod view_status;
@@ -56,5 +56,5 @@ pub enum TransactionActions {
         message = "send-meta-transaction    - Act as a relayer to send a signed delegate action (meta-transaction)"
     ))]
     /// Act as a relayer to send a signed delegate action (meta-transaction)
-    SendMetaTransaction(self::send_meta_transaction::SendMetaTransaction),
+    SendMetaTransaction(self::send_meta_transaction::SignedMetaTransaction),
 }
