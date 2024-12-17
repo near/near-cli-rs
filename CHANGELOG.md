@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0](https://github.com/near/near-cli-rs/compare/v0.16.1...v0.17.0) - 2024-12-16
+
+### Added
+
+- Added the ability to send a signed meta-transaction from a file (#428)
+- Added the ability to send a signed transaction from a file (#412)
+- Added the ability to use TEACH ME mode to create an account with a faucet service sponsor (#407)
+
+### Fixed
+
+- Fixed field name for JSON file with transaction information (signed-transaction-info.json) (#427)
+
+### Other
+
+- add CODEOWNERS (#426)
+- print searched location on miss on sign-with-legacy-keychain (#422)
+- [**breaking**] updates near-* dependencies to 0.28 release (#423)
+
 ## [0.16.1](https://github.com/near/near-cli-rs/compare/v0.16.0...v0.16.1) - 2024-12-06
 
 ### Added
