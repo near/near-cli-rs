@@ -68,6 +68,8 @@ https://github.com/user-attachments/assets/4a7e4633-1957-4dc2-a032-827fa9c06c29
 
 Install it with `cargo`, just make sure you have [Rust](https://rustup.rs) installed on your computer.
 
+> NOTE: On Linux, near-cli-rs is built with Ledger devices support by default, and that requires `libudev-dev` package. On Debian/Ubuntu, install it with `apt install libudev-dev`.
+
 ```bash
 cargo install near-cli-rs
 ```
