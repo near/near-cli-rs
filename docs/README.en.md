@@ -68,9 +68,12 @@ You can learn more about working with the configuration file [here](GUIDE.en.md#
 
 ## Building
 
-_near CLI_ is written in Rust, so you'll need to install
+Prerequisites:
+
+* _near CLI_ is written in Rust, so you'll need to install
 [Rust](https://www.rust-lang.org/) in order to compile it.
-_near CLI_ compiles with Rust 1.64.0 (stable) or newer. In general, _near CLI_ tracks the latest stable release of the Rust compiler.
+  _near CLI_ compiles with Rust 1.80.0 (stable) or newer. In general, _near CLI_ tracks the latest stable release of the Rust compiler.
+* libudev-dev (Debian/Ubuntu: `apt install libudev-dev`)
 
 To build _near CLI_:
 
@@ -79,5 +82,5 @@ $ git clone https://github.com/near/near-cli-rs.git
 $ cd near-cli-rs
 $ cargo build --release
 $ ./target/release/near --version
-near 0.2.4
+near 0.17.0
 ```
