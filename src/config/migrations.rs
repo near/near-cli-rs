@@ -87,6 +87,16 @@ impl From<NetworkConfigV1> for NetworkConfigV2 {
     }
 }
 
+pub fn update_config_v2_to_v2_1(config_v2: ConfigV2) -> ConfigVersion {
+    let mut config_v2_1 = config_v2;
+    for (name, network_config) in config_v2_1.network_connection.iter_mut() {
+        if name == "testnet" && network_config.fastnear_url.is_none() {
+            network_config.fastnear_url = Some("https://test.api.fastnear.com/".parse().unwrap());
+        }
+    }
+    ConfigVersion::V2_1(config_v2_1)
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(tag = "version")]
 pub enum ConfigVersion {
@@ -94,4 +104,7 @@ pub enum ConfigVersion {
     V1(ConfigV1),
     #[serde(rename = "2")]
     V2(ConfigV2),
+    // Adds fastnear_url to the testnet config if it's not present
+    #[serde(rename = "2.1")]
+    V2_1(ConfigV2),
 }

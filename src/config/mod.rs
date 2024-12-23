@@ -74,7 +74,7 @@ impl Config {
     }
 
     pub fn into_latest_version(self) -> migrations::ConfigVersion {
-        migrations::ConfigVersion::V2(self)
+        migrations::ConfigVersion::V2_1(self)
     }
 
     pub fn get_config_toml() -> color_eyre::eyre::Result<Self> {
@@ -193,7 +193,10 @@ impl From<migrations::ConfigVersion> for Config {
                     migrations::ConfigVersion::V2(config_v1.into())
                 }
                 migrations::ConfigVersion::V2(config_v2) => {
-                    break config_v2;
+                    migrations::update_config_v2_to_v2_1(config_v2)
+                }
+                migrations::ConfigVersion::V2_1(config_v2_1) => {
+                    break config_v2_1;
                 }
             };
         }
