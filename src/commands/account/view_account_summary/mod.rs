@@ -108,8 +108,8 @@ fn get_account_inquiry(
                 crate::common::fetch_historically_delegated_staking_pools(fastnear_url, account_id)
                     .ok()
             });
-    let validators = if let Some(validators) = historically_delegated_validators {
-        Ok(validators)
+    let pools_to_query = if let Some(user_staked_pools) = historically_delegated_validators {
+        Ok(user_staked_pools)
     } else if let Some(staking_pools_factory_account_id) =
         &network_config.staking_pools_factory_account_id
     {
@@ -132,7 +132,7 @@ fn get_account_inquiry(
 
     let delegated_stake: color_eyre::Result<
         std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
-    > = match validators {
+    > = match pools_to_query {
         Ok(validators) => {
             let mut all_results = std::collections::BTreeMap::new();
             let validators: Vec<_> = validators.into_iter().collect();

@@ -1,10 +1,16 @@
-use crate::config::Config as ConfigV2;
+use crate::config::Config as ConfigV3;
 use crate::config::NetworkConfig as NetworkConfigV2;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ConfigV1 {
     pub credentials_home_dir: std::path::PathBuf,
     pub network_connection: linked_hash_map::LinkedHashMap<String, NetworkConfigV1>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ConfigV2 {
+    pub credentials_home_dir: std::path::PathBuf,
+    pub network_connection: linked_hash_map::LinkedHashMap<String, NetworkConfigV2>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -30,6 +36,25 @@ impl From<ConfigV1> for ConfigV2 {
                 .network_connection
                 .into_iter()
                 .map(|(network_name, network_config)| (network_name, network_config.into()))
+                .collect(),
+        }
+    }
+}
+
+impl From<ConfigV2> for ConfigV3 {
+    fn from(config: ConfigV2) -> Self {
+        ConfigV3 {
+            credentials_home_dir: config.credentials_home_dir,
+            network_connection: config
+                .network_connection
+                .into_iter()
+                .map(|(network_name, mut network_config)| {
+                    if network_name == "testnet" && network_config.faucet_url.is_none() {
+                        network_config.fastnear_url =
+                            Some("https://test.api.fastnear.com/".parse().unwrap());
+                    }
+                    (network_name, network_config)
+                })
                 .collect(),
         }
     }
@@ -87,16 +112,6 @@ impl From<NetworkConfigV1> for NetworkConfigV2 {
     }
 }
 
-pub fn update_config_v2_to_v2_1(config_v2: ConfigV2) -> ConfigVersion {
-    let mut config_v2_1 = config_v2;
-    for (name, network_config) in config_v2_1.network_connection.iter_mut() {
-        if name == "testnet" && network_config.fastnear_url.is_none() {
-            network_config.fastnear_url = Some("https://test.api.fastnear.com/".parse().unwrap());
-        }
-    }
-    ConfigVersion::V2_1(config_v2_1)
-}
-
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(tag = "version")]
 pub enum ConfigVersion {
@@ -105,6 +120,6 @@ pub enum ConfigVersion {
     #[serde(rename = "2")]
     V2(ConfigV2),
     // Adds fastnear_url to the testnet config if it's not present
-    #[serde(rename = "2.1")]
-    V2_1(ConfigV2),
+    #[serde(rename = "3")]
+    V3(ConfigV3),
 }
