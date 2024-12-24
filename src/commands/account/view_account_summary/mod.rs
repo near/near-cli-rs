@@ -134,7 +134,7 @@ fn get_account_inquiry(
         std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
     > = match pools_to_query {
         Ok(validators) => {
-            let mut all_results = std::collections::BTreeMap::new();
+            let mut all_results = Ok(std::collections::BTreeMap::new());
             let validators: Vec<_> = validators.into_iter().collect();
 
             for (batch_index, validator_batch) in validators
@@ -171,11 +171,21 @@ fn get_account_inquiry(
                             })
                         })
                         .try_collect::<std::collections::BTreeMap<_, _>>(),
-                )?;
+                );
 
-                all_results.extend(batch_results);
+                match batch_results {
+                    Ok(batch_results) => {
+                        let _ = all_results.as_mut().map(|all_results| {
+                            all_results.extend(batch_results);
+                        });
+                    }
+                    Err(err) => {
+                        all_results = Err(err);
+                        break;
+                    }
+                };
             }
-            Ok(all_results)
+            all_results
         }
         Err(err) => Err(err),
     };
