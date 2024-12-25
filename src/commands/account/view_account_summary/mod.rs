@@ -108,8 +108,8 @@ fn get_account_inquiry(
                 crate::common::fetch_historically_delegated_staking_pools(fastnear_url, account_id)
                     .ok()
             });
-    let validators = if let Some(validators) = historically_delegated_validators {
-        Ok(validators)
+    let pools_to_query = if let Some(user_staked_pools) = historically_delegated_validators {
+        Ok(user_staked_pools)
     } else if let Some(staking_pools_factory_account_id) =
         &network_config.staking_pools_factory_account_id
     {
@@ -124,32 +124,69 @@ fn get_account_inquiry(
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?;
-    let concurrency = 10;
+    // Staring from Feb 2025, the rate limit is 150 requests per 30 seconds for mainnet.
+    // We will limit the number of requests per batch to 140 to be conservative.
+    let batch_size = 140;
+    let batch_cooldown = tokio::time::Duration::from_secs(30);
+    let concurrency = 10; // Process 10 requests concurrently within each batch
+
     let delegated_stake: color_eyre::Result<
         std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
-    > = match validators {
-        Ok(validators) => Ok(runtime.block_on(
-            futures::stream::iter(validators)
-                .map(|validator_account_id| async {
-                    let balance = get_delegated_staked_balance(
-                        &json_rpc_client,
-                        block_reference,
-                        &validator_account_id,
-                        account_id,
-                    )
-                    .await?;
-                    Ok::<_, color_eyre::eyre::Report>((validator_account_id, balance))
-                })
-                .buffer_unordered(concurrency)
-                .filter(|balance_result| {
-                    futures::future::ready(if let Ok((_, balance)) = balance_result {
-                        !balance.is_zero()
-                    } else {
-                        true
-                    })
-                })
-                .try_collect(),
-        )?),
+    > = match pools_to_query {
+        Ok(validators) => {
+            let mut all_results = Ok(std::collections::BTreeMap::new());
+            let validators: Vec<_> = validators.into_iter().collect();
+
+            for (batch_index, validator_batch) in validators
+                .chunks(batch_size)
+                .map(|x| x.to_vec())
+                .enumerate()
+            {
+                if batch_index > 0 {
+                    // Wait 30 seconds before starting next batch
+                    tracing::info!(
+                        "Waiting for 30 seconds before fetching next batch of stake information"
+                    );
+                    runtime.block_on(async { tokio::time::sleep(batch_cooldown).await });
+                }
+
+                let batch_results = runtime.block_on(
+                    futures::stream::iter(validator_batch)
+                        .map(|validator_account_id| async {
+                            let balance = get_delegated_staked_balance(
+                                &json_rpc_client,
+                                block_reference,
+                                &validator_account_id,
+                                account_id,
+                            )
+                            .await?;
+                            Ok::<_, color_eyre::eyre::Report>((validator_account_id, balance))
+                        })
+                        .buffer_unordered(concurrency)
+                        .filter(|balance_result| {
+                            futures::future::ready(if let Ok((_, balance)) = balance_result {
+                                !balance.is_zero()
+                            } else {
+                                true
+                            })
+                        })
+                        .try_collect::<std::collections::BTreeMap<_, _>>(),
+                );
+
+                match batch_results {
+                    Ok(batch_results) => {
+                        let _ = all_results.as_mut().map(|all_results| {
+                            all_results.extend(batch_results);
+                        });
+                    }
+                    Err(err) => {
+                        all_results = Err(err);
+                        break;
+                    }
+                };
+            }
+            all_results
+        }
         Err(err) => Err(err),
     };
 
