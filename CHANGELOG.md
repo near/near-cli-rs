@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.1](https://github.com/near/near-cli-rs/compare/v0.17.0...v0.17.1) - 2024-12-25
+
+### Other
+
+- handle new rate-limits for querying pools (#433)
+- Extended the documentation for building NEAR CLI from the source code (#430)
+
 ## [0.17.0](https://github.com/near/near-cli-rs/compare/v0.16.1...v0.17.0) - 2024-12-16
 
 ### Added
