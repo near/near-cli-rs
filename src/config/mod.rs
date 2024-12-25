@@ -52,7 +52,7 @@ impl Default for Config {
                 near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
                 faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
                 meta_transaction_relayer_url: None,
-                fastnear_url: None,
+                fastnear_url: Some("https://test.api.fastnear.com/".parse().unwrap()),
                 staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
                 coingecko_url: None,
             },
@@ -99,7 +99,17 @@ impl Config {
                 }
             })?;
 
-            Ok(config_version.into())
+            let config = match config_version {
+                migrations::ConfigVersion::V3(config) => config,
+                _ => {
+                    eprintln!("Migrating config.toml to the latest version...");
+                    let config: Config = config_version.into();
+                    Self::write_config_toml(config.clone())?;
+                    config
+                }
+            };
+
+            Ok(config)
         } else {
             Ok(crate::config::Config::default())
         }
