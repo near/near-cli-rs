@@ -156,3 +156,7 @@ libudev-dev = { version = "*", targets = [
     "x86_64-unknown-linux-gnu",
     "aarch64-unknown-linux-gnu",
 ] }
+
+[patch.crates-io]
+interactive-clap = { git = 'https://github.com/dj8yfo/interactive-clap.git', branch = 'propagate_doc_comments_on_flags' }
+interactive-clap-derive = { git = 'https://github.com/dj8yfo/interactive-clap.git', branch = 'propagate_doc_comments_on_flags' }
