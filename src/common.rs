@@ -2065,7 +2065,7 @@ pub fn input_network_name(
                 network_config
                     .linkdrop_account_id
                     .as_ref()
-                    .map_or(false, |linkdrop_account_id| {
+                    .is_some_and(|linkdrop_account_id| {
                         account_ids.iter().any(|account_id| {
                             account_id.as_str().ends_with(linkdrop_account_id.as_str())
                         })
