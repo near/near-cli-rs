@@ -99,15 +99,12 @@ impl Config {
                 }
             })?;
 
-            let config = match config_version {
-                migrations::ConfigVersion::V3(config) => config,
-                _ => {
-                    eprintln!("Migrating config.toml to the latest version...");
-                    let config: Config = config_version.into();
-                    Self::write_config_toml(config.clone())?;
-                    config
-                }
-            };
+            let is_latest_version = config_version.is_latest_version();
+            let config: Config = config_version.into();
+
+            if !is_latest_version {
+                Self::write_config_toml(config.clone())?;
+            }
 
             Ok(config)
         } else {
@@ -200,9 +197,11 @@ impl From<migrations::ConfigVersion> for Config {
         loop {
             config_version = match config_version {
                 migrations::ConfigVersion::V1(config_v1) => {
+                    eprintln!("Migrating config.toml from V1 to V2...");
                     migrations::ConfigVersion::V2(config_v1.into())
                 }
                 migrations::ConfigVersion::V2(config_v2) => {
+                    eprintln!("Migrating config.toml from V2 to V3...");
                     migrations::ConfigVersion::V3(config_v2.into())
                 }
                 migrations::ConfigVersion::V3(config_v3) => {

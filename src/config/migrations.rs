@@ -123,3 +123,13 @@ pub enum ConfigVersion {
     #[serde(rename = "3")]
     V3(ConfigV3),
 }
+
+impl ConfigVersion {
+    pub fn is_latest_version(&self) -> bool {
+        // Used match instead of matches! to compile fail if new version is added
+        match self {
+            ConfigVersion::V3(_) => true,
+            ConfigVersion::V2(_) | ConfigVersion::V1(_) => false,
+        }
+    }
+}
