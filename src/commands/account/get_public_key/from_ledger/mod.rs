@@ -2,6 +2,7 @@
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = PublicKeyFromLedgerContext)]
 pub struct PublicKeyFromLedger {
+    #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
 }
