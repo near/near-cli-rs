@@ -32,11 +32,11 @@ pub enum GetPublicKeyMode {
     #[strum_discriminants(strum(
         message = "from-keychain               - Get the public key stored in a secure keychain"
     ))]
-    /// Get the public key stored in a secure keychain
+    /// Get the public key (full access key) stored in a secure keychain
     FromKeychain(self::from_keychain::PublicKeyFromKeychain),
     #[strum_discriminants(strum(
         message = "from-legacy-keychain        - Get the public key stored in the legacy keychain (compatible with the old near CLI)"
     ))]
-    /// Get the public key stored in the legacy keychain (compatible with the old near CLI)
+    /// Get the public key (full access key) stored in the legacy keychain (compatible with the old near CLI)
     FromLegacyKeychain(self::from_legacy_keychain::PublicKeyFromKeychain),
 }

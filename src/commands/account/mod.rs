@@ -57,9 +57,9 @@ pub enum AccountActions {
     /// View a list of access keys of an account
     ListKeys(self::list_keys::ViewListKeys),
     #[strum_discriminants(strum(
-        message = "get-public-key          - Get the public key (full access key) to your account"
+        message = "get-public-key          - Get the public key to your account"
     ))]
-    /// Get the public key (full access key) to your account
+    /// Get the public key to your account
     GetPublicKey(self::get_public_key::GetPublicKey),
     #[strum_discriminants(strum(
         message = "add-key                 - Add an access key to an account"
