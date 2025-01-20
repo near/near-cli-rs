@@ -49,7 +49,7 @@ impl From<ConfigV2> for ConfigV3 {
                 .network_connection
                 .into_iter()
                 .map(|(network_name, mut network_config)| {
-                    if network_name == "testnet" && network_config.faucet_url.is_none() {
+                    if network_name == "testnet" && network_config.fastnear_url.is_none() {
                         network_config.fastnear_url =
                             Some("https://test.api.fastnear.com/".parse().unwrap());
                     }
@@ -112,7 +112,7 @@ impl From<NetworkConfigV1> for NetworkConfigV2 {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 #[serde(tag = "version")]
 pub enum ConfigVersion {
     #[serde(rename = "1")]
@@ -122,4 +122,14 @@ pub enum ConfigVersion {
     // Adds fastnear_url to the testnet config if it's not present
     #[serde(rename = "3")]
     V3(ConfigV3),
+}
+
+impl ConfigVersion {
+    pub fn is_latest_version(&self) -> bool {
+        // Used match instead of matches! to compile fail if new version is added
+        match self {
+            ConfigVersion::V3(_) => true,
+            ConfigVersion::V2(_) | ConfigVersion::V1(_) => false,
+        }
+    }
 }
