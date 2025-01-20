@@ -5,6 +5,7 @@ pub mod create_account;
 mod delete_account;
 mod delete_key;
 mod export_account;
+mod get_public_key;
 mod import_account;
 mod list_keys;
 pub mod storage_management;
@@ -55,6 +56,11 @@ pub enum AccountActions {
     ))]
     /// View a list of access keys of an account
     ListKeys(self::list_keys::ViewListKeys),
+    #[strum_discriminants(strum(
+        message = "get-public-key          - Get the public key to your account"
+    ))]
+    /// Get the public key to your account
+    GetPublicKey(self::get_public_key::GetPublicKey),
     #[strum_discriminants(strum(
         message = "add-key                 - Add an access key to an account"
     ))]
