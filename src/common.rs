@@ -1332,6 +1332,37 @@ pub fn print_transaction_status(
     return_value
 }
 
+pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
+    network_config: crate::config::NetworkConfig,
+    credentials_home_dir: std::path::PathBuf,
+    key_pair_properties_buf: &str,
+    public_key_str: &str,
+    account_id: &str,
+) -> color_eyre::eyre::Result<String> {
+    match save_access_key_to_keychain(
+        network_config.clone(),
+        key_pair_properties_buf,
+        public_key_str,
+        account_id,
+    ) {
+        Ok(message) => Ok(message),
+        Err(err) => {
+            eprintln!(
+                "Failed to save the access key <{}> to the keychain.\n{}",
+                public_key_str, err
+            );
+            eprint!("The data for the access key will be stored in the leagacy keychain.");
+            save_access_key_to_legacy_keychain(
+                network_config.clone(),
+                credentials_home_dir,
+                key_pair_properties_buf,
+                public_key_str,
+                account_id,
+            )
+        }
+    }
+}
+
 pub fn save_access_key_to_keychain(
     network_config: crate::config::NetworkConfig,
     key_pair_properties_buf: &str,

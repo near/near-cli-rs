@@ -97,12 +97,13 @@ near-token = { version = "0.3", features = [
 near-abi = "0.4.2"
 zstd = "0.13"
 
-keyring = { version = "3.0.5", features = [
-    "apple-native",
-    "windows-native",
-    "sync-secret-service",
-    "vendored",
-] }
+# keyring = { version = "3.0.5", features = [
+#     "apple-native",
+#     "windows-native",
+#     "sync-secret-service",
+#     "vendored",
+# ] }
+keyring = "3.0.5"
 interactive-clap = "0.3"
 interactive-clap-derive = "0.3"
 
