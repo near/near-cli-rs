@@ -1354,7 +1354,7 @@ pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
                     public_key_str, err
                 )
                 .red(),
-                "The data for the access key will be stored in the leagacy keychain.".red()
+                "The data for the access key will be stored in the legacy keychain.".red()
             );
             save_access_key_to_legacy_keychain(
                 network_config.clone(),
