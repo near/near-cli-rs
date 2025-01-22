@@ -1348,10 +1348,14 @@ pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
         Ok(message) => Ok(message),
         Err(err) => {
             eprintln!(
-                "Failed to save the access key <{}> to the keychain.\n{}",
-                public_key_str, err
+                "\n{}\n{}\n",
+                format!(
+                    "Failed to save the access key <{}> to the keychain.\n{}",
+                    public_key_str, err
+                )
+                .red(),
+                "The data for the access key will be stored in the leagacy keychain.".red()
             );
-            eprint!("The data for the access key will be stored in the leagacy keychain.");
             save_access_key_to_legacy_keychain(
                 network_config.clone(),
                 credentials_home_dir,
@@ -1379,7 +1383,8 @@ pub fn save_access_key_to_keychain(
         .set_password(key_pair_properties_buf)
         .wrap_err("Failed to save password to keychain. You may need to install the secure keychain package by following this instruction: https://github.com/jaraco/keyring#using-keyring-on-headless-linux-systems")?;
 
-    Ok("The data for the access key is saved in the keychain".to_string())
+    // Ok("The data for the access key is saved in the keychain".to_string())
+    color_eyre::eyre::bail!(keyring::error::Error::NoEntry)
 }
 
 pub fn save_access_key_to_legacy_keychain(
