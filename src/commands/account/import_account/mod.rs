@@ -118,18 +118,14 @@ fn save_access_key(
     )
     .prompt()?;
     if let SelectStorage::SaveToKeychain = selection {
-        let storage_message = crate::common::save_access_key_to_keychain(
-            network_config,
-            key_pair_properties_buf,
-            public_key_str,
-            account_id.as_ref(),
-        )
-        .wrap_err_with(|| {
-            format!(
-                "Failed to save the access key <{}> to the keychain",
-                public_key_str
-            )
-        })?;
+        let storage_message =
+            crate::common::save_access_key_to_keychain_or_save_to_legacy_keychain(
+                network_config,
+                credentials_home_dir,
+                key_pair_properties_buf,
+                public_key_str,
+                account_id.as_ref(),
+            )?;
         eprintln!("{}", storage_message);
         return Ok(());
     }
