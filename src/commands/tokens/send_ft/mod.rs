@@ -1,4 +1,7 @@
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
 mod amount_ft;
+mod max_amount_ft;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
@@ -10,9 +13,8 @@ pub struct SendFtCommand {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the receiver account ID?
     receiver_account_id: crate::types::account_id::AccountId,
-    #[interactive_clap(named_arg)]
-    /// Specify amount FT
-    amount_ft: self::amount_ft::AmountFt,
+    #[interactive_clap(subcommand)]
+    transfer_amount_ft: TransferAmountFt,
 }
 
 #[derive(Debug, Clone)]
@@ -55,4 +57,21 @@ impl SendFtCommand {
             "What is the receiver account ID?",
         )
     }
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = SendFtCommandContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Select an action with the amount of fungible tokens to transfer:
+pub enum TransferAmountFt {
+    #[strum_discriminants(strum(
+        message = "exact-amount   - Transfer of the specified amount of fungible tokens (wNearAmount (10 wNEAR))"
+    ))]
+    /// Transfer of the specified amount of fungible tokens (wNearAmount (10 wNEAR))
+    ExactAmount(self::amount_ft::AmountFt),
+    #[strum_discriminants(strum(
+        message = "max-amount     - Transfer the entire amount of fungible tokens from your account ID"
+    ))]
+    /// Transfer the entire amount of fungible tokens from your account ID
+    MaxAmount(self::max_amount_ft::MaxAmountFt),
 }

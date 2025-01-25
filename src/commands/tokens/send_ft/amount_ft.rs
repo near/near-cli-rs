@@ -5,6 +5,8 @@ use serde_json::{json, Value};
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
 
+use super::super::view_ft_balance::get_ft_balance;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendFtCommandContext)]
 #[interactive_clap(output_context = AmountFtContext)]
@@ -19,11 +21,12 @@ pub struct AmountFt {
 
 #[derive(Debug, Clone)]
 pub struct AmountFtContext {
-    global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    ft_contract_account_id: near_primitives::types::AccountId,
-    receiver_account_id: near_primitives::types::AccountId,
-    amount_ft: crate::types::ft_properties::FungibleToken,
+    pub global_context: crate::GlobalContext,
+    pub signer_account_id: near_primitives::types::AccountId,
+    pub ft_contract_account_id: near_primitives::types::AccountId,
+    pub receiver_account_id: near_primitives::types::AccountId,
+    pub transfer_amount_option: super::TransferAmountFtDiscriminants,
+    pub amount_ft: Option<crate::types::ft_properties::FungibleToken>,
 }
 
 impl AmountFtContext {
@@ -52,7 +55,8 @@ impl AmountFtContext {
             signer_account_id: previous_context.signer_account_id,
             ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
-            amount_ft: scope.amount_ft.normalize(&ft_metadata)?,
+            transfer_amount_option: super::TransferAmountFtDiscriminants::ExactAmount,
+            amount_ft: Some(scope.amount_ft.normalize(&ft_metadata)?),
         })
     }
 }
@@ -116,7 +120,8 @@ pub struct PrepaidGasContext {
     signer_account_id: near_primitives::types::AccountId,
     ft_contract_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    amount_ft: crate::types::ft_properties::FungibleToken,
+    transfer_amount_option: super::TransferAmountFtDiscriminants,
+    amount_ft: Option<crate::types::ft_properties::FungibleToken>,
     gas: crate::common::NearGas,
 }
 
@@ -130,6 +135,7 @@ impl PrepaidGasContext {
             signer_account_id: previous_context.signer_account_id,
             ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
+            transfer_amount_option: previous_context.transfer_amount_option,
             amount_ft: previous_context.amount_ft,
             gas: scope.gas,
         })
@@ -186,9 +192,32 @@ impl DepositContext {
                 let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let deposit = scope.deposit;
-                let amount_ft = previous_context.amount_ft.clone();
+                let optional_amount_ft = previous_context.amount_ft.clone();
 
                 move |network_config| {
+                    let amount_ft = if let super::TransferAmountFtDiscriminants::MaxAmount = previous_context.transfer_amount_option {
+                        let function_args = serde_json::to_vec(&json!({"account_id": signer_account_id.to_string()}))?;
+                        let amount = get_ft_balance(
+                            network_config,
+                            &ft_contract_account_id,
+                            function_args,
+                            near_primitives::types::Finality::Final.into()
+                        )?
+                        .parse_result_from_json::<String>()?;
+                        let crate::types::ft_properties::FtMetadata { decimals, symbol } = crate::types::ft_properties::params_ft_metadata(
+                            ft_contract_account_id.clone(),
+                            network_config,
+                            near_primitives::types::Finality::Final.into(),
+                        )?;
+                        crate::types::ft_properties::FungibleToken::from_params_ft(
+                            amount.parse::<u128>()?,
+                            decimals,
+                            symbol
+                        )
+                    } else {
+                        optional_amount_ft.clone().expect("Internal error")
+                    };
+
                     get_prepopulated_transaction(
                         network_config,
                         &ft_contract_account_id,
@@ -203,11 +232,34 @@ impl DepositContext {
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
             let signer_account_id = previous_context.signer_account_id.clone();
-            let amount_ft = previous_context.amount_ft.clone();
             let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
             let receiver_account_id = previous_context.receiver_account_id.clone();
+            let optional_amount_ft = previous_context.amount_ft.clone();
 
-            move |outcome_view, _network_config| {
+            move |outcome_view, network_config| {
+                let amount_ft = if let super::TransferAmountFtDiscriminants::MaxAmount = previous_context.transfer_amount_option {
+                    let function_args = serde_json::to_vec(&json!({"account_id": signer_account_id.to_string()}))?;
+                    let amount = get_ft_balance(
+                        network_config,
+                        &ft_contract_account_id,
+                        function_args,
+                        near_primitives::types::Finality::Final.into()
+                    )?
+                    .parse_result_from_json::<String>()?;
+                    let crate::types::ft_properties::FtMetadata { decimals, symbol } = crate::types::ft_properties::params_ft_metadata(
+                        ft_contract_account_id.clone(),
+                        network_config,
+                        near_primitives::types::Finality::Final.into(),
+                    )?;
+                    crate::types::ft_properties::FungibleToken::from_params_ft(
+                        amount.parse::<u128>()?,
+                        decimals,
+                        symbol
+                    )
+                } else {
+                    optional_amount_ft.clone().expect("Internal error")
+                };
+
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                     eprintln!(
                         "<{signer_account_id}> has successfully transferred {amount_ft} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.",

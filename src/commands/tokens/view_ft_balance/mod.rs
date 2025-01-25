@@ -82,7 +82,7 @@ impl ViewFtBalance {
 }
 
 #[tracing::instrument(name = "Getting FT balance ...", skip_all)]
-fn get_ft_balance(
+pub fn get_ft_balance(
     network_config: &crate::config::NetworkConfig,
     ft_contract_account_id: &near_primitives::types::AccountId,
     args: Vec<u8>,
