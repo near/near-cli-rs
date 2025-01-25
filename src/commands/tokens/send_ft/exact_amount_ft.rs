@@ -9,8 +9,8 @@ use super::super::view_ft_balance::get_ft_balance;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendFtCommandContext)]
-#[interactive_clap(output_context = AmountFtContext)]
-pub struct AmountFt {
+#[interactive_clap(output_context = ExactAmountFtContext)]
+pub struct ExactAmountFt {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter an amount FT to transfer:
     amount_ft: crate::types::ft_properties::FungibleToken,
@@ -20,7 +20,7 @@ pub struct AmountFt {
 }
 
 #[derive(Debug, Clone)]
-pub struct AmountFtContext {
+pub struct ExactAmountFtContext {
     pub global_context: crate::GlobalContext,
     pub signer_account_id: near_primitives::types::AccountId,
     pub ft_contract_account_id: near_primitives::types::AccountId,
@@ -29,10 +29,10 @@ pub struct AmountFtContext {
     pub amount_ft: Option<crate::types::ft_properties::FungibleToken>,
 }
 
-impl AmountFtContext {
+impl ExactAmountFtContext {
     pub fn from_previous_context(
         previous_context: super::SendFtCommandContext,
-        scope: &<AmountFt as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<ExactAmountFt as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = crate::common::find_network_where_account_exist(
             &previous_context.global_context,
@@ -61,7 +61,7 @@ impl AmountFtContext {
     }
 }
 
-impl AmountFt {
+impl ExactAmountFt {
     fn input_amount_ft(
         context: &super::SendFtCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::ft_properties::FungibleToken>> {
@@ -103,7 +103,7 @@ impl AmountFt {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = AmountFtContext)]
+#[interactive_clap(input_context = ExactAmountFtContext)]
 #[interactive_clap(output_context = PrepaidGasContext)]
 pub struct PrepaidGas {
     #[interactive_clap(skip_default_input_arg)]
@@ -127,7 +127,7 @@ pub struct PrepaidGasContext {
 
 impl PrepaidGasContext {
     pub fn from_previous_context(
-        previous_context: AmountFtContext,
+        previous_context: ExactAmountFtContext,
         scope: &<PrepaidGas as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
@@ -144,7 +144,7 @@ impl PrepaidGasContext {
 
 impl PrepaidGas {
     fn input_gas(
-        _context: &AmountFtContext,
+        _context: &ExactAmountFtContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         eprintln!();
         Ok(Some(

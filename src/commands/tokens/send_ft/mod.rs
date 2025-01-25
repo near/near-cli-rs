@@ -1,6 +1,6 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-mod amount_ft;
+mod exact_amount_ft;
 mod max_amount_ft;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -68,7 +68,7 @@ pub enum TransferAmountFt {
         message = "exact-amount   - Transfer of the specified amount of fungible tokens (wNearAmount (10 wNEAR))"
     ))]
     /// Transfer of the specified amount of fungible tokens (wNearAmount (10 wNEAR))
-    ExactAmount(self::amount_ft::AmountFt),
+    ExactAmount(self::exact_amount_ft::ExactAmountFt),
     #[strum_discriminants(strum(
         message = "max-amount     - Transfer the entire amount of fungible tokens from your account ID"
     ))]
