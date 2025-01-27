@@ -31,6 +31,9 @@ struct Cmd {
     /// Offline mode
     #[interactive_clap(long)]
     offline: bool,
+    /// Quiet mode
+    #[interactive_clap(long)]
+    quiet: bool,
     /// TEACH-ME mode
     #[interactive_clap(long)]
     teach_me: bool,
@@ -49,6 +52,7 @@ impl CmdContext {
         Ok(Self(crate::GlobalContext {
             config: previous_context.0,
             offline: scope.offline,
+            quiet: scope.quiet,
             teach_me: scope.teach_me,
         }))
     }
@@ -123,10 +127,12 @@ fn main() -> crate::common::CliResult {
                 std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args()),
             );
 
-            eprintln!(
-                "\n\nHere is your console command if you need to script it or re-run:\n    {}\n",
-                cli_cmd_str.yellow()
-            );
+            if !cli_cmd.quiet {
+                eprintln!(
+                    "\n\nHere is your console command if you need to script it or re-run:\n    {}\n",
+                    cli_cmd_str.yellow()
+                );
+            }
 
             crate::common::save_cli_command(&cli_cmd_str);
 
@@ -145,10 +151,12 @@ fn main() -> crate::common::CliResult {
                     std::iter::once(&near_cli_exec_path).chain(&cli_cmd.to_cli_args()),
                 );
 
-                eprintln!(
-                    "\nHere is your console command if you need to script it or re-run:\n    {}\n",
-                    cli_cmd_str.yellow()
-                );
+                if !cli_cmd.quiet {
+                    eprintln!(
+                        "\nHere is your console command if you need to script it or re-run:\n    {}\n",
+                        cli_cmd_str.yellow()
+                    );
+                }
 
                 crate::common::save_cli_command(&cli_cmd_str);
             }
@@ -186,6 +194,7 @@ fn main() -> crate::common::CliResult {
                 );
                 let self_update_cli_cmd = CliCmd {
                     offline: false,
+                    quiet: false,
                     teach_me: false,
                     top_level:
                         Some(crate::commands::CliTopLevelCommand::Extensions(
