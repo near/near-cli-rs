@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0](https://github.com/near/near-cli-rs/compare/v0.18.0...v0.19.0) - 2025-01-27
+
+### Added
+
+- A new `--quiet` flag to suppress noisy output in scripting scenarios (#441)
+
+### Fixed
+
+- Use legacy keychain as a fallback storage when system keychain is not supported (e.g. WSL, Codespaces, Docker containers, CI) (#439)
+
 ## [0.18.0](https://github.com/near/near-cli-rs/compare/v0.17.0...v0.18.0) - 2025-01-20
 
 ### Added
