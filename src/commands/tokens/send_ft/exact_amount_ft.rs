@@ -10,7 +10,7 @@ pub struct ExactAmountFt {
     amount_ft: crate::types::ft_properties::FungibleToken,
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
-    prepaid_gas: super::transaction_formation::PrepaidGas,
+    prepaid_gas: super::ft_transfer::PrepaidGas,
 }
 
 #[derive(Debug, Clone)]

@@ -4,7 +4,7 @@
 pub struct MaxAmountFt {
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
-    prepaid_gas: super::transaction_formation::PrepaidGas,
+    prepaid_gas: super::ft_transfer::PrepaidGas,
 }
 
 #[derive(Debug, Clone)]
