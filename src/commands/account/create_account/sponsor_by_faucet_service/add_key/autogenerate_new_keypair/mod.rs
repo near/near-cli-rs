@@ -83,8 +83,9 @@ impl SaveModeContext {
                         SaveModeDiscriminants::SaveToKeychain => {
                             let key_pair_properties_buf =
                                 serde_json::to_string(&key_pair_properties)?;
-                            crate::common::save_access_key_to_keychain(
+                            crate::common::save_access_key_to_keychain_or_save_to_legacy_keychain(
                                 network_config.clone(),
+                                credentials_home_dir.clone(),
                                 &key_pair_properties_buf,
                                 &key_pair_properties.public_key_str,
                                 &new_account_id_str,

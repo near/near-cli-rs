@@ -16,6 +16,7 @@ pub mod utils_command;
 pub struct GlobalContext {
     pub config: crate::config::Config,
     pub offline: bool,
+    pub quiet: bool,
     pub teach_me: bool,
 }
 
