@@ -49,11 +49,17 @@ impl CmdContext {
         previous_context: ConfigContext,
         scope: &<Cmd as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let verbosity = if scope.quiet {
+            near_cli_rs::Verbosity::Quiet
+        } else if scope.teach_me {
+            near_cli_rs::Verbosity::TeachMe
+        } else {
+            near_cli_rs::Verbosity::Interactive
+        };
         Ok(Self(crate::GlobalContext {
             config: previous_context.0,
             offline: scope.offline,
-            quiet: scope.quiet,
-            teach_me: scope.teach_me,
+            verbosity,
         }))
     }
 }
@@ -118,7 +124,14 @@ fn main() -> crate::common::CliResult {
             }
         },
     };
-    near_cli_rs::setup_tracing(cli.teach_me)?;
+    let verbosity = if cli.quiet {
+        near_cli_rs::Verbosity::Quiet
+    } else if cli.teach_me {
+        near_cli_rs::Verbosity::TeachMe
+    } else {
+        near_cli_rs::Verbosity::Interactive
+    };
+    near_cli_rs::setup_tracing(verbosity)?;
 
     let cli_cmd = match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli), (config,)) {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
