@@ -3,62 +3,69 @@ use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendFtCommandContext)]
-#[interactive_clap(output_context = ExactAmountFtContext)]
-pub struct ExactAmountFt {
+#[interactive_clap(output_context = AmountFtContext)]
+pub struct AmountFt {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter an amount FT to transfer:
-    amount_ft: crate::types::ft_properties::FungibleToken,
+    ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
     prepaid_gas: super::ft_transfer::PrepaidGas,
 }
 
 #[derive(Debug, Clone)]
-pub struct ExactAmountFtContext {
+pub struct AmountFtContext {
     pub global_context: crate::GlobalContext,
     pub signer_account_id: near_primitives::types::AccountId,
     pub ft_contract_account_id: near_primitives::types::AccountId,
     pub receiver_account_id: near_primitives::types::AccountId,
-    pub transfer_amount_option: super::TransferAmountFtDiscriminants,
-    pub amount_ft: Option<crate::types::ft_properties::FungibleToken>,
+    pub ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
 }
 
-impl ExactAmountFtContext {
+impl AmountFtContext {
     pub fn from_previous_context(
         previous_context: super::SendFtCommandContext,
-        scope: &<ExactAmountFt as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<AmountFt as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let network_config = crate::common::find_network_where_account_exist(
-            &previous_context.global_context,
-            previous_context.ft_contract_account_id.clone(),
-        )
-        .wrap_err_with(|| {
-            format!(
-                "Contract <{}> does not exist in networks",
-                previous_context.ft_contract_account_id
-            )
-        })?;
-        let ft_metadata = crate::types::ft_properties::params_ft_metadata(
-            previous_context.ft_contract_account_id.clone(),
-            &network_config,
-            near_primitives::types::Finality::Final.into(),
-        )?;
+        let ft_transfer_amount =
+            if let crate::types::ft_properties::FungibleTokenTransferAmount::MaxAmount =
+                scope.ft_transfer_amount
+            {
+                crate::types::ft_properties::FungibleTokenTransferAmount::MaxAmount
+            } else {
+                let network_config = crate::common::find_network_where_account_exist(
+                    &previous_context.global_context,
+                    previous_context.ft_contract_account_id.clone(),
+                )
+                .wrap_err_with(|| {
+                    format!(
+                        "Contract <{}> does not exist in networks",
+                        previous_context.ft_contract_account_id
+                    )
+                })?;
+                let ft_metadata = crate::types::ft_properties::params_ft_metadata(
+                    previous_context.ft_contract_account_id.clone(),
+                    &network_config,
+                    near_primitives::types::Finality::Final.into(),
+                )?;
+                scope.ft_transfer_amount.normalize(&ft_metadata)?
+            };
 
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
-            transfer_amount_option: super::TransferAmountFtDiscriminants::ExactAmount,
-            amount_ft: Some(scope.amount_ft.normalize(&ft_metadata)?),
+            ft_transfer_amount,
         })
     }
 }
 
-impl ExactAmountFt {
-    fn input_amount_ft(
+impl AmountFt {
+    fn input_ft_transfer_amount(
         context: &super::SendFtCommandContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::ft_properties::FungibleToken>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::ft_properties::FungibleTokenTransferAmount>>
+    {
         let network_config = crate::common::find_network_where_account_exist(
             &context.global_context,
             context.ft_contract_account_id.clone(),
@@ -78,11 +85,11 @@ impl ExactAmountFt {
         eprintln!();
 
         Ok(Some(
-            CustomType::<crate::types::ft_properties::FungibleToken>::new(&format!(
-                "Enter an FT amount to transfer (example: 10 {symbol} or 0.5 {symbol}):",
+            CustomType::<crate::types::ft_properties::FungibleTokenTransferAmount>::new(&format!(
+                "Enter an FT amount to transfer (example: 10 {symbol} or 0.5 {symbol} or \"all\" to transfer the entire amount of fungible tokens from your account):",
                 symbol = ft_metadata.symbol
             ))
-            .with_validator(move |ft: &crate::types::ft_properties::FungibleToken| {
+            .with_validator(move |ft: &crate::types::ft_properties::FungibleTokenTransferAmount| {
                 match ft.normalize(&ft_metadata) {
                     Err(err) => Ok(inquire::validator::Validation::Invalid(
                         inquire::validator::ErrorMessage::Custom(err.to_string()),
