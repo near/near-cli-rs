@@ -1,5 +1,5 @@
 mod amount_ft;
-mod ft_transfer;
+mod preparation_ft_transfer;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
