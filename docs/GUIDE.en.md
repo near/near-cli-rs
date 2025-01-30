@@ -1399,14 +1399,15 @@ https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWe
 
 #### send-ft - The transfer is carried out in FT tokens
 
-This command is used to transfer FT tokens between accounts. Please note that the amount of tokens forwarded is indicated together in dimensionless units.
+This command is used to transfer FT tokens between accounts. Please note that the number of tokens to be transferred is indicated along with the name of the token currency.
 In order to execute this command, in the terminal command line type:
 ```txt
 near tokens \
     fro_volod.testnet \
-    send-ft usdn.testnet volodymyr.testnet 10000000000000000000 \
-        --prepaid-gas 100.000TeraGas \
-        --attached-deposit 1yoctoNEAR \
+    send-ft usdn.testnet volodymyr.testnet \
+    amount-ft '10 usn' \
+    prepaid-gas '100.0 Tgas' \
+    attached-deposit '1 yoctoNEAR' \
     network-config testnet \
     sign-with-keychain \
     send
@@ -1415,18 +1416,55 @@ near tokens \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-Successful transaction
 The "ft_transfer" call to <usdn.testnet> on behalf of <fro_volod.testnet> succeeded.
-Transaction ID: 5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
+
+Gas burned: 3.3 Tgas
+Transaction fee: 0.0003200613918854 NEAR (approximately $0.00140186 USD, using $4.38 USD/NEAR exchange rate)
+Transaction ID: FhK3CkEHbCk5wwGfjyEC6k1eHGcUh97ZThqY3Cx5XLSN
 To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/5a7YmANdpimiqUm6WC6n4dd91b6A9PafNNhad8HWKugN
+https://explorer.testnet.near.org/transactionsFhK3CkEHbCk5wwGfjyEC6k1eHGcUh97ZThqY3Cx5XLSN
+
+<fro_volod.testnet> has successfully transferred 10 USN (FT-contract: usdn.testnet) to <volodymyr.testnet>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/uvZGcJUpufJZdB10GsQlfXwW1?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/uvZGcJUpufJZdB10GsQlfXwW1.png" width="836"/>
+<a href="https://asciinema.org/a/FYZ9hbg37jKeGVPUeRu3sJltz?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/FYZ9hbg37jKeGVPUeRu3sJltz.png" width="836"/>
+</a>
+</details>
+
+If you want to transfer all tokens from your account, enter "all" instead of the exact number of tokens:
+```txt
+near tokens \
+    fro_volod.testnet \
+    send-ft usdn.testnet volodymyr.testnet \
+    amount-ft all \
+    prepaid-gas '100.0 Tgas' \
+    attached-deposit '1 yoctoNEAR' \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+The "ft_transfer" call to <usdn.testnet> on behalf of <fro_volod.testnet> succeeded.
+
+Gas burned: 3.2 Tgas
+Transaction fee: 0.0003189020106812 NEAR (approximately $0.00141592 USD, using $4.44 USD/NEAR exchange rate)
+Transaction ID: G4jK24V6FULBfVxyd92WGH5BJzR6PELkqoFdBNGvQT48
+To see the transaction in the transaction explorer, please open this url in your browser:
+https://explorer.testnet.near.org/transactionsG4jK24V6FULBfVxyd92WGH5BJzR6PELkqoFdBNGvQT48
+
+<fro_volod.testnet> has successfully transferred 19633907.798969034783801448 USN (FT-contract: usdn.testnet) to <volodymyr.testnet>.
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/IHJsQ4H7Fhl3CC4t7vRjJs4pX?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/IHJsQ4H7Fhl3CC4t7vRjJs4pX.png" width="836"/>
 </a>
 </details>
 
