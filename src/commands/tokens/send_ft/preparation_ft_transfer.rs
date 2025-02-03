@@ -27,6 +27,7 @@ pub struct PrepaidGasContext {
     receiver_account_id: near_primitives::types::AccountId,
     ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
     gas: crate::common::NearGas,
+    memo: Option<String>,
 }
 
 impl PrepaidGasContext {
@@ -41,6 +42,7 @@ impl PrepaidGasContext {
             receiver_account_id: previous_context.receiver_account_id,
             ft_transfer_amount: previous_context.ft_transfer_amount,
             gas: scope.gas,
+            memo: previous_context.memo,
         })
     }
 }
@@ -96,6 +98,7 @@ impl DepositContext {
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let deposit = scope.deposit;
                 let ft_transfer_amount = previous_context.ft_transfer_amount.clone();
+                let memo = previous_context.memo.clone();
 
                 move |network_config| {
                     let amount_ft = get_amount_ft(
@@ -111,6 +114,7 @@ impl DepositContext {
                         &receiver_account_id,
                         &signer_account_id,
                         &amount_ft,
+                        &memo,
                         &deposit,
                         &previous_context.gas
                     )
@@ -178,6 +182,7 @@ impl Deposit {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tracing::instrument(
     name = "Creating a pre-populated transaction for signature ...",
     skip_all
@@ -188,16 +193,26 @@ fn get_prepopulated_transaction(
     receiver_account_id: &near_primitives::types::AccountId,
     signer_id: &near_primitives::types::AccountId,
     amount_ft: &crate::types::ft_properties::FungibleToken,
+    memo: &Option<String>,
     deposit: &crate::types::near_token::NearToken,
     gas: &crate::common::NearGas,
 ) -> color_eyre::eyre::Result<crate::commands::PrepopulatedTransaction> {
+    let mut transfer_args = serde_json::Map::new();
+    transfer_args.insert(
+        "receiver_id".to_string(),
+        json!(receiver_account_id.to_string()),
+    );
+    transfer_args.insert("amount".to_string(), json!(amount_ft.amount().to_string()));
+    if let Some(m) = memo {
+        if !m.trim().is_empty() {
+            transfer_args.insert("memo".to_string(), json!(m));
+        }
+    }
+    let args_ft_transfer = serde_json::to_vec(&transfer_args)?;
     let action_ft_transfer = near_primitives::transaction::Action::FunctionCall(Box::new(
         near_primitives::transaction::FunctionCallAction {
             method_name: "ft_transfer".to_string(),
-            args: serde_json::to_vec(&json!({
-                "receiver_id": receiver_account_id.to_string(),
-                "amount": amount_ft.amount().to_string()
-            }))?,
+            args: args_ft_transfer,
             gas: gas.as_gas(),
             deposit: deposit.as_yoctonear(),
         },

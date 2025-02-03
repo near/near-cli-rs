@@ -1,5 +1,5 @@
 use color_eyre::eyre::ContextCompat;
-use inquire::CustomType;
+use inquire::{CustomType, Text};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendFtCommandContext)]
@@ -8,6 +8,9 @@ pub struct AmountFt {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter an amount FT to transfer:
     ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
+    #[interactive_clap(skip_default_input_arg)]
+    /// Enter a memo for transfer (optional):
+    memo: Option<String>,
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
     prepaid_gas: super::preparation_ft_transfer::PrepaidGas,
@@ -20,6 +23,7 @@ pub struct AmountFtContext {
     pub ft_contract_account_id: near_primitives::types::AccountId,
     pub receiver_account_id: near_primitives::types::AccountId,
     pub ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
+    pub memo: Option<String>,
 }
 
 impl AmountFtContext {
@@ -57,6 +61,14 @@ impl AmountFtContext {
             ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             ft_transfer_amount,
+            memo: scope.memo.as_ref().and_then(|s| {
+                let trimmed = s.trim();
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed.to_string())
+                }
+            }),
         })
     }
 }
@@ -100,5 +112,16 @@ impl AmountFt {
             .with_formatter(&|ft| ft.to_string())
             .prompt()?,
         ))
+    }
+
+    fn input_memo(
+        _context: &super::SendFtCommandContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        let input = Text::new("Enter a memo for transfer (optional):").prompt()?;
+        Ok(if input.trim().is_empty() {
+            None
+        } else {
+            Some(input)
+        })
     }
 }
