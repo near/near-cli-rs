@@ -21,6 +21,7 @@ pub use near_cli_rs::transaction_signature_options;
 pub use near_cli_rs::types;
 pub use near_cli_rs::utils_command;
 pub use near_cli_rs::GlobalContext;
+pub use near_cli_rs::Verbosity;
 
 type ConfigContext = (crate::config::Config,);
 
@@ -50,11 +51,11 @@ impl CmdContext {
         scope: &<Cmd as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let verbosity = if scope.quiet {
-            near_cli_rs::Verbosity::Quiet
+            Verbosity::Quiet
         } else if scope.teach_me {
-            near_cli_rs::Verbosity::TeachMe
+            Verbosity::TeachMe
         } else {
-            near_cli_rs::Verbosity::Interactive
+            Verbosity::Interactive
         };
         Ok(Self(crate::GlobalContext {
             config: previous_context.0,
@@ -125,11 +126,11 @@ fn main() -> crate::common::CliResult {
         },
     };
     let verbosity = if cli.quiet {
-        near_cli_rs::Verbosity::Quiet
+        Verbosity::Quiet
     } else if cli.teach_me {
-        near_cli_rs::Verbosity::TeachMe
+        Verbosity::TeachMe
     } else {
-        near_cli_rs::Verbosity::Interactive
+        Verbosity::Interactive
     };
     near_cli_rs::setup_tracing(verbosity)?;
 

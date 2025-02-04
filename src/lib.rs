@@ -79,13 +79,14 @@ pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
                 .with(
                     tracing_subscriber::fmt::layer()
                         .without_time()
-                        .with_writer(indicatif_layer.get_stderr_writer()),
+                        .with_writer(indicatif_layer.get_stderr_writer())
+                        .with_target(false),
                 )
                 .with(indicatif_layer)
                 .with(env_filter)
                 .init();
         }
-        Verbosity::Quiet => todo!(),
+        Verbosity::Quiet => {}
     };
     Ok(())
 }
