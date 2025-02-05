@@ -1,5 +1,5 @@
 use color_eyre::eyre::{Context, ContextCompat};
-use inquire::CustomType;
+use inquire::{CustomType, Text};
 use serde_json::{json, Value};
 
 use crate::common::CallResultExt;
@@ -15,6 +15,9 @@ pub struct AmountFt {
     #[interactive_clap(named_arg)]
     /// Enter gas for function call
     prepaid_gas: PrepaidGas,
+    #[interactive_clap(skip_default_input_arg)]
+    /// Enter a memo for transfer (optional):
+    memo: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -24,6 +27,7 @@ pub struct AmountFtContext {
     ft_contract_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
     amount_ft: crate::types::ft_properties::FungibleToken,
+    memo: Option<String>,
 }
 
 impl AmountFtContext {
@@ -53,6 +57,14 @@ impl AmountFtContext {
             ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             amount_ft: scope.amount_ft.normalize(&ft_metadata)?,
+            memo: scope.memo.as_ref().and_then(|s| {
+                let trimmed = s.trim();
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed.to_string())
+                }
+            }),
         })
     }
 }
@@ -96,6 +108,17 @@ impl AmountFt {
             .prompt()?,
         ))
     }
+
+    fn input_memo(
+        _context: &super::SendFtCommandContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        let input = Text::new("Enter a memo for transfer (optional):").prompt()?;
+        Ok(if input.trim().is_empty() {
+            None
+        } else {
+            Some(input)
+        })
+    }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -118,6 +141,7 @@ pub struct PrepaidGasContext {
     receiver_account_id: near_primitives::types::AccountId,
     amount_ft: crate::types::ft_properties::FungibleToken,
     gas: crate::common::NearGas,
+    memo: Option<String>,
 }
 
 impl PrepaidGasContext {
@@ -132,6 +156,7 @@ impl PrepaidGasContext {
             receiver_account_id: previous_context.receiver_account_id,
             amount_ft: previous_context.amount_ft,
             gas: scope.gas,
+            memo: previous_context.memo,
         })
     }
 }
@@ -187,7 +212,7 @@ impl DepositContext {
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let deposit = scope.deposit;
                 let amount_ft = previous_context.amount_ft.clone();
-
+                let memo = previous_context.memo.clone();
                 move |network_config| {
                     get_prepopulated_transaction(
                         network_config,
@@ -195,6 +220,7 @@ impl DepositContext {
                         &receiver_account_id,
                         &signer_account_id,
                         &amount_ft,
+                        &memo,
                         &deposit,
                         &previous_context.gas
                     )
@@ -265,16 +291,26 @@ fn get_prepopulated_transaction(
     receiver_account_id: &near_primitives::types::AccountId,
     signer_id: &near_primitives::types::AccountId,
     amount_ft: &crate::types::ft_properties::FungibleToken,
+    memo: &Option<String>,
     deposit: &crate::types::near_token::NearToken,
     gas: &crate::common::NearGas,
 ) -> color_eyre::eyre::Result<crate::commands::PrepopulatedTransaction> {
+    let mut transfer_args = serde_json::Map::new();
+    transfer_args.insert(
+        "receiver_id".to_string(),
+        json!(receiver_account_id.to_string()),
+    );
+    transfer_args.insert("amount".to_string(), json!(amount_ft.amount().to_string()));
+    if let Some(m) = memo {
+        if !m.trim().is_empty() {
+            transfer_args.insert("memo".to_string(), json!(m));
+        }
+    }
+    let args_ft_transfer = serde_json::to_vec(&transfer_args)?;
     let action_ft_transfer = near_primitives::transaction::Action::FunctionCall(Box::new(
         near_primitives::transaction::FunctionCallAction {
             method_name: "ft_transfer".to_string(),
-            args: serde_json::to_vec(&json!({
-                "receiver_id": receiver_account_id.to_string(),
-                "amount": amount_ft.amount().to_string()
-            }))?,
+            args: args_ft_transfer,
             gas: gas.as_gas(),
             deposit: deposit.as_yoctonear(),
         },
