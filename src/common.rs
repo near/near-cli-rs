@@ -659,18 +659,18 @@ pub fn print_unsigned_transaction(
     for action in &transaction.actions {
         match action {
             near_primitives::transaction::Action::CreateAccount(_) => {
-                eprintln!(
-                    "{:>5} {:<20} {}",
+                info_str.push_str(&format!(
+                    "\n{:>5} {:<20} {}",
                     "--", "create account:", &transaction.receiver_id
-                )
+                ));
             }
             near_primitives::transaction::Action::DeployContract(code) => {
                 let code_hash = CryptoHash::hash_bytes(&code.code);
-                eprintln!(
-                    "{:>5} {:<70}",
+                info_str.push_str(&format!(
+                    "\n{:>5} {:<70}",
                     "--",
                     format!("deploy contract {:?}", code_hash)
-                )
+                ));
             }
             near_primitives::transaction::Action::FunctionCall(function_call_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "function call:"));
@@ -724,49 +724,49 @@ pub fn print_unsigned_transaction(
                 ));
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
-                eprintln!("{:>5} {:<20}", "--", "stake:");
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "stake:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "", "public key:", &stake_action.public_key
-                );
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "",
                     "stake:",
                     crate::types::near_token::NearToken::from_yoctonear(stake_action.stake)
-                );
+                ));
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
-                eprintln!("{:>5} {:<20}", "--", "add access key:");
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "add access key:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "", "public key:", &add_key_action.public_key
-                );
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "", "nonce:", &add_key_action.access_key.nonce
-                );
-                eprintln!(
-                    "{:>18} {:<13} {:?}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {:?}",
                     "", "permission:", &add_key_action.access_key.permission
-                );
+                ));
             }
             near_primitives::transaction::Action::DeleteKey(delete_key_action) => {
-                eprintln!("{:>5} {:<20}", "--", "delete access key:");
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "delete access key:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "", "public key:", &delete_key_action.public_key
-                );
+                ));
             }
             near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
-                eprintln!(
-                    "{:>5} {:<20} {}",
+                info_str.push_str(&format!(
+                    "\n{:>5} {:<20} {}",
                     "--", "delete account:", &transaction.receiver_id
-                );
-                eprintln!(
-                    "{:>5} {:<20} {}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>5} {:<20} {}",
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
-                );
+                ));
             }
             near_primitives::transaction::Action::Delegate(signed_delegate_action) => {
                 let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
