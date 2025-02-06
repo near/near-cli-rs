@@ -1682,7 +1682,7 @@ dependencies = [
 [[package]]
 name = "interactive-clap"
 version = "0.3.1"
-source = "git+https://github.com/dj8yfo/interactive-clap.git?branch=propagate_doc_comments_on_flags#c66953e9838f4bf5bcc689a0d90e3ea66a1da39e"
+source = "git+https://github.com/dj8yfo/interactive-clap.git?branch=propagate_doc_comments_on_flags#3db17e1e90c56ab7707c875d6d527ff0387c08e9"
 dependencies = [
  "interactive-clap-derive",
  "strum",
@@ -1692,7 +1692,7 @@ dependencies = [
 [[package]]
 name = "interactive-clap-derive"
 version = "0.3.1"
-source = "git+https://github.com/dj8yfo/interactive-clap.git?branch=propagate_doc_comments_on_flags#c66953e9838f4bf5bcc689a0d90e3ea66a1da39e"
+source = "git+https://github.com/dj8yfo/interactive-clap.git?branch=propagate_doc_comments_on_flags#3db17e1e90c56ab7707c875d6d527ff0387c08e9"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",
