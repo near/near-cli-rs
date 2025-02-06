@@ -38,7 +38,7 @@ impl std::str::FromStr for FungibleTokenTransferAmount {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s == "all" {
+        if s.to_lowercase() == "all" {
             Ok(Self::MaxAmount)
         } else {
             Ok(Self::ExactAmount(FungibleToken::from_str(s)?))
