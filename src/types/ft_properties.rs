@@ -3,6 +3,49 @@ use color_eyre::eyre::{Context, ContextCompat};
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
+pub enum FungibleTokenTransferAmount {
+    /// Transfer of the specified amount of fungible tokens (wNearAmount (10 wNEAR))
+    ExactAmount(FungibleToken),
+    /// Transfer the entire amount of fungible tokens from your account ID
+    MaxAmount,
+}
+
+impl interactive_clap::ToCli for FungibleTokenTransferAmount {
+    type CliVariant = FungibleTokenTransferAmount;
+}
+
+impl FungibleTokenTransferAmount {
+    pub fn normalize(&self, ft_metadata: &FtMetadata) -> color_eyre::eyre::Result<Self> {
+        if let Self::ExactAmount(ft) = self {
+            Ok(Self::ExactAmount(ft.normalize(ft_metadata)?))
+        } else {
+            Ok(Self::MaxAmount)
+        }
+    }
+}
+
+impl std::fmt::Display for FungibleTokenTransferAmount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ExactAmount(ft) => ft.fmt(f),
+            Self::MaxAmount => write!(f, "all"),
+        }
+    }
+}
+
+impl std::str::FromStr for FungibleTokenTransferAmount {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.to_lowercase() == "all" {
+            Ok(Self::MaxAmount)
+        } else {
+            Ok(Self::ExactAmount(FungibleToken::from_str(s)?))
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
 pub struct FungibleToken {
     amount: u128,
@@ -206,5 +249,24 @@ mod tests {
         let ft_token = FungibleToken::from_str("0.123456 USDC").unwrap();
         assert_eq!(ft_token.to_string(), "0.123456 USDC".to_string());
         assert_eq!(ft_token.symbol, "USDC".to_string());
+    }
+    #[test]
+    fn ft_transfer_amount_to_string_0dot123456_usdc() {
+        let ft_transfer_amount = FungibleTokenTransferAmount::from_str("0.123456 USDC").unwrap();
+        assert_eq!(ft_transfer_amount.to_string(), "0.123456 USDC".to_string());
+        assert_eq!(
+            ft_transfer_amount,
+            FungibleTokenTransferAmount::ExactAmount(FungibleToken::from_params_ft(
+                123456,
+                6,
+                "USDC".to_string()
+            ))
+        );
+    }
+    #[test]
+    fn ft_transfer_amount_to_string_all() {
+        let ft_transfer_amount = FungibleTokenTransferAmount::from_str("all").unwrap();
+        assert_eq!(ft_transfer_amount.to_string(), "all".to_string());
+        assert_eq!(ft_transfer_amount, FungibleTokenTransferAmount::MaxAmount);
     }
 }
