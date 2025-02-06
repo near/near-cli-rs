@@ -55,7 +55,10 @@ impl TransactionInfoContext {
                         "\nTransaction {}:\n",
                         query_view_transaction_status.transaction.hash
                     );
-                    crate::common::print_unsigned_transaction(&prepopulated_transaction);
+                    crate::common::print_unsigned_transaction(
+                        &prepopulated_transaction,
+                        String::new(),
+                    );
                     eprintln!();
 
                     if prepopulated_transaction.actions.len() == 1 {
@@ -112,7 +115,7 @@ impl TransactionInfoContext {
                     cmd_cli_args.extend(skip_action.to_cli_args());
 
                     let near_cli_exec_path = crate::common::get_near_exec_path();
-                    if !previous_context.quiet {
+                    if !matches!(previous_context.verbosity, crate::Verbosity::Quiet) {
                         eprintln!("Here is your console command to run archive transaction. You can to edit it or re-run:");
                         eprintln!(
                             "{}\n",
