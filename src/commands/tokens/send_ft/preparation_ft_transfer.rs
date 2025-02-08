@@ -8,7 +8,7 @@ use crate::common::JsonRpcClientExt;
 use super::super::view_ft_balance::get_ft_balance;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::amount_ft::AmountFtContext)]
+#[interactive_clap(input_context = super::amount_ft::MemoContext)]
 #[interactive_clap(output_context = PrepaidGasContext)]
 pub struct PrepaidGas {
     #[interactive_clap(skip_default_input_arg)]
@@ -32,7 +32,7 @@ pub struct PrepaidGasContext {
 
 impl PrepaidGasContext {
     pub fn from_previous_context(
-        previous_context: super::amount_ft::AmountFtContext,
+        previous_context: super::amount_ft::MemoContext,
         scope: &<PrepaidGas as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
@@ -49,7 +49,7 @@ impl PrepaidGasContext {
 
 impl PrepaidGas {
     fn input_gas(
-        _context: &super::amount_ft::AmountFtContext,
+        _context: &super::amount_ft::MemoContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         eprintln!();
         Ok(Some(
