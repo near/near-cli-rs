@@ -7,6 +7,7 @@ pub mod ft_properties;
 pub mod json;
 pub mod near_allowance;
 pub mod near_token;
+pub mod optional_string;
 pub mod path_buf;
 pub mod public_key;
 pub mod public_key_list;

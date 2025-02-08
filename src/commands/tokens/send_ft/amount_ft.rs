@@ -1,5 +1,5 @@
 use color_eyre::eyre::ContextCompat;
-use inquire::{CustomType, Text};
+use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendFtCommandContext)]
@@ -8,12 +8,9 @@ pub struct AmountFt {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter an amount FT to transfer:
     ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
-    #[interactive_clap(skip_default_input_arg)]
-    /// Enter a memo for transfer (optional):
-    memo: Option<String>,
     #[interactive_clap(named_arg)]
-    /// Enter gas for function call
-    prepaid_gas: super::preparation_ft_transfer::PrepaidGas,
+    /// Enter a memo for transfer (optional):
+    memo: Memo,
 }
 
 #[derive(Debug, Clone)]
@@ -23,7 +20,6 @@ pub struct AmountFtContext {
     pub ft_contract_account_id: near_primitives::types::AccountId,
     pub receiver_account_id: near_primitives::types::AccountId,
     pub ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
-    pub memo: Option<String>,
 }
 
 impl AmountFtContext {
@@ -61,14 +57,6 @@ impl AmountFtContext {
             ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             ft_transfer_amount,
-            memo: scope.memo.as_ref().and_then(|s| {
-                let trimmed = s.trim();
-                if trimmed.is_empty() {
-                    None
-                } else {
-                    Some(trimmed.to_string())
-                }
-            }),
         })
     }
 }
@@ -113,15 +101,52 @@ impl AmountFt {
             .prompt()?,
         ))
     }
+}
 
-    fn input_memo(
-        _context: &super::SendFtCommandContext,
-    ) -> color_eyre::eyre::Result<Option<String>> {
-        let input = Text::new("Enter a memo for transfer (optional):").prompt()?;
-        Ok(if input.trim().is_empty() {
-            None
-        } else {
-            Some(input)
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = AmountFtContext)]
+#[interactive_clap(output_context = MemoContext)]
+pub struct Memo {
+    #[interactive_clap(skip_default_input_arg)]
+    /// Enter a memo for transfer (optional):
+    memo: crate::types::optional_string::OptionalString,
+    #[interactive_clap(named_arg)]
+    /// Enter gas for function call
+    prepaid_gas: super::preparation_ft_transfer::PrepaidGas,
+}
+
+#[derive(Debug, Clone)]
+pub struct MemoContext {
+    pub global_context: crate::GlobalContext,
+    pub signer_account_id: near_primitives::types::AccountId,
+    pub ft_contract_account_id: near_primitives::types::AccountId,
+    pub receiver_account_id: near_primitives::types::AccountId,
+    pub ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
+    pub memo: Option<String>,
+}
+
+impl MemoContext {
+    pub fn from_previous_context(
+        previous_context: AmountFtContext,
+        scope: &<Memo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.signer_account_id,
+            ft_contract_account_id: previous_context.ft_contract_account_id,
+            receiver_account_id: previous_context.receiver_account_id,
+            ft_transfer_amount: previous_context.ft_transfer_amount,
+            memo: scope.memo.clone().into(),
         })
+    }
+}
+
+impl Memo {
+    fn input_memo(
+        _context: &AmountFtContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::optional_string::OptionalString>> {
+        Ok(Some(
+            CustomType::new("Enter a memo for transfer (optional):").prompt()?,
+        ))
     }
 }
