@@ -764,7 +764,7 @@ pub fn print_unsigned_transaction(
                     "--", "delete account:", &transaction.receiver_id
                 ));
                 info_str.push_str(&format!(
-                    "\n{:>5} {:<20} {}",
+                    "\n{:>8} {:<17} {}",
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
                 ));
             }
@@ -797,10 +797,10 @@ fn print_value_successful_transaction(
     for action in transaction_info.transaction.actions {
         match action {
             near_primitives::views::ActionView::CreateAccount => {
-                eprintln!(
-                    "New account <{}> has been successfully created.",
+                info_str.push_str(&format!(
+                    "\nNew account <{}> has been successfully created.",
                     transaction_info.transaction.receiver_id,
-                );
+                ));
             }
             near_primitives::views::ActionView::DeployContract { code: _ } => {
                 eprintln!("Contract code has been successfully deployed.",);
@@ -847,10 +847,10 @@ fn print_value_successful_transaction(
                 public_key,
                 access_key: _,
             } => {
-                eprintln!(
-                    "Added access key = {} to {}.",
+                info_str.push_str(&format!(
+                    "\nAdded access key = {} to {}.",
                     public_key, transaction_info.transaction.receiver_id,
-                );
+                ));
             }
             near_primitives::views::ActionView::DeleteKey { public_key } => {
                 eprintln!(
@@ -859,10 +859,10 @@ fn print_value_successful_transaction(
                 );
             }
             near_primitives::views::ActionView::DeleteAccount { beneficiary_id: _ } => {
-                eprintln!(
-                    "Account <{}> has been successfully deleted.",
+                info_str.push_str(&format!(
+                    "\nAccount <{}> has been successfully deleted.",
                     transaction_info.transaction.signer_id,
-                );
+                ));
             }
             near_primitives::views::ActionView::Delegate {
                 delegate_action,
