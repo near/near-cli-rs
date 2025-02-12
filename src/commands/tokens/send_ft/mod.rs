@@ -18,7 +18,7 @@ pub struct SendFtCommand {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the receiver account ID?
     receiver_account_id: crate::types::account_id::AccountId,
-    #[interactive_clap(named_arg)]
+    #[interactive_clap(subargs)]
     /// Specify amount FT
     amount_ft: self::amount_ft::AmountFt,
 }

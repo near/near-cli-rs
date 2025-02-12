@@ -1,5 +1,5 @@
 use color_eyre::eyre::ContextCompat;
-use inquire::CustomType;
+use inquire::{CustomType, Text};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendFtCommandContext)]
@@ -107,7 +107,8 @@ impl AmountFt {
 #[interactive_clap(input_context = AmountFtContext)]
 #[interactive_clap(output_context = FtTransferParamsContext)]
 pub struct FtTransferParams {
-    #[interactive_clap(skip_interactive_input)]
+    #[interactive_clap(skip_default_input_arg)]
+    /// Enter a memo for transfer (optional):
     memo: Option<String>,
     #[interactive_clap(long = "prepaid-gas")]
     #[interactive_clap(skip_interactive_input)]
@@ -211,5 +212,16 @@ impl FtTransferParamsContext {
 impl From<FtTransferParamsContext> for crate::commands::ActionContext {
     fn from(item: FtTransferParamsContext) -> Self {
         item.0
+    }
+}
+
+impl FtTransferParams {
+    fn input_memo(_context: &AmountFtContext) -> color_eyre::eyre::Result<Option<String>> {
+        let input = Text::new("Enter a memo for transfer (optional):").prompt()?;
+        Ok(if input.trim().is_empty() {
+            None
+        } else {
+            Some(input)
+        })
     }
 }
