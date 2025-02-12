@@ -191,7 +191,6 @@ fn validate_new_account_id(
                 account_id,
                 near_primitives::types::BlockReference::latest(),
             ));
-    println!("***************** account state: {:#?}", account_state);
     match account_state {
         Ok(_) => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
