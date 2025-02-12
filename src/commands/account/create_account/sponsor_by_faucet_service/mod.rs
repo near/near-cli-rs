@@ -123,7 +123,6 @@ fn print_account_creation_status(
     credentials_home_dir: &std::path::Path,
     storage_message: String,
 ) -> crate::CliResult {
-    // eprintln!();
     match result {
         Ok(response) => {
             tracing::info!(
