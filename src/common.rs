@@ -2636,7 +2636,7 @@ fn get_used_account_list_path(credentials_home_dir: &std::path::Path) -> std::pa
     credentials_home_dir.join("accounts.json")
 }
 
-pub fn create_used_account_list_from_keychain(
+pub fn create_used_account_list_from_legacy_keychain(
     credentials_home_dir: &std::path::Path,
 ) -> color_eyre::eyre::Result<()> {
     let mut used_account_list: std::collections::BTreeSet<near_primitives::types::AccountId> =
@@ -2661,8 +2661,13 @@ pub fn create_used_account_list_from_keychain(
         }
     }
 
+    let used_account_list_path = get_used_account_list_path(credentials_home_dir);
+    std::fs::create_dir_all(credentials_home_dir)?;
+    if !used_account_list_path.exists() {
+        std::fs::File::create(&used_account_list_path)
+            .wrap_err_with(|| format!("Failed to create file: {:?}", &used_account_list_path))?;
+    }
     if !used_account_list.is_empty() {
-        let used_account_list_path = get_used_account_list_path(credentials_home_dir);
         let used_account_list_buf = serde_json::to_string(
             &used_account_list
                 .into_iter()
