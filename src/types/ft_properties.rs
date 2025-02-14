@@ -1,4 +1,5 @@
 use color_eyre::eyre::{Context, ContextCompat};
+use serde::de::{Deserialize, Deserializer};
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
@@ -100,6 +101,11 @@ impl FungibleToken {
 
     pub fn symbol(&self) -> &str {
         &self.symbol
+    }
+
+    pub fn update_amount(&mut self, new_amount: u128) -> Self {
+        self.amount = new_amount;
+        self.clone()
     }
 }
 
@@ -269,4 +275,21 @@ mod tests {
         assert_eq!(ft_transfer_amount.to_string(), "all".to_string());
         assert_eq!(ft_transfer_amount, FungibleTokenTransferAmount::MaxAmount);
     }
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct FtTransfer {
+    pub receiver_id: String,
+    #[serde(deserialize_with = "parse_u128_string")]
+    pub amount: u128,
+    pub memo: Option<String>,
+}
+
+fn parse_u128_string<'de, D>(deserializer: D) -> color_eyre::eyre::Result<u128, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    String::deserialize(deserializer)?
+        .parse::<u128>()
+        .map_err(serde::de::Error::custom)
 }
