@@ -152,7 +152,7 @@ pub fn get_amount_ft(
         crate::types::ft_properties::FungibleTokenTransferAmount::ExactAmount(ft) => Ok(ft.clone()),
         crate::types::ft_properties::FungibleTokenTransferAmount::MaxAmount => {
             let function_args =
-                serde_json::to_vec(&json!({"account_id": signer_account_id.to_string()}))?;
+                serde_json::to_vec(&json!({"account_id": signer_account_id}))?;
             let amount = get_ft_balance(
                 network_config,
                 ft_contract_account_id,
