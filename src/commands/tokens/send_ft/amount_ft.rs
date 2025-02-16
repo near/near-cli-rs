@@ -135,14 +135,7 @@ impl FtTransferParamsContext {
                 let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let ft_transfer_amount = previous_context.ft_transfer_amount.clone();
-                let memo = scope.memo.as_ref().and_then(|s| {
-                    let trimmed = s.trim();
-                    if trimmed.is_empty() {
-                        None
-                    } else {
-                        Some(trimmed.to_string())
-                    }
-                });
+                let memo = scope.memo.clone();
                 let gas = scope.gas.unwrap_or(near_gas::NearGas::from_tgas(100));
                 let deposit = scope.deposit.unwrap_or(crate::types::near_token::NearToken::from_yoctonear(1));
 
