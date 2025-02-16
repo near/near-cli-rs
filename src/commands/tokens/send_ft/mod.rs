@@ -131,14 +131,14 @@ pub fn get_prepopulated_transaction(
         return Ok(crate::commands::PrepopulatedTransaction {
             signer_id: signer_id.clone(),
             receiver_id: ft_contract_account_id.clone(),
-            actions: vec![action_storage_deposit, action_ft_transfer.clone()],
+            actions: vec![action_storage_deposit, action_ft_transfer],
         });
     }
 
     Ok(crate::commands::PrepopulatedTransaction {
         signer_id: signer_id.clone(),
         receiver_id: ft_contract_account_id.clone(),
-        actions: vec![action_ft_transfer.clone()],
+        actions: vec![action_ft_transfer],
     })
 }
 
