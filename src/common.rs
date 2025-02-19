@@ -803,7 +803,7 @@ fn print_value_successful_transaction(
                 ));
             }
             near_primitives::views::ActionView::DeployContract { code: _ } => {
-                eprintln!("Contract code has been successfully deployed.",);
+                info_str.push_str("Contract code has been successfully deployed.");
             }
             near_primitives::views::ActionView::FunctionCall {
                 method_name,
@@ -2654,14 +2654,19 @@ pub impl near_primitives::views::CallResult {
     }
 
     fn print_logs(&self) {
-        eprintln!("--------------");
+        let mut info_str = String::new();
         if self.logs.is_empty() {
-            eprintln!("No logs")
+            info_str.push_str("\nNo logs")
         } else {
-            eprintln!("Logs:");
-            eprintln!("  {}", self.logs.join("\n  "));
+            info_str.push_str("\nLogs:");
+            info_str.push_str(&format!("\n  {}", self.logs.join("\n  ")));
         }
-        eprintln!("--------------");
+        info_str.push_str("\n------------------------------------");
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "--- Logs ---------------------------{}\n",
+            crate::common::indent_payload(&info_str)
+        );
     }
 }
 

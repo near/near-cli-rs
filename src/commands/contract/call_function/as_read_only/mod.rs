@@ -129,16 +129,24 @@ fn call_view_function(
             )
         })?;
     call_result.print_logs();
-    eprintln!("Result:");
+    let mut info_str = String::new();
     if call_result.result.is_empty() {
-        eprintln!("Empty result");
+        info_str.push_str("\nEmpty result");
     } else if let Ok(json_result) = call_result.parse_result_from_json::<serde_json::Value>() {
-        println!("{}", serde_json::to_string_pretty(&json_result)?);
+        info_str.push_str(&format!(
+            "\n{}",
+            serde_json::to_string_pretty(&json_result)?
+        ));
     } else if let Ok(string_result) = String::from_utf8(call_result.result) {
-        println!("{string_result}");
+        info_str.push_str(&format!("\n{string_result}"));
     } else {
-        eprintln!("The returned value is not printable (binary data)");
+        info_str.push_str("\nThe returned value is not printable (binary data)");
     }
-    eprintln!("--------------");
+    info_str.push_str("\n------------------------------------");
+    tracing::info!(
+        parent: &tracing::Span::none(),
+        "--- Result -------------------------{}\n",
+        crate::common::indent_payload(&info_str)
+    );
     Ok(())
 }
