@@ -831,16 +831,16 @@ fn print_value_successful_transaction(
                 public_key: _,
             } => {
                 if stake == 0 {
-                    eprintln!(
-                        "Validator <{}> successfully unstaked.",
+                    info_str.push_str(&format!(
+                        "\nValidator <{}> successfully unstaked.",
                         transaction_info.transaction.signer_id,
-                    );
+                    ));
                 } else {
-                    eprintln!(
-                        "Validator <{}> has successfully staked {}.",
+                    info_str.push_str(&format!(
+                        "\nValidator <{}> has successfully staked {}.",
                         transaction_info.transaction.signer_id,
                         crate::types::near_token::NearToken::from_yoctonear(stake),
-                    );
+                    ));
                 }
             }
             near_primitives::views::ActionView::AddKey {
@@ -853,10 +853,10 @@ fn print_value_successful_transaction(
                 ));
             }
             near_primitives::views::ActionView::DeleteKey { public_key } => {
-                eprintln!(
-                    "Access key <{}> for account <{}> has been successfully deleted.",
+                info_str.push_str(&format!(
+                    "\nAccess key <{}> for account <{}> has been successfully deleted.",
                     public_key, transaction_info.transaction.signer_id,
-                );
+                ));
             }
             near_primitives::views::ActionView::DeleteAccount { beneficiary_id: _ } => {
                 info_str.push_str(&format!(
