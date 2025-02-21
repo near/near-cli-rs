@@ -1386,14 +1386,19 @@ pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
     ) {
         Ok(message) => Ok(message),
         Err(err) => {
-            eprintln!(
-                "\n{}\n{}\n",
+            let info_str = format!(
+                "{}\n{}\n",
                 format!(
                     "Failed to save the access key <{}> to the keychain.\n{}",
                     public_key_str, err
                 )
                 .red(),
                 "The data for the access key will be stored in the legacy keychain.".red()
+            );
+            tracing::warn!(
+                parent: &tracing::Span::none(),
+                "\n{}",
+                crate::common::indent_payload(&info_str)
             );
             save_access_key_to_legacy_keychain(
                 network_config.clone(),
