@@ -122,9 +122,6 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
             info_str,
             crate::common::indent_payload(&crate::common::print_unsigned_transaction(
                 &new_context.prepopulated_transaction,
-                &new_context.prepopulated_transaction.signer_id,
-                &new_context.prepopulated_transaction.receiver_id,
-                String::new()
             ))
         );
 

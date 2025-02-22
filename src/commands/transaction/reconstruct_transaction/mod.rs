@@ -57,9 +57,6 @@ impl TransactionInfoContext {
                         query_view_transaction_status.transaction.hash,
                         crate::common::indent_payload(&crate::common::print_unsigned_transaction(
                             &prepopulated_transaction,
-                            &prepopulated_transaction.signer_id,
-                            &prepopulated_transaction.receiver_id,
-                            String::new()
                         ))
                     );
 

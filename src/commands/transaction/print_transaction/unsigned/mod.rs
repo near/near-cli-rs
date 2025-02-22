@@ -19,9 +19,10 @@ impl PrintContext {
         let unsigned_transaction: near_primitives::transaction::TransactionV0 =
             scope.unsigned_transaction.clone().into();
 
-        crate::common::print_full_unsigned_transaction(
-            Transaction::V0(unsigned_transaction),
-            "\nUnsigned transaction (full):\n".to_string(),
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "Unsigned transaction (full):{}",
+            crate::common::indent_payload(&crate::common::print_full_unsigned_transaction(Transaction::V0(unsigned_transaction)))
         );
 
         Ok(Self)

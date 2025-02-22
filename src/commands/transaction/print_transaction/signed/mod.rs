@@ -17,9 +17,10 @@ impl PrintContext {
         let signed_transaction: near_primitives::transaction::SignedTransaction =
             scope.signed_transaction.clone().into();
 
-        crate::common::print_full_signed_transaction(
-            signed_transaction,
-            "\nSigned transaction (full):\n".to_string(),
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "Signed transaction (full):{}",
+            crate::common::indent_payload(&crate::common::print_full_signed_transaction(signed_transaction))
         );
 
         Ok(Self)

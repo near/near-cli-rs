@@ -614,20 +614,21 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
 
 pub fn print_full_signed_transaction(
     transaction: near_primitives::transaction::SignedTransaction,
-    mut info_str: String,
-) {
-    info_str.push_str(&format!("\n{:<13} {}", "signature:", transaction.signature));
-    crate::common::print_full_unsigned_transaction(transaction.transaction, info_str);
+) -> String {
+    let mut info_str = format!("\n{:<13} {}", "signature:", transaction.signature);
+    info_str.push_str(&crate::common::print_full_unsigned_transaction(
+        transaction.transaction,
+    ));
+    info_str
 }
 
 pub fn print_full_unsigned_transaction(
     transaction: near_primitives::transaction::Transaction,
-    mut info_str: String,
-) {
-    info_str.push_str(&format!(
+) -> String {
+    let mut info_str = format!(
         "\nunsigned transaction hash (Base58-encoded SHA-256 hash): {}",
         transaction.get_hash_and_size().0
-    ));
+    );
 
     info_str.push_str(&format!(
         "\n{:<13} {}",
@@ -642,21 +643,21 @@ pub fn print_full_unsigned_transaction(
     ));
 
     let prepopulated = crate::commands::PrepopulatedTransaction::from(transaction);
-    tracing::info!(
-        parent: &tracing::Span::none(),
-        "{}",
-        crate::common::indent_payload(&print_unsigned_transaction(&prepopulated, &prepopulated.signer_id, &prepopulated.receiver_id, info_str))
-    );
+
+    info_str.push_str(&print_unsigned_transaction(&prepopulated));
+
+    info_str
 }
 
 pub fn print_unsigned_transaction(
     transaction: &crate::commands::PrepopulatedTransaction,
-    signer_id: &near_primitives::types::AccountId,
-    receiver_id: &near_primitives::types::AccountId,
-    mut info_str: String,
 ) -> String {
-    info_str.push_str(&format!("\n{:<13} {}", "signer_id:", signer_id));
-    info_str.push_str(&format!("\n{:<13} {}", "receiver_id:", receiver_id));
+    let mut info_str = String::new();
+    info_str.push_str(&format!("\n{:<13} {}", "signer_id:", transaction.signer_id));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "receiver_id:", transaction.receiver_id
+    ));
 
     if transaction
         .actions
@@ -786,12 +787,7 @@ pub fn print_unsigned_transaction(
                     receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
                     actions: signed_delegate_action.delegate_action.get_actions(),
                 };
-                info_str = print_unsigned_transaction(
-                    &prepopulated_transaction,
-                    &prepopulated_transaction.signer_id,
-                    &prepopulated_transaction.receiver_id,
-                    info_str.clone(),
-                );
+                info_str.push_str(&print_unsigned_transaction(&prepopulated_transaction));
             }
         }
     }
