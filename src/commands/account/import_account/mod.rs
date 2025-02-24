@@ -49,7 +49,6 @@ pub fn login(
 
     let account_id = loop {
         let account_id_from_cli = input_account_id()?;
-        eprintln!();
         if crate::common::verify_account_access_key(
             account_id_from_cli.clone(),
             public_key.clone(),
@@ -57,7 +56,11 @@ pub fn login(
         )
         .is_err()
         {
-            eprintln!("{}", error_message);
+            tracing::warn!(
+                parent: &tracing::Span::none(),
+                "WARNING!{}",
+                crate::common::indent_payload(error_message)
+            );
 
             #[derive(strum_macros::Display)]
             enum ConfirmOptions {
