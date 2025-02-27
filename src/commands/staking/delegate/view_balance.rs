@@ -96,18 +96,24 @@ fn calculation_delegated_stake_balance(
             _ => "",
         };
 
-    eprintln!("Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:");
-    eprintln!(
-        "      Staked balance:     {:>38}",
+    let mut info_str = String::new();
+    info_str.push_str(&format!(
+        "\n      Staked balance:     {:>38}",
         near_token::NearToken::from_yoctonear(user_staked_balance).to_string()
-    );
-    eprintln!(
-        "      Unstaked balance:   {:>38} {withdrawal_availability_message}",
+    ));
+    info_str.push_str(&format!(
+        "\n      Unstaked balance:   {:>38} {withdrawal_availability_message}",
         near_token::NearToken::from_yoctonear(user_unstaked_balance).to_string()
-    );
-    eprintln!(
-        "      Total balance:      {:>38}",
+    ));
+    info_str.push_str(&format!(
+        "\n      Total balance:      {:>38}",
         near_token::NearToken::from_yoctonear(user_total_balance).to_string()
+    ));
+    tracing::info!(
+        parent: &tracing::Span::none(),
+        "{}{}",
+        format!("Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:"),
+        crate::common::indent_payload(&info_str)
     );
 
     Ok(())

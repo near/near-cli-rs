@@ -49,7 +49,6 @@ pub fn login(
 
     let account_id = loop {
         let account_id_from_cli = input_account_id()?;
-        eprintln!();
         if crate::common::verify_account_access_key(
             account_id_from_cli.clone(),
             public_key.clone(),
@@ -57,7 +56,11 @@ pub fn login(
         )
         .is_err()
         {
-            eprintln!("{}", error_message);
+            tracing::warn!(
+                parent: &tracing::Span::none(),
+                "WARNING!{}",
+                crate::common::indent_payload(error_message)
+            );
 
             #[derive(strum_macros::Display)]
             enum ConfirmOptions {
@@ -126,7 +129,11 @@ fn save_access_key(
                 public_key_str,
                 account_id.as_ref(),
             )?;
-        eprintln!("{}", storage_message);
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "\n{}",
+            crate::common::indent_payload(&storage_message)
+        );
         return Ok(());
     }
 
@@ -138,6 +145,10 @@ fn save_access_key(
         account_id.as_ref(),
     )
     .wrap_err_with(|| format!("Failed to save a file with access key: {}", public_key_str))?;
-    eprintln!("{}", storage_message);
+    tracing::info!(
+        parent: &tracing::Span::none(),
+        "\n{}",
+        crate::common::indent_payload(&storage_message)
+    );
     Ok(())
 }

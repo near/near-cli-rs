@@ -52,7 +52,11 @@ impl StakeContext {
 
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    eprintln!("<{signer_id}> has successfully delegated  {amount} to stake with <{validator_id}>.")
+                    tracing::info!(
+                        parent: &tracing::Span::none(),
+                        "\n{}",
+                        crate::common::indent_payload(&format!("<{signer_id}> has successfully delegated {amount} to stake with <{validator_id}>."))
+                    )
                 }
                 Ok(())
             }

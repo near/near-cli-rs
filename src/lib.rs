@@ -16,60 +16,77 @@ pub mod utils_command;
 pub struct GlobalContext {
     pub config: crate::config::Config,
     pub offline: bool,
-    pub quiet: bool,
-    pub teach_me: bool,
+    pub verbosity: Verbosity,
 }
 
-pub fn setup_tracing(teach_me_flag_is_set: bool) -> CliResult {
+#[derive(Debug, Clone)]
+pub enum Verbosity {
+    Interactive,
+    TeachMe,
+    Quiet,
+}
+
+impl Default for Verbosity {
+    fn default() -> Self {
+        Self::Interactive
+    }
+}
+
+pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
     use indicatif::ProgressStyle;
     use tracing_indicatif::IndicatifLayer;
     use tracing_subscriber::layer::SubscriberExt;
     use tracing_subscriber::util::SubscriberInitExt;
     use tracing_subscriber::EnvFilter;
 
-    if teach_me_flag_is_set {
-        let env_filter = EnvFilter::from_default_env()
-            .add_directive(tracing::Level::WARN.into())
-            .add_directive("near_teach_me=info".parse()?)
-            .add_directive("near_cli_rs=info".parse()?);
-        tracing_subscriber::registry()
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .without_time()
-                    .with_target(false),
-            )
-            .with(env_filter)
-            .init();
-    } else {
-        let indicatif_layer = IndicatifLayer::new()
-            .with_progress_style(
-                ProgressStyle::with_template(
-                    "{spinner:.blue}{span_child_prefix} {span_name} {msg} {span_fields}",
+    match verbosity {
+        Verbosity::TeachMe => {
+            let env_filter = EnvFilter::from_default_env()
+                .add_directive(tracing::Level::WARN.into())
+                .add_directive("near_teach_me=info".parse()?)
+                .add_directive("near_cli_rs=info".parse()?);
+            tracing_subscriber::registry()
+                .with(
+                    tracing_subscriber::fmt::layer()
+                        .without_time()
+                        .with_target(false),
                 )
-                .unwrap()
-                .tick_strings(&[
-                    "▹▹▹▹▹",
-                    "▸▹▹▹▹",
-                    "▹▸▹▹▹",
-                    "▹▹▸▹▹",
-                    "▹▹▹▸▹",
-                    "▹▹▹▹▸",
-                    "▪▪▪▪▪",
-                ]),
-            )
-            .with_span_child_prefix_symbol("↳ ");
-        let env_filter = EnvFilter::from_default_env()
-            .add_directive(tracing::Level::WARN.into())
-            .add_directive("near_cli_rs=info".parse()?);
-        tracing_subscriber::registry()
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .without_time()
-                    .with_writer(indicatif_layer.get_stderr_writer()),
-            )
-            .with(indicatif_layer)
-            .with(env_filter)
-            .init();
+                .with(env_filter)
+                .init();
+        }
+        Verbosity::Interactive => {
+            let indicatif_layer = IndicatifLayer::new()
+                .with_progress_style(
+                    ProgressStyle::with_template(
+                        "{spinner:.blue}{span_child_prefix} {span_name} {msg} {span_fields}",
+                    )
+                    .unwrap()
+                    .tick_strings(&[
+                        "▹▹▹▹▹",
+                        "▸▹▹▹▹",
+                        "▹▸▹▹▹",
+                        "▹▹▸▹▹",
+                        "▹▹▹▸▹",
+                        "▹▹▹▹▸",
+                        "▪▪▪▪▪",
+                    ]),
+                )
+                .with_span_child_prefix_symbol("↳ ");
+            let env_filter = EnvFilter::from_default_env()
+                .add_directive(tracing::Level::WARN.into())
+                .add_directive("near_cli_rs=info".parse()?);
+            tracing_subscriber::registry()
+                .with(
+                    tracing_subscriber::fmt::layer()
+                        .without_time()
+                        .with_writer(indicatif_layer.get_stderr_writer())
+                        .with_target(false),
+                )
+                .with(indicatif_layer)
+                .with(env_filter)
+                .init();
+        }
+        Verbosity::Quiet => {}
     };
     Ok(())
 }
