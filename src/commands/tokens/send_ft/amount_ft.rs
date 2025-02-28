@@ -180,7 +180,11 @@ impl FtTransferParamsContext {
                                     &ft_contract_account_id,
                                     near_primitives::types::BlockId::Hash(outcome_view.receipts_outcome.last().expect("FT transfer should have at least one receipt outcome, but none was received").block_hash).into()
                                 ) {
-                                    let ft_transfer_amount = ft_balance.clone().update_amount(ft_transfer.amount);
+                                    let ft_transfer_amount = crate::types::ft_properties::FungibleToken::from_params_ft(
+                                        ft_transfer.amount,
+                                        ft_balance.decimals(),
+                                        ft_balance.symbol().to_string()
+                                    );
                                     eprintln!(
                                         "<{signer_account_id}> has successfully transferred {ft_transfer_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.\nRemaining balance: {ft_balance}",
                                     );

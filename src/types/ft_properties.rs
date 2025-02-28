@@ -102,11 +102,6 @@ impl FungibleToken {
     pub fn symbol(&self) -> &str {
         &self.symbol
     }
-
-    pub fn update_amount(&mut self, new_amount: u128) -> Self {
-        self.amount = new_amount;
-        self.clone()
-    }
 }
 
 impl std::fmt::Display for FungibleToken {
