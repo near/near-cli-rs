@@ -139,7 +139,7 @@ impl DepositContext {
                                     network_config,
                                     &signer_account_id,
                                     &ft_contract_account_id,
-                                    near_primitives::types::BlockId::Hash(outcome_view.receipts_outcome[0].block_hash).into()
+                                    near_primitives::types::BlockId::Hash(outcome_view.receipts_outcome.last().expect("FT transfer should have at least one receipt outcome, but none was received").block_hash).into()
                                 ) {
                                     let ft_transfer_amount = ft_balance.clone().update_amount(ft_transfer.amount);
                                     eprintln!(
