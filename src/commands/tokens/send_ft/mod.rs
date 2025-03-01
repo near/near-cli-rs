@@ -80,29 +80,22 @@ pub fn get_prepopulated_transaction(
     deposit: &crate::types::near_token::NearToken,
     gas: &crate::common::NearGas,
 ) -> color_eyre::eyre::Result<crate::commands::PrepopulatedTransaction> {
-    let args = serde_json::to_vec(&json!({
-        "receiver_id": amount_ft.amount().to_string(),
-        "amount": amount_ft.amount().to_string(),
-        "memo": memo.as_ref().and_then(|s| {
-            let trimmed = s.trim();
-            if trimmed.is_empty() {
-                None
-            } else {
-                Some(trimmed.to_string())
-            }
-        })
-    }))?;
+    let args_ft_transfer = serde_json::to_vec(&crate::types::ft_properties::FtTransfer {
+        receiver_id: receiver_account_id.clone(),
+        amount: amount_ft.amount(),
+        memo: memo.clone(),
+    })?;
 
     let action_ft_transfer = near_primitives::transaction::Action::FunctionCall(Box::new(
         near_primitives::transaction::FunctionCallAction {
             method_name: "ft_transfer".to_string(),
-            args,
+            args: args_ft_transfer,
             gas: gas.as_gas(),
             deposit: deposit.as_yoctonear(),
         },
     ));
 
-    let args = serde_json::to_vec(&json!({"account_id": receiver_account_id.to_string()}))?;
+    let args = serde_json::to_vec(&json!({"account_id": receiver_account_id}))?;
 
     let call_result = network_config
         .json_rpc_client()
@@ -131,45 +124,40 @@ pub fn get_prepopulated_transaction(
         return Ok(crate::commands::PrepopulatedTransaction {
             signer_id: signer_id.clone(),
             receiver_id: ft_contract_account_id.clone(),
-            actions: vec![action_storage_deposit, action_ft_transfer],
+            actions: vec![action_storage_deposit, action_ft_transfer.clone()],
         });
     }
 
     Ok(crate::commands::PrepopulatedTransaction {
         signer_id: signer_id.clone(),
         receiver_id: ft_contract_account_id.clone(),
-        actions: vec![action_ft_transfer],
+        actions: vec![action_ft_transfer.clone()],
     })
 }
 
-pub fn get_amount_ft(
-    ft_transfer_amount: &crate::types::ft_properties::FungibleTokenTransferAmount,
+fn get_ft_balance_for_account(
     network_config: &crate::config::NetworkConfig,
     signer_account_id: &near_primitives::types::AccountId,
     ft_contract_account_id: &near_primitives::types::AccountId,
+    block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<crate::types::ft_properties::FungibleToken> {
-    match ft_transfer_amount {
-        crate::types::ft_properties::FungibleTokenTransferAmount::ExactAmount(ft) => Ok(ft.clone()),
-        crate::types::ft_properties::FungibleTokenTransferAmount::MaxAmount => {
-            let function_args = serde_json::to_vec(&json!({"account_id": signer_account_id}))?;
-            let amount = get_ft_balance(
-                network_config,
-                ft_contract_account_id,
-                function_args,
-                near_primitives::types::Finality::Final.into(),
-            )?
-            .parse_result_from_json::<String>()?;
-            let crate::types::ft_properties::FtMetadata { decimals, symbol } =
-                crate::types::ft_properties::params_ft_metadata(
-                    ft_contract_account_id.clone(),
-                    network_config,
-                    near_primitives::types::Finality::Final.into(),
-                )?;
-            Ok(crate::types::ft_properties::FungibleToken::from_params_ft(
-                amount.parse::<u128>()?,
-                decimals,
-                symbol,
-            ))
-        }
-    }
+    let function_args = serde_json::to_vec(&json!({"account_id": signer_account_id}))?;
+    let amount = get_ft_balance(
+        network_config,
+        ft_contract_account_id,
+        function_args,
+        block_reference,
+    )?
+    .parse_result_from_json::<String>()?;
+    let crate::types::ft_properties::FtMetadata { decimals, symbol } =
+        crate::types::ft_properties::params_ft_metadata(
+            ft_contract_account_id.clone(),
+            network_config,
+            near_primitives::types::Finality::Final.into(),
+        )?;
+    Ok(crate::types::ft_properties::FungibleToken::from_params_ft(
+        amount.parse::<u128>()?,
+        decimals,
+        symbol,
+    ))
 }
