@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0](https://github.com/near/near-cli-rs/compare/v0.18.0...v0.19.0) - 2025-03-01
+
+### Added
+
+- Added "send all" option to fungible tokens (#440)
+- let users specify a memo when sending ft
+- A new `--quiet` flag to suppress noisy output in scripting scenarios (#441)
+
+### Fixed
+
+- Fixed information about successful transfer of "send all" ft tokens (#447)
+- Fixed cli command for memo parameter (#446)
+- Use legacy keychain as a fallback storage when system keychain is not supported (e.g. WSL, Codespaces, Docker containers, CI) (#439)
+
+### Other
+
+- Typos fix (#451)
+- Added the ability to add an account ID to the account list without using the legacy keychain (#449)
+- Updated the copyright year to 2025 ([#448](https://github.com/near/near-cli-rs/pull/448))
+
 ## [0.18.0](https://github.com/near/near-cli-rs/compare/v0.17.0...v0.18.0) - 2025-01-20
 
 ### Added
