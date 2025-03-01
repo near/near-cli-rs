@@ -1,5 +1,6 @@
 use color_eyre::eyre::{Context, ContextCompat};
 use serde::de::{Deserialize, Deserializer};
+use serde::ser::{Serialize, Serializer};
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
@@ -219,6 +220,32 @@ pub fn params_ft_metadata(
     Ok(ft_metadata)
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct FtTransfer {
+    pub receiver_id: near_primitives::types::AccountId,
+    #[serde(deserialize_with = "parse_u128_string", serialize_with = "to_string")]
+    pub amount: u128,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memo: Option<String>,
+}
+
+fn parse_u128_string<'de, D>(deserializer: D) -> color_eyre::eyre::Result<u128, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    String::deserialize(deserializer)?
+        .parse::<u128>()
+        .map_err(serde::de::Error::custom)
+}
+
+fn to_string<S, T: ToString>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let s = value.to_string();
+    String::serialize(&s, serializer)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -270,21 +297,34 @@ mod tests {
         assert_eq!(ft_transfer_amount.to_string(), "all".to_string());
         assert_eq!(ft_transfer_amount, FungibleTokenTransferAmount::MaxAmount);
     }
-}
-
-#[derive(Debug, Clone, serde::Deserialize)]
-pub struct FtTransfer {
-    pub receiver_id: String,
-    #[serde(deserialize_with = "parse_u128_string")]
-    pub amount: u128,
-    pub memo: Option<String>,
-}
-
-fn parse_u128_string<'de, D>(deserializer: D) -> color_eyre::eyre::Result<u128, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    String::deserialize(deserializer)?
-        .parse::<u128>()
-        .map_err(serde::de::Error::custom)
+    #[test]
+    fn ft_transfer_with_memo_to_vec_u8() {
+        let ft_transfer = serde_json::to_vec(&crate::types::ft_properties::FtTransfer {
+            receiver_id: "fro_volod.testnet".parse().unwrap(),
+            amount: FungibleToken::from_str("0.123456 USDC").unwrap().amount(),
+            memo: Some("Memo".to_string()),
+        })
+        .unwrap();
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&ft_transfer)
+                .unwrap()
+                .to_string(),
+            "{\"amount\":\"123456\",\"memo\":\"Memo\",\"receiver_id\":\"fro_volod.testnet\"}"
+        );
+    }
+    #[test]
+    fn ft_transfer_without_memo_to_vec_u8() {
+        let ft_transfer = serde_json::to_vec(&crate::types::ft_properties::FtTransfer {
+            receiver_id: "fro_volod.testnet".parse().unwrap(),
+            amount: FungibleToken::from_str("0.123456 USDC").unwrap().amount(),
+            memo: None,
+        })
+        .unwrap();
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&ft_transfer)
+                .unwrap()
+                .to_string(),
+            "{\"amount\":\"123456\",\"receiver_id\":\"fro_volod.testnet\"}"
+        );
+    }
 }

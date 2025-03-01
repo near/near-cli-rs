@@ -80,18 +80,11 @@ pub fn get_prepopulated_transaction(
     deposit: &crate::types::near_token::NearToken,
     gas: &crate::common::NearGas,
 ) -> color_eyre::eyre::Result<crate::commands::PrepopulatedTransaction> {
-    let args_ft_transfer = serde_json::to_vec(&json!({
-        "receiver_id": receiver_account_id,
-        "amount": amount_ft.amount().to_string(),
-        "memo": memo.as_ref().and_then(|s| {
-            let trimmed = s.trim();
-            if trimmed.is_empty() {
-                None
-            } else {
-                Some(trimmed.to_string())
-            }
-        })
-    }))?;
+    let args_ft_transfer = serde_json::to_vec(&crate::types::ft_properties::FtTransfer {
+        receiver_id: receiver_account_id.clone(),
+        amount: amount_ft.amount(),
+        memo: memo.clone(),
+    })?;
 
     let action_ft_transfer = near_primitives::transaction::Action::FunctionCall(Box::new(
         near_primitives::transaction::FunctionCallAction {
