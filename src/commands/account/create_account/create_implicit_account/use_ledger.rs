@@ -66,7 +66,12 @@ impl SaveWithLedgerContext {
                         .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
                         .write(buf.as_bytes())
                         .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
-                    eprintln!("\nThe file {:?} was saved successfully", &file_path);
+
+                    tracing::info!(
+                        parent: &tracing::Span::none(),
+                        "The file {:?} was saved successfully",
+                        &file_path
+                    );
 
                     Ok(())
                 }
