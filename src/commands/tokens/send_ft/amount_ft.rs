@@ -185,8 +185,13 @@ impl FtTransferParamsContext {
                                         ft_balance.decimals(),
                                         ft_balance.symbol().to_string()
                                     );
-                                    eprintln!(
+                                    let info_str = format!(
                                         "<{signer_account_id}> has successfully transferred {ft_transfer_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.\nRemaining balance: {ft_balance}",
+                                    );
+                                    tracing::info!(
+                                        parent: &tracing::Span::none(),
+                                        "\n{}",
+                                        crate::common::indent_payload(&info_str)
                                     );
                                     return Ok(());
                                 }
@@ -194,8 +199,13 @@ impl FtTransferParamsContext {
                         }
                     }
                 }
-                eprintln!(
+                let info_str = format!(
                     "<{signer_account_id}> has successfully transferred fungible tokens (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.",
+                );
+                tracing::info!(
+                    parent: &tracing::Span::none(),
+                    "\n{}",
+                    crate::common::indent_payload(&info_str)
                 );
                 Ok(())
             }
