@@ -28,15 +28,21 @@ impl AsTextContext {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
                     query_view_method_response.kind
                 {
-                    eprintln!("Contract state (values):");
+                    let mut info_str = String::new();
                     for value in &result.values {
-                        eprintln!("key:\n{}", key_value_to_string(&value.key)?.green());
-                        eprintln!("value:\n{}", key_value_to_string(&value.value)?.yellow());
-                        eprintln!("--------------------------------");
+                        info_str.push_str(&format!("\nkey:   {}", key_value_to_string(&value.key)?.green()));
+                        info_str.push_str(&format!("\nvalue: {}", key_value_to_string(&value.value)?.yellow()));
+                        info_str.push_str("\n--------------------------------");
                     }
-                    eprintln!(
-                        "\nContract state (proof):\n{:#?}\n",
-                        &result.proof
+                    tracing::info!(
+                        parent: &tracing::Span::none(),
+                        "Contract state (values):{}\n",
+                        crate::common::indent_payload(&info_str)
+                    );
+                    tracing::info!(
+                        parent: &tracing::Span::none(),
+                        "Contract state (proof):\n{}\n",
+                        crate::common::indent_payload(&format!("{:#?}", result.proof))
                     );
                 } else {
                     return Err(color_eyre::Report::msg("Error call result".to_string()));

@@ -67,7 +67,13 @@ impl SendContext {
                 };
             }
         }
-        eprintln!("{storage_message}");
+        if !storage_message.is_empty() {
+            tracing::info!(
+                parent: &tracing::Span::none(),
+                "\n{}",
+                crate::common::indent_payload(&storage_message)
+            );
+        }
         Ok(Self)
     }
 }
