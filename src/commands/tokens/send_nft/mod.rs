@@ -1,4 +1,3 @@
-use inquire::CustomType;
 use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -14,13 +13,11 @@ pub struct SendNftCommand {
     /// Enter an token_id for NFT:
     token_id: String,
     #[interactive_clap(long = "prepaid-gas")]
-    #[interactive_clap(skip_default_input_arg)]
-    /// Enter gas for function call:
-    gas: crate::common::NearGas,
+    #[interactive_clap(skip_interactive_input)]
+    gas: Option<crate::common::NearGas>,
     #[interactive_clap(long = "attached-deposit")]
-    #[interactive_clap(skip_default_input_arg)]
-    /// Enter deposit for a function call:
-    deposit: crate::types::near_token::NearToken,
+    #[interactive_clap(skip_interactive_input)]
+    deposit: Option<crate::types::near_token::NearToken>,
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
@@ -48,8 +45,10 @@ impl SendNftCommandContext {
             nft_contract_account_id: scope.nft_contract_account_id.clone().into(),
             receiver_account_id: scope.receiver_account_id.clone().into(),
             token_id: scope.token_id.clone(),
-            gas: scope.gas,
-            deposit: scope.deposit,
+            gas: scope.gas.unwrap_or(near_gas::NearGas::from_tgas(100)),
+            deposit: scope
+                .deposit
+                .unwrap_or(crate::types::near_token::NearToken::from_yoctonear(1)),
         })
     }
 }
@@ -139,38 +138,5 @@ impl SendNftCommand {
             &context.global_context.config.credentials_home_dir,
             "What is the receiver account ID?",
         )
-    }
-
-    fn input_gas(
-        _context: &super::TokensCommandsContext,
-    ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
-        eprintln!();
-        Ok(Some(
-            CustomType::new("Enter gas for function call:")
-                .with_starting_input("100 TeraGas")
-                .with_validator(move |gas: &crate::common::NearGas| {
-                    if gas > &near_gas::NearGas::from_tgas(300) {
-                        Ok(inquire::validator::Validation::Invalid(
-                            inquire::validator::ErrorMessage::Custom(
-                                "You need to enter a value of no more than 300 TeraGas".to_string(),
-                            ),
-                        ))
-                    } else {
-                        Ok(inquire::validator::Validation::Valid)
-                    }
-                })
-                .prompt()?,
-        ))
-    }
-
-    fn input_deposit(
-        _context: &super::TokensCommandsContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        eprintln!();
-        Ok(Some(
-            CustomType::new("Enter deposit for a function call (example: 10 NEAR or 0.5 near or 10000 yoctonear):")
-                .with_starting_input("1 yoctoNEAR")
-                .prompt()?
-        ))
     }
 }
