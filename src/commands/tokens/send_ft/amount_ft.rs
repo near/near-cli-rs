@@ -205,15 +205,15 @@ impl FtTransferParamsContext {
                             }
                         }
                     }
+                    let info_str = format!(
+                        "<{signer_account_id}> has successfully transferred fungible tokens (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.",
+                    );
+                    tracing::info!(
+                        parent: &tracing::Span::none(),
+                        "\n{}",
+                        crate::common::indent_payload(&info_str)
+                    );
                 }
-                let info_str = format!(
-                    "<{signer_account_id}> has successfully transferred fungible tokens (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.",
-                );
-                tracing::info!(
-                    parent: &tracing::Span::none(),
-                    "\n{}",
-                    crate::common::indent_payload(&info_str)
-                );
                 Ok(())
             }
         });
