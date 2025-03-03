@@ -43,6 +43,9 @@ impl ViewNftAssetsContext {
                     owner_account_id,
                     crate::common::indent_payload(&serde_json::to_string_pretty(&serde_call_result)?)
                 );
+                if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
+                    println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
+                }
                 Ok(())
             }
         });

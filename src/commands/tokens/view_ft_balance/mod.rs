@@ -52,6 +52,9 @@ impl ViewFtBalanceContext {
                     "{}",
                     format!("<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})")
                 );
+                if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
+                    println!("<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})");
+                }
                 Ok(())
             }
         });

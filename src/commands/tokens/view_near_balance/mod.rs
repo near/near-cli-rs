@@ -31,7 +31,10 @@ impl ViewNearBalanceContext {
                     "{}",
                     crate::common::indent_payload(&format!("{account_transfer_allowance}"))
                 );
-            Ok(())
+                if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
+                    println!("{account_transfer_allowance}");
+                };
+                Ok(())
             }
         });
 
