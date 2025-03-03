@@ -77,7 +77,15 @@ impl FunctionContext {
             let function_name = scope.function_name.clone();
 
             move |network_config, block_reference| {
-                call_view_function(network_config, &account_id, &function_name, function_args.clone(), function_args_type.clone(), block_reference)
+                call_view_function(
+                    network_config,
+                    &account_id,
+                    &function_name,
+                    function_args.clone(),
+                    function_args_type.clone(),
+                    block_reference,
+                    &previous_context.global_context.verbosity,
+                )
             }
         });
 
@@ -117,6 +125,7 @@ fn call_view_function(
     function_args: String,
     function_args_type: super::call_function_args_type::FunctionArgsType,
     block_reference: &near_primitives::types::BlockReference,
+    verbosity: &crate::Verbosity,
 ) -> crate::CliResult {
     let args = super::call_function_args_type::function_args(function_args, function_args_type)?;
     let call_result = network_config
@@ -142,10 +151,14 @@ fn call_view_function(
     } else {
         info_str.push_str("\nThe returned value is not printable (binary data)");
     }
+
+    if let crate::Verbosity::Quiet = verbosity {
+        println!("{}", info_str);
+    };
     info_str.push_str("\n------------------------------------");
     tracing::info!(
         parent: &tracing::Span::none(),
-        "--- Result -------------------------{}\n",
+        "--- Result -------------------------\n{}",
         crate::common::indent_payload(&info_str)
     );
     Ok(())
