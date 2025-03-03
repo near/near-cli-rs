@@ -49,6 +49,7 @@ impl StakeContext {
             let signer_id = previous_context.account_id.clone();
             let validator_id = scope.validator_account_id.clone();
             let amount = scope.amount;
+            let verbosity = previous_context.global_context.verbosity.clone();
 
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
@@ -56,7 +57,10 @@ impl StakeContext {
                         parent: &tracing::Span::none(),
                         "\n{}",
                         crate::common::indent_payload(&format!("<{signer_id}> has successfully delegated {amount} to stake with <{validator_id}>."))
-                    )
+                    );
+                    if let crate::Verbosity::Quiet = verbosity {
+                        println!("<{signer_id}> has successfully delegated {amount} to stake with <{validator_id}>.");
+                    };
                 }
                 Ok(())
             }

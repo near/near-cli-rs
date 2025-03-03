@@ -30,7 +30,13 @@ impl ViewBalanceContext {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
 
             move |network_config: &crate::config::NetworkConfig, block_reference: &near_primitives::types::BlockReference| {
-                calculation_delegated_stake_balance(&account_id, &validator_account_id, network_config, block_reference)
+                calculation_delegated_stake_balance(
+                    &account_id,
+                    &validator_account_id,
+                    network_config,
+                    block_reference,
+                    &previous_context.global_context.verbosity
+                )
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -64,6 +70,7 @@ fn calculation_delegated_stake_balance(
     validator_account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
+    verbosity: &crate::Verbosity,
 ) -> crate::CliResult {
     let user_staked_balance: u128 = get_user_staked_balance(
         network_config,
@@ -115,7 +122,12 @@ fn calculation_delegated_stake_balance(
         format!("Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:"),
         crate::common::indent_payload(&info_str)
     );
-
+    if let crate::Verbosity::Quiet = verbosity {
+        println!(
+            "Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:{}",
+            crate::common::indent_payload(&info_str)
+        );
+    };
     Ok(())
 }
 
