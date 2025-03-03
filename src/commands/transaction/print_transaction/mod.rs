@@ -14,6 +14,7 @@ pub struct PrintTransactionCommands {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Select signed or unsigned transaction to print:
 pub enum PrintTransactionActions {
     #[strum_discriminants(strum(
         message = "unsigned         - Print all fields of previously prepared unsigned transaction without modification"
