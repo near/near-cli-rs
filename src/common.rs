@@ -1283,6 +1283,7 @@ fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decima
 pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
+    verbosity: &crate::Verbosity,
 ) -> crate::CliResult {
     let near_usd_exchange_rate: Option<Result<f64, color_eyre::eyre::Error>> = network_config
         .coingecko_url
@@ -1300,14 +1301,15 @@ pub fn print_transaction_status(
 
         if receipt.outcome.logs.is_empty() {
             logs_result_output.push_str(&format!(
-                "\nLogs [{}]:   No logs\n",
+                "\nLogs [{}]:   No logs",
                 receipt.outcome.executor_id
             ));
         } else {
-            logs_result_output.push_str(&format!("\nLogs [{}]:\n", receipt.outcome.executor_id));
-            logs_result_output.push_str(&format!("  {}\n", receipt.outcome.logs.join("\n  ")));
+            logs_result_output.push_str(&format!("\nLogs [{}]:", receipt.outcome.executor_id));
+            logs_result_output.push_str(&format!("\n  {}", receipt.outcome.logs.join("\n  ")));
         };
     }
+    logs_result_output.push_str("\n------------------------------------");
 
     let return_value = match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
@@ -1324,19 +1326,39 @@ pub fn print_transaction_status(
             }
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
-            logs_result_output.push_str("--- Result -------------------------");
-            if bytes_result.is_empty() {
-                logs_result_output.push_str("\nEmpty result\n");
+            let result_output = if bytes_result.is_empty() {
+                "Empty result".to_string()
             } else if let Ok(json_result) =
                 serde_json::from_slice::<serde_json::Value>(bytes_result)
             {
-                logs_result_output.push_str(&serde_json::to_string_pretty(&json_result)?);
+                serde_json::to_string_pretty(&json_result)?
             } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
-                logs_result_output.push_str(&string_result);
+                string_result
             } else {
-                logs_result_output.push_str("The returned value is not printable (binary data)");
-            }
-            logs_result_output.push_str("------------------------------------");
+                "The returned value is not printable (binary data)".to_string()
+            };
+            if let crate::Verbosity::Quiet = verbosity {
+                if let Some(near_primitives::views::ActionView::FunctionCall {
+                    method_name: _,
+                    args: _,
+                    gas: _,
+                    deposit: _,
+                }) = transaction_info
+                    .clone()
+                    .transaction
+                    .actions
+                    .into_iter()
+                    .next()
+                {
+                    if !["true", "empty result"].contains(&result_output.to_lowercase().as_str()) {
+                        println!("{result_output}");
+                    }
+                    return Ok(());
+                }
+            };
+            logs_result_output.push_str("\n--- Result -------------------------\n");
+            logs_result_output.push_str(&result_output);
+            logs_result_output.push_str("\n------------------------------------");
 
             logs_result_output.push_str(&print_value_successful_transaction(
                 transaction_info.clone(),
