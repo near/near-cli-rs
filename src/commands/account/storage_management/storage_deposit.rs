@@ -139,9 +139,13 @@ impl SignerAccountIdContext {
                 let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
 
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    eprintln!(
-                        "<{signer_account_id}> has successfully added a deposit of {deposit} to <{receiver_account_id}> on contract <{contract_account_id}>.",
-                        deposit = previous_context.deposit,
+                    tracing::info!(
+                        parent: &tracing::Span::none(),
+                        "\n{}",
+                        crate::common::indent_payload(&format!(
+                            "<{signer_account_id}> has successfully added a deposit of {deposit} to <{receiver_account_id}> on contract <{contract_account_id}>.",
+                            deposit = previous_context.deposit,
+                        ))
                     );
                 }
                 Ok(())
