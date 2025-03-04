@@ -17,6 +17,16 @@ near --offline tokens \
     sign-later
 ```
 
+_near CLI_ has the `--quiet` flag to suppress noisy output in scripts:
+```txt
+near --quiet tokens \
+    fro_volod.testnet \
+    send-near volodymyr.testnet 0.1NEAR \
+    network-config testnet \
+    sign-with-keychain \
+    send
+```
+
 _near CLI_ is a great tool for understanding NEAR on the low level. For example, if you want to view more detailed information about the RPC calls being made and their parameters, simply run the CLI with the `--teach-me` flag:
 ```txt
 near --teach-me tokens \
@@ -30,13 +40,11 @@ near --teach-me tokens \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Unsigned transaction:
-
-signer_id:    fro_volod.testnet
-receiver_id:  volodymyr.testnet
-actions:
-   -- transfer deposit:    0.1 NEAR
-
+ INFO Unsigned transaction:
+ |    signer_id:    fro_volod.testnet
+ |    receiver_id:  volodymyr.testnet
+ |    actions:
+ |       -- transfer deposit:    0.1 NEAR
  INFO Signing the transaction with a key saved in the secure keychain ...:Getting a list of: fro_volod.testnet access keys ...
  INFO I am making HTTP call to NEAR JSON RPC to get a list of keys for `fro_volod.testnet` account, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list
  INFO HTTP POST https://archival-rpc.testnet.near.org/
@@ -137,10 +145,10 @@ actions:
  |      "nonce": 147781057000109,
  |      "permission": "FullAccess"
  |    }
+ INFO Your transaction was signed successfully.
+ |    Public key: ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx
+ |    Signature:  ed25519:4r8YNLMkqhxSTFLejMf8JvZw6q8ue9BuQHf7JEycamAWCqLckfE5zNG7ceWoUfagQaJLTunD59ig4LuecYyVk8Qe
 
-Your transaction was signed successfully.
-Public key: ed25519:7siBhHN2eYNCubz5jAJhMdo34x33QJt5ZgUJBTNifZAx
-Signature: ed25519:4r8YNLMkqhxSTFLejMf8JvZw6q8ue9BuQHf7JEycamAWCqLckfE5zNG7ceWoUfagQaJLTunD59ig4LuecYyVk8Qe
  INFO Sending transaction ...:Broadcasting transaction via RPC: https://archival-rpc.testnet.near.org/
  INFO I am making HTTP call to NEAR JSON RPC to broadcast a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx
  INFO HTTP POST https://archival-rpc.testnet.near.org/
@@ -232,22 +240,20 @@ Signature: ed25519:4r8YNLMkqhxSTFLejMf8JvZw6q8ue9BuQHf7JEycamAWCqLckfE5zNG7ceWoU
  |        ]
  |      }
  |    }
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [volodymyr.testnet]:   No logs
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
 
---- Logs ---------------------------
-Logs [volodymyr.testnet]:   No logs
---- Result -------------------------
-Empty result
-------------------------------------
+ |    <fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
 
-<fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
-
-Gas burned: 0.447 Tgas
-Transaction fee: 0.0000446365125 NEAR (approximately $0.00025308 USD, using $5.67 USD/NEAR exchange rate)
-Transaction ID: F3eZmhtFekCrzKMbc3uk5UbKkMsuuecj6WbK9spcz8bW
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactionsF3eZmhtFekCrzKMbc3uk5UbKkMsuuecj6WbK9spcz8bW
-
-
+ |    Gas burned: 0.447 Tgas
+ |    Transaction fee: 0.0000446365125 NEAR (approximately $0.00015176 USD, using $3.40 USD/NEAR exchange rate)
+ |    Transaction ID: 8WEG4LgrpEbyhbhHqUJcJ9QT3rqccYHfijmUVL7uPj6a
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions8WEG4LgrpEbyhbhHqUJcJ9QT3rqccYHfijmUVL7uPj6a
 
 
 Here is your console command if you need to script it or re-run:
@@ -273,8 +279,8 @@ Before proceeding to the description of specific commands, it is necessary to co
         For example, _/Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_8h7kFK4quSUJRkUwo3LLiK83sraEm2jnQTECuZhWu8HC.json_
 
         <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-        <a href="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV?autoplay=1&t=1&speed=2">
-            <img src="https://asciinema.org/a/30jHxm9lRevRG4K1h0GWlEciV.png" width="836"/>
+        <a href="https://asciinema.org/a/SAlkUVFzRth0ifbx3wJt9aZ0C?autoplay=1&t=1&speed=2">
+            <img src="https://asciinema.org/a/SAlkUVFzRth0ifbx3wJt9aZ0C.png" width="836"/>
         </a>
         </details>
 
@@ -358,32 +364,32 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Account details for 'fro_volod.testnet' at block #97804915 (5G8HHWMJMHRMMaHTjeZLSvL7ruYMtH9tXq25Q6BPUivu)
-Native account balance: 182.685021399504861699999997 NEAR
-Validator stake: 0 NEAR
-Storage used by the account: 288962 bytes
-Contract code SHA-256 checksum (hex): fd999145baf49ece7d09fca7d030d384c4ea8ed4df651c6e87a015c4dfa6c0ec
-Number of access keys: 14
-   1. ed25519:2QFAeUutKUDpmgKDyHXm7Wcz1uhjxk92fK6zY2dB7FCD (nonce: 97492076000000) is granted to only do [] function calls on v2.ref-farming.testnet with an allowance of 0.25 NEAR
-   2. ed25519:3p1HbrTDYxY4q3V6QznW14qkuv3Bq1phFpCTsbrJpbEC (nonce: 94363284000000) is granted to full access
-   3. ed25519:5UJE4PzyxECS42hBZSD1QQCLdq5j39vCtzshFPbnGdm1 (nonce: 73069087000002) is granted to full access
-   4. ed25519:6YU78BezKwQNrz5vmtkSCALtx7cPDC1JBs9DhjeSJ39X (nonce: 97490513000000) is granted to only do [] function calls on v2.ref-farming.testnet with an allowance of 0.25 NEAR
-   5. ed25519:7YCfA1KrToJtAYGTBgAMe4LWfQEi4iwLGcH2q5SvGKzD (nonce: 94982716000000) is granted to only do [] function calls on mintspace2.testnet with an allowance of 0.25 NEAR
-   6. ed25519:95w5YFsJ3iktzDwRBWUGqLF6Gv5CoJuVifBjcEEdJs8s (nonce: 72253433000003) is granted to full access
-   7. ed25519:9nyDySTNAGPywxC9pG4DPdnF3eEVexDgrfzZYsoahPsV (nonce: 76057805000000) is granted to full access
-   8. ed25519:AEC4szaeNzT8PQAifsnisdivq4mwswJbBM65DdkT6kdS (nonce: 72263674000000) is granted to full access
-   9. ed25519:D31un5TFeABdNUVMaf3QzeBz3Z3yau2GZA2VPe8XX6GB (nonce: 72325441000021) is granted to full access
-  10. ed25519:DZz4r5oLSBVcLuqFzSoLUEJ3Qv67cpgGbsRHy8SvbGiU (nonce: 72253481000000) is granted to full access
-  11. ed25519:DyKmdLkWMqC1HFs6t6PfNhVemjQE16W2RNofWPpW5ZZh (nonce: 72325378000007) is granted to full access
-  12. ed25519:EWoYxHNZHtApUfu1nTGC49XHW5dNinoDKABcauHnjevZ (nonce: 73069042000001) is granted to full access
-  13. ed25519:EYtsL67TpgfpE1udnga2m41vDoBqeZ2DB32onhsxsVUb (nonce: 72251760000002) is granted to full access
-  14. ed25519:G2U7aZ91pgG3TS96gCWov5L1DkNWSi3756RRkwuspZ4L (nonce: 72251684000002) is granted to full access
+---------------------------------------------------------------------------------------------------------------
+ fro_volod.testnet                At block #188408667 
+                                  (4wDcAgoktL85KKsMKP9oBJCUvLtsU9prNXorDJtzup27) 
+---------------------------------------------------------------------------------------------------------------
+ NEAR Social profile unavailable  The profile can be edited at https://near.social 
+                                  or using the cli command: bos social-db manage-profile 
+                                  (https://github.com/bos-cli-rs/bos-cli-rs) 
+---------------------------------------------------------------------------------------------------------------
+ Native account balance           3076.37 NEAR 
+---------------------------------------------------------------------------------------------------------------
+ Validator stake                  0 NEAR 
+---------------------------------------------------------------------------------------------------------------
+ Delegated stake                  handler error: [State of contract pool.f863973.m0 is too large to be viewed] 
+---------------------------------------------------------------------------------------------------------------
+ Storage used by the account      295.1 KB 
+---------------------------------------------------------------------------------------------------------------
+ Contract (SHA-256 checksum hex)  fd999145baf49ece7d09fca7d030d384c4ea8ed4df651c6e87a015c4dfa6c0ec 
+---------------------------------------------------------------------------------------------------------------
+ Access keys                      50 full access keys and 25 function-call-only access keys 
+---------------------------------------------------------------------------------------------------------------
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/WA7eNU7hbmv7oa5lNLrmJzmRu?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/WA7eNU7hbmv7oa5lNLrmJzmRu.png" width="836"/>
+<a href="https://asciinema.org/a/yx1X3lSBI2LDH74MVau8O9AqX?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/yx1X3lSBI2LDH74MVau8O9AqX.png" width="836"/>
 </a>
 </details>
 
@@ -400,30 +406,32 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Account details for 'fro_volod.testnet' at block #73069245 (HCUJq3vQ3ztyCZAhmRmHR3cwSDcoE4zEbaWkhAjFuxUY)
-Native account balance: 198.9924766125790117 NEAR
-Validator stake: 0 NEAR
-Storage used by the account: 288660 bytes
-Contract code SHA-256 checksum (hex): fd999145baf49ece7d09fca7d030d384c4ea8ed4df651c6e87a015c4dfa6c0ec
-Number of access keys: 12
-   1. ed25519:5UJE4PzyxECS42hBZSD1QQCLdq5j39vCtzshFPbnGdm1 (nonce: 73069087000001) is granted to full access
-   2. ed25519:95w5YFsJ3iktzDwRBWUGqLF6Gv5CoJuVifBjcEEdJs8s (nonce: 72253433000003) is granted to full access
-   3. ed25519:AEC4szaeNzT8PQAifsnisdivq4mwswJbBM65DdkT6kdS (nonce: 72263674000000) is granted to full access
-   4. ed25519:D31un5TFeABdNUVMaf3QzeBz3Z3yau2GZA2VPe8XX6GB (nonce: 72325441000009) is granted to full access
-   5. ed25519:DZz4r5oLSBVcLuqFzSoLUEJ3Qv67cpgGbsRHy8SvbGiU (nonce: 72253481000000) is granted to full access
-   6. ed25519:DyKmdLkWMqC1HFs6t6PfNhVemjQE16W2RNofWPpW5ZZh (nonce: 72325378000001) is granted to full access
-   7. ed25519:EWoYxHNZHtApUfu1nTGC49XHW5dNinoDKABcauHnjevZ (nonce: 73069042000001) is granted to full access
-   8. ed25519:EYtsL67TpgfpE1udnga2m41vDoBqeZ2DB32onhsxsVUb (nonce: 72251760000002) is granted to full access
-   9. ed25519:G2U7aZ91pgG3TS96gCWov5L1DkNWSi3756RRkwuspZ4L (nonce: 72251684000002) is granted to full access
-  10. ed25519:H5A5WfckocSLeXC7h22PcnscrWWrADHaRzrVWFMYT5o9 (nonce: 72254265000000) is granted to full access
-  11. ed25519:HXHM2GTqDzCZnd7UQzPtL7VwcFfcm7n8Z8voo1ArE4Tr (nonce: 72263503000002) is granted to full access
-  12. ed25519:HjzSeCGdWT15iSj2TybmKV2dZteu1VYYAaYvNYVNZY2W (nonce: 72253750000000) is granted to full access
+------------------------------------------------------------------------------------------------------------------
+ fro_volod.testnet                At block #73069245 
+                                  (HCUJq3vQ3ztyCZAhmRmHR3cwSDcoE4zEbaWkhAjFuxUY) 
+------------------------------------------------------------------------------------------------------------------
+ NEAR Social profile unavailable  The profile can be edited at https://near.social 
+                                  or using the cli command: bos social-db manage-profile 
+                                  (https://github.com/bos-cli-rs/bos-cli-rs) 
+------------------------------------------------------------------------------------------------------------------
+ Native account balance           199.00 NEAR 
+------------------------------------------------------------------------------------------------------------------
+ Validator stake                  0 NEAR 
+------------------------------------------------------------------------------------------------------------------
+ Delegated stake                  handler error: [account 4ire-pool.pool.f863973.m0 does not exist while viewing] 
+------------------------------------------------------------------------------------------------------------------
+ Storage used by the account      288.7 KB 
+------------------------------------------------------------------------------------------------------------------
+ Contract (SHA-256 checksum hex)  fd999145baf49ece7d09fca7d030d384c4ea8ed4df651c6e87a015c4dfa6c0ec 
+------------------------------------------------------------------------------------------------------------------
+ Access keys                      12 full access keys and 0 function-call-only access keys 
+------------------------------------------------------------------------------------------------------------------
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/oKL2H2gbDntOt0MHqpjsPnZZv?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/oKL2H2gbDntOt0MHqpjsPnZZv.png" width="836"/>
+<a href="https://asciinema.org/a/DR8EApNOLXWEYox2v4P3JnQbL?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/DR8EApNOLXWEYox2v4P3JnQbL.png" width="836"/>
 </a>
 </details>
 
@@ -440,30 +448,32 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Account details for 'fro_volod.testnet' at block #73069245 (HCUJq3vQ3ztyCZAhmRmHR3cwSDcoE4zEbaWkhAjFuxUY)
-Native account balance: 198.9924766125790117 NEAR
-Validator stake: 0 NEAR
-Storage used by the account: 288660 bytes
-Contract code SHA-256 checksum (hex): fd999145baf49ece7d09fca7d030d384c4ea8ed4df651c6e87a015c4dfa6c0ec
-Number of access keys: 12
-   1. ed25519:5UJE4PzyxECS42hBZSD1QQCLdq5j39vCtzshFPbnGdm1 (nonce: 73069087000001) is granted to full access
-   2. ed25519:95w5YFsJ3iktzDwRBWUGqLF6Gv5CoJuVifBjcEEdJs8s (nonce: 72253433000003) is granted to full access
-   3. ed25519:AEC4szaeNzT8PQAifsnisdivq4mwswJbBM65DdkT6kdS (nonce: 72263674000000) is granted to full access
-   4. ed25519:D31un5TFeABdNUVMaf3QzeBz3Z3yau2GZA2VPe8XX6GB (nonce: 72325441000009) is granted to full access
-   5. ed25519:DZz4r5oLSBVcLuqFzSoLUEJ3Qv67cpgGbsRHy8SvbGiU (nonce: 72253481000000) is granted to full access
-   6. ed25519:DyKmdLkWMqC1HFs6t6PfNhVemjQE16W2RNofWPpW5ZZh (nonce: 72325378000001) is granted to full access
-   7. ed25519:EWoYxHNZHtApUfu1nTGC49XHW5dNinoDKABcauHnjevZ (nonce: 73069042000001) is granted to full access
-   8. ed25519:EYtsL67TpgfpE1udnga2m41vDoBqeZ2DB32onhsxsVUb (nonce: 72251760000002) is granted to full access
-   9. ed25519:G2U7aZ91pgG3TS96gCWov5L1DkNWSi3756RRkwuspZ4L (nonce: 72251684000002) is granted to full access
-  10. ed25519:H5A5WfckocSLeXC7h22PcnscrWWrADHaRzrVWFMYT5o9 (nonce: 72254265000000) is granted to full access
-  11. ed25519:HXHM2GTqDzCZnd7UQzPtL7VwcFfcm7n8Z8voo1ArE4Tr (nonce: 72263503000002) is granted to full access
-  12. ed25519:HjzSeCGdWT15iSj2TybmKV2dZteu1VYYAaYvNYVNZY2W (nonce: 72253750000000) is granted to full access
+---------------------------------------------------------------------------------------------------------------
+ fro_volod.testnet                At block #73069245 
+                                  (HCUJq3vQ3ztyCZAhmRmHR3cwSDcoE4zEbaWkhAjFuxUY) 
+---------------------------------------------------------------------------------------------------------------
+ NEAR Social profile unavailable  The profile can be edited at https://near.social 
+                                  or using the cli command: bos social-db manage-profile 
+                                  (https://github.com/bos-cli-rs/bos-cli-rs) 
+---------------------------------------------------------------------------------------------------------------
+ Native account balance           199.00 NEAR 
+---------------------------------------------------------------------------------------------------------------
+ Validator stake                  0 NEAR 
+---------------------------------------------------------------------------------------------------------------
+ Delegated stake                  handler error: [State of contract pool.f863973.m0 is too large to be viewed] 
+---------------------------------------------------------------------------------------------------------------
+ Storage used by the account      288.7 KB 
+---------------------------------------------------------------------------------------------------------------
+ Contract (SHA-256 checksum hex)  fd999145baf49ece7d09fca7d030d384c4ea8ed4df651c6e87a015c4dfa6c0ec 
+---------------------------------------------------------------------------------------------------------------
+ Access keys                      12 full access keys and 0 function-call-only access keys 
+---------------------------------------------------------------------------------------------------------------
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/TqhSdwjoc9PMxbLZtTWSnCRR5?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/TqhSdwjoc9PMxbLZtTWSnCRR5.png" width="836"/>
+<a href="https://asciinema.org/a/m8N04Nw1ZTjKSjWxDuSWQRRQF?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/m8N04Nw1ZTjKSjWxDuSWQRRQF.png" width="836"/>
 </a>
 </details>
 
@@ -497,13 +507,14 @@ After successful authorization in _[NEAR Wallet](https://wallet.near.org/)_, you
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-The data for the access key is saved in macOS Keychain
+ INFO 
+ |    The data for the access key is saved in the keychain
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/qEqxCxVMKjAWg92XhYCzWYhxO?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/qEqxCxVMKjAWg92XhYCzWYhxO.png" width="836"/>
+<a href="https://asciinema.org/a/7NfUlDCVzSOyRMyK4WznHl9OR?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/7NfUlDCVzSOyRMyK4WznHl9OR.png" width="836"/>
 </a>
 </details>
 
@@ -513,7 +524,7 @@ To authorize the user, in the terminal command line type:
 ```txt
 near account \
     import-account \
-    using-seed-phrase 'rapid cover napkin accuse junk drill sick tooth poem patch evil fan' \
+    using-seed-phrase 'trigger arrow grunt vendor crane safe reflect please sponsor verify club shiver' \
         --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''' \
     network-config testnet
 ```
@@ -521,13 +532,14 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-The data for the access key is saved in macOS Keychain
+ INFO 
+ |    The data for the access key is saved in the keychain
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/G9l4So0zbT3bNGekePp1tzJg5?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/G9l4So0zbT3bNGekePp1tzJg5.png" width="836"/>
+<a href="https://asciinema.org/a/A6Nl0T1RzCWxiKssA35EFXzoJ?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/A6Nl0T1RzCWxiKssA35EFXzoJ.png" width="836"/>
 </a>
 </details>
 
@@ -537,20 +549,22 @@ To authorize the user, in the terminal command line type:
 ```txt
 near account \
     import-account \
-    using-private-key ed25519:5YhAaEe3G4VtiBavJMvpzPPmknfsTauzVjwK1ZjPVw2MFM6zFyUv4tSiSfCbCn78mEnMifE6iX5qbhFsWEwErcC2 \
+    using-private-key ed25519:3AoMxLat91aAdkh4vyq7MgbKepYhSiC5WzknLFbiXUKfsoCXXeuN9W6R4EpFd3TLvBms7gbafupvtvQJmBt7W24f \
     network-config testnet
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-The data for the access key is saved in macOS Keychain
+ INFO 
+ |    The file: /Users/frovolod/.near-credentials/testnet/volodymyr.testnet/ed25519_3fm1ctizEANiJG2CgJXx41e18BjtNTAnB4hfYSMjd4Fh.json already exists! Therefore it was not overwritten.
+ |    The file: /Users/frovolod/.near-credentials/testnet/volodymyr.testnet.json already exists! Therefore it was not overwritten.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/KK14atSSbI8dLB3RcuyI2tfP8?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/KK14atSSbI8dLB3RcuyI2tfP8.png" width="836"/>
+<a href="https://asciinema.org/a/HOAvsRMGyf2ZCm88i1rc9xh5Q?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/HOAvsRMGyf2ZCm88i1rc9xh5Q.png" width="836"/>
 </a>
 </details>
 
@@ -581,8 +595,8 @@ near account \
     --wallet-url 'https://wallet.testnet.near.org/'
 ```
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/QqVhhVaBP4MP7XFDeb6arIB3S?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/QqVhhVaBP4MP7XFDeb6arIB3S.png" width="836"/>
+<a href="https://asciinema.org/a/t0D7wymkkQmI4RWjjlRDIW9ri?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/t0D7wymkkQmI4RWjjlRDIW9ri.png" width="836"/>
 </a>
 </details>
 
@@ -652,19 +666,20 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/test_fro.testnet/ed25519_CCwvhsp3Y3BfLbfYJQJqXJA2CaSP7CRjn1t7PyEtsjej.json
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/test_fro.testnet.json
+ INFO 
+ |    New account <test_fro.testnet> created successfully.
+ |    The data for the access key is saved in the keychain
 
-New account <test_fro.testnet> created successfully.
-Transaction ID: FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/FnsrXbnzH1jjTWpAo1M8cZhEN5p7jyqgRPa1aqnRzxp3
+ INFO 
+ |    Transaction ID: DsA3CKDg1LhNg3mJufDLqAcbqrVJdqBhmisBfGmevB9M
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsDsA3CKDg1LhNg3mJufDLqAcbqrVJdqBhmisBfGmevB9M
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/gKThQJT5rwgxLiN4EPQ1HiNnG?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/gKThQJT5rwgxLiN4EPQ1HiNnG.png" width="836"/>
+<a href="https://asciinema.org/a/R4904WX4yzroxMvQyx2RKjxAe?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/R4904WX4yzroxMvQyx2RKjxAe.png" width="836"/>
 </a>
 </details>
 
@@ -683,16 +698,19 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-New account <test_fro1.testnet> created successfully.
-Transaction ID: D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/D1rRpZx5AcYWzC91Jdt69qF1iqai7knUAtvdvqNA2bv
+ INFO 
+ |    New account <test_fro1.testnet> created successfully.
+
+ INFO 
+ |    Transaction ID: DLUXKWd2bBxWYfWxXoVPu75UtBXEw9ivUdFb88MNtFyd
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsDLUXKWd2bBxWYfWxXoVPu75UtBXEw9ivUdFb88MNtFyd
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/mYTEDj9Pxe3e6hwoTnDASuv0d?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/mYTEDj9Pxe3e6hwoTnDASuv0d.png" width="836"/>
+<a href="https://asciinema.org/a/mpQfajE66XGuoSYniCGXo2auX?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/mpQfajE66XGuoSYniCGXo2auX.png" width="836"/>
 </a>
 </details>
 
@@ -711,16 +729,19 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-New account <test_fro2.testnet> created successfully.
-Transaction ID: E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/E7rKjJiYg1BwXa6e7xMueDS8NUNjqZSN5zDRpB5sARTi
+ INFO 
+ |    New account <test_fro2.testnet> created successfully.
+
+ INFO 
+ |    Transaction ID: zTjfXq8743AF8LWjzqxGtierA5oAF39fA8eKoyEHxnc
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionszTjfXq8743AF8LWjzqxGtierA5oAF39fA8eKoyEHxnc
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/uxZ7FVsK7OQTakfrgwHhL4X7D?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/uxZ7FVsK7OQTakfrgwHhL4X7D.png" width="836"/>
+<a href="https://asciinema.org/a/zYuBxa8EOJQ80AGTbdt3n8Wgi?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/zYuBxa8EOJQ80AGTbdt3n8Wgi.png" width="836"/>
 </a>
 </details>
 
@@ -739,10 +760,13 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-New account <test_fro3.testnet> created successfully.
-Transaction ID: BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/BStBXVisyR5FUj3ZfCAeQ1ohfwTnx2vTbYaRPLTQ5Uek
+ INFO 
+ |    New account <test_fro3.testnet> created successfully.
+
+ INFO 
+ |    Transaction ID: 6cLee6K73jV9itZrtHv55AJUyT4egu289digLjqyrdB8
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions6cLee6K73jV9itZrtHv55AJUyT4egu289digLjqyrdB8
 ```
 </details>
 
@@ -778,20 +802,31 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-New account <new.fro_volod.testnet> created successfully.
-Transaction ID: DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/DRT3EpCK9iT5APyGgfcgSoLPCLCYYKtnrVgDhGLDEZFo
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [new.fro_volod.testnet]:   No logs
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
 
-The data for the access key is saved in a file /Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet/ed25519_3ngtirechhepHKrzfkdgqqtwqSMtdbSLR6N1c4ivnzu6.json
-The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new.fro_volod.testnet.json"
+ |    New account <new.fro_volod.testnet> has been successfully created.
+ |    <fro_volod.testnet> has transferred 1 NEAR to <new.fro_volod.testnet> successfully.
+ |    Added access key = ed25519:9E6cc5kQUCFWnE3WLVsCcQEupXdsGT825kVEenWRjSBa to new.fro_volod.testnet.
+
+ |    Gas burned: 8.4 Tgas
+ |    Transaction fee: 0.0008349895375 NEAR (approximately $0.00276381 USD, using $3.31 USD/NEAR exchange rate)
+ |    Transaction ID: CSxoCxwU5D7UQGgqEe3xUcdQCWj76PZUbga6HHXUkJiw
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsCSxoCxwU5D7UQGgqEe3xUcdQCWj76PZUbga6HHXUkJiw
+
+ INFO 
+ |    The data for the access key is saved in the keychain
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/62q0BKhCtXV8hQ3sxDpnO1CQl?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/62q0BKhCtXV8hQ3sxDpnO1CQl.png" width="836"/>
+<a href="https://asciinema.org/a/KnP0AE3YaZqlawk8PGCEjZLUI?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/KnP0AE3YaZqlawk8PGCEjZLUI.png" width="836"/>
 </a>
 </details>
 
@@ -810,20 +845,33 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-New account <new7.testnet> created successfully.
-Transaction ID: GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/GxZRjmYxZyo6X6Mn1kfuRJhfUnxsUVCiHZAZKqrLtR27
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [testnet]:   No logs
+ |    Logs [new7.testnet]:   No logs
+ |    Logs [fro_volod.testnet]:   No logs
+ |    Logs [testnet]:   No logs
+ |    Logs [fro_volod.testnet]:   No logs
+ |    --- Result -------------------------
+ |    true
+ |    ------------------------------------
 
-The data for the access key is saved in a file "/Users/frovolod/.near-credentials/testnet/new7.testnet/ed25519_EX1qK1S1T4WxXJFLH7qZvKxnGQtcKfEEsiA4BNxAZ6mP.json"
-The file: /Users/frovolod/.near-credentials/testnet/new7.testnet.json already exists! Therefore it was not overwritten.
+ |    The "create_account" call to <testnet> on behalf of <fro_volod.testnet> succeeded.
+
+ |    Gas burned: 12.8 Tgas
+ |    Transaction fee: 0.0012273219166046 NEAR (approximately $0.00353468 USD, using $2.88 USD/NEAR exchange rate)
+ |    Transaction ID: EhT2qMgQ2jusMgfMzBJEiKvPxtfLchGFYFGjApuBnpvE
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsEhT2qMgQ2jusMgfMzBJEiKvPxtfLchGFYFGjApuBnpvE
+
+ INFO 
+ |    The data for the access key is saved in the keychain
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/MxmfDRdKPeP0VdXUiENmV2UXr?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/MxmfDRdKPeP0VdXUiENmV2UXr.png" width="836"/>
+<a href="https://asciinema.org/a/japVKNYt3uxjpvrijc2TkYPyi?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/japVKNYt3uxjpvrijc2TkYPyi.png" width="836"/>
 </a>
 </details>
 
@@ -853,8 +901,8 @@ https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZb
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/gEr7nG46C5kRp1DokYAQA28Qp?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/gEr7nG46C5kRp1DokYAQA28Qp.png" width="836"/>
+<a href="https://asciinema.org/a/OV2uJcTxoUS4xsjw2qSHMSBjk?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/OV2uJcTxoUS4xsjw2qSHMSBjk.png" width="836"/>
 </a>
 </details>
 
@@ -865,7 +913,7 @@ In order to execute this command, in the terminal command line type:
 ```txt
 near account \
     create-account fund-myself pk.volodymyr.testnet '0.1 NEAR' \
-    use-manually-provided-public-key ed25519:6jm8hWUgwoEeGmpdEyk9zrCqtXM8kHhvg8M236ZaGusS \
+    use-manually-provided-public-key ed25519:HVPgAsZkZ7cwLZDqK313XJsDyqAvgBxrATcD7VacA8KE \
     sign-as volodymyr.testnet \
     network-config testnet \
     sign-with-keychain \
@@ -875,17 +923,28 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-New account <pk.volodymyr.testnet> created successfully.
-Transaction ID: CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/CAVAR7jx2ofnbjxFFL2JVNbLsGNWF2q2tqMEtHxXmRLi
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [pk.volodymyr.testnet]:   No logs
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    New account <pk.volodymyr.testnet> has been successfully created.
+ |    <volodymyr.testnet> has transferred 0.1 NEAR to <pk.volodymyr.testnet> successfully.
+ |    Added access key = ed25519:HVPgAsZkZ7cwLZDqK313XJsDyqAvgBxrATcD7VacA8KE to pk.volodymyr.testnet.
+
+ |    Gas burned: 8.4 Tgas
+ |    Transaction fee: 0.0008349895375 NEAR (approximately $0.00240476 USD, using $2.88 USD/NEAR exchange rate)
+ |    Transaction ID: CMjUG79xuGVY4LuEKV1ZH1mwhEsqNVM3PxHu5FMTvAVh
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsCMjUG79xuGVY4LuEKV1ZH1mwhEsqNVM3PxHu5FMTvAVh
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/R90IRnacRBO3Ni4PcpbRwm6Tt?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/R90IRnacRBO3Ni4PcpbRwm6Tt.png" width="836"/>
+<a href="https://asciinema.org/a/Q1o78gXKPMlysjd54z13ILq29?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Q1o78gXKPMlysjd54z13ILq29.png" width="836"/>
 </a>
 </details>
 
@@ -906,17 +965,28 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-New account <ledger1.volodymyr.testnet> created successfully.
-Transaction ID: BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/BKJp3QdaLtnXA8xwfqyk6JfrDsDxbxqADVyuNzQmKGNL
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [ledger1.volodymyr.testnet]:   No logs
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    New account <ledger1.volodymyr.testnet> has been successfully created.
+ |    <volodymyr.testnet> has transferred 0.1 NEAR to <ledger1.volodymyr.testnet> successfully.
+ |    Added access key = ed25519:FsRjjvkQZbwcBooXyuz4WMxXtxEKLJVJ6nc3CnaurdRr to ledger1.volodymyr.testnet.
+
+ |    Gas burned: 8.4 Tgas
+ |    Transaction fee: 0.0008349895375 NEAR (approximately $0.00238807 USD, using $2.86 USD/NEAR exchange rate)
+ |    Transaction ID: E8V5rKKZXBhJc11zyXjs3HnrtbL8SWduogAi2NHUQtvy
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsE8V5rKKZXBhJc11zyXjs3HnrtbL8SWduogAi2NHUQtvy
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/SN2DNObpJeqI2QrN7BNjLNdU6?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/SN2DNObpJeqI2QrN7BNjLNdU6.png" width="836"/>
+<a href="https://asciinema.org/a/90UD5uLHp2A4cWAF4yg3nFycX?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/90UD5uLHp2A4cWAF4yg3nFycX.png" width="836"/>
 </a>
 </details>
 
@@ -941,13 +1011,13 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-The file "/Users/frovolod/.near-credentials/implicit/1573066d3fa7a2d56357aa5ddbc84295d94c61590390000981f5900b04e2f55f.json" was saved successfully
+ INFO The file "/Users/frovolod/.near-credentials/implicit/58dc6259c521584ae83a790e6a540671330b0942d30e1aa96716b50d0df90427.json" was saved successfully
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/qPqMPP3tKwliWw2cu5vwCRfJi?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/qPqMPP3tKwliWw2cu5vwCRfJi.png" width="836"/>
+<a href="https://asciinema.org/a/jxAWqa9i8flsU82lLbjeXWxYJ?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/jxAWqa9i8flsU82lLbjeXWxYJ.png" width="836"/>
 </a>
 </details>
 
@@ -966,13 +1036,13 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-The file "/Users/frovolod/.near-credentials/implicit/ledger/739c872c3057cd5d812c49345248b9fdd318c8ad33ace6cf0468109eae972c8e.json" was saved successfully
+ INFO The file "/Users/frovolod/.near-credentials/implicit/dceea0a5598a57c1f90cc0ead2666c91fa3e64162f76fa1b3483f5825339b9f9.json" was saved successfully
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/kL5x9MXNrlSZWS83YjVkxnsf7?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/kL5x9MXNrlSZWS83YjVkxnsf7.png" width="836"/>
+<a href="https://asciinema.org/a/ywzPcsYIdZ5bOupWECxvCgLem?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/ywzPcsYIdZ5bOupWECxvCgLem.png" width="836"/>
 </a>
 </details>
 
@@ -992,13 +1062,13 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa6508f90f98e646836647ecd883d1d2b1989e5.json" was saved successfully
+ INFO The file "/Users/frovolod/.near-credentials/implicit/eca9e1a6e0fa9a6af6d046bcffa6508f90f98e646836647ecd883d1d2b1989e5.json" was saved successfully
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/rtmvhKL9eQXqIKBkvX62oi0qx?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/rtmvhKL9eQXqIKBkvX62oi0qx.png" width="836"/>
+<a href="https://asciinema.org/a/g8IGfYHTeitrtGwcr3deCosG9?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/g8IGfYHTeitrtGwcr3deCosG9.png" width="836"/>
 </a>
 </details>
 
@@ -1026,13 +1096,13 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Profile for fro_volod.testnet updated successfully
+ INFO Profile for fro_volod.testnet updated successfully
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/bF7AQuj012xVk4Xt5kMfOWAq1?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/bF7AQuj012xVk4Xt5kMfOWAq1.png" width="836"/>
+<a href="https://asciinema.org/a/o1syzzHQ6NDAXp2HOKTw2vA7V?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/o1syzzHQ6NDAXp2HOKTw2vA7V.png" width="836"/>
 </a>
 </details>
 
@@ -1053,13 +1123,13 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Profile for fro_volod.testnet updated successfully
+ INFO Profile for fro_volod.testnet updated successfully
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/lbyMQp94TqvbNjBGmjQ49PEpJ?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/lbyMQp94TqvbNjBGmjQ49PEpJ.png" width="836"/>
+<a href="https://asciinema.org/a/Uc28SNzhjRE2qJAdo6DSuuia4?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/Uc28SNzhjRE2qJAdo6DSuuia4.png" width="836"/>
 </a>
 </details>
 
@@ -1102,28 +1172,36 @@ This command is designed to delete the current account. It is important to remem
 In order to execute this command, in the terminal command line type:
 ```txt
 near account \
-    delete-account 2.fro_volod.testnet \
+    delete-account test_fro.testnet \
     beneficiary volodymyr.testnet \
     network-config testnet \
-    sign-with-keychain \
+    sign-with-legacy-keychain \
     send
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-Successful transaction
-Account <2.fro_volod.testnet> has been successfully deleted.
-Transaction ID: EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/EHvB47npN8Z46qhsrw5XpKmD3n3jDn4MGiD85YSqw7cy
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [test_fro.testnet]:   No logs
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    Account <test_fro.testnet> has been successfully deleted.
+
+ |    Gas burned: 0.512 Tgas
+ |    Transaction fee: 0.0000511097 NEAR (approximately $0.00017019 USD, using $3.33 USD/NEAR exchange rate)
+ |    Transaction ID: GZjvB6sDetrShK6bDHpZTgeuSRuwEgP1vfDzsGrsfo1o
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsGZjvB6sDetrShK6bDHpZTgeuSRuwEgP1vfDzsGrsfo1o
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/bicRQEA5bhRG6e7nKaF8ghzVm?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/bicRQEA5bhRG6e7nKaF8ghzVm.png" width="836"/>
+<a href="https://asciinema.org/a/pnDBuxBmhq510wgFH894hUcwP?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/pnDBuxBmhq510wgFH894hUcwP.png" width="836"/>
 </a>
 </details>
 
@@ -1143,27 +1221,30 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Number of access keys: 14
-   1. ed25519:2QFAeUutKUDpmgKDyHXm7Wcz1uhjxk92fK6zY2dB7FCD (nonce: 97492076000000) is granted to only do [] function calls on v2.ref-farming.testnet with an allowance of 0.25 NEAR
-   2. ed25519:3p1HbrTDYxY4q3V6QznW14qkuv3Bq1phFpCTsbrJpbEC (nonce: 94363284000000) is granted to full access
-   3. ed25519:5UJE4PzyxECS42hBZSD1QQCLdq5j39vCtzshFPbnGdm1 (nonce: 73069087000002) is granted to full access
-   4. ed25519:6YU78BezKwQNrz5vmtkSCALtx7cPDC1JBs9DhjeSJ39X (nonce: 97490513000000) is granted to only do [] function calls on v2.ref-farming.testnet with an allowance of 0.25 NEAR
-   5. ed25519:7YCfA1KrToJtAYGTBgAMe4LWfQEi4iwLGcH2q5SvGKzD (nonce: 94982716000000) is granted to only do [] function calls on mintspace2.testnet with an allowance of 0.25 NEAR
-   6. ed25519:95w5YFsJ3iktzDwRBWUGqLF6Gv5CoJuVifBjcEEdJs8s (nonce: 72253433000003) is granted to full access
-   7. ed25519:9nyDySTNAGPywxC9pG4DPdnF3eEVexDgrfzZYsoahPsV (nonce: 76057805000000) is granted to full access
-   8. ed25519:AEC4szaeNzT8PQAifsnisdivq4mwswJbBM65DdkT6kdS (nonce: 72263674000000) is granted to full access
-   9. ed25519:D31un5TFeABdNUVMaf3QzeBz3Z3yau2GZA2VPe8XX6GB (nonce: 72325441000021) is granted to full access
-  10. ed25519:DZz4r5oLSBVcLuqFzSoLUEJ3Qv67cpgGbsRHy8SvbGiU (nonce: 72253481000000) is granted to full access
-  11. ed25519:DyKmdLkWMqC1HFs6t6PfNhVemjQE16W2RNofWPpW5ZZh (nonce: 72325378000007) is granted to full access
-  12. ed25519:EWoYxHNZHtApUfu1nTGC49XHW5dNinoDKABcauHnjevZ (nonce: 73069042000001) is granted to full access
-  13. ed25519:EYtsL67TpgfpE1udnga2m41vDoBqeZ2DB32onhsxsVUb (nonce: 72251760000002) is granted to full access
-  14. ed25519:G2U7aZ91pgG3TS96gCWov5L1DkNWSi3756RRkwuspZ4L (nonce: 72251684000002) is granted to full access
++----+------------------------------------------------------+-----------------+------------------------------------------------------------------------------------------------+
+| #  | Public Key                                           | Nonce           | Permissions                                                                                    |
++----+------------------------------------------------------+-----------------+------------------------------------------------------------------------------------------------+
+| 1  | ed25519:1TprKa4burMqDMjDHyBSUaFQQczF7NamhxTx2yEXe9P  | 116133598000035 | full access                                                                                    |
+| 2  | ed25519:51oCqnMN2qcYsG7uVREEeJsodnodqcWqnLonLuHynjs  | 102558993000058 | full access                                                                                    |
+| 3  | ed25519:9Wmqx7NmztxtBeMAmwe6V4PrhedEo8Wh7EmjqzpFeGU  | 188577382000028 | do any function calls on v1.social08.testnet with an allowance of 0.240 NEAR                   |
+| 4  | ed25519:PgDd7jVtz9oHMrVPJXQKfVTVKgeYN48Xgcsad6pvvB7  | 105045425000000 | full access                                                                                    |
+| 5  | ed25519:RtG1Pg8ZeuTxRYqtc3fmhJWJAMEDZqtQAfDZHjKChh2  | 115787893000227 | full access                                                                                    |
+| 6  | ed25519:eXeEYjNKj6qNsy2HenhFPQ2DuN6JUpDjffmmyEr8WFj  | 101440281000000 | full access                                                                                    |
+| 7  | ed25519:27R66L6yevyHbsk4fESZDC8QUQBwCdx6vvkk1uQmG7NY | 97890993000000  | only do ["set_a", "set_b"] function calls on meta.pool.testnet with an allowance of 0.100 NEAR |
+| 8  | ed25519:2PFtFn3Pd61bHRWf2jwkF53pdCQTWAZiMfe6bF8Wx1k2 | 166608694000003 | do any function calls on v1.social08.testnet with an allowance of 0.249 NEAR                   |
+| 9  | ed25519:2QFAeUutKUDpmgKDyHXm7Wcz1uhjxk92fK6zY2dB7FCD | 97492076000000  | do any function calls on v2.ref-farming.testnet with an allowance of 0.250 NEAR                |
+| 10 | ed25519:2SBFq3hdLXTCTEfFL6Y5Df7vUSxMsHbtyJLeLbNvyu8o | 102449374000004 | full access                                                                                    |
+| 11 | ed25519:2igdi4TVH8saGLonAhdBdbPGpzQNpePktpzfjgX9dzPb | 140356139000001 | do any function calls on v1.social08.testnet with an allowance of 0.250 NEAR                   |
+| 12 | ed25519:39rNXzNAHG5UQHs481yr7Kwf5ay5mTqLeC5Ru9Guz1TC | 126060275000006 | do any function calls on v1.social08.testnet with an allowance of 0.244 NEAR                   |
+| 13 | ed25519:3Liiip4dG9ixaHiqHwqg9gZ8u9LQVhm89ys9ZKpSHjtD | 188577281000000 | do any function calls on v1.social08.testnet with an allowance of 0.250 NEAR                   |
+| 14 | ed25519:3MEZZ2m2VL1XLYu2HNpHREQWNBGatE64XjdKeHAQWBuV | 101494304000024 | full access                                                                                    |
++----+------------------------------------------------------+-----------------+------------------------------------------------------------------------------------------------+
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/KVfcCCyj2dEHEm4TcDkjtiW6s?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/KVfcCCyj2dEHEm4TcDkjtiW6s.png" width="836"/>
+<a href="https://asciinema.org/a/wJBFTtuVy76Z7XI8EF3iCnl3b?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/wJBFTtuVy76Z7XI8EF3iCnl3b.png" width="836"/>
 </a>
 </details>
 
@@ -1187,18 +1268,26 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-Successful transaction
-Added access key = ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 to fro_volod.testnet.
-Transaction ID: 2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/2oVDKopcWphN3qrUoq7XjFMpRuCUjz6jSU327q8trAQ5
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [fro_volod.testnet]:   No logs
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    Added access key = ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 to fro_volod.testnet.
+
+ |    Gas burned: 0.420 Tgas
+ |    Transaction fee: 0.000041964925 NEAR (approximately $0.00013135 USD, using $3.13 USD/NEAR exchange rate)
+ |    Transaction ID: 2UNZbYQN6HvzhkT65igKcX3V7U972aUTREahoH8qLXnP
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions2UNZbYQN6HvzhkT65igKcX3V7U972aUTREahoH8qLXnP
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/H4BfrteW1ClAzrLcRx9m8gQAV?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/H4BfrteW1ClAzrLcRx9m8gQAV.png" width="836"/>
+<a href="https://asciinema.org/a/WJgcapQLRFjFl8WK5EP7ag4GT?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/WJgcapQLRFjFl8WK5EP7ag4GT.png" width="836"/>
 </a>
 </details>
 
@@ -1211,33 +1300,44 @@ In order to execute this command, in the terminal command line type:
 near account \
     add-key fro_volod.testnet \
     grant-function-call-access \
-        --allowance '1 NEAR' \
-        --receiver-account-id 'meta.pool.testnet' \
-        --method-names 'set_a, set_b' \
+        --allowance '0.1 NEAR' \
+        --contract-account-id meta.pool.testnet \
+        --function-names 'set_a, set_b' \
     autogenerate-new-keypair \
     save-to-keychain \
     network-config testnet \
     sign-with-plaintext-private-key \
-        --signer-public-key ed25519:D31un5TFeABdNUVMaf3QzeBz3Z3yau2GZA2VPe8XX6GB \
-        --signer-private-key  ed25519:3UVo1GAatRz12iX3CRuKAuK3MPLDD9bPf4LXJD5DkHs13er3UeJLW7aRPAVsFQ2FjopUw6DEApEngac8FPtnnkYB \
+        --signer-public-key ed25519:1TprKa4burMqDMjDHyBSUaFQQczF7NamhxTx2yEXe9P \
+        --signer-private-key ed25519:1aXaNaPNxU6Nwb4R1FxP9FzqFqhXwsx3nDS8PWv2jLxcX2ABEbKiGCPFKwEqQYzULWqiXLZDQX8oZYrhSLnDXFf \
     send
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-Successful transaction
-Added access key = ed25519:27R66L6yevyHbsk4fESZDC8QUQBwCdx6vvkk1uQmG7NY to fro_volod.testnet.
-Transaction ID: DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvnj4Umo7ZzdB3
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [fro_volod.testnet]:   No logs
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    Added access key = ed25519:GmYFKxZ85UETqmnwCpqEHiy5ZW2YNCj75hM2rvADyXW9 to fro_volod.testnet.
+
+ |    Gas burned: 0.421 Tgas
+ |    Transaction fee: 0.0000420600457944 NEAR (approximately $0.00013921 USD, using $3.31 USD/NEAR exchange rate)
+ |    Transaction ID: HTpGEukqkBTmYowVgyWAfLFVXBFUUZr9bgdGq865H63X
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsHTpGEukqkBTmYowVgyWAfLFVXBFUUZr9bgdGq865H63X
+
+ INFO 
+ |    The data for the access key is saved in the keychain
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/h08oydOTq3njf6mt1FNRMHGVs?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/h08oydOTq3njf6mt1FNRMHGVs.png" width="836"/>
+<a href="https://asciinema.org/a/ob8maBfWAkmzcdkDkyiFj3NUN?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/ob8maBfWAkmzcdkDkyiFj3NUN.png" width="836"/>
 </a>
 </details>
 
@@ -1246,8 +1346,8 @@ https://explorer.testnet.near.org/transactions/DaJySrNtSUZU7KPyvfUMbh6xYi9vZeMvn
 In order to remove access keys, in the terminal command line type:
 ```txt
 near account \
-    delete-key fro_volod.testnet \
-    ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 \
+    delete-keys fro_volod.testnet \
+    public-keys ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 \
     network-config testnet \
     sign-with-keychain \
     send
@@ -1256,18 +1356,26 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-Successful transaction
-Access key <ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3> for account <fro_volod.testnet> has been successfully deleted.
-Transaction ID: 6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/6S7bJ76QNFypUvP7PCB1hkLM7X5GxPxP2gn4rnDHMzPz
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [fro_volod.testnet]:   No logs
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    Access key <ed25519:1TprKa4burMqDMjDHyBSUaFQQczF7NamhxTx2yEXe9P> for account <fro_volod.testnet> has been successfully deleted.
+
+ |    Gas burned: 0.407 Tgas
+ |    Transaction fee: 0.000040601225 NEAR (approximately $0.00013357 USD, using $3.29 USD/NEAR exchange rate)
+ |    Transaction ID: EnEZCBbpbYnxw1owzdezt78VDffBSV947zAruS9JnYx7
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsEnEZCBbpbYnxw1owzdezt78VDffBSV947zAruS9JnYx7
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/IYaNEYcMHtmSe6zKc2L63Okph?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/IYaNEYcMHtmSe6zKc2L63Okph.png" width="836"/>
+<a href="https://asciinema.org/a/0YaxX4K0CbV5E4Ub4SycxwDoq?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/0YaxX4K0CbV5E4Ub4SycxwDoq.png" width="836"/>
 </a>
 </details>
 
@@ -1314,20 +1422,40 @@ near account \
     deposit volodymyr.testnet '1 NEAR' \
     sign-as fro_volod.testnet \
     network-config testnet \
-    sign-with-macos-keychain \
+    sign-with-keychain \
     send
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<fro_volod.testnet> has successfully added a deposit of 1 NEAR to <volodymyr.testnet> on contract <v1.social08.testnet>.
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [v1.social08.testnet]:   No logs
+ |    ------------------------------------
+ |    --- Result -------------------------
+ |    {
+ |      "available": "18240389999854543210876607",
+ |      "total": "28338949999854543210876607"
+ |    }
+ |    ------------------------------------
+
+ |    The "storage_deposit" call to <v1.social08.testnet> on behalf of <fro_volod.testnet> succeeded.
+
+ |    Gas burned: 2.7 Tgas
+ |    Transaction fee: 0.0002640055798606 NEAR (approximately $0.00071017 USD, using $2.69 USD/NEAR exchange rate)
+ |    Transaction ID: 4hdrNYjpTMD4crncQ2dSkvwTu4Nn5gCoxx73KcjX6mSQ
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions4hdrNYjpTMD4crncQ2dSkvwTu4Nn5gCoxx73KcjX6mSQ
+
+ INFO 
+ |    <fro_volod.testnet> has successfully added a deposit of 1 NEAR to <volodymyr.testnet> on contract <v1.social08.testnet>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/QXXvnhz2HasKtQdT5KPVr6d1n?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/QXXvnhz2HasKtQdT5KPVr6d1n.png" width="836"/>
+<a href="https://asciinema.org/a/DlT4UZoCGaSJRJG90gAWuEYau?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/DlT4UZoCGaSJRJG90gAWuEYau.png" width="836"/>
 </a>
 </details>
 
@@ -1348,13 +1476,35 @@ near account \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully withdraw 0.5 NEAR from <v1.social08.testnet>.
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [v1.social08.testnet]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    ------------------------------------
+ |    --- Result -------------------------
+ |    {
+ |      "available": "17540389999854543210876607",
+ |      "total": "27638949999854543210876607"
+ |    }
+ |    ------------------------------------
+
+ |    The "storage_withdraw" call to <v1.social08.testnet> on behalf of <volodymyr.testnet> succeeded.
+
+ |    Gas burned: 3.6 Tgas
+ |    Transaction fee: 0.000334496827071 NEAR (approximately $0.00090648 USD, using $2.71 USD/NEAR exchange rate)
+ |    Transaction ID: SBmgKggqKy7NuhK51Ug2JRYYeEwT453uqQe5ntHDwUJ
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsSBmgKggqKy7NuhK51Ug2JRYYeEwT453uqQe5ntHDwUJ
+
+ INFO 
+ |    <volodymyr.testnet> has successfully withdraw 0.5 NEAR from <v1.social08.testnet>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/veTOTpLZZ6mKHxkn0zizpXcjx?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/veTOTpLZZ6mKHxkn0zizpXcjx.png" width="836"/>
+<a href="https://asciinema.org/a/YKOPSaGn7WGJl4tBBTjk2X4Qf?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/YKOPSaGn7WGJl4tBBTjk2X4Qf.png" width="836"/>
 </a>
 </details>
 
@@ -1382,18 +1532,26 @@ near tokens \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-Successful transaction
-<fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
-Transaction ID: 8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/8BbB674VDxeg36egMzdHFsCUExpkLWAWeYqEfd9u9ZaD
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [volodymyr.testnet]:   No logs
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    <fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
+
+ |    Gas burned: 0.447 Tgas
+ |    Transaction fee: 0.0000446365125 NEAR (approximately $0.00014506 USD, using $3.25 USD/NEAR exchange rate)
+ |    Transaction ID: FjU9rvNvaUUwKgFnH7UUmSEYuB3LBKBgY8QPwnfSgwVH
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsFjU9rvNvaUUwKgFnH7UUmSEYuB3LBKBgY8QPwnfSgwVH
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/U1pNSHZw812e4BHvnFGpefVs4?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/U1pNSHZw812e4BHvnFGpefVs4.png" width="836"/>
+<a href="https://asciinema.org/a/6ZwQzkCc1y6QlG1u2gp7taQuz?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/6ZwQzkCc1y6QlG1u2gp7taQuz.png" width="836"/>
 </a>
 </details>
 
@@ -1404,10 +1562,7 @@ In order to execute this command, in the terminal command line type:
 ```txt
 near tokens \
     fro_volod.testnet \
-    send-ft usdn.testnet volodymyr.testnet \
-    amount-ft '10 usn' \
-    prepaid-gas '100.0 Tgas' \
-    attached-deposit '1 yoctoNEAR' \
+    send-ft usdn.testnet volodymyr.testnet '10 usn' memo Memo \
     network-config testnet \
     sign-with-keychain \
     send
@@ -1416,32 +1571,42 @@ near tokens \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-The "ft_transfer" call to <usdn.testnet> on behalf of <fro_volod.testnet> succeeded.
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [usdn.testnet]:
+ |      EVENT_JSON:{"standard":"nep141","version":"1.0.0","event":"ft_transfer","data":[{"old_owner_id":"fro_volod.testnet","new_owner_id":"volodymyr.testnet","amount":"10000000000000000000","memo":"Memo"}]}
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
 
-Gas burned: 3.3 Tgas
-Transaction fee: 0.0003200613918854 NEAR (approximately $0.00140186 USD, using $4.38 USD/NEAR exchange rate)
-Transaction ID: FhK3CkEHbCk5wwGfjyEC6k1eHGcUh97ZThqY3Cx5XLSN
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactionsFhK3CkEHbCk5wwGfjyEC6k1eHGcUh97ZThqY3Cx5XLSN
+ |    The "ft_transfer" call to <usdn.testnet> on behalf of <fro_volod.testnet> succeeded.
 
-<fro_volod.testnet> has successfully transferred 10 USN (FT-contract: usdn.testnet) to <volodymyr.testnet>.
+ |    Gas burned: 3.3 Tgas
+ |    Transaction fee: 0.0003208356830642 NEAR (approximately $0.00104913 USD, using $3.27 USD/NEAR exchange rate)
+ |    Transaction ID: 53divo1wG2Qbod9NpHrtb2jLhoMYjr79nx4BWgpXToBV
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions53divo1wG2Qbod9NpHrtb2jLhoMYjr79nx4BWgpXToBV
+
+ INFO 
+ |    <fro_volod.testnet> has successfully transferred 10 USN (FT-contract: usdn.testnet) to <volodymyr.testnet>.
+ |    Remaining balance: 19633813.798969034783801448 USN
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/FYZ9hbg37jKeGVPUeRu3sJltz?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/FYZ9hbg37jKeGVPUeRu3sJltz.png" width="836"/>
+<a href="https://asciinema.org/a/8GTPGhYidBtk5PUfXTphoMykx?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/8GTPGhYidBtk5PUfXTphoMykx.png" width="836"/>
 </a>
 </details>
 
-If you want to transfer all tokens from your account, enter "all" instead of the exact number of tokens:
+If you want to transfer all tokens from your account, enter "all" instead of the exact number of tokens.  
+Note: By default, the "prepaid-gas" parameter is set to "100.0 Tgas" and the "attached-deposit" parameter is set to "1 yoctoNEAR", but you can change this.
 ```txt
 near tokens \
-    fro_volod.testnet \
-    send-ft usdn.testnet volodymyr.testnet \
-    amount-ft all \
-    prepaid-gas '100.0 Tgas' \
-    attached-deposit '1 yoctoNEAR' \
+    volodymyr.testnet \
+    send-ft usdn.testnet fro_volod.testnet all memo '' \
+        --prepaid-gas '300.0 Tgas' \
+        --attached-deposit '1 yoctoNEAR' \
     network-config testnet \
     sign-with-keychain \
     send
@@ -1450,34 +1615,45 @@ near tokens \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-The "ft_transfer" call to <usdn.testnet> on behalf of <fro_volod.testnet> succeeded.
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [usdn.testnet]:
+ |      EVENT_JSON:{"standard":"nep141","version":"1.0.0","event":"ft_transfer","data":[{"old_owner_id":"volodymyr.testnet","new_owner_id":"fro_volod.testnet","amount":"20000000000000000000"}]}
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
 
-Gas burned: 3.2 Tgas
-Transaction fee: 0.0003189020106812 NEAR (approximately $0.00141592 USD, using $4.44 USD/NEAR exchange rate)
-Transaction ID: G4jK24V6FULBfVxyd92WGH5BJzR6PELkqoFdBNGvQT48
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactionsG4jK24V6FULBfVxyd92WGH5BJzR6PELkqoFdBNGvQT48
+ |    The "ft_transfer" call to <usdn.testnet> on behalf of <volodymyr.testnet> succeeded.
 
-<fro_volod.testnet> has successfully transferred 19633907.798969034783801448 USN (FT-contract: usdn.testnet) to <volodymyr.testnet>.
+ |    Gas burned: 3.2 Tgas
+ |    Transaction fee: 0.0003185247202124 NEAR (approximately $0.00104157 USD, using $3.27 USD/NEAR exchange rate)
+ |    Transaction ID: 3ThPcpCHV7xAjpd6MXkVtcG4E7RYN8XLdsopu17dKtzy
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions3ThPcpCHV7xAjpd6MXkVtcG4E7RYN8XLdsopu17dKtzy
+
+ INFO 
+ |    <volodymyr.testnet> has successfully transferred 20 USN (FT-contract: usdn.testnet) to <fro_volod.testnet>.
+ |    Remaining balance: 0 USN
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/IHJsQ4H7Fhl3CC4t7vRjJs4pX?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/IHJsQ4H7Fhl3CC4t7vRjJs4pX.png" width="836"/>
+<a href="https://asciinema.org/a/9QU5VNUACLx39P8IuMcpiRgq3?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/9QU5VNUACLx39P8IuMcpiRgq3.png" width="836"/>
 </a>
 </details>
 
 #### send-nft - The transfer is carried out in NFT tokens
 
-This command is used to transfer NFT tokens between accounts.
+This command is used to transfer NFT tokens between accounts.  
+Note: By default, the "prepaid-gas" parameter is set to "100.0 Tgas" and the "attached-deposit" parameter is set to "1 yoctoNEAR", but you can change this.
 In order to execute this command, in the terminal command line type:
 ```txt
 near tokens \
     fro_volod.testnet \
     send-nft paras-token-v2.testnet volodymyr.testnet 1604:4 \
-        --prepaid-gas 100.000TeraGas \
-        --attached-deposit 1yoctoNEAR \
+        --prepaid-gas '300.0 Tgas' \
+        --attached-deposit '1 yoctoNEAR' \
     network-config testnet \
     sign-with-keychain \
     send
@@ -1486,18 +1662,32 @@ near tokens \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-Successful transaction
-The "nft_transfer" call to <paras-token-v2.testnet> on behalf of <fro_volod.testnet> succeeded.
-Transaction ID: 9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/9q2VbakZbj5ja6GAFXpFnbtbYHijEHyT7Ry34GQ6cvLB
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [paras-token-v2.testnet]:
+ |      Transfer 1604:4 from fro_volod.testnet to volodymyr.testnet
+ |      EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"nft_transfer","data":[{"old_owner_id":"fro_volod.testnet","new_owner_id":"volodymyr.testnet","token_ids":["1604:4"]}]}
+ |    ------------------------------------
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    The "nft_transfer" call to <paras-token-v2.testnet> on behalf of <fro_volod.testnet> succeeded.
+
+ |    Gas burned: 7.0 Tgas
+ |    Transaction fee: 0.0006925168715809 NEAR (approximately $0.00221605 USD, using $3.20 USD/NEAR exchange rate)
+ |    Transaction ID: 5hU6kfPak5pbZjC7ovs1jSiaoFHtKYWr5KUnuWb2fXc2
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions5hU6kfPak5pbZjC7ovs1jSiaoFHtKYWr5KUnuWb2fXc2
+
+ INFO 
+ |    <fro_volod.testnet> has successfully transferred NFT token_id="1604:4" to <volodymyr.testnet> on contract <paras-token-v2.testnet>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/iFXW6ryGQSdsWML0c3qAw3qGY?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/iFXW6ryGQSdsWML0c3qAw3qGY.png" width="836"/>
+<a href="https://asciinema.org/a/KE8sxQqiF56YOunQjN0v3ShuF?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/KE8sxQqiF56YOunQjN0v3ShuF.png" width="836"/>
 </a>
 </details>
 
@@ -1518,13 +1708,14 @@ near tokens \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-fro_volod.testnet account has 169.589001320890476999999994 NEAR available for transfer (the total balance is 172.482461320890476999999994 NEAR, but 2.89246 NEAR is locked for storage and the transfer transaction fee is ~0.001 NEAR)
+ INFO 
+ |    fro_volod.testnet account has 3071.44 NEAR available for transfer (the total balance is 3074.41 NEAR, but 2.97 NEAR is locked for storage)
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/lKGalzAxt3zCSxOsreqdykO8X?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/lKGalzAxt3zCSxOsreqdykO8X.png" width="836"/>
+<a href="https://asciinema.org/a/UnX0qgb8zN7nRkb7dUk9vP3kL?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/UnX0qgb8zN7nRkb7dUk9vP3kL.png" width="836"/>
 </a>
 </details>
 
@@ -1545,13 +1736,13 @@ near tokens \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-fro_volod.testnet account has "31942967677775774595" FT tokens (FT-contract: usdn.testnet)
+ INFO <fro_volod.testnet> account has 19633875.798969034783801448 USN  (FT-contract: usdn.testnet)
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/k7Bz5r20x2Bo5RIX7Q1VnpNZC?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/k7Bz5r20x2Bo5RIX7Q1VnpNZC.png" width="836"/>
+<a href="https://asciinema.org/a/H2G535BxCM4qB6s3tPmusfHb0?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/H2G535BxCM4qB6s3tPmusfHb0.png" width="836"/>
 </a>
 </details>
 
@@ -1573,33 +1764,34 @@ near tokens \
 
 ```txt
 fro_volod.testnet account has NFT tokens:
-[
-  {
-    "approved_account_ids": {},
-    "metadata": {
-      "copies": 100,
-      "description": null,
-      "expires_at": null,
-      "extra": null,
-      "issued_at": "1657613801537412611",
-      "media": "bafybeib65t37t2tagukok4m7f5rldfirzb5ykvdq3yqbwnbcrtllpggg6u",
-      "media_hash": null,
-      "reference": "bafkreidmbv4j2qylxc2mngsup7cxakw7gwyd7lu2zycznrdtqw4kc52cwu",
-      "reference_hash": null,
-      "starts_at": null,
-      "title": "Apollo42 #01 #4",
-      "updated_at": null
-    },
-    "owner_id": "fro_volod.testnet",
-    "token_id": "1604:4"
-  }
-]
+ INFO fro_volod.testnet account has NFT tokens:
+ |    [
+ |      {
+ |        "approved_account_ids": {},
+ |        "metadata": {
+ |          "copies": 100,
+ |          "description": null,
+ |          "expires_at": null,
+ |          "extra": null,
+ |          "issued_at": "1657613801537412611",
+ |          "media": "bafybeib65t37t2tagukok4m7f5rldfirzb5ykvdq3yqbwnbcrtllpggg6u",
+ |          "media_hash": null,
+ |          "reference": "bafkreidmbv4j2qylxc2mngsup7cxakw7gwyd7lu2zycznrdtqw4kc52cwu",
+ |          "reference_hash": null,
+ |          "starts_at": null,
+ |          "title": "Apollo42 #01 #4",
+ |          "updated_at": null
+ |        },
+ |        "owner_id": "fro_volod.testnet",
+ |        "token_id": "1604:4"
+ |      }
+ |    ]
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/znmY5yzIlSTjOlRRRUHzeeuzJ?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/znmY5yzIlSTjOlRRRUHzeeuzJ.png" width="836"/>
+<a href="https://asciinema.org/a/bRStRj3bg1gT9YAwFxeScFcai?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/bRStRj3bg1gT9YAwFxeScFcai.png" width="836"/>
 </a>
 </details>
 
@@ -1676,16 +1868,16 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Delegated stake balance with validator <aurora.pool.f863973.m0> by <volodymyr.testnet>:
-      Staked balance:           38.021465232511349340052266 NEAR
-      Unstaked balance:          0.000000000000000000000001 NEAR
-      Total balance:            38.021465232511349340052267 NEAR
+ INFO Delegated stake balance with validator <aurora.pool.f863973.m0> by <volodymyr.testnet>:
+ |          Staked balance:                                 10.07 NEAR
+ |          Unstaked balance:                              139.98 NEAR (available for withdrawal)
+ |          Total balance:                                 150.04 NEAR
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/2ZFe7ILJOoJCHYPYSnv7JBBFy?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/2ZFe7ILJOoJCHYPYSnv7JBBFy.png" width="836"/>
+<a href="https://asciinema.org/a/TmMzGE4lfW4PZONfbfF57IRwt?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/TmMzGE4lfW4PZONfbfF57IRwt.png" width="836"/>
 </a>
 </details>
 
@@ -1704,13 +1896,37 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully delegated 15 NEAR to stake with <aurora.pool.f863973.m0>.
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [aurora.pool.f863973.m0]:
+ |      @volodymyr.testnet deposited 15000000000000000000000000. New unstaked balance is 139970879972821537334942845
+ |      @volodymyr.testnet staking 14999999999999999999999996. Received 3440175881468611169391603 new staking shares. Total 124970879972821537334942849 unstaked balance and 22948853294897913527674841 staking shares
+ |      Contract total staked balance is 18048777328345645362302984477380. Total number of shares 4139397896998144363779930177559
+ |    Logs [aurora.pool.f863973.m0]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    Logs [aurora.pool.f863973.m0]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    ------------------------------------
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    The "deposit_and_stake" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.
+
+ |    Gas burned: 6.1 Tgas
+ |    Transaction fee: 0.000565088651184 NEAR (approximately $0.00184218 USD, using $3.26 USD/NEAR exchange rate)
+ |    Transaction ID: 5mqV2dcZSQZz1RvT9kbKgS68A62sxYCQUyPkfGQ7qsvw
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions5mqV2dcZSQZz1RvT9kbKgS68A62sxYCQUyPkfGQ7qsvw
+
+ INFO 
+ |    <volodymyr.testnet> has successfully delegated 15 NEAR to stake with <aurora.pool.f863973.m0>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/tTwzlj0FszzXEh36aP6ZaTdhG?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/tTwzlj0FszzXEh36aP6ZaTdhG.png" width="836"/>
+<a href="https://asciinema.org/a/BoKVychKEmbazAeo6jWDbm4KL?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/tTwzlj0FsBoKVychKEmbazAeo6jWDbm4KLzzXEh36aP6ZaTdhG.png" width="836"/>
 </a>
 </details>
 
@@ -1729,13 +1945,36 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully delegated 5 NEAR to stake with <aurora.pool.f863973.m0>.
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [aurora.pool.f863973.m0]:
+ |      @volodymyr.testnet staking 4999999999999999999999998. Received 1146725293822870389797201 new staking shares. Total 124970879972821537334942845 unstaked balance and 19508677413429302358283238 staking shares
+ |      Contract total staked balance is 18048762328345645362302984477383. Total number of shares 4139394456822262895168760785956
+ |    Logs [aurora.pool.f863973.m0]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    Logs [aurora.pool.f863973.m0]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    ------------------------------------
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    The "stake" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.
+
+ |    Gas burned: 5.8 Tgas
+ |    Transaction fee: 0.0005278299014306 NEAR (approximately $0.00172072 USD, using $3.26 USD/NEAR exchange rate)
+ |    Transaction ID: Cv6VTBzU5v4gjmsGAhTFuY2taKL4RmZZoSJfFkV81Fbt
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsCv6VTBzU5v4gjmsGAhTFuY2taKL4RmZZoSJfFkV81Fbt
+
+ INFO 
+ |    <volodymyr.testnet> has successfully delegated 5 NEAR to stake with <aurora.pool.f863973.m0>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/10T84aFMiJSYLv3shBEsql68L?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/10T84aFMiJSYLv3shBEsql68L.png" width="836"/>
+<a href="https://asciinema.org/a/0yWzlHfbiB0FvX0k4PJuQndyu?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/0yWzlHfbiB0FvX0k4PJuQndyu.png" width="836"/>
 </a>
 </details>
 
@@ -1754,13 +1993,36 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully delegated all previously unstaked NEAR tokens to stake with <aurora.pool.f863973.m0>.
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [aurora.pool.f863973.m0]:
+ |      @volodymyr.testnet staking 124970879972821537334942846. Received 28661453811227289230731537 new staking shares. Total 3 unstaked balance and 51610307106125202758406378 staking shares
+ |      Contract total staked balance is 18048902299225618183840319420227. Total number of shares 4139426558451955591069160909096
+ |    Logs [aurora.pool.f863973.m0]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    Logs [aurora.pool.f863973.m0]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    ------------------------------------
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    The "stake_all" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.
+
+ |    Gas burned: 5.9 Tgas
+ |    Transaction fee: 0.0005400473556783 NEAR (approximately $0.00174975 USD, using $3.24 USD/NEAR exchange rate)
+ |    Transaction ID: BHqnut5dFr9H76K31VqHHw5zgDVNhp3TbjxcmWG87Mg7
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsBHqnut5dFr9H76K31VqHHw5zgDVNhp3TbjxcmWG87Mg7
+
+ INFO 
+ |    <volodymyr.testnet> has successfully delegated to stake with <aurora.pool.f863973.m0>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/bhUAfnDCnt9U2XQLeY46sbTWR?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/bhUAfnDCnt9U2XQLeY46sbTWR.png" width="836"/>
+<a href="https://asciinema.org/a/gHLsrArPXQZI6cS5a9L0GGIRu?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/gHLsrArPXQZI6cS5a9L0GGIRu.png" width="836"/>
 </a>
 </details>
 
@@ -1779,13 +2041,36 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully unstaked 7 NEAR from <aurora.pool.f863973.m0>.
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [aurora.pool.f863973.m0]:
+ |      @volodymyr.testnet unstaking 7000000000000000000000002. Spent 1605415411352018545716082 staking shares. Total 14000000000000000000000005 unstaked balance and 48399476283421165666974215 staking shares
+ |      Contract total staked balance is 18048888299225618183840319420230. Total number of shares 4139423347621132887032069476933
+ |    Logs [aurora.pool.f863973.m0]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    Logs [aurora.pool.f863973.m0]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    ------------------------------------
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    The "unstake" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.
+
+ |    Gas burned: 5.8 Tgas
+ |    Transaction fee: 0.0005277130544669 NEAR (approximately $0.00173089 USD, using $3.28 USD/NEAR exchange rate)
+ |    Transaction ID: 2CaQzKqsLiVLc9xSKcZAkL8o9ypPgvYrNDdkvGY7AmU9
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions2CaQzKqsLiVLc9xSKcZAkL8o9ypPgvYrNDdkvGY7AmU9
+
+ INFO 
+ |    <volodymyr.testnet> has successfully unstaked 7 NEAR from <aurora.pool.f863973.m0>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/vOJusmeGFwrofAKN6wd2Q3a5w?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/vOJusmeGFwrofAKN6wd2Q3a5w.png" width="836"/>
+<a href="https://asciinema.org/a/KDoVnegViGZsLudqI17kTAqn7?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/KDoVnegViGZsLudqI17kTAqn7.png" width="836"/>
 </a>
 </details>
 
@@ -1804,13 +2089,36 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully unstaked the entire amount from <aurora.pool.f863973.m0>.
+ INFO                                                                                                                                                                         
+ |    --- Logs ---------------------------                                                                                                                                    
+ |    Logs [aurora.pool.f863973.m0]:                                                                                                                                          
+ |      @volodymyr.testnet unstaking 225033438191942506311861536. Spent 51610307106125202758406379 staking shares. Total 225033438191942506311861540 unstaked balance and 0 staking shares                                                                                                                                                                  
+ |      Contract total staked balance is 18048677265787426241334007558698. Total number of shares 4139374948144849465866402502718                                             
+ |    Logs [aurora.pool.f863973.m0]:   No logs                                                                                                                                
+ |    Logs [volodymyr.testnet]:   No logs                                                                                                                                     
+ |    Logs [aurora.pool.f863973.m0]:   No logs                                                                                                                                
+ |    Logs [volodymyr.testnet]:   No logs                                                                                                                                     
+ |    ------------------------------------                                                                                                                                    
+ |    --- Result -------------------------                                                                                                                                    
+ |    Empty result                                                                                                                                                            
+ |    ------------------------------------                                                                                                                                    
+                                                                                                                                                                              
+ |    The "unstake_all" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.                                                                          
+                                                                                                                                                                              
+ |    Gas burned: 5.9 Tgas                                                                                                                                                    
+ |    Transaction fee: 0.0005414102448012 NEAR (approximately $0.00177582 USD, using $3.28 USD/NEAR exchange rate)                                                            
+ |    Transaction ID: Bp2nPibgyDzKTqbGhqeowhZCgdqAjoGYr3PGnBVLDD9X                                                                                                            
+ |    To see the transaction in the transaction explorer, please open this url in your browser:                                                                               
+ |    https://explorer.testnet.near.org/transactionsBp2nPibgyDzKTqbGhqeowhZCgdqAjoGYr3PGnBVLDD9X                                                                              
+                                                                                                                                                                              
+ INFO                                                                                                                                                                         
+ |    <volodymyr.testnet> has successfully unstaked the entire available amount from <aurora.pool.f863973.m0>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/FgEjwrSlSHjIXeUBZGyl1O6vG?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/FgEjwrSlSHjIXeUBZGyl1O6vG.png" width="836"/>
+<a href="https://asciinema.org/a/QMUCK5dw9hz91zCQntAqF8JFX?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/QMUCK5dw9hz91zCQntAqF8JFX.png" width="836"/>
 </a>
 </details>
 
@@ -1894,32 +2202,39 @@ near contract \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-[
-  {
-    "account_id": "zavodil.near",
-    "can_withdraw": false,
-    "staked_balance": "107480661091559500516766891",
-    "unstaked_balance": "1307739180247557404925470405"
-  },
-  {
-    "account_id": "gagdiez.near",
-    "can_withdraw": true,
-    "staked_balance": "4387193990112136827894210960",
-    "unstaked_balance": "1"
-  },
-  {
-    "account_id": "gibby49.near",
-    "can_withdraw": true,
-    "staked_balance": "1105950300133283278041226",
-    "unstaked_balance": "1"
-  }
-]
+ INFO 
+ |    --- Logs ---------------------------
+ |    No logs
+ |    ------------------------------------
+ INFO 
+ |    --- Result -------------------------
+ |    [
+ |      {
+ |        "account_id": "zavodil.near",
+ |        "can_withdraw": true,
+ |        "staked_balance": "11433121116815084999423646794",
+ |        "unstaked_balance": "0"
+ |      },
+ |      {
+ |        "account_id": "dba22fecd3b52fbba153f476dd6ea166b9b1c5f2b73a51461ff738445b195181",
+ |        "can_withdraw": true,
+ |        "staked_balance": "3331729047758900549893273",
+ |        "unstaked_balance": "1"
+ |      },
+ |      {
+ |        "account_id": "gibby49.near",
+ |        "can_withdraw": true,
+ |        "staked_balance": "1405036979648505277794095",
+ |        "unstaked_balance": "1"
+ |      }
+ |    ]
+ |    ------------------------------------
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/OHhdlJEaoA4nLJSDtybgc7kCR?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/OHhdlJEaoA4nLJSDtybgc7kCR.png" width="836"/>
+<a href="https://asciinema.org/a/O0wuaKKU9aaDLZOQk0R33mYvn?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/O0wuaKKU9aaDLZOQk0R33mYvn.png" width="836"/>
 </a>
 </details>
 
@@ -1942,18 +2257,27 @@ near contract \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-Successful transaction
-The "rate" call to <turbo.volodymyr.testnet> on behalf of <fro_volod.testnet> succeeded.
-Transaction ID: 7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/7RuoSAdCctSEw63GKsfQJg1YXRzH3msUCo4oygzauPko
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [turbo.volodymyr.testnet]:   No logs
+ |    ------------------------------------
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    The "rate" call to <turbo.volodymyr.testnet> on behalf of <fro_volod.testnet> succeeded.
+
+ |    Gas burned: 2.2 Tgas
+ |    Transaction fee: 0.0002154134874181 NEAR (approximately $0.00070440 USD, using $3.27 USD/NEAR exchange rate)
+ |    Transaction ID: DVB2RxNJyazoAKxMs7VugWuqiU9ZgkVXvLmM7cxs88jf
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactionsDVB2RxNJyazoAKxMs7VugWuqiU9ZgkVXvLmM7cxs88jf
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/S6LHwINBHskznxMrJPHzUmgxM?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/S6LHwINBHskznxMrJPHzUmgxM.png" width="836"/>
+<a href="https://asciinema.org/a/6yYpaiRUa3b80P5ECGeX9SnLy?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/6yYpaiRUa3b80P5ECGeX9SnLy.png" width="836"/>
 </a>
 </details>
 
@@ -1963,11 +2287,11 @@ In order to add a new contract, in the terminal command line type:
 ```txt
 near contract \
     deploy \
-    262.volodymyr.testnet \
-    use-file /Users/frovolod/Documents/NEAR/rust-counter/contract/target/wasm32-unknown-unknown/release/rust_counter_tutorial.wasm \
+    volodymyr.testnet \
+    use-file /Users/frovolod/Documents/NEAR/near-cli-rs/counter_volodymyr_testnet.wasm \
     with-init-call increment \
     json-args {} \
-    prepaid-gas '1 TGas' \
+    prepaid-gas '100 TGas' \
     attached-deposit '0 NEAR' \
     network-config testnet \
     sign-with-keychain \
@@ -1977,19 +2301,29 @@ near contract \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction sent ...
-Successful transaction
-Contract code has been successfully deployed.
-The "increment" call to <262.volodymyr.testnet> on behalf of <262.volodymyr.testnet> succeeded.
-Transaction ID: 4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
-To see the transaction in the transaction explorer, please open this url in your browser:
-https://explorer.testnet.near.org/transactions/4YGGhF88aevNGpF5uaXNGHfQprHRqkia7eTpyxegJVms
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [volodymyr.testnet]:
+ |      Increased number to 43
+ |      Make sure you don't overflow, my friend.
+ |    ------------------------------------
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+ |    Contract code has been successfully deployed.
+ |    The "increment" call to <volodymyr.testnet> on behalf of <volodymyr.testnet> succeeded.
+
+ |    Gas burned: 10.4 Tgas
+ |    Transaction fee: 0.0010399389813202 NEAR (approximately $0.00341099 USD, using $3.28 USD/NEAR exchange rate)
+ |    Transaction ID: 3kq668vjhE1ZFFSKegNARfjy8ZhCeit8cPvuY8tELSGF
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions3kq668vjhE1ZFFSKegNARfjy8ZhCeit8cPvuY8tELSGF
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/7KD9gM9tj2AWtgGpjUmytkPg9?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/7KD9gM9tj2AWtgGpjUmytkPg9.png" width="836"/>
+<a href="https://asciinema.org/a/EP1iriayC6fZdB6ddz82nBc9W?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/EP1iriayC6fZdB6ddz82nBc9W.png" width="836"/>
 </a>
 </details>
 
@@ -2002,21 +2336,22 @@ In order to get the contract file, type the following in the terminal command li
 
 ```txt
 near contract \
-    download-wasm 262.volodymyr.testnet \
-    to-folder /Users/frovolod/Downloads \
+    download-wasm volodymyr.testnet \
+    save-to-file volodymyr_testnet.wasm \
     network-config testnet \
     now
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
 ```txt
-The file "/Users/frovolod/Downloads/contract_262_volodymyr_testnet.wasm" was downloaded successfully
+ INFO 
+ |    The file "volodymyr_testnet.wasm" was downloaded successfully
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/2UbeTzLJq16qtCUR015wuRFmN?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/2UbeTzLJq16qtCUR015wuRFmN.png" width="836"/>
+<a href="https://asciinema.org/a/u9x4lbDFZu9rzwNgChu9jukGq?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/u9x4lbDFZu9rzwNgChu9jukGq.png" width="836"/>
 </a>
 </details>
 
@@ -2038,34 +2373,36 @@ near contract \
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
+
 ```txt
-Contract state (values):
-[
-  {
-    "key": "MjF2b2xvZHlteXIudGVzdG5ldA==",
-    "value": "JwAAAAAAAAAIAAAAAAAAAA=="
-  },
-  {
-    "key": "U1RBVEU=",
-    "value": ""
-  },
-  {
-    "key": "ZnJvX3ZvbG9kLnRlc3RuZXQ=",
-    "value": "HQAAAAAAAAAGAAAAAAAAAA=="
-  },
-  {
-    "key": "dm9sb2R5bXlyLnRlc3RuZXQ=",
-    "value": "QAEAAAAAAABAAAAAAAAAAA=="
-  }
-]
-Contract state (proof):
-[]
+ INFO Contract state (values):
+ |    [
+ |      {
+ |        "key": "MjF2b2xvZHlteXIudGVzdG5ldA==",
+ |        "value": "JwAAAAAAAAAIAAAAAAAAAA=="
+ |      },
+ |      {
+ |        "key": "U1RBVEU=",
+ |        "value": ""
+ |      },
+ |      {
+ |        "key": "ZnJvX3ZvbG9kLnRlc3RuZXQ=",
+ |        "value": "HQAAAAAAAAAGAAAAAAAAAA=="
+ |      },
+ |      {
+ |        "key": "dm9sb2R5bXlyLnRlc3RuZXQ=",
+ |        "value": "dwEAAAAAAABLAAAAAAAAAA=="
+ |      }
+ |    ]
+
+ INFO Contract state (proof):
+ |    []
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/ylVt2VzX2GZp6nP5OccBbdKul?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/ylVt2VzX2GZp6nP5OccBbdKul.png" width="836"/>
+<a href="https://asciinema.org/a/ng5lTKyfJaD0VGl9KCjWmDhjA?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/ng5lTKyfJaD0VGl9KCjWmDhjA.png" width="836"/>
 </a>
 </details>
 
@@ -2090,161 +2427,112 @@ near transaction \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction status: FinalExecutionOutcomeWithReceiptView {
-    final_outcome: FinalExecutionOutcome {
-        status: SuccessValue(``),
-        transaction: SignedTransactionView {
-            signer_id: AccountId(
-                "volodymyr.testnet",
-            ),
-            public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-            nonce: 165,
-            receiver_id: AccountId(
-                "qweqweqwe.volodymyr.testnet",
-            ),
-            actions: [
-                CreateAccount,
-                Transfer {
-                    deposit: 100000000000000000000000000,
-                },
-                AddKey {
-                    public_key: ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf,
-                    access_key: AccessKeyView {
-                        nonce: 0,
-                        permission: FullAccess,
-                    },
-                },
-            ],
-            signature: ed25519:266jBRjvnaxe4mDyHRGwv3TJesvgRo2umJBqkZU26fRwmhVHciu3tBSLqRZFjEuqLTiwDTrFvfxpJ8Sbd2PqHHhv,
-            hash: `GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank`,
-        },
-        transaction_outcome: ExecutionOutcomeWithIdView {
-            proof: [],
-            block_hash: `AQH6jDqqxpBYj5NSZv3Skg5hUZQRsn16jvDuphCTugSQ`,
-            id: `GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank`,
-            outcome: ExecutionOutcomeView {
-                logs: [],
-                receipt_ids: [
-                    `5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh`,
-                ],
-                gas_burnt: 424555062500,
-                tokens_burnt: 42455506250000000000,
-                executor_id: AccountId(
-                    "volodymyr.testnet",
-                ),
-                status: SuccessReceiptId(5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh),
-                metadata: ExecutionMetadataView {
-                    version: 1,
-                    gas_profile: None,
-                },
-            },
-        },
-        receipts_outcome: [
-            ExecutionOutcomeWithIdView {
-                proof: [],
-                block_hash: `DBUpiLVVDBQwSAPU8ZTE8KQnX5skDD1dTsBjJQ8kV24R`,
-                id: `5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh`,
-                outcome: ExecutionOutcomeView {
-                    logs: [],
-                    receipt_ids: [
-                        `851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU`,
-                    ],
-                    gas_burnt: 424555062500,
-                    tokens_burnt: 42455506250000000000,
-                    executor_id: AccountId(
-                        "qweqweqwe.volodymyr.testnet",
-                    ),
-                    status: SuccessValue(``),
-                    metadata: ExecutionMetadataView {
-                        version: 1,
-                        gas_profile: None,
-                    },
-                },
-            },
-            ExecutionOutcomeWithIdView {
-                proof: [],
-                block_hash: `BSjrH3WyKnXhD17drR94YfM725Ho59us9N4msXrrgHEw`,
-                id: `851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU`,
-                outcome: ExecutionOutcomeView {
-                    logs: [],
-                    receipt_ids: [],
-                    gas_burnt: 0,
-                    tokens_burnt: 0,
-                    executor_id: AccountId(
-                        "volodymyr.testnet",
-                    ),
-                    status: SuccessValue(``),
-                    metadata: ExecutionMetadataView {
-                        version: 1,
-                        gas_profile: None,
-                    },
-                },
-            },
-        ],
-    },
-    receipts: [
-        ReceiptView {
-            predecessor_id: AccountId(
-                "volodymyr.testnet",
-            ),
-            receiver_id: AccountId(
-                "qweqweqwe.volodymyr.testnet",
-            ),
-            receipt_id: `5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh`,
-            receipt: Action {
-                signer_id: AccountId(
-                    "volodymyr.testnet",
-                ),
-                signer_public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-                gas_price: 103000000,
-                output_data_receivers: [],
-                input_data_ids: [],
-                actions: [
-                    CreateAccount,
-                    Transfer {
-                        deposit: 100000000000000000000000000,
-                    },
-                    AddKey {
-                        public_key: ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf,
-                        access_key: AccessKeyView {
-                            nonce: 0,
-                            permission: FullAccess,
-                        },
-                    },
-                ],
-            },
-        },
-        ReceiptView {
-            predecessor_id: AccountId(
-                "system",
-            ),
-            receiver_id: AccountId(
-                "volodymyr.testnet",
-            ),
-            receipt_id: `851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU`,
-            receipt: Action {
-                signer_id: AccountId(
-                    "volodymyr.testnet",
-                ),
-                signer_public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
-                gas_price: 0,
-                output_data_receivers: [],
-                input_data_ids: [],
-                actions: [
-                    Transfer {
-                        deposit: 1273665187500000000,
-                    },
-                ],
-            },
-        },
-    ],
-}
+ INFO Transaction status:
+ |    RpcTransactionResponse {
+ |        final_execution_outcome: Some(
+ |            FinalExecutionOutcome(
+ |                FinalExecutionOutcome {
+ |                    status: SuccessValue(''),
+ |                    transaction: SignedTransactionView {
+ |                        signer_id: AccountId(
+ |                            "volodymyr.testnet",
+ |                        ),
+ |                        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
+ |                        nonce: 165,
+ |                        receiver_id: AccountId(
+ |                            "qweqweqwe.volodymyr.testnet",
+ |                        ),
+ |                        actions: [
+ |                            CreateAccount,
+ |                            Transfer {
+ |                                deposit: 100000000000000000000000000,
+ |                            },
+ |                            AddKey {
+ |                                public_key: ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf,
+ |                                access_key: AccessKeyView {
+ |                                    nonce: 0,
+ |                                    permission: FullAccess,
+ |                                },
+ |                            },
+ |                        ],
+ |                        priority_fee: 0,
+ |                        signature: ed25519:266jBRjvnaxe4mDyHRGwv3TJesvgRo2umJBqkZU26fRwmhVHciu3tBSLqRZFjEuqLTiwDTrFvfxpJ8Sbd2PqHHhv,
+ |                        hash: GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank,
+ |                    },
+ |                    transaction_outcome: ExecutionOutcomeWithIdView {
+ |                        proof: [],
+ |                        block_hash: AQH6jDqqxpBYj5NSZv3Skg5hUZQRsn16jvDuphCTugSQ,
+ |                        id: GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank,
+ |                        outcome: ExecutionOutcomeView {
+ |                            logs: [],
+ |                            receipt_ids: [
+ |                                5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh,
+ |                            ],
+ |                            gas_burnt: 424555062500,
+ |                            tokens_burnt: 42455506250000000000,
+ |                            executor_id: AccountId(
+ |                                "volodymyr.testnet",
+ |                            ),
+ |                            status: SuccessReceiptId(5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh),
+ |                            metadata: ExecutionMetadataView {
+ |                                version: 1,
+ |                                gas_profile: None,
+ |                            },
+ |                        },
+ |                    },
+ |                    receipts_outcome: [
+ |                        ExecutionOutcomeWithIdView {
+ |                            proof: [],
+ |                            block_hash: DBUpiLVVDBQwSAPU8ZTE8KQnX5skDD1dTsBjJQ8kV24R,
+ |                            id: 5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh,
+ |                            outcome: ExecutionOutcomeView {
+ |                                logs: [],
+ |                                receipt_ids: [
+ |                                    851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU,
+ |                                ],
+ |                                gas_burnt: 424555062500,
+ |                                tokens_burnt: 42455506250000000000,
+ |                                executor_id: AccountId(
+ |                                    "qweqweqwe.volodymyr.testnet",
+ |                                ),
+ |                                status: SuccessValue(''),
+ |                                metadata: ExecutionMetadataView {
+ |                                    version: 1,
+ |                                    gas_profile: None,
+ |                                },
+ |                            },
+ |                        },
+ |                        ExecutionOutcomeWithIdView {
+ |                            proof: [],
+ |                            block_hash: BSjrH3WyKnXhD17drR94YfM725Ho59us9N4msXrrgHEw,
+ |                            id: 851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU,
+ |                            outcome: ExecutionOutcomeView {
+ |                                logs: [],
+ |                                receipt_ids: [],
+ |                                gas_burnt: 0,
+ |                                tokens_burnt: 0,
+ |                                executor_id: AccountId(
+ |                                    "volodymyr.testnet",
+ |                                ),
+ |                                status: SuccessValue(''),
+ |                                metadata: ExecutionMetadataView {
+ |                                    version: 1,
+ |                                    gas_profile: None,
+ |                                },
+ |                            },
+ |                        },
+ |                    ],
+ |                },
+ |            ),
+ |        ),
+ |        final_execution_status: Final,
+ |    }
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/xf69gJEha7yO27E27CZszkN97?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/xf69gJEha7yO27E27CZszkN97.png" width="836"/>
+<a href="https://asciinema.org/a/OKLJdE09ueWy3HG27YcXExeF2?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/OKLJdE09ueWy3HG27YcXExeF2.png" width="836"/>
 </a>
 </details>
 
@@ -2260,26 +2548,25 @@ near transaction \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-Transaction GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank:
+ INFO Transaction GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank:
+ |    signer_id:    volodymyr.testnet
+ |    receiver_id:  qweqweqwe.volodymyr.testnet
+ |    actions:
+ |       -- create account:      qweqweqwe.volodymyr.testnet
+ |       -- transfer deposit:    100 NEAR
+ |       -- add access key:     
+ |                       public key:   ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf
+ |                       nonce:        0
+ |                       permission:   FullAccess
 
-signer_id:    volodymyr.testnet
-receiver_id:  qweqweqwe.volodymyr.testnet
-actions:
-   -- create account:      qweqweqwe.volodymyr.testnet
-   -- transfer deposit:    100 NEAR
-   -- add access key:     
-                   public key:   ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf
-                   nonce:        0
-                   permission:   FullAccess
-
-Here is your console command to run archive transaction. You can to edit it or re-run:
-near transaction construct-transaction volodymyr.testnet qweqweqwe.volodymyr.testnet add-action create-account add-action transfer '100 NEAR' add-action add-key grant-full-access use-manually-provided-public-key ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf skip network-config testnet
+ INFO Here is your console command to run archive transaction. You can to edit it or re-run:
+ |    ./near transaction construct-transaction volodymyr.testnet qweqweqwe.volodymyr.testnet add-action create-account add-action transfer '100 NEAR' add-action add-key grant-full-access use-manually-provided-public-key ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf skip network-config testnet
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/lw5MEk8sJ1NGPMNWpuVfjLpAT?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/lw5MEk8sJ1NGPMNWpuVfjLpAT.png" width="836"/>
+<a href="https://asciinema.org/a/MCJgvWJpbu5W6ky1nxxkc38uW?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/MCJgvWJpbu5W6ky1nxxkc38uW.png" width="836"/>
 </a>
 </details>
 
@@ -2293,8 +2580,8 @@ Let's consider an example when it is necessary to perform several actions within
 To do this, we will use the transaction constructor:
 
 <details><summary>Demonstration of the command in interactive mode</summary>
-<a href="https://asciinema.org/a/WNbxN1GB861q2sBbiKbQyVl3S?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/WNbxN1GB861q2sBbiKbQyVl3S.png" width="836"/>
+<a href="https://asciinema.org/a/xph7SMTc2ZKlMCc8gbX179tvL?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/xph7SMTc2ZKlMCc8gbX179tvL.png" width="836"/>
 </a>
 </details>
 
