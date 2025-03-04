@@ -30,9 +30,9 @@ impl AsTextContext {
                 {
                     let mut info_str = String::new();
                     for value in &result.values {
-                        info_str.push_str(&format!("\nkey:   {}", key_value_to_string(&value.key)?.green()));
-                        info_str.push_str(&format!("\nvalue: {}", key_value_to_string(&value.value)?.yellow()));
-                        info_str.push_str("\n--------------------------------");
+                        info_str.push_str(&format!("\n\tkey:   {}", key_value_to_string(&value.key)?.green()));
+                        info_str.push_str(&format!("\n\tvalue: {}", key_value_to_string(&value.value)?.yellow()));
+                        info_str.push_str("\n\t--------------------------------");
                     }
                     tracing::info!(
                         parent: &tracing::Span::none(),

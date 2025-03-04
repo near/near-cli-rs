@@ -26,6 +26,10 @@ impl AsJsonContext {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
                     query_view_method_response.kind
                 {
+                    if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
+                        println!("Contract state (values):\n{}\n", serde_json::to_string_pretty(&result.values)?);
+                        println!("Contract state (proof):\n{:#?}\n", result.proof)
+                    }
                     tracing::info!(
                         parent: &tracing::Span::none(),
                         "Contract state (values):\n{}\n",
