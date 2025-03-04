@@ -158,7 +158,7 @@ fn call_view_function(
     info_str.push_str("\n------------------------------------");
     tracing::info!(
         parent: &tracing::Span::none(),
-        "--- Result -------------------------\n{}",
+        "--- Result -------------------------{}",
         crate::common::indent_payload(&info_str)
     );
     Ok(())

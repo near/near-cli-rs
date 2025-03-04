@@ -1385,10 +1385,11 @@ pub fn print_transaction_status(
         }
     ));
 
-    logs_result_output.push_str(&format!("\nTransaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
-    id=transaction_info.transaction_outcome.id,
-    path=network_config.explorer_transaction_url
-));
+    logs_result_output.push_str(&format!(
+        "\nTransaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+        id=transaction_info.transaction_outcome.id,
+        path=network_config.explorer_transaction_url
+    ));
 
     tracing::info!(
         parent: &tracing::Span::none(),
@@ -1425,7 +1426,7 @@ pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
             tracing::warn!(
                 parent: &tracing::Span::none(),
                 "\n{}",
-                crate::common::indent_payload(&info_str)
+                indent_payload(&info_str)
             );
             save_access_key_to_legacy_keychain(
                 network_config.clone(),
@@ -2697,7 +2698,7 @@ pub impl near_primitives::views::CallResult {
         tracing::info!(
             parent: &tracing::Span::none(),
             "--- Logs ---------------------------{}\n",
-            crate::common::indent_payload(&info_str)
+            indent_payload(&info_str)
         );
     }
 }
