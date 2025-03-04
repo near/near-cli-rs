@@ -26,7 +26,14 @@ impl ViewNearBalanceContext {
                     owner_account_id.clone(),
                     block_reference.clone(),
                 ))?;
-                eprintln!("{account_transfer_allowance}");
+                tracing::info!(
+                    parent: &tracing::Span::none(),
+                    "{}",
+                    crate::common::indent_payload(&format!("{account_transfer_allowance}"))
+                );
+                if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
+                    println!("{account_transfer_allowance}");
+                };
                 Ok(())
             }
         });

@@ -32,20 +32,28 @@ impl NetworkContext {
             .wrap_err("Failed to get network config!")?
             .clone();
 
-        eprintln!("\nYour transaction:");
-        eprintln!("{:<13} {}", "signer_id:", &network_config.network_name);
-        eprintln!("actions:");
-        eprintln!(
-            "{:>5} {:<20} {}",
+        let mut info_str: String = String::new();
+        info_str.push_str(&format!(
+            "\n{:<13} {}",
+            "signer_id:", &network_config.network_name
+        ));
+        info_str.push_str("\nactions:");
+        info_str.push_str(&format!(
+            "\n{:>5} {:<20} {}",
             "--", "create account:", &previous_context.new_account_id
-        );
-        eprintln!("{:>5} {:<20}", "--", "add access key:");
-        eprintln!(
-            "{:>18} {:<13} {}",
+        ));
+        info_str.push_str(&format!("\n{:>5} {:<20}", "--", "add access key:"));
+        info_str.push_str(&format!(
+            "\n{:>18} {:<13} {}",
             "", "public key:", &previous_context.public_key
+        ));
+        info_str.push_str(&format!("\n{:>18} {:<13} FullAccess", "", "permission:"));
+        info_str.push('\n');
+
+        tracing::info!(
+            "Your transaction:{}",
+            crate::common::indent_payload(&info_str)
         );
-        eprintln!("{:>18} {:<13} FullAccess", "", "permission:");
-        eprintln!();
 
         Ok(Self {
             new_account_id: previous_context.new_account_id,

@@ -23,6 +23,7 @@ pub struct SignLater {
 
 #[derive(Debug, Clone)]
 pub struct SignLaterContext {
+    global_context: crate::GlobalContext,
     unsigned_transaction: near_primitives::transaction::Transaction,
 }
 
@@ -40,6 +41,7 @@ impl SignLaterContext {
             actions: previous_context.prepopulated_transaction.actions,
         });
         Ok(Self {
+            global_context: previous_context.global_context,
             unsigned_transaction,
         })
     }

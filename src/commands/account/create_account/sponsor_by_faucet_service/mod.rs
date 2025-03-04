@@ -123,7 +123,6 @@ fn print_account_creation_status(
     credentials_home_dir: &std::path::Path,
     storage_message: String,
 ) -> crate::CliResult {
-    eprintln!();
     match result {
         Ok(response) => {
             tracing::info!(
@@ -133,7 +132,13 @@ fn print_account_creation_status(
                 crate::common::indent_payload(&format!("{:#?}", response))
             );
             if response.status() >= reqwest::StatusCode::BAD_REQUEST {
-                eprintln!("WARNING! The new account <{new_account_id}> could not be created successfully.\n{storage_message}\n");
+                tracing::warn!(
+                    parent: &tracing::Span::none(),
+                    "WARNING!{}",
+                    crate::common::indent_payload(&format!(
+                        "\nThe new account <{new_account_id}> could not be created successfully.\n{storage_message}\n"
+                    ))
+                );
                 return Err(color_eyre::Report::msg(format!(
                     "The faucet (helper service) server failed with status code <{}>",
                     response.status()
@@ -152,23 +157,46 @@ fn print_account_creation_status(
             match account_creation_transaction.status {
                 near_primitives::views::FinalExecutionStatus::SuccessValue(ref value) => {
                     if value == b"false" {
-                        eprintln!("WARNING! The new account <{new_account_id}> could not be created successfully.\n{storage_message}\n");
+                        tracing::warn!(
+                            parent: &tracing::Span::none(),
+                            "WARNING!{}",
+                            crate::common::indent_payload(&format!(
+                                "\nThe new account <{new_account_id}> could not be created successfully.\n{storage_message}\n"
+                            ))
+                        );
                     } else {
                         crate::common::update_used_account_list_as_signer(
                             credentials_home_dir,
                             new_account_id.as_ref(),
                         );
-                        eprintln!("New account <{new_account_id}> created successfully.\n{storage_message}\n");
+                        tracing::info!(
+                            parent: &tracing::Span::none(),
+                            "{}",
+                            crate::common::indent_payload(&format!(
+                                "\nNew account <{new_account_id}> created successfully.\n{storage_message}\n"
+                            ))
+                        );
                     }
-                    eprintln!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
-                        id=account_creation_transaction.transaction_outcome.id,
-                        path=network_config.explorer_transaction_url
+                    tracing::info!(
+                        parent: &tracing::Span::none(),
+                        "\n{}",
+                        crate::common::indent_payload(&format!(
+                            "Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+                            id=account_creation_transaction.transaction_outcome.id,
+                            path=network_config.explorer_transaction_url
+                        ))
                     );
                 }
                 near_primitives::views::FinalExecutionStatus::NotStarted
                 | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
                 near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-                    eprintln!("WARNING! The new account <{new_account_id}> could not be created successfully.\n{storage_message}\n");
+                    tracing::warn!(
+                        parent: &tracing::Span::none(),
+                        "WARNING!{}",
+                        crate::common::indent_payload(&format!(
+                            "\nThe new account <{new_account_id}> could not be created successfully.\n{storage_message}\n"
+                        ))
+                    );
                     match tx_execution_error {
                         near_primitives::errors::TxExecutionError::ActionError(action_error) => {
                             return crate::common::convert_action_error_to_cli_result(
@@ -194,7 +222,13 @@ fn print_account_creation_status(
                 "JSON RPC Response:\n{}",
                 crate::common::indent_payload(&err.to_string())
             );
-            eprintln!("WARNING! The new account <{new_account_id}> could not be created successfully.\n{storage_message}\n");
+            tracing::warn!(
+                parent: &tracing::Span::none(),
+                "WARNING!{}",
+                crate::common::indent_payload(&format!(
+                    "\nThe new account <{new_account_id}> could not be created successfully.\n{storage_message}\n"
+                ))
+            );
             Err(color_eyre::Report::msg(err.to_string()))
         }
     }

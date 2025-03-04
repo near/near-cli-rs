@@ -135,9 +135,15 @@ impl SignPrivateKeyContext {
             unsigned_transaction,
         );
 
-        eprintln!("\nYour transaction was signed successfully.");
-        eprintln!("Public key: {}", scope.signer_public_key);
-        eprintln!("Signature: {}", signature);
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "Your transaction was signed successfully.{}",
+            crate::common::indent_payload(&format!(
+                "\nPublic key: {}\nSignature:  {}\n",
+                scope.signer_public_key,
+                signature
+            ))
+        );
 
         Ok(Self {
             network_config: previous_context.network_config,
