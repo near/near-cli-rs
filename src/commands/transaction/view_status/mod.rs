@@ -29,6 +29,9 @@ impl TransactionInfoContext {
                 move |network_config| {
                     let query_view_transaction_status =
                         get_transaction_info(network_config, tx_hash)?;
+                    if let crate::Verbosity::Quiet = previous_context.verbosity {
+                        println!("Transaction status:\n{:#?}", query_view_transaction_status);
+                    }
                     tracing::info!(
                         parent: &tracing::Span::none(),
                         "Transaction status:\n{}",

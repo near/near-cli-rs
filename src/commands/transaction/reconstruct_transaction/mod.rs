@@ -114,13 +114,22 @@ impl TransactionInfoContext {
                     cmd_cli_args.extend(skip_action.to_cli_args());
 
                     let near_cli_exec_path = crate::common::get_near_exec_path();
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "Here is your console command to run archive transaction. You can to edit it or re-run:\n{}",
-                        crate::common::indent_payload(&shell_words::join(
-                            std::iter::once(near_cli_exec_path).chain(cmd_cli_args)
-                        ))
-                    );
+                    if let crate::Verbosity::Quiet = previous_context.verbosity {
+                        println!(
+                            "{}",
+                            shell_words::join(
+                                std::iter::once(near_cli_exec_path).chain(cmd_cli_args)
+                            )
+                        );
+                    } else {
+                        tracing::info!(
+                            parent: &tracing::Span::none(),
+                            "Here is your console command to run archive transaction. You can to edit it or re-run:\n{}",
+                            crate::common::indent_payload(&shell_words::join(
+                                std::iter::once(near_cli_exec_path).chain(cmd_cli_args)
+                            ))
+                        );
+                    }
                     Ok(())
                 }
             });
