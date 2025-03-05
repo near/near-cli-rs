@@ -710,8 +710,8 @@ near account \
 </details>
 
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
-<a href="https://asciinema.org/a/mYTEDj9Pxe3e6hwoTnDASuv0d?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/mYTEDj9Pxe3e6hwoTnDASuv0d.png" width="836"/>
+<a href="https://asciinema.org/a/mpQfajE66XGuoSYniCGXo2auX?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/mpQfajE66XGuoSYniCGXo2auX.png" width="836"/>
 </a>
 </details>
 
@@ -781,12 +781,12 @@ near account \
 
 С помощью этой команды можно создать как суб-аккаунт, так и аккаунт с коротким именем, например, alice.near или alice.testnet (в сети testnet).
 Ключи доступа к создаваемому аккаунту можно добавить несколькими способами:
-- [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
-- [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
-- [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
-- [use-ledger](#use-ledger---Use-a-ledger)
+- [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair-fund-myself)
+- [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually-fund-myself)
+- [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually-fund-myself)
+- [use-ledger](#use-ledger---Use-a-ledger-fund-myself)
 
-##### autogenerate-new-keypair - Automatically generate a key pair
+##### autogenerate-new-keypair - Automatically generate a key pair (fund-myself)
 
 Для создания суб-аккаунта необходимо ввести в командной строке терминала:
 ```txt
@@ -876,7 +876,7 @@ near account \
 </a>
 </details>
 
-##### use-manually-provided-seed-prase - Use the provided seed phrase manually
+##### use-manually-provided-seed-prase - Use the provided seed phrase manually (fund-myself)
 
 Данная команда добавляет аккаунту заранее известную мнемоническую фразу.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
@@ -907,7 +907,7 @@ https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZb
 </a>
 </details>
 
-##### use-manually-provided-public-key - Use the provided public key manually
+##### use-manually-provided-public-key - Use the provided public key manually (fund-myself)
 
 Данная команда добавляет аккаунту заранее известный публичный ключ доступа.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
@@ -949,7 +949,7 @@ near account \
 </a>
 </details>
 
-##### use-ledger - Use a ledger
+##### use-ledger - Use a ledger (fund-myself)
 
 Данная команда с помощью леджера добавляет ключи доступа аккаунту.
 Для выполнения этой команды необходимо ввести в командной строке терминала:
@@ -1848,14 +1848,14 @@ near staking \
 
 #### delegation - Delegation management
 
-- [view-balance](#View-the-total-balance-for-a-given-account)
-- [deposit-and-stake](#deposit-and-stake---Deposits-the-attached-amount-into-the-inner-account-of-the-predecessor-and-stakes-it)
-- [stake](#stake---Staking-the-given-amount-from-the-inner-account-of-the-predecessor)
-- [stake-all](#stake-all---Staking-all-available-unstaked-balance-from-the-inner-account-of-the-predecessor)
-- [unstake](#unstake---Unstaking-the-given-amount-from-the-inner-account-of-the-predecessor)
-- [unstake-all](#unstake-all---Unstaking-all-staked-balance-from-the-inner-account-of-the-predecessor)
-- [withdraw](#withdraw---Withdrawing-the-non-staked-balance-for-given-account)
-- [withdraw-all](#withdraw-all---Withdrawing-the-entire-unstaked-balance-from-the-predecessor-account)
+- [view-balance](#view-balance---View-the-delegated-stake-balance-for-a-given-account)
+- [deposit-and-stake](#deposit-and-stake---Delegate-NEAR-tokens-to-a-validators-staking-pool)
+- [stake](#stake---Delegate-a-certain-amount-of-previously-deposited-or-unstaked-NEAR-tokens-to-a-validators-staking-pool)
+- [stake-all](#stake-all---Delegate-all-previously-deposited-or-unstaked-NEAR-tokens-to-a-validators-staking-pool)
+- [unstake](#unstake---Unstake-a-certain-amount-of-delegated-NEAR-tokens-from-a-validators-staking-pool)
+- [unstake-all](#unstake-all---Unstake-all-delegated-NEAR-tokens-from-a-validators-staking-pool)
+- [withdraw](#withdraw---Withdraw-a-certain-amount-of-unstaked-NEAR-tokens-from-a-validators-staking-pool)
+- [withdraw-all](#withdraw-all---Withdraw-all-unstaked-NEAR-tokens-from-a-validators-staking-pool)
 
 ##### view-balance - View the delegated stake balance for a given account
 
@@ -2548,7 +2548,7 @@ near transaction \
 </a>
 </details>
 
-#### reconstruct-transaction  - Use any existing transaction from the chain to construct NEAR CLI command (helpful tool for re-submitting similar transactions)
+#### reconstruct-transaction - Use any existing transaction from the chain to construct NEAR CLI command (helpful tool for re-submitting similar transactions)
 
 Рассмотрим пример, когда необходимо повторить выполненную ранее транзакцию:
 ```txt

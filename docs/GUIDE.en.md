@@ -780,12 +780,12 @@ near account \
 
 With this command, you can create both a sub account and a "short name" account.
 Access keys to the created account can be added in several ways:
-- [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair)
-- [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually)
-- [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually)
-- [use-ledger](#use-ledger---Use-a-ledger)
+- [autogenerate-new-keypair](#autogenerate-new-keypair---Automatically-generate-a-key-pair-fund-myself)
+- [use-manually-provided-seed-prase](#use-manually-provided-seed-prase---Use-the-provided-seed-phrase-manually-fund-myself)
+- [use-manually-provided-public-key](#use-manually-provided-public-key---Use-the-provided-public-key-manually-fund-myself)
+- [use-ledger](#use-ledger---Use-a-ledger-fund-myself)
 
-##### autogenerate-new-keypair - Automatically generate a key pair
+##### autogenerate-new-keypair - Automatically generate a key pair (fund-myself)
 
 In order to create a sub-account, in the terminal command line type:
 ```txt
@@ -875,7 +875,7 @@ near account \
 </a>
 </details>
 
-##### use-manually-provided-seed-prase - Use the provided seed phrase manually
+##### use-manually-provided-seed-prase - Use the provided seed phrase manually (fund-myself)
 
 This command adds a previously known mnemonic phrase to the account.
 In order to execute this command, in the terminal command line type:
@@ -906,7 +906,7 @@ https://explorer.testnet.near.org/transactions/31iA2SsxtrRzb3fD5KtsFTZni8yUi2iZb
 </a>
 </details>
 
-##### use-manually-provided-public-key - Use the provided public key manually
+##### use-manually-provided-public-key - Use the provided public key manually (fund-myself)
 
 This command adds a pre-known public access key to the account.
 In order to execute this command, in the terminal command line type:
@@ -948,7 +948,7 @@ near account \
 </a>
 </details>
 
-##### use-ledger - Use a ledger
+##### use-ledger - Use a ledger (fund-myself)
 
 This command adds access keys to an account using a ledger.
 In order to execute this command, in the terminal command line type:
@@ -1843,16 +1843,16 @@ near staking \
 </a>
 </details>
 
-#### delegation - Stake delegation management
+#### delegation - Delegation management
 
 - [view-balance](#view-balance---View-the-delegated-stake-balance-for-a-given-account)
-- [deposit-and-stake](#deposit-and-stake---Delegate-NEAR-tokens-to-a-validator's-staking-pool)
-- [stake](#stake---Delegate-a-certain-amount-of-previously-deposited-or-unstaked-NEAR-tokens-to-a-validator's-staking-pool)
-- [stake-all](#stake-all---Delegate-all-previously-deposited-or-unstaked-NEAR-tokens-to-a-validator's-staking-pool)
-- [unstake](#unstake---Unstake-a-certain-amount-of-delegated-NEAR-tokens-from-a-validator's-staking-pool)
-- [unstake-all](#unstake-all---Unstake-all-delegated-NEAR-tokens-from-a-validator's-staking-pool)
-- [withdraw](#withdraw---Withdraw-a-certain-amount-of-unstaked-NEAR-tokens-from-a-validator's-staking-pool)
-- [withdraw-all](#withdraw-all---Withdraw-all-unstaked-NEAR-tokens-from-a-validator's-staking-pool)
+- [deposit-and-stake](#deposit-and-stake---Delegate-NEAR-tokens-to-a-validators-staking-pool)
+- [stake](#stake---Delegate-a-certain-amount-of-previously-deposited-or-unstaked-NEAR-tokens-to-a-validators-staking-pool)
+- [stake-all](#stake-all---Delegate-all-previously-deposited-or-unstaked-NEAR-tokens-to-a-validators-staking-pool)
+- [unstake](#unstake---Unstake-a-certain-amount-of-delegated-NEAR-tokens-from-a-validators-staking-pool)
+- [unstake-all](#unstake-all---Unstake-all-delegated-NEAR-tokens-from-a-validators-staking-pool)
+- [withdraw](#withdraw---Withdraw-a-certain-amount-of-unstaked-NEAR-tokens-from-a-validators-staking-pool)
+- [withdraw-all](#withdraw-all---Withdraw-all-unstaked-NEAR-tokens-from-a-validators-staking-pool)
 
 ##### view-balance - View the delegated stake balance for a given account
 
@@ -2536,7 +2536,7 @@ near transaction \
 </a>
 </details>
 
-#### reconstruct-transaction  - Use any existing transaction from the chain to construct NEAR CLI command (helpful tool for re-submitting similar transactions)
+#### reconstruct-transaction - Use any existing transaction from the chain to construct NEAR CLI command (helpful tool for re-submitting similar transactions)
 
 Let's consider an example when it is necessary to repeat a previously completed transaction:
 ```txt
