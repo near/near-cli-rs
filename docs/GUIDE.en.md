@@ -335,13 +335,14 @@ Before proceeding to the description of specific commands, it is necessary to co
 View account details ([View properties for an account](#view-account-summary---view-properties-for-an-account)) and view account access keys ([View a list of access keys of an account](#list-keys---View-a-list-of-access-keys-of-an-account)) is possible at the current time (***now***) and at a certain point in the past by specifying the block (***at-block-height*** or ***at-block-hash***). The examples below show how these modes can be used.
 
 - [view-account-summary](#view-account-summary---View-properties-for-an-account)
-- [import-account](#import-account---import-existing-account-aka-sign-in)
+- [import-account](#import-account---Import-existing-account-aka-sign-in)
+- [export-account](#export-account---Export-existing-account)
 - [create-account](#create-account---Create-a-new-account)
 - [update-social-profile](#update-social-profile---Update-NEAR-Social-profile)
 - [delete-account](#delete-account---Delete-an-account)
 - [list-keys](#list-keys---View-a-list-of-access-keys-of-an-account)
 - [add-key](#add-key---Add-an-access-key-to-an-account)
-- [delete-key](#delete-key---Delete-an-access-key-from-an-account)
+- [delete-keys](#delete-keys---Delete-access-keys-from-an-account)
 - [manage-storage-deposit](#manage-storage-deposit---Storage-management-deposit-withdrawal-balance-review)
 
 #### view-account-summary - View properties for an account
@@ -570,7 +571,7 @@ near account \
 
 #### export-account - Export existing account
 
-- [using-web-wallet](#using-web-wallet---Export-existing-account-using-NEAR-Wallet-aka-sign-in)
+- [using-web-wallet](#using-web-wallet---Export-existing-account-using-NEAR-Wallet)
 - [using-seed-phrase](#using-seed-phrase---Export-existing-account-using-a-seed-phrase)
 - [using-private-key](#using-private-key---Export-existing-account-using-a-private-key)
 
@@ -1341,7 +1342,7 @@ near account \
 </a>
 </details>
 
-#### delete-key - Delete an access key from an account
+#### delete-keys - Delete access keys from an account
 
 In order to remove access keys, in the terminal command line type:
 ```txt
@@ -1795,7 +1796,7 @@ fro_volod.testnet account has NFT tokens:
 </a>
 </details>
 
-### staking - Manage staking: view, deposit, and withdraw delegated stake
+### staking - Manage staking: view, add and withdraw stake
 
 - [validator-list](#validator-list---View-the-list-of-validators-to-delegate)
 - [delegation](#delegation---Delegation-management)
@@ -1926,7 +1927,7 @@ near staking \
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/BoKVychKEmbazAeo6jWDbm4KL?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/tTwzlj0FsBoKVychKEmbazAeo6jWDbm4KLzzXEh36aP6ZaTdhG.png" width="836"/>
+    <img src="https://asciinema.org/a/BoKVychKEmbazAeo6jWDbm4KL.png" width="836"/>
 </a>
 </details>
 
@@ -2137,13 +2138,33 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-<volodymyr.testnet> has successfully withdrawn 3 NEAR from <aurora.pool.f863973.m0>.
+ INFO 
+ |    --- Logs ---------------------------
+ |    Logs [aurora.pool.f863973.m0]:
+ |      @volodymyr.testnet withdrawing 3000000000000000000000000. New unstaked balance is 229033438191942506311861548
+ |    Logs [volodymyr.testnet]:   No logs
+ |    Logs [volodymyr.testnet]:   No logs
+ |    ------------------------------------
+ |    --- Result -------------------------
+ |    Empty result
+ |    ------------------------------------
+
+ |    The "withdraw" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.
+
+ |    Gas burned: 3.3 Tgas
+ |    Transaction fee: 0.0002987794103032 NEAR (approximately $0.00089932 USD, using $3.01 USD/NEAR exchange rate)
+ |    Transaction ID: 9g59iXm8efEjZ2wmK3KEKTNQFAcqXfnVXUQXJroFnPcD
+ |    To see the transaction in the transaction explorer, please open this url in your browser:
+ |    https://explorer.testnet.near.org/transactions9g59iXm8efEjZ2wmK3KEKTNQFAcqXfnVXUQXJroFnPcD
+
+ INFO 
+ |    <volodymyr.testnet> has successfully withdrawn 3 NEAR from <aurora.pool.f863973.m0>.
 ```
 </details>
 
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
-<a href="https://asciinema.org/a/U4V6CUJU0vG0dJhT4igXyrJpk?autoplay=1&t=1&speed=2">
-    <img src="https://asciinema.org/a/U4V6CUJU0vG0dJhT4igXyrJpk.png" width="836"/>
+<a href="https://asciinema.org/a/kfkWKm88jwOWYnmbJptbEH618?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/kfkWKm88jwOWYnmbJptbEH618.png" width="836"/>
 </a>
 </details>
 
@@ -2343,6 +2364,7 @@ near contract \
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
+
 ```txt
  INFO 
  |    The file "volodymyr_testnet.wasm" was downloaded successfully
