@@ -7,6 +7,7 @@ use std::str::FromStr;
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use color_eyre::owo_colors::OwoColorize;
 use futures::{StreamExt, TryStreamExt};
+use near_primitives::action::{GlobalContractDeployMode, GlobalContractIdentifier};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
@@ -765,21 +766,30 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                 print_unsigned_transaction(&prepopulated_transaction);
             }
             near_primitives::transaction::Action::DeployGlobalContract(deploy) => {
-                // TODO: review this
                 let code_hash = CryptoHash::hash_bytes(&deploy.code);
-                eprintln!(
-                    "{:>5} {:<70}",
-                    "--",
-                    format!("deploy global contract {:?}", code_hash)
-                )
+                let identifier = match deploy.deploy_mode {
+                    GlobalContractDeployMode::CodeHash => {
+                        format!("deploy code <{:?}> as a global hash", code_hash)
+                    }
+                    GlobalContractDeployMode::AccountId => {
+                        format!(
+                            "deploy code <{:?}> to a global account <{}>",
+                            code_hash, transaction.receiver_id
+                        )
+                    }
+                };
+                eprintln!("{:>5} {:<70}", "--", identifier)
             }
             near_primitives::transaction::Action::UseGlobalContract(contract_identifier) => {
-                // TODO: review this
-                eprintln!(
-                    "{:>5} {:<70}",
-                    "--",
-                    format!("use global contract {:?}", contract_identifier)
-                )
+                let identifier = match contract_identifier.contract_identifier {
+                    GlobalContractIdentifier::CodeHash(hash) => {
+                        format!("use <{}> code for deploy", hash)
+                    }
+                    GlobalContractIdentifier::AccountId(ref account_id) => {
+                        format!("use <{}> code for deploy", account_id)
+                    }
+                };
+                eprintln!("{:>5} {:<70}", "--", identifier)
             }
         }
     }
