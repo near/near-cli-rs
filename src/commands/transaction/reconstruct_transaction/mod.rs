@@ -240,11 +240,61 @@ fn action_transformation(
         Action::Delegate(_) => {
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
-        Action::DeployGlobalContract(_) => {
-            todo!("The feature is not implemented yet.");
+        Action::DeployGlobalContract(action) => {
+            std::fs::write(
+                "reconstruct-transaction-deploy-code.wasm",
+                action.code
+            )
+            .wrap_err("Failed to write the deploy command code to file: 'reconstruct-transaction-deploy-code.wasm' in the current folder")?;
+
+            let mode = match action.deploy_mode {
+                near_primitives::action::GlobalContractDeployMode::AccountId => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalAccountId(
+                    add_action::deploy_global_contract::CliNextCommand {
+                        next_action: None
+                    }
+                ),
+                near_primitives::action::GlobalContractDeployMode::CodeHash => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalHash(
+                    add_action::deploy_global_contract::CliNextCommand {
+                        next_action: None
+                    }
+                ),
+            };
+            Ok(Some(add_action::CliActionSubcommand::DeployGlobalContract(
+                add_action::deploy_global_contract::CliDeployGlobalContractAction {
+                    file_path: Some("reconstruct-transaction-deploy-code.wasm".parse()?),
+                    mode: Some(mode)
+                }
+            )))
         }
-        Action::UseGlobalContract(_) => {
-            todo!("The feature is not implemented yet.");
+        Action::UseGlobalContract(use_global_contract_action) => {
+            let mode = match use_global_contract_action.contract_identifier {
+                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => add_action::use_global_contract::CliUseGlobalActionMode::AsGlobalHash(
+                    add_action::use_global_contract::CliUseHashAction {
+                        hash: Some(crate::types::crypto_hash::CryptoHash(hash)),
+                        initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
+                            add_action::deploy_contract::initialize_mode::CliNoInitialize {
+                                next_action: None
+                            }
+                        ))
+                    }
+                ),
+                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => add_action::use_global_contract::CliUseGlobalActionMode::AsGlobalAccountId(
+                    add_action::use_global_contract::CliUseAccountIdAction {
+                        account_id: Some(crate::types::account_id::AccountId(account_id)),
+                        initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
+                            add_action::deploy_contract::initialize_mode::CliNoInitialize {
+                                next_action: None
+                            }
+                        ))
+                    }
+                ),
+            };
+
+            Ok(Some(add_action::CliActionSubcommand::UseGlobalContract(
+                add_action::use_global_contract::CliUseGlobalContractAction {
+                    mode: Some(mode)
+                }
+            )))
         }
     }
 }
