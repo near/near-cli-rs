@@ -141,7 +141,7 @@ impl ContractHashContext {
                 near_primitives::action::UseGlobalContractAction {
                     contract_identifier:
                         near_primitives::action::GlobalContractIdentifier::CodeHash(
-                            scope.hash.clone().into(),
+                            scope.hash.into(),
                         ),
                 },
             )),

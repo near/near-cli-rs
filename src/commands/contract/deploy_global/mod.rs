@@ -48,15 +48,15 @@ impl ContractFileContext {
 /// Choose a global contract deploy mode:
 pub enum DeployGlobalMode {
     #[strum_discriminants(strum(
-        message = "hash       - Deploy a global contract as a hash (immutable)"
+        message = "as-global-hash       - Deploy code as a global contract code hash (immutable)"
     ))]
-    /// Deploy a global contract as a hash (immutable)
-    Hash(DeployGlobalResult),
+    /// Deploy code as a global contract code hash (immutable)
+    AsGlobalHash(DeployGlobalResult),
     #[strum_discriminants(strum(
-        message = "account-id - Deploy a global contract as an account ID (mutable)"
+        message = "as-global-account-id - Deploy code as a global contract account ID (mutable)"
     ))]
-    /// Deploy a global contract as an account ID (mutable)
-    AccountId(DeployGlobalResult),
+    /// Deploy code as a global contract account ID (mutable)
+    AsGlobalAccountId(DeployGlobalResult),
 }
 
 #[derive(Debug, Clone)]
@@ -75,10 +75,10 @@ impl DeployGlobalModeContext {
             global_context: previous_context.global_context,
             code: previous_context.code,
             mode: match scope {
-                DeployGlobalModeDiscriminants::Hash => {
+                DeployGlobalModeDiscriminants::AsGlobalHash => {
                     near_primitives::action::GlobalContractDeployMode::CodeHash
                 }
-                DeployGlobalModeDiscriminants::AccountId => {
+                DeployGlobalModeDiscriminants::AsGlobalAccountId => {
                     near_primitives::action::GlobalContractDeployMode::AccountId
                 }
             },
