@@ -144,7 +144,6 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
         let account_id = item.account_id.clone();
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
         std::sync::Arc::new({
-            
             move |_network_config| {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.account_id.clone(),

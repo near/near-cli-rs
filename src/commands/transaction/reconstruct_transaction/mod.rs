@@ -264,7 +264,7 @@ fn action_transformation(
                     file_path: Some("reconstruct-transaction-deploy-code.wasm".parse()?),
                     mode: Some(mode)
                 }
-            )))  
+            )))
         }
         Action::UseGlobalContract(use_global_contract_action) => {
             let mode = match use_global_contract_action.contract_identifier {
