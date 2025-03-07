@@ -764,6 +764,23 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                 };
                 print_unsigned_transaction(&prepopulated_transaction);
             }
+            near_primitives::transaction::Action::DeployGlobalContract(deploy) => {
+                // TODO: review this
+                let code_hash = CryptoHash::hash_bytes(&deploy.code);
+                eprintln!(
+                    "{:>5} {:<70}",
+                    "--",
+                    format!("deploy global contract {:?}", code_hash)
+                )
+            }
+            near_primitives::transaction::Action::UseGlobalContract(contract_identifier) => {
+                // TODO: review this
+                eprintln!(
+                    "{:>5} {:<70}",
+                    "--",
+                    format!("use global contract {:?}", contract_identifier)
+                )
+            }
         }
     }
 }
@@ -849,6 +866,16 @@ fn print_value_successful_transaction(
                     "Actions delegated for <{}> completed successfully.",
                     delegate_action.sender_id,
                 );
+            }
+            near_primitives::views::ActionView::DeployGlobalContract { code: _ }
+            | near_primitives::views::ActionView::DeployGlobalContractByAccountId { code: _ } => {
+                eprintln!("Global contract has been successfully deployed.",);
+            }
+            near_primitives::views::ActionView::UseGlobalContractByAccountId { account_id } => {
+                eprintln!("Contract has been successfully deployed with the code from the global account <{}>.", account_id);
+            }
+            near_primitives::views::ActionView::UseGlobalContract { code_hash } => {
+                eprintln!("Contract has been successfully deployed with the code from the global hash <{}>.", code_hash);
             }
         }
     }

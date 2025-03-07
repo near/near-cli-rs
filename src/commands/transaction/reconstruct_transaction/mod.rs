@@ -240,6 +240,12 @@ fn action_transformation(
         Action::Delegate(_) => {
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
+        Action::DeployGlobalContract(_) => {
+            todo!()
+        }
+        Action::UseGlobalContract(_) => {
+            todo!()
+        }
     }
 }
 
