@@ -1338,23 +1338,8 @@ pub fn print_transaction_status(
                 "The returned value is not printable (binary data)".to_string()
             };
             if let crate::Verbosity::Quiet = verbosity {
-                if let Some(near_primitives::views::ActionView::FunctionCall {
-                    method_name: _,
-                    args: _,
-                    gas: _,
-                    deposit: _,
-                }) = transaction_info
-                    .clone()
-                    .transaction
-                    .actions
-                    .into_iter()
-                    .next()
-                {
-                    if !["true", "empty result"].contains(&result_output.to_lowercase().as_str()) {
-                        println!("{result_output}");
-                    }
-                    return Ok(());
-                }
+                std::io::stdout().write_all(bytes_result)?;
+                return Ok(());
             };
             logs_result_output.push_str("\n--- Result -------------------------\n");
             logs_result_output.push_str(&result_output);
