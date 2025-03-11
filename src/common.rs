@@ -687,7 +687,7 @@ pub fn print_unsigned_transaction(
                         "deploy code <{:?}> to a account <{}>",
                         code_hash, transaction.receiver_id
                     )
-                )
+                ))
             }
             near_primitives::transaction::Action::FunctionCall(function_call_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "function call:"));
