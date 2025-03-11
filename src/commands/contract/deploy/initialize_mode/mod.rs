@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 mod call_function_type;
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = super::ContractFileContext)]
+#[interactive_clap(context = super::GenericDeployContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Select the need for initialization:
 pub enum InitializeMode {
@@ -16,7 +16,7 @@ pub enum InitializeMode {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::ContractFileContext)]
+#[interactive_clap(input_context = super::GenericDeployContext)]
 #[interactive_clap(output_context = NoInitializeContext)]
 pub struct NoInitialize {
     #[interactive_clap(named_arg)]
@@ -25,18 +25,18 @@ pub struct NoInitialize {
 }
 
 #[derive(Debug, Clone)]
-pub struct NoInitializeContext(super::ContractFileContext);
+pub struct NoInitializeContext(super::GenericDeployContext);
 
 impl NoInitializeContext {
     pub fn from_previous_context(
-        previous_context: super::ContractFileContext,
+        previous_context: super::GenericDeployContext,
         _scope: &<NoInitialize as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        Ok(Self(super::ContractFileContext {
+        Ok(Self(super::GenericDeployContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            code: previous_context.code,
+            deploy_action: previous_context.deploy_action,
         }))
     }
 }
@@ -52,11 +52,7 @@ impl From<NoInitializeContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: receiver_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::DeployContract(
-                            near_primitives::transaction::DeployContractAction {
-                                code: item.0.code.clone(),
-                            },
-                        )],
+                        actions: vec![item.0.deploy_action.clone()],
                     })
                 }
             });

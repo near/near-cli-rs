@@ -1,7 +1,7 @@
 use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::super::ContractFileContext)]
+#[interactive_clap(input_context = super::super::GenericDeployContext)]
 #[interactive_clap(output_context = CallFunctionActionContext)]
 pub struct CallFunctionAction {
     /// What is the name of the function?
@@ -23,14 +23,14 @@ pub struct CallFunctionActionContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     signer_account_id: near_primitives::types::AccountId,
-    code: Vec<u8>,
+    deploy_action: near_primitives::transaction::Action,
     function_name: String,
     function_args: Vec<u8>,
 }
 
 impl CallFunctionActionContext {
     pub fn from_previous_context(
-        previous_context: super::super::ContractFileContext,
+        previous_context: super::super::GenericDeployContext,
         scope: &<CallFunctionAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let function_args =
@@ -42,7 +42,7 @@ impl CallFunctionActionContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            code: previous_context.code,
+            deploy_action: previous_context.deploy_action,
             function_name: scope.function_name.clone(),
             function_args,
         })
@@ -51,7 +51,7 @@ impl CallFunctionActionContext {
 
 impl CallFunctionAction {
     fn input_function_args_type(
-        _context: &super::super::ContractFileContext,
+        _context: &super::super::GenericDeployContext,
     ) -> color_eyre::eyre::Result<
         Option<super::super::super::call_function::call_function_args_type::FunctionArgsType>,
     > {
@@ -76,7 +76,7 @@ pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     signer_account_id: near_primitives::types::AccountId,
-    code: Vec<u8>,
+    deploy_action: near_primitives::transaction::Action,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
@@ -91,7 +91,7 @@ impl PrepaidGasContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            code: previous_context.code,
+            deploy_action: previous_context.deploy_action,
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
             gas: scope.gas,
@@ -155,11 +155,7 @@ impl DepositContext {
                         signer_id: signer_account_id.clone(),
                         receiver_id: receiver_account_id.clone(),
                         actions: vec![
-                            near_primitives::transaction::Action::DeployContract(
-                                near_primitives::transaction::DeployContractAction {
-                                    code: previous_context.code.clone(),
-                                },
-                            ),
+                            previous_context.deploy_action.clone(),
                             near_primitives::transaction::Action::FunctionCall(Box::new(
                                 near_primitives::transaction::FunctionCallAction {
                                     method_name: previous_context.function_name.clone(),
