@@ -28,7 +28,8 @@ impl AsJsonContext {
                 {
                     if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
                         println!("Contract state (values):\n{}\n", serde_json::to_string_pretty(&result.values)?);
-                        println!("Contract state (proof):\n{:#?}\n", result.proof)
+                        println!("Contract state (proof):\n{:#?}\n", result.proof);
+                        return Ok(());
                     }
                     tracing::info!(
                         parent: &tracing::Span::none(),

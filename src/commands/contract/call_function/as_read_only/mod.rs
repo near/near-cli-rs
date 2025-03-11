@@ -154,6 +154,7 @@ fn call_view_function(
 
     if let crate::Verbosity::Quiet = verbosity {
         println!("{}", info_str);
+        return Ok(());
     };
     info_str.push_str("\n------------------------------------");
     tracing::info!(

@@ -1290,8 +1290,7 @@ pub fn print_transaction_status(
         .as_ref()
         .map(get_near_usd_exchange_rate);
 
-    let mut logs_result_output = String::from("--- Logs ---------------------------");
-
+    let mut logs_info = String::new();
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
 
@@ -1300,16 +1299,25 @@ pub fn print_transaction_status(
         total_tokens_burnt += receipt.outcome.tokens_burnt;
 
         if receipt.outcome.logs.is_empty() {
-            logs_result_output.push_str(&format!(
+            logs_info.push_str(&format!(
                 "\nLogs [{}]:   No logs",
                 receipt.outcome.executor_id
             ));
         } else {
-            logs_result_output.push_str(&format!("\nLogs [{}]:", receipt.outcome.executor_id));
-            logs_result_output.push_str(&format!("\n  {}", receipt.outcome.logs.join("\n  ")));
+            logs_info.push_str(&format!("\nLogs [{}]:", receipt.outcome.executor_id));
+            logs_info.push_str(&format!("\n  {}", receipt.outcome.logs.join("\n  ")));
         };
     }
-    logs_result_output.push_str("\n------------------------------------");
+    logs_info.push_str("\n------------------------------------");
+
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "--- Logs ---------------------------{}",
+        crate::common::indent_payload(&logs_info)
+    );
+
+    let mut result_output = String::new();
 
     let return_value = match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
@@ -1326,7 +1334,12 @@ pub fn print_transaction_status(
             }
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
-            let result_output = if bytes_result.is_empty() {
+            if let crate::Verbosity::Quiet = verbosity {
+                std::io::stdout().write_all(bytes_result)?;
+                return Ok(());
+            };
+            let mut result_info = String::new();
+            let result = if bytes_result.is_empty() {
                 "Empty result".to_string()
             } else if let Ok(json_result) =
                 serde_json::from_slice::<serde_json::Value>(bytes_result)
@@ -1337,27 +1350,28 @@ pub fn print_transaction_status(
             } else {
                 "The returned value is not printable (binary data)".to_string()
             };
-            if let crate::Verbosity::Quiet = verbosity {
-                std::io::stdout().write_all(bytes_result)?;
-                return Ok(());
-            };
-            logs_result_output.push_str("\n--- Result -------------------------\n");
-            logs_result_output.push_str(&result_output);
-            logs_result_output.push_str("\n------------------------------------");
+            result_info.push_str(&result);
+            result_info.push_str("\n------------------------------------");
 
-            logs_result_output.push_str(&print_value_successful_transaction(
+            result_output.push_str(&print_value_successful_transaction(
                 transaction_info.clone(),
             ));
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "--- Result -------------------------\n{}",
+                crate::common::indent_payload(&result_info)
+            );
             Ok(())
         }
     };
 
-    logs_result_output.push_str(&format!(
+    result_output.push_str(&format!(
         "\nGas burned: {}",
         NearGas::from_gas(total_gas_burnt)
     ));
 
-    logs_result_output.push_str(&format!(
+    result_output.push_str(&format!(
         "\nTransaction fee: {}{}",
         crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
         match near_usd_exchange_rate {
@@ -1370,7 +1384,7 @@ pub fn print_transaction_status(
         }
     ));
 
-    logs_result_output.push_str(&format!(
+    result_output.push_str(&format!(
         "\nTransaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
         id=transaction_info.transaction_outcome.id,
         path=network_config.explorer_transaction_url
@@ -1378,8 +1392,8 @@ pub fn print_transaction_status(
 
     tracing::info!(
         parent: &tracing::Span::none(),
-        "\n{}",
-        crate::common::indent_payload(&logs_result_output)
+        "{}",
+        crate::common::indent_payload(&result_output)
     );
     return_value
 }
@@ -2681,6 +2695,7 @@ pub impl near_primitives::views::CallResult {
         }
         info_str.push_str("\n------------------------------------");
         tracing::info!(
+            target: "near_teach_me",
             parent: &tracing::Span::none(),
             "--- Logs ---------------------------{}\n",
             indent_payload(&info_str)
