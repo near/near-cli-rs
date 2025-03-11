@@ -658,7 +658,10 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                 eprintln!(
                     "{:>5} {:<70}",
                     "--",
-                    format!("deploy contract {:?}", code_hash)
+                    format!(
+                        "deploy code <{:?}> to a account <{}>",
+                        code_hash, transaction.receiver_id
+                    )
                 )
             }
             near_primitives::transaction::Action::FunctionCall(function_call_action) => {
@@ -783,10 +786,10 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
             near_primitives::transaction::Action::UseGlobalContract(contract_identifier) => {
                 let identifier = match contract_identifier.contract_identifier {
                     GlobalContractIdentifier::CodeHash(hash) => {
-                        format!("use <{}> code for deploy", hash)
+                        format!("use global <{}> code to deploy from", hash)
                     }
                     GlobalContractIdentifier::AccountId(ref account_id) => {
-                        format!("use <{}> code for deploy", account_id)
+                        format!("use global <{}> code to deploy from", account_id)
                     }
                 };
                 eprintln!("{:>5} {:<70}", "--", identifier)

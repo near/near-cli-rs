@@ -241,10 +241,10 @@ fn action_transformation(
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
         Action::DeployGlobalContract(_) => {
-            todo!("The feature is not implemented yet.");
+            unimplemented!("The DeployGlobalContract action is not implemented yet. The issue is tracked at https://github.com/near/near-cli-rs/issues/458");
         }
         Action::UseGlobalContract(_) => {
-            todo!("The feature is not implemented yet.");
+            unimplemented!("The UseGlobalContract action is not implemented yet. The issue is tracked at https://github.com/near/near-cli-rs/issues/458");
         }
     }
 }
