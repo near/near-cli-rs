@@ -80,9 +80,13 @@ impl SignerAccountIdContext {
             move |outcome_view, network_config| {
                 let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    eprintln!(
-                        "<{signer_account_id}> has successfully withdraw {amount} from <{contract_account_id}>.",
-                        amount = previous_context.amount,
+                    tracing::info!(
+                        parent: &tracing::Span::none(),
+                        "\n{}",
+                        crate::common::indent_payload(&format!(
+                            "<{signer_account_id}> has successfully withdraw {amount} from <{contract_account_id}>.",
+                            amount = previous_context.amount,
+                        ))
                     );
                 }
                 Ok(())
