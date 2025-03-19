@@ -2116,6 +2116,7 @@ dependencies = [
  "smart-default",
  "strum",
  "strum_macros",
+ "sysexits",
  "textwrap",
  "thiserror 2.0.6",
  "tokio",
@@ -3680,6 +3681,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "sysexits"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a70e00b0ea6c3e7154dfc48fee004bf61bdc154fd99b7e17c05318503b9660b"
+
+[[package]]
 name = "system-configuration"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4345,7 +4352,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

@@ -5,8 +5,6 @@
 )]
 
 use clap::Parser;
-#[cfg(feature = "self-update")]
-use color_eyre::eyre::WrapErr;
 use color_eyre::owo_colors::OwoColorize;
 use interactive_clap::ToCliArgs;
 
@@ -71,11 +69,18 @@ impl From<CmdContext> for crate::GlobalContext {
     }
 }
 
-fn main() -> crate::common::CliResult {
-    let config = crate::config::Config::get_config_toml()?;
+fn main() -> Result<(), sysexits::error::ExitCodeRangeError> {
+    let config = crate::config::Config::get_config_toml().map_err(|err| {
+        eprintln!("{err}");
+        sysexits::ExitCode::Config.exit()
+    })?;
 
     if !crate::common::is_used_account_list_exist(&config.credentials_home_dir) {
-        crate::common::create_used_account_list_from_legacy_keychain(&config.credentials_home_dir)?;
+        crate::common::create_used_account_list_from_legacy_keychain(&config.credentials_home_dir)
+            .map_err(|err| {
+                eprintln!("{err}");
+                sysexits::ExitCode::CantCreat.exit()
+            })?;
     }
 
     #[cfg(not(debug_assertions))]
@@ -84,7 +89,11 @@ fn main() -> crate::common::CliResult {
     let display_env_section = true;
     color_eyre::config::HookBuilder::default()
         .display_env_section(display_env_section)
-        .install()?;
+        .install()
+        .map_err(|err| {
+            eprintln!("{err}");
+            sysexits::ExitCode::Software.exit()
+        })?;
 
     #[cfg(feature = "self-update")]
     let handle = std::thread::spawn(|| -> color_eyre::eyre::Result<String> {
@@ -97,7 +106,8 @@ fn main() -> crate::common::CliResult {
         Ok(cli) => cli,
         Err(cmd_error) => match cmd_error.kind() {
             clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {
-                cmd_error.exit()
+                eprintln!("{cmd_error}");
+                sysexits::ExitCode::Usage.exit()
             }
             _ => {
                 match crate::js_command_match::JsCmd::try_parse() {
@@ -111,15 +121,21 @@ fn main() -> crate::common::CliResult {
                         if cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
                             && js_cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
                         {
-                            return crate::common::try_external_subcommand_execution(cmd_error);
+                            return crate::common::try_external_subcommand_execution(cmd_error)
+                                .map_err(|err| {
+                                    eprintln!("{err}");
+                                    sysexits::ExitCode::Usage.exit()
+                                });
                         }
 
                         // js understand the subcommand
                         if js_cmd_error.kind() != clap::error::ErrorKind::InvalidSubcommand {
-                            js_cmd_error.exit();
+                            eprintln!("{js_cmd_error}");
+                            sysexits::ExitCode::Usage.exit()
                         }
 
-                        cmd_error.exit();
+                        eprintln!("{cmd_error}");
+                        sysexits::ExitCode::Usage.exit()
                     }
                 }
             }
@@ -132,7 +148,10 @@ fn main() -> crate::common::CliResult {
     } else {
         Verbosity::Interactive
     };
-    near_cli_rs::setup_tracing(verbosity)?;
+    near_cli_rs::setup_tracing(verbosity).map_err(|err| {
+        eprintln!("{err}");
+        sysexits::ExitCode::Software.exit()
+    })?;
 
     let cli_cmd = match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli), (config,)) {
         interactive_clap::ResultFromCli::Ok(cli_cmd)
@@ -197,10 +216,21 @@ fn main() -> crate::common::CliResult {
     ) {
         if let Ok(Ok(latest_version)) = handle.join() {
             let current_version = semver::Version::parse(self_update::cargo_crate_version!())
-                .wrap_err("Failed to parse current version of `near` CLI")?;
+                .map_err(|err| {
+                    tracing::error!(
+                        "Failed to parse current version of `near` CLI\n{}",
+                        crate::common::indent_payload(&format!("{err}"))
+                    );
+                    sysexits::ExitCode::Software.exit()
+                })?;
 
-            let latest_version = semver::Version::parse(&latest_version)
-                .wrap_err("Failed to parse latest version of `near` CLI")?;
+            let latest_version = semver::Version::parse(&latest_version).map_err(|err| {
+                tracing::error!(
+                    "Failed to parse latest version of `near` CLI\n{}",
+                    crate::common::indent_payload(&format!("{err}"))
+                );
+                sysexits::ExitCode::Software.exit()
+            })?;
 
             if current_version < latest_version {
                 eprintln!(
@@ -232,5 +262,10 @@ fn main() -> crate::common::CliResult {
         }
     };
 
-    cli_cmd.map(|_| ())
+    cli_cmd.map(|_| ()).map_err(|err| {
+        tracing::error!("{:?}", err);
+        err.downcast_ref::<sysexits::ExitCode>()
+            .unwrap_or(&sysexits::ExitCode::Software)
+            .exit()
+    })
 }
