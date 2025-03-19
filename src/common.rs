@@ -995,68 +995,93 @@ pub fn convert_action_error_to_cli_result(
 ) -> crate::CliResult {
     match &action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::CantCreat) // 73 - A (user specified) output file cannot be created.
+                .wrap_err_with(|| format!(
+                    "Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.",
+                    account_id
+                ))
         }
         near_primitives::errors::ActionErrorKind::AccountDoesNotExist { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: TX receiver ID <{}> doesn't exist (but action is not \"Create Account\").",
-                account_id
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::NoUser) // 67 - The user specified did not exist.
+                .wrap_err_with(|| format!(
+                    "Error: TX receiver ID <{}> doesn't exist (but action is not \"Create Account\").",
+                    account_id
+                ))
         }
         near_primitives::errors::ActionErrorKind::CreateAccountOnlyByRegistrar {
             account_id: _,
             registrar_account_id: _,
             predecessor_id: _,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A top-level account ID can only be created by registrar."))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was "not possible" during a protocol exchange.
+                .wrap_err("Error: A top-level account ID can only be created by registrar.")
         }
         near_primitives::errors::ActionErrorKind::CreateAccountNotAllowed {
             account_id,
             predecessor_id,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A newly created account <{}> must be under a namespace of the creator account <{}>.", account_id, predecessor_id))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                .wrap_err_with(|| format!(
+                    "Error: A newly created account <{}> must be under a namespace of the creator account <{}>.",
+                    account_id, predecessor_id
+                ))
         }
         near_primitives::errors::ActionErrorKind::ActorNoPermission {
             account_id: _,
             actor_id: _,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Administrative actions can be proceed only if sender=receiver or the first TX action is a \"Create Account\" action."))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was "not possible" during a protocol exchange.
+                .wrap_err("Error: Administrative actions can be proceed only if sender=receiver or the first TX action is a \"Create Account\" action.")
         }
         near_primitives::errors::ActionErrorKind::DeleteKeyDoesNotExist {
             account_id,
             public_key,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Account <{}>  tries to remove an access key <{}> that doesn't exist.",
-                account_id, public_key
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::OsFile) // 72 - Some system file (e.g., /etc/passwd, /var/run/utmp) does not exist, cannot be opened, or has some sort of error (e.g., syntax error).
+                .wrap_err_with(|| {
+                    format!(
+                    "Error: Account <{}>  tries to remove an access key <{}> that doesn't exist.",
+                    account_id, public_key
+                )
+                })
         }
         near_primitives::errors::ActionErrorKind::AddKeyAlreadyExists {
             account_id,
             public_key,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Public key <{}> is already used for an existing account ID <{}>.",
-                public_key, account_id
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Unavailable) // 69 - A service is unavailable. This can occur if a support program or file does not exist. This can also be used as a catch-all message when something you wanted to do doesn’t work, but you don’t know why.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: Public key <{}> is already used for an existing account ID <{}>.",
+                        public_key, account_id
+                    )
+                })
         }
         near_primitives::errors::ActionErrorKind::DeleteAccountStaking { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Account <{}> is staking and can not be deleted",
-                account_id
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: Account <{}> is staking and can not be deleted",
+                        account_id
+                    )
+                })
         }
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
-                account_id,
-                crate::types::near_token::NearToken::from_yoctonear(*amount)
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| format!(
+                    "Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
+                    account_id,
+                    crate::types::near_token::NearToken::from_yoctonear(*amount)
+                ))
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Account <{}> is not yet staked, but tries to unstake.",
-                account_id
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: Account <{}> is not yet staked, but tries to unstake.",
+                        account_id
+                    )
+                })
         }
         near_primitives::errors::ActionErrorKind::TriesToStake {
             account_id,
@@ -1064,72 +1089,115 @@ pub fn convert_action_error_to_cli_result(
             locked: _,
             balance,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
-                account_id,
-                crate::types::near_token::NearToken::from_yoctonear(*balance),
-                crate::types::near_token::NearToken::from_yoctonear(*stake)
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| format!(
+                    "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
+                    account_id,
+                    crate::types::near_token::NearToken::from_yoctonear(*balance),
+                    crate::types::near_token::NearToken::from_yoctonear(*stake)
+                ))
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
             account_id: _,
             stake,
             minimum_stake,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                crate::types::near_token::NearToken::from_yoctonear(*stake),
-                crate::types::near_token::NearToken::from_yoctonear(*minimum_stake)
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
+                        crate::types::near_token::NearToken::from_yoctonear(*stake),
+                        crate::types::near_token::NearToken::from_yoctonear(*minimum_stake)
+                    )
+                })
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An error occurred during a `FunctionCall` Action, parameter is debug message.\n{:?}", function_call_error_ser))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| format!(
+                    "Error: An error occurred during a `FunctionCall` Action, parameter is debug message.\n{:?}",
+                    function_call_error_ser
+                ))
         }
         near_primitives::errors::ActionErrorKind::NewReceiptValidationError(
             receipt_validation_error,
         ) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Error occurs when a new `ActionReceipt` created by the `FunctionCall` action fails.\n{:?}", receipt_validation_error))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::IoErr) // 74 - An error occurred while doing I/O on some file.
+                .wrap_err_with(|| format!(
+                    "Error: Error occurs when a new `ActionReceipt` created by the `FunctionCall` action fails.\n{:?}",
+                    receipt_validation_error
+                ))
         }
         near_primitives::errors::ActionErrorKind::OnlyImplicitAccountCreationAllowed {
             account_id: _,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71"))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err("Error: `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71")
         }
         near_primitives::errors::ActionErrorKind::DeleteAccountWithLargeState { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Delete account <{}> whose state is large is temporarily banned.",
-                account_id
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::TempFail) // 75 - Temporary failure, indicating something that is not really an error. For example that a mailer could not create a connection, and the request should be reattempted later.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: Delete account <{}> whose state is large is temporarily banned.",
+                        account_id
+                    )
+                })
         }
         near_primitives::errors::ActionErrorKind::DelegateActionInvalidSignature => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid Signature on DelegateAction"))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                .wrap_err("Error: Invalid Signature on DelegateAction")
         }
         near_primitives::errors::ActionErrorKind::DelegateActionSenderDoesNotMatchTxReceiver {
             sender_id,
             receiver_id,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Delegate Action sender {sender_id} does not match transaction receiver {receiver_id}"))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: Delegate Action sender {} does not match transaction receiver {}",
+                        sender_id, receiver_id
+                    )
+                })
         }
         near_primitives::errors::ActionErrorKind::DelegateActionExpired => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Expired"))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err("Error: DelegateAction Expired")
         }
         near_primitives::errors::ActionErrorKind::DelegateActionAccessKeyError(_) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The given public key doesn't exist for the sender"))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                .wrap_err("Error: The given public key doesn't exist for the sender")
         }
         near_primitives::errors::ActionErrorKind::DelegateActionInvalidNonce {
             delegate_nonce,
             ak_nonce,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} ak_nonce: {ak_nonce}"))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: DelegateAction Invalid Delegate Nonce: {} ak_nonce: {}",
+                        delegate_nonce, ak_nonce
+                    )
+                })
         }
         near_primitives::errors::ActionErrorKind::DelegateActionNonceTooLarge {
             delegate_nonce,
             upper_bound,
         } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}"))
-        },
-        near_primitives::errors::ActionErrorKind::NonRefundableTransferToExistingAccount { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Non-refundable storage transfer to an existing account <{account_id}> is not allowed according to NEP-491."))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: DelegateAction Invalid Delegate Nonce: {} upper bound: {}",
+                        delegate_nonce, upper_bound
+                    )
+                })
+        }
+        near_primitives::errors::ActionErrorKind::NonRefundableTransferToExistingAccount {
+            account_id,
+        } => {
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| format!(
+                    "Error: Non-refundable storage transfer to an existing account <{}> is not allowed according to NEP-491.",
+                    account_id
+                ))
         }
     }
 }
