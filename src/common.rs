@@ -995,7 +995,7 @@ pub fn convert_action_error_to_cli_result(
 ) -> crate::CliResult {
     match &action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
-            color_eyre::eyre::Result::Err(sysexits::ExitCode::CantCreat) // 73 - A (user specified) output file cannot be created.
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was "not possible" during a protocol exchange.
                 .wrap_err_with(|| format!(
                     "Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.",
                     account_id
