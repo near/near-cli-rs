@@ -1206,139 +1206,321 @@ pub fn convert_invalid_tx_error_to_cli_result(
     invalid_tx_error: &near_primitives::errors::InvalidTxError,
 ) -> crate::CliResult {
     match invalid_tx_error {
-        near_primitives::errors::InvalidTxError::InvalidAccessKeyError(invalid_access_key_error) => {
+        near_primitives::errors::InvalidTxError::InvalidAccessKeyError(
+            invalid_access_key_error,
+        ) => {
             match invalid_access_key_error {
-                near_primitives::errors::InvalidAccessKeyError::AccessKeyNotFound{account_id, public_key} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Public key {} doesn't exist for the account <{}>.", public_key, account_id))
-                },
-                near_primitives::errors::InvalidAccessKeyError::ReceiverMismatch{tx_receiver, ak_receiver} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction for <{}> doesn't match the access key for <{}>.", tx_receiver, ak_receiver))
-                },
-                near_primitives::errors::InvalidAccessKeyError::MethodNameMismatch{method_name} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction method name <{}> isn't allowed by the access key.", method_name))
-                },
+                near_primitives::errors::InvalidAccessKeyError::AccessKeyNotFound {
+                    account_id,
+                    public_key,
+                } => {
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                        .wrap_err_with(|| {
+                            format!(
+                                "Error: Public key {} doesn't exist for the account <{}>.",
+                                public_key, account_id
+                            )
+                        })
+                }
+                near_primitives::errors::InvalidAccessKeyError::ReceiverMismatch {
+                    tx_receiver,
+                    ak_receiver,
+                } => {
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                        .wrap_err_with(|| {
+                            format!(
+                                "Error: Transaction for <{}> doesn't match the access key for <{}>.",
+                                tx_receiver, ak_receiver
+                            )
+                        })
+                }
+                near_primitives::errors::InvalidAccessKeyError::MethodNameMismatch {
+                    method_name,
+                } => {
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                        .wrap_err_with(|| {
+                            format!(
+                                "Error: Transaction method name <{}> isn't allowed by the access key.",
+                                method_name
+                            )
+                        })
+                }
                 near_primitives::errors::InvalidAccessKeyError::RequiresFullAccess => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction requires a full permission access key."))
-                },
-                near_primitives::errors::InvalidAccessKeyError::NotEnoughAllowance{account_id, public_key, allowance, cost} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
-                        public_key,
-                        account_id,
-                        crate::types::near_token::NearToken::from_yoctonear(*allowance),
-                        crate::types::near_token::NearToken::from_yoctonear(*cost)
-                    ))
-                },
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                        .wrap_err("Error: Transaction requires a full permission access key.")
+                }
+                near_primitives::errors::InvalidAccessKeyError::NotEnoughAllowance {
+                    account_id,
+                    public_key,
+                    allowance,
+                    cost,
+                } => {
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                        .wrap_err_with(|| format!(
+                            "Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
+                            public_key,
+                            account_id,
+                            crate::types::near_token::NearToken::from_yoctonear(*allowance),
+                            crate::types::near_token::NearToken::from_yoctonear(*cost)
+                        ))
+                }
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Having a deposit with a function call action is not allowed with a function call access key."))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                        .wrap_err("Error: Having a deposit with a function call action is not allowed with a function call access key.")
                 }
             }
-        },
+        }
         near_primitives::errors::InvalidTxError::InvalidSignerId { signer_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX signer ID <{}> is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::utils::is_valid_account_id\".", signer_id))
-        },
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::NoUser) // 67 - The user specified did not exist.
+                .wrap_err_with(|| format!(
+                    "Error: TX signer ID <{}> is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::utils::is_valid_account_id\".",
+                    signer_id
+                ))
+        }
         near_primitives::errors::InvalidTxError::SignerDoesNotExist { signer_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX signer ID <{}> is not found in the storage.", signer_id))
-        },
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::NoUser) // 67 - The user specified did not exist.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: TX signer ID <{}> is not found in the storage.",
+                        signer_id
+                    )
+                })
+        }
         near_primitives::errors::InvalidTxError::InvalidNonce { tx_nonce, ak_nonce } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction nonce ({}) must be account[access_key].nonce ({}) + 1.", tx_nonce, ak_nonce))
-        },
-        near_primitives::errors::InvalidTxError::NonceTooLarge { tx_nonce, upper_bound } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction nonce ({}) is larger than the upper bound ({}) given by the block height.", tx_nonce, upper_bound))
-        },
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: Transaction nonce ({}) must be account[access_key].nonce ({}) + 1.",
+                        tx_nonce, ak_nonce
+                    )
+                })
+        }
+        near_primitives::errors::InvalidTxError::NonceTooLarge {
+            tx_nonce,
+            upper_bound,
+        } => {
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| format!(
+                    "Error: Transaction nonce ({}) is larger than the upper bound ({}) given by the block height.",
+                    tx_nonce, upper_bound
+                ))
+        }
         near_primitives::errors::InvalidTxError::InvalidReceiverId { receiver_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX receiver ID ({}) is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::is_valid_account_id\".", receiver_id))
-        },
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::NoUser) // 67 - The user specified did not exist.
+                .wrap_err_with(|| format!(
+                    "Error: TX receiver ID ({}) is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::is_valid_account_id\".",
+                    receiver_id
+                ))
+        }
         near_primitives::errors::InvalidTxError::InvalidSignature => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX signature is not valid"))
-        },
-        near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
-                signer_id,
-                crate::types::near_token::NearToken::from_yoctonear(*balance),
-                crate::types::near_token::NearToken::from_yoctonear(*cost)
-            ))
-        },
-        near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
-                signer_id,
-                crate::types::near_token::NearToken::from_yoctonear(*amount)
-            ))
-        },
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                .wrap_err("Error: TX signature is not valid")
+        }
+        near_primitives::errors::InvalidTxError::NotEnoughBalance {
+            signer_id,
+            balance,
+            cost,
+        } => {
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
+                        signer_id,
+                        crate::types::near_token::NearToken::from_yoctonear(*balance),
+                        crate::types::near_token::NearToken::from_yoctonear(*cost)
+                    )
+                })
+        }
+        near_primitives::errors::InvalidTxError::LackBalanceForState { signer_id, amount } => {
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| format!(
+                    "Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
+                    signer_id,
+                    crate::types::near_token::NearToken::from_yoctonear(*amount)
+                ))
+        }
         near_primitives::errors::InvalidTxError::CostOverflow => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An integer overflow occurred during transaction cost estimation."))
-        },
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::DataErr) // 65 - The input data was incorrect in some way. This should only be used for user’s data and not system files.
+                .wrap_err("Error: An integer overflow occurred during transaction cost estimation.")
+        }
         near_primitives::errors::InvalidTxError::InvalidChain => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction parent block hash doesn't belong to the current chain."))
-        },
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err(
+                    "Error: Transaction parent block hash doesn't belong to the current chain.",
+                )
+        }
         near_primitives::errors::InvalidTxError::Expired => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction has expired."))
-        },
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err("Error: Transaction has expired.")
+        }
         near_primitives::errors::InvalidTxError::ActionsValidation(actions_validation_error) => {
             match actions_validation_error {
                 near_primitives::errors::ActionsValidationError::DeleteActionMustBeFinal => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The delete action must be the final action in transaction."))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err("Error: The delete action must be the final action in transaction.")
                 },
                 near_primitives::errors::ActionsValidationError::TotalPrepaidGasExceeded {total_prepaid_gas, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The total prepaid gas ({}) for all given actions exceeded the limit ({}).",
-                    total_prepaid_gas,
-                    limit
-                    ))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err_with(|| format!(
+                            "Error: The total prepaid gas ({}) for all given actions exceeded the limit ({}).",
+                            total_prepaid_gas,
+                            limit
+                        ))
                 },
                 near_primitives::errors::ActionsValidationError::TotalNumberOfActionsExceeded {total_number_of_actions, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The number of actions ({}) exceeded the given limit ({}).", total_number_of_actions, limit))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err_with(|| format!(
+                            "Error: The number of actions ({}) exceeded the given limit ({}).",
+                            total_number_of_actions, limit
+                        ))
                 },
                 near_primitives::errors::ActionsValidationError::AddKeyMethodNamesNumberOfBytesExceeded {total_number_of_bytes, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The total number of bytes ({}) of the method names exceeded the limit ({}) in a Add Key action.", total_number_of_bytes, limit))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err_with(|| format!(
+                            "Error: The total number of bytes ({}) of the method names exceeded the limit ({}) in a Add Key action.",
+                            total_number_of_bytes, limit
+                        ))
                 },
                 near_primitives::errors::ActionsValidationError::AddKeyMethodNameLengthExceeded {length, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The length ({}) of some method name exceeded the limit ({}) in a Add Key action.", length, limit))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err_with(|| format!(
+                            "Error: The length ({}) of some method name exceeded the limit ({}) in a Add Key action.",
+                            length, limit
+                        ))
                 },
                 near_primitives::errors::ActionsValidationError::IntegerOverflow => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Integer overflow."))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::DataErr) // 65 - The input data was incorrect in some way. This should only be used for user’s data and not system files.
+                        .wrap_err("Error: Integer overflow.")
                 },
                 near_primitives::errors::ActionsValidationError::InvalidAccountId {account_id} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid account ID <{}>.", account_id))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::NoUser) // 67 - The user specified did not exist.
+                        .wrap_err_with(|| format!(
+                            "Error: Invalid account ID <{}>.",
+                            account_id
+                        ))
                 },
                 near_primitives::errors::ActionsValidationError::ContractSizeExceeded {size, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The size ({}) of the contract code exceeded the limit ({}) in a DeployContract action.", size, limit))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err_with(|| format!(
+                            "Error: The size ({}) of the contract code exceeded the limit ({}) in a DeployContract action.",
+                            size, limit
+                        ))
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallMethodNameLengthExceeded {length, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The length ({}) of the method name exceeded the limit ({}) in a Function Call action.", length, limit))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err_with(|| format!(
+                            "Error: The length ({}) of the method name exceeded the limit ({}) in a Function Call action.",
+                            length, limit
+                        ))
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallArgumentsLengthExceeded {length, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The length ({}) of the arguments exceeded the limit ({}) in a Function Call action.", length, limit))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err_with(|| format!(
+                            "Error: The length ({}) of the arguments exceeded the limit ({}) in a Function Call action.",
+                            length, limit
+                        ))
                 },
                 near_primitives::errors::ActionsValidationError::UnsuitableStakingKey {public_key} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An attempt to stake with a public key <{}> that is not convertible to ristretto.", public_key))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
+                    .wrap_err_with(|| format!(
+                        "Error: An attempt to stake with a public key <{}> that is not convertible to ristretto.",
+                        public_key
+                    ))
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallZeroAttachedGas => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The attached amount of gas in a FunctionCall action has to be a positive number."))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err("Error: The attached amount of gas in a FunctionCall action has to be a positive number.")
                 }
                 near_primitives::errors::ActionsValidationError::DelegateActionMustBeOnlyOne => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The transaction contains more than one delegation action"))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err("Error: The transaction contains more than one delegation action")
                 }
                 near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Protocol Feature {} is unsupported in version {}", protocol_feature, version))
+                    color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                        .wrap_err_with(|| format!(
+                            "Error: Protocol Feature {} is unsupported in version {}",
+                            protocol_feature, version
+                        ))
                 }
             }
-        },
+        }
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The size ({}) of serialized transaction exceeded the limit ({}).", size, limit))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::DataErr) // 65 - The input data was incorrect in some way. This should only be used for user’s data and not system files.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: The size ({}) of serialized transaction exceeded the limit ({}).",
+                        size, limit
+                    )
+                })
         }
         near_primitives::errors::InvalidTxError::InvalidTransactionVersion => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid transaction version"))
-        },
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::DataErr) // 65 - The input data was incorrect in some way. This should only be used for user’s data and not system files.
+                .wrap_err("Error: Invalid transaction version")
+        }
         near_primitives::errors::InvalidTxError::StorageError(error) => match error {
-            near_primitives::errors::StorageError::StorageInternalError => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Internal storage error")),
-            near_primitives::errors::StorageError::MissingTrieValue(_, hash) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Requested trie value by its hash ({hash}) which is missing in the storage",)),
-            near_primitives::errors::StorageError::UnexpectedTrieValue => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Unexpected trie value")),
-            near_primitives::errors::StorageError::StorageInconsistentState(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The storage is in the incosistent state: {}", message)),
-            near_primitives::errors::StorageError::FlatStorageBlockNotSupported(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The block is not supported by flat storage: {}", message)),
-            near_primitives::errors::StorageError::MemTrieLoadingError(message) =>  color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The trie is not loaded in memory: {}", message)),
-            near_primitives::errors::StorageError::FlatStorageReshardingAlreadyInProgress => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Flat storage resharding is already in progress")),
+            near_primitives::errors::StorageError::StorageInternalError => {
+                color_eyre::eyre::Result::Err(sysexits::ExitCode::Software) // 70 - An internal software error has been detected.
+                    .wrap_err("Error: Internal storage error")
+            }
+            near_primitives::errors::StorageError::MissingTrieValue(_, hash) => {
+                color_eyre::eyre::Result::Err(sysexits::ExitCode::DataErr) // 65 - The input data was incorrect in some way. This should only be used for user’s data and not system files.
+                    .wrap_err_with(|| format!(
+                        "Error: Requested trie value by its hash ({}) which is missing in the storage",
+                        hash
+                    ))
+            }
+            near_primitives::errors::StorageError::UnexpectedTrieValue => {
+                color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                    .wrap_err("Error: Unexpected trie value")
+            }
+            near_primitives::errors::StorageError::StorageInconsistentState(message) => {
+                color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                    .wrap_err_with(|| {
+                        format!(
+                            "Error: The storage is in the incosistent state: {}",
+                            message
+                        )
+                    })
+            }
+            near_primitives::errors::StorageError::FlatStorageBlockNotSupported(message) => {
+                color_eyre::eyre::Result::Err(sysexits::ExitCode::TempFail) // 75 - Temporary failure, indicating something that is not really an error.
+                    .wrap_err_with(|| {
+                        format!(
+                            "Error: The block is not supported by flat storage: {}",
+                            message
+                        )
+                    })
+            }
+            near_primitives::errors::StorageError::MemTrieLoadingError(message) => {
+                color_eyre::eyre::Result::Err(sysexits::ExitCode::TempFail) // 75 - Temporary failure, indicating something that is not really an error.
+                    .wrap_err_with(|| {
+                        format!("Error: The trie is not loaded in memory: {}", message)
+                    })
+            }
+            near_primitives::errors::StorageError::FlatStorageReshardingAlreadyInProgress => {
+                color_eyre::eyre::Result::Err(sysexits::ExitCode::TempFail) // 75 - Temporary failure, indicating something that is not really an error.
+                    .wrap_err("Error: Flat storage resharding is already in progress")
+            }
         },
-        near_primitives::errors::InvalidTxError::ShardCongested { shard_id, congestion_level } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is too congested ({congestion_level:.2}/1.00) and can't accept new transaction")),
-        near_primitives::errors::InvalidTxError::ShardStuck { shard_id, missed_chunks } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is {missed_chunks} blocks behind and can't accept new transaction until it will be in the sync")),
+        near_primitives::errors::InvalidTxError::ShardCongested {
+            shard_id,
+            congestion_level,
+        } => {
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::TempFail) // 75 - Temporary failure, indicating something that is not really an error.
+                .wrap_err_with(|| format!(
+                    "Error: The shard ({shard_id}) is too congested ({congestion_level:.2}/1.00) and can't accept new transaction"
+                ))
+        }
+        near_primitives::errors::InvalidTxError::ShardStuck {
+            shard_id,
+            missed_chunks,
+        } => {
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::TempFail) // 75 - Temporary failure, indicating something that is not really an error.
+                .wrap_err_with(|| format!(
+                    "Error: The shard ({}) is {} blocks behind and can't accept new transaction until it will be in the sync",
+                    shard_id, missed_chunks
+                ))
+        }
     }
 }
 
