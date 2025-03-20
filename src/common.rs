@@ -1030,7 +1030,7 @@ pub fn convert_action_error_to_cli_result(
             account_id: _,
             actor_id: _,
         } => {
-            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was "not possible" during a protocol exchange.
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::NoPerm) // 77 - You did not have sufficient permission to perform the operation.
                 .wrap_err("Error: Administrative actions can be proceed only if sender=receiver or the first TX action is a \"Create Account\" action.")
         }
         near_primitives::errors::ActionErrorKind::DeleteKeyDoesNotExist {
