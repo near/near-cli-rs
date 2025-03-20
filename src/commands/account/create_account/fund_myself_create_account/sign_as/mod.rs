@@ -1,3 +1,4 @@
+use color_eyre::eyre::WrapErr;
 use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -193,17 +194,16 @@ fn validate_new_account_id(
             ));
     match account_state {
         Ok(_) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "\nAccount <{}> already exists in network <{}>. Therefore, it is not possible to create an account with this name.",
-                account_id,
-                network_config.network_name
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| format!(
+                    "\nAccount <{}> already exists in network <{}>. Therefore, it is not possible to create an account with this name.",
+                    account_id,
+                    network_config.network_name
+                ))
         }
         Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                    ..
-                },
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
             ),
         )) => Ok(()),
         Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
@@ -216,8 +216,6 @@ fn validate_new_account_id(
             );
             Ok(())
         }
-        Err(err) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string()))
-        }
+        Err(err) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string())),
     }
 }
