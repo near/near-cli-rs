@@ -69,17 +69,17 @@ impl From<CmdContext> for crate::GlobalContext {
     }
 }
 
-fn main() -> Result<(), sysexits::error::ExitCodeRangeError> {
+fn _main() -> sysexits::Result<()> {
     let config = crate::config::Config::get_config_toml().map_err(|err| {
-        eprintln!("{err}");
-        sysexits::ExitCode::Config.exit()
+        eprintln!("{err:?}");
+        sysexits::ExitCode::Config
     })?;
 
     if !crate::common::is_used_account_list_exist(&config.credentials_home_dir) {
         crate::common::create_used_account_list_from_legacy_keychain(&config.credentials_home_dir)
             .map_err(|err| {
-                eprintln!("{err}");
-                sysexits::ExitCode::CantCreat.exit()
+                eprintln!("{err:?}");
+                sysexits::ExitCode::CantCreat
             })?;
     }
 
@@ -92,7 +92,7 @@ fn main() -> Result<(), sysexits::error::ExitCodeRangeError> {
         .install()
         .map_err(|err| {
             eprintln!("{err}");
-            sysexits::ExitCode::Software.exit()
+            sysexits::ExitCode::Software
         })?;
 
     #[cfg(feature = "self-update")]
@@ -106,8 +106,7 @@ fn main() -> Result<(), sysexits::error::ExitCodeRangeError> {
         Ok(cli) => cli,
         Err(cmd_error) => match cmd_error.kind() {
             clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {
-                eprintln!("{cmd_error}");
-                sysexits::ExitCode::Usage.exit()
+                cmd_error.exit();
             }
             _ => {
                 match crate::js_command_match::JsCmd::try_parse() {
@@ -123,19 +122,27 @@ fn main() -> Result<(), sysexits::error::ExitCodeRangeError> {
                         {
                             return crate::common::try_external_subcommand_execution(cmd_error)
                                 .map_err(|err| {
-                                    eprintln!("{err}");
-                                    sysexits::ExitCode::Usage.exit()
+                                    eprintln!("{err:?}");
+                                    sysexits::ExitCode::Usage
                                 });
                         }
 
                         // js understand the subcommand
-                        if js_cmd_error.kind() != clap::error::ErrorKind::InvalidSubcommand {
-                            eprintln!("{js_cmd_error}");
-                            sysexits::ExitCode::Usage.exit()
+                        match js_cmd_error.kind() {
+                            clap::error::ErrorKind::InvalidSubcommand => {
+                                let _ = cmd_error.print();
+                                return Err(sysexits::ExitCode::Usage);
+                            }
+                            clap::error::ErrorKind::DisplayHelp
+                            | clap::error::ErrorKind::DisplayVersion => {
+                                let _ = js_cmd_error.print();
+                                return Err(sysexits::ExitCode::Ok);
+                            }
+                            _ => {
+                                let _ = js_cmd_error.print();
+                                return Err(sysexits::ExitCode::Usage);
+                            }
                         }
-
-                        eprintln!("{cmd_error}");
-                        sysexits::ExitCode::Usage.exit()
                     }
                 }
             }
@@ -149,8 +156,8 @@ fn main() -> Result<(), sysexits::error::ExitCodeRangeError> {
         Verbosity::Interactive
     };
     near_cli_rs::setup_tracing(verbosity).map_err(|err| {
-        eprintln!("{err}");
-        sysexits::ExitCode::Software.exit()
+        eprintln!("{err:?}");
+        sysexits::ExitCode::Software
     })?;
 
     let cli_cmd = match <Cmd as interactive_clap::FromCli>::from_cli(Some(cli), (config,)) {
@@ -221,7 +228,7 @@ fn main() -> Result<(), sysexits::error::ExitCodeRangeError> {
                         "Failed to parse current version of `near` CLI\n{}",
                         crate::common::indent_payload(&format!("{err}"))
                     );
-                    sysexits::ExitCode::Software.exit()
+                    sysexits::ExitCode::Software
                 })?;
 
             let latest_version = semver::Version::parse(&latest_version).map_err(|err| {
@@ -229,7 +236,7 @@ fn main() -> Result<(), sysexits::error::ExitCodeRangeError> {
                     "Failed to parse latest version of `near` CLI\n{}",
                     crate::common::indent_payload(&format!("{err}"))
                 );
-                sysexits::ExitCode::Software.exit()
+                sysexits::ExitCode::Software
             })?;
 
             if current_version < latest_version {
@@ -264,8 +271,11 @@ fn main() -> Result<(), sysexits::error::ExitCodeRangeError> {
 
     cli_cmd.map(|_| ()).map_err(|err| {
         tracing::error!("{:?}", err);
-        err.downcast_ref::<sysexits::ExitCode>()
-            .unwrap_or(&sysexits::ExitCode::Software)
-            .exit()
+        err.downcast::<sysexits::ExitCode>()
+            .unwrap_or(sysexits::ExitCode::Software)
     })
+}
+
+fn main() -> sysexits::ExitCode {
+    _main().into()
 }

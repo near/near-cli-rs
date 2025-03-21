@@ -68,7 +68,7 @@ self_update = { version = "0.41.0", features = [
     "compression-flate2",
 ], optional = true }
 
-color-eyre = "0.6"
+color-eyre = { version = "0.6", default-features = false }
 thiserror = "2"
 sysexits = "0.8.5"
 

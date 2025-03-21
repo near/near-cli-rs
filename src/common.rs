@@ -1813,7 +1813,8 @@ pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
         .map(|x| format!("{:?}", &x).to_lowercase())
         .any(|x| x == subcommand);
     if is_top_level_command_known {
-        error.exit()
+        let _ = error.print();
+        sysexits::ExitCode::Usage.exit();
     }
     let subcommand_exe = format!("near-{}{}", subcommand, std::env::consts::EXE_SUFFIX);
 
