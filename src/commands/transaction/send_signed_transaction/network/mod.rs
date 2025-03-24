@@ -14,6 +14,7 @@ pub struct Network {
 
 #[derive(Debug, Clone)]
 pub struct NetworkContext {
+    global_context: crate::GlobalContext,
     signed_transaction: near_primitives::transaction::SignedTransaction,
     network_config: crate::config::NetworkConfig,
 }
@@ -24,6 +25,7 @@ impl NetworkContext {
         scope: &<Network as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context
+            .global_context
             .config
             .network_connection
             .get(&scope.network_name)
@@ -31,6 +33,7 @@ impl NetworkContext {
             .clone();
 
         Ok(Self {
+            global_context: previous_context.global_context,
             signed_transaction: previous_context.signed_transaction,
             network_config,
         })
@@ -42,7 +45,7 @@ impl Network {
         context: &super::SignedTransactionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
         crate::common::input_network_name(
-            &context.config,
+            &context.global_context.config,
             &[context.signed_transaction.transaction.receiver_id().clone()],
         )
     }
@@ -73,6 +76,10 @@ impl SubmitContext {
                 &previous_context.signed_transaction,
             )?;
 
-        crate::common::print_transaction_status(&transaction_info, &previous_context.network_config)
+        crate::common::print_transaction_status(
+            &transaction_info,
+            &previous_context.network_config,
+            &previous_context.global_context.verbosity,
+        )
     }
 }

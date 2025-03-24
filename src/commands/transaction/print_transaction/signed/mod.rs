@@ -11,16 +11,20 @@ pub struct PrintContext;
 
 impl PrintContext {
     pub fn from_previous_context(
-        _previous_context: crate::GlobalContext,
+        previous_context: crate::GlobalContext,
         scope: &<PrintTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let signed_transaction: near_primitives::transaction::SignedTransaction =
             scope.signed_transaction.clone().into();
-
-        eprintln!("\nSigned transaction (full):\n");
-        crate::common::print_full_signed_transaction(signed_transaction);
-        eprintln!();
-
+        let info_str = crate::common::print_full_signed_transaction(signed_transaction);
+        if let crate::Verbosity::Quiet = previous_context.verbosity {
+            println!("Signed transaction (full):{}", info_str)
+        };
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "Signed transaction (full):{}",
+            crate::common::indent_payload(&info_str)
+        );
         Ok(Self)
     }
 }

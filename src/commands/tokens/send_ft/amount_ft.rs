@@ -135,7 +135,14 @@ impl FtTransferParamsContext {
                 let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let ft_transfer_amount = previous_context.ft_transfer_amount.clone();
-                let memo = scope.memo.clone();
+                let memo = scope.memo.as_ref().and_then(|s| {
+                    let trimmed = s.trim();
+                    if trimmed.is_empty() {
+                        None
+                    } else {
+                        Some(trimmed.to_string())
+                    }
+                });
                 let gas = scope.gas.unwrap_or(near_gas::NearGas::from_tgas(100));
                 let deposit = scope.deposit.unwrap_or(crate::types::near_token::NearToken::from_yoctonear(1));
 
@@ -185,18 +192,28 @@ impl FtTransferParamsContext {
                                         ft_balance.decimals(),
                                         ft_balance.symbol().to_string()
                                     );
-                                    eprintln!(
+                                    let info_str = format!(
                                         "<{signer_account_id}> has successfully transferred {ft_transfer_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.\nRemaining balance: {ft_balance}",
+                                    );
+                                    tracing::info!(
+                                        parent: &tracing::Span::none(),
+                                        "\n{}",
+                                        crate::common::indent_payload(&info_str)
                                     );
                                     return Ok(());
                                 }
                             }
                         }
                     }
+                    let info_str = format!(
+                        "<{signer_account_id}> has successfully transferred fungible tokens (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.",
+                    );
+                    tracing::info!(
+                        parent: &tracing::Span::none(),
+                        "\n{}",
+                        crate::common::indent_payload(&info_str)
+                    );
                 }
-                eprintln!(
-                    "<{signer_account_id}> has successfully transferred fungible tokens (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.",
-                );
                 Ok(())
             }
         });

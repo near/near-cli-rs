@@ -51,12 +51,14 @@ impl TransactionInfoContext {
                             .expect("Internal error: can not convert the action_view to action."),
                     };
 
-                    eprintln!(
-                        "\nTransaction {}:\n",
-                        query_view_transaction_status.transaction.hash
+                    tracing::info!(
+                        parent: &tracing::Span::none(),
+                        "Transaction {}:{}",
+                        query_view_transaction_status.transaction.hash,
+                        crate::common::indent_payload(&crate::common::print_unsigned_transaction(
+                            &prepopulated_transaction,
+                        ))
                     );
-                    crate::common::print_unsigned_transaction(&prepopulated_transaction);
-                    eprintln!();
 
                     if prepopulated_transaction.actions.len() == 1 {
                         if let near_primitives::transaction::Action::Delegate(
@@ -112,13 +114,20 @@ impl TransactionInfoContext {
                     cmd_cli_args.extend(skip_action.to_cli_args());
 
                     let near_cli_exec_path = crate::common::get_near_exec_path();
-                    if !previous_context.quiet {
-                        eprintln!("Here is your console command to run archive transaction. You can to edit it or re-run:");
-                        eprintln!(
-                            "{}\n",
+                    if let crate::Verbosity::Quiet = previous_context.verbosity {
+                        println!(
+                            "{}",
                             shell_words::join(
                                 std::iter::once(near_cli_exec_path).chain(cmd_cli_args)
                             )
+                        );
+                    } else {
+                        tracing::info!(
+                            parent: &tracing::Span::none(),
+                            "Here is your console command to run archive transaction. You can to edit it or re-run:\n{}",
+                            crate::common::indent_payload(&shell_words::join(
+                                std::iter::once(near_cli_exec_path).chain(cmd_cli_args)
+                            ))
                         );
                     }
                     Ok(())

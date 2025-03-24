@@ -205,12 +205,15 @@ fn validate_new_account_id(
                     ..
                 },
             ),
-        )) => {
-            eprintln!("\nServer error.\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.");
-            Ok(())
-        }
+        )) => Ok(()),
         Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
-            eprintln!("\nTransport error.\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.");
+            tracing::warn!(
+                parent: &tracing::Span::none(),
+                "Transport error.{}",
+                crate::common::indent_payload(
+                    "\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.\n"
+                )
+            );
             Ok(())
         }
         Err(err) => {
