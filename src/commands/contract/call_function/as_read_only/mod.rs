@@ -77,7 +77,15 @@ impl FunctionContext {
             let function_name = scope.function_name.clone();
 
             move |network_config, block_reference| {
-                call_view_function(network_config, &account_id, &function_name, function_args.clone(), function_args_type.clone(), block_reference)
+                call_view_function(
+                    network_config,
+                    &account_id,
+                    &function_name,
+                    function_args.clone(),
+                    function_args_type.clone(),
+                    block_reference,
+                    &previous_context.global_context.verbosity,
+                )
             }
         });
 
@@ -117,6 +125,7 @@ fn call_view_function(
     function_args: String,
     function_args_type: super::call_function_args_type::FunctionArgsType,
     block_reference: &near_primitives::types::BlockReference,
+    verbosity: &crate::Verbosity,
 ) -> crate::CliResult {
     let args = super::call_function_args_type::function_args(function_args, function_args_type)?;
     let call_result = network_config
@@ -129,16 +138,29 @@ fn call_view_function(
             )
         })?;
     call_result.print_logs();
-    eprintln!("Result:");
+    let mut info_str = String::new();
     if call_result.result.is_empty() {
-        eprintln!("Empty result");
+        info_str.push_str("\nEmpty result");
     } else if let Ok(json_result) = call_result.parse_result_from_json::<serde_json::Value>() {
-        println!("{}", serde_json::to_string_pretty(&json_result)?);
+        info_str.push_str(&format!(
+            "\n{}",
+            serde_json::to_string_pretty(&json_result)?
+        ));
     } else if let Ok(string_result) = String::from_utf8(call_result.result) {
-        println!("{string_result}");
+        info_str.push_str(&format!("\n{string_result}"));
     } else {
-        eprintln!("The returned value is not printable (binary data)");
+        info_str.push_str("\nThe returned value is not printable (binary data)");
     }
-    eprintln!("--------------");
+
+    if let crate::Verbosity::Quiet = verbosity {
+        println!("{}", info_str);
+        return Ok(());
+    };
+    info_str.push_str("\n------------------------------------");
+    tracing::info!(
+        parent: &tracing::Span::none(),
+        "--- Result -------------------------{}",
+        crate::common::indent_payload(&info_str)
+    );
     Ok(())
 }

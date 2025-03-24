@@ -47,8 +47,14 @@ impl ViewFtBalanceContext {
                     symbol
                 );
 
-                eprintln!(
-                    "\n<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})"
+                if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
+                    println!("<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})");
+                    return Ok(());
+                };
+                tracing::info!(
+                    parent: &tracing::Span::none(),
+                    "{}",
+                    format!("<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})")
                 );
                 Ok(())
             }
@@ -81,7 +87,7 @@ impl ViewFtBalance {
     }
 }
 
-#[tracing::instrument(name = "Getting FT balance ...", skip_all)]
+#[tracing::instrument(name = "Getting FT balance ...", skip_all, parent = None)]
 pub fn get_ft_balance(
     network_config: &crate::config::NetworkConfig,
     ft_contract_account_id: &near_primitives::types::AccountId,

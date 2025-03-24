@@ -30,7 +30,7 @@ pub enum SignedTransactionType {
 
 #[derive(Debug, Clone)]
 pub struct SignedTransactionContext {
-    config: crate::config::Config,
+    global_context: crate::GlobalContext,
     signed_transaction: near_primitives::transaction::SignedTransaction,
 }
 
@@ -54,7 +54,7 @@ impl Base64SignedTransactionContext {
         scope: &<Base64SignedTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(SignedTransactionContext {
-            config: previous_context.config,
+            global_context: previous_context,
             signed_transaction: scope.signed_action.inner.clone(),
         }))
     }
@@ -99,7 +99,7 @@ impl FileWithBase64SignedTransactionContext {
             .signed_transaction;
 
         Ok(Self(SignedTransactionContext {
-            config: previous_context.config,
+            global_context: previous_context,
             signed_transaction,
         }))
     }
