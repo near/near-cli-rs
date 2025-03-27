@@ -1378,8 +1378,7 @@ pub fn print_transaction_status(
                 std::io::stdout().write_all(bytes_result)?;
                 return Ok(());
             };
-            let mut result_info = String::new();
-            let result = if bytes_result.is_empty() {
+            let mut result_info = if bytes_result.is_empty() {
                 "Empty result".to_string()
             } else if let Ok(json_result) =
                 serde_json::from_slice::<serde_json::Value>(bytes_result)
@@ -1390,7 +1389,29 @@ pub fn print_transaction_status(
             } else {
                 "The returned value is not printable (binary data)".to_string()
             };
-            result_info.push_str(&result);
+            if let crate::Verbosity::Interactive = verbosity {
+                for action in &transaction_info.transaction.actions {
+                    if let near_primitives::views::ActionView::FunctionCall {
+                        method_name: _,
+                        args: _,
+                        gas: _,
+                        deposit: _,
+                    } = action
+                    {
+                        tracing::info!(
+                            parent: &tracing::Span::none(),
+                            "Function execution logs ------------{}",
+                            crate::common::indent_payload(&logs_info)
+                        );
+                        tracing::info!(
+                            parent: &tracing::Span::none(),
+                            "Function execution return value (printed to stdout):"
+                        );
+                        suspend_tracing_indicatif(|| println!("{}", result_info));
+                        return Ok(());
+                    }
+                }
+            }
             result_info.push_str("\n------------------------------------");
 
             result_output.push_str(&print_value_successful_transaction(
