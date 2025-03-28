@@ -7,6 +7,7 @@ use std::str::FromStr;
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use color_eyre::owo_colors::OwoColorize;
 use futures::{StreamExt, TryStreamExt};
+use near_primitives::action::{GlobalContractDeployMode, GlobalContractIdentifier};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
@@ -612,62 +613,90 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     Ok(key_pair_properties)
 }
 
-pub fn print_full_signed_transaction(transaction: near_primitives::transaction::SignedTransaction) {
-    eprintln!("{:<25} {}\n", "signature:", transaction.signature);
-    crate::common::print_full_unsigned_transaction(transaction.transaction);
+pub fn print_full_signed_transaction(
+    transaction: near_primitives::transaction::SignedTransaction,
+) -> String {
+    let mut info_str = format!("\n{:<13} {}", "signature:", transaction.signature);
+    info_str.push_str(&crate::common::print_full_unsigned_transaction(
+        transaction.transaction,
+    ));
+    info_str
 }
 
-pub fn print_full_unsigned_transaction(transaction: near_primitives::transaction::Transaction) {
-    eprintln!(
-        "Unsigned transaction hash (Base58-encoded SHA-256 hash): {}\n\n",
+pub fn print_full_unsigned_transaction(
+    transaction: near_primitives::transaction::Transaction,
+) -> String {
+    let mut info_str = format!(
+        "\nunsigned transaction hash (Base58-encoded SHA-256 hash): {}",
         transaction.get_hash_and_size().0
     );
 
-    eprintln!("{:<13} {}", "public_key:", &transaction.public_key());
-    eprintln!("{:<13} {}", "nonce:", &transaction.nonce());
-    eprintln!("{:<13} {}", "block_hash:", &transaction.block_hash());
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "public_key:",
+        &transaction.public_key()
+    ));
+    info_str.push_str(&format!("\n{:<13} {}", "nonce:", &transaction.nonce()));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "block_hash:",
+        &transaction.block_hash()
+    ));
 
     let prepopulated = crate::commands::PrepopulatedTransaction::from(transaction);
-    print_unsigned_transaction(&prepopulated);
+
+    info_str.push_str(&print_unsigned_transaction(&prepopulated));
+
+    info_str
 }
 
-pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTransaction) {
-    eprintln!("{:<13} {}", "signer_id:", &transaction.signer_id);
-    eprintln!("{:<13} {}", "receiver_id:", &transaction.receiver_id);
+pub fn print_unsigned_transaction(
+    transaction: &crate::commands::PrepopulatedTransaction,
+) -> String {
+    let mut info_str = String::new();
+    info_str.push_str(&format!("\n{:<13} {}", "signer_id:", transaction.signer_id));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "receiver_id:", transaction.receiver_id
+    ));
+
     if transaction
         .actions
         .iter()
         .any(|action| matches!(action, near_primitives::transaction::Action::Delegate(_)))
     {
-        eprintln!("signed delegate action:");
+        info_str.push_str("\nsigned delegate action:");
     } else {
-        eprintln!("actions:");
+        info_str.push_str("\nactions:");
     };
 
     for action in &transaction.actions {
         match action {
             near_primitives::transaction::Action::CreateAccount(_) => {
-                eprintln!(
-                    "{:>5} {:<20} {}",
+                info_str.push_str(&format!(
+                    "\n{:>5} {:<20} {}",
                     "--", "create account:", &transaction.receiver_id
-                )
+                ));
             }
             near_primitives::transaction::Action::DeployContract(code) => {
                 let code_hash = CryptoHash::hash_bytes(&code.code);
-                eprintln!(
-                    "{:>5} {:<70}",
+                info_str.push_str(&format!(
+                    "\n{:>5} {:<70}",
                     "--",
-                    format!("deploy contract {:?}", code_hash)
-                )
+                    format!(
+                        "deploy code <{:?}> to a account <{}>",
+                        code_hash, transaction.receiver_id
+                    )
+                ))
             }
             near_primitives::transaction::Action::FunctionCall(function_call_action) => {
-                eprintln!("{:>5} {:<20}", "--", "function call:");
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "function call:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "", "method name:", &function_call_action.method_name
-                );
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "",
                     "args:",
                     match serde_json::from_slice::<serde_json::Value>(&function_call_action.args) {
@@ -687,74 +716,74 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                             }
                         }
                     }
-                );
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "",
                     "gas:",
                     crate::common::NearGas::from_gas(function_call_action.gas)
-                );
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "",
                     "deposit:",
                     crate::types::near_token::NearToken::from_yoctonear(
                         function_call_action.deposit
                     )
-                );
+                ));
             }
             near_primitives::transaction::Action::Transfer(transfer_action) => {
-                eprintln!(
-                    "{:>5} {:<20} {}",
+                info_str.push_str(&format!(
+                    "\n{:>5} {:<20} {}",
                     "--",
                     "transfer deposit:",
                     crate::types::near_token::NearToken::from_yoctonear(transfer_action.deposit)
-                );
+                ));
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
-                eprintln!("{:>5} {:<20}", "--", "stake:");
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "stake:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "", "public key:", &stake_action.public_key
-                );
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "",
                     "stake:",
                     crate::types::near_token::NearToken::from_yoctonear(stake_action.stake)
-                );
+                ));
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
-                eprintln!("{:>5} {:<20}", "--", "add access key:");
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "add access key:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "", "public key:", &add_key_action.public_key
-                );
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "", "nonce:", &add_key_action.access_key.nonce
-                );
-                eprintln!(
-                    "{:>18} {:<13} {:?}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {:?}",
                     "", "permission:", &add_key_action.access_key.permission
-                );
+                ));
             }
             near_primitives::transaction::Action::DeleteKey(delete_key_action) => {
-                eprintln!("{:>5} {:<20}", "--", "delete access key:");
-                eprintln!(
-                    "{:>18} {:<13} {}",
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "delete access key:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
                     "", "public key:", &delete_key_action.public_key
-                );
+                ));
             }
             near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
-                eprintln!(
-                    "{:>5} {:<20} {}",
+                info_str.push_str(&format!(
+                    "\n{:>5} {:<20} {}",
                     "--", "delete account:", &transaction.receiver_id
-                );
-                eprintln!(
-                    "{:>5} {:<20} {}",
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>8} {:<17} {}",
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
-                );
+                ));
             }
             near_primitives::transaction::Action::Delegate(signed_delegate_action) => {
                 let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
@@ -762,25 +791,54 @@ pub fn print_unsigned_transaction(transaction: &crate::commands::PrepopulatedTra
                     receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
                     actions: signed_delegate_action.delegate_action.get_actions(),
                 };
-                print_unsigned_transaction(&prepopulated_transaction);
+                info_str.push_str(&print_unsigned_transaction(&prepopulated_transaction));
+            }
+            near_primitives::transaction::Action::DeployGlobalContract(deploy) => {
+                let code_hash = CryptoHash::hash_bytes(&deploy.code);
+                let identifier = match deploy.deploy_mode {
+                    GlobalContractDeployMode::CodeHash => {
+                        format!("deploy code <{:?}> as a global hash", code_hash)
+                    }
+                    GlobalContractDeployMode::AccountId => {
+                        format!(
+                            "deploy code <{:?}> to a global account <{}>",
+                            code_hash, transaction.receiver_id
+                        )
+                    }
+                };
+                eprintln!("{:>5} {:<70}", "--", identifier)
+            }
+            near_primitives::transaction::Action::UseGlobalContract(contract_identifier) => {
+                let identifier = match contract_identifier.contract_identifier {
+                    GlobalContractIdentifier::CodeHash(hash) => {
+                        format!("use global <{}> code to deploy from", hash)
+                    }
+                    GlobalContractIdentifier::AccountId(ref account_id) => {
+                        format!("use global <{}> code to deploy from", account_id)
+                    }
+                };
+                eprintln!("{:>5} {:<70}", "--", identifier)
             }
         }
     }
+    info_str.push('\n');
+    info_str
 }
 
 fn print_value_successful_transaction(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
-) {
+) -> String {
+    let mut info_str: String = String::from('\n');
     for action in transaction_info.transaction.actions {
         match action {
             near_primitives::views::ActionView::CreateAccount => {
-                eprintln!(
-                    "New account <{}> has been successfully created.",
+                info_str.push_str(&format!(
+                    "\nNew account <{}> has been successfully created.",
                     transaction_info.transaction.receiver_id,
-                );
+                ));
             }
             near_primitives::views::ActionView::DeployContract { code: _ } => {
-                eprintln!("Contract code has been successfully deployed.",);
+                info_str.push_str("Contract code has been successfully deployed.");
             }
             near_primitives::views::ActionView::FunctionCall {
                 method_name,
@@ -788,70 +846,82 @@ fn print_value_successful_transaction(
                 gas: _,
                 deposit: _,
             } => {
-                eprintln!(
-                    "The \"{}\" call to <{}> on behalf of <{}> succeeded.",
+                info_str.push_str(&format!(
+                    "\nThe \"{}\" call to <{}> on behalf of <{}> succeeded.",
                     method_name,
                     transaction_info.transaction.receiver_id,
                     transaction_info.transaction.signer_id,
-                );
+                ));
             }
             near_primitives::views::ActionView::Transfer { deposit } => {
-                eprintln!(
-                    "<{}> has transferred {} to <{}> successfully.",
+                info_str.push_str(&format!(
+                    "\n<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
                     crate::types::near_token::NearToken::from_yoctonear(deposit),
                     transaction_info.transaction.receiver_id,
-                );
+                ));
             }
             near_primitives::views::ActionView::Stake {
                 stake,
                 public_key: _,
             } => {
                 if stake == 0 {
-                    eprintln!(
-                        "Validator <{}> successfully unstaked.",
+                    info_str.push_str(&format!(
+                        "\nValidator <{}> successfully unstaked.",
                         transaction_info.transaction.signer_id,
-                    );
+                    ));
                 } else {
-                    eprintln!(
-                        "Validator <{}> has successfully staked {}.",
+                    info_str.push_str(&format!(
+                        "\nValidator <{}> has successfully staked {}.",
                         transaction_info.transaction.signer_id,
                         crate::types::near_token::NearToken::from_yoctonear(stake),
-                    );
+                    ));
                 }
             }
             near_primitives::views::ActionView::AddKey {
                 public_key,
                 access_key: _,
             } => {
-                eprintln!(
-                    "Added access key = {} to {}.",
+                info_str.push_str(&format!(
+                    "\nAdded access key = {} to {}.",
                     public_key, transaction_info.transaction.receiver_id,
-                );
+                ));
             }
             near_primitives::views::ActionView::DeleteKey { public_key } => {
-                eprintln!(
-                    "Access key <{}> for account <{}> has been successfully deleted.",
+                info_str.push_str(&format!(
+                    "\nAccess key <{}> for account <{}> has been successfully deleted.",
                     public_key, transaction_info.transaction.signer_id,
-                );
+                ));
             }
             near_primitives::views::ActionView::DeleteAccount { beneficiary_id: _ } => {
-                eprintln!(
-                    "Account <{}> has been successfully deleted.",
+                info_str.push_str(&format!(
+                    "\nAccount <{}> has been successfully deleted.",
                     transaction_info.transaction.signer_id,
-                );
+                ));
             }
             near_primitives::views::ActionView::Delegate {
                 delegate_action,
                 signature: _,
             } => {
-                eprintln!(
+                info_str.push_str(&format!(
                     "Actions delegated for <{}> completed successfully.",
                     delegate_action.sender_id,
-                );
+                ));
+            }
+            near_primitives::views::ActionView::DeployGlobalContract { code: _ }
+            | near_primitives::views::ActionView::DeployGlobalContractByAccountId { code: _ } => {
+                eprintln!("Global contract has been successfully deployed.",);
+            }
+            near_primitives::views::ActionView::UseGlobalContractByAccountId { account_id } => {
+                eprintln!("Contract has been successfully deployed with the code from the global account <{}>.", account_id);
+            }
+            near_primitives::views::ActionView::UseGlobalContract { code_hash } => {
+                eprintln!("Contract has been successfully deployed with the code from the global hash <{}>.", code_hash);
             }
         }
     }
+    info_str.push('\n');
+    info_str
 }
 
 pub fn rpc_transaction_error(
@@ -1253,14 +1323,14 @@ fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decima
 pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
+    verbosity: &crate::Verbosity,
 ) -> crate::CliResult {
     let near_usd_exchange_rate: Option<Result<f64, color_eyre::eyre::Error>> = network_config
         .coingecko_url
         .as_ref()
         .map(get_near_usd_exchange_rate);
 
-    eprintln!("\n--- Logs ---------------------------"); // "\n" - required for correct display after {span_name}
-
+    let mut logs_info = String::new();
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
 
@@ -1269,12 +1339,25 @@ pub fn print_transaction_status(
         total_tokens_burnt += receipt.outcome.tokens_burnt;
 
         if receipt.outcome.logs.is_empty() {
-            eprintln!("Logs [{}]:   No logs", receipt.outcome.executor_id);
+            logs_info.push_str(&format!(
+                "\nLogs [{}]:   No logs",
+                receipt.outcome.executor_id
+            ));
         } else {
-            eprintln!("Logs [{}]:", receipt.outcome.executor_id);
-            eprintln!("  {}", receipt.outcome.logs.join("\n  "));
+            logs_info.push_str(&format!("\nLogs [{}]:", receipt.outcome.executor_id));
+            logs_info.push_str(&format!("\n  {}", receipt.outcome.logs.join("\n  ")));
         };
     }
+    logs_info.push_str("\n------------------------------------");
+
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "--- Logs ---------------------------{}",
+        crate::common::indent_payload(&logs_info)
+    );
+
+    let mut result_output = String::new();
 
     let return_value = match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
@@ -1291,28 +1374,45 @@ pub fn print_transaction_status(
             }
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
-            eprintln!("--- Result -------------------------");
-            if bytes_result.is_empty() {
-                eprintln!("Empty result");
+            if let crate::Verbosity::Quiet = verbosity {
+                std::io::stdout().write_all(bytes_result)?;
+                return Ok(());
+            };
+            let mut result_info = String::new();
+            let result = if bytes_result.is_empty() {
+                "Empty result".to_string()
             } else if let Ok(json_result) =
                 serde_json::from_slice::<serde_json::Value>(bytes_result)
             {
-                println!("{}", serde_json::to_string_pretty(&json_result)?);
+                serde_json::to_string_pretty(&json_result)?
             } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
-                println!("{string_result}");
+                string_result
             } else {
-                eprintln!("The returned value is not printable (binary data)");
-            }
-            eprintln!("------------------------------------\n");
-            print_value_successful_transaction(transaction_info.clone());
+                "The returned value is not printable (binary data)".to_string()
+            };
+            result_info.push_str(&result);
+            result_info.push_str("\n------------------------------------");
+
+            result_output.push_str(&print_value_successful_transaction(
+                transaction_info.clone(),
+            ));
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "--- Result -------------------------\n{}",
+                crate::common::indent_payload(&result_info)
+            );
             Ok(())
         }
     };
 
-    eprintln!();
-    eprintln!("Gas burned: {}", NearGas::from_gas(total_gas_burnt));
-    eprintln!(
-        "Transaction fee: {}{}",
+    result_output.push_str(&format!(
+        "\nGas burned: {}",
+        NearGas::from_gas(total_gas_burnt)
+    ));
+
+    result_output.push_str(&format!(
+        "\nTransaction fee: {}{}",
         crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
         match near_usd_exchange_rate {
             Some(Ok(exchange_rate)) => calculate_usd_amount(total_tokens_burnt, exchange_rate).map_or_else(
@@ -1322,13 +1422,19 @@ pub fn print_transaction_status(
             Some(Err(err)) => format!(" (USD equivalent is unavailable due to an error: {})", err),
             None => String::new(),
         }
-    );
+    ));
 
-    eprintln!("Transaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+    result_output.push_str(&format!(
+        "\nTransaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
         id=transaction_info.transaction_outcome.id,
         path=network_config.explorer_transaction_url
-    );
+    ));
 
+    tracing::info!(
+        parent: &tracing::Span::none(),
+        "{}",
+        crate::common::indent_payload(&result_output)
+    );
     return_value
 }
 
@@ -1347,14 +1453,19 @@ pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
     ) {
         Ok(message) => Ok(message),
         Err(err) => {
-            eprintln!(
-                "\n{}\n{}\n",
+            let info_str = format!(
+                "{}\n{}\n",
                 format!(
                     "Failed to save the access key <{}> to the keychain.\n{}",
                     public_key_str, err
                 )
                 .red(),
                 "The data for the access key will be stored in the legacy keychain.".red()
+            );
+            tracing::warn!(
+                parent: &tracing::Span::none(),
+                "\n{}",
+                indent_payload(&info_str)
             );
             save_access_key_to_legacy_keychain(
                 network_config.clone(),
@@ -2615,14 +2726,20 @@ pub impl near_primitives::views::CallResult {
     }
 
     fn print_logs(&self) {
-        eprintln!("--------------");
+        let mut info_str = String::new();
         if self.logs.is_empty() {
-            eprintln!("No logs")
+            info_str.push_str("\nNo logs")
         } else {
-            eprintln!("Logs:");
-            eprintln!("  {}", self.logs.join("\n  "));
+            info_str.push_str("\nLogs:");
+            info_str.push_str(&format!("\n  {}", self.logs.join("\n  ")));
         }
-        eprintln!("--------------");
+        info_str.push_str("\n------------------------------------");
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "--- Logs ---------------------------{}\n",
+            indent_payload(&info_str)
+        );
     }
 }
 

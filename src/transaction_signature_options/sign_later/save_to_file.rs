@@ -31,11 +31,14 @@ impl SaveToFileContext {
             .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
             .write(&serde_json::to_vec_pretty(&data_unsigned_transaction)?)
             .wrap_err_with(|| format!("Failed to write to file: {:?}", &file_path))?;
-        eprintln!("\nThe file {:?} was created successfully. It has a unsigned transaction (serialized as base64).", &file_path);
-
-        eprintln!(
-            "This base64-encoded transaction can be signed and sent later. There is a helper command on near CLI that can do that:\n$ {} transaction sign-transaction\n",
-            crate::common::get_near_exec_path()
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "{}",
+            crate::common::indent_payload(&format!(
+                "\nThe file {:?} was created successfully. It has a unsigned transaction (serialized as base64).\nThis base64-encoded transaction can be signed and sent later. There is a helper command on near CLI that can do that:\n$ {} transaction sign-transaction\n",
+                &file_path,
+                crate::common::get_near_exec_path()
+            ))
         );
         Ok(Self)
     }
