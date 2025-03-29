@@ -148,6 +148,9 @@ install-path = "CARGO_HOME"
 # Whether to install an updater program
 install-updater = false
 
+[workspace.metadata.dist.github-custom-runners]
+aarch64-unknown-linux-gnu = "ubuntu-24.04-arm"
+
 [workspace.metadata.dist.dependencies.apt]
 libudev-dev = { version = "*", targets = [
     "x86_64-unknown-linux-gnu",
