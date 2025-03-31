@@ -60,11 +60,13 @@ impl SaveWithLedgerContext {
                     let mut file_path = std::path::PathBuf::new();
                     file_path.push(folder_path);
 
-                    std::fs::create_dir_all(&file_path)?;
+                    std::fs::create_dir_all(&file_path).wrap_err(sysexits::ExitCode::CantCreat)?;
                     file_path.push(file_name);
                     std::fs::File::create(&file_path)
+                        .wrap_err(sysexits::ExitCode::CantCreat)
                         .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
                         .write(buf.as_bytes())
+                        .wrap_err(sysexits::ExitCode::DataErr)
                         .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
 
                     tracing::info!(

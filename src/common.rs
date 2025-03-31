@@ -1760,7 +1760,7 @@ pub fn save_access_key_to_legacy_keychain(
     let mut path_with_key_name = std::path::PathBuf::from(&credentials_home_dir);
     path_with_key_name.push(dir_name);
     path_with_key_name.push(account_id);
-    std::fs::create_dir_all(&path_with_key_name)?;
+    std::fs::create_dir_all(&path_with_key_name).wrap_err(sysexits::ExitCode::CantCreat)?;
     path_with_key_name.push(file_with_key_name);
     let message_1 = if path_with_key_name.exists() {
         format!(
@@ -1769,8 +1769,10 @@ pub fn save_access_key_to_legacy_keychain(
         )
     } else {
         std::fs::File::create(&path_with_key_name)
+            .wrap_err(sysexits::ExitCode::CantCreat)
             .wrap_err_with(|| format!("Failed to create file: {:?}", path_with_key_name))?
             .write(key_pair_properties_buf.as_bytes())
+            .wrap_err(sysexits::ExitCode::DataErr)
             .wrap_err_with(|| format!("Failed to write to file: {:?}", path_with_key_name))?;
         format!(
             "The data for the access key is saved in a file {}",
@@ -1790,8 +1792,10 @@ pub fn save_access_key_to_legacy_keychain(
         ))
     } else {
         std::fs::File::create(&path_with_account_name)
+            .wrap_err(sysexits::ExitCode::CantCreat)
             .wrap_err_with(|| format!("Failed to create file: {:?}", path_with_account_name))?
             .write(key_pair_properties_buf.as_bytes())
+            .wrap_err(sysexits::ExitCode::DataErr)
             .wrap_err_with(|| format!("Failed to write to file: {:?}", path_with_account_name))?;
         Ok(format!(
             "{}\nThe data for the access key is saved in a file {}",
@@ -2968,12 +2972,14 @@ pub impl near_primitives::views::CallResult {
     where
         T: for<'de> serde::Deserialize<'de>,
     {
-        serde_json::from_slice(&self.result).wrap_err_with(|| {
-            format!(
-                "Failed to parse view-function call return value: {}",
-                String::from_utf8_lossy(&self.result)
-            )
-        })
+        serde_json::from_slice(&self.result)
+            .wrap_err(sysexits::ExitCode::NoInput)
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to parse view-function call return value: {}",
+                    String::from_utf8_lossy(&self.result)
+                )
+            })
     }
 
     fn print_logs(&self) {
@@ -3030,9 +3036,10 @@ pub fn create_used_account_list_from_legacy_keychain(
     }
 
     let used_account_list_path = get_used_account_list_path(credentials_home_dir);
-    std::fs::create_dir_all(credentials_home_dir)?;
+    std::fs::create_dir_all(credentials_home_dir).wrap_err(sysexits::ExitCode::CantCreat)?;
     if !used_account_list_path.exists() {
         std::fs::File::create(&used_account_list_path)
+            .wrap_err(sysexits::ExitCode::CantCreat)
             .wrap_err_with(|| format!("Failed to create file: {:?}", &used_account_list_path))?;
     }
     if !used_account_list.is_empty() {
@@ -3045,12 +3052,14 @@ pub fn create_used_account_list_from_legacy_keychain(
                 })
                 .collect::<Vec<_>>(),
         )?;
-        std::fs::write(&used_account_list_path, used_account_list_buf).wrap_err_with(|| {
-            format!(
-                "Failed to write to file: {}",
-                used_account_list_path.display()
-            )
-        })?;
+        std::fs::write(&used_account_list_path, used_account_list_buf)
+            .wrap_err(sysexits::ExitCode::DataErr)
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to write to file: {}",
+                    used_account_list_path.display()
+                )
+            })?;
     }
     Ok(())
 }
