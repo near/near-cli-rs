@@ -143,8 +143,9 @@ impl SignKeychainContext {
             }
         };
 
-        let account_json: super::AccountKeyPair =
-            serde_json::from_str(&password).wrap_err("Error reading data")?;
+        let account_json: super::AccountKeyPair = serde_json::from_str(&password)
+            .wrap_err(sysexits::ExitCode::NoInput)
+            .wrap_err("Error reading data")?;
 
         let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (

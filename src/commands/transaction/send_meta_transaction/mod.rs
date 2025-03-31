@@ -92,9 +92,11 @@ impl FileWithBase64SignedMetaTransactionContext {
         scope: &<FileWithBase64SignedMetaTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let data = std::fs::read_to_string(&scope.file_path)
+            .wrap_err(sysexits::ExitCode::NoInput)
             .wrap_err_with(|| format!("File {:?} not found!", &scope.file_path))?;
 
         let signed_delegate_action = serde_json::from_str::<FileSignedMetaTransaction>(&data)
+            .wrap_err(sysexits::ExitCode::NoInput)
             .wrap_err_with(|| format!("Error reading data from file: {:?}", &scope.file_path))?
             .signed_delegate_action;
 

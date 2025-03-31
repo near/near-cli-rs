@@ -75,6 +75,7 @@ impl PublicKeyFromLegacyKeychainContext {
 
                             signer_keychain_folder
                             .read_dir()
+                            .wrap_err(sysexits::ExitCode::NoInput)
                             .wrap_err("There are no access keys found in the keychain for the signer account. Import an access key for an account before signing transactions with keychain.")?
                             .filter_map(Result::ok)
                             .find(|entry| full_access_key_filenames.contains(&entry.file_name()))
@@ -88,20 +89,24 @@ impl PublicKeyFromLegacyKeychainContext {
                         }
                     };
                     let signer_access_key_json =
-                    std::fs::read(&signer_access_key_file_path).wrap_err_with(|| {
-                        format!(
-                            "Access key file for account <{}> on network <{}> not found! \nSearch location: {:?}",
-                            account_id,
-                            network_config.network_name, signer_access_key_file_path
-                        )
-                    })?;
-                    let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
-                        serde_json::from_slice(&signer_access_key_json).wrap_err_with(|| {
+                    std::fs::read(&signer_access_key_file_path)
+                        .wrap_err(sysexits::ExitCode::NoInput)
+                        .wrap_err_with(|| {
                             format!(
-                                "Error reading data from file: {:?}",
-                                &signer_access_key_file_path
+                                "Access key file for account <{}> on network <{}> not found! \nSearch location: {:?}",
+                                account_id,
+                                network_config.network_name, signer_access_key_file_path
                             )
                         })?;
+                    let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
+                        serde_json::from_slice(&signer_access_key_json)
+                            .wrap_err(sysexits::ExitCode::NoInput)
+                            .wrap_err_with(|| {
+                                format!(
+                                    "Error reading data from file: {:?}",
+                                    &signer_access_key_file_path
+                                )
+                            })?;
                     eprintln!("\nPublic key: {}", account_key_pair.public_key);
                     Ok(())
                 }

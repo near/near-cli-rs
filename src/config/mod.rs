@@ -85,7 +85,8 @@ impl Config {
                 Self::write_config_toml(crate::config::Config::default())?;
             };
 
-            let config_toml = std::fs::read_to_string(&path_config_toml)?;
+            let config_toml =
+                std::fs::read_to_string(&path_config_toml).wrap_err(sysexits::ExitCode::NoInput)?;
 
             let config_version = toml::from_str::<migrations::ConfigVersion>(&config_toml).or_else::<color_eyre::eyre::Report, _>(|err| {
                 if let Ok(config_v1) = toml::from_str::<migrations::ConfigV1>(&config_toml) {
@@ -155,7 +156,8 @@ pub struct NetworkConfig {
 impl NetworkConfig {
     pub(crate) fn get_fields(&self) -> color_eyre::eyre::Result<Vec<String>> {
         let network_config_value: serde_json::Value =
-            serde_json::from_str(&serde_json::to_string(self)?)?;
+            serde_json::from_str(&serde_json::to_string(self)?)
+                .wrap_err(sysexits::ExitCode::NoInput)?;
         Ok(network_config_value
             .as_object()
             .wrap_err("Internal error")?

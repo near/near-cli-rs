@@ -81,7 +81,9 @@ impl PublicKeyFromKeychainContext {
                     };
 
                     let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
-                        serde_json::from_str(&password).wrap_err("Error reading data")?;
+                        serde_json::from_str(&password)
+                            .wrap_err(sysexits::ExitCode::NoInput)
+                            .wrap_err("Error reading data")?;
                     eprintln!("\nPublic key: {}", account_key_pair.public_key);
 
                     Ok(())

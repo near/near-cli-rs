@@ -138,12 +138,14 @@ impl SignLegacyKeychainContext {
                     )
                 })?;
         let signer_access_key: super::AccountKeyPair =
-            serde_json::from_slice(&signer_access_key_json).wrap_err_with(|| {
-                format!(
-                    "Error reading data from file: {:?}",
-                    &signer_access_key_file_path
-                )
-            })?;
+            serde_json::from_slice(&signer_access_key_json)
+                .wrap_err(sysexits::ExitCode::NoInput)
+                .wrap_err_with(|| {
+                    format!(
+                        "Error reading data from file: {:?}",
+                        &signer_access_key_file_path
+                    )
+                })?;
 
         let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (
@@ -277,7 +279,7 @@ impl SignLegacyKeychain {
 
             path.push(context.prepopulated_transaction.signer_id.to_string());
 
-            let signer_dir = path.read_dir()?;
+            let signer_dir = path.read_dir().wrap_err(sysexits::ExitCode::NoInput)?;
 
             let key_list = signer_dir
                 .filter_map(|entry| entry.ok())

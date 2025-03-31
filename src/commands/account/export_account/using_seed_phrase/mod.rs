@@ -44,11 +44,14 @@ impl ExportAccountFromSeedPhraseContext {
                     )?;
 
                     let data = std::fs::read_to_string(&data_path)
+                        .wrap_err(sysexits::ExitCode::NoInput)
                         .wrap_err("Access key file not found!")?;
                     let key_pair_properties: crate::common::KeyPairProperties =
-                        serde_json::from_str(&data).wrap_err_with(|| {
-                            format!("Error reading data from file: {:?}", &data_path)
-                        })?;
+                        serde_json::from_str(&data)
+                            .wrap_err(sysexits::ExitCode::NoInput)
+                            .wrap_err_with(|| {
+                                format!("Error reading data from file: {:?}", &data_path)
+                            })?;
                     println!(
                         "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
                         account_id, key_pair_properties.master_seed_phrase, key_pair_properties.seed_phrase_hd_path

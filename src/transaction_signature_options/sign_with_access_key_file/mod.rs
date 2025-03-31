@@ -54,6 +54,7 @@ impl SignAccessKeyFileContext {
             .wrap_err(sysexits::ExitCode::NoInput)
             .wrap_err("Access key file not found!")?;
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
+            .wrap_err(sysexits::ExitCode::NoInput)
             .wrap_err_with(|| format!("Error reading data from file: {:?}", &scope.file_path))?;
 
         let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
