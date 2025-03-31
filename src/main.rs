@@ -272,7 +272,7 @@ fn _main() -> sysexits::Result<()> {
     cli_cmd.map(|_| ()).map_err(|err| {
         tracing::error!("{:?}", err);
         err.downcast::<sysexits::ExitCode>()
-            .unwrap_or(sysexits::ExitCode::Software)
+            .unwrap_or(sysexits::ExitCode::Unavailable)
     })
 }
 
