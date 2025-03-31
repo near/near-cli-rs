@@ -111,6 +111,7 @@ impl SignLegacyKeychainContext {
 
                 signer_keychain_folder
                     .read_dir()
+                    .wrap_err(sysexits::ExitCode::NoInput)
                     .wrap_err("There are no access keys found in the keychain for the signer account. Import an access key for an account before signing transactions with keychain.")?
                     .filter_map(Result::ok)
                     .find(|entry| full_access_key_filenames.contains(&entry.file_name()))
@@ -127,13 +128,15 @@ impl SignLegacyKeychainContext {
             }
         };
         let signer_access_key_json =
-            std::fs::read(&signer_access_key_file_path).wrap_err_with(|| {
-                format!(
-                    "Access key file for account <{}> on network <{}> not found! \nSearch location: {:?}",
-                    previous_context.prepopulated_transaction.signer_id,
-                    network_config.network_name, signer_access_key_file_path
-                )
-            })?;
+            std::fs::read(&signer_access_key_file_path)
+                .wrap_err(sysexits::ExitCode::NoInput)
+                .wrap_err_with(|| {
+                    format!(
+                        "Access key file for account <{}> on network <{}> not found! \nSearch location: {:?}",
+                        previous_context.prepopulated_transaction.signer_id,
+                        network_config.network_name, signer_access_key_file_path
+                    )
+                })?;
         let signer_access_key: super::AccountKeyPair =
             serde_json::from_slice(&signer_access_key_json).wrap_err_with(|| {
                 format!(
@@ -163,6 +166,7 @@ impl SignLegacyKeychainContext {
                     &signer_access_key.public_key,
                     near_primitives::types::BlockReference::latest()
                 )
+                .wrap_err(sysexits::ExitCode::NoPerm)
                 .wrap_err(
                     "Cannot sign a transaction due to an error while fetching the most recent nonce value",
                 )?;
