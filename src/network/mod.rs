@@ -1,3 +1,5 @@
+use color_eyre::eyre::{ContextCompat, WrapErr};
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = NetworkContext)]
 #[interactive_clap(output_context = NetworkOutputContext)]
@@ -31,7 +33,8 @@ impl NetworkOutputContext {
         let network_connection = previous_context.config.network_connection;
         let mut network_config = network_connection
             .get(&scope.network_name)
-            .expect("Failed to get network config!")
+            .wrap_err(sysexits::ExitCode::DataErr)
+            .wrap_err("Failed to get network config!")?
             .clone();
         if let Some(url) = scope.wallet_url.clone() {
             network_config.wallet_url = url.into();

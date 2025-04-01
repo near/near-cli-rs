@@ -1,5 +1,7 @@
 use std::io::Write;
 
+use color_eyre::eyre::WrapErr;
+
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SignLaterContext)]
 #[interactive_clap(output_context = DisplayContext)]
@@ -20,7 +22,9 @@ impl DisplayContext {
             crate::common::get_near_exec_path()
         );
         if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
-            std::io::stdout().write_all(info_str.as_bytes())?;
+            std::io::stdout()
+                .write_all(info_str.as_bytes())
+                .wrap_err(sysexits::ExitCode::DataErr)?;
             return Ok(Self);
         }
         tracing::info!(

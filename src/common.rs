@@ -1625,7 +1625,9 @@ pub fn print_transaction_status(
         }
         near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
             if let crate::Verbosity::Quiet = verbosity {
-                std::io::stdout().write_all(bytes_result)?;
+                std::io::stdout()
+                    .write_all(bytes_result)
+                    .wrap_err(sysexits::ExitCode::DataErr)?;
                 return Ok(());
             };
             let mut result_info = String::new();
@@ -1876,6 +1878,7 @@ pub fn get_delegated_validator_list_from_mainnet(
 ) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
     let network_config = network_connection
         .get("mainnet")
+        .wrap_err(sysexits::ExitCode::Config)
         .wrap_err("There is no 'mainnet' network in your configuration.")?;
 
     let epoch_validator_info = network_config
