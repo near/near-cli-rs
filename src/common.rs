@@ -1113,10 +1113,12 @@ pub fn convert_action_error_to_cli_result(
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
             color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
-                .wrap_err_with(|| format!(
-                    "Error: An error occurred during a `FunctionCall` Action, parameter is debug message.\n{:?}",
-                    function_call_error_ser
-                ))
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: An error occurred during a `FunctionCall` action.\n{:?}",
+                        function_call_error_ser
+                    )
+                })
         }
         near_primitives::errors::ActionErrorKind::NewReceiptValidationError(
             receipt_validation_error,
@@ -1607,13 +1609,13 @@ pub fn print_transaction_status(
         crate::common::indent_payload(&logs_info)
     );
 
+    let mut result_info = String::new();
     let mut result_output = String::new();
 
     let return_value = match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted
         | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-            eprintln!("--- Transaction failed ------------");
             match tx_execution_error {
                 near_primitives::errors::TxExecutionError::ActionError(action_error) => {
                     convert_action_error_to_cli_result(action_error)
@@ -1630,7 +1632,6 @@ pub fn print_transaction_status(
                     .wrap_err(sysexits::ExitCode::DataErr)?;
                 return Ok(());
             };
-            let mut result_info = String::new();
             let result = if bytes_result.is_empty() {
                 "Empty result".to_string()
             } else if let Ok(json_result) =
@@ -1682,11 +1683,19 @@ pub fn print_transaction_status(
         path=network_config.explorer_transaction_url
     ));
 
-    tracing::info!(
-        parent: &tracing::Span::none(),
-        "{}",
-        crate::common::indent_payload(&result_output)
-    );
+    if result_info.is_empty() {
+        tracing::error!(
+            parent: &tracing::Span::none(),
+            "Transaction failed{}",
+            crate::common::indent_payload(&result_output)
+        );
+    } else {
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "{}",
+            crate::common::indent_payload(&result_output)
+        );
+    }
     return_value
 }
 
