@@ -102,7 +102,14 @@ impl PublicKeyFromLegacyKeychainContext {
                                 &signer_access_key_file_path
                             )
                         })?;
-                    eprintln!("\nPublic key: {}", account_key_pair.public_key);
+
+                    if let crate::Verbosity::Quiet = previous_context.verbosity {
+                        println!("{}", account_key_pair.public_key);
+                    } else {
+                        eprintln!("\nPublic key (printed to stdout): ");
+                        println!("{}", account_key_pair.public_key);
+                    }
+
                     Ok(())
                 }
             });
