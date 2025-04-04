@@ -84,7 +84,13 @@ impl PublicKeyFromKeychainContext {
                         serde_json::from_str(&password)
                             .wrap_err(sysexits::ExitCode::NoInput)
                             .wrap_err("Error reading data")?;
-                    eprintln!("\nPublic key: {}", account_key_pair.public_key);
+
+                    if let crate::Verbosity::Quiet = previous_context.verbosity {
+                        println!("{}", account_key_pair.public_key);
+                    } else {
+                        eprintln!("\nPublic key (printed to stdout): ");
+                        println!("{}", account_key_pair.public_key);
+                    }
 
                     Ok(())
                 }

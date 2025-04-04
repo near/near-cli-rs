@@ -12,7 +12,7 @@ pub struct PublicKeyFromLedgerContext {}
 
 impl PublicKeyFromLedgerContext {
     pub fn from_previous_context(
-        _previous_context: crate::GlobalContext,
+        previous_context: crate::GlobalContext,
         scope: &<PublicKeyFromLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let seed_phrase_hd_path = scope.seed_phrase_hd_path.clone();
@@ -27,7 +27,7 @@ impl PublicKeyFromLedgerContext {
             "Please allow getting the PublicKey on Ledger device (HD Path: {})",
             seed_phrase_hd_path
         );
-        let public_key = near_ledger::get_public_key(seed_phrase_hd_path.into()).map_err(
+        let verifying_key = near_ledger::get_public_key(seed_phrase_hd_path.into()).map_err(
             |near_ledger_error| {
                 color_eyre::Report::msg(format!(
                     "An error occurred while trying to get PublicKey from Ledger device: {:?}",
@@ -35,12 +35,16 @@ impl PublicKeyFromLedgerContext {
                 ))
             },
         )?;
-        eprintln!(
-            "\nPublic key: {}",
-            near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
-                public_key.to_bytes(),
-            ))
-        );
+        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+            verifying_key.to_bytes(),
+        ));
+
+        if let crate::Verbosity::Quiet = previous_context.verbosity {
+            println!("{}", public_key);
+        } else {
+            eprintln!("\nPublic key (printed to stdout): ");
+            println!("{}", public_key);
+        }
 
         Ok(Self {})
     }
