@@ -201,6 +201,7 @@ fn action_transformation(
                 "reconstruct-transaction-deploy-code.wasm",
                 deploy_contract_action.code
             )
+            .wrap_err(sysexits::ExitCode::DataErr)
             .wrap_err("Failed to write the deploy command code to file: 'reconstruct-transaction-deploy-code.wasm' in the current folder")?;
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
                 add_action::deploy_contract::CliDeployContractAction {

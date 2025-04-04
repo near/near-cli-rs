@@ -36,11 +36,13 @@ impl SaveWithUseAutoGenerationContext {
                     file_name.push(format!("{}.json", key_pair_properties.implicit_account_id));
                     file_path.push(folder_path);
 
-                    std::fs::create_dir_all(&file_path)?;
+                    std::fs::create_dir_all(&file_path).wrap_err(sysexits::ExitCode::CantCreat)?;
                     file_path.push(file_name);
                     std::fs::File::create(&file_path)
+                        .wrap_err(sysexits::ExitCode::CantCreat)
                         .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
                         .write(buf.as_bytes())
+                        .wrap_err(sysexits::ExitCode::DataErr)
                         .wrap_err_with(|| format!("Failed to write to file: {:?}", folder_path))?;
 
                     tracing::info!(

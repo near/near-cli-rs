@@ -122,7 +122,7 @@ pub fn sending_signed_transaction(
                         return Err(color_eyre::eyre::eyre!(err.to_string()));
                     }
                 }
-                Err(report) => return Err(color_eyre::Report::msg(report)),
+                Err(report) => return Err(report),
             },
         };
     };

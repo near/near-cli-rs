@@ -68,9 +68,11 @@ impl ContractFileContext {
         previous_context: ContractContext,
         scope: &<ContractFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let code = std::fs::read(&scope.file_path).wrap_err_with(|| {
-            format!("Failed to open or read the file: {:?}.", &scope.file_path.0,)
-        })?;
+        let code = std::fs::read(&scope.file_path)
+            .wrap_err(sysexits::ExitCode::NoInput)
+            .wrap_err_with(|| {
+                format!("Failed to open or read the file: {:?}.", &scope.file_path.0,)
+            })?;
         Ok(Self {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,

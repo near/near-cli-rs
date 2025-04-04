@@ -28,9 +28,12 @@ impl SaveToFileContext {
         });
 
         std::fs::File::create(&file_path)
+            .wrap_err(sysexits::ExitCode::CantCreat)
             .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
             .write(&serde_json::to_vec_pretty(&data_unsigned_transaction)?)
+            .wrap_err(sysexits::ExitCode::DataErr)
             .wrap_err_with(|| format!("Failed to write to file: {:?}", &file_path))?;
+
         tracing::info!(
             parent: &tracing::Span::none(),
             "{}",
