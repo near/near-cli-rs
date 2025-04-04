@@ -14,14 +14,20 @@ pub struct PublicKeyFromSeedPhraseContext;
 
 impl PublicKeyFromSeedPhraseContext {
     pub fn from_previous_context(
-        _previous_context: crate::GlobalContext,
+        previous_context: crate::GlobalContext,
         scope: &<PublicKeyFromSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let public_key = crate::common::get_public_key_from_seed_phrase(
             scope.seed_phrase_hd_path.clone().into(),
             &scope.master_seed_phrase,
         )?;
-        eprintln!("\nPublic key: {}", public_key);
+
+        if let crate::Verbosity::Quiet = previous_context.verbosity {
+            println!("{}", public_key);
+        } else {
+            eprintln!("\nPublic key (printed to stdout): ");
+            println!("{}", public_key);
+        }
 
         Ok(Self)
     }
