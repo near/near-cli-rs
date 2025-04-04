@@ -1643,6 +1643,28 @@ pub fn print_transaction_status(
             } else {
                 "The returned value is not printable (binary data)".to_string()
             };
+            if let crate::Verbosity::Interactive = verbosity {
+                for action in &transaction_info.transaction.actions {
+                    if let near_primitives::views::ActionView::FunctionCall {
+                        method_name: _,
+                        args: _,
+                        gas: _,
+                        deposit: _,
+                    } = action
+                    {
+                        tracing::info!(
+                            parent: &tracing::Span::none(),
+                            "Function execution logs ------------{}",
+                            crate::common::indent_payload(&logs_info)
+                        );
+                        tracing::info!(
+                            parent: &tracing::Span::none(),
+                            "Function execution return value (printed to stdout):"
+                        );
+                        suspend_tracing_indicatif(|| println!("{}", result));
+                    }
+                }
+            }
             result_info.push_str(&result);
             result_info.push_str("\n------------------------------------");
 
