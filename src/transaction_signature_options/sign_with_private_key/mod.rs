@@ -10,7 +10,6 @@ use crate::common::RpcQueryResponseExt;
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
 #[interactive_clap(output_context = SignPrivateKeyContext)]
 pub struct SignPrivateKey {
-    #[interactive_clap(long)]
     /// Enter sender (signer) private (secret) key:
     pub signer_private_key: crate::types::secret_key::SecretKey,
     #[interactive_clap(long)]
