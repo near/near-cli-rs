@@ -340,6 +340,7 @@ Here is your console command if you need to script it or re-run:
 - [update-social-profile](#update-social-profile---Update-NEAR-Social-profile)
 - [delete-account](#delete-account---Delete-an-account)
 - [list-keys](#list-keys---View-a-list-of-access-keys-of-an-account)
+- [get-public-key](#get-public-key---Get-the-public-key-to-your-account)
 - [add-key](#add-key---Add-an-access-key-to-an-account)
 - [delete-keys](#delete-keys---Delete-access-keys-from-an-account)
 - [manage-storage-deposit](#manage-storage-deposit---Storage-management-deposit-withdrawal-balance-review)
@@ -1246,6 +1247,132 @@ near account \
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/wJBFTtuVy76Z7XI8EF3iCnl3b?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/wJBFTtuVy76Z7XI8EF3iCnl3b.png" width="836"/>
+</a>
+</details>
+
+#### get-public-key - Get the public key to your account
+
+- [from-ledger](#from-ledger---Get-the-public-key-stored-on-your-Ledger-Nano-device)
+- [from-seed-phrase](#from-seed-phrase---Get-the-public-key-with-the-seed-phrase)
+- [from-plaintext-private-key](#from-plaintext-private-key---Get-the-public-key-from-the-plaintext-private-key)
+- [from-keychain](#from-keychain---Get-the-public-key-stored-in-a-secure-keychain)
+- [from-legacy-keychain](#from-legacy-keychain---Get-the-public-key-stored-in-the-legacy-keychain-compatible-with-the-old-near-CLI)
+
+#### from-ledger - Get the public key stored on your Ledger Nano device
+
+Для получения публичного ключа из Ledger необходимо ввести в командной строке терминала:
+```txt
+near account \
+    get-public-key \
+    from-ledger --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''/0'\''/1'\'''
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Public key (printed to stdout): 
+ed25519:FsRjjvkQZbwcBooXyuz4WMxXtxEKLJVJ6nc3CnaurdRr
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/jlZk2P1wCLJG6tpR8YeNONNBr?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/jlZk2P1wCLJG6tpR8YeNONNBr.png" width="836"/>
+</a>
+</details>
+
+#### from-seed-phrase - Get the public key with the seed phrase
+
+Для получения публичного ключа из сид-фразы необходимо ввести в командной строке терминала:
+```txt
+near account \
+    get-public-key \
+    from-seed-phrase 'trigger arrow grunt vendor crane safe reflect please sponsor verify club shiver' \
+        --seed-phrase-hd-path 'm/44'\''/397'\''/0'\'''
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Public key (printed to stdout): 
+ed25519:3fm1ctizEANiJG2CgJXx41e18BjtNTAnB4hfYSMjd4Fh
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/85kbNU8gg0i0LU1Cm9n9umM78?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/85kbNU8gg0i0LU1Cm9n9umM78.png" width="836"/>
+</a>
+</details>
+
+#### from-plaintext-private-key - Get the public key from the plaintext private key
+
+Для получения публичного ключа из секретного ключа необходимо ввести в командной строке терминала:
+```txt
+near account \
+    get-public-key \
+    from-plaintext-private-key ed25519:3AoMxLat91aAdkh4vyq7MgbKepYhSiC5WzknLFbiXUKfsoCXXeuN9W6R4EpFd3TLvBms7gbafupvtvQJmBt7W24f
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Public key (printed to stdout): 
+ed25519:3fm1ctizEANiJG2CgJXx41e18BjtNTAnB4hfYSMjd4Fh
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/XV4rJx6VVxQaKDVoDz2l6Vudt?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/XV4rJx6VVxQaKDVoDz2l6Vudt.png" width="836"/>
+</a>
+</details>
+
+#### from-keychain - Get the public key stored in a secure keychain
+
+Для получения публичного ключа из Keychain необходимо ввести в командной строке терминала:
+```txt
+near account \
+    get-public-key \
+    from-keychain volodymyr.testnet \
+    network-config testnet
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Public key (printed to stdout): 
+ed25519:CuXJ7CSpDdHvoKMwA4whFnaUwQuWGNCLu7APHKiQb4az
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/9Ct7taSDiQa6BsW5z7iZtXXlA?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/9Ct7taSDiQa6BsW5z7iZtXXlA.png" width="836"/>
+</a>
+</details>
+
+#### from-legacy-keychain - Get the public key stored in the legacy keychain (compatible with the old near CLI)
+
+Для получения публичного ключа из хранилища необходимо ввести в командной строке терминала:
+```txt
+near account \
+    get-public-key \
+    from-legacy-keychain volodymyr.testnet \
+    network-config testnet
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+Public key (printed to stdout): 
+ed25519:CuXJ7CSpDdHvoKMwA4whFnaUwQuWGNCLu7APHKiQb4az
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/w1odwOVXSv1fwOl4BKyoxJNgv?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/w1odwOVXSv1fwOl4BKyoxJNgv.png" width="836"/>
 </a>
 </details>
 
