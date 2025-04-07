@@ -2334,6 +2334,7 @@ Error:
 
 - [call-function](#call-function---Execute-function-contract-method)
 - [deploy](#deploy---Add-a-new-contract-code)
+- [inspect](#inspect---Get-a-list-of-available-function-names)
 - [download-wasm](#download-wasm---Download-wasm)
 - [view-storage](#view-storage---View-contract-storage-state)
 
@@ -2482,6 +2483,127 @@ near contract \
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/EP1iriayC6fZdB6ddz82nBc9W?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/EP1iriayC6fZdB6ddz82nBc9W.png" width="836"/>
+</a>
+</details>
+
+#### inspect - Get a list of available function names
+
+Для просмотра свойств контракта необходимо ввести в командной строке терминала:
+```txt
+near contract \
+    inspect \
+    neardevhub-contract.volodymyr.testnet \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+---------------------------------------------------------------------------------------------------------
+ neardevhub-contract.volodymyr.testnet  At block #192197254 
+                                        (9TU8wpXFYYEuAuiR8Ar9dJWHHxJhJhspmMFHsvpDco8Y) 
+---------------------------------------------------------------------------------------------------------
+ SHA-256 checksum hex                   af9739ffcf42e571b7d512c35c18d4716ac20d20cae8aafdf6d27cb7bc5040ab 
+---------------------------------------------------------------------------------------------------------
+ Storage used                           895.9 KB (895.2 KB Wasm + 705 B data) 
+---------------------------------------------------------------------------------------------------------
+ Access keys                            1 full access keys and 0 function-call-only access keys 
+---------------------------------------------------------------------------------------------------------
+ Contract version                       0.1.0 
+---------------------------------------------------------------------------------------------------------
+ Contract link                           
+---------------------------------------------------------------------------------------------------------
+ Supported standards                    nep330 (1.1.0) 
+---------------------------------------------------------------------------------------------------------
+ NEAR ABI version                       0.4.0 
+---------------------------------------------------------------------------------------------------------
+
+ Functions: (hint: you can download full JSON Schema using `download-abi` command)
+  
+▹▹▸▹▹ Contract inspection ...  
+▹▹▹▹▸  ↳  Analysis of contract data ...                                                                                                                                                                                             ... Arguments (JSON Schema):
+       {
+         "serialization_type": "json",
+         "args": [
+           {
+             "name": "post_id",
+             "type_schema": {
+               "type": "integer",
+               "format": "uint64",
+               "minimum": 0.0
+             }
+           }
+         ]
+       }
+ ... Return Value (JSON Schema):
+       No return value
+  
+ fn add_member(...) -> ... (read-write function - transcation required)  
+ ... Arguments (JSON Schema):
+       {
+         "serialization_type": "json",
+         "args": [
+           {
+             "name": "member",
+             "type_schema": {
+               "$ref": "#/definitions/Member"
+             }
+           },
+           {
+             "name": "metadata",
+             "type_schema": {
+               "$ref": "#/definitions/VersionedMemberMetadata"
+             }
+           }
+         ]
+       }
+ ... Return Value (JSON Schema):
+       No return value
+  
+ fn add_post(...) -> ... (read-write function - transcation required) payable  
+ ... Arguments (JSON Schema):
+       {
+         "serialization_type": "json",
+         "args": [
+           {
+             "name": "parent_id",
+             "type_schema": {
+               "type": [
+                 "integer",
+                 "null"
+               ],
+               "format": "uint64",
+               "minimum": 0.0
+             }
+           },
+           {
+             "name": "body",
+             "type_schema": {
+               "$ref": "#/definitions/PostBody"
+             }
+           },
+           {
+             "name": "labels",
+             "type_schema": {
+               "type": "array",
+               "items": {
+                 "type": "string"
+               },
+               "uniqueItems": true
+             }
+           }
+         ]
+       }
+ ... Return Value (JSON Schema):
+       No return value
+... ... ...       
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/FKvZYq7vHu0zwvw3KYSKwQuBB?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/FKvZYq7vHu0zwvw3KYSKwQuBB.png" width="836"/>
 </a>
 </details>
 
