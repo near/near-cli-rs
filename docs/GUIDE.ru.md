@@ -2723,6 +2723,7 @@ near contract \
 - [construct-transaction](#construct-transaction---Construct-a-new-transaction)
 - [sign-transaction](#sign-transaction---Sign-previously-prepared-unsigned-transaction)
 - [send-signed-transaction](#send-signed-transaction---Send-a-signed-transaction)
+- [print-transaction](#print-transaction---Print-all-fields-of-previously-prepared-transaction-without-modification)
 - [send-meta-transaction](#send-meta-transaction---Act-as-a-relayer-to-send-a-signed-delegate-action-meta-transaction)
 
 #### view-status - View a transaction status
@@ -2919,6 +2920,36 @@ near transaction \
 <details><summary>Демонстрация работы команды в интерактивном режиме</summary>
 <a href="https://asciinema.org/a/ignaXjJrvvDpQV4YUEK96iozX?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/ignaXjJrvvDpQV4YUEK96iozX.png" width="836"/>
+</a>
+</details>
+
+#### print-transaction - Print all fields of previously prepared transaction without modification
+
+Рассмотрим пример, когда необходимо просмотреть подписанную или неподписанную транзакцию. Воспользуемся подписанной транзакцией из предыдущего примера.
+```txt
+near transaction \
+    print-transaction signed EQAAAHZvbG9keW15ci50ZXN0bmV0AJBJl9Sd5oZ1oXfc100pYXreoKWW+E63mVg8l69akbRWdqBxSFkvAAARAAAAZnJvX3ZvbG9kLnRlc3RuZXT7QjAtOsW6cL6MPyPnKpHqG2oBP2bjVLfbrdVzxhEvXwEAAAADAAAAoe3MzhvC0wAAAAAAAADBUbhi8hyWfMM9Q7pmTb9+2EJ2oUh+JAp6uVPLH2hnv4W7jHkPDAtUo4hnEiVYhPE8ztqJMJvEo3bT6wxISJkN
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+ INFO Signed transaction (full):
+ |    signature:    ed25519:4sB6cgQqHnnx558AHjRSQ7uFLJCfi7J44kcYyhjB2DqZknKKQJbcFY8KqrzuWnJqQZNK56gt4hVLAvkTwd3zB3iU
+ |    unsigned transaction hash (Base58-encoded SHA-256 hash): AaQPiqVRUSUjqQVyvrRUw7Sr7WDwMVr8h8UrZY1WhwqM
+ |    public_key:   ed25519:AiEo5xepXjY7ChihZJ6AsfoDAaUowhPgvQp997qnFuRP
+ |    nonce:        52060514001014
+ |    block_hash:   HuosRMcXT7Ghe5ihdpiBRnDUqSZNLWZf4P2M4nQzGEsp
+ |    signer_id:    volodymyr.testnet
+ |    receiver_id:  fro_volod.testnet
+ |    actions:
+ |       -- transfer deposit:    1 NEAR
+```
+</details>
+
+<details><summary>Демонстрация работы команды в интерактивном режиме</summary>
+<a href="https://asciinema.org/a/D0JHl1RbLrHrAgjRnp61FAlBl?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/D0JHl1RbLrHrAgjRnp61FAlBl.png" width="836"/>
 </a>
 </details>
 
