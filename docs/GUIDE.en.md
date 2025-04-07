@@ -2325,6 +2325,7 @@ near staking \
 - [call-function](#call-function---Execute-function-contract-method)
 - [deploy](#deploy---Add-a-new-contract-code)
 - [inspect](#inspect---Get-a-list-of-available-function-names)
+- [download-abi](#download-abi---Download-contract-ABI)
 - [download-wasm](#download-wasm---Download-wasm)
 - [view-storage](#view-storage---View-contract-storage-state)
 
@@ -2594,6 +2595,34 @@ near contract \
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/FKvZYq7vHu0zwvw3KYSKwQuBB?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/FKvZYq7vHu0zwvw3KYSKwQuBB.png" width="836"/>
+</a>
+</details>
+
+#### download-abi - Download contract ABI
+
+You can download the contract ABI for the current moment (***now***) and for a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).
+Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+
+In order to get the contract ABI, type the following in the terminal command line:
+
+```txt
+near contract \
+    download-abi neardevhub-contract.volodymyr.testnet \
+    save-to-file neardevhub-contract_volodymyr_testnet.abi.json \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+ INFO The file "neardevhub-contract_volodymyr_testnet.abi.json" was downloaded successfully
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/fyOhP1ThQMX57JKcZBP72PJwl?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/fyOhP1ThQMX57JKcZBP72PJwl.png" width="836"/>
 </a>
 </details>
 

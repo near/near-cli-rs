@@ -2335,6 +2335,7 @@ Error:
 - [call-function](#call-function---Execute-function-contract-method)
 - [deploy](#deploy---Add-a-new-contract-code)
 - [inspect](#inspect---Get-a-list-of-available-function-names)
+- [download-abi](#download-abi---Download-contract-ABI)
 - [download-wasm](#download-wasm---Download-wasm)
 - [view-storage](#view-storage---View-contract-storage-state)
 
@@ -2604,6 +2605,34 @@ near contract \
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/FKvZYq7vHu0zwvw3KYSKwQuBB?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/FKvZYq7vHu0zwvw3KYSKwQuBB.png" width="836"/>
+</a>
+</details>
+
+#### download-abi - Download contract ABI
+
+Скачать ABI контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).
+Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).
+
+Для получения ABI контракта необходимо ввести в командной строке терминала:
+
+```txt
+near contract \
+    download-abi neardevhub-contract.volodymyr.testnet \
+    save-to-file neardevhub-contract_volodymyr_testnet.abi.json \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+ INFO The file "neardevhub-contract_volodymyr_testnet.abi.json" was downloaded successfully
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/fyOhP1ThQMX57JKcZBP72PJwl?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/fyOhP1ThQMX57JKcZBP72PJwl.png" width="836"/>
 </a>
 </details>
 
