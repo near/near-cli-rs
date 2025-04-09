@@ -1260,14 +1260,14 @@ near account \
 
 #### from-ledger - Get the public key stored on your Ledger Nano device
 
-Для получения публичного ключа из Ledger необходимо ввести в командной строке терминала:
+Для получения публичного ключа из Ledger необходимо ввести в командной строке терминала (обратите внимание, что в качестве путей `from-ledger` поддерживаются только пути, состоящие ровно из 5 компонентов, то есть "m/44'/397'/0'/0'/10'" будет работать, а "m/44'/397'/0'" - нет, в отличие, например, от пути `from-seed-phrase`):
 ```txt
 near account \
     get-public-key \
-    from-ledger --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''/0'\''/1'\'''
+    from-ledger --seed-phrase-hd-path "m/44'/397'/0'/0'/1'"
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>Результат выполнения команды будет примерно таким</i></summary>
 
 ```txt
 Public key (printed to stdout): 
@@ -1288,7 +1288,7 @@ ed25519:FsRjjvkQZbwcBooXyuz4WMxXtxEKLJVJ6nc3CnaurdRr
 near account \
     get-public-key \
     from-seed-phrase 'trigger arrow grunt vendor crane safe reflect please sponsor verify club shiver' \
-        --seed-phrase-hd-path 'm/44'\''/397'\''/0'\'''
+        --seed-phrase-hd-path "m/44'/397'/0'"
 ```
 
 <details><summary><i>Результат выполнения команды</i></summary>
@@ -1330,7 +1330,7 @@ ed25519:3fm1ctizEANiJG2CgJXx41e18BjtNTAnB4hfYSMjd4Fh
 
 #### from-keychain - Get the public key stored in a secure keychain
 
-Для получения публичного ключа из Keychain необходимо ввести в командной строке терминала:
+Для получения публичного ключа из Keychain необходимо ввести в командной строке терминала (обратите внимание, что команда может блокировать разблокировку `Keychain` через gui-widget за пределами ввода/вывода cli):
 ```txt
 near account \
     get-public-key \
@@ -1338,7 +1338,7 @@ near account \
     network-config testnet
 ```
 
-<details><summary><i>Результат выполнения команды</i></summary>
+<details><summary><i>Результат выполнения этой команды для другой учетной записи будет аналогичен следующему:</i></summary>
 
 ```txt
 Public key (printed to stdout): 
@@ -1352,9 +1352,10 @@ ed25519:CuXJ7CSpDdHvoKMwA4whFnaUwQuWGNCLu7APHKiQb4az
 </a>
 </details>
 
-#### from-legacy-keychain - Get the public key stored in the legacy keychain (compatible with the old near CLI)
+#### from-legacy-keychain - Get the public key stored in the legacy keychain (compatible with the [old near CLI](https://github.com/near/near-cli))
 
-Для получения публичного ключа из хранилища необходимо ввести в командной строке терминала:
+Для получения публичного ключа из хранилища необходимо ввести в командной строке терминала (Каталог с ключами доступа определен в [конфигурационном файле](#config---manage-connections-in-a-configuration-file).
+        Ключи доступа должны находиться в файле _публичный-ключ.json_, расположенном в _/Users/user/.near-credentials/имя-сети/имя-пользователя/_):
 ```txt
 near account \
     get-public-key \
@@ -2608,7 +2609,7 @@ near contract \
 </a>
 </details>
 
-#### download-abi - Download contract ABI
+#### download-abi - Download contract [ABI](https://github.com/near/abi)
 
 Скачать ABI контракта возможно на текущий момент времени (***now***) и на определеный момент в прошлом, указав блок (***at-block-height*** или ***at-block-hash***).
 Примеры использования этих параметров рассмотрены в разделе [View properties for an account](#view-account-summary---view-properties-for-an-account).

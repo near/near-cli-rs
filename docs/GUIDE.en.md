@@ -1260,14 +1260,14 @@ near account \
 
 #### from-ledger - Get the public key stored on your Ledger Nano device
 
-To get the public key from Ledger, enter in the terminal command line:
+To get the public key from Ledger, enter in the terminal command line (note that only paths with precisely 5 components are supported as `from-ledger` paths, that is "m/44'/397'/0'/0'/10'" will work but "m/44'/397'/0'" will not, unlike e.g. `from-seed-phrase` hd path):
 ```txt
 near account \
     get-public-key \
-    from-ledger --seed-phrase-hd-path 'm/44'\''/397'\''/0'\''/0'\''/1'\'''
+    from-ledger --seed-phrase-hd-path "m/44'/397'/0'/0'/1'"
 ```
 
-<details><summary><i>The result of this command will be as follows:</i></summary>
+<details><summary><i>The result of this command will be approximately as follows:</i></summary>
 
 ```txt
 Public key (printed to stdout): 
@@ -1288,7 +1288,7 @@ To get the public key from the seed phrase, enter in the terminal command line:
 near account \
     get-public-key \
     from-seed-phrase 'trigger arrow grunt vendor crane safe reflect please sponsor verify club shiver' \
-        --seed-phrase-hd-path 'm/44'\''/397'\''/0'\'''
+        --seed-phrase-hd-path "m/44'/397'/0'"
 ```
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
@@ -1330,7 +1330,7 @@ ed25519:3fm1ctizEANiJG2CgJXx41e18BjtNTAnB4hfYSMjd4Fh
 
 #### from-keychain - Get the public key stored in a secure keychain
 
-To get the public key from a secure keychain, enter in the terminal command line:
+To get the public key from a secure keychain, enter in the terminal command line (note that command may block for unlocking `keychain` via gui-widget outside of cli input/output):
 ```txt
 near account \
     get-public-key \
@@ -1338,7 +1338,7 @@ near account \
     network-config testnet
 ```
 
-<details><summary><i>The result of this command will be as follows:</i></summary>
+<details><summary><i>The result of running this command for another account will be similar to the following:</i></summary>
 
 ```txt
 Public key (printed to stdout): 
@@ -1352,9 +1352,10 @@ ed25519:CuXJ7CSpDdHvoKMwA4whFnaUwQuWGNCLu7APHKiQb4az
 </a>
 </details>
 
-#### from-legacy-keychain - Get the public key stored in the legacy keychain (compatible with the old near CLI)
+#### from-legacy-keychain - Get the public key stored in the legacy keychain (compatible with the [old near CLI](https://github.com/near/near-cli))
 
-To get the public key from a legacy keychain, enter in the terminal command line:
+To get the public key from a legacy keychain, enter in the terminal command line (Directory with access keys defined in [config](#config---manage-connections-in-a-configuration-file).
+        The access keys must be in the _public-key.json_ file located in _/Users/user/.near-credentials/network-name/user-name/_):
 ```txt
 near account \
     get-public-key \
@@ -2598,7 +2599,7 @@ near contract \
 </a>
 </details>
 
-#### download-abi - Download contract ABI
+#### download-abi - Download contract [ABI](https://github.com/near/abi)
 
 You can download the contract ABI for the current moment (***now***) and for a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).
 Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
