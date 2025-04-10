@@ -10,10 +10,6 @@ use crate::common::RpcQueryResponseExt;
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
 #[interactive_clap(output_context = SignPrivateKeyContext)]
 pub struct SignPrivateKey {
-    #[interactive_clap(long)]
-    /// Enter sender (signer) public key:
-    pub signer_public_key: crate::types::public_key::PublicKey,
-    #[interactive_clap(long)]
     /// Enter sender (signer) private (secret) key:
     pub signer_private_key: crate::types::secret_key::SecretKey,
     #[interactive_clap(long)]
@@ -54,7 +50,7 @@ impl SignPrivateKeyContext {
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.network_config.clone();
         let signer_secret_key: near_crypto::SecretKey = scope.signer_private_key.clone().into();
-        let public_key: near_crypto::PublicKey = scope.signer_public_key.clone().into();
+        let public_key = signer_secret_key.public_key();
 
         let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (
@@ -141,7 +137,7 @@ impl SignPrivateKeyContext {
             "Your transaction was signed successfully.{}",
             crate::common::indent_payload(&format!(
                 "\nPublic key: {}\nSignature:  {}\n",
-                scope.signer_public_key,
+                public_key,
                 signature
             ))
         );
