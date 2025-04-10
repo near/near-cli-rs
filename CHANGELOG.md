@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.1](https://github.com/near/near-cli-rs/compare/v0.19.0...v0.19.1) - 2025-04-10
+
+### Added
+
+- Added new command "get public key from plaintext private key" ([#466](https://github.com/near/near-cli-rs/pull/466))
+- Use free ARM64 GitHub Action runners for pre-built binaries ([#454](https://github.com/near/near-cli-rs/pull/454))
+
+### Fixed
+
+- allow forks to leverage transfer-to-project workflow ([#464](https://github.com/near/near-cli-rs/pull/464))
+
+### Other
+
+- updated GUIDE ([#469](https://github.com/near/near-cli-rs/pull/469))
+- Updated CI secret name in the devtools pipeline ([#460](https://github.com/near/near-cli-rs/pull/460))
+
 ## [0.19.0](https://github.com/near/near-cli-rs/compare/v0.18.0...v0.19.0) - 2025-03-12
 
 ### Added
