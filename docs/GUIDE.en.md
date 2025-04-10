@@ -341,6 +341,7 @@ View account details ([View properties for an account](#view-account-summary---v
 - [update-social-profile](#update-social-profile---Update-NEAR-Social-profile)
 - [delete-account](#delete-account---Delete-an-account)
 - [list-keys](#list-keys---View-a-list-of-access-keys-of-an-account)
+- [get-public-key](#get-public-key---Get-the-public-key-to-your-account)
 - [add-key](#add-key---Add-an-access-key-to-an-account)
 - [delete-keys](#delete-keys---Delete-access-keys-from-an-account)
 - [manage-storage-deposit](#manage-storage-deposit---Storage-management-deposit-withdrawal-balance-review)
@@ -1246,6 +1247,133 @@ near account \
 <details><summary><i>Demonstration of the command in interactive mode</i></summary>
 <a href="https://asciinema.org/a/wJBFTtuVy76Z7XI8EF3iCnl3b?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/wJBFTtuVy76Z7XI8EF3iCnl3b.png" width="836"/>
+</a>
+</details>
+
+#### get-public-key - Get the public key to your account
+
+- [from-ledger](#from-ledger---Get-the-public-key-stored-on-your-Ledger-Nano-device)
+- [from-seed-phrase](#from-seed-phrase---Get-the-public-key-with-the-seed-phrase)
+- [from-plaintext-private-key](#from-plaintext-private-key---Get-the-public-key-from-the-plaintext-private-key)
+- [from-keychain](#from-keychain---Get-the-public-key-stored-in-a-secure-keychain)
+- [from-legacy-keychain](#from-legacy-keychain---Get-the-public-key-stored-in-the-legacy-keychain-compatible-with-the-old-near-CLI)
+
+#### from-ledger - Get the public key stored on your Ledger Nano device
+
+To get the public key from Ledger, enter in the terminal command line (note that only paths with precisely 5 components are supported as `from-ledger` paths, that is "m/44'/397'/0'/0'/10'" will work but "m/44'/397'/0'" will not, unlike e.g. `from-seed-phrase` hd path):
+```txt
+near account \
+    get-public-key \
+    from-ledger --seed-phrase-hd-path "m/44'/397'/0'/0'/1'"
+```
+
+<details><summary><i>The result of this command will be approximately as follows:</i></summary>
+
+```txt
+Public key (printed to stdout): 
+ed25519:FsRjjvkQZbwcBooXyuz4WMxXtxEKLJVJ6nc3CnaurdRr
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/jlZk2P1wCLJG6tpR8YeNONNBr?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/jlZk2P1wCLJG6tpR8YeNONNBr.png" width="836"/>
+</a>
+</details>
+
+#### from-seed-phrase - Get the public key with the seed phrase
+
+To get the public key from the seed phrase, enter in the terminal command line:
+```txt
+near account \
+    get-public-key \
+    from-seed-phrase 'trigger arrow grunt vendor crane safe reflect please sponsor verify club shiver' \
+        --seed-phrase-hd-path "m/44'/397'/0'"
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Public key (printed to stdout): 
+ed25519:3fm1ctizEANiJG2CgJXx41e18BjtNTAnB4hfYSMjd4Fh
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/85kbNU8gg0i0LU1Cm9n9umM78?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/85kbNU8gg0i0LU1Cm9n9umM78.png" width="836"/>
+</a>
+</details>
+
+#### from-plaintext-private-key - Get the public key from the plaintext private key
+
+To get the public key from the plaintext private key, enter in the terminal command line:
+```txt
+near account \
+    get-public-key \
+    from-plaintext-private-key ed25519:3AoMxLat91aAdkh4vyq7MgbKepYhSiC5WzknLFbiXUKfsoCXXeuN9W6R4EpFd3TLvBms7gbafupvtvQJmBt7W24f
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Public key (printed to stdout): 
+ed25519:3fm1ctizEANiJG2CgJXx41e18BjtNTAnB4hfYSMjd4Fh
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/XV4rJx6VVxQaKDVoDz2l6Vudt?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/XV4rJx6VVxQaKDVoDz2l6Vudt.png" width="836"/>
+</a>
+</details>
+
+#### from-keychain - Get the public key stored in a secure keychain
+
+To get the public key from a secure keychain, enter in the terminal command line (note that command may block for unlocking `keychain` via gui-widget outside of cli input/output):
+```txt
+near account \
+    get-public-key \
+    from-keychain volodymyr.testnet \
+    network-config testnet
+```
+
+<details><summary><i>The result of running this command for another account will be similar to the following:</i></summary>
+
+```txt
+Public key (printed to stdout): 
+ed25519:CuXJ7CSpDdHvoKMwA4whFnaUwQuWGNCLu7APHKiQb4az
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/9Ct7taSDiQa6BsW5z7iZtXXlA?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/9Ct7taSDiQa6BsW5z7iZtXXlA.png" width="836"/>
+</a>
+</details>
+
+#### from-legacy-keychain - Get the public key stored in the legacy keychain (compatible with the [old near CLI](https://github.com/near/near-cli))
+
+To get the public key from a legacy keychain, enter in the terminal command line (Directory with access keys defined in [config](#config---manage-connections-in-a-configuration-file).
+        The access keys must be in the _public-key.json_ file located in _/Users/user/.near-credentials/network-name/user-name/_):
+```txt
+near account \
+    get-public-key \
+    from-legacy-keychain volodymyr.testnet \
+    network-config testnet
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+Public key (printed to stdout): 
+ed25519:CuXJ7CSpDdHvoKMwA4whFnaUwQuWGNCLu7APHKiQb4az
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/w1odwOVXSv1fwOl4BKyoxJNgv?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/w1odwOVXSv1fwOl4BKyoxJNgv.png" width="836"/>
 </a>
 </details>
 
@@ -2197,6 +2325,8 @@ near staking \
 
 - [call-function](#call-function---Execute-function-contract-method)
 - [deploy](#deploy---Add-a-new-contract-code)
+- [inspect](#inspect---Get-a-list-of-available-function-names)
+- [download-abi](#download-abi---Download-contract-ABI)
 - [download-wasm](#download-wasm---Download-wasm)
 - [view-storage](#view-storage---View-contract-storage-state)
 
@@ -2348,6 +2478,155 @@ near contract \
 </a>
 </details>
 
+#### inspect - Get a list of available function names
+
+To view the properties of a contract, enter in the terminal command line:
+```txt
+near contract \
+    inspect \
+    neardevhub-contract.volodymyr.testnet \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+---------------------------------------------------------------------------------------------------------
+ neardevhub-contract.volodymyr.testnet  At block #192197254 
+                                        (9TU8wpXFYYEuAuiR8Ar9dJWHHxJhJhspmMFHsvpDco8Y) 
+---------------------------------------------------------------------------------------------------------
+ SHA-256 checksum hex                   af9739ffcf42e571b7d512c35c18d4716ac20d20cae8aafdf6d27cb7bc5040ab 
+---------------------------------------------------------------------------------------------------------
+ Storage used                           895.9 KB (895.2 KB Wasm + 705 B data) 
+---------------------------------------------------------------------------------------------------------
+ Access keys                            1 full access keys and 0 function-call-only access keys 
+---------------------------------------------------------------------------------------------------------
+ Contract version                       0.1.0 
+---------------------------------------------------------------------------------------------------------
+ Contract link                           
+---------------------------------------------------------------------------------------------------------
+ Supported standards                    nep330 (1.1.0) 
+---------------------------------------------------------------------------------------------------------
+ NEAR ABI version                       0.4.0 
+---------------------------------------------------------------------------------------------------------
+
+ Functions: (hint: you can download full JSON Schema using `download-abi` command)
+  
+▹▹▸▹▹ Contract inspection ...  
+▹▹▹▹▸  ↳  Analysis of contract data ...                                                                                                                                                                                             ... Arguments (JSON Schema):
+       {
+         "serialization_type": "json",
+         "args": [
+           {
+             "name": "post_id",
+             "type_schema": {
+               "type": "integer",
+               "format": "uint64",
+               "minimum": 0.0
+             }
+           }
+         ]
+       }
+ ... Return Value (JSON Schema):
+       No return value
+  
+ fn add_member(...) -> ... (read-write function - transcation required)  
+ ... Arguments (JSON Schema):
+       {
+         "serialization_type": "json",
+         "args": [
+           {
+             "name": "member",
+             "type_schema": {
+               "$ref": "#/definitions/Member"
+             }
+           },
+           {
+             "name": "metadata",
+             "type_schema": {
+               "$ref": "#/definitions/VersionedMemberMetadata"
+             }
+           }
+         ]
+       }
+ ... Return Value (JSON Schema):
+       No return value
+  
+ fn add_post(...) -> ... (read-write function - transcation required) payable  
+ ... Arguments (JSON Schema):
+       {
+         "serialization_type": "json",
+         "args": [
+           {
+             "name": "parent_id",
+             "type_schema": {
+               "type": [
+                 "integer",
+                 "null"
+               ],
+               "format": "uint64",
+               "minimum": 0.0
+             }
+           },
+           {
+             "name": "body",
+             "type_schema": {
+               "$ref": "#/definitions/PostBody"
+             }
+           },
+           {
+             "name": "labels",
+             "type_schema": {
+               "type": "array",
+               "items": {
+                 "type": "string"
+               },
+               "uniqueItems": true
+             }
+           }
+         ]
+       }
+ ... Return Value (JSON Schema):
+       No return value
+... ... ...       
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/FKvZYq7vHu0zwvw3KYSKwQuBB?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/FKvZYq7vHu0zwvw3KYSKwQuBB.png" width="836"/>
+</a>
+</details>
+
+#### download-abi - Download contract [ABI](https://github.com/near/abi)
+
+You can download the contract ABI for the current moment (***now***) and for a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).
+Examples of the use of these parameters are discussed in the ([View properties for an account](#view-account-summary---view-properties-for-an-account)).
+
+In order to get the contract ABI, type the following in the terminal command line:
+
+```txt
+near contract \
+    download-abi neardevhub-contract.volodymyr.testnet \
+    save-to-file neardevhub-contract_volodymyr_testnet.abi.json \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+ INFO The file "neardevhub-contract_volodymyr_testnet.abi.json" was downloaded successfully
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/fyOhP1ThQMX57JKcZBP72PJwl?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/fyOhP1ThQMX57JKcZBP72PJwl.png" width="836"/>
+</a>
+</details>
+
 #### download-wasm - Download wasm
 
 You can download the contract file for the current moment (***now***) and for a certain moment in the past by specifying the block (***at-block-height*** or ***at-block-hash***).
@@ -2435,6 +2714,7 @@ near contract \
 - [construct-transaction](#construct-transaction---Construct-a-new-transaction)
 - [sign-transaction](#sign-transaction---Sign-previously-prepared-unsigned-transaction)
 - [send-signed-transaction](#send-signed-transaction---Send-a-signed-transaction)
+- [print-transaction](#print-transaction---Print-all-fields-of-previously-prepared-transaction-without-modification)
 - [send-meta-transaction](#send-meta-transaction---Act-as-a-relayer-to-send-a-signed-delegate-action-meta-transaction)
 
 #### view-status - View a transaction status
@@ -2631,6 +2911,36 @@ Let's look at the previous example, using the capabilities of sending a signed t
 <details><summary>Demonstration of the command in interactive mode</summary>
 <a href="https://asciinema.org/a/ignaXjJrvvDpQV4YUEK96iozX?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/ignaXjJrvvDpQV4YUEK96iozX.png" width="836"/>
+</a>
+</details>
+
+#### print-transaction - Print all fields of previously prepared transaction without modification
+
+Let's look at an example where we need to view a signed or unsigned transaction. Let's use the signed transaction from the previous example.
+```txt
+near transaction \
+    print-transaction signed EQAAAHZvbG9keW15ci50ZXN0bmV0AJBJl9Sd5oZ1oXfc100pYXreoKWW+E63mVg8l69akbRWdqBxSFkvAAARAAAAZnJvX3ZvbG9kLnRlc3RuZXT7QjAtOsW6cL6MPyPnKpHqG2oBP2bjVLfbrdVzxhEvXwEAAAADAAAAoe3MzhvC0wAAAAAAAADBUbhi8hyWfMM9Q7pmTb9+2EJ2oUh+JAp6uVPLH2hnv4W7jHkPDAtUo4hnEiVYhPE8ztqJMJvEo3bT6wxISJkN
+```
+
+<details><summary><i>The result of this command will be as follows:</i></summary>
+
+```txt
+ INFO Signed transaction (full):
+ |    signature:    ed25519:4sB6cgQqHnnx558AHjRSQ7uFLJCfi7J44kcYyhjB2DqZknKKQJbcFY8KqrzuWnJqQZNK56gt4hVLAvkTwd3zB3iU
+ |    unsigned transaction hash (Base58-encoded SHA-256 hash): AaQPiqVRUSUjqQVyvrRUw7Sr7WDwMVr8h8UrZY1WhwqM
+ |    public_key:   ed25519:AiEo5xepXjY7ChihZJ6AsfoDAaUowhPgvQp997qnFuRP
+ |    nonce:        52060514001014
+ |    block_hash:   HuosRMcXT7Ghe5ihdpiBRnDUqSZNLWZf4P2M4nQzGEsp
+ |    signer_id:    volodymyr.testnet
+ |    receiver_id:  fro_volod.testnet
+ |    actions:
+ |       -- transfer deposit:    1 NEAR
+```
+</details>
+
+<details><summary><i>Demonstration of the command in interactive mode</i></summary>
+<a href="https://asciinema.org/a/D0JHl1RbLrHrAgjRnp61FAlBl?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/D0JHl1RbLrHrAgjRnp61FAlBl.png" width="836"/>
 </a>
 </details>
 
