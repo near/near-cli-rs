@@ -247,7 +247,7 @@ impl FtTransferParams {
     fn input_memo(_context: &AmountFtContext) -> color_eyre::eyre::Result<Option<String>> {
         let input = Text::new("Enter a memo for transfer (optional):").prompt()?;
         Ok(if input.trim().is_empty() {
-            None
+            Some(String::new())
         } else {
             Some(input)
         })
