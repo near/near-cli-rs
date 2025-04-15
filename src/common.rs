@@ -806,7 +806,7 @@ pub fn print_unsigned_transaction(
                         )
                     }
                 };
-                eprintln!("{:>5} {:<70}", "--", identifier)
+                info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
             }
             near_primitives::transaction::Action::UseGlobalContract(contract_identifier) => {
                 let identifier = match contract_identifier.contract_identifier {
@@ -817,33 +817,7 @@ pub fn print_unsigned_transaction(
                         format!("use global <{}> code to deploy from", account_id)
                     }
                 };
-                eprintln!("{:>5} {:<70}", "--", identifier)
-            }
-            near_primitives::transaction::Action::DeployGlobalContract(deploy) => {
-                let code_hash = CryptoHash::hash_bytes(&deploy.code);
-                let identifier = match deploy.deploy_mode {
-                    GlobalContractDeployMode::CodeHash => {
-                        format!("deploy code <{:?}> as a global hash", code_hash)
-                    }
-                    GlobalContractDeployMode::AccountId => {
-                        format!(
-                            "deploy code <{:?}> to a global account <{}>",
-                            code_hash, transaction.receiver_id
-                        )
-                    }
-                };
-                eprintln!("{:>5} {:<70}", "--", identifier)
-            }
-            near_primitives::transaction::Action::UseGlobalContract(contract_identifier) => {
-                let identifier = match contract_identifier.contract_identifier {
-                    GlobalContractIdentifier::CodeHash(hash) => {
-                        format!("use <{}> code for deploy", hash)
-                    }
-                    GlobalContractIdentifier::AccountId(ref account_id) => {
-                        format!("use <{}> code for deploy", account_id)
-                    }
-                };
-                eprintln!("{:>5} {:<70}", "--", identifier)
+                info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
             }
         }
     }
@@ -936,23 +910,13 @@ fn print_value_successful_transaction(
             }
             near_primitives::views::ActionView::DeployGlobalContract { code: _ }
             | near_primitives::views::ActionView::DeployGlobalContractByAccountId { code: _ } => {
-                eprintln!("Global contract has been successfully deployed.",);
+                info_str.push_str("Global contract has been successfully deployed.");
             }
             near_primitives::views::ActionView::UseGlobalContractByAccountId { account_id } => {
-                eprintln!("Contract has been successfully deployed with the code from the global account <{}>.", account_id);
+                info_str.push_str(&format!("Contract has been successfully deployed with the code from the global account <{}>.", account_id));
             }
             near_primitives::views::ActionView::UseGlobalContract { code_hash } => {
-                eprintln!("Contract has been successfully deployed with the code from the global hash <{}>.", code_hash);
-            }
-            near_primitives::views::ActionView::DeployGlobalContract { code: _ }
-            | near_primitives::views::ActionView::DeployGlobalContractByAccountId { code: _ } => {
-                eprintln!("Global contract has been successfully deployed.",);
-            }
-            near_primitives::views::ActionView::UseGlobalContractByAccountId { account_id } => {
-                eprintln!("Contract has been successfully deployed with the code from the global account <{}>.", account_id);
-            }
-            near_primitives::views::ActionView::UseGlobalContract { code_hash } => {
-                eprintln!("Contract has been successfully deployed with the code from the global hash <{}>.", code_hash);
+                info_str.push_str(&format!("Contract has been successfully deployed with the code from the global hash <{}>.", code_hash));
             }
         }
     }
