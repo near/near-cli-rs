@@ -97,7 +97,7 @@ impl TransactionInfoContext {
                             add_action_1::add_action::CliAddAction {
                                 action: action_transformation(
                                     transaction_action,
-                                    prepopulated_transaction.receiver_id.clone().into(),
+                                    prepopulated_transaction.receiver_id.clone(),
                                     network_config,
                                     near_primitives::types::BlockReference::BlockId(
                                         near_primitives::types::BlockId::Hash(
@@ -226,7 +226,7 @@ fn action_transformation(
             if code_hash.0 != deploy_contract_action.code.as_slice() {
                 return Err(color_eyre::Report::msg("The code hash of the contract deploy action does not match the code that we retrieved from the archive node.".to_string()));
             }
-            
+
             std::fs::write(
                 "reconstruct-transaction-deploy-code.wasm",
                 code
