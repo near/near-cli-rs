@@ -29,7 +29,7 @@ impl TransactionInfoContext {
             std::sync::Arc::new({
                 let tx_hash: near_primitives::hash::CryptoHash = scope.transaction_hash.into();
 
-                move |network_config| {
+                move |network_config: &crate::config::NetworkConfig| {
                     let query_view_transaction_status = super::view_status::get_transaction_info(network_config, tx_hash)?
                         .final_execution_outcome
                         .wrap_err_with(|| {
@@ -84,7 +84,7 @@ impl TransactionInfoContext {
                                         prepopulated_transaction.signer_id.into(),
                                     ),
                                     receiver_account_id: Some(
-                                        prepopulated_transaction.receiver_id.into(),
+                                        prepopulated_transaction.receiver_id.clone().into(),
                                     ),
                                     next_actions: None,
                                 },
@@ -95,7 +95,18 @@ impl TransactionInfoContext {
                     for transaction_action in prepopulated_transaction.actions {
                         let next_actions = add_action_1::CliNextAction::AddAction(
                             add_action_1::add_action::CliAddAction {
-                                action: action_transformation(transaction_action)?,
+                                action: action_transformation(
+                                    transaction_action,
+                                    prepopulated_transaction.receiver_id.clone().into(),
+                                    network_config,
+                                    near_primitives::types::BlockReference::BlockId(
+                                        near_primitives::types::BlockId::Hash(
+                                            query_view_transaction_status
+                                                .transaction_outcome
+                                                .block_hash,
+                                        ),
+                                    ),
+                                )?,
                             },
                         );
                         cmd_cli_args.extend(next_actions.to_cli_args());
@@ -150,6 +161,9 @@ impl From<TransactionInfoContext> for crate::network::NetworkContext {
 
 fn action_transformation(
     archival_action: near_primitives::transaction::Action,
+    receiver_id: near_primitives::types::AccountId,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<
     Option<super::construct_transaction::add_action_1::add_action::CliActionSubcommand>,
 > {
@@ -197,9 +211,25 @@ fn action_transformation(
             )))
         }
         Action::DeployContract(deploy_contract_action) => {
+            // Unfortunately, RPC doesn't return the code for the deployed contract. Only the hash.
+            // So we need to fetch it from archive node.
+
+            let code = crate::commands::contract::download_wasm::get_code(
+                &receiver_id,
+                network_config,
+                block_reference
+            ).map_err(|e| {
+                color_eyre::Report::msg(format!("Couldn't fetch the code. Please use the archival node to fetch the code. Error: {}", e))
+            })?;
+
+            let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
+            if code_hash.0 != deploy_contract_action.code.as_slice() {
+                return Err(color_eyre::Report::msg("The code hash of the contract deploy action does not match the code that we retrieved from the archive node.".to_string()));
+            }
+            
             std::fs::write(
                 "reconstruct-transaction-deploy-code.wasm",
-                deploy_contract_action.code
+                code
             )
             .wrap_err("Failed to write the deploy command code to file: 'reconstruct-transaction-deploy-code.wasm' in the current folder")?;
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
