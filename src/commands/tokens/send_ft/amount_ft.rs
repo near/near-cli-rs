@@ -245,11 +245,8 @@ impl From<FtTransferParamsContext> for crate::commands::ActionContext {
 
 impl FtTransferParams {
     fn input_memo(_context: &AmountFtContext) -> color_eyre::eyre::Result<Option<String>> {
-        let input = Text::new("Enter a memo for transfer (optional):").prompt()?;
-        Ok(if input.trim().is_empty() {
-            None
-        } else {
-            Some(input)
-        })
+        Ok(Some(
+            Text::new("Enter a memo for transfer (optional):").prompt()?,
+        ))
     }
 }
