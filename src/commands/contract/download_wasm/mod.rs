@@ -133,8 +133,10 @@ fn download_contract_code(
             return Err(color_eyre::Report::msg("Error call result".to_string()));
         };
     std::fs::File::create(file_path)
+        .wrap_err(sysexits::ExitCode::CantCreat)
         .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
         .write(&call_access_view.code)
+        .wrap_err(sysexits::ExitCode::DataErr)
         .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
     tracing::info!(
         parent: &tracing::Span::none(),

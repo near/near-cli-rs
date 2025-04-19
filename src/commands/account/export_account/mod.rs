@@ -76,7 +76,9 @@ pub fn get_account_key_pair_from_keychain(
 ) -> color_eyre::eyre::Result<crate::transaction_signature_options::AccountKeyPair> {
     let password = get_password_from_keychain(network_config, account_id)?;
     let account_key_pair = serde_json::from_str(&password);
-    account_key_pair.wrap_err("Error reading data")
+    account_key_pair
+        .wrap_err(sysexits::ExitCode::NoInput)
+        .wrap_err("Error reading data")
 }
 
 #[tracing::instrument(
@@ -130,9 +132,12 @@ pub fn get_account_key_pair_from_legacy_keychain(
 ) -> color_eyre::eyre::Result<crate::transaction_signature_options::AccountKeyPair> {
     let data_path =
         get_account_key_pair_data_path(network_config, account_id, credentials_home_dir)?;
-    let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
+    let data = std::fs::read_to_string(&data_path)
+        .wrap_err(sysexits::ExitCode::NoInput)
+        .wrap_err("Access key file not found!")?;
     let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
         serde_json::from_str(&data)
+            .wrap_err(sysexits::ExitCode::NoInput)
             .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
     Ok(account_key_pair)
 }
@@ -172,12 +177,14 @@ pub fn get_account_properties_data_path(
         if !check_if_seed_phrase_exists {
             return Ok(path);
         }
-        let data = std::fs::read_to_string(&path).wrap_err_with(|| {
-            format!(
-                "Access key file for account <{}> on network <{}> not found!",
-                account_id, network_config.network_name
-            )
-        })?;
+        let data = std::fs::read_to_string(&path)
+            .wrap_err(sysexits::ExitCode::NoInput)
+            .wrap_err_with(|| {
+                format!(
+                    "Access key file for account <{}> on network <{}> not found!",
+                    account_id, network_config.network_name
+                )
+            })?;
         if serde_json::from_str::<crate::common::KeyPairProperties>(&data).is_ok() {
             return Ok(path);
         }
@@ -205,6 +212,7 @@ pub fn get_account_properties_data_path(
         }
         let dir = path
             .read_dir()
+            .wrap_err(sysexits::ExitCode::NoInput)
             .wrap_err("There are no access keys found in the keychain for the account.")?;
         for entry in dir.flatten() {
             if entry
@@ -219,9 +227,12 @@ pub fn get_account_properties_data_path(
                 if !check_if_seed_phrase_exists {
                     return Ok(data_path);
                 }
-                let data =
-                    std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
-                serde_json::from_str::<crate::common::KeyPairProperties>(&data).wrap_err_with(|| format!(
+                let data = std::fs::read_to_string(&data_path)
+                    .wrap_err(sysexits::ExitCode::NoInput)
+                    .wrap_err("Access key file not found!")?;
+                serde_json::from_str::<crate::common::KeyPairProperties>(&data)
+                    .wrap_err(sysexits::ExitCode::NoInput)
+                    .wrap_err_with(|| format!(
                         "There are no master seed phrase in keychain to export for account <{account_id}>."
                     ))?;
                 return Ok(data_path);
