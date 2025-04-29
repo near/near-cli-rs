@@ -58,7 +58,7 @@ fn input_function_name(
     let network_config = crate::common::find_network_where_account_exist(
         global_context,
         contract_account_id.clone(),
-    );
+    )?;
 
     if let Some(network_config) = network_config {
         let json_rpc_client = network_config.json_rpc_client();
