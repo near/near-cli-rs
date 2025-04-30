@@ -306,21 +306,27 @@ pub fn verify_account_access_key(
 pub fn is_account_exist(
     networks: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
     account_id: near_primitives::types::AccountId,
-) -> bool {
+) -> color_eyre::eyre::Result<bool> {
     for (_, network_config) in networks {
-        if tokio::runtime::Runtime::new()
+        let result = tokio::runtime::Runtime::new()
             .unwrap()
             .block_on(get_account_state(
                 network_config,
                 &account_id,
                 near_primitives::types::Finality::Final.into(),
-            ))
-            .is_ok()
-        {
-            return true;
+            ));
+
+        if result.is_ok() {
+            return Ok(true);
+        }
+
+        if let Err(AccountStateError::Cancel) = result {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Operation was canceled by the user"
+            ));
         }
     }
-    false
+    Ok(false)
 }
 
 #[tracing::instrument(name = "Searching for a network where an account exists for", skip_all)]
