@@ -36,7 +36,7 @@ impl AmountFtContext {
                 let network_config = crate::common::find_network_where_account_exist(
                     &previous_context.global_context,
                     previous_context.ft_contract_account_id.clone(),
-                )
+                )?
                 .wrap_err_with(|| {
                     format!(
                         "Contract <{}> does not exist in networks",
@@ -69,7 +69,7 @@ impl AmountFt {
         let network_config = crate::common::find_network_where_account_exist(
             &context.global_context,
             context.ft_contract_account_id.clone(),
-        )
+        )?
         .wrap_err_with(|| {
             format!(
                 "Contract <{}> does not exist in networks",

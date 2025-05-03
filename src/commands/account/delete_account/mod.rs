@@ -155,7 +155,7 @@ impl BeneficiaryAccount {
                 if crate::common::find_network_where_account_exist(
                     &context.global_context,
                     account_id.clone().into(),
-                )
+                )?
                 .is_none()
                 {
                     eprintln!("\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{}> as the beneficiary as it does not exist on [{}] networks.",

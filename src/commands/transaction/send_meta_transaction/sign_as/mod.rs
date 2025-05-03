@@ -91,7 +91,7 @@ impl RelayerAccountId {
             if !crate::common::is_account_exist(
                 &context.global_context.config.network_connection,
                 relayer_account_id.clone().into(),
-            ) {
+            )? {
                 eprintln!(
                     "\nThe account <{relayer_account_id}> does not exist on [{}] networks.",
                     context.global_context.config.network_names().join(", ")
