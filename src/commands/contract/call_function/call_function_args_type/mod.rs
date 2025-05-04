@@ -98,6 +98,7 @@ pub fn function_args(
         super::call_function_args_type::FunctionArgsType::FileArgs => {
             let data_path = std::path::PathBuf::from(args);
             let data = std::fs::read(&data_path)
+                .wrap_err(sysexits::ExitCode::NoInput)
                 .wrap_err_with(|| format!("Access to data file <{:?}> not found!", &data_path))?;
             Ok(data)
         }

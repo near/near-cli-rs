@@ -85,7 +85,8 @@ impl Config {
                 Self::write_config_toml(crate::config::Config::default())?;
             };
 
-            let config_toml = std::fs::read_to_string(&path_config_toml)?;
+            let config_toml =
+                std::fs::read_to_string(&path_config_toml).wrap_err(sysexits::ExitCode::NoInput)?;
 
             let config_version = toml::from_str::<migrations::ConfigVersion>(&config_toml).or_else::<color_eyre::eyre::Report, _>(|err| {
                 if let Ok(config_v1) = toml::from_str::<migrations::ConfigV1>(&config_toml) {
@@ -118,12 +119,14 @@ impl Config {
             dirs::config_dir().wrap_err("Impossible to get your config dir!")?;
 
         path_config_toml.push("near-cli");
-        std::fs::create_dir_all(&path_config_toml)?;
+        std::fs::create_dir_all(&path_config_toml).wrap_err(sysexits::ExitCode::CantCreat)?;
         path_config_toml.push("config.toml");
 
         std::fs::File::create(&path_config_toml)
+            .wrap_err(sysexits::ExitCode::CantCreat)
             .wrap_err_with(|| format!("Failed to create file: {path_config_toml:?}"))?
             .write(config_toml.as_bytes())
+            .wrap_err(sysexits::ExitCode::DataErr)
             .wrap_err_with(|| format!("Failed to write to file: {path_config_toml:?}"))?;
 
         eprintln!("Note: `near` CLI configuration is stored in {path_config_toml:?}");
@@ -153,7 +156,8 @@ pub struct NetworkConfig {
 impl NetworkConfig {
     pub(crate) fn get_fields(&self) -> color_eyre::eyre::Result<Vec<String>> {
         let network_config_value: serde_json::Value =
-            serde_json::from_str(&serde_json::to_string(self)?)?;
+            serde_json::from_str(&serde_json::to_string(self)?)
+                .wrap_err(sysexits::ExitCode::NoInput)?;
         Ok(network_config_value
             .as_object()
             .wrap_err("Internal error")?
