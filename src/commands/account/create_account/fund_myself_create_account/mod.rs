@@ -74,7 +74,7 @@ impl NewAccount {
                 let network = crate::common::find_network_where_account_exist(
                     context,
                     account_id.clone().into(),
-                );
+                )?;
                 if let Some(network_config) = network {
                     eprintln!(
                         "\nHeads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
@@ -105,7 +105,7 @@ impl NewAccount {
                         if crate::common::find_network_where_account_exist(
                             context,
                             parent_account_id.clone().into(),
-                        )
+                        )?
                         .is_none()
                         {
                             eprintln!("\nThe parent account <{}> does not exist on [{}] networks. Therefore, you cannot create an account <{}>.",

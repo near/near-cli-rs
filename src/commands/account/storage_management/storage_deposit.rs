@@ -58,7 +58,7 @@ impl DepositArgs {
             if !crate::common::is_account_exist(
                 &context.global_context.config.network_connection,
                 receiver_account_id.clone().into(),
-            ) {
+            )? {
                 eprintln!(
                     "\nThe account <{receiver_account_id}> does not exist on [{}] networks.",
                     context.global_context.config.network_names().join(", ")

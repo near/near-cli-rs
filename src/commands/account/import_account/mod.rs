@@ -49,13 +49,17 @@ pub fn login(
 
     let account_id = loop {
         let account_id_from_cli = input_account_id()?;
-        if crate::common::verify_account_access_key(
+        let access_key_view = crate::common::verify_account_access_key(
             account_id_from_cli.clone(),
             public_key.clone(),
             network_config.clone(),
-        )
-        .is_err()
-        {
+        );
+        if let Err(crate::common::AccountStateError::Cancel) = access_key_view {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Operation was canceled by the user"
+            ));
+        }
+        if access_key_view.is_err() {
             tracing::warn!(
                 parent: &tracing::Span::none(),
                 "WARNING!{}",
