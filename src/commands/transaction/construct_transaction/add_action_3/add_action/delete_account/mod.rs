@@ -87,7 +87,7 @@ impl DeleteAccountAction {
                 if crate::common::find_network_where_account_exist(
                     &context.global_context,
                     account_id.clone().into(),
-                )
+                )?
                 .is_none()
                 {
                     eprintln!(
