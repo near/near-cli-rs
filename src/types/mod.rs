@@ -17,4 +17,5 @@ pub mod signed_transaction;
 pub mod slip10;
 pub mod transaction;
 pub mod url;
+pub mod utf8_path_buf;
 pub mod vec_string;
