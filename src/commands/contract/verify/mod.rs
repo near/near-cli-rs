@@ -1,4 +1,7 @@
-use color_eyre::eyre::{Context, ContextCompat};
+use color_eyre::{
+    eyre::{Context, ContextCompat},
+    owo_colors::OwoColorize,
+};
 
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
@@ -123,12 +126,15 @@ impl ContractFileContext {
         })?;
 
         if wasm == docker_build_code {
-            println!("+++++++")
+            tracing::info!("\n{}", crate::common::indent_payload(
+                "The code obtained from the WASM file and the code calculated from the repository are the same."
+            ))
         } else {
-            println!("-------")
+            tracing::info!("\n{}", crate::common::indent_payload(
+                "The code obtained from the WASM file and the code calculated from the repository are different."
+            ).red())
         }
 
-        // XXX todo!
         Ok(Self)
     }
 }
@@ -137,19 +143,20 @@ fn verify_contract(
     contract_code_hash_from_repository: near_verify_rs::types::sha256_checksum::SHA256Checksum,
     contract_code_hash: near_primitives::hash::CryptoHash,
 ) {
-    let message = if contract_code_hash_from_repository.hash == contract_code_hash.as_bytes() {
-        format!(
+    if contract_code_hash_from_repository.hash == contract_code_hash.as_bytes() {
+        tracing::info!("\n{}", crate::common::indent_payload(&
+            format!(
             "The hash code obtained from the contract account ID and the hash code calculated from the repository are the same.\nhash: {}",
             contract_code_hash
-        )
+        )))
     } else {
-        format!(
+        tracing::info!("\n{}", crate::common::indent_payload(&
+            format!(
             "The hash code obtained from the contract account ID: {}\nThe hash code calculated from the repository:        {}",
             contract_code_hash,
             contract_code_hash_from_repository.to_base58_string()
-        )
+        )).red())
     };
-    tracing::info!("\n{}", crate::common::indent_payload(&message));
 }
 
 #[tracing::instrument(
