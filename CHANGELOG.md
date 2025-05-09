@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.0](https://github.com/near/near-cli-rs/compare/v0.19.0...v0.20.0) - 2025-05-09
+
+### Added
+
+- deploy and use global contracts from UI excluding action builder. ([#456](https://github.com/near/near-cli-rs/pull/456))
+- Do not require to explicitly provide public key during signing transactions with a plaintext private key (we can always extract it from the private key) ([#468](https://github.com/near/near-cli-rs/pull/468))
+- Added new command "get public key from plaintext private key" ([#466](https://github.com/near/near-cli-rs/pull/466))
+- Use free ARM64 GitHub Action runners for pre-built binaries ([#454](https://github.com/near/near-cli-rs/pull/454))
+
+### Fixed
+
+- Fixed canceling the CLI operation in retry prompts ([#478](https://github.com/near/near-cli-rs/pull/478))
+- Fixed cli command `near tokens send-ft` without `memo` ([#474](https://github.com/near/near-cli-rs/pull/474))
+- allow forks to leverage transfer-to-project workflow ([#464](https://github.com/near/near-cli-rs/pull/464))
+
+### Other
+
+- fixed reconstruction of transaction from contract deploy ([#476](https://github.com/near/near-cli-rs/pull/476))
+- Refactored 'send-ft memo' command from using Option<String> to just String ([#477](https://github.com/near/near-cli-rs/pull/477))
+- Replaced Linux x86-64 ubuntu-20.04 build environment with ubuntu-22.04 as 20.04 reached its end of life, so minimal supported glibc for pre-built binaries is now 2.35 - Linux users with older glibc will have to install CLIs from the source code or update their OS ([#470](https://github.com/near/near-cli-rs/pull/470))
+- updated GUIDE ([#469](https://github.com/near/near-cli-rs/pull/469))
+- Updated CI secret name in the devtools pipeline ([#460](https://github.com/near/near-cli-rs/pull/460))
+
 ## [0.19.0](https://github.com/near/near-cli-rs/compare/v0.18.0...v0.19.0) - 2025-03-12
 
 ### Added
