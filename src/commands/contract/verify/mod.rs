@@ -2,7 +2,10 @@ use color_eyre::eyre::{Context, ContextCompat};
 
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use near_verify_rs::types::source_id::{GitReference, SourceKind};
+use near_verify_rs::types::{
+    contract_source_metadata::ContractSourceMetadata,
+    source_id::{GitReference, SourceId, SourceKind},
+};
 
 use crate::common::JsonRpcClientExt;
 
@@ -101,9 +104,30 @@ impl ContractFileContext {
         _previous_context: crate::GlobalContext,
         scope: &<ContractFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let _code = std::fs::read(&scope.file_path).wrap_err_with(|| {
+        let wasm = std::fs::read(&scope.file_path).wrap_err_with(|| {
             format!("Failed to open or read the file: {:?}.", &scope.file_path,)
         })?;
+
+        let contract_source_metadata = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(fetch_contract_source_metadata_from_wasm(&wasm))?;
+
+        let (_tempdir, docker_build_out_wasm) =
+            get_docker_build_out_wasm_from_contract_source_metadata(contract_source_metadata)?;
+
+        let docker_build_code = std::fs::read(&docker_build_out_wasm).wrap_err_with(|| {
+            format!(
+                "Failed to open or read the file: {:?}.",
+                &docker_build_out_wasm,
+            )
+        })?;
+
+        if wasm == docker_build_code {
+            println!("+++++++")
+        } else {
+            println!("-------")
+        }
+
         // XXX todo!
         Ok(Self)
     }
@@ -137,7 +161,7 @@ fn get_contract_code_hash_from_repository(
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<near_verify_rs::types::sha256_checksum::SHA256Checksum> {
-    let contract_source_metadata: near_verify_rs::types::contract_source_metadata::ContractSourceMetadata = tokio::runtime::Runtime::new().unwrap().block_on(
+    let contract_source_metadata = tokio::runtime::Runtime::new().unwrap().block_on(
         super::inspect::get_contract_source_metadata(
             &network_config.json_rpc_client(),
             block_reference,
@@ -155,11 +179,10 @@ fn get_contract_code_hash_from_repository(
     skip_all
 )]
 fn get_docker_build_out_wasm_from_contract_source_metadata(
-    contract_source_metadata: near_verify_rs::types::contract_source_metadata::ContractSourceMetadata,
+    contract_source_metadata: ContractSourceMetadata,
 ) -> color_eyre::eyre::Result<(tempfile::TempDir, camino::Utf8PathBuf)> {
     let build_info = contract_source_metadata.build_info.as_ref().wrap_err("`contract_source_metadata` does not have a `build_info` field. This field is an addition to version **1.2.0** of **NEP-330**.")?;
-    let source_id =
-        near_verify_rs::types::source_id::SourceId::from_url(&build_info.source_code_snapshot)?;
+    let source_id = SourceId::from_url(&build_info.source_code_snapshot)?;
 
     let tempdir = tempfile::tempdir()?;
     let target_dir = tempdir.path().to_path_buf();
@@ -233,4 +256,15 @@ fn get_contract_code_hash_from_contract_account_id(
             return Err(color_eyre::Report::msg("Error call result".to_string()));
         };
     Ok(contract_code_view.hash)
+}
+
+async fn fetch_contract_source_metadata_from_wasm(
+    wasm: &[u8],
+) -> color_eyre::eyre::Result<ContractSourceMetadata> {
+    let worker = near_workspaces::sandbox().await?;
+    let contract = worker.dev_deploy(wasm).await?;
+    let outcome = contract.view("contract_source_metadata").await?;
+    Ok(serde_json::from_slice::<ContractSourceMetadata>(
+        outcome.result.as_slice(),
+    )?)
 }

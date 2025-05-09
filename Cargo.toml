@@ -95,7 +95,7 @@ near-token = { version = "0.3", features = [
 ] }
 
 near-abi = "0.4.2"
-
+near-workspaces = "0.19.0"
 near-verify-rs = "0.3.0"
 camino = "1.1.1"
 git2 = "0.19"
