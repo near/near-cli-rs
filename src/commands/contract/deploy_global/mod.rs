@@ -150,7 +150,7 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
                     receiver_id: item.account_id.clone(),
                     actions: vec![near_primitives::transaction::Action::DeployGlobalContract(
                         near_primitives::action::DeployGlobalContractAction {
-                            code: item.code.clone(),
+                            code: item.code.clone().into(),
                             deploy_mode: item.mode.clone(),
                         },
                     )],
