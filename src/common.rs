@@ -1186,8 +1186,12 @@ pub fn convert_action_error_to_cli_result(
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}"))
         },
-        near_primitives::errors::ActionErrorKind::NonRefundableTransferToExistingAccount { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Non-refundable storage transfer to an existing account <{account_id}> is not allowed according to NEP-491."))
+        near_primitives::errors::ActionErrorKind::GlobalContractDoesNotExist { identifier } => {
+            let identifier = match identifier {
+                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => format!("hash<{}>", hash),
+                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => format!("account id<{}>", account_id),
+            };
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Global contract with identifier {} does not exist.", identifier))
         }
     }
 }
