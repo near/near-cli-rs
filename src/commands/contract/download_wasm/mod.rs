@@ -103,7 +103,6 @@ impl DownloadContract {
     }
 }
 
-#[tracing::instrument(name = "Download contract code ...", skip_all)]
 fn download_contract_code(
     account_id: &near_primitives::types::AccountId,
     file_path: &std::path::PathBuf,
@@ -123,6 +122,7 @@ fn download_contract_code(
     Ok(())
 }
 
+#[tracing::instrument(name = "Download contract code ...", skip_all)]
 pub fn get_code(
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,

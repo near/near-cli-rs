@@ -219,10 +219,16 @@ fn action_transformation(
                 network_config,
                 block_reference
             ).map_err(|e| {
-                color_eyre::Report::msg(format!("Couldn't fetch the code. Please use the archival node to fetch the code. Error: {}", e))
+                color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {}", e))
             })?;
 
             let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
+            tracing::info!(
+                parent: &tracing::Span::none(),
+                "The code for the account <{}> was downloaded successfully with hash <{}>",
+                receiver_id,
+                code_hash,
+            );
             if code_hash.0 != deploy_contract_action.code.as_slice() {
                 return Err(color_eyre::Report::msg("The code hash of the contract deploy action does not match the code that we retrieved from the archive node.".to_string()));
             }
@@ -232,6 +238,13 @@ fn action_transformation(
                 code
             )
             .wrap_err("Failed to write the deploy command code to file: 'reconstruct-transaction-deploy-code.wasm' in the current folder")?;
+
+            tracing::info!(
+                parent: &tracing::Span::none(),
+                "The file `{}` with contract code of `{}` was downloaded successfully",
+                "reconstruct-transaction-deploy-code.wasm",
+                receiver_id,
+            );
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
                 add_action::deploy_contract::CliDeployContractAction {
                     use_file: Some(add_action::deploy_contract::ClapNamedArgContractFileForDeployContractAction::UseFile(
