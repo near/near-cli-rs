@@ -4,7 +4,7 @@ pub mod call_function;
 pub mod deploy;
 pub mod deploy_global;
 mod download_abi;
-mod download_wasm;
+pub mod download_wasm;
 mod inspect;
 mod view_storage;
 
