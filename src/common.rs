@@ -1250,14 +1250,12 @@ pub fn convert_action_error_to_cli_result(
                     )
                 })
         }
-        near_primitives::errors::ActionErrorKind::NonRefundableTransferToExistingAccount {
-            account_id,
-        } => {
-            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
-                .wrap_err_with(|| format!(
-                    "Error: Non-refundable storage transfer to an existing account <{}> is not allowed according to NEP-491.",
-                    account_id
-                ))
+        near_primitives::errors::ActionErrorKind::GlobalContractDoesNotExist { identifier } => {
+            let identifier = match identifier {
+                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => format!("hash<{}>", hash),
+                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => format!("account id<{}>", account_id),
+            };
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Global contract with identifier {} does not exist.", identifier))
         }
     }
 }

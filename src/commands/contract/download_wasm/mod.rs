@@ -103,13 +103,33 @@ impl DownloadContract {
     }
 }
 
-#[tracing::instrument(name = "Download contract code ...", skip_all)]
 fn download_contract_code(
     account_id: &near_primitives::types::AccountId,
     file_path: &std::path::PathBuf,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
 ) -> crate::CliResult {
+    let code = get_code(account_id, network_config, block_reference)?;
+    std::fs::File::create(file_path)
+        .wrap_err(sysexits::ExitCode::CantCreat)
+        .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
+        .write(&call_access_view.code)
+        .wrap_err(sysexits::ExitCode::DataErr)
+        .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
+    tracing::info!(
+        parent: &tracing::Span::none(),
+        "The file {:?} was downloaded successfully",
+        file_path
+    );
+    Ok(())
+}
+
+#[tracing::instrument(name = "Download contract code ...", skip_all)]
+pub fn get_code(
+    account_id: &near_primitives::types::AccountId,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<Vec<u8>> {
     let query_view_method_response = network_config
         .json_rpc_client()
         .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
@@ -132,16 +152,5 @@ fn download_contract_code(
         } else {
             return Err(color_eyre::Report::msg("Error call result".to_string()));
         };
-    std::fs::File::create(file_path)
-        .wrap_err(sysexits::ExitCode::CantCreat)
-        .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
-        .write(&call_access_view.code)
-        .wrap_err(sysexits::ExitCode::DataErr)
-        .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
-    tracing::info!(
-        parent: &tracing::Span::none(),
-        "The file {:?} was downloaded successfully",
-        file_path
-    );
-    Ok(())
+    Ok(call_access_view.code)
 }
