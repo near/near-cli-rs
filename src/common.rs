@@ -1252,10 +1252,17 @@ pub fn convert_action_error_to_cli_result(
         }
         near_primitives::errors::ActionErrorKind::GlobalContractDoesNotExist { identifier } => {
             let identifier = match identifier {
-                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => format!("hash<{}>", hash),
-                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => format!("account id<{}>", account_id),
+                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => {
+                    format!("hash<{}>", hash)
+                }
+                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => {
+                    format!("account id<{}>", account_id)
+                }
             };
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Global contract with identifier {} does not exist.", identifier))
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Global contract with identifier {} does not exist.",
+                identifier
+            ))
         }
     }
 }
