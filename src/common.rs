@@ -1259,10 +1259,13 @@ pub fn convert_action_error_to_cli_result(
                     format!("account id<{}>", account_id)
                 }
             };
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Global contract with identifier {} does not exist.",
-                identifier
-            ))
+            color_eyre::eyre::Result::Err(sysexits::ExitCode::Protocol) // 76 - The remote system returned something that was “not possible” during a protocol exchange.
+                .wrap_err_with(|| {
+                    format!(
+                        "Error: Global contract with identifier {} does not exist.",
+                        identifier
+                    )
+                })
         }
     }
 }
