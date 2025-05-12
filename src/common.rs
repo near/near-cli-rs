@@ -2044,13 +2044,37 @@ pub fn display_account_info(
         Fy->bytesize::ByteSize(account_view.storage_usage),
     ]);
 
-    let contract_status = if account_view.code_hash == CryptoHash::default() {
-        "No contract code".to_string()
-    } else {
-        hex::encode(account_view.code_hash.as_ref())
+    let (table_code_message, contract_status) = match (
+        &account_view.code_hash,
+        &account_view.global_contract_account_id,
+        &account_view.global_contract_hash,
+    ) {
+        (_, Some(global_contract_account_id), None) => (
+            "Contract (Global Account Id)",
+            global_contract_account_id.to_string(),
+        ),
+        (_, None, Some(global_contract_hash)) => (
+            "Contract (Global Contract Hash SHA-256 checksum hex)",
+            hex::encode(global_contract_hash.as_ref()),
+        ),
+        (hash, None, None) if *hash == CryptoHash::default() => (
+            "Contract (Local SHA-256 checksum hex)",
+            "No contract code".to_string(),
+        ),
+        (code_hash, None, None) => (
+            "Contract (Local SHA-256 checksum hex)",
+            hex::encode(code_hash.as_ref()),
+        ),
+        (_, _, _) => (
+            "Contract (Local SHA-256 checksum hex)",
+            "Invalid account contract state. Please contact the developers."
+                .red()
+                .to_string(),
+        ),
     };
+
     table.add_row(prettytable::row![
-        Fg->"Contract (SHA-256 checksum hex)",
+        Fg->table_code_message,
         Fy->contract_status
     ]);
 
