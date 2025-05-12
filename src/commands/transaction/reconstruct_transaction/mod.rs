@@ -392,7 +392,7 @@ fn download_code(
     // So we need to fetch it from archive node.
 
     let code = crate::commands::contract::download_wasm::get_code(
-                &receiver_id,
+                receiver_id,
                 network_config,
                 block_reference
             ).map_err(|e| {
