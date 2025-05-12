@@ -5,7 +5,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
 #[interactive_clap(output_context = DeployGlobalContractActionContext)]
 pub struct DeployGlobalContractAction {
-    /// What is a file location of the contract?
+    /// What is the file location of the contract?
     pub file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(subcommand)]
     mode: DeployGlobalMode,
@@ -61,7 +61,7 @@ impl DeployGlobalModeContext {
     ) -> color_eyre::eyre::Result<Self> {
         let action = near_primitives::transaction::Action::DeployGlobalContract(
             near_primitives::action::DeployGlobalContractAction {
-                code: previous_context.code,
+                code: previous_context.code.into(),
                 deploy_mode: match scope {
                     DeployGlobalModeDiscriminants::AsGlobalHash => {
                         near_primitives::action::GlobalContractDeployMode::CodeHash

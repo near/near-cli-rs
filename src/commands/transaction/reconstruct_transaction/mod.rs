@@ -320,7 +320,7 @@ fn action_transformation(
         }
         Action::UseGlobalContract(use_global_contract_action) => {
             let mode = match use_global_contract_action.contract_identifier {
-                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => add_action::use_global_contract::CliUseGlobalActionMode::AsGlobalHash(
+                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => add_action::use_global_contract::CliUseGlobalActionMode::UseGlobalHash(
                     add_action::use_global_contract::CliUseHashAction {
                         hash: Some(crate::types::crypto_hash::CryptoHash(hash)),
                         initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
@@ -330,7 +330,7 @@ fn action_transformation(
                         ))
                     }
                 ),
-                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => add_action::use_global_contract::CliUseGlobalActionMode::AsGlobalAccountId(
+                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => add_action::use_global_contract::CliUseGlobalActionMode::UseGlobalAccountId(
                     add_action::use_global_contract::CliUseAccountIdAction {
                         account_id: Some(crate::types::account_id::AccountId(account_id)),
                         initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(

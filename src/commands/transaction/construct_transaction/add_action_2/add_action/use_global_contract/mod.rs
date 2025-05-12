@@ -14,22 +14,22 @@ pub struct UseGlobalContractAction {
 /// Choose a global contract deploy mode:
 pub enum UseGlobalActionMode {
     #[strum_discriminants(strum(
-        message = "as-global-hash       - Deploy code as a global contract code hash (immutable)"
+        message = "use-global-hash       - Use a global contract code hash pre-deployed on-chain (immutable)"
     ))]
-    /// Deploy code as a global contract code hash (immutable)
-    AsGlobalHash(UseHashAction),
+    /// Use a global contract code hash (immutable)
+    UseGlobalHash(UseHashAction),
     #[strum_discriminants(strum(
-        message = "as-global-account-id - Deploy code as a global contract account ID (mutable)"
+        message = "use-global-account-id - Use a global contract account ID pre-deployed on-chain (mutable)"
     ))]
-    /// Deploy code as a global contract account ID (mutable)
-    AsGlobalAccountId(UseAccountIdAction),
+    /// Use a global contract account ID (mutable)
+    UseGlobalAccountId(UseAccountIdAction),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
 #[interactive_clap(output_context = UseHashActionContext)]
 pub struct UseHashAction {
-    /// What is a hash of the global contract?
+    /// What is the hash of the global contract?
     pub hash: crate::types::crypto_hash::CryptoHash,
     #[interactive_clap(subcommand)]
     initialize: super::deploy_contract::initialize_mode::InitializeMode,
@@ -71,7 +71,7 @@ impl From<UseHashActionContext> for super::super::super::ConstructTransactionCon
 #[interactive_clap(output_context = UseAccountIdActionContext)]
 pub struct UseAccountIdAction {
     #[interactive_clap(skip_default_input_arg)]
-    /// What is a account ID of the global contract?
+    /// What is the account ID of the global contract?
     pub account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     initialize: super::deploy_contract::initialize_mode::InitializeMode,
@@ -81,9 +81,9 @@ impl UseAccountIdAction {
     pub fn input_account_id(
         context: &super::super::super::ConstructTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_signer_account_id_from_used_account_list(
+        crate::common::input_non_signer_account_id_from_used_account_list(
             &context.global_context.config.credentials_home_dir,
-            "What is a account ID of the global contract?",
+            "What is the account ID of the global contract?",
         )
     }
 }

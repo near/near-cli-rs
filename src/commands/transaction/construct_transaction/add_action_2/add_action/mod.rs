@@ -60,7 +60,9 @@ pub enum ActionSubcommand {
     ))]
     /// Specify the details to deploy the global contract code
     DeployGlobalContract(self::deploy_global_contract::DeployGlobalContractAction),
-    #[strum_discriminants(strum(message = "use-global-contract    - Use a global contract"))]
+    #[strum_discriminants(strum(
+        message = "use-global-contract    - Use a global contract to re-use the pre-deployed on-chain code"
+    ))]
     /// Specify the details to use the global contract
     UseGlobalContract(self::use_global_contract::UseGlobalContractAction),
 }
