@@ -410,10 +410,12 @@ fn download_code(
         return Err(color_eyre::Report::msg("The code hash of the contract deploy action does not match the code that we retrieved from the archive node.".to_string()));
     }
 
-    std::fs::write(file_name, code).wrap_err(format!(
-        "Failed to write the deploy command code to file: '{}' in the current folder",
-        file_name
-    ))?;
+    std::fs::write(file_name, code)
+        .wrap_err(sysexits::ExitCode::DataErr)
+        .wrap_err(format!(
+            "Failed to write the deploy command code to file: '{}' in the current folder",
+            file_name
+        ))?;
 
     tracing::info!(
         parent: &tracing::Span::none(),
