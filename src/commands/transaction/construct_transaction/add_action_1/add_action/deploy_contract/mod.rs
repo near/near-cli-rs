@@ -14,7 +14,7 @@ pub struct DeployContractAction {
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
 #[interactive_clap(output_context = ContractFileContext)]
 pub struct ContractFile {
-    /// What is a file location of the contract?
+    /// What is the file location of the contract?
     pub file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(subcommand)]
     initialize: self::initialize_mode::InitializeMode,

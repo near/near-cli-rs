@@ -211,41 +211,13 @@ fn action_transformation(
             )))
         }
         Action::DeployContract(deploy_contract_action) => {
-            // Unfortunately, RPC doesn't return the code for the deployed contract. Only the hash.
-            // So we need to fetch it from archive node.
-
-            let code = crate::commands::contract::download_wasm::get_code(
+            download_code(
                 &receiver_id,
                 network_config,
-                block_reference
-            ).map_err(|e| {
-                color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {}", e))
-            })?;
-
-            let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
-            tracing::info!(
-                parent: &tracing::Span::none(),
-                "The code for the account <{}> was downloaded successfully with hash <{}>",
-                receiver_id,
-                code_hash,
-            );
-            if code_hash.0 != deploy_contract_action.code.as_slice() {
-                return Err(color_eyre::Report::msg("The code hash of the contract deploy action does not match the code that we retrieved from the archive node.".to_string()));
-            }
-
-            std::fs::write(
+                block_reference,
                 "reconstruct-transaction-deploy-code.wasm",
-                code
-            )
-            .wrap_err(sysexits::ExitCode::DataErr)
-            .wrap_err("Failed to write the deploy command code to file: 'reconstruct-transaction-deploy-code.wasm' in the current folder")?;
-
-            tracing::info!(
-                parent: &tracing::Span::none(),
-                "The file `{}` with contract code of `{}` was downloaded successfully",
-                "reconstruct-transaction-deploy-code.wasm",
-                receiver_id,
-            );
+                &deploy_contract_action.code
+            )?;
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
                 add_action::deploy_contract::CliDeployContractAction {
                     use_file: Some(add_action::deploy_contract::ClapNamedArgContractFileForDeployContractAction::UseFile(
@@ -293,11 +265,62 @@ fn action_transformation(
         Action::Delegate(_) => {
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
-        Action::DeployGlobalContract(_) => {
-            unimplemented!("The DeployGlobalContract action is not implemented yet. The issue is tracked at https://github.com/near/near-cli-rs/issues/458");
+        Action::DeployGlobalContract(action) => {
+            download_code(
+                &receiver_id,
+                network_config,
+                block_reference,
+                "reconstruct-transaction-deploy-code.wasm",
+                &action.code
+            )?;
+            let mode = match action.deploy_mode {
+                near_primitives::action::GlobalContractDeployMode::AccountId => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalAccountId(
+                    add_action::deploy_global_contract::CliNextCommand {
+                        next_action: None
+                    }
+                ),
+                near_primitives::action::GlobalContractDeployMode::CodeHash => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalHash(
+                    add_action::deploy_global_contract::CliNextCommand {
+                        next_action: None
+                    }
+                ),
+            };
+            Ok(Some(add_action::CliActionSubcommand::DeployGlobalContract(
+                add_action::deploy_global_contract::CliDeployGlobalContractAction {
+                    file_path: Some("reconstruct-transaction-deploy-code.wasm".parse()?),
+                    mode: Some(mode)
+                }
+            )))
         }
-        Action::UseGlobalContract(_) => {
-            unimplemented!("The UseGlobalContract action is not implemented yet. The issue is tracked at https://github.com/near/near-cli-rs/issues/458");
+        Action::UseGlobalContract(use_global_contract_action) => {
+            let mode = match use_global_contract_action.contract_identifier {
+                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => add_action::use_global_contract::CliUseGlobalActionMode::UseGlobalHash(
+                    add_action::use_global_contract::CliUseHashAction {
+                        hash: Some(crate::types::crypto_hash::CryptoHash(hash)),
+                        initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
+                            add_action::deploy_contract::initialize_mode::CliNoInitialize {
+                                next_action: None
+                            }
+                        ))
+                    }
+                ),
+                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => add_action::use_global_contract::CliUseGlobalActionMode::UseGlobalAccountId(
+                    add_action::use_global_contract::CliUseAccountIdAction {
+                        account_id: Some(crate::types::account_id::AccountId(account_id)),
+                        initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
+                            add_action::deploy_contract::initialize_mode::CliNoInitialize {
+                                next_action: None
+                            }
+                        ))
+                    }
+                ),
+            };
+
+            Ok(Some(add_action::CliActionSubcommand::UseGlobalContract(
+                add_action::use_global_contract::CliUseGlobalContractAction {
+                    mode: Some(mode)
+                }
+            )))
         }
     }
 }
@@ -356,4 +379,48 @@ fn get_access_key_permission(
             ),
         )),
     }
+}
+
+fn download_code(
+    receiver_id: &near_primitives::types::AccountId,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: near_primitives::types::BlockReference,
+    file_name: &str,
+    hash_to_match: &[u8],
+) -> color_eyre::eyre::Result<()> {
+    // Unfortunately, RPC doesn't return the code for the deployed contract. Only the hash.
+    // So we need to fetch it from archive node.
+
+    let code = crate::commands::contract::download_wasm::get_code(
+                receiver_id,
+                network_config,
+                block_reference
+            ).map_err(|e| {
+                color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {}", e))
+            })?;
+
+    let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
+    tracing::info!(
+        parent: &tracing::Span::none(),
+        "The code for the account <{}> was downloaded successfully with hash <{}>",
+        receiver_id,
+        code_hash,
+    );
+    if code_hash.0 != hash_to_match {
+        return Err(color_eyre::Report::msg("The code hash of the contract deploy action does not match the code that we retrieved from the archive node.".to_string()));
+    }
+
+    std::fs::write(file_name, code).wrap_err(format!(
+        "Failed to write the deploy command code to file: '{}' in the current folder",
+        file_name
+    ))?;
+
+    tracing::info!(
+        parent: &tracing::Span::none(),
+        "The file `{}` with contract code of `{}` was downloaded successfully",
+        file_name,
+        receiver_id,
+    );
+
+    Ok(())
 }
