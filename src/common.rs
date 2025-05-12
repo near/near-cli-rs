@@ -1453,13 +1453,7 @@ pub fn print_transaction_status(
             };
             if let crate::Verbosity::Interactive = verbosity {
                 for action in &transaction_info.transaction.actions {
-                    if let near_primitives::views::ActionView::FunctionCall {
-                        method_name: _,
-                        args: _,
-                        gas: _,
-                        deposit: _,
-                    } = action
-                    {
+                    if let near_primitives::views::ActionView::FunctionCall { .. } = action {
                         tracing::info!(
                             parent: &tracing::Span::none(),
                             "Function execution logs ------------{}",
