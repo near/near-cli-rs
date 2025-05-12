@@ -199,14 +199,17 @@ fn validate_new_account_id(
                 network_config.network_name
             ))
         }
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+        Err(crate::common::AccountStateError::Cancel) => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Operation was canceled by the user"))
+        }
+        Err(crate::common::AccountStateError::JsonRpcError(near_jsonrpc_client::errors::JsonRpcError::ServerError(
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
                 near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
                     ..
                 },
-            ),
+            )),
         )) => Ok(()),
-        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+        Err(crate::common::AccountStateError::JsonRpcError(near_jsonrpc_client::errors::JsonRpcError::TransportError(_))) => {
             tracing::warn!(
                 parent: &tracing::Span::none(),
                 "Transport error.{}",
@@ -217,7 +220,7 @@ fn validate_new_account_id(
             Ok(())
         }
         Err(err) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err.to_string()))
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("{:?}", err))
         }
     }
 }

@@ -1,5 +1,5 @@
 use color_eyre::eyre::ContextCompat;
-use inquire::{CustomType, Text};
+use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendFtCommandContext)]
@@ -36,7 +36,7 @@ impl AmountFtContext {
                 let network_config = crate::common::find_network_where_account_exist(
                     &previous_context.global_context,
                     previous_context.ft_contract_account_id.clone(),
-                )
+                )?
                 .wrap_err_with(|| {
                     format!(
                         "Contract <{}> does not exist in networks",
@@ -69,7 +69,7 @@ impl AmountFt {
         let network_config = crate::common::find_network_where_account_exist(
             &context.global_context,
             context.ft_contract_account_id.clone(),
-        )
+        )?
         .wrap_err_with(|| {
             format!(
                 "Contract <{}> does not exist in networks",
@@ -107,9 +107,8 @@ impl AmountFt {
 #[interactive_clap(input_context = AmountFtContext)]
 #[interactive_clap(output_context = FtTransferParamsContext)]
 pub struct FtTransferParams {
-    #[interactive_clap(skip_default_input_arg)]
     /// Enter a memo for transfer (optional):
-    memo: Option<String>,
+    memo: String,
     #[interactive_clap(long = "prepaid-gas")]
     #[interactive_clap(skip_interactive_input)]
     gas: Option<crate::common::NearGas>,
@@ -135,22 +134,15 @@ impl FtTransferParamsContext {
                 let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let ft_transfer_amount = previous_context.ft_transfer_amount.clone();
-                let memo = scope.memo.as_ref().and_then(|s| {
-                    let trimmed = s.trim();
-                    if trimmed.is_empty() {
-                        None
-                    } else {
-                        Some(trimmed.to_string())
-                    }
-                });
+                let memo = scope.memo.trim().to_string();
                 let gas = scope.gas.unwrap_or(near_gas::NearGas::from_tgas(100));
                 let deposit = scope.deposit.unwrap_or(crate::types::near_token::NearToken::from_yoctonear(1));
 
                 move |network_config| {
                     let amount_ft = if let crate::types::ft_properties::FungibleTokenTransferAmount::ExactAmount(ft) = &ft_transfer_amount {
-                        ft.clone()
+                        ft
                     } else {
-                        super::get_ft_balance_for_account(
+                        &super::get_ft_balance_for_account(
                             network_config,
                             &signer_account_id,
                             &ft_contract_account_id,
@@ -163,10 +155,10 @@ impl FtTransferParamsContext {
                         &ft_contract_account_id,
                         &receiver_account_id,
                         &signer_account_id,
-                        &amount_ft,
+                        amount_ft,
                         &memo,
-                        &deposit,
-                        &gas
+                        deposit,
+                        gas
                     )
                 }
             });
@@ -240,16 +232,5 @@ impl FtTransferParamsContext {
 impl From<FtTransferParamsContext> for crate::commands::ActionContext {
     fn from(item: FtTransferParamsContext) -> Self {
         item.0
-    }
-}
-
-impl FtTransferParams {
-    fn input_memo(_context: &AmountFtContext) -> color_eyre::eyre::Result<Option<String>> {
-        let input = Text::new("Enter a memo for transfer (optional):").prompt()?;
-        Ok(if input.trim().is_empty() {
-            None
-        } else {
-            Some(input)
-        })
     }
 }

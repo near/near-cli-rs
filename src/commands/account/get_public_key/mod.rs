@@ -4,6 +4,7 @@ mod from_keychain;
 #[cfg(feature = "ledger")]
 mod from_ledger;
 mod from_legacy_keychain;
+mod from_plaintext_private_key;
 mod from_seed_phrase;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -29,6 +30,11 @@ pub enum GetPublicKeyMode {
     ))]
     /// Get the public key with the seed phrase
     FromSeedPhrase(self::from_seed_phrase::PublicKeyFromSeedPhrase),
+    #[strum_discriminants(strum(
+        message = "from-plaintext-private-key  - Get the public key from the plaintext private key"
+    ))]
+    /// Get the public key from the plaintext private key
+    FromPlaintextPrivateKey(self::from_plaintext_private_key::PublicKeyFromPlaintextPrivateKey),
     #[strum_discriminants(strum(
         message = "from-keychain               - Get the public key stored in a secure keychain"
     ))]
