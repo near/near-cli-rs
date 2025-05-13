@@ -265,32 +265,8 @@ fn action_transformation(
         Action::Delegate(_) => {
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
-        Action::DeployGlobalContract(action) => {
-            download_code(
-                &receiver_id,
-                network_config,
-                block_reference,
-                "reconstruct-transaction-deploy-code.wasm",
-                &action.code
-            )?;
-            let mode = match action.deploy_mode {
-                near_primitives::action::GlobalContractDeployMode::AccountId => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalAccountId(
-                    add_action::deploy_global_contract::CliNextCommand {
-                        next_action: None
-                    }
-                ),
-                near_primitives::action::GlobalContractDeployMode::CodeHash => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalHash(
-                    add_action::deploy_global_contract::CliNextCommand {
-                        next_action: None
-                    }
-                ),
-            };
-            Ok(Some(add_action::CliActionSubcommand::DeployGlobalContract(
-                add_action::deploy_global_contract::CliDeployGlobalContractAction {
-                    file_path: Some("reconstruct-transaction-deploy-code.wasm".parse()?),
-                    mode: Some(mode)
-                }
-            )))
+        Action::DeployGlobalContract(_) => {
+            Err(color_eyre::eyre::eyre!("Reconstruction of Global Deploy transactions is not supported yet. This feature is being tracked at: https://github.com/near/nearcore/issues/13531"))
         }
         Action::UseGlobalContract(use_global_contract_action) => {
             let mode = match use_global_contract_action.contract_identifier {
