@@ -1,4 +1,5 @@
 use color_eyre::eyre::Context;
+use std::io::Write;
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
@@ -137,29 +138,31 @@ fn call_view_function(
                 function_name, account_id, network_config.network_name
             )
         })?;
-    call_result.print_logs();
-    let mut info_str = String::new();
-    if call_result.result.is_empty() {
-        info_str.push_str("\nEmpty result");
+
+    let info_str = if call_result.result.is_empty() {
+        "Empty result".to_string()
     } else if let Ok(json_result) = call_result.parse_result_from_json::<serde_json::Value>() {
-        info_str.push_str(&format!(
-            "\n{}",
-            serde_json::to_string_pretty(&json_result)?
-        ));
-    } else if let Ok(string_result) = String::from_utf8(call_result.result) {
-        info_str.push_str(&format!("\n{string_result}"));
+        serde_json::to_string_pretty(&json_result)?
+    } else if let Ok(string_result) = String::from_utf8(call_result.result.clone()) {
+        string_result
     } else {
-        info_str.push_str("\nThe returned value is not printable (binary data)");
-    }
+        "The returned value is not printable (binary data)".to_string()
+    };
 
     if let crate::Verbosity::Quiet = verbosity {
+        std::io::stdout().write_all(&call_result.result)?;
+        return Ok(());
+    } else if let crate::Verbosity::Interactive = verbosity {
+        eprintln!("Function execution return value (printed to stdout):");
         println!("{}", info_str);
         return Ok(());
     };
-    info_str.push_str("\n------------------------------------");
+
+    call_result.print_logs();
     tracing::info!(
+        target: "near_teach_me",
         parent: &tracing::Span::none(),
-        "--- Result -------------------------{}",
+        "--- Result -------------------------\n{}",
         crate::common::indent_payload(&info_str)
     );
     Ok(())
