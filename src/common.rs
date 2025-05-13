@@ -2050,26 +2050,29 @@ pub fn display_account_info(
         &account_view.global_contract_hash,
     ) {
         (_, Some(global_contract_account_id), None) => (
-            "Contract (Global Account Id)",
+            "Global Contract (by Account Id)",
             global_contract_account_id.to_string(),
         ),
         (_, None, Some(global_contract_hash)) => (
-            "Contract (Global Contract Hash SHA-256 checksum hex)",
+            "Global Contract (by Hash: SHA-256 checksum hex)",
             hex::encode(global_contract_hash.as_ref()),
         ),
-        (hash, None, None) if *hash == CryptoHash::default() => (
-            "Contract (Local SHA-256 checksum hex)",
-            "No contract code".to_string(),
-        ),
+        (hash, None, None) if *hash == CryptoHash::default() => {
+            ("Contract", "No contract code".to_string())
+        }
         (code_hash, None, None) => (
-            "Contract (Local SHA-256 checksum hex)",
+            "Local Contract (SHA-256 checksum hex)",
             hex::encode(code_hash.as_ref()),
         ),
-        (_, _, _) => (
-            "Contract (Local SHA-256 checksum hex)",
-            "Invalid account contract state. Please contact the developers."
-                .red()
-                .to_string(),
+        (code_hash, global_account_id, global_hash) => (
+            "Contract",
+            format!(
+                "Invalid account contract state. Please contact the developers. code_hash: <{}>, global_account_id: <{:?}>, global_hash: <{:?}>",
+                hex::encode(code_hash.as_ref()),
+                global_account_id,
+                global_hash.as_ref()
+            )
+            .red().to_string()
         ),
     };
 
