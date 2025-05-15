@@ -18,6 +18,7 @@ impl std::fmt::Display for FileBytes {
 impl FileBytes {
     pub fn read_bytes(&self) -> color_eyre::Result<Vec<u8>> {
         std::fs::read(&self.inner)
+            .wrap_err(sysexits::ExitCode::NoInput)
             .wrap_err_with(|| format!("Error reading data from file: {}", self.inner.display()))
     }
 }

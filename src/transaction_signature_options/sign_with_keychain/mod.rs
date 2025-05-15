@@ -143,8 +143,9 @@ impl SignKeychainContext {
             }
         };
 
-        let account_json: super::AccountKeyPair =
-            serde_json::from_str(&password).wrap_err("Error reading data")?;
+        let account_json: super::AccountKeyPair = serde_json::from_str(&password)
+            .wrap_err(sysexits::ExitCode::NoInput)
+            .wrap_err("Error reading data")?;
 
         let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (
@@ -167,6 +168,7 @@ impl SignKeychainContext {
                     &account_json.public_key,
                     near_primitives::types::BlockReference::latest(),
                 )
+                .wrap_err(sysexits::ExitCode::NoPerm)
                 .wrap_err_with(||
                     format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
                 )?;
