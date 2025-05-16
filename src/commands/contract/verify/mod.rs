@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use color_eyre::{
     eyre::{Context, ContextCompat},
     owo_colors::OwoColorize,
@@ -20,10 +18,10 @@ use crate::common::JsonRpcClientExt;
 pub struct Contract {
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
-    use_contract_source_code_path: Option<crate::types::utf8_path_buf::Utf8PathBuf>,
+    use_contract_source_code_path: Option<crate::types::path_buf::PathBuf>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
-    save_contract_source_code_into: Option<crate::types::utf8_path_buf::Utf8PathBuf>,
+    save_contract_source_code_into: Option<crate::types::path_buf::PathBuf>,
     #[interactive_clap(subcommand)]
     source_contract_code: SourceContractCode,
 }
@@ -31,8 +29,8 @@ pub struct Contract {
 #[derive(Debug, Clone)]
 pub struct ContractContext {
     global_context: crate::GlobalContext,
-    use_contract_source_code_path: Option<crate::types::utf8_path_buf::Utf8PathBuf>,
-    save_contract_source_code_into: Option<crate::types::utf8_path_buf::Utf8PathBuf>,
+    use_contract_source_code_path: Option<std::path::PathBuf>,
+    save_contract_source_code_into: Option<std::path::PathBuf>,
 }
 
 impl ContractContext {
@@ -49,8 +47,14 @@ impl ContractContext {
         }
         Ok(Self {
             global_context: previous_context,
-            use_contract_source_code_path: scope.use_contract_source_code_path.clone(),
-            save_contract_source_code_into: scope.save_contract_source_code_into.clone(),
+            use_contract_source_code_path: scope
+                .use_contract_source_code_path
+                .as_ref()
+                .map(std::path::PathBuf::from),
+            save_contract_source_code_into: scope
+                .save_contract_source_code_into
+                .as_ref()
+                .map(std::path::PathBuf::from),
         })
     }
 }
@@ -107,22 +111,16 @@ impl ContractAccountIdContext {
             let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
 
             move |network_config, block_reference| {
-                let contract_source_code = if let Some(path) = &previous_context.use_contract_source_code_path {
-                    path.read_bytes()?
-                } else {
-                    let docker_build_code = get_contract_code_from_repository(&account_id, network_config, block_reference)?;
-                    if let Some(path) = &previous_context.save_contract_source_code_into {
-                        std::fs::File::create(path)
-                            .wrap_err_with(|| format!("Failed to create file: {:?}", &path))?
-                            .write(&docker_build_code)
-                            .wrap_err_with(|| format!("Failed to write to file: {:?}", &path))?;
-                        tracing::info!("The file '{}' was downloaded successfully", path);
-                    }
-                    docker_build_code
-                };
+                let docker_build_code = get_contract_code_from_repository(
+                    &account_id,
+                    network_config,
+                    block_reference,
+                    previous_context.use_contract_source_code_path.clone(),
+                    previous_context.save_contract_source_code_into.clone()
+                )?;
 
                 verify_contract(
-                    contract_source_code,
+                    docker_build_code,
                     get_contract_code_from_contract_account_id(&account_id, network_config, block_reference)?
                 );
 
@@ -160,33 +158,15 @@ impl ContractFileContext {
     ) -> color_eyre::eyre::Result<Self> {
         let wasm_code = scope.file_path.read_bytes()?;
 
-        let contract_source_code = if let Some(path) =
-            previous_context.use_contract_source_code_path
-        {
-            path.read_bytes()?
-        } else {
-            let contract_source_metadata = tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(fetch_contract_source_metadata_from_wasm(&wasm_code))?;
+        let contract_source_metadata = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(fetch_contract_source_metadata_from_wasm(&wasm_code))?;
 
-            let (_tempdir, docker_build_out_wasm) =
-                get_docker_build_out_wasm_from_contract_source_metadata(contract_source_metadata)?;
-
-            let docker_build_code = std::fs::read(&docker_build_out_wasm).wrap_err_with(|| {
-                format!(
-                    "Failed to open or read the file: {:?}.",
-                    &docker_build_out_wasm,
-                )
-            })?;
-            if let Some(path) = previous_context.save_contract_source_code_into {
-                std::fs::File::create(&path)
-                    .wrap_err_with(|| format!("Failed to create file: {:?}", &path))?
-                    .write(&docker_build_code)
-                    .wrap_err_with(|| format!("Failed to write to file: {:?}", &path))?;
-                tracing::info!("The file '{}' was downloaded successfully", path);
-            }
-            docker_build_code
-        };
+        let contract_source_code = get_docker_build_out_wasm_from_contract_source_metadata(
+            contract_source_metadata,
+            previous_context.use_contract_source_code_path,
+            previous_context.save_contract_source_code_into,
+        )?;
 
         verify_contract(contract_source_code, wasm_code);
 
@@ -220,6 +200,8 @@ fn get_contract_code_from_repository(
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
+    use_contract_source_code_path: Option<std::path::PathBuf>,
+    save_contract_source_code_into: Option<std::path::PathBuf>,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
     let contract_source_metadata = tokio::runtime::Runtime::new().unwrap().block_on(
         super::inspect::get_contract_source_metadata(
@@ -228,15 +210,12 @@ fn get_contract_code_from_repository(
             account_id,
         ),
     )?;
-    let (_tempdir, docker_build_out_wasm) =
-        get_docker_build_out_wasm_from_contract_source_metadata(contract_source_metadata)?;
 
-    std::fs::read(&docker_build_out_wasm).wrap_err_with(|| {
-        format!(
-            "Failed to open or read the file: {:?}.",
-            &docker_build_out_wasm,
-        )
-    })
+    get_docker_build_out_wasm_from_contract_source_metadata(
+        contract_source_metadata,
+        use_contract_source_code_path,
+        save_contract_source_code_into,
+    )
 }
 
 #[tracing::instrument(
@@ -245,16 +224,26 @@ fn get_contract_code_from_repository(
 )]
 fn get_docker_build_out_wasm_from_contract_source_metadata(
     contract_source_metadata: ContractSourceMetadata,
-) -> color_eyre::eyre::Result<(tempfile::TempDir, camino::Utf8PathBuf)> {
+    use_contract_source_code_path: Option<std::path::PathBuf>,
+    save_contract_source_code_into: Option<std::path::PathBuf>,
+) -> color_eyre::eyre::Result<Vec<u8>> {
     let build_info = contract_source_metadata.build_info.as_ref().wrap_err("`contract_source_metadata` does not have a `build_info` field. This field is an addition to version **1.2.0** of **NEP-330**.")?;
     let source_id = SourceId::from_url(&build_info.source_code_snapshot)?;
 
     let tempdir = tempfile::tempdir()?;
-    let target_dir = tempdir.path().to_path_buf();
 
-    let SourceKind::Git(GitReference::Rev(rev)) = source_id.kind();
+    let target_dir = if let Some(path_buf) = save_contract_source_code_into {
+        path_buf
+    } else if let Some(path_buf) = use_contract_source_code_path.clone() {
+        path_buf
+    } else {
+        tempdir.path().to_path_buf()
+    };
 
-    checkout_remote_repo(source_id.url().as_str(), &target_dir, rev)?;
+    if use_contract_source_code_path.is_none() {
+        let SourceKind::Git(GitReference::Rev(rev)) = source_id.kind();
+        checkout_remote_repo(source_id.url().as_str(), &target_dir, rev)?;
+    }
 
     let target_dir = camino::Utf8PathBuf::from_path_buf(target_dir)
         .map_err(|err| color_eyre::eyre::eyre!("convert path buf {:?}", err))?;
@@ -271,7 +260,8 @@ fn get_docker_build_out_wasm_from_contract_source_metadata(
             false,
         )
     })?;
-    Ok((tempdir, utf8_path_buf))
+    std::fs::read(&utf8_path_buf)
+        .wrap_err_with(|| format!("Failed to open or read the file: {:?}.", &utf8_path_buf,))
 }
 
 fn checkout_remote_repo(
