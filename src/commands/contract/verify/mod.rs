@@ -146,7 +146,7 @@ impl From<ContractAccountIdContext> for crate::network_view_at_block::ArgsForVie
 #[interactive_clap(output_context = ContractFileContext)]
 pub struct ContractFile {
     /// What is a file location of the contract?
-    pub file_path: crate::types::utf8_path_buf::Utf8PathBuf,
+    pub file_path: crate::types::path_buf::PathBuf,
 }
 
 pub struct ContractFileContext;
