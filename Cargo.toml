@@ -95,11 +95,6 @@ near-token = { version = "0.3", features = [
 ] }
 
 near-abi = "0.4.2"
-near-workspaces = "0.19.0"
-near-verify-rs = "0.3.0"
-camino = "1.1.1"
-git2 = "0.19"
-tempfile = "3.10.1"
 
 zstd = "0.13"
 
@@ -115,10 +110,24 @@ interactive-clap-derive = "0.3"
 
 rust_decimal = "1.35.0"
 
+# verify_contract dependencies
+near-verify-rs = {version = "0.3.0", optional = true}
+near-workspaces = {version = "0.19.0", optional = true}
+camino = {version = "1.1.1", optional = true}
+git2 = {version = "0.19", optional = true}
+tempfile = {version = "3.10.1", optional = true}
+
 [features]
-default = ["ledger", "self-update"]
+default = ["ledger", "self-update", "verify_contract"]
 ledger = ["near-ledger"]
 self-update = ["self_update", "semver"]
+verify_contract = [
+    "dep:near-verify-rs",
+    "dep:near-workspaces",
+    "dep:camino",
+    "dep:git2",
+    "dep:tempfile"
+]
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
