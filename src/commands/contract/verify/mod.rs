@@ -8,6 +8,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 use near_verify_rs::types::{
     contract_source_metadata::ContractSourceMetadata,
     source_id::{GitReference, SourceId, SourceKind},
+    whitelist::{Whitelist, WhitelistEntry},
 };
 
 use crate::common::JsonRpcClientExt;
@@ -22,6 +23,8 @@ pub struct Contract {
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     save_contract_source_code_into: Option<crate::types::path_buf::PathBuf>,
+    #[interactive_clap(long)]
+    no_image_whitelist: bool,
     #[interactive_clap(subcommand)]
     source_contract_code: SourceContractCode,
 }
@@ -31,6 +34,7 @@ pub struct ContractContext {
     global_context: crate::GlobalContext,
     use_contract_source_code_path: Option<std::path::PathBuf>,
     save_contract_source_code_into: Option<std::path::PathBuf>,
+    no_image_whitelist: bool,
 }
 
 impl ContractContext {
@@ -55,6 +59,7 @@ impl ContractContext {
                 .save_contract_source_code_into
                 .as_ref()
                 .map(std::path::PathBuf::from),
+            no_image_whitelist: scope.no_image_whitelist,
         })
     }
 }
@@ -116,7 +121,8 @@ impl ContractAccountIdContext {
                     network_config,
                     block_reference,
                     previous_context.use_contract_source_code_path.clone(),
-                    previous_context.save_contract_source_code_into.clone()
+                    previous_context.save_contract_source_code_into.clone(),
+                    previous_context.no_image_whitelist
                 )?;
 
                 verify_contract(
@@ -166,6 +172,7 @@ impl ContractFileContext {
             contract_source_metadata,
             previous_context.use_contract_source_code_path,
             previous_context.save_contract_source_code_into,
+            previous_context.no_image_whitelist,
         )?;
 
         verify_contract(contract_source_code, wasm_code);
@@ -202,6 +209,7 @@ fn get_contract_code_from_repository(
     block_reference: &near_primitives::types::BlockReference,
     use_contract_source_code_path: Option<std::path::PathBuf>,
     save_contract_source_code_into: Option<std::path::PathBuf>,
+    no_image_whitelist: bool,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
     let contract_source_metadata = tokio::runtime::Runtime::new().unwrap().block_on(
         super::inspect::get_contract_source_metadata(
@@ -215,6 +223,7 @@ fn get_contract_code_from_repository(
         contract_source_metadata,
         use_contract_source_code_path,
         save_contract_source_code_into,
+        no_image_whitelist,
     )
 }
 
@@ -226,7 +235,17 @@ fn get_docker_build_out_wasm_from_contract_source_metadata(
     contract_source_metadata: ContractSourceMetadata,
     use_contract_source_code_path: Option<std::path::PathBuf>,
     save_contract_source_code_into: Option<std::path::PathBuf>,
+    no_image_whitelist: bool,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
+    let whitelist: Option<Whitelist> = if no_image_whitelist {
+        None
+    } else {
+        Some(vec![WhitelistEntry {
+            expected_docker_image: "sourcescan/cargo-near".to_string(),
+        }])
+    };
+    contract_source_metadata.validate(whitelist)?;
+
     let build_info = contract_source_metadata.build_info.as_ref().wrap_err("`contract_source_metadata` does not have a `build_info` field. This field is an addition to version **1.2.0** of **NEP-330**.")?;
     let source_id = SourceId::from_url(&build_info.source_code_snapshot)?;
 
@@ -248,7 +267,6 @@ fn get_docker_build_out_wasm_from_contract_source_metadata(
     let target_dir = camino::Utf8PathBuf::from_path_buf(target_dir)
         .map_err(|err| color_eyre::eyre::eyre!("convert path buf {:?}", err))?;
 
-    contract_source_metadata.validate(None)?;
     let utf8_path_buf = tracing_indicatif::suspend_tracing_indicatif::<
         _,
         color_eyre::eyre::Result<camino::Utf8PathBuf>,
