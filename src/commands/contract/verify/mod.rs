@@ -12,6 +12,7 @@ use near_verify_rs::types::{
 };
 
 use crate::common::JsonRpcClientExt;
+use crate::types::contract_properties::ContractProperties;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -116,7 +117,7 @@ impl ContractAccountIdContext {
             let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
 
             move |network_config, block_reference| {
-                let docker_build_code = get_contract_code_from_repository(
+                let contract_properties = get_contract_properties_from_repository(
                     &account_id,
                     network_config,
                     block_reference,
@@ -126,7 +127,7 @@ impl ContractAccountIdContext {
                 )?;
 
                 verify_contract(
-                    docker_build_code,
+                    contract_properties,
                     get_contract_code_from_contract_account_id(&account_id, network_config, block_reference)?
                 );
 
@@ -168,49 +169,42 @@ impl ContractFileContext {
             .unwrap()
             .block_on(fetch_contract_source_metadata_from_wasm(&wasm_code))?;
 
-        let contract_source_code = get_docker_build_out_wasm_from_contract_source_metadata(
+        let contract_properties = get_contract_properties_from_docker_build(
             contract_source_metadata,
             previous_context.use_contract_source_code_path,
             previous_context.save_contract_source_code_into,
             previous_context.no_image_whitelist,
         )?;
 
-        verify_contract(contract_source_code, wasm_code);
+        verify_contract(contract_properties, wasm_code);
 
         Ok(Self)
     }
 }
 
-fn verify_contract(contract_code_from_repository: Vec<u8>, contract_code: Vec<u8>) {
-    // XXX fix message
-    if contract_code_from_repository == contract_code {
-        tracing::info!("\n{}", crate::common::indent_payload(&
-            format!(
-            "The hash code obtained from the contract account ID and the hash code calculated from the repository are the same.\nhash: ",
-            // contract_code_hash
-        )))
+fn verify_contract(contract_properties: ContractProperties, contract_code: Vec<u8>) {
+    if contract_properties.code == contract_code {
+        tracing::info!("{}\n{}",
+            "The code obtained from the contract account ID and the code calculated from the repository are the same.".green(),
+            crate::common::indent_payload(&contract_properties.to_string())
+        )
     } else {
-        tracing::info!("\n{}", crate::common::indent_payload(&
-            format!(
-            "The hash code obtained from the contract account ID: \nThe hash code calculated from the repository:        ",
-            // contract_code_hash,
-            // contract_code_hash_from_repository.to_base58_string()
-        )).red())
-    };
+        tracing::info!("{}", "The code obtained from the contract account ID and the code calculated from the repository do not match.".red())
+    }
 }
 
 #[tracing::instrument(
-    name = "Getting the contract code hash from the repository ...",
+    name = "Getting the contract properties from the repository ...",
     skip_all
 )]
-fn get_contract_code_from_repository(
+fn get_contract_properties_from_repository(
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
     use_contract_source_code_path: Option<std::path::PathBuf>,
     save_contract_source_code_into: Option<std::path::PathBuf>,
     no_image_whitelist: bool,
-) -> color_eyre::eyre::Result<Vec<u8>> {
+) -> color_eyre::eyre::Result<ContractProperties> {
     let contract_source_metadata = tokio::runtime::Runtime::new().unwrap().block_on(
         super::inspect::get_contract_source_metadata(
             &network_config.json_rpc_client(),
@@ -219,7 +213,7 @@ fn get_contract_code_from_repository(
         ),
     )?;
 
-    get_docker_build_out_wasm_from_contract_source_metadata(
+    get_contract_properties_from_docker_build(
         contract_source_metadata,
         use_contract_source_code_path,
         save_contract_source_code_into,
@@ -227,16 +221,13 @@ fn get_contract_code_from_repository(
     )
 }
 
-#[tracing::instrument(
-    name = "Getting the docker build out wasm from the contract source metadata ...",
-    skip_all
-)]
-fn get_docker_build_out_wasm_from_contract_source_metadata(
+#[tracing::instrument(name = "Getting contract properties from docker build ...", skip_all)]
+fn get_contract_properties_from_docker_build(
     contract_source_metadata: ContractSourceMetadata,
     use_contract_source_code_path: Option<std::path::PathBuf>,
     save_contract_source_code_into: Option<std::path::PathBuf>,
     no_image_whitelist: bool,
-) -> color_eyre::eyre::Result<Vec<u8>> {
+) -> color_eyre::eyre::Result<ContractProperties> {
     let whitelist: Option<Whitelist> = if no_image_whitelist {
         None
     } else {
@@ -267,19 +258,33 @@ fn get_docker_build_out_wasm_from_contract_source_metadata(
     let target_dir = camino::Utf8PathBuf::from_path_buf(target_dir)
         .map_err(|err| color_eyre::eyre::eyre!("convert path buf {:?}", err))?;
 
-    let utf8_path_buf = tracing_indicatif::suspend_tracing_indicatif::<
+    let contract_path_buf = tracing_indicatif::suspend_tracing_indicatif::<
         _,
         color_eyre::eyre::Result<camino::Utf8PathBuf>,
     >(|| {
         near_verify_rs::logic::nep330_build::run(
-            contract_source_metadata,
+            contract_source_metadata.clone(),
             target_dir,
             vec![],
             false,
         )
     })?;
-    std::fs::read(&utf8_path_buf)
-        .wrap_err_with(|| format!("Failed to open or read the file: {:?}.", &utf8_path_buf,))
+    let contract_code = std::fs::read(&contract_path_buf)
+        .wrap_err_with(|| format!("Failed to open or read the file: {:?}.", &contract_path_buf,))?;
+    let contract_code_hash = near_verify_rs::logic::compute_hash(contract_path_buf)?;
+
+    let contract_properties = ContractProperties {
+        code: contract_code,
+        hash: contract_code_hash,
+        version: contract_source_metadata.version,
+        standards: contract_source_metadata.standards,
+        link: contract_source_metadata.link,
+        source: build_info.source_code_snapshot.clone(),
+        build_environment: build_info.build_environment.clone(),
+        build_command: build_info.build_command.clone(),
+    };
+
+    Ok(contract_properties)
 }
 
 fn checkout_remote_repo(
@@ -297,7 +302,7 @@ fn checkout_remote_repo(
 }
 
 #[tracing::instrument(
-    name = "Getting the contract code hash from the contract account ID ...",
+    name = "Getting the contract code from the contract account ID ...",
     skip_all
 )]
 fn get_contract_code_from_contract_account_id(
