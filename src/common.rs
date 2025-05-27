@@ -251,7 +251,9 @@ pub fn verify_account_access_key(
                 &account_id,
                 &public_key,
                 near_primitives::types::BlockReference::latest(),
-            ) {
+            )
+            .map_err(|err| *err)
+        {
             Ok(rpc_query_response) => {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =
                     rpc_query_response.kind
@@ -2352,11 +2354,10 @@ pub fn input_network_name(
 }
 
 pub trait JsonRpcClientExt {
-    #[allow(clippy::result_large_err)] // temporary workaround for clippy on 1.87 rust toolchain
     fn blocking_call<M>(
         &self,
         method: M,
-    ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
+    ) -> Result<M::Response, Box<near_jsonrpc_client::errors::JsonRpcError<M::Error>>>
     where
         M: near_jsonrpc_client::methods::RpcMethod,
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display;
@@ -2371,7 +2372,6 @@ pub trait JsonRpcClientExt {
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error>;
 
-    #[allow(clippy::result_large_err)] // temporary workaround for clippy on 1.87 rust toolchain
     fn blocking_call_view_access_key(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2379,32 +2379,36 @@ pub trait JsonRpcClientExt {
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_client::errors::JsonRpcError<
-            near_jsonrpc_primitives::types::query::RpcQueryError,
+        Box<
+            near_jsonrpc_client::errors::JsonRpcError<
+                near_jsonrpc_primitives::types::query::RpcQueryError,
+            >,
         >,
     >;
 
-    #[allow(clippy::result_large_err)] // temporary workaround for clippy on 1.87 rust toolchain
     fn blocking_call_view_access_key_list(
         &self,
         account_id: &near_primitives::types::AccountId,
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_client::errors::JsonRpcError<
-            near_jsonrpc_primitives::types::query::RpcQueryError,
+        Box<
+            near_jsonrpc_client::errors::JsonRpcError<
+                near_jsonrpc_primitives::types::query::RpcQueryError,
+            >,
         >,
     >;
 
-    #[allow(clippy::result_large_err)] // temporary workaround for clippy on 1.87 rust toolchain
     fn blocking_call_view_account(
         &self,
         account_id: &near_primitives::types::AccountId,
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_client::errors::JsonRpcError<
-            near_jsonrpc_primitives::types::query::RpcQueryError,
+        Box<
+            near_jsonrpc_client::errors::JsonRpcError<
+                near_jsonrpc_primitives::types::query::RpcQueryError,
+            >,
         >,
     >;
 }
@@ -2413,7 +2417,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     fn blocking_call<M>(
         &self,
         method: M,
-    ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
+    ) -> Result<M::Response, Box<near_jsonrpc_client::errors::JsonRpcError<M::Error>>>
     where
         M: near_jsonrpc_client::methods::RpcMethod,
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
@@ -2489,6 +2493,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                     );
                 }
             })
+            .map_err(Box::new)
     }
 
     /// A helper function to make a view-funcation call using JSON encoding for the function
@@ -2569,8 +2574,10 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_client::errors::JsonRpcError<
-            near_jsonrpc_primitives::types::query::RpcQueryError,
+        Box<
+            near_jsonrpc_client::errors::JsonRpcError<
+                near_jsonrpc_primitives::types::query::RpcQueryError,
+            >,
         >,
     > {
         tracing::Span::current().pb_set_message(&format!(
@@ -2605,8 +2612,10 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_client::errors::JsonRpcError<
-            near_jsonrpc_primitives::types::query::RpcQueryError,
+        Box<
+            near_jsonrpc_client::errors::JsonRpcError<
+                near_jsonrpc_primitives::types::query::RpcQueryError,
+            >,
         >,
     > {
         tracing::Span::current()
@@ -2638,8 +2647,10 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_client::errors::JsonRpcError<
-            near_jsonrpc_primitives::types::query::RpcQueryError,
+        Box<
+            near_jsonrpc_client::errors::JsonRpcError<
+                near_jsonrpc_primitives::types::query::RpcQueryError,
+            >,
         >,
     > {
         tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
