@@ -16,7 +16,10 @@ use tracing_indicatif::suspend_tracing_indicatif;
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
 
 pub type CliResult = color_eyre::eyre::Result<()>;
-pub type JsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::JsonRpcError<E>>>;
+
+/// A type alias was introduced to simplify the usage of `Result` with a boxed error type that was
+/// necessary to fix `clippy::result_large_err` warning
+pub type BoxedJsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::JsonRpcError<E>>>;
 
 use inquire::{Select, Text};
 use strum::IntoEnumIterator;
@@ -2355,7 +2358,7 @@ pub fn input_network_name(
 }
 
 pub trait JsonRpcClientExt {
-    fn blocking_call<M>(&self, method: M) -> JsonRpcResult<M::Response, M::Error>
+    fn blocking_call<M>(&self, method: M) -> BoxedJsonRpcResult<M::Response, M::Error>
     where
         M: near_jsonrpc_client::methods::RpcMethod,
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display;
@@ -2375,7 +2378,7 @@ pub trait JsonRpcClientExt {
         account_id: &near_primitives::types::AccountId,
         public_key: &near_crypto::PublicKey,
         block_reference: near_primitives::types::BlockReference,
-    ) -> JsonRpcResult<
+    ) -> BoxedJsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
         near_jsonrpc_primitives::types::query::RpcQueryError,
     >;
@@ -2384,7 +2387,7 @@ pub trait JsonRpcClientExt {
         &self,
         account_id: &near_primitives::types::AccountId,
         block_reference: near_primitives::types::BlockReference,
-    ) -> JsonRpcResult<
+    ) -> BoxedJsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
         near_jsonrpc_primitives::types::query::RpcQueryError,
     >;
@@ -2393,14 +2396,14 @@ pub trait JsonRpcClientExt {
         &self,
         account_id: &near_primitives::types::AccountId,
         block_reference: near_primitives::types::BlockReference,
-    ) -> JsonRpcResult<
+    ) -> BoxedJsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
         near_jsonrpc_primitives::types::query::RpcQueryError,
     >;
 }
 
 impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
-    fn blocking_call<M>(&self, method: M) -> JsonRpcResult<M::Response, M::Error>
+    fn blocking_call<M>(&self, method: M) -> BoxedJsonRpcResult<M::Response, M::Error>
     where
         M: near_jsonrpc_client::methods::RpcMethod,
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
@@ -2555,7 +2558,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         account_id: &near_primitives::types::AccountId,
         public_key: &near_crypto::PublicKey,
         block_reference: near_primitives::types::BlockReference,
-    ) -> JsonRpcResult<
+    ) -> BoxedJsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
         near_jsonrpc_primitives::types::query::RpcQueryError,
     > {
@@ -2589,7 +2592,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         &self,
         account_id: &near_primitives::types::AccountId,
         block_reference: near_primitives::types::BlockReference,
-    ) -> JsonRpcResult<
+    ) -> BoxedJsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
         near_jsonrpc_primitives::types::query::RpcQueryError,
     > {
@@ -2620,7 +2623,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         &self,
         account_id: &near_primitives::types::AccountId,
         block_reference: near_primitives::types::BlockReference,
-    ) -> JsonRpcResult<
+    ) -> BoxedJsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
         near_jsonrpc_primitives::types::query::RpcQueryError,
     > {
