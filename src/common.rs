@@ -2354,7 +2354,6 @@ pub fn input_network_name(
 }
 
 pub trait JsonRpcClientExt {
-    #[allow(clippy::result_large_err)] // temporary workaround for clippy on 1.87 rust toolchain
     fn blocking_call<M>(
         &self,
         method: M,
@@ -2373,7 +2372,6 @@ pub trait JsonRpcClientExt {
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error>;
 
-    #[allow(clippy::result_large_err)] // temporary workaround for clippy on 1.87 rust toolchain
     fn blocking_call_view_access_key(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2388,7 +2386,6 @@ pub trait JsonRpcClientExt {
         >,
     >;
 
-    #[allow(clippy::result_large_err)] // temporary workaround for clippy on 1.87 rust toolchain
     fn blocking_call_view_access_key_list(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -2402,7 +2399,6 @@ pub trait JsonRpcClientExt {
         >,
     >;
 
-    #[allow(clippy::result_large_err)] // temporary workaround for clippy on 1.87 rust toolchain
     fn blocking_call_view_account(
         &self,
         account_id: &near_primitives::types::AccountId,
