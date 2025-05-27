@@ -16,6 +16,7 @@ use tracing_indicatif::suspend_tracing_indicatif;
 use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
 
 pub type CliResult = color_eyre::eyre::Result<()>;
+pub type JsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::JsonRpcError<E>>>;
 
 use inquire::{Select, Text};
 use strum::IntoEnumIterator;
@@ -2354,10 +2355,7 @@ pub fn input_network_name(
 }
 
 pub trait JsonRpcClientExt {
-    fn blocking_call<M>(
-        &self,
-        method: M,
-    ) -> Result<M::Response, Box<near_jsonrpc_client::errors::JsonRpcError<M::Error>>>
+    fn blocking_call<M>(&self, method: M) -> JsonRpcResult<M::Response, M::Error>
     where
         M: near_jsonrpc_client::methods::RpcMethod,
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display;
@@ -2377,47 +2375,32 @@ pub trait JsonRpcClientExt {
         account_id: &near_primitives::types::AccountId,
         public_key: &near_crypto::PublicKey,
         block_reference: near_primitives::types::BlockReference,
-    ) -> Result<
+    ) -> JsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        Box<
-            near_jsonrpc_client::errors::JsonRpcError<
-                near_jsonrpc_primitives::types::query::RpcQueryError,
-            >,
-        >,
+        near_jsonrpc_primitives::types::query::RpcQueryError,
     >;
 
     fn blocking_call_view_access_key_list(
         &self,
         account_id: &near_primitives::types::AccountId,
         block_reference: near_primitives::types::BlockReference,
-    ) -> Result<
+    ) -> JsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        Box<
-            near_jsonrpc_client::errors::JsonRpcError<
-                near_jsonrpc_primitives::types::query::RpcQueryError,
-            >,
-        >,
+        near_jsonrpc_primitives::types::query::RpcQueryError,
     >;
 
     fn blocking_call_view_account(
         &self,
         account_id: &near_primitives::types::AccountId,
         block_reference: near_primitives::types::BlockReference,
-    ) -> Result<
+    ) -> JsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        Box<
-            near_jsonrpc_client::errors::JsonRpcError<
-                near_jsonrpc_primitives::types::query::RpcQueryError,
-            >,
-        >,
+        near_jsonrpc_primitives::types::query::RpcQueryError,
     >;
 }
 
 impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
-    fn blocking_call<M>(
-        &self,
-        method: M,
-    ) -> Result<M::Response, Box<near_jsonrpc_client::errors::JsonRpcError<M::Error>>>
+    fn blocking_call<M>(&self, method: M) -> JsonRpcResult<M::Response, M::Error>
     where
         M: near_jsonrpc_client::methods::RpcMethod,
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
@@ -2572,13 +2555,9 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         account_id: &near_primitives::types::AccountId,
         public_key: &near_crypto::PublicKey,
         block_reference: near_primitives::types::BlockReference,
-    ) -> Result<
+    ) -> JsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        Box<
-            near_jsonrpc_client::errors::JsonRpcError<
-                near_jsonrpc_primitives::types::query::RpcQueryError,
-            >,
-        >,
+        near_jsonrpc_primitives::types::query::RpcQueryError,
     > {
         tracing::Span::current().pb_set_message(&format!(
             "public key {public_key} on account <{account_id}>..."
@@ -2610,13 +2589,9 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         &self,
         account_id: &near_primitives::types::AccountId,
         block_reference: near_primitives::types::BlockReference,
-    ) -> Result<
+    ) -> JsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        Box<
-            near_jsonrpc_client::errors::JsonRpcError<
-                near_jsonrpc_primitives::types::query::RpcQueryError,
-            >,
-        >,
+        near_jsonrpc_primitives::types::query::RpcQueryError,
     > {
         tracing::Span::current()
             .pb_set_message(&format!("access keys on account <{account_id}>..."));
@@ -2645,13 +2620,9 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         &self,
         account_id: &near_primitives::types::AccountId,
         block_reference: near_primitives::types::BlockReference,
-    ) -> Result<
+    ) -> JsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        Box<
-            near_jsonrpc_client::errors::JsonRpcError<
-                near_jsonrpc_primitives::types::query::RpcQueryError,
-            >,
-        >,
+        near_jsonrpc_primitives::types::query::RpcQueryError,
     > {
         tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
         tracing::info!(target: "near_teach_me", "account <{account_id}>...");
