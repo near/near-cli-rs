@@ -2354,11 +2354,10 @@ pub fn input_network_name(
 }
 
 pub trait JsonRpcClientExt {
-    #[allow(clippy::result_large_err)]
     fn blocking_call<M>(
         &self,
         method: M,
-    ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
+    ) -> Result<M::Response, Box<near_jsonrpc_client::errors::JsonRpcError<M::Error>>>
     where
         M: near_jsonrpc_client::methods::RpcMethod,
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display;
@@ -2418,7 +2417,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     fn blocking_call<M>(
         &self,
         method: M,
-    ) -> near_jsonrpc_client::MethodCallResult<M::Response, M::Error>
+    ) -> Result<M::Response, Box<near_jsonrpc_client::errors::JsonRpcError<M::Error>>>
     where
         M: near_jsonrpc_client::methods::RpcMethod,
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
@@ -2494,6 +2493,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                     );
                 }
             })
+            .map_err(Box::new)
     }
 
     /// A helper function to make a view-funcation call using JSON encoding for the function
@@ -2603,7 +2603,6 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         self.blocking_call(query_view_method_request)
             .inspect(teach_me_call_response)
-            .map_err(Box::new)
     }
 
     #[tracing::instrument(name = "Getting a list of", skip_all)]
@@ -2639,7 +2638,6 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         self.blocking_call(query_view_method_request)
             .inspect(teach_me_call_response)
-            .map_err(Box::new)
     }
 
     #[tracing::instrument(name = "Getting information about", skip_all)]
@@ -2674,7 +2672,6 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
         self.blocking_call(query_view_method_request)
             .inspect(teach_me_call_response)
-            .map_err(Box::new)
     }
 }
 
