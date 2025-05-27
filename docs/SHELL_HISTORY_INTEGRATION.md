@@ -40,7 +40,7 @@ function near() {
         final_command=$(<"$tmp_file")
 
         if [[ -n "$final_command" ]]; then
-            print -s -- "$final_command"
+            print -sr -- "$final_command"
         fi
 
         rm "$tmp_file"
@@ -50,9 +50,35 @@ function near() {
 
 ## Fish
 
-Add the following function to your `~/.config/fish/config.fish` file:
+### Fish 4.0 and newer
+
+If you're running Fish >= 4.0, add this to your `~/.config/fish/config.fish`:
 
 ```fish
+function near
+    command near $argv
+
+    set tmp_dir (set -q TMPDIR; and echo $TMPDIR; or echo /tmp)
+    set tmp_file "$tmp_dir/near-cli-rs-final-command.log"
+
+    if test -f "$tmp_file"
+        set -l final_command (cat "$tmp_file")
+
+        if test -n "$final_command"
+            history append -- "$final_command"
+        end
+
+        rm "$tmp_file"
+    end
+end
+```
+
+### Fish 3.x (below 4.0)
+
+For Fish versions older than 4.0, where `history append` isn't available, fallback to manually editing your history file:
+
+```fish
+# this function is for compatability with old Fish shell versions
 function near
     command near $argv
 
@@ -73,7 +99,9 @@ function near
                 set history_file "$HOME/.fish_history"
             end
 
-            echo "- cmd: $final_command" >> $history_file
+            set -l escaped (string replace -a "\\" "\\\\" -- $final_command)
+
+            echo "- cmd: $escaped" >> $history_file
             echo "  when: "(date +%s) >> $history_file
 
             history --merge
@@ -85,7 +113,7 @@ end
 ```
 
 > [!NOTE]
-> For Fish shell, the function appends the command to the Fish history file and merges it to make it immediately accessible via the arrow keys.
+> For Fish shell versions older than 4.0, function appends the command to the Fish history file and merges it to make it immediately accessible via the arrow keys.
 
 ## Explanation
 
@@ -97,8 +125,8 @@ Steps performed by the functions:
 - Check if the temporary log file exists.
 - Read the command from the log file.
 - If the command is not empty:
-  - For Bash and Zsh: Add the command to the shell history.
-  - For Fish: Append the command to the Fish history file and merge the history.
+  - For Bash, Zsh, and Fish: Add the command to the shell history.
+  - For Fish (pre 4.0 function): Make command parsable, append the command to the Fish history file, and merge the history.
 - Remove the temporary log file to prevent duplicate entries.
 
 > [!IMPORTANT]
