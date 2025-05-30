@@ -20,7 +20,7 @@ impl Default for Config {
 
         let mut network_connection = linked_hash_map::LinkedHashMap::new();
         network_connection.insert(
-            "mainnet-near-archival".to_string(),
+            "mainnet".to_string(),
             NetworkConfig {
                 network_name: "mainnet".to_string(),
                 rpc_url: "https://archival-rpc.mainnet.near.org/".parse().unwrap(),
@@ -76,28 +76,9 @@ impl Default for Config {
                 coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             },
         );
-        network_connection.insert(
-            "mainnet-drpc".to_string(),
-            NetworkConfig {
-                network_name: "mainnet".to_string(),
-                rpc_url: "https://near.drpc.org/".parse().unwrap(),
-                rpc_api_key: None,
-                wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
-                explorer_transaction_url: "https://explorer.near.org/transactions/"
-                    .parse()
-                    .unwrap(),
-                linkdrop_account_id: Some("near".parse().unwrap()),
-                near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
-                faucet_url: None,
-                meta_transaction_relayer_url: None,
-                fastnear_url: Some("https://api.fastnear.com/".parse().unwrap()),
-                staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
-                coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
-            },
-        );
 
         network_connection.insert(
-            "testnet-near-archival".to_string(),
+            "testnet".to_string(),
             NetworkConfig {
                 network_name: "testnet".to_string(),
                 rpc_url: "https://archival-rpc.testnet.near.org/".parse().unwrap(),
@@ -139,25 +120,6 @@ impl Default for Config {
             NetworkConfig {
                 network_name: "testnet".to_string(),
                 rpc_url: "https://near-testnet.lava.build:433/".parse().unwrap(),
-                rpc_api_key: None,
-                wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
-                explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
-                    .parse()
-                    .unwrap(),
-                linkdrop_account_id: Some("testnet".parse().unwrap()),
-                near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
-                faucet_url: Some("https://helper.neraprotocol.com/account".parse().unwrap()),
-                meta_transaction_relayer_url: None,
-                fastnear_url: Some("https://test.api.fastnear.com/".parse().unwrap()),
-                staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
-                coingecko_url: None,
-            },
-        );
-        network_connection.insert(
-            "testnet-drpc".to_string(),
-            NetworkConfig {
-                network_name: "testnet".to_string(),
-                rpc_url: "https://near-testnet.drpc.org/".parse().unwrap(),
                 rpc_api_key: None,
                 wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
                 explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
