@@ -11,8 +11,6 @@ use near_primitives::types::{BlockId, BlockReference};
 
 use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
 
-mod contract_metadata;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractContext)]
@@ -466,11 +464,14 @@ pub enum FetchContractSourceMetadataError {
 }
 
 #[tracing::instrument(name = "Getting contract source metadata", skip_all)]
-async fn get_contract_source_metadata(
+pub async fn get_contract_source_metadata(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
-) -> Result<self::contract_metadata::ContractSourceMetadata, FetchContractSourceMetadataError> {
+) -> Result<
+    near_verify_rs::types::contract_source_metadata::ContractSourceMetadata,
+    FetchContractSourceMetadataError,
+> {
     let mut retries_left = (0..5).rev();
     loop {
         let contract_source_metadata_response = json_rpc_client
@@ -507,7 +508,7 @@ async fn get_contract_source_metadata(
                 return contract_source_metadata_response
                     .call_result()
                     .map_err(FetchContractSourceMetadataError::ContractSourceMetadataUnknownFormat)?
-                    .parse_result_from_json::<self::contract_metadata::ContractSourceMetadata>()
+                    .parse_result_from_json::<near_verify_rs::types::contract_source_metadata::ContractSourceMetadata>()
                     .wrap_err("Failed to parse contract source metadata")
                     .map_err(
                         FetchContractSourceMetadataError::ContractSourceMetadataUnknownFormat,
