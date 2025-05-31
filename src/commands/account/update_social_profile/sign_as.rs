@@ -167,7 +167,8 @@ fn get_prepopulated_transaction(
         actions: vec![],
     };
 
-    let local_profile: serde_json::Value = serde_json::from_slice(data)?;
+    let local_profile: serde_json::Value =
+        serde_json::from_slice(data).wrap_err(sysexits::ExitCode::NoInput)?;
     let remote_profile =
         get_remote_profile(network_config, &contract_account_id, account_id.clone())?;
 
@@ -183,7 +184,8 @@ fn get_prepopulated_transaction(
         accounts: HashMap::from([(
             account_id.clone(),
             near_socialdb_client::types::socialdb_types::AccountProfile {
-                profile: serde_json::from_value(local_profile)?,
+                profile: serde_json::from_value(local_profile)
+                    .wrap_err(sysexits::ExitCode::NoInput)?,
             },
         )]),
     };
