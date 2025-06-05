@@ -4,6 +4,7 @@ use color_eyre::{
 };
 
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 use near_verify_rs::types::{
     contract_source_metadata::ContractSourceMetadata,
@@ -117,6 +118,7 @@ impl ContractAccountIdContext {
             let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
 
             move |network_config, block_reference| {
+                let contract_code_from_contract_account_id = get_contract_code_from_contract_account_id(&account_id, network_config, block_reference)?;
                 let contract_properties = get_contract_properties_from_repository(
                     &account_id,
                     network_config,
@@ -127,8 +129,9 @@ impl ContractAccountIdContext {
                 )?;
 
                 verify_contract(
+                    previous_context.global_context.verbosity.clone(),
+                    contract_code_from_contract_account_id,
                     contract_properties,
-                    get_contract_code_from_contract_account_id(&account_id, network_config, block_reference)?
                 );
 
                 Ok(())
@@ -176,18 +179,35 @@ impl ContractFileContext {
             previous_context.no_image_whitelist,
         )?;
 
-        verify_contract(contract_properties, wasm_code);
+        verify_contract(
+            previous_context.global_context.verbosity,
+            wasm_code,
+            contract_properties,
+        );
 
         Ok(Self)
     }
 }
 
-fn verify_contract(contract_properties: ContractProperties, contract_code: Vec<u8>) {
+fn verify_contract(
+    verbosity: crate::Verbosity,
+    contract_code: Vec<u8>,
+    contract_properties: ContractProperties,
+) {
     if contract_properties.code == contract_code {
-        tracing::info!("{}\n{}",
-            "The code obtained from the contract account ID and the code calculated from the repository are the same.".green(),
-            crate::common::indent_payload(&contract_properties.to_string())
-        )
+        if let crate::Verbosity::Quiet = verbosity {
+            println!(
+                "The code obtained from the contract account ID and the code calculated from the repository are the same.\n{}",
+                contract_properties
+            )
+        } else {
+            tracing::info!("{}\n{}",
+                "The code obtained from the contract account ID and the code calculated from the repository are the same.".green(),
+                crate::common::indent_payload(&contract_properties.to_string())
+            )
+        }
+    } else if let crate::Verbosity::Quiet = verbosity {
+        println!("The code obtained from the contract account ID and the code calculated from the repository do not match.")
     } else {
         tracing::info!("{}", "The code obtained from the contract account ID and the code calculated from the repository do not match.".red())
     }
@@ -301,15 +321,20 @@ fn checkout_remote_repo(
     Ok(())
 }
 
-#[tracing::instrument(
-    name = "Getting the contract code from the contract account ID ...",
-    skip_all
-)]
+#[tracing::instrument(name = "Getting the contract code from", skip_all)]
 fn get_contract_code_from_contract_account_id(
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
+    tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
+    tracing::info!(target: "near_teach_me", "{}", format!("{account_id} ..."));
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to get the contract code (Wasm binary) deployed to `{}` account, learn more https://docs.near.org/api/rpc/contracts#view-contract-code",
+            account_id
+    );
     let view_code_response = network_config
         .json_rpc_client()
         .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
