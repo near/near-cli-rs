@@ -11,8 +11,6 @@ use near_primitives::types::{BlockId, BlockReference};
 
 use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
 
-mod contract_metadata;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractContext)]
@@ -465,30 +463,52 @@ pub enum FetchContractSourceMetadataError {
     ContractSourceMetadataUnknownFormat(Report),
 }
 
-#[tracing::instrument(name = "Getting contract source metadata", skip_all)]
-async fn get_contract_source_metadata(
+#[tracing::instrument(name = "Getting contract source metadata for account", skip_all)]
+pub async fn get_contract_source_metadata(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
-) -> Result<self::contract_metadata::ContractSourceMetadata, FetchContractSourceMetadataError> {
+) -> Result<
+    near_verify_rs::types::contract_source_metadata::ContractSourceMetadata,
+    FetchContractSourceMetadataError,
+> {
+    tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
+    tracing::info!(target: "near_teach_me", "{}", format!("{account_id} ..."));
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to call a read-only function `contract_source_metadata` on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
+            account_id
+    );
+
     let mut retries_left = (0..5).rev();
     loop {
-        let contract_source_metadata_response = json_rpc_client
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: block_reference.clone(),
-                request: near_primitives::views::QueryRequest::CallFunction {
-                    account_id: account_id.clone(),
-                    method_name: "contract_source_metadata".to_owned(),
-                    args: near_primitives::types::FunctionArgs::from(vec![]),
-                },
-            })
-            .await;
+        let rpc_query_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: block_reference.clone(),
+            request: near_primitives::views::QueryRequest::CallFunction {
+                account_id: account_id.clone(),
+                method_name: "contract_source_metadata".to_owned(),
+                args: near_primitives::types::FunctionArgs::from(vec![]),
+            },
+        };
+
+        crate::common::teach_me_request_payload(json_rpc_client, &rpc_query_request);
+
+        let contract_source_metadata_response = json_rpc_client.call(rpc_query_request).await;
 
         match contract_source_metadata_response {
-            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_))
-                if retries_left.next().is_some() =>
-            {
-                eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
+                if let Some(retries_left) = retries_left.next() {
+                    sleep_after_error(format!(
+                        "(Previous attempt failed with error: `{}`. Will retry {} more times)",
+                        err.to_string().red(),
+                        retries_left
+                    ));
+                } else {
+                    return Err(FetchContractSourceMetadataError::RpcError(
+                        near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
+                    ));
+                }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
                 near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
@@ -506,15 +526,45 @@ async fn get_contract_source_metadata(
             Ok(contract_source_metadata_response) => {
                 return contract_source_metadata_response
                     .call_result()
+                    .inspect(|call_result| {
+                        tracing::info!(
+                            target: "near_teach_me",
+                            parent: &tracing::Span::none(),
+                            "JSON RPC Response:\n{}",
+                            crate::common::indent_payload(&format!(
+                                "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
+                                contract_source_metadata_response.block_hash,
+                                contract_source_metadata_response.block_height,
+                                call_result.logs,
+                                call_result.result
+                            ))
+                        );
+                        tracing::info!(
+                            target: "near_teach_me",
+                            parent: &tracing::Span::none(),
+                            "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
+                            crate::common::indent_payload(
+                                &String::from_utf8(call_result.result.clone())
+                                    .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
+                            )
+                        );
+                    })
+                    .inspect_err(|err| {
+                        tracing::info!(
+                            target: "near_teach_me",
+                            parent: &tracing::Span::none(),
+                            "JSON RPC Response:\n{}",
+                            crate::common::indent_payload(&err.to_string())
+                        );
+                    })
                     .map_err(FetchContractSourceMetadataError::ContractSourceMetadataUnknownFormat)?
-                    .parse_result_from_json::<self::contract_metadata::ContractSourceMetadata>()
+                    .parse_result_from_json::<near_verify_rs::types::contract_source_metadata::ContractSourceMetadata>()
                     .wrap_err("Failed to parse contract source metadata")
                     .map_err(
                         FetchContractSourceMetadataError::ContractSourceMetadataUnknownFormat,
                     );
             }
         }
-        std::thread::sleep(std::time::Duration::from_millis(100));
     }
 }
 
@@ -588,4 +638,11 @@ pub async fn get_contract_abi(
         }
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     }
+}
+
+#[tracing::instrument(name = "Waiting 3 seconds before sending a request via RPC", skip_all)]
+fn sleep_after_error(additional_message_for_name: String) {
+    tracing::Span::current().pb_set_message(&additional_message_for_name);
+    tracing::info!(target: "near_teach_me", "{}", &additional_message_for_name);
+    std::thread::sleep(std::time::Duration::from_secs(3));
 }
