@@ -1,3 +1,4 @@
+use color_eyre::eyre::eyre;
 use near_primitives::action::Action;
 use serde::{Deserialize, Serialize};
 use serde_with::{base64::Base64, serde_as, DisplayFromStr};
@@ -9,7 +10,7 @@ pub struct ActionCall {
     #[serde_as(as = "Base64")]
     args: Vec<u8>,
     deposit: crate::types::near_token::NearToken,
-    // NOTE: We cannot use `crate::common::NearGas`, as sputnikdao uses `U128`
+    // NOTE: We cannot use `crate::common::NearGas`, as sputnikdao uses `U64`
     // https://github.com/near-daos/sputnik-dao-contract/blob/278adc713e795f95a6da4d3007c7e03e8120f153/sputnikdao2/src/proposals.rs#L42
     #[serde_as(as = "DisplayFromStr")]
     gas: u64,
@@ -33,7 +34,7 @@ pub struct FunctionCallArgs {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 /// Enum for DAO proposal arguments
 ///
-/// Directly translates to `{ "TransferKindName": { TransferArguments }}`
+/// Directly translates to `{ "TransferKindName": TransferArguments }`
 pub enum ProposalKind {
     Transfer(TransferArgs),
     FunctionCall(FunctionCallArgs),
@@ -42,47 +43,86 @@ pub enum ProposalKind {
 impl TryFrom<&crate::commands::PrepopulatedTransaction> for ProposalKind {
     type Error = color_eyre::eyre::Error;
 
-    fn try_from(value: &crate::commands::PrepopulatedTransaction) -> Result<Self, Self::Error> {
-        match value.actions.first() {
-            Some(Action::Transfer(transaction_action)) => {
-                Ok(ProposalKind::Transfer(TransferArgs {
-                    token_id: String::new(),
-                    receiver_id: value.receiver_id.clone(),
-                    amount: crate::types::near_token::NearToken::from_yoctonear(
-                        transaction_action.deposit,
-                    ),
-                    msg: None,
-                }))
+    fn try_from(
+        transaction: &crate::commands::PrepopulatedTransaction,
+    ) -> Result<Self, Self::Error> {
+        if transaction.actions.is_empty() {
+            return Err(eyre!("No actions were found in transaction!"));
+        }
+
+        let mut parsed_actions = Vec::new();
+
+        for action in &transaction.actions {
+            match action {
+                Action::Transfer(_) => {
+                    if parsed_actions.is_empty() {
+                        parsed_actions.push(action.clone());
+                    } else if let Action::Transfer(_) = parsed_actions.last().unwrap() {
+                        return Err(eyre!("Batch transfers are not supported for DAO proposals"));
+                    } else {
+                        return Err(eyre!(
+                            "Mixed action types are not supported for DAO proposals"
+                        ));
+                    }
+                }
+                Action::FunctionCall(_) => {
+                    if parsed_actions.is_empty() {
+                        parsed_actions.push(action.clone());
+                    } else if let Action::FunctionCall(_) = parsed_actions.last().unwrap() {
+                        parsed_actions.push(action.clone());
+                    } else {
+                        return Err(eyre!(
+                            "Mixed action types are not supported for DAO proposals"
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(eyre!(
+                        "Passed `Action` type is not supported for DAO proposal"
+                    ));
+                }
             }
+        }
+
+        match parsed_actions.first() {
+            Some(Action::Transfer(transfer_action)) => Ok(ProposalKind::Transfer(TransferArgs {
+                token_id: String::new(),
+                receiver_id: transaction.receiver_id.clone(),
+                amount: crate::types::near_token::NearToken::from_yoctonear(
+                    transfer_action.deposit,
+                ),
+                msg: None,
+            })),
             Some(Action::FunctionCall(_)) => {
-                let action_calls = value
-                    .actions
+                let action_calls = parsed_actions
                     .iter()
-                    .map(|action| match action {
-                        Action::FunctionCall(function_call_action) => Ok(ActionCall {
-                            method_name: function_call_action.method_name.clone(),
-                            args: function_call_action.args.clone(),
-                            deposit: crate::types::near_token::NearToken::from_yoctonear(
-                                function_call_action.deposit,
-                            ),
-                            gas: function_call_action.gas,
-                        }),
-                        _ => Err(color_eyre::eyre::eyre!(
-                            "Mixed action types is not supported by DAO proposals"
-                        )),
+                    .filter_map(|action| {
+                        if let Action::FunctionCall(function_call_action) = action {
+                            Some(ActionCall {
+                                method_name: function_call_action.method_name.clone(),
+                                args: function_call_action.args.clone(),
+                                deposit: crate::types::near_token::NearToken::from_yoctonear(
+                                    function_call_action.deposit,
+                                ),
+                                gas: function_call_action.gas,
+                            })
+                        } else {
+                            None
+                        }
                     })
-                    .collect::<Result<Vec<_>, _>>()?;
+                    .collect();
 
                 Ok(ProposalKind::FunctionCall(FunctionCallArgs {
-                    receiver_id: value.receiver_id.clone(),
+                    receiver_id: transaction.receiver_id.clone(),
                     actions: action_calls,
                 }))
             }
-            Some(other_action) => Err(color_eyre::eyre::eyre!(
-                "Action type {:?} is not supported for DAO proposals",
-                std::mem::discriminant(other_action)
-            )),
-            None => Err(color_eyre::eyre::eyre!("No actions found in transaction")),
+            Some(_) => unreachable!(
+                "only `Action::FunctionCall` and `Action::Transfer` were pushed to vector"
+            ),
+            None => unreachable!(
+                "only `Action::FunctionCall` and `Action::Transfer` were pushed to vector"
+            ),
         }
     }
 }
