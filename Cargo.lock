@@ -2094,6 +2094,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "serde_with",
  "shell-words",
  "shellexpand",
  "slipped10",

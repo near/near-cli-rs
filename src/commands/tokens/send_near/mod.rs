@@ -54,6 +54,19 @@ impl From<SendNearCommandContext> for crate::commands::ActionContext {
                 }
             });
 
+        println!(
+            "Constructed prepopulated transaction after network callback: {:?}",
+            crate::commands::PrepopulatedTransaction {
+                signer_id: item.signer_account_id.clone(),
+                receiver_id: item.receiver_account_id.clone(),
+                actions: vec![near_primitives::transaction::Action::Transfer(
+                    near_primitives::transaction::TransferAction {
+                        deposit: item.amount_in_near.as_yoctonear(),
+                    },
+                )],
+            }
+        );
+
         Self {
             global_context: item.global_context,
             interacting_with_account_ids: vec![item.signer_account_id, item.receiver_account_id],
