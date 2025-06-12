@@ -801,8 +801,8 @@ pub fn print_unsigned_transaction(
                                 .replace('\n', "\n                                 ")
                         }
                         Err(_) => {
-                            if let Ok(s) = String::from_utf8(function_call_action.args.clone()) {
-                                s
+                            if let Ok(args) = String::from_utf8(function_call_action.args.clone()) {
+                                args
                             } else {
                                 format!(
                                     "<non-printable data ({})>",

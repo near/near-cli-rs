@@ -58,10 +58,9 @@ pub enum SignWith {
     /// Prepare unsigned transaction to sign it later
     SignLater(self::sign_later::SignLater),
     #[strum_discriminants(strum(
-        message = "submit-as-dao-proposal           - Convert current transaction to DAO proposal (experimental)"
+        message = "submit-as-dao-proposal           - Convert current transaction to DAO proposal"
     ))]
     /// Prepare transaction as dao proposal
-    // WARN: Maybe Boxing this would be better?
     SubmitAsDaoProposal(self::submit_dao_proposal::DaoProposal),
 }
 
