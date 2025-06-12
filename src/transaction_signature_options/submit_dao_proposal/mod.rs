@@ -11,7 +11,7 @@ pub struct DaoProposal {
     #[interactive_clap(skip_default_input_arg)]
     /// What is dao account ID?
     dao_account_id: crate::types::account_id::AccountId,
-    #[interactive_clap(named_arg)]
+    #[interactive_clap(subargs)]
     /// Proposal function params
     proposal_arguments: DaoProposalArguments,
 }
@@ -62,7 +62,7 @@ pub struct DaoProposalArguments {
     /// Enter proposal description:
     proposal_description: String,
     #[interactive_clap(named_arg)]
-    /// Enter gas amount:
+    /// Enter gas amount for DAO proposal:
     prepaid_gas: PrepaidGas,
 }
 
@@ -110,10 +110,10 @@ impl DaoProposalArguments {
 #[interactive_clap(output_context = PrepaidGasContext)]
 pub struct PrepaidGas {
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter gas for function call:
+    /// Enter gas amount for DAO proposal:
     gas: crate::common::NearGas,
     #[interactive_clap(named_arg)]
-    /// Enter deposit for this call:
+    /// Enter deposit for DAO proposal:
     attached_deposit: Deposit,
 }
 
@@ -171,7 +171,7 @@ impl PrepaidGas {
 #[interactive_clap(output_context=DepositContext)]
 pub struct Deposit {
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter deposit for this function call:
+    /// Enter deposit for DAO proposal:
     deposit: crate::types::near_token::NearToken,
     #[interactive_clap(subcommand)]
     transaction_signature_options: dao_sign_with::DaoSignWith,
