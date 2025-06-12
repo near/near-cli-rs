@@ -209,15 +209,18 @@ impl Deposit {
     pub fn input_deposit(
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
+        let one_near = crate::types::near_token::NearToken::from_near(1);
+
         Ok(Some(
             CustomType::new("Enter deposit for adding DAO proposal:")
-                .with_starting_input("1 NEAR")
+                .with_starting_input(&one_near.to_string())
                 .with_validator(move |deposit: &crate::types::near_token::NearToken| {
-                    if deposit < &crate::types::near_token::NearToken::from_near(1) {
+                    if deposit < &one_near {
                         Ok(inquire::validator::Validation::Invalid(
-                            inquire::validator::ErrorMessage::Custom(
-                                "You need to enter amount more than 1 NEAR".to_string(),
-                            ),
+                            inquire::validator::ErrorMessage::Custom(format!(
+                                "You need to enter amount more than {}",
+                                one_near
+                            )),
                         ))
                     } else {
                         Ok(inquire::validator::Validation::Valid)
