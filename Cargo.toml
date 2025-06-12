@@ -23,6 +23,7 @@ name = "near"
 path = "src/main.rs"
 
 [dependencies]
+base64 = "0.22.1"
 clap = { version = "4.0.18", features = ["derive"] }
 inquire = "0.7"
 strum = { version = "0.24", features = ["derive"] }
