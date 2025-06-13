@@ -47,10 +47,6 @@ impl NearToken {
         Self(near_token::NearToken::from_yoctonear(inner))
     }
 
-    pub fn from_near(inner: u128) -> Self {
-        Self(near_token::NearToken::from_near(inner))
-    }
-
     pub const fn is_zero(&self) -> bool {
         self.0.is_zero()
     }

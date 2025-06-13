@@ -148,20 +148,22 @@ impl PrepaidGas {
         _context: &DaoProposalArgumentsContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         Ok(Some(
-            CustomType::new("Enter gas for addding DAO proposal:")
-                .with_starting_input("100 TeraGas")
-                .with_validator(move |gas: &crate::common::NearGas| {
-                    if gas > &near_gas::NearGas::from_tgas(300) {
-                        Ok(inquire::validator::Validation::Invalid(
-                            inquire::validator::ErrorMessage::Custom(
-                                "You need to enter a value of no more than 300 TeraGas".to_string(),
-                            ),
-                        ))
-                    } else {
-                        Ok(inquire::validator::Validation::Valid)
-                    }
-                })
-                .prompt()?,
+            CustomType::new(
+                "What is the gas limit for adding DAO proposal (if unsure, keep 10TGas)?",
+            )
+            .with_starting_input("10 Tgas")
+            .with_validator(move |gas: &crate::common::NearGas| {
+                if gas > &near_gas::NearGas::from_tgas(300) {
+                    Ok(inquire::validator::Validation::Invalid(
+                        inquire::validator::ErrorMessage::Custom(
+                            "You need to enter a value of no more than 300 TeraGas".to_string(),
+                        ),
+                    ))
+                } else {
+                    Ok(inquire::validator::Validation::Valid)
+                }
+            })
+            .prompt()?,
         ))
     }
 }
@@ -209,23 +211,9 @@ impl Deposit {
     pub fn input_deposit(
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        let one_near = crate::types::near_token::NearToken::from_near(1);
-
         Ok(Some(
             CustomType::new("Enter deposit for adding DAO proposal:")
-                .with_starting_input(&one_near.to_string())
-                .with_validator(move |deposit: &crate::types::near_token::NearToken| {
-                    if deposit < &one_near {
-                        Ok(inquire::validator::Validation::Invalid(
-                            inquire::validator::ErrorMessage::Custom(format!(
-                                "You need to enter amount more than {}",
-                                one_near
-                            )),
-                        ))
-                    } else {
-                        Ok(inquire::validator::Validation::Valid)
-                    }
-                })
+                .with_starting_input("0 NEAR")
                 .prompt()?,
         ))
     }

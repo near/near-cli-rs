@@ -4,7 +4,6 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::str::FromStr;
 
-use base64::Engine;
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use color_eyre::owo_colors::OwoColorize;
 use futures::{StreamExt, TryStreamExt};
@@ -715,35 +714,6 @@ pub fn print_full_unsigned_transaction(
     info_str
 }
 
-pub fn deep_decode_args(v: &mut serde_json::Value) {
-    match v {
-        serde_json::Value::Object(map) => {
-            for (key, val) in map.iter_mut() {
-                if key == "args" {
-                    if let serde_json::Value::String(s) = val {
-                        if let Ok(bytes) = base64::engine::general_purpose::STANDARD.decode(s) {
-                            if let Ok(mut nested) =
-                                serde_json::from_slice::<serde_json::Value>(&bytes)
-                            {
-                                deep_decode_args(&mut nested);
-                                *val = nested;
-                                continue;
-                            }
-                        }
-                    }
-                }
-                deep_decode_args(val);
-            }
-        }
-        serde_json::Value::Array(arr) => {
-            for elem in arr {
-                deep_decode_args(elem);
-            }
-        }
-        _ => {}
-    }
-}
-
 pub fn print_unsigned_transaction(
     transaction: &crate::commands::PrepopulatedTransaction,
 ) -> String {
@@ -794,9 +764,8 @@ pub fn print_unsigned_transaction(
                     "",
                     "args:",
                     match serde_json::from_slice::<serde_json::Value>(&function_call_action.args) {
-                        Ok(mut parsed) => {
-                            deep_decode_args(&mut parsed);
-                            serde_json::to_string_pretty(&parsed)
+                        Ok(parsed_args) => {
+                            serde_json::to_string_pretty(&parsed_args)
                                 .unwrap_or_else(|_| "".to_string())
                                 .replace('\n', "\n                                 ")
                         }
