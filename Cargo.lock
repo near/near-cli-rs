@@ -2057,7 +2057,6 @@ dependencies = [
 name = "near-cli-rs"
 version = "0.20.0"
 dependencies = [
- "base64 0.22.1",
  "bip39",
  "bs58 0.5.1",
  "bytesize",

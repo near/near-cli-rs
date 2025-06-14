@@ -46,55 +46,28 @@ impl TryFrom<&crate::commands::PrepopulatedTransaction> for ProposalKind {
     fn try_from(
         transaction: &crate::commands::PrepopulatedTransaction,
     ) -> Result<Self, Self::Error> {
-        if transaction.actions.is_empty() {
+        let Some(first_action) = transaction.actions.first() else {
             return Err(eyre!("No actions were found in transaction!"));
-        }
+        };
 
-        let mut parsed_actions = Vec::new();
-
-        for action in &transaction.actions {
-            match action {
-                Action::Transfer(_) => {
-                    if parsed_actions.is_empty() {
-                        parsed_actions.push(action.clone());
-                    } else if let Action::Transfer(_) = parsed_actions.last().unwrap() {
-                        return Err(eyre!("Batch transfers are not supported for DAO proposals"));
-                    } else {
-                        return Err(eyre!(
-                            "Mixed action types are not supported for DAO proposals"
-                        ));
-                    }
-                }
-                Action::FunctionCall(_) => {
-                    if parsed_actions.is_empty() {
-                        parsed_actions.push(action.clone());
-                    } else if let Action::FunctionCall(_) = parsed_actions.last().unwrap() {
-                        parsed_actions.push(action.clone());
-                    } else {
-                        return Err(eyre!(
-                            "Mixed action types are not supported for DAO proposals"
-                        ));
-                    }
-                }
-                _ => {
-                    return Err(eyre!(
-                        "Passed `Action` type is not supported for DAO proposal"
-                    ));
+        match first_action {
+            Action::Transfer(transfer_action) => {
+                if transaction.actions.len() > 1 {
+                    Err(eyre!("Batch transfers are not supported for DAO proposals"))
+                } else {
+                    Ok(ProposalKind::Transfer(TransferArgs {
+                        token_id: String::new(),
+                        receiver_id: transaction.receiver_id.clone(),
+                        amount: crate::types::near_token::NearToken::from_yoctonear(
+                            transfer_action.deposit,
+                        ),
+                        msg: None,
+                    }))
                 }
             }
-        }
-
-        match parsed_actions.first() {
-            Some(Action::Transfer(transfer_action)) => Ok(ProposalKind::Transfer(TransferArgs {
-                token_id: String::new(),
-                receiver_id: transaction.receiver_id.clone(),
-                amount: crate::types::near_token::NearToken::from_yoctonear(
-                    transfer_action.deposit,
-                ),
-                msg: None,
-            })),
-            Some(Action::FunctionCall(_)) => {
-                let action_calls = parsed_actions
+            Action::FunctionCall(_) => {
+                let action_calls: Vec<_> = transaction
+                    .actions
                     .iter()
                     .filter_map(|action| {
                         if let Action::FunctionCall(function_call_action) = action {
@@ -112,17 +85,20 @@ impl TryFrom<&crate::commands::PrepopulatedTransaction> for ProposalKind {
                     })
                     .collect();
 
-                Ok(ProposalKind::FunctionCall(FunctionCallArgs {
-                    receiver_id: transaction.receiver_id.clone(),
-                    actions: action_calls,
-                }))
+                if action_calls.len() != transaction.actions.len() {
+                    Err(eyre!(
+                        "Mixed action types are not supported for DAO proposals"
+                    ))
+                } else {
+                    Ok(ProposalKind::FunctionCall(FunctionCallArgs {
+                        receiver_id: transaction.receiver_id.clone(),
+                        actions: action_calls,
+                    }))
+                }
             }
-            Some(_) => unreachable!(
-                "only `Action::FunctionCall` and `Action::Transfer` were pushed to vector"
-            ),
-            None => unreachable!(
-                "only `Action::FunctionCall` and `Action::Transfer` were pushed to vector"
-            ),
+            action => Err(eyre!(
+                "Passed {action:?} type is not supported for DAO proposal"
+            )),
         }
     }
 }

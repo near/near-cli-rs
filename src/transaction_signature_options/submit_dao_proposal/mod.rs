@@ -149,7 +149,7 @@ impl PrepaidGas {
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         Ok(Some(
             CustomType::new(
-                "What is the gas limit for adding DAO proposal (if unsure, keep 10TGas)?",
+                "What is the gas limit for adding DAO proposal (if unsure, keep 10 Tgas)?",
             )
             .with_starting_input("10 Tgas")
             .with_validator(move |gas: &crate::common::NearGas| {
