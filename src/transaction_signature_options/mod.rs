@@ -12,6 +12,7 @@ pub mod sign_with_ledger;
 pub mod sign_with_legacy_keychain;
 pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
+pub mod submit_dao_proposal;
 
 pub const META_TRANSACTION_VALID_FOR_DEFAULT: u64 = 1000;
 
@@ -56,6 +57,11 @@ pub enum SignWith {
     ))]
     /// Prepare unsigned transaction to sign it later
     SignLater(self::sign_later::SignLater),
+    #[strum_discriminants(strum(
+        message = "submit-as-dao-proposal           - Convert current transaction to DAO proposal"
+    ))]
+    /// Prepare transaction as dao proposal
+    SubmitAsDaoProposal(self::submit_dao_proposal::DaoProposal),
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
