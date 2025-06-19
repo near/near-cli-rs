@@ -1,7 +1,7 @@
 use color_eyre::eyre::eyre;
 use near_primitives::action::Action;
 use serde::{Deserialize, Serialize};
-use serde_with::{base64::Base64, serde_as, DisplayFromStr};
+use serde_with::{base64::Base64, serde_as};
 
 #[serde_as]
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -9,11 +9,8 @@ pub struct ActionCall {
     method_name: String,
     #[serde_as(as = "Base64")]
     args: Vec<u8>,
-    deposit: crate::types::near_token::NearToken,
-    // NOTE: We cannot use `crate::common::NearGas`, as sputnikdao uses `U64`
-    // https://github.com/near-daos/sputnik-dao-contract/blob/278adc713e795f95a6da4d3007c7e03e8120f153/sputnikdao2/src/proposals.rs#L42
-    #[serde_as(as = "DisplayFromStr")]
-    gas: u64,
+    deposit: near_token::NearToken,
+    gas: near_gas::NearGas,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -74,10 +71,10 @@ impl TryFrom<&crate::commands::PrepopulatedTransaction> for ProposalKind {
                             Some(ActionCall {
                                 method_name: function_call_action.method_name.clone(),
                                 args: function_call_action.args.clone(),
-                                deposit: crate::types::near_token::NearToken::from_yoctonear(
+                                deposit: near_token::NearToken::from_yoctonear(
                                     function_call_action.deposit,
                                 ),
-                                gas: function_call_action.gas,
+                                gas: near_gas::NearGas::from_gas(function_call_action.gas),
                             })
                         } else {
                             None
