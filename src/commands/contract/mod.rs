@@ -6,6 +6,7 @@ pub mod deploy_global;
 mod download_abi;
 pub mod download_wasm;
 mod inspect;
+mod verify;
 mod view_storage;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -41,6 +42,11 @@ pub enum ContractActions {
     ))]
     /// Get a list of available function names
     Inspect(self::inspect::Contract),
+    #[strum_discriminants(strum(
+        message = "verify           - Verify the contract for compliance with the program code"
+    ))]
+    /// Verify the contract for compliance with the program code
+    Verify(self::verify::Contract),
     #[strum_discriminants(strum(message = "download-abi     - Download contract ABI"))]
     /// Download contract ABI
     DownloadAbi(self::download_abi::Contract),
