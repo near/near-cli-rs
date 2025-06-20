@@ -39,16 +39,21 @@ impl SaveToFileContext {
                     serde_json::to_value(FileSignedTransaction { signed_transaction })?;
 
                 std::fs::File::create(&file_path)
+                    .wrap_err(sysexits::ExitCode::CantCreat)
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
                     .write(&serde_json::to_vec(&data_signed_transaction)?)
+                    .wrap_err(sysexits::ExitCode::DataErr)
                     .wrap_err_with(|| format!("Failed to write to file: {:?}", &file_path))?;
-                eprintln!("\nThe file {:?} was created successfully. It has a signed transaction (serialized as base64).", &file_path);
 
-                eprintln!(
-                    "This base64-encoded signed transaction is ready to be sent to the network. You can call RPC server directly, or use a helper command on near CLI:\n$ {} transaction send-signed-transaction\n",
-                    crate::common::get_near_exec_path()
+                tracing::info!(
+                    "{}",
+                    crate::common::indent_payload(&format!(
+                        "\nThe file {:?} was created successfully. It has a signed transaction (serialized as base64).\nThis base64-encoded signed transaction is ready to be sent to the network. You can call RPC server directly, or use a helper command on near CLI:\n$ {} transaction send-signed-transaction\n{}",
+                        &file_path,
+                        crate::common::get_near_exec_path(),
+                        storage_message
+                    ))
                 );
-                eprintln!("{storage_message}");
             }
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
@@ -59,16 +64,21 @@ impl SaveToFileContext {
                     })?;
 
                 std::fs::File::create(&file_path)
+                    .wrap_err(sysexits::ExitCode::CantCreat)
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
                     .write(&serde_json::to_vec(&data_signed_delegate_action)?)
+                    .wrap_err(sysexits::ExitCode::DataErr)
                     .wrap_err_with(|| format!("Failed to write to file: {:?}", &file_path))?;
-                eprintln!("\nThe file {:?} was created successfully. It has a signed delegate action (serialized as base64).", &file_path);
 
-                eprintln!(
-                    "This base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n",
-                    crate::common::get_near_exec_path()
+                tracing::info!(
+                    "{}",
+                    crate::common::indent_payload(&format!(
+                        "\nThe file {:?} was created successfully. It has a signed delegate action (serialized as base64).\nThis base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n{}",
+                        &file_path,
+                        crate::common::get_near_exec_path(),
+                        storage_message
+                    ))
                 );
-                eprintln!("{storage_message}");
             }
         }
         Ok(Self)

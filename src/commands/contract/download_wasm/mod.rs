@@ -111,8 +111,10 @@ fn download_contract_code(
 ) -> crate::CliResult {
     let code = get_code(account_id, network_config, block_reference)?;
     std::fs::File::create(file_path)
+        .wrap_err(sysexits::ExitCode::CantCreat)
         .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
         .write(&code)
+        .wrap_err(sysexits::ExitCode::DataErr)
         .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
     tracing::info!(
         parent: &tracing::Span::none(),

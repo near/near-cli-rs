@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use color_eyre::eyre::ContextCompat;
+use color_eyre::eyre::{ContextCompat, WrapErr};
 use near_primitives::types::{BlockId, BlockReference, Finality};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
@@ -39,6 +39,7 @@ impl NetworkViewAtBlockArgsContext {
         let network_connection = previous_context.config.network_connection.clone();
         let network_config = network_connection
             .get(&scope.network_name)
+            .wrap_err(sysexits::ExitCode::DataErr)
             .wrap_err("Failed to get network config!")?
             .clone();
         Ok(Self {

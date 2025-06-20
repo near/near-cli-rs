@@ -1,4 +1,4 @@
-use color_eyre::eyre::ContextCompat;
+use color_eyre::eyre::{ContextCompat, WrapErr};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -29,6 +29,7 @@ impl NetworkContext {
             .config
             .network_connection
             .get(&scope.network_name)
+            .wrap_err(sysexits::ExitCode::DataErr)
             .wrap_err("Failed to get network config!")?
             .clone();
 
