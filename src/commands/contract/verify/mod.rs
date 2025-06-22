@@ -76,11 +76,6 @@ pub enum SourceContractCode {
     ))]
     /// Verify the contract by contract account ID
     DeployedAt(ContractAccountId),
-    #[strum_discriminants(strum(
-        message = "wasm-file      - Verify the contract using a wasm file"
-    ))]
-    /// Verify the contract using a wasm file
-    WasmFile(ContractFile),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -148,44 +143,6 @@ impl ContractAccountIdContext {
 impl From<ContractAccountIdContext> for crate::network_view_at_block::ArgsForViewContext {
     fn from(item: ContractAccountIdContext) -> Self {
         item.0
-    }
-}
-
-#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(input_context = ContractContext)]
-#[interactive_clap(output_context = ContractFileContext)]
-pub struct ContractFile {
-    /// What is a file location of the contract?
-    pub file_path: crate::types::path_buf::PathBuf,
-}
-
-pub struct ContractFileContext;
-
-impl ContractFileContext {
-    pub fn from_previous_context(
-        previous_context: ContractContext,
-        scope: &<ContractFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> color_eyre::eyre::Result<Self> {
-        let wasm_code = scope.file_path.read_bytes()?;
-
-        let contract_source_metadata = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(fetch_contract_source_metadata_from_wasm(&wasm_code))?;
-
-        let contract_properties = get_contract_properties_from_docker_build(
-            contract_source_metadata,
-            previous_context.use_contract_source_code_path,
-            previous_context.save_contract_source_code_into,
-            previous_context.no_image_whitelist,
-        )?;
-
-        verify_contract(
-            previous_context.global_context.verbosity,
-            wasm_code,
-            contract_properties,
-        );
-
-        Ok(Self)
     }
 }
 
@@ -359,15 +316,4 @@ fn get_contract_code_from_contract_account_id(
             return Err(color_eyre::Report::msg("Error call result".to_string()));
         };
     Ok(contract_code_view.code)
-}
-
-async fn fetch_contract_source_metadata_from_wasm(
-    wasm: &[u8],
-) -> color_eyre::eyre::Result<ContractSourceMetadata> {
-    let worker = near_workspaces::sandbox().await?;
-    let contract = worker.dev_deploy(wasm).await?;
-    let outcome = contract.view("contract_source_metadata").await?;
-    Ok(serde_json::from_slice::<ContractSourceMetadata>(
-        outcome.result.as_slice(),
-    )?)
 }
