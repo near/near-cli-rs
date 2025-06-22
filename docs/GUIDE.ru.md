@@ -2336,6 +2336,7 @@ Error:
 - [call-function](#call-function---Execute-function-contract-method)
 - [deploy](#deploy---Add-a-new-contract-code)
 - [inspect](#inspect---Get-a-list-of-available-function-names)
+- [verify](#verify---Verify-the-contract-for-compliance-with-the-program-code)
 - [download-abi](#download-abi---Download-contract-ABI)
 - [download-wasm](#download-wasm---Download-wasm)
 - [view-storage](#view-storage---View-contract-storage-state)
@@ -2606,6 +2607,36 @@ near contract \
 <details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
 <a href="https://asciinema.org/a/FKvZYq7vHu0zwvw3KYSKwQuBB?autoplay=1&t=1&speed=2">
     <img src="https://asciinema.org/a/FKvZYq7vHu0zwvw3KYSKwQuBB.png" width="836"/>
+</a>
+</details>
+
+#### verify - Verify the contract for compliance with the program code
+
+Для проверки контракта на соответствие программному коду необходимо ввести в командной строке терминала:
+```txt
+near contract \
+    verify deployed-at \
+    simple-package-verify-rs-ci.testnet \
+    network-config testnet \
+    now
+```
+
+<details><summary><i>Результат выполнения команды</i></summary>
+
+```txt
+ INFO The code obtained from the contract account ID and the code calculated from the repository are the same.
+ |    Contract code hash: 5KaX9FM9NtjpfahksL8TMWQk3LF7k8Sv88Qem4tGrVDW
+ |    Contract version: 1.0.0
+ |    Standards used by the contract:   [nep330:1.2.0]
+ |    View the contract's source code on:       https://github.com/dj8yfo/verify_contracts_collection/tree/e3303f0cf8761b99f84f93c3a2d7046be6f4edb5
+ |    Build Environment:        sourcescan/cargo-near:0.13.4-rust-1.85.0@sha256:a9d8bee7b134856cc8baa142494a177f2ba9ecfededfcdd38f634e14cca8aae2
+ |    Build Command:    cargo near build non-reproducible-wasm --locked
+```
+</details>
+
+<details><summary><i>Демонстрация работы команды в интерактивном режиме</i></summary>
+<a href="https://asciinema.org/a/kRbwEWB7mnjBXULWPGcFE1597?autoplay=1&t=1&speed=2">
+    <img src="https://asciinema.org/a/kRbwEWB7mnjBXULWPGcFE1597.png" width="836"/>
 </a>
 </details>
 

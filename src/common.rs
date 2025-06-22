@@ -2746,6 +2746,26 @@ pub(crate) fn teach_me_call_response(response: &impl serde::Serialize) {
     }
 }
 
+pub(crate) fn teach_me_request_payload(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    request: &near_jsonrpc_client::methods::query::RpcQueryRequest,
+) {
+    if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(request) {
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "HTTP POST {}",
+            json_rpc_client.server_addr()
+        );
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "JSON Request Body:\n{}",
+            indent_payload(&format!("{:#}", request_payload))
+        );
+    }
+}
+
 pub fn indent_payload(s: &str) -> String {
     use std::fmt::Write;
 
