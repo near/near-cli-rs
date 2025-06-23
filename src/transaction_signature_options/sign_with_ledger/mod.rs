@@ -10,7 +10,7 @@ use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
 
 const SW_BUFFER_OVERFLOW: &str = "0x6990";
-const ERR_OVERFLOW_MEMO: &str = "Buffer overflow on Ledger device occured. \
+const ERR_OVERFLOW_MEMO: &str = "Buffer overflow on Ledger device occurred. \
 Transaction is too large for signature. \
 This is resolved in https://github.com/dj8yfo/app-near-rs . \
 The status is tracked in `About` section.";

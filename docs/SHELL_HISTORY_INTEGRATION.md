@@ -78,7 +78,7 @@ end
 For Fish versions older than 4.0, where `history append` isn't available, fallback to manually editing your history file:
 
 ```fish
-# this function is for compatability with old Fish shell versions
+# this function is for compatibility with old Fish shell versions
 function near
     command near $argv
 
