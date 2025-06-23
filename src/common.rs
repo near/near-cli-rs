@@ -1332,7 +1332,7 @@ pub fn convert_invalid_tx_error_to_cli_result(
             near_primitives::errors::StorageError::StorageInternalError => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Internal storage error")),
             near_primitives::errors::StorageError::MissingTrieValue(_, hash) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Requested trie value by its hash ({hash}) which is missing in the storage",)),
             near_primitives::errors::StorageError::UnexpectedTrieValue => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Unexpected trie value")),
-            near_primitives::errors::StorageError::StorageInconsistentState(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The storage is in the incosistent state: {}", message)),
+            near_primitives::errors::StorageError::StorageInconsistentState(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The storage is in the inconsistent state: {}", message)),
             near_primitives::errors::StorageError::FlatStorageBlockNotSupported(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The block is not supported by flat storage: {}", message)),
             near_primitives::errors::StorageError::MemTrieLoadingError(message) =>  color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The trie is not loaded in memory: {}", message)),
             near_primitives::errors::StorageError::FlatStorageReshardingAlreadyInProgress => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Flat storage resharding is already in progress")),
