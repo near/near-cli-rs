@@ -219,9 +219,7 @@ fn get_contract_properties_from_docker_build(
 
     let tempdir = tempfile::tempdir()?;
 
-    let target_dir = if let Some(path_buf) = save_contract_source_code_into {
-        path_buf
-    } else if let Some(path_buf) = use_contract_source_code_path.clone() {
+    let target_dir = if let Some(path_buf) = use_contract_source_code_path.clone() {
         path_buf
     } else {
         tempdir.path().to_path_buf()
@@ -234,6 +232,21 @@ fn get_contract_properties_from_docker_build(
 
     let target_dir = camino::Utf8PathBuf::from_path_buf(target_dir)
         .map_err(|err| color_eyre::eyre::eyre!("convert path buf {:?}", err))?;
+
+    if let Some(save_to_path) = save_contract_source_code_into {
+        // remove .git in target dir
+        let git_subfolder = target_dir.join(".git");
+        std::fs::remove_dir_all(&git_subfolder).wrap_err(format!(
+            "couldn't completely delete .git subfolder {:?}",
+            git_subfolder
+        ))?;
+
+        // recursively copy target dir to `save-contract-source-code-into` location before building anything
+        dircpy::copy_dir(&target_dir, &save_to_path).wrap_err(format!(
+            "an error occurred during recursive copy from build site {:?} to `save-contract-source-code-into` location {:?}",
+            target_dir, save_to_path,
+        ))?;
+    }
 
     let contract_path_buf = tracing_indicatif::suspend_tracing_indicatif::<
         _,
