@@ -148,7 +148,7 @@ fn save_access_key(
         public_key_str,
         account_id.as_ref(),
     )
-    .wrap_err_with(|| format!("Failed to save a file with access key: {}", public_key_str))?;
+    .wrap_err_with(|| format!("Failed to save a file with access key: {public_key_str}"))?;
     tracing::info!(
         parent: &tracing::Span::none(),
         "\n{}",

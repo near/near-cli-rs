@@ -135,9 +135,7 @@ impl SignPrivateKeyContext {
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
             crate::common::indent_payload(&format!(
-                "\nPublic key: {}\nSignature:  {}\n",
-                public_key,
-                signature
+                "\nPublic key: {public_key}\nSignature:  {signature}\n"
             ))
         );
 

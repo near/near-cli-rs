@@ -27,14 +27,12 @@ impl AddAccessWithLedgerContext {
 
         let seed_phrase_hd_path = scope.seed_phrase_hd_path.clone();
         eprintln!(
-            "Please allow getting the PublicKey on Ledger device (HD Path: {})",
-            seed_phrase_hd_path
+            "Please allow getting the PublicKey on Ledger device (HD Path: {seed_phrase_hd_path})"
         );
         let public_key = near_ledger::get_public_key(seed_phrase_hd_path.into()).map_err(
             |near_ledger_error| {
                 color_eyre::Report::msg(format!(
-                    "An error occurred while trying to get PublicKey from Ledger device: {:?}",
-                    near_ledger_error
+                    "An error occurred while trying to get PublicKey from Ledger device: {near_ledger_error:?}"
                 ))
             },
         )?;

@@ -143,7 +143,7 @@ impl std::str::FromStr for FungibleToken {
             2 => {
                 let num_int_part = res_split[0]
                     .parse::<u128>()
-                    .map_err(|err| format!("FungibleToken: {}", err))?;
+                    .map_err(|err| format!("FungibleToken: {err}"))?;
                 let len_fract: u8 = res_split[1]
                     .trim_end_matches('0')
                     .len()
@@ -152,7 +152,7 @@ impl std::str::FromStr for FungibleToken {
                 let num_fract_part = res_split[1]
                     .trim_end_matches('0')
                     .parse::<u128>()
-                    .map_err(|err| format!("FungibleToken: {}", err))?;
+                    .map_err(|err| format!("FungibleToken: {err}"))?;
                 let amount = num_int_part
                     .checked_mul(
                         10u128
@@ -174,7 +174,7 @@ impl std::str::FromStr for FungibleToken {
                 };
                 let amount = res_split[0]
                     .parse::<u128>()
-                    .map_err(|err| format!("FungibleToken: {}", err))?;
+                    .map_err(|err| format!("FungibleToken: {err}"))?;
                 Ok(Self {
                     amount,
                     decimals: 0,

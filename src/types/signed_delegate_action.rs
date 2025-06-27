@@ -12,8 +12,7 @@ impl serde::Serialize for SignedDelegateActionAsBase64 {
     {
         let signed_delegate_action_borsh = borsh::to_vec(&self.inner).map_err(|err| {
             serde::ser::Error::custom(format!(
-                "The value could not be borsh encoded due to: {}",
-                err
+                "The value could not be borsh encoded due to: {err}"
             ))
         })?;
         let signed_delegate_action_as_base64 =
@@ -34,8 +33,7 @@ impl<'de> serde::Deserialize<'de> for SignedDelegateActionAsBase64 {
         )
         .map_err(|err| {
             serde::de::Error::custom(format!(
-                "The value could not decoded from base64 due to: {}",
-                err
+                "The value could not decoded from base64 due to: {err}"
             ))
         })?;
         let signed_delegate_action = borsh::from_slice::<
@@ -43,8 +41,7 @@ impl<'de> serde::Deserialize<'de> for SignedDelegateActionAsBase64 {
         >(&signed_delegate_action_borsh)
         .map_err(|err| {
             serde::de::Error::custom(format!(
-                "The value could not decoded from borsh due to: {}",
-                err
+                "The value could not decoded from borsh due to: {err}"
             ))
         })?;
         Ok(Self {
@@ -59,9 +56,9 @@ impl std::str::FromStr for SignedDelegateActionAsBase64 {
         Ok(Self {
             inner: near_primitives::action::delegate::SignedDelegateAction::try_from_slice(
                 &near_primitives::serialize::from_base64(s)
-                .map_err(|err| format!("parsing of signed delegate action failed due to base64 sequence being invalid: {}", err))?,
+                .map_err(|err| format!("parsing of signed delegate action failed due to base64 sequence being invalid: {err}"))?,
             )
-            .map_err(|err| format!("delegate action could not be deserialized from borsh: {}", err))?,
+            .map_err(|err| format!("delegate action could not be deserialized from borsh: {err}"))?,
         })
     }
 }
@@ -72,7 +69,7 @@ impl std::fmt::Display for SignedDelegateActionAsBase64 {
             &borsh::to_vec(&self.inner)
                 .expect("Signed Delegate Action serialization to borsh is not expected to fail"),
         );
-        write!(f, "{}", base64_signed_delegate_action)
+        write!(f, "{base64_signed_delegate_action}")
     }
 }
 

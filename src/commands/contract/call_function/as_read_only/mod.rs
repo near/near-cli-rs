@@ -154,7 +154,7 @@ fn call_view_function(
         return Ok(());
     } else if let crate::Verbosity::Interactive = verbosity {
         eprintln!("Function execution return value (printed to stdout):");
-        println!("{}", info_str);
+        println!("{info_str}");
         return Ok(());
     };
 

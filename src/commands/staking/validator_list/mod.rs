@@ -48,7 +48,7 @@ fn display_validators_info(network_config: &crate::config::NetworkConfig) -> cra
             format!("{:>6}", "N/A")
         };
         let delegators = if let Some(num) = validator.delegators {
-            format!("{:>8}", num)
+            format!("{num:>8}")
         } else {
             format!("{:>8}", "N/A")
         };

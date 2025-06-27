@@ -35,14 +35,12 @@ impl SaveWithLedgerContext {
                     std::thread::sleep(std::time::Duration::from_secs(1));
 
                     eprintln!(
-                        "Please allow getting the PublicKey on Ledger device (HD Path: {})",
-                        seed_phrase_hd_path
+                        "Please allow getting the PublicKey on Ledger device (HD Path: {seed_phrase_hd_path})"
                     );
                     let public_key = near_ledger::get_public_key(seed_phrase_hd_path.clone().into())
                     .map_err(|near_ledger_error| {
                         color_eyre::Report::msg(format!(
-                            "An error occurred while trying to get PublicKey from Ledger device: {:?}",
-                            near_ledger_error
+                            "An error occurred while trying to get PublicKey from Ledger device: {near_ledger_error:?}"
                         ))
                     })?;
                     let public_key_str =
@@ -56,16 +54,16 @@ impl SaveWithLedgerContext {
                     })
                     .to_string();
                     let file_name: std::path::PathBuf =
-                        format!("{}.json", implicit_account_id).into();
+                        format!("{implicit_account_id}.json").into();
                     let mut file_path = std::path::PathBuf::new();
                     file_path.push(folder_path);
 
                     std::fs::create_dir_all(&file_path)?;
                     file_path.push(file_name);
                     std::fs::File::create(&file_path)
-                        .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
+                        .wrap_err_with(|| format!("Failed to create file: {file_path:?}"))?
                         .write(buf.as_bytes())
-                        .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
+                        .wrap_err_with(|| format!("Failed to write to file: {file_path:?}"))?;
 
                     tracing::info!(
                         parent: &tracing::Span::none(),
