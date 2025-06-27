@@ -53,35 +53,3 @@ impl AccountId {
         Self::from_str(owner_account_id).unwrap()
     }
 }
-
-pub fn is_implicit(account_id: &str) -> bool {
-    account_id.len() == 64
-        && account_id
-            .as_bytes()
-            .iter()
-            .all(|b| matches!(b, b'a'..=b'f' | b'0'..=b'9'))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn account_is_implicit() {
-        assert_eq!(
-            is_implicit("881ced1b09f1b226d622139532d10011a767e03942c99f3a0f7345ae56d951d6"),
-            true
-        );
-    }
-    #[test]
-    fn account_is_not_implicit() {
-        assert_eq!(
-            is_implicit("881ced1b09f1b226d622139532d10011a767e03942c99f3a0f7345ae56d951D6"),
-            false
-        );
-        assert_eq!(
-            is_implicit("881ced1b09f1b226d622139532d10011a767e03942c99f3a0f7345ae56d951d"),
-            false
-        );
-    }
-}
