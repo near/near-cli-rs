@@ -54,8 +54,7 @@ impl NewAccount {
             #[derive(derive_more::Display)]
             enum ConfirmOptions {
                 #[display(
-                    fmt = "Yes, I want to check that <{}> account does not exist. (It is free of charge, and only requires Internet access)",
-                    account_id
+                    fmt = "Yes, I want to check that <{account_id}> account does not exist. (It is free of charge, and only requires Internet access)"
                 )]
                 Yes {
                     account_id: crate::types::account_id::AccountId,

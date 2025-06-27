@@ -12,10 +12,7 @@ impl std::str::FromStr for Base64Bytes {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
             inner: near_primitives::serialize::from_base64(s).map_err(|err| {
-                format!(
-                    "parsing action {s} failed due to invalid base64 sequence: {}",
-                    err
-                )
+                format!("parsing action {s} failed due to invalid base64 sequence: {err}")
             })?,
         })
     }

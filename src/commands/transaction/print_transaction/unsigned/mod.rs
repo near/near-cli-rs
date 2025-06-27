@@ -22,7 +22,7 @@ impl PrintContext {
             crate::common::print_full_unsigned_transaction(Transaction::V0(unsigned_transaction));
 
         if let crate::Verbosity::Quiet = previous_context.verbosity {
-            println!("Unsigned transaction (full):{}", info_str);
+            println!("Unsigned transaction (full):{info_str}");
         }
         tracing::info!(
             parent: &tracing::Span::none(),

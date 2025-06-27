@@ -48,9 +48,9 @@ impl std::str::FromStr for TransactionAsBase64 {
         Ok(Self {
             inner: near_primitives::transaction::TransactionV0::try_from_slice(
                 &near_primitives::serialize::from_base64(s)
-                    .map_err(|err| format!("base64 transaction sequence is invalid: {}", err))?,
+                    .map_err(|err| format!("base64 transaction sequence is invalid: {err}"))?,
             )
-            .map_err(|err| format!("transaction could not be parsed: {}", err))?,
+            .map_err(|err| format!("transaction could not be parsed: {err}"))?,
         })
     }
 }
@@ -61,6 +61,6 @@ impl std::fmt::Display for TransactionAsBase64 {
             &borsh::to_vec(&self.inner)
                 .expect("Transaction is not expected to fail on serialization"),
         );
-        write!(f, "{}", base64_unsigned_transaction)
+        write!(f, "{base64_unsigned_transaction}")
     }
 }

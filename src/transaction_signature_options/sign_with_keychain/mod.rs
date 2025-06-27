@@ -89,7 +89,7 @@ impl SignKeychainContext {
                 Err(err) => {
                     match matches!(err, keyring::Error::NoEntry) {
                         true => eprintln!("Warning: no access key found in keychain"),
-                        false => eprintln!("Warning: keychain was not able to be read, {}", err),
+                        false => eprintln!("Warning: keychain was not able to be read, {err}"),
                     }
 
                     eprintln!("trying with the legacy keychain");

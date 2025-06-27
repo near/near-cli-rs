@@ -47,7 +47,7 @@ impl PublicKeyFromKeychainContext {
                                 near_primitives::types::Finality::Final.into(),
                             )
                             .wrap_err_with(|| {
-                                format!("Failed to fetch access key list for {}", account_id)
+                                format!("Failed to fetch access key list for {account_id}")
                             })?
                             .access_key_list_view()?;
 
@@ -64,7 +64,7 @@ impl PublicKeyFromKeychainContext {
                             .find_map(|public_key| {
                                 let keyring = keyring::Entry::new(
                                     &service_name,
-                                    &format!("{}:{}", account_id, public_key),
+                                    &format!("{account_id}:{public_key}"),
                                 )
                                 .ok()?;
                                 keyring.get_password().ok()

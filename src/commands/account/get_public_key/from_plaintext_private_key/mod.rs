@@ -18,10 +18,10 @@ impl PublicKeyFromPlaintextPrivateKeyContext {
         let public_key = private_key.public_key();
 
         if let crate::Verbosity::Quiet = previous_context.verbosity {
-            println!("{}", public_key);
+            println!("{public_key}");
         } else {
             eprintln!("\nPublic key (printed to stdout): ");
-            println!("{}", public_key);
+            println!("{public_key}");
         }
 
         Ok(Self {})
