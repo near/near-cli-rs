@@ -60,6 +60,15 @@ pub fn login(
             ));
         }
         if access_key_view.is_err() {
+            // If the implicit account does not exist on the network, it will still be imported.
+            if crate::types::account_id::is_implicit(account_id_from_cli.as_ref()) {
+                let pk_implicit_account =
+                    near_crypto::PublicKey::from_near_implicit_account(&account_id_from_cli)?;
+                if public_key_str == pk_implicit_account.to_string() {
+                    break account_id_from_cli;
+                }
+            };
+
             tracing::warn!(
                 parent: &tracing::Span::none(),
                 "WARNING!{}",
