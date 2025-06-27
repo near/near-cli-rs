@@ -145,9 +145,7 @@ impl SignSeedPhraseContext {
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
             crate::common::indent_payload(&format!(
-                "\nPublic key: {}\nSignature:  {}\n",
-                signer_public_key,
-                signature
+                "\nPublic key: {signer_public_key}\nSignature:  {signature}\n"
             ))
         );
 

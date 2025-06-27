@@ -25,6 +25,6 @@ impl interactive_clap::ToCli for PathBuf {
 impl PathBuf {
     pub fn read_bytes(&self) -> color_eyre::Result<Vec<u8>> {
         std::fs::read(self.0.clone())
-            .wrap_err_with(|| format!("Error reading data from file: {}", self))
+            .wrap_err_with(|| format!("Error reading data from file: {self}"))
     }
 }

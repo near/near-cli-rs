@@ -372,7 +372,7 @@ fn download_code(
                 network_config,
                 block_reference
             ).map_err(|e| {
-                color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {}", e))
+                color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {e}"))
             })?;
 
     let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
@@ -387,8 +387,7 @@ fn download_code(
     }
 
     std::fs::write(file_name, code).wrap_err(format!(
-        "Failed to write the deploy command code to file: '{}' in the current folder",
-        file_name
+        "Failed to write the deploy command code to file: '{file_name}' in the current folder"
     ))?;
 
     tracing::info!(

@@ -99,7 +99,7 @@ pub fn get_password_from_keychain(
                 account_id,
                 near_primitives::types::Finality::Final.into(),
             )
-            .wrap_err_with(|| format!("Failed to fetch access key list for {}", account_id))?
+            .wrap_err_with(|| format!("Failed to fetch access key list for {account_id}"))?
             .access_key_list_view()?;
 
         access_key_list
@@ -114,7 +114,7 @@ pub fn get_password_from_keychain(
             .map(|key| key.public_key)
             .find_map(|public_key| {
                 let keyring =
-                    keyring::Entry::new(&service_name, &format!("{}:{}", account_id, public_key))
+                    keyring::Entry::new(&service_name, &format!("{account_id}:{public_key}"))
                         .ok()?;
                 keyring.get_password().ok()
             })
@@ -161,7 +161,7 @@ pub fn get_account_properties_data_path(
     credentials_home_dir: &std::path::Path,
     check_if_seed_phrase_exists: bool,
 ) -> color_eyre::eyre::Result<std::path::PathBuf> {
-    let file_name = format!("{}.json", account_id);
+    let file_name = format!("{account_id}.json");
     let mut path = std::path::PathBuf::from(credentials_home_dir);
 
     let dir_name = network_config.network_name.clone();
@@ -189,7 +189,7 @@ pub fn get_account_properties_data_path(
             account_id,
             near_primitives::types::Finality::Final.into(),
         )
-        .wrap_err_with(|| format!("Failed to fetch access KeyList for {}", account_id))?
+        .wrap_err_with(|| format!("Failed to fetch access KeyList for {account_id}"))?
         .access_key_list_view()?;
     let mut path = std::path::PathBuf::from(credentials_home_dir);
     path.push(dir_name);

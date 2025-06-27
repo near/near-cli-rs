@@ -64,7 +64,7 @@ fn auto_import_secret_key(
     private_key: &near_crypto::SecretKey,
 ) -> crate::CliResult {
     let mut url: url::Url = network_config.wallet_url.join("auto-import-secret-key")?;
-    let fragment = format!("{}/{}", account_id, private_key);
+    let fragment = format!("{account_id}/{private_key}");
     url.set_fragment(Some(&fragment));
     eprintln!(
         "If your browser doesn't automatically open, please visit this URL:\n {}\n",

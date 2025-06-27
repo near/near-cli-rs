@@ -175,10 +175,7 @@ pub fn get_signed_delegate_action(
         parent: &tracing::Span::none(),
         "Your delegating action was signed successfully.{}",
         crate::common::indent_payload(&format!(
-            "\nNote that the signed transaction is valid until block {}. You can change the validity of a transaction by setting a flag in the command: --meta-transaction-valid-for 2000\nPublic key: {}\nSignature:  {}\n",
-            max_block_height,
-            public_key,
-            signature
+            "\nNote that the signed transaction is valid until block {max_block_height}. You can change the validity of a transaction by setting a flag in the command: --meta-transaction-valid-for 2000\nPublic key: {public_key}\nSignature:  {signature}\n"
         ))
     );
 

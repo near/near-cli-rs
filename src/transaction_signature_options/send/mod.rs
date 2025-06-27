@@ -56,7 +56,7 @@ impl SendContext {
                     Ok(relayer_response) => {
                         if relayer_response.status().is_success() {
                             let response_text = relayer_response.text().map_err(color_eyre::Report::msg)?;
-                            eprintln!("\nRelayer Response text: {}", response_text);
+                            eprintln!("\nRelayer Response text: {response_text}");
                         } else {
                             eprintln!(
                                 "\nRequest failed with status code: {}",
@@ -169,7 +169,7 @@ fn sending_delegate_action(
         target: "near_teach_me",
         parent: &tracing::Span::none(),
         "JSON Body:\n{}",
-        crate::common::indent_payload(&format!("{:#}", request_payload))
+        crate::common::indent_payload(&format!("{request_payload:#}"))
     );
 
     let response = client
@@ -181,7 +181,7 @@ fn sending_delegate_action(
         target: "near_teach_me",
         parent: &tracing::Span::none(),
         "JSON RPC Response:\n{}",
-        crate::common::indent_payload(&format!("{:#?}", response))
+        crate::common::indent_payload(&format!("{response:#?}"))
     );
 
     Ok(response)

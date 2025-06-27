@@ -154,8 +154,7 @@ fn verify_contract(
     if contract_properties.code == contract_code {
         if let crate::Verbosity::Quiet = verbosity {
             println!(
-                "The code obtained from the contract account ID and the code calculated from the repository are the same.\n{}",
-                contract_properties
+                "The code obtained from the contract account ID and the code calculated from the repository are the same.\n{contract_properties}"
             )
         } else {
             tracing::info!("{}\n{}",

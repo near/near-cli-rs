@@ -49,8 +49,7 @@ impl PublicKeyFromLegacyKeychainContext {
                             )
                             .wrap_err_with(|| {
                                 format!(
-                                    "Failed to fetch access KeyList for {}",
-                                    account_id
+                                    "Failed to fetch access KeyList for {account_id}"
                                 )
                             })?
                             .access_key_list_view()?
@@ -80,11 +79,10 @@ impl PublicKeyFromLegacyKeychainContext {
                             .find(|entry| full_access_key_filenames.contains(&entry.file_name()))
                             .map(|signer_access_key| signer_access_key.path())
                             .unwrap_or_else(|| keychain_folder.join(format!(
-                                "{}.json",
-                                account_id
+                                "{account_id}.json"
                             )))
                         } else {
-                            keychain_folder.join(format!("{}.json", account_id))
+                            keychain_folder.join(format!("{account_id}.json"))
                         }
                     };
                     let signer_access_key_json =

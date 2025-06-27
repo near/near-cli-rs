@@ -67,10 +67,10 @@ impl std::str::FromStr for BlockHashAsBase58 {
         Ok(Self {
             inner: bs58::decode(s)
                 .into_vec()
-                .map_err(|err| format!("base58 block hash sequence is invalid: {}", err))?
+                .map_err(|err| format!("base58 block hash sequence is invalid: {err}"))?
                 .as_slice()
                 .try_into()
-                .map_err(|err| format!("block hash could not be collected: {}", err))?,
+                .map_err(|err| format!("block hash could not be collected: {err}"))?,
         })
     }
 }
@@ -504,7 +504,7 @@ async fn view_account(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
             "JSON Request Body:\n{}",
-            indent_payload(&format!("{:#}", request_payload))
+            indent_payload(&format!("{request_payload:#}"))
         );
     }
 
@@ -517,7 +517,7 @@ async fn view_account(
                     target: "near_teach_me",
                     parent: &tracing::Span::none(),
                     "JSON RPC Request failed due to connectivity issue:\n{}",
-                    indent_payload(&format!("{:#?}", transport_error))
+                    indent_payload(&format!("{transport_error:#?}"))
                 );
             }
             near_jsonrpc_client::errors::JsonRpcError::ServerError(
@@ -535,7 +535,7 @@ async fn view_account(
                     target: "near_teach_me",
                     parent: &tracing::Span::none(),
                     "JSON RPC Request returned a generic server error:\n{}",
-                    indent_payload(&format!("{:#?}", server_error))
+                    indent_payload(&format!("{server_error:#?}"))
                 );
             }
         })
@@ -581,10 +581,7 @@ pub fn get_key_pair_properties_from_seed_phrase(
         &seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
-        color_eyre::Report::msg(format!(
-            "Failed to derive a key from the master key: {}",
-            err
-        ))
+        color_eyre::Report::msg(format!("Failed to derive a key from the master key: {err}"))
     })?;
 
     let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
@@ -617,10 +614,7 @@ pub fn get_public_key_from_seed_phrase(
         &seed_phrase_hd_path,
     )
     .map_err(|err| {
-        color_eyre::Report::msg(format!(
-            "Failed to derive a key from the master key: {}",
-            err
-        ))
+        color_eyre::Report::msg(format!("Failed to derive a key from the master key: {err}"))
     })?;
     let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
     let public_key_str = format!(
@@ -652,10 +646,7 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
         &generate_keypair.seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
-        color_eyre::Report::msg(format!(
-            "Failed to derive a key from the master key: {}",
-            err
-        ))
+        color_eyre::Report::msg(format!("Failed to derive a key from the master key: {err}"))
     })?;
 
     let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
@@ -861,7 +852,7 @@ pub fn print_unsigned_transaction(
                 let code_hash = CryptoHash::hash_bytes(&deploy.code);
                 let identifier = match deploy.deploy_mode {
                     GlobalContractDeployMode::CodeHash => {
-                        format!("deploy code <{:?}> as a global hash", code_hash)
+                        format!("deploy code <{code_hash:?}> as a global hash")
                     }
                     GlobalContractDeployMode::AccountId => {
                         format!(
@@ -875,10 +866,10 @@ pub fn print_unsigned_transaction(
             near_primitives::transaction::Action::UseGlobalContract(contract_identifier) => {
                 let identifier = match contract_identifier.contract_identifier {
                     GlobalContractIdentifier::CodeHash(hash) => {
-                        format!("use global <{}> code to deploy from", hash)
+                        format!("use global <{hash}> code to deploy from")
                     }
                     GlobalContractIdentifier::AccountId(ref account_id) => {
-                        format!("use global <{}> code to deploy from", account_id)
+                        format!("use global <{account_id}> code to deploy from")
                     }
                 };
                 info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
@@ -977,10 +968,10 @@ fn print_value_successful_transaction(
                 info_str.push_str("Global contract has been successfully deployed.");
             }
             near_primitives::views::ActionView::UseGlobalContractByAccountId { account_id } => {
-                info_str.push_str(&format!("Contract has been successfully deployed with the code from the global account <{}>.", account_id));
+                info_str.push_str(&format!("Contract has been successfully deployed with the code from the global account <{account_id}>."));
             }
             near_primitives::views::ActionView::UseGlobalContract { code_hash } => {
-                info_str.push_str(&format!("Contract has been successfully deployed with the code from the global hash <{}>.", code_hash));
+                info_str.push_str(&format!("Contract has been successfully deployed with the code from the global hash <{code_hash}>."));
             }
         }
     }
@@ -1194,8 +1185,8 @@ pub fn convert_action_error_to_cli_result(
         },
         near_primitives::errors::ActionErrorKind::GlobalContractDoesNotExist { identifier } => {
             let identifier = match identifier {
-                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => format!("hash<{}>", hash),
-                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => format!("account id<{}>", account_id),
+                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => format!("hash<{hash}>"),
+                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => format!("account id<{account_id}>"),
             };
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Global contract with identifier {} does not exist.", identifier))
         }
@@ -1469,7 +1460,7 @@ pub fn print_transaction_status(
                             parent: &tracing::Span::none(),
                             "Function execution return value (printed to stdout):"
                         );
-                        suspend_tracing_indicatif(|| println!("{}", result));
+                        suspend_tracing_indicatif(|| println!("{result}"));
                     }
                 }
             }
@@ -1499,10 +1490,10 @@ pub fn print_transaction_status(
         crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
         match near_usd_exchange_rate {
             Some(Ok(exchange_rate)) => calculate_usd_amount(total_tokens_burnt, exchange_rate).map_or_else(
-                || format!(" (USD equivalent is too big to be displayed, using ${:.2} USD/NEAR exchange rate)", exchange_rate),
-                |amount| format!(" (approximately ${:.8} USD, using ${:.2} USD/NEAR exchange rate)", amount, exchange_rate)
+                || format!(" (USD equivalent is too big to be displayed, using ${exchange_rate:.2} USD/NEAR exchange rate)"),
+                |amount| format!(" (approximately ${amount:.8} USD, using ${exchange_rate:.2} USD/NEAR exchange rate)")
             ),
-            Some(Err(err)) => format!(" (USD equivalent is unavailable due to an error: {})", err),
+            Some(Err(err)) => format!(" (USD equivalent is unavailable due to an error: {err})"),
             None => String::new(),
         }
     ));
@@ -1546,11 +1537,8 @@ pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
         Err(err) => {
             let info_str = format!(
                 "{}\n{}\n",
-                format!(
-                    "Failed to save the access key <{}> to the keychain.\n{}",
-                    public_key_str, err
-                )
-                .red(),
+                format!("Failed to save the access key <{public_key_str}> to the keychain.\n{err}")
+                    .red(),
                 "The data for the access key will be stored in the legacy keychain.".red()
             );
             tracing::warn!(
@@ -1580,7 +1568,7 @@ pub fn save_access_key_to_keychain(
         network_config.network_name, account_id
     ));
 
-    keyring::Entry::new(&service_name, &format!("{}:{}", account_id, public_key_str))
+    keyring::Entry::new(&service_name, &format!("{account_id}:{public_key_str}"))
         .wrap_err("Failed to open keychain")?
         .set_password(key_pair_properties_buf)
         .wrap_err("Failed to save password to keychain. You may need to install the secure keychain package by following this instruction: https://github.com/jaraco/keyring#using-keyring-on-headless-linux-systems")?;
@@ -1610,16 +1598,16 @@ pub fn save_access_key_to_legacy_keychain(
         )
     } else {
         std::fs::File::create(&path_with_key_name)
-            .wrap_err_with(|| format!("Failed to create file: {:?}", path_with_key_name))?
+            .wrap_err_with(|| format!("Failed to create file: {path_with_key_name:?}"))?
             .write(key_pair_properties_buf.as_bytes())
-            .wrap_err_with(|| format!("Failed to write to file: {:?}", path_with_key_name))?;
+            .wrap_err_with(|| format!("Failed to write to file: {path_with_key_name:?}"))?;
         format!(
             "The data for the access key is saved in a file {}",
             &path_with_key_name.display()
         )
     };
 
-    let file_with_account_name: std::path::PathBuf = format!("{}.json", account_id).into();
+    let file_with_account_name: std::path::PathBuf = format!("{account_id}.json").into();
     let mut path_with_account_name = std::path::PathBuf::from(&credentials_home_dir);
     path_with_account_name.push(dir_name);
     path_with_account_name.push(file_with_account_name);
@@ -1631,9 +1619,9 @@ pub fn save_access_key_to_legacy_keychain(
         ))
     } else {
         std::fs::File::create(&path_with_account_name)
-            .wrap_err_with(|| format!("Failed to create file: {:?}", path_with_account_name))?
+            .wrap_err_with(|| format!("Failed to create file: {path_with_account_name:?}"))?
             .write(key_pair_properties_buf.as_bytes())
-            .wrap_err_with(|| format!("Failed to write to file: {:?}", path_with_account_name))?;
+            .wrap_err_with(|| format!("Failed to write to file: {path_with_account_name:?}"))?;
         Ok(format!(
             "{}\nThe data for the access key is saved in a file {}",
             message_1,
@@ -1867,7 +1855,7 @@ pub fn fetch_historically_delegated_staking_pools(
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
     let request =
-        reqwest::blocking::get(fastnear_url.join(&format!("v1/account/{}/staking", account_id))?)?;
+        reqwest::blocking::get(fastnear_url.join(&format!("v1/account/{account_id}/staking"))?)?;
     let response: StakingResponse = request.json()?;
 
     Ok(response
@@ -2282,14 +2270,10 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                     None => "with no limit".to_string(),
                 };
                 if method_names.is_empty() {
-                    format!(
-                        "do any function calls on {} {}",
-                        receiver_id, allowance_message
-                    )
+                    format!("do any function calls on {receiver_id} {allowance_message}")
                 } else {
                     format!(
-                        "only do {:?} function calls on {} {}",
-                        method_names, receiver_id, allowance_message
+                        "only do {method_names:?} function calls on {receiver_id} {allowance_message}"
                     )
                 }
             }
@@ -2424,7 +2408,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                     target: "near_teach_me",
                     parent: &tracing::Span::none(),
                     "JSON Request Body:\n{}",
-                    indent_payload(&format!("{:#}", request_payload))
+                    indent_payload(&format!("{request_payload:#}"))
                 );
                 match message_about_saving_payload {
                     Ok(Some(message)) => {
@@ -2457,7 +2441,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                         target: "near_teach_me",
                         parent: &tracing::Span::none(),
                         "JSON RPC Request failed due to connectivity issue:\n{}",
-                        indent_payload(&format!("{:#?}", transport_error))
+                        indent_payload(&format!("{transport_error:#?}"))
                     );
                 }
                 near_jsonrpc_client::errors::JsonRpcError::ServerError(
@@ -2475,7 +2459,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                         target: "near_teach_me",
                         parent: &tracing::Span::none(),
                         "JSON RPC Request returned a generic server error:\n{}",
-                        indent_payload(&format!("{:#?}", server_error))
+                        indent_payload(&format!("{server_error:#?}"))
                     );
                 }
             })
@@ -2680,7 +2664,7 @@ fn replace_params_with_file(
                 return Err(format!(
                     "Failed to save payload to `{}`. Serialization error:\n{}",
                     &file_path.display(),
-                    indent_payload(&format!("{:#?}", err))
+                    indent_payload(&format!("{err:#?}"))
                 ));
             }
         }
@@ -2706,19 +2690,19 @@ fn replace_params_with_file(
                     Err(err) => Err(format!(
                         "Failed to save payload to `{}`. Failed to write file:\n{}",
                         &file_path.display(),
-                        indent_payload(&format!("{:#?}", err))
+                        indent_payload(&format!("{err:#?}"))
                     )),
                 },
                 Err(err) => Err(format!(
                     "Failed to save payload to `{}`. Serialization error:\n{}",
                     &file_path.display(),
-                    indent_payload(&format!("{:#?}", err))
+                    indent_payload(&format!("{err:#?}"))
                 )),
             },
             Err(err) => Err(format!(
                 "Failed to save payload to `{}`. Failed to create file:\n{}",
                 &file_path.display(),
-                indent_payload(&format!("{:#?}", err))
+                indent_payload(&format!("{err:#?}"))
             )),
         };
 
@@ -2741,7 +2725,7 @@ pub(crate) fn teach_me_call_response(response: &impl serde::Serialize) {
             target: "near_teach_me",
             parent: &tracing::Span::none(),
             "JSON RPC Response:\n{}",
-            indent_payload(&format!("{:#}", response_payload))
+            indent_payload(&format!("{response_payload:#}"))
         );
     }
 }
@@ -2761,7 +2745,7 @@ pub(crate) fn teach_me_request_payload(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
             "JSON Request Body:\n{}",
-            indent_payload(&format!("{:#}", request_payload))
+            indent_payload(&format!("{request_payload:#}"))
         );
     }
 }
@@ -3052,7 +3036,7 @@ pub fn save_cli_command(cli_cmd_str: &str) {
         return;
     };
 
-    if let Err(err) = writeln!(tmp_file, "{}", cli_cmd_str) {
-        eprintln!("Failed to store a cli command in a temporary file: {}", err);
+    if let Err(err) = writeln!(tmp_file, "{cli_cmd_str}") {
+        eprintln!("Failed to store a cli command in a temporary file: {err}");
     }
 }
