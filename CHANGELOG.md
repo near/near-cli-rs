@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0](https://github.com/near/near-cli-rs/compare/v0.20.0...v0.21.0) - 2025-06-27
+
+### Added
+
+- Improved support for importing implicit accounts ([#498](https://github.com/near/near-cli-rs/pull/498))
+- Added a command to confirm locally that the deployed contract matches the source code it was built from ([#480](https://github.com/near/near-cli-rs/pull/480))
+- Add support for submitting general DAO proposals ([#492](https://github.com/near/near-cli-rs/pull/492))
+
+### Fixed
+
+- `clippy::result_large_err` warning ([#488](https://github.com/near/near-cli-rs/pull/488))
+
+### Other
+
+- Fixed linting errors - non-inlined formatting syntax ([#499](https://github.com/near/near-cli-rs/pull/499))
+- fix some typos ([#494](https://github.com/near/near-cli-rs/pull/494))
+- simplified action struct ([#493](https://github.com/near/near-cli-rs/pull/493))
+- added more RPCs (FAST NEAR and Lava) to the default config generation ([#491](https://github.com/near/near-cli-rs/pull/491))
+- introduced `BoxedJsonRpcResult` type ([#490](https://github.com/near/near-cli-rs/pull/490))
+- fixed shell configuration for command history ([#487](https://github.com/near/near-cli-rs/pull/487))
+
 ## [0.20.0](https://github.com/near/near-cli-rs/compare/v0.19.0...v0.20.0) - 2025-05-13
 
 ### Added
