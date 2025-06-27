@@ -5,6 +5,8 @@ use color_eyre::eyre::Context;
 use inquire::{CustomType, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+use near_primitives::account::id::AccountType;
+
 mod using_private_key;
 mod using_seed_phrase;
 mod using_web_wallet;
@@ -49,6 +51,16 @@ pub fn login(
 
     let account_id = loop {
         let account_id_from_cli = input_account_id()?;
+
+        // If the implicit account does not exist on the network, it will still be imported.
+        if let AccountType::NearImplicitAccount = account_id_from_cli.get_account_type() {
+            let pk_implicit_account =
+                near_crypto::PublicKey::from_near_implicit_account(&account_id_from_cli)?;
+            if public_key_str == pk_implicit_account.to_string() {
+                break account_id_from_cli;
+            }
+        };
+
         let access_key_view = crate::common::verify_account_access_key(
             account_id_from_cli.clone(),
             public_key.clone(),
