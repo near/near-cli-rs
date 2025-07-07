@@ -9,8 +9,8 @@ use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 use near_primitives::types::{BlockId, BlockReference};
 
-use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
 use super::FetchAbiError;
+use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -568,8 +568,6 @@ pub async fn get_contract_source_metadata(
         }
     }
 }
-
-
 
 #[tracing::instrument(name = "Waiting 3 seconds before sending a request via RPC", skip_all)]
 fn sleep_after_error(additional_message_for_name: String) {

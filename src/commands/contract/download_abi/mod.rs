@@ -108,14 +108,13 @@ fn download_contract_abi(
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> crate::CliResult {
-    let abi_root =
-        tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(super::get_contract_abi(
-                &network_config.json_rpc_client(),
-                block_reference,
-                account_id,
-            ))?;
+    let abi_root = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(super::get_contract_abi(
+            &network_config.json_rpc_client(),
+            block_reference,
+            account_id,
+        ))?;
     std::fs::File::create(file_path)
         .wrap_err_with(|| format!("Failed to create file: {file_path:?}"))?
         .write(&serde_json::to_vec_pretty(&abi_root)?)
