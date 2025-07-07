@@ -65,7 +65,7 @@ fn input_function_name(
         if let Ok(contract_abi) =
             tokio::runtime::Runtime::new()
                 .unwrap()
-                .block_on(super::inspect::get_contract_abi(
+                .block_on(super::get_contract_abi(
                     &json_rpc_client,
                     &near_primitives::types::Finality::Final.into(),
                     contract_account_id,

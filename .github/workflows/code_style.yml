@@ -25,4 +25,6 @@ jobs:
         sudo apt-get install --assume-yes libudev-dev
     - name: Check lints (cargo clippy)
       run: cargo clippy -- -D warnings
+      # TODO #A: run acceptance testing of install with --no-default-features
+      # TODO #B: add cargo check workflows from local Justfile
 
