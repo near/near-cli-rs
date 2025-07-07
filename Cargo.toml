@@ -77,7 +77,7 @@ textwrap = "0.16.1"
 
 near-crypto = "0.30"
 near-primitives = "0.30"
-near-jsonrpc-client = { version = "0.17", features = ["any", "adversarial"] }
+near-jsonrpc-client = { version = "0.17", features = ["any"] }
 near-jsonrpc-primitives = "0.30"
 near-parameters = "0.30"
 near-socialdb-client = "0.11"
