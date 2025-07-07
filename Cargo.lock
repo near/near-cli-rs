@@ -2238,6 +2238,7 @@ dependencies = [
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
  "near-ledger",
+ "near-parameters",
  "near-primitives",
  "near-socialdb-client",
  "near-token",
