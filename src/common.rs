@@ -24,6 +24,8 @@ pub type BoxedJsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::J
 use inquire::{Select, Text};
 use strum::IntoEnumIterator;
 
+use crate::types::partial_protocol_config::get_partial_protocol_config;
+
 const FINAL_COMMAND_FILE_NAME: &str = "near-cli-rs-final-command.log";
 
 pub fn get_near_exec_path() -> String {
@@ -173,7 +175,8 @@ pub async fn get_account_transfer_allowance(
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
-    let account_state = get_account_state(network_config, &account_id, block_reference).await;
+    let account_state =
+        get_account_state(network_config, &account_id, block_reference.clone()).await;
     let account_view = match account_state {
         Ok(account_view) => account_view,
         Err(AccountStateError::JsonRpcError(
@@ -213,17 +216,11 @@ pub async fn get_account_transfer_allowance(
             ));
         }
     };
-    let storage_amount_per_byte = network_config
-        .json_rpc_client()
-        .call(
-            near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-            },
-        )
-        .await
-        .wrap_err("RpcError")?
-        .runtime_config
-        .storage_amount_per_byte;
+    let storage_amount_per_byte =
+        get_partial_protocol_config(&network_config.json_rpc_client(), &block_reference)
+            .await?
+            .runtime_config
+            .storage_amount_per_byte;
 
     Ok(AccountTransferAllowance {
         account_id,
@@ -239,6 +236,7 @@ pub async fn get_account_transfer_allowance(
     })
 }
 
+#[allow(clippy::result_large_err)]
 #[tracing::instrument(name = "Account access key verification ...", skip_all)]
 pub fn verify_account_access_key(
     account_id: near_primitives::types::AccountId,
