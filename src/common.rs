@@ -236,6 +236,7 @@ pub async fn get_account_transfer_allowance(
     })
 }
 
+#[allow(clippy::result_large_err)]
 #[tracing::instrument(name = "Account access key verification ...", skip_all)]
 pub fn verify_account_access_key(
     account_id: near_primitives::types::AccountId,
