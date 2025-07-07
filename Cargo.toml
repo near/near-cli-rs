@@ -55,7 +55,6 @@ url = { version = "2", features = ["serde"] }
 open = "5"
 shell-words = "1"
 cargo-util = "0.2"
-indicatif = "0.17.8"
 indenter = "0.3"
 tracing = "0.1.40"
 tracing-indicatif = "0.3.6"
@@ -166,6 +165,7 @@ install-updater = false
 [workspace.metadata.dist.github-custom-runners]
 aarch64-unknown-linux-gnu = "ubuntu-24.04-arm"
 x86_64-unknown-linux-gnu = "ubuntu-22.04"
+x86_64-pc-windows-msvc = "windows-2022"
 
 [workspace.metadata.dist.dependencies.apt]
 libudev-dev = { version = "*", targets = [

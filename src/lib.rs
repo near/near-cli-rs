@@ -33,7 +33,7 @@ impl Default for Verbosity {
 }
 
 pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
-    use indicatif::ProgressStyle;
+    use tracing_indicatif::style::ProgressStyle;
     use tracing_indicatif::IndicatifLayer;
     use tracing_subscriber::layer::SubscriberExt;
     use tracing_subscriber::util::SubscriberInitExt;
