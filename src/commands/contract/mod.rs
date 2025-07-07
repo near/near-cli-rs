@@ -44,28 +44,16 @@ pub enum ContractActions {
     ))]
     /// Add a global contract code
     DeployAsGlobal(self::deploy_global::Contract),
-    #[cfg_attr(
-        feature = "inspect_contract",
-        strum_discriminants(strum(
-            message = "inspect          - Get a list of available function names"
-        ))
-    )]
-    #[cfg_attr(
-        feature = "inspect_contract",
-        doc = "Get a list of available function names"
-    )]
+    #[strum_discriminants(strum(
+        message = "inspect          - Get a list of available function names"
+    ))]
+    /// Get a list of available function names
     #[cfg(feature = "inspect_contract")]
     Inspect(self::inspect::Contract),
-    #[cfg_attr(
-        feature = "verify_contract",
-        strum_discriminants(strum(
-            message = "verify           - Verify the contract for compliance with the program code"
-        ))
-    )]
-    #[cfg_attr(
-        feature = "verify_contract",
-        doc = "Verify the contract for compliance with the program code"
-    )]
+    #[strum_discriminants(strum(
+        message = "verify           - Verify the contract for compliance with the program code"
+    ))]
+    /// Verify the contract for compliance with the program code
     #[cfg(feature = "verify_contract")]
     Verify(self::verify::Contract),
     #[strum_discriminants(strum(message = "download-abi     - Download contract ABI"))]
