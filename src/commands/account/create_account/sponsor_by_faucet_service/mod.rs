@@ -102,7 +102,7 @@ pub fn before_creating_account(
         target: "near_teach_me",
         parent: &tracing::Span::none(),
         "JSON Body:\n{}",
-        crate::common::indent_payload(&format!("{:#?}", data))
+        crate::common::indent_payload(&format!("{data:#?}"))
     );
 
     let result = client.post(faucet_service_url.clone()).json(&data).send();
@@ -129,7 +129,7 @@ fn print_account_creation_status(
                 target: "near_teach_me",
                 parent: &tracing::Span::none(),
                 "JSON RPC Response:\n{}",
-                crate::common::indent_payload(&format!("{:#?}", response))
+                crate::common::indent_payload(&format!("{response:#?}"))
             );
             if response.status() >= reqwest::StatusCode::BAD_REQUEST {
                 tracing::warn!(

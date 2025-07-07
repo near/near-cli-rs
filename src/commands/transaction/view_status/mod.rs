@@ -30,12 +30,12 @@ impl TransactionInfoContext {
                     let query_view_transaction_status =
                         get_transaction_info(network_config, tx_hash)?;
                     if let crate::Verbosity::Quiet = previous_context.verbosity {
-                        println!("Transaction status:\n{:#?}", query_view_transaction_status);
+                        println!("Transaction status:\n{query_view_transaction_status:#?}");
                     }
                     tracing::info!(
                         parent: &tracing::Span::none(),
                         "Transaction status:\n{}",
-                        crate::common::indent_payload(&format!("{:#?}", query_view_transaction_status))
+                        crate::common::indent_payload(&format!("{query_view_transaction_status:#?}"))
                     );
                     Ok(())
                 }

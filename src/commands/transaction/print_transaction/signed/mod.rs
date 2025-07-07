@@ -18,7 +18,7 @@ impl PrintContext {
             scope.signed_transaction.clone().into();
         let info_str = crate::common::print_full_signed_transaction(signed_transaction);
         if let crate::Verbosity::Quiet = previous_context.verbosity {
-            println!("Signed transaction (full):{}", info_str)
+            println!("Signed transaction (full):{info_str}")
         };
         tracing::info!(
             parent: &tracing::Span::none(),

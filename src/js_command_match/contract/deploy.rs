@@ -90,35 +90,35 @@ mod tests {
             ),
             (
                 format!("near deploy contract.testnet build/hello_near.wasm --{} new --initArgs '{args}'", INIT_FUNCTION_ALIASES[0]),
-                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send", args)
+                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send")
             ),
             (
                 format!("near deploy contract.testnet build/hello_near.wasm --{} new --initArgs '{args}'", INIT_FUNCTION_ALIASES[1]),
-                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send", args)
+                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send")
             ),
             (
                 format!("near deploy contract.testnet build/hello_near.wasm --initFunction new --{} '{args}'", INIT_ARGS_ALIASES[0]),
-                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send", args)
+                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send")
             ),
             (
                 format!("near deploy contract.testnet build/hello_near.wasm --initFunction new --{} '{args}'", INIT_ARGS_ALIASES[1]),
-                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send", args)
+                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send")
             ),
             (
                 format!("near deploy contract.testnet build/hello_near.wasm --initFunction new --initArgs '{args}' --{} 60000000000000", INIT_GAS_ALIASES[0]),
-                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{}' prepaid-gas '60 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send", args)
+                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{args}' prepaid-gas '60 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send")
             ),
             (
                 format!("near deploy contract.testnet build/hello_near.wasm --initFunction new --initArgs '{args}' --{} 60000000000000", INIT_GAS_ALIASES[1]),
-                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{}' prepaid-gas '60 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send", args)
+                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{args}' prepaid-gas '60 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-keychain send")
             ),
             (
                 format!("near deploy contract.testnet build/hello_near.wasm --initFunction new --initArgs '{args}' --initGas 60000000000000 --{} 1", INIT_DEPOSIT_ALIASES[0]),
-                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{}' prepaid-gas '60 Tgas' attached-deposit '1 NEAR' network-config testnet sign-with-keychain send", args)
+                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{args}' prepaid-gas '60 Tgas' attached-deposit '1 NEAR' network-config testnet sign-with-keychain send")
             ),
             (
                 format!("near deploy contract.testnet build/hello_near.wasm --initFunction new --initArgs '{args}' --initGas 60000000000000 --{} 1", INIT_DEPOSIT_ALIASES[1]),
-                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{}' prepaid-gas '60 Tgas' attached-deposit '1 NEAR' network-config testnet sign-with-keychain send", args)
+                format!("contract deploy contract.testnet use-file build/hello_near.wasm with-init-call new json-args '{args}' prepaid-gas '60 Tgas' attached-deposit '1 NEAR' network-config testnet sign-with-keychain send")
             ),
             (
                 format!("near deploy contract.testnet build/hello_near.wasm --{} testnet", NETWORK_ID_ALIASES[0]),

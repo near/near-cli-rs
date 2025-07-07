@@ -48,9 +48,9 @@ impl SaveWithSeedPhraseContext {
                     std::fs::create_dir_all(&file_path)?;
                     file_path.push(file_name);
                     std::fs::File::create(&file_path)
-                        .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
+                        .wrap_err_with(|| format!("Failed to create file: {file_path:?}"))?
                         .write(buf.as_bytes())
-                        .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
+                        .wrap_err_with(|| format!("Failed to write to file: {file_path:?}"))?;
 
                     tracing::info!(
                         parent: &tracing::Span::none(),

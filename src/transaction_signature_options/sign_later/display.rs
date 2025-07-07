@@ -18,7 +18,7 @@ impl DisplayContext {
             crate::common::get_near_exec_path()
         );
         if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
-            println!("{}", info_str);
+            println!("{info_str}");
         }
         tracing::info!(
             parent: &tracing::Span::none(),

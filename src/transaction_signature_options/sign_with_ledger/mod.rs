@@ -153,8 +153,7 @@ impl SignLedgerContext {
                 }
                 Err(near_ledger_error) => {
                     return Err(color_eyre::Report::msg(format!(
-                        "Error occurred while signing the transaction: {:?}",
-                        near_ledger_error
+                        "Error occurred while signing the transaction: {near_ledger_error:?}"
                     )));
                 }
             };
@@ -188,8 +187,7 @@ impl SignLedgerContext {
             }
             Err(near_ledger_error) => {
                 return Err(color_eyre::Report::msg(format!(
-                    "Error occurred while signing the transaction: {:?}",
-                    near_ledger_error
+                    "Error occurred while signing the transaction: {near_ledger_error:?}"
                 )));
             }
         };
@@ -272,14 +270,12 @@ impl interactive_clap::FromCli for SignLedger {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         eprintln!(
-            "Please allow getting the PublicKey on Ledger device (HD Path: {})",
-            seed_phrase_hd_path
+            "Please allow getting the PublicKey on Ledger device (HD Path: {seed_phrase_hd_path})"
         );
         let public_key = match near_ledger::get_public_key(seed_phrase_hd_path.clone().into())
             .map_err(|near_ledger_error| {
                 color_eyre::Report::msg(format!(
-                    "An error occurred while trying to get PublicKey from Ledger device: {:?}",
-                    near_ledger_error
+                    "An error occurred while trying to get PublicKey from Ledger device: {near_ledger_error:?}"
                 ))
             }) {
             Ok(public_key) => public_key,
