@@ -2728,6 +2728,7 @@ pub(crate) fn teach_me_call_response(response: &impl serde::Serialize) {
     }
 }
 
+#[cfg(feature = "inspect_contract")]
 pub(crate) fn teach_me_request_payload(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     request: &near_jsonrpc_client::methods::query::RpcQueryRequest,

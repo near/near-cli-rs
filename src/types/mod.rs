@@ -1,6 +1,7 @@
 pub mod account_id;
 pub mod api_key;
 pub mod base64_bytes;
+#[cfg(feature = "verify_contract")]
 pub mod contract_properties;
 pub mod crypto_hash;
 pub mod file_bytes;
