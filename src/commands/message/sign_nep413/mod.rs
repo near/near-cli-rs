@@ -2,20 +2,14 @@ use near_crypto::{SecretKey, Signature};
 use near_primitives::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_primitives::hash::hash;
 use serde::Serialize;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+pub mod message_type;
 pub mod signature_options;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = SignNep413Context)]
 pub struct SignNep413 {
-    #[interactive_clap(value_enum)]
-    #[interactive_clap(skip_default_input_arg)]
-    /// Message encoding:
-    encoding: MessageEncoding,
-    /// The message to sign:
-    message: String,
     #[interactive_clap(long)]
     /// A 32-byte nonce as a base64-encoded string:
     nonce: crate::types::base64_bytes::Base64Bytes,
@@ -26,7 +20,7 @@ pub struct SignNep413 {
     /// Which account to sign the message with:
     signer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
-    sign_with: self::signature_options::SignWith,
+    message_type: self::message_type::MessageType,
 }
 
 #[derive(Debug, Clone)]
@@ -41,16 +35,6 @@ impl SignNep413Context {
         previous_context: crate::GlobalContext,
         scope: &<SignNep413 as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let message = match scope.encoding {
-            MessageEncoding::Utf8 => scope.message.clone(),
-            MessageEncoding::Base64 => String::from_utf8(
-                near_primitives::serialize::from_base64(&scope.message).map_err(|e| {
-                    color_eyre::eyre::eyre!("Failed to decode base64 message: {}", e)
-                })?,
-            )
-            .map_err(|e| color_eyre::eyre::eyre!("Message is not valid UTF-8: {}", e))?,
-        };
-
         let nonce_bytes = scope.nonce.as_bytes();
         if nonce_bytes.len() != 32 {
             return Err(color_eyre::eyre::eyre!(
@@ -62,7 +46,7 @@ impl SignNep413Context {
         nonce.copy_from_slice(nonce_bytes);
 
         let payload = NEP413Payload {
-            message,
+            message: String::new(),
             nonce,
             recipient: scope.recipient.clone(),
             callback_url: None,
@@ -73,26 +57,6 @@ impl SignNep413Context {
             payload,
             signer_id: scope.signer_account_id.clone().into(),
         })
-    }
-}
-
-#[derive(Debug, Clone, EnumDiscriminants, clap::ValueEnum)]
-#[strum_discriminants(derive(EnumMessage, EnumIter))]
-pub enum MessageEncoding {
-    Utf8,
-    Base64,
-}
-
-impl interactive_clap::ToCli for MessageEncoding {
-    type CliVariant = Self;
-}
-
-impl std::fmt::Display for MessageEncoding {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Utf8 => write!(f, "utf8"),
-            Self::Base64 => write!(f, "base64"),
-        }
     }
 }
 
@@ -135,18 +99,4 @@ pub fn sign_nep413_payload(
     let hash = hash(&bytes);
     let signature = secret_key.sign(hash.as_ref());
     Ok(signature)
-}
-
-impl SignNep413 {
-    fn input_encoding(
-        _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<MessageEncoding>> {
-        Ok(Some(
-            inquire::Select::new(
-                "How is the message encoded?",
-                vec![MessageEncoding::Utf8, MessageEncoding::Base64],
-            )
-            .prompt()?,
-        ))
-    }
 }
