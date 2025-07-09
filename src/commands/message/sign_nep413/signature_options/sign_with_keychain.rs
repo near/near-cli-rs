@@ -19,9 +19,16 @@ impl SignKeychainContext {
                 let signer_id = previous_context.signer_id.clone();
                 let payload = previous_context.payload.clone();
                 move |network_config| {
-                    let secret_key = crate::commands::account::export_account::get_account_key_pair_from_keychain(network_config, &signer_id)?.private_key;
-                    let signature = super::super::sign_nep413_payload(&payload, &secret_key)?;
-                    println!("Signature: {}", signature);
+                    let key_pair = crate::commands::account::export_account::get_account_key_pair_from_keychain(network_config, &signer_id)?;
+                    let signature =
+                        super::super::sign_nep413_payload(&payload, &key_pair.private_key)?;
+
+                    let signed_message = super::super::SignedMessage {
+                        account_id: signer_id.to_string(),
+                        public_key: key_pair.public_key.to_string(),
+                        signature: signature.to_string(),
+                    };
+                    println!("{}", serde_json::to_string_pretty(&signed_message)?);
                     Ok(())
                 }
             });

@@ -23,14 +23,13 @@ impl SignLedgerContext {
         eprintln!("Opening the NEAR application... Please approve opening the application");
         near_ledger::open_near_application().map_err(|ledger_error| {
             color_eyre::Report::msg(format!(
-                "An error happened while trying to open the NEAR application on the ledger: {:?}",
-                ledger_error
+                "An error happened while trying to open the NEAR application on the ledger: {ledger_error:?}"
             ))
         })?;
 
         let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
             near_ledger::get_public_key(scope.seed_phrase_hd_path.clone().into())
-                .map_err(|err| color_eyre::eyre::eyre!("Ledger get_public_key error: {:?}", err))?
+                .map_err(|err| color_eyre::eyre::eyre!("Ledger get_public_key error: {err:?}"))?
                 .to_bytes(),
         ));
 

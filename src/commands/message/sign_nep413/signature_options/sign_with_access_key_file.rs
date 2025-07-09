@@ -27,7 +27,13 @@ impl SignAccessKeyFileContext {
             &previous_context.payload,
             &account_json.private_key,
         )?;
-        println!("Signature: {}", signature);
+
+        let signed_message = super::super::SignedMessage {
+            account_id: previous_context.signer_id.to_string(),
+            public_key: account_json.public_key.to_string(),
+            signature: signature.to_string(),
+        };
+        println!("{}", serde_json::to_string_pretty(&signed_message)?);
         Ok(Self)
     }
 }

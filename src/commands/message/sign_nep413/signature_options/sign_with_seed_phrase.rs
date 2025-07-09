@@ -25,7 +25,13 @@ impl SignSeedPhraseContext {
         let secret_key = near_crypto::SecretKey::from_str(&key_pair_properties.secret_keypair_str)?;
 
         let signature = super::super::sign_nep413_payload(&previous_context.payload, &secret_key)?;
-        println!("Signature: {}", signature);
+
+        let signed_message = super::super::SignedMessage {
+            account_id: previous_context.signer_id.to_string(),
+            public_key: key_pair_properties.public_key_str,
+            signature: signature.to_string(),
+        };
+        println!("{}", serde_json::to_string_pretty(&signed_message)?);
         Ok(Self)
     }
 }

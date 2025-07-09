@@ -24,13 +24,20 @@ impl SignLegacyKeychainContext {
                     .credentials_home_dir
                     .clone();
                 move |network_config| {
-                    let secret_key = crate::commands::account::export_account::get_account_key_pair_from_legacy_keychain(
+                    let key_pair = crate::commands::account::export_account::get_account_key_pair_from_legacy_keychain(
                         network_config,
                         &signer_id,
                         &credentials_home_dir
-                    )?.private_key;
-                    let signature = super::super::sign_nep413_payload(&payload, &secret_key)?;
-                    println!("Signature: {}", signature);
+                    )?;
+                    let signature =
+                        super::super::sign_nep413_payload(&payload, &key_pair.private_key)?;
+
+                    let signed_message = super::super::SignedMessage {
+                        account_id: signer_id.to_string(),
+                        public_key: key_pair.public_key.to_string(),
+                        signature: signature.to_string(),
+                    };
+                    println!("{}", serde_json::to_string_pretty(&signed_message)?);
                     Ok(())
                 }
             });
