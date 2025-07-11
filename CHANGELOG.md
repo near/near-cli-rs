@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0](https://github.com/near/near-cli-rs/compare/v0.21.0...v0.22.0) - 2025-07-11
+
+### Added
+
+- New "message sign-nep413" command - NEP-413 offchain messages signing ([#507](https://github.com/near/near-cli-rs/pull/507))
+
 ## [0.21.0](https://github.com/near/near-cli-rs/compare/v0.20.0...v0.21.0) - 2025-07-08
 
 ### Added
