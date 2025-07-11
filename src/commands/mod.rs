@@ -40,14 +40,14 @@ pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
     /// Use this to construct transactions or view a transaction status.
     Transaction(self::transaction::TransactionCommands),
+    #[strum_discriminants(strum(message = "message     - Sign an arbitrary message (NEP-413)"))]
+    /// Sign an arbitrary message (NEP-413)
+    Message(self::message::MessageCommand),
     #[strum_discriminants(strum(
         message = "config      - Manage connections in a configuration file (config.toml)"
     ))]
     /// Use this to manage connections in a configuration file (config.toml).
     Config(self::config::ConfigCommands),
-    #[strum_discriminants(strum(message = "message     - Sign an arbitrary message (NEP-413)"))]
-    /// Sign an arbitrary message (NEP-413)
-    Message(self::message::MessageCommand),
     #[cfg(feature = "self-update")]
     #[strum_discriminants(strum(message = "extension   - Manage near CLI and extensions"))]
     /// Use this to manage near CLI and extensions
