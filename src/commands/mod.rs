@@ -4,6 +4,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 pub mod account;
 mod config;
 pub mod contract;
+pub mod message;
 mod staking;
 mod tokens;
 pub mod transaction;
@@ -39,6 +40,9 @@ pub enum TopLevelCommand {
     #[strum_discriminants(strum(message = "transaction - Operate transactions"))]
     /// Use this to construct transactions or view a transaction status.
     Transaction(self::transaction::TransactionCommands),
+    #[strum_discriminants(strum(message = "message     - Sign an arbitrary message (NEP-413)"))]
+    /// Sign an arbitrary message (NEP-413)
+    Message(self::message::MessageCommand),
     #[strum_discriminants(strum(
         message = "config      - Manage connections in a configuration file (config.toml)"
     ))]

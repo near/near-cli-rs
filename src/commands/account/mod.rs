@@ -4,7 +4,7 @@ mod add_key;
 pub mod create_account;
 mod delete_account;
 mod delete_key;
-mod export_account;
+pub mod export_account;
 mod get_public_key;
 mod import_account;
 mod list_keys;
