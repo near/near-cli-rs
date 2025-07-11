@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::super::SignNep413Context)]
+#[interactive_clap(input_context = super::super::FinalSignNep413Context)]
 #[interactive_clap(output_context = SignLegacyKeychainContext)]
 pub struct SignLegacyKeychain {
     #[interactive_clap(named_arg)]
@@ -11,7 +11,7 @@ pub struct SignLegacyKeychainContext(crate::network::NetworkContext);
 
 impl SignLegacyKeychainContext {
     pub fn from_previous_context(
-        previous_context: super::super::SignNep413Context,
+        previous_context: super::super::FinalSignNep413Context,
         _scope: &<SignLegacyKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =

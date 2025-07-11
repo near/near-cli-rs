@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::super::SignNep413Context)]
+#[interactive_clap(input_context = super::super::FinalSignNep413Context)]
 #[interactive_clap(output_context = SignPrivateKeyContext)]
 pub struct SignPrivateKey {
     /// Enter your private (secret) key:
@@ -11,7 +11,7 @@ pub struct SignPrivateKeyContext;
 
 impl SignPrivateKeyContext {
     pub fn from_previous_context(
-        previous_context: super::super::SignNep413Context,
+        previous_context: super::super::FinalSignNep413Context,
         scope: &<SignPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let secret_key: near_crypto::SecretKey = scope.private_key.clone().into();

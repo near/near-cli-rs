@@ -9,6 +9,7 @@ pub mod ft_properties;
 pub mod json;
 pub mod near_allowance;
 pub mod near_token;
+pub mod nonce32_bytes;
 pub mod partial_protocol_config;
 pub mod path_buf;
 pub mod public_key;

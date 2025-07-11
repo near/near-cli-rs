@@ -9,7 +9,7 @@ pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = super::SignNep413Context)]
+#[interactive_clap(context = super::FinalSignNep413Context)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// How do you want to sign the message?
 pub enum SignWith {

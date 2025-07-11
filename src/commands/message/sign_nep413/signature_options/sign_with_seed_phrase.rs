@@ -1,6 +1,6 @@
 use std::str::FromStr;
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::super::SignNep413Context)]
+#[interactive_clap(input_context = super::super::FinalSignNep413Context)]
 #[interactive_clap(output_context = SignSeedPhraseContext)]
 pub struct SignSeedPhrase {
     /// Enter the seed-phrase for this account:
@@ -15,7 +15,7 @@ pub struct SignSeedPhraseContext;
 
 impl SignSeedPhraseContext {
     pub fn from_previous_context(
-        previous_context: super::super::SignNep413Context,
+        previous_context: super::super::FinalSignNep413Context,
         scope: &<SignSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let key_pair_properties = crate::common::get_key_pair_properties_from_seed_phrase(
@@ -38,7 +38,7 @@ impl SignSeedPhraseContext {
 
 impl SignSeedPhrase {
     fn input_seed_phrase_hd_path(
-        _context: &super::super::SignNep413Context,
+        _context: &super::super::FinalSignNep413Context,
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
         crate::transaction_signature_options::sign_with_seed_phrase::input_seed_phrase_hd_path()
     }

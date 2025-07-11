@@ -18,9 +18,8 @@ pub enum MessageType {
 
 #[derive(Debug, Clone)]
 pub struct MessageTypeContext {
-    pub global_context: crate::GlobalContext,
-    pub payload: super::NEP413Payload,
-    pub signer_id: near_primitives::types::AccountId,
+    global_context: crate::GlobalContext,
+    _message: String,
 }
 
 impl MessageTypeContext {
@@ -30,8 +29,7 @@ impl MessageTypeContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context.global_context,
-            payload: previous_context.payload,
-            signer_id: previous_context.signer_id,
+            _message: String::new(),
         })
     }
 }
@@ -40,8 +38,7 @@ impl From<super::SignNep413Context> for MessageTypeContext {
     fn from(item: super::SignNep413Context) -> Self {
         Self {
             global_context: item.global_context,
-            payload: item.payload,
-            signer_id: item.signer_id,
+            _message: String::new(),
         }
     }
 }

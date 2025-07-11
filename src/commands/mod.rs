@@ -45,13 +45,13 @@ pub enum TopLevelCommand {
     ))]
     /// Use this to manage connections in a configuration file (config.toml).
     Config(self::config::ConfigCommands),
+    #[strum_discriminants(strum(message = "message     - Sign an arbitrary message (NEP-413)"))]
+    /// Sign an arbitrary message (NEP-413)
+    Message(self::message::MessageCommand),
     #[cfg(feature = "self-update")]
     #[strum_discriminants(strum(message = "extension   - Manage near CLI and extensions"))]
     /// Use this to manage near CLI and extensions
     Extensions(self::extensions::ExtensionsCommands),
-    #[strum_discriminants(strum(message = "message     - Sign an arbitrary message (NEP-413)"))]
-    /// Sign an arbitrary message (NEP-413)
-    Message(self::message::MessageCommand),
 }
 
 pub type OnBeforeSigningCallback = std::sync::Arc<
