@@ -66,35 +66,42 @@ pub fn login(
             public_key.clone(),
             network_config.clone(),
         );
-        if let Err(crate::common::AccountStateError::Cancel) = access_key_view {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Operation was canceled by the user"
-            ));
-        }
-        if access_key_view.is_err() {
-            tracing::warn!(
-                parent: &tracing::Span::none(),
-                "WARNING!{}",
-                crate::common::indent_payload(error_message)
-            );
 
-            #[derive(strum_macros::Display)]
-            enum ConfirmOptions {
-                #[strum(to_string = "Yes, I want to re-enter the account_id.")]
-                Yes,
-                #[strum(to_string = "No, I want to save the access key information.")]
-                No,
-            }
-            let select_choose_input = Select::new(
-                "Would you like to re-enter the account_id?",
-                vec![ConfirmOptions::Yes, ConfirmOptions::No],
-            )
-            .prompt()?;
-            if let ConfirmOptions::No = select_choose_input {
+        match access_key_view {
+            Ok(_) => {
                 break account_id_from_cli;
             }
-        } else {
-            break account_id_from_cli;
+            Err(boxed_error) => match *boxed_error {
+                crate::common::AccountStateError::Cancel => {
+                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                        "Operation was canceled by the user"
+                    ));
+                }
+                _ => {
+                    tracing::warn!(
+                        parent: &tracing::Span::none(),
+                        "WARNING!{}",
+                        crate::common::indent_payload(error_message)
+                    );
+
+                    #[derive(strum_macros::Display)]
+                    enum ConfirmOptions {
+                        #[strum(to_string = "Yes, I want to re-enter the account_id.")]
+                        Yes,
+                        #[strum(to_string = "No, I want to save the access key information.")]
+                        No,
+                    }
+                    let select_choose_input = Select::new(
+                        "Would you like to re-enter the account_id?",
+                        vec![ConfirmOptions::Yes, ConfirmOptions::No],
+                    )
+                    .prompt()?;
+
+                    if let ConfirmOptions::No = select_choose_input {
+                        break account_id_from_cli;
+                    }
+                }
+            },
         }
     };
     crate::common::update_used_account_list_as_signer(&credentials_home_dir, &account_id);

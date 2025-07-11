@@ -236,7 +236,6 @@ pub async fn get_account_transfer_allowance(
     })
 }
 
-#[allow(clippy::result_large_err)]
 #[tracing::instrument(name = "Account access key verification ...", skip_all)]
 pub fn verify_account_access_key(
     account_id: near_primitives::types::AccountId,
@@ -244,7 +243,7 @@ pub fn verify_account_access_key(
     network_config: crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<
     near_primitives::views::AccessKeyView,
-    AccountStateError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+    Box<AccountStateError<near_jsonrpc_primitives::types::query::RpcQueryError>>,
 > {
     loop {
         match network_config
@@ -262,11 +261,11 @@ pub fn verify_account_access_key(
                 {
                     return Ok(result);
                 } else {
-                    return Err(AccountStateError::JsonRpcError(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
+                    return Err(Box::new(AccountStateError::JsonRpcError(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
                         near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
                             near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
                         ),
-                    ))));
+                    )))));
                 }
             }
             Err(
@@ -278,28 +277,28 @@ pub fn verify_account_access_key(
                     ),
                 ),
             ) => {
-                return Err(AccountStateError::JsonRpcError(err));
+                return Err(Box::new(AccountStateError::JsonRpcError(err)));
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
                 let need_check_account = need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.", network_config.network_name));
                 if need_check_account.is_err() {
-                    return Err(AccountStateError::Cancel);
+                    return Err(Box::new(AccountStateError::Cancel));
                 }
                 if let Ok(false) = need_check_account {
-                    return Err(AccountStateError::JsonRpcError(
+                    return Err(Box::new(AccountStateError::JsonRpcError(
                         near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
-                    ));
+                    )));
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
                 let need_check_account = need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.", network_config.network_name));
                 if need_check_account.is_err() {
-                    return Err(AccountStateError::Cancel);
+                    return Err(Box::new(AccountStateError::Cancel));
                 }
                 if let Ok(false) = need_check_account {
-                    return Err(AccountStateError::JsonRpcError(
+                    return Err(Box::new(AccountStateError::JsonRpcError(
                         near_jsonrpc_client::errors::JsonRpcError::ServerError(err),
-                    ));
+                    )));
                 }
             }
         }
