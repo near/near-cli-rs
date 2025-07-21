@@ -1420,24 +1420,22 @@ pub fn print_transaction_status(
     let return_value = match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted => {
             if let crate::Verbosity::Quiet = verbosity {
-                println!("WARNING! The execution has not yet started.")
-            } else {
-                tracing::warn!(
-                    parent: &tracing::Span::none(),
-                    "WARNING!{}", "The execution has not yet started."
-                )
+                return Ok(());
             }
+            tracing::warn!(
+                parent: &tracing::Span::none(),
+                "WARNING! The execution has not yet started."
+            );
             Ok(())
         }
         near_primitives::views::FinalExecutionStatus::Started => {
             if let crate::Verbosity::Quiet = verbosity {
-                println!("WARNING! The execution has started and still going.")
-            } else {
-                tracing::warn!(
-                    parent: &tracing::Span::none(),
-                    "WARNING!{}", "The execution has started and still going."
-                )
+                return Ok(());
             }
+            tracing::warn!(
+                parent: &tracing::Span::none(),
+                "WARNING! The execution has started and still going."
+            );
             Ok(())
         }
         near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
