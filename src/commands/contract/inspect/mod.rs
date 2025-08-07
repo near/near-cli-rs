@@ -157,15 +157,19 @@ async fn display_inspect_contract(
 
     table.add_row(prettytable::row![
         Fy->"Storage used",
-        format!("{} ({} Wasm + {} data)",
-            bytesize::ByteSize(account_view.storage_usage),
-            bytesize::ByteSize(u64::try_from(contract_code_view.code.len())?),
-            bytesize::ByteSize(
-                account_view.storage_usage
-                    .checked_sub(u64::try_from(contract_code_view.code.len())?)
-                    .expect("Unexpected error")
+        if account_view.global_contract_account_id.is_none() & account_view.global_contract_hash.is_none() {
+            format!("{} ({} Wasm + {} data)",
+                bytesize::ByteSize(account_view.storage_usage),
+                bytesize::ByteSize(u64::try_from(contract_code_view.code.len())?),
+                bytesize::ByteSize(
+                    account_view.storage_usage
+                        .checked_sub(u64::try_from(contract_code_view.code.len())?)
+                        .expect("Unexpected error")
+                )
             )
-        )
+        } else {
+            format!("{} (The contract on the account is global, so the size of the Wasm file is not taken into account)", bytesize::ByteSize(account_view.storage_usage))
+        }
     ]);
 
     let access_keys_summary = if access_keys.is_empty() {
