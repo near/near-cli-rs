@@ -134,32 +134,71 @@ async fn display_inspect_contract(
         format!("At block #{}\n({})", view_code_response.block_height, view_code_response.block_hash)
     ]);
 
-    let contract_status = if account_view.code_hash == near_primitives::hash::CryptoHash::default()
-    {
-        "No contract code".to_string()
-    } else {
-        hex::encode(account_view.code_hash.as_ref())
+    let (contract_type, contract_status, checksum_hex, checksum_base58, storage_used) = match (
+        &account_view.code_hash,
+        &account_view.global_contract_account_id,
+        &account_view.global_contract_hash,
+    ) {
+        (_, Some(global_contract_account_id), None) => (
+            "Global Contract",
+            format!("deployed by account ID <{global_contract_account_id}>"),
+            "no data".to_string(),
+            "no data".to_string(),
+            format!("{}", bytesize::ByteSize(account_view.storage_usage)),
+        ),
+        (_, None, Some(global_contract_hash)) => (
+            "Global Contract",
+            "deployed by Hash".to_string(),
+            hex::encode(global_contract_hash.as_ref()),
+            bs58::encode(global_contract_hash).into_string(),
+            format!("{}", bytesize::ByteSize(account_view.storage_usage)),
+        ),
+        (code_hash, None, None) => (
+            "Local Contract",
+            String::new(),
+            hex::encode(code_hash.as_ref()),
+            bs58::encode(code_hash).into_string(),
+            format!(
+                "{} ({} Wasm + {} data)",
+                bytesize::ByteSize(account_view.storage_usage),
+                bytesize::ByteSize(u64::try_from(contract_code_view.code.len())?),
+                bytesize::ByteSize(
+                    account_view
+                        .storage_usage
+                        .checked_sub(u64::try_from(contract_code_view.code.len())?)
+                        .expect("Unexpected error")
+                )
+            ),
+        ),
+        (_code_hash, _global_account_id, _global_hash) => (
+            "Contract",
+            "Invalid account contract state. Please contact the developers."
+                .red()
+                .to_string(),
+            String::new(),
+            String::new(),
+            format!("{}", bytesize::ByteSize(account_view.storage_usage)),
+        ),
     };
+
     table.add_row(prettytable::row![
-        Fy->"SHA-256 checksum hex",
+        Fy->contract_type,
         contract_status
     ]);
 
     table.add_row(prettytable::row![
+        Fy->"SHA-256 checksum [hex]",
+        checksum_hex
+    ]);
+
+    table.add_row(prettytable::row![
+        Fy->"SHA-256 checksum [base58]",
+        checksum_base58
+    ]);
+
+    table.add_row(prettytable::row![
         Fy->"Storage used",
-        if account_view.global_contract_account_id.is_none() & account_view.global_contract_hash.is_none() {
-            format!("{} ({} Wasm + {} data)",
-                bytesize::ByteSize(account_view.storage_usage),
-                bytesize::ByteSize(u64::try_from(contract_code_view.code.len())?),
-                bytesize::ByteSize(
-                    account_view.storage_usage
-                        .checked_sub(u64::try_from(contract_code_view.code.len())?)
-                        .expect("Unexpected error")
-                )
-            )
-        } else {
-            format!("{} (The contract on the account is global, so the size of the Wasm file is not taken into account)", bytesize::ByteSize(account_view.storage_usage))
-        }
+        storage_used
     ]);
 
     let access_keys_summary = if access_keys.is_empty() {
