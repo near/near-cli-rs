@@ -76,12 +76,12 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-crypto = "0.30"
-near-primitives = "0.30"
-near-jsonrpc-client = { version = "0.17", features = ["any"] }
-near-jsonrpc-primitives = "0.30"
-near-parameters = "0.30"
-near-socialdb-client = "0.11"
+near-crypto = "0.31"
+near-primitives = "0.31"
+near-jsonrpc-client = { version = "0.18", features = ["any"] }
+near-jsonrpc-primitives = "0.31"
+near-parameters = "0.31"
+near-socialdb-client = "0.12"
 
 near-ledger = { version = "0.9.0", optional = true }
 
