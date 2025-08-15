@@ -55,7 +55,8 @@ slipped10 = { version = "0.4.6" }
 url = { version = "2", features = ["serde"] }
 open = "5"
 shell-words = "1"
-cargo-util = "0.2"
+# TODO: cahnge back to "0.2" when building contracts will be available on rust >1.86.0
+cargo-util = "<0.2.22"
 indenter = "0.3"
 tracing = "0.1.40"
 tracing-indicatif = "0.3.6"
