@@ -2213,7 +2213,7 @@ dependencies = [
 
 [[package]]
 name = "near-cli-rs"
-version = "0.22.1"
+version = "0.22.2"
 dependencies = [
  "bip39",
  "borsh",

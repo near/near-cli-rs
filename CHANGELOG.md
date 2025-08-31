@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.2](https://github.com/near/near-cli-rs/compare/v0.22.1...v0.22.2) - 2025-08-31
+
+### Fixed
+
+- Fixed the inspection command for the global contract on the account. ([#513](https://github.com/near/near-cli-rs/pull/513))
+
 ## [0.22.1](https://github.com/near/near-cli-rs/compare/v0.22.0...v0.22.1) - 2025-08-15
 
 ### Other
