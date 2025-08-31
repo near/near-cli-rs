@@ -7,10 +7,10 @@ use color_eyre::{
 use thiserror::Error;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use near_primitives::types::{BlockId, BlockReference};
+use near_primitives::types::BlockReference;
 
 use super::FetchAbiError;
-use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
+use crate::common::{CallResultExt, RpcQueryResponseExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -47,7 +47,13 @@ impl ContractContext {
             let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
 
             move |network_config, block_reference| {
-                inspect_contract(&account_id, network_config, block_reference)
+                tokio::runtime::Runtime::new()
+                    .unwrap()
+                    .block_on(display_inspect_contract(
+                        &account_id,
+                        network_config,
+                        block_reference,
+                    ))
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -64,37 +70,21 @@ impl From<ContractContext> for crate::network_view_at_block::ArgsForViewContext 
     }
 }
 
-#[tracing::instrument(name = "Contract inspection ...", skip_all)]
-fn inspect_contract(
-    account_id: &near_primitives::types::AccountId,
-    network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
-) -> crate::CliResult {
-    let view_code_response = get_contract_code(account_id, network_config, block_reference)?;
-
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(display_inspect_contract(
-            account_id,
-            network_config,
-            view_code_response,
-        ))
-}
-
 #[tracing::instrument(name = "Obtaining the contract code ...", skip_all)]
-fn get_contract_code(
+async fn get_contract_code(
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::query::RpcQueryResponse> {
     network_config
         .json_rpc_client()
-        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_reference.clone(),
             request: near_primitives::views::QueryRequest::ViewCode {
                 account_id: account_id.clone(),
             },
         })
+        .await
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch query ViewCode for <{}> on network <{}>",
@@ -103,14 +93,14 @@ fn get_contract_code(
         })
 }
 
-#[tracing::instrument(name = "Analysis of contract data ...", skip_all)]
+#[tracing::instrument(name = "Contract inspection ...", skip_all)]
 async fn display_inspect_contract(
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
-    view_code_response: near_jsonrpc_primitives::types::query::RpcQueryResponse,
+    block_reference: &near_primitives::types::BlockReference,
 ) -> crate::CliResult {
     let json_rpc_client = network_config.json_rpc_client();
-    let block_reference = BlockReference::from(BlockId::Hash(view_code_response.block_hash));
+    let view_code_response = get_contract_code(account_id, network_config, block_reference).await?;
     let contract_code_view =
         if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
             view_code_response.kind
@@ -123,7 +113,7 @@ async fn display_inspect_contract(
     let account_view = get_account_view(
         &network_config.network_name,
         &json_rpc_client,
-        &block_reference,
+        block_reference,
         account_id,
     )
     .await?;
@@ -131,7 +121,7 @@ async fn display_inspect_contract(
     let access_keys = get_access_keys(
         &network_config.network_name,
         &json_rpc_client,
-        &block_reference,
+        block_reference,
         account_id,
     )
     .await?;
@@ -144,28 +134,71 @@ async fn display_inspect_contract(
         format!("At block #{}\n({})", view_code_response.block_height, view_code_response.block_hash)
     ]);
 
-    let contract_status = if account_view.code_hash == near_primitives::hash::CryptoHash::default()
-    {
-        "No contract code".to_string()
-    } else {
-        hex::encode(account_view.code_hash.as_ref())
+    let (contract_type, contract_status, checksum_hex, checksum_base58, storage_used) = match (
+        &account_view.code_hash,
+        &account_view.global_contract_account_id,
+        &account_view.global_contract_hash,
+    ) {
+        (_, Some(global_contract_account_id), None) => (
+            "Global Contract",
+            format!("deployed by account ID <{global_contract_account_id}>"),
+            "no data".to_string(),
+            "no data".to_string(),
+            format!("{}", bytesize::ByteSize(account_view.storage_usage)),
+        ),
+        (_, None, Some(global_contract_hash)) => (
+            "Global Contract",
+            "deployed by Hash".to_string(),
+            hex::encode(global_contract_hash.as_ref()),
+            bs58::encode(global_contract_hash).into_string(),
+            format!("{}", bytesize::ByteSize(account_view.storage_usage)),
+        ),
+        (code_hash, None, None) => (
+            "Local Contract",
+            String::new(),
+            hex::encode(code_hash.as_ref()),
+            bs58::encode(code_hash).into_string(),
+            format!(
+                "{} ({} Wasm + {} data)",
+                bytesize::ByteSize(account_view.storage_usage),
+                bytesize::ByteSize(u64::try_from(contract_code_view.code.len())?),
+                bytesize::ByteSize(
+                    account_view
+                        .storage_usage
+                        .checked_sub(u64::try_from(contract_code_view.code.len())?)
+                        .expect("Unexpected error")
+                )
+            ),
+        ),
+        (_code_hash, _global_account_id, _global_hash) => (
+            "Contract",
+            "Invalid account contract state. Please contact the developers."
+                .red()
+                .to_string(),
+            String::new(),
+            String::new(),
+            format!("{}", bytesize::ByteSize(account_view.storage_usage)),
+        ),
     };
+
     table.add_row(prettytable::row![
-        Fy->"SHA-256 checksum hex",
+        Fy->contract_type,
         contract_status
     ]);
 
     table.add_row(prettytable::row![
+        Fy->"SHA-256 checksum [hex]",
+        checksum_hex
+    ]);
+
+    table.add_row(prettytable::row![
+        Fy->"SHA-256 checksum [base58]",
+        checksum_base58
+    ]);
+
+    table.add_row(prettytable::row![
         Fy->"Storage used",
-        format!("{} ({} Wasm + {} data)",
-            bytesize::ByteSize(account_view.storage_usage),
-            bytesize::ByteSize(u64::try_from(contract_code_view.code.len())?),
-            bytesize::ByteSize(
-                account_view.storage_usage
-                    .checked_sub(u64::try_from(contract_code_view.code.len())?)
-                    .expect("Unexpected error")
-            )
-        )
+        storage_used
     ]);
 
     let access_keys_summary = if access_keys.is_empty() {
@@ -191,7 +224,7 @@ async fn display_inspect_contract(
         access_keys_summary
     ]);
 
-    match get_contract_source_metadata(&json_rpc_client, &block_reference, account_id).await {
+    match get_contract_source_metadata(&json_rpc_client, block_reference, account_id).await {
         Ok(contract_source_metadata) => {
             table.add_row(prettytable::row![
                 Fy->"Contract version",
@@ -243,7 +276,7 @@ async fn display_inspect_contract(
         }
     }
 
-    match super::get_contract_abi(&json_rpc_client, &block_reference, account_id).await {
+    match super::get_contract_abi(&json_rpc_client, block_reference, account_id).await {
         Ok(abi_root) => {
             table.add_row(prettytable::row![
                 Fy->"NEAR ABI version",
