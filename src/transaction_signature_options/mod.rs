@@ -10,6 +10,7 @@ pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
 pub mod sign_with_legacy_keychain;
+pub mod sign_with_mpc;
 pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
 pub mod submit_dao_proposal;
