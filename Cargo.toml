@@ -43,6 +43,10 @@ openssl = { version = "0.10", features = ["vendored"] }
 bip39 = { version = "2.0.0", features = ["rand"] }
 bs58 = "0.5"
 borsh = "1.5.7"
+# Already included into near_crypto
+secp256k1 = { version = "0.27", features = ["global-context"] }
+# Already included into near_crypto
+sha3 = "0.10.8"
 ed25519-dalek = { version = "2", default-features = false }
 hex = "0.4.2"
 linked-hash-map = { version = "0.5", features = ["serde_impl"] }
