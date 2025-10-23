@@ -5,51 +5,49 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Select a tool for signing transaction to send to MPC:
 pub enum MpcSignWith {
+    // NOTE: There should be a better naming for user as "sign-with-keychain" kinda misleading
     #[strum_discriminants(strum(
-        message = "sign-with-keychain               - Sign the transaction with a key saved in the secure keychain"
+        message = "sign-mpc-tx-with-keychain                - Sign MPC contract call a key saved in the secure keychain"
     ))]
-    /// Sign the transaction with a key saved in keychain
-    SignWithKeychain(crate::transaction_signature_options::sign_with_keychain::SignKeychain),
+    /// Sign MPC contract call with a key saved in keychain
+    SignMpcWithKeychain(crate::transaction_signature_options::sign_with_keychain::SignKeychain),
     #[strum_discriminants(strum(
-        message = "sign-with-legacy-keychain        - Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)"
+        message = "sign-mpc-with-legacy-keychain            - Sign MPC contract call with a key saved in keychain (compatible with the old near CLI)"
     ))]
-    /// Sign the transaction with a key saved in legacy keychain (compatible with the old near CLI)
-    SignWithLegacyKeychain(
+    /// Sign MPC contract call with a key saved in legacy keychain (compatible with the old near CLI)
+    SignMpcWithLegacyKeychain(
         crate::transaction_signature_options::sign_with_legacy_keychain::SignLegacyKeychain,
     ),
     #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(
-        message = "sign-with-ledger                 - Sign the transaction with Ledger Nano device"
+        message = "sign-mpc-tx-with-ledger                  - Sign MPC contract call with Ledger Nano device"
     ))]
-    /// Sign the transaction with Ledger Nano device
-    SignWithLedger(crate::transaction_signature_options::sign_with_ledger::SignLedger),
+    /// Sign MPC contract call with Ledger Nano device
+    SignMpcWithLedger(crate::transaction_signature_options::sign_with_ledger::SignLedger),
     #[strum_discriminants(strum(
-        message = "sign-with-plaintext-private-key  - Sign the transaction with a plaintext private key"
+        message = "sign-mpc-tx-with-plaintext-private-key   - Sign MPC contract call with a plaintext private key"
     ))]
-    /// Sign the transaction with a plaintext private key
-    SignWithPlaintextPrivateKey(
+    /// Sign MPC contract call with a plaintext private key
+    SignMpcWithPlaintextPrivateKey(
         crate::transaction_signature_options::sign_with_private_key::SignPrivateKey,
     ),
     #[strum_discriminants(strum(
-        message = "sign-with-access-key-file        - Sign the transaction using the account access key file (access-key-file.json)"
+        message = "sign-mpc-tx-with-access-key-file         - Sign MPC contract call using the account access key file (access-key-file.json)"
     ))]
-    /// Sign the transaction using the account access key file (access-key-file.json)
-    SignWithAccessKeyFile(
+    /// Sign MPC contract call using the account access key file (access-key-file.json)
+    SignMpcWithAccessKeyFile(
         crate::transaction_signature_options::sign_with_access_key_file::SignAccessKeyFile,
     ),
     #[strum_discriminants(strum(
-        message = "sign-with-seed-phrase            - Sign the transaction using the seed phrase"
+        message = "sign-mpc-tx-with-seed-phrase             - Sign MPC contract call using the seed phrase"
     ))]
-    /// Sign the transaction using the seed phrase
-    SignWithSeedPhrase(crate::transaction_signature_options::sign_with_seed_phrase::SignSeedPhrase),
+    /// Sign MPC contract call using the seed phrase
+    SignMpcWithSeedPhrase(
+        crate::transaction_signature_options::sign_with_seed_phrase::SignSeedPhrase,
+    ),
     #[strum_discriminants(strum(
-        message = "sign-later                       - Prepare an unsigned transaction to sign it later"
+        message = "submit-mpc-as-dao-proposal               - Convert current MPC transaction to DAO proposal"
     ))]
-    /// Prepare unsigned transaction to sign it later
-    SignLater(crate::transaction_signature_options::sign_later::SignLater),
-    #[strum_discriminants(strum(
-        message = "submit-as-dao-proposal           - Convert current transaction to DAO proposal"
-    ))]
-    /// Prepare transaction as dao proposal
-    SubmitAsDaoProposal(crate::transaction_signature_options::submit_dao_proposal::DaoProposal),
+    /// Prepare MPC transaction as dao proposal
+    SubmitMpcAsDaoProposal(crate::transaction_signature_options::submit_dao_proposal::DaoProposal),
 }

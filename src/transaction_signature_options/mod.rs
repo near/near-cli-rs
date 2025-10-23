@@ -54,15 +54,15 @@ pub enum SignWith {
     /// Sign the transaction using the seed phrase
     SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
     #[strum_discriminants(strum(
-        message = "sign-later                       - Prepare an unsigned transaction to sign it later"
-    ))]
-    /// Prepare unsigned transaction to sign it later
-    SignLater(self::sign_later::SignLater),
-    #[strum_discriminants(strum(
         message = "sign-with-mpc                    - Sign and send the transaction with MPC"
     ))]
     /// Sign and send the transaction with MPC
     SignWithMpc(crate::transaction_signature_options::sign_with_mpc::SignMpc),
+    #[strum_discriminants(strum(
+        message = "sign-later                       - Prepare an unsigned transaction to sign it later"
+    ))]
+    /// Prepare unsigned transaction to sign it later
+    SignLater(self::sign_later::SignLater),
     #[strum_discriminants(strum(
         message = "submit-as-dao-proposal           - Convert current transaction to DAO proposal"
     ))]
