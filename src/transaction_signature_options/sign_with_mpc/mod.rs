@@ -112,7 +112,6 @@ impl MpcDeriveContext {
             ));
         }
 
-        // 1. derive key for the path
         let derived_public_key = derive_public_key(
             &previous_context.mpc_contract_address,
             &previous_context.admin_account_id,
@@ -125,7 +124,6 @@ impl MpcDeriveContext {
             bs58::encode(&derived_public_key).into_string()
         );
 
-        // 2. check if key is published to controllable_account
         let json_rpc_response = network_config
                 .json_rpc_client()
                 .blocking_call_view_access_key(
@@ -295,8 +293,7 @@ impl DepositContext {
 
         let mpc_tx_payload = Transaction::V0(payload);
 
-        let serialized_near_tx = borsh::to_vec(&mpc_tx_payload)?;
-        let hashed_transaction = hash_payload(&serialized_near_tx);
+        let hashed_transaction = near_primitives::hash::CryptoHash::hash_borsh(&mpc_tx_payload).0;
         let sign_request = mpc_sign_result::SignRequest::new(
             hashed_transaction,
             format!(
@@ -320,12 +317,6 @@ impl DepositContext {
             network_config: previous_context.tx_context.network_config,
         })
     }
-}
-
-fn hash_payload(payload: &[u8]) -> [u8; 32] {
-    let mut hasher = cargo_util::Sha256::new();
-    hasher.update(payload);
-    hasher.finish()
 }
 
 impl Deposit {
@@ -369,7 +360,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                     let unsigned_transaction = item.original_payload_transaction.clone();
                     let sender_id = unsigned_transaction.signer_id().clone();
                     let reciever_id = unsigned_transaction.receiver_id().clone();
-                    let contract_id = item.admin_account_id.clone();
+                    let contract_id = item.mpc_contract_address.clone();
                     let sign_request_tx = signed_transaction_to_replace.clone();
 
                     let sign_outcome_view =
@@ -401,10 +392,14 @@ impl From<DepositContext> for crate::commands::TransactionContext {
 
                     tracing::info!(
                         parent: &tracing::Span::none(),
-                        "Successfully signed original transaction from <{}> to <{}> via MPC contract <{}>.",
+                        "Successfully signed original transaction from <{}> to <{}> via MPC contract <{}>:{}",
                         sender_id,
                         reciever_id,
                         contract_id,
+                        crate::common::indent_payload(&format!(
+                            "\nSignature:  {}\n",
+                            signed_transaction.signature,
+                        ))
                     );
 
                     *signed_transaction_to_replace = signed_transaction;
