@@ -308,7 +308,7 @@ impl From<migrations::ConfigVersion> for Config {
                     migrations::ConfigVersion::V3(config_v2.into())
                 }
                 migrations::ConfigVersion::V3(config_v3) => {
-                    eprintln!("Migrating config.toml form V3 to v4...");
+                    eprintln!("Migrating config.toml from V3 to v4...");
                     migrations::ConfigVersion::V4(config_v3.into())
                 }
                 migrations::ConfigVersion::V4(config_v4) => {

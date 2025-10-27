@@ -13,7 +13,7 @@ mod mpc_sign_with;
 #[interactive_clap(output_context = SignMpcContext)]
 pub struct SignMpc {
     #[interactive_clap(skip_default_input_arg)]
-    /// What is the Admin account addres?
+    /// What is the Admin account address?
     admin_account_id: crate::types::account_id::AccountId,
 
     #[interactive_clap(subargs)]
@@ -59,7 +59,7 @@ impl SignMpc {
 #[interactive_clap(output_context = MpcDeriveKeyContext)]
 pub struct MpcDeriveKey {
     #[interactive_clap(skip_default_input_arg)]
-    /// What is the MPC key type for derivation (if unsure choose Secp256K1)?
+    /// What is the MPC key type for derivation?
     key_type: crate::types::key_type::KeyType,
     #[interactive_clap(named_arg)]
     /// Prepaid Gas for calling MPC contract
@@ -70,7 +70,7 @@ pub struct MpcDeriveKey {
 pub struct MpcDeriveKeyContext {
     admin_account_id: near_primitives::types::AccountId,
     derived_public_key: near_crypto::PublicKey,
-    nounce: near_primitives::types::Nonce,
+    nonce: near_primitives::types::Nonce,
     block_hash: near_primitives::hash::CryptoHash,
     tx_context: crate::commands::TransactionContext,
 }
@@ -142,7 +142,7 @@ impl MpcDeriveKeyContext {
         Ok(Self {
             admin_account_id: previous_context.admin_account_id,
             derived_public_key,
-            nounce: json_rpc_response
+            nonce: json_rpc_response
                 .access_key_view()
                 .wrap_err("Error current_nonce")?
                 .nonce
@@ -203,7 +203,7 @@ pub fn derive_public_key(
 #[interactive_clap(output_context = PrepaidGasContext)]
 pub struct PrepaidGas {
     #[interactive_clap(skip_default_input_arg)]
-    /// What is the gas limit for signing MPC (if unsure, keep 15 Tgas)?
+    /// What is the gas limit for signing MPC?
     gas: crate::common::NearGas,
 
     #[interactive_clap(named_arg)]
@@ -215,7 +215,7 @@ pub struct PrepaidGas {
 pub struct PrepaidGasContext {
     admin_account_id: near_primitives::types::AccountId,
     derived_public_key: near_crypto::PublicKey,
-    nounce: near_primitives::types::Nonce,
+    nonce: near_primitives::types::Nonce,
     block_hash: near_primitives::hash::CryptoHash,
     tx_context: crate::commands::TransactionContext,
     gas: crate::common::NearGas,
@@ -229,7 +229,7 @@ impl PrepaidGasContext {
         Ok(PrepaidGasContext {
             admin_account_id: previous_context.admin_account_id,
             derived_public_key: previous_context.derived_public_key,
-            nounce: previous_context.nounce,
+            nonce: previous_context.nonce,
             block_hash: previous_context.block_hash,
             tx_context: previous_context.tx_context,
             gas: scope.gas,
@@ -308,7 +308,7 @@ impl DepositContext {
                 .prepopulated_transaction
                 .receiver_id,
             public_key: previous_context.derived_public_key.clone(),
-            nonce: previous_context.nounce,
+            nonce: previous_context.nonce,
             block_hash: previous_context.block_hash,
             actions: previous_context.tx_context.prepopulated_transaction.actions,
         };
