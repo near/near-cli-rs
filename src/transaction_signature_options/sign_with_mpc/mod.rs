@@ -81,7 +81,7 @@ impl MpcDeriveKeyContext {
         scope: &<MpcDeriveKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.tx_context.network_config.clone();
-        let controlable_account = previous_context
+        let controllable_account = previous_context
             .tx_context
             .prepopulated_transaction
             .signer_id
@@ -99,7 +99,7 @@ impl MpcDeriveKeyContext {
             &previous_context.admin_account_id,
             &format!(
                 "{}-{}",
-                previous_context.admin_account_id, controlable_account
+                previous_context.admin_account_id, controllable_account
             ),
             &scope.key_type,
             &network_config,
@@ -108,7 +108,7 @@ impl MpcDeriveKeyContext {
         let json_rpc_response = network_config
                 .json_rpc_client()
                 .blocking_call_view_access_key(
-                    &controlable_account,
+                    &controllable_account,
                     &derived_public_key.clone(),
                     near_primitives::types::BlockReference::latest(),
                 )
@@ -123,19 +123,19 @@ impl MpcDeriveKeyContext {
                             format!(
                                 "\n    {} account add-key {} grant-full-access use-manually-provided-public-key {}",
                                 crate::common::get_near_exec_path(),
-                                controlable_account,
+                                controllable_account,
                                 derived_public_key
                             )
                         );
                     }
                 })
                 .wrap_err_with(||
-                    format!("Cannot sign MPC transaction for <{}> due to an error while checking if derived key exists on network <{}>", controlable_account, network_config.network_name)
+                    format!("Cannot sign MPC transaction for <{}> due to an error while checking if derived key exists on network <{}>", controllable_account, network_config.network_name)
                 )?;
 
         tracing::info!(
             "Derived public key for <{}>:{}",
-            controlable_account,
+            controllable_account,
             crate::common::indent_payload(&format!("\n{derived_public_key}\n"))
         );
 
@@ -414,7 +414,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 move |signed_transaction_to_replace, network_config| {
                     let unsigned_transaction = item.original_payload_transaction.clone();
                     let sender_id = unsigned_transaction.signer_id().clone();
-                    let reciever_id = unsigned_transaction.receiver_id().clone();
+                    let receiver_id = unsigned_transaction.receiver_id().clone();
                     let contract_id = item.mpc_contract_address.clone();
                     let sign_request_tx = signed_transaction_to_replace.clone();
 
@@ -449,7 +449,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                         parent: &tracing::Span::none(),
                         "Successfully signed original transaction from <{}> to <{}> via MPC contract <{}>:{}",
                         sender_id,
-                        reciever_id,
+                        receiver_id,
                         contract_id,
                         crate::common::indent_payload(&format!(
                             "\nSignature:  {}\n",
@@ -468,7 +468,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
             network_config: item.network_config,
             prepopulated_transaction: mpc_sign_transaction,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+                |_prepopulated_unsigned_transaction, _network_config| Ok(()),
             ),
             on_after_signing_callback,
             on_before_sending_transaction_callback: std::sync::Arc::new(

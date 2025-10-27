@@ -247,7 +247,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
             network_config: item.network_config,
             prepopulated_transaction: new_prepopulated_transaction,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+                |_prepopulated_unsigned_transaction, _network_config| Ok(()),
             ),
             on_after_signing_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config| Ok(()),

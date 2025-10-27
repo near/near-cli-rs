@@ -151,7 +151,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
             ],
             get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+                |_prepopulated_unsigned_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback,
