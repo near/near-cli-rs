@@ -80,4 +80,3 @@ impl From<SignResult> for near_crypto::Signature {
         }
     }
 }
-
