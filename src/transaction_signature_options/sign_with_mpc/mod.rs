@@ -245,8 +245,6 @@ impl PrepaidGas {
             CustomType::new("What is the gas limit for signing MPC (if unsure, keep 15 Tgas)?")
                 .with_starting_input("15 Tgas")
                 .with_validator(move |gas: &crate::common::NearGas| {
-                    // NOTE: MPC contract requires minimum of 15 TeraGas
-                    // https://github.com/near/mpc/blob/64e026635538f2380093005b31f43267bee8a995/crates/contract/src/lib.rs#L63
                     if gas < &near_gas::NearGas::from_tgas(15) {
                         Ok(inquire::validator::Validation::Invalid(
                             inquire::validator::ErrorMessage::Custom(
@@ -366,16 +364,12 @@ impl Deposit {
     pub fn input_deposit(
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        // NOTE: "Fee changes depending on how busy network is" - how?
-        // https://github.com/near/mpc/blob/2.2.0-rc1/libs/chain-signatures/contract/src/lib.rs#L324C1-L324C58
         Ok(Some(
             CustomType::new(
                 "What is the deposit for MPC contract call (if unsure, keep 1 yoctoNEAR)?",
             )
             .with_starting_input("1 yoctoNEAR")
             .with_validator(move |deposit: &crate::types::near_token::NearToken| {
-                // NOTE: MPC contract requires minimum of 1 yoctoNEAR as deposit
-                // https://github.com/near/mpc/blob/64e026635538f2380093005b31f43267bee8a995/crates/contract/src/lib.rs#L87
                 if deposit < &crate::types::near_token::NearToken::from_yoctonear(1) {
                     Ok(inquire::validator::Validation::Invalid(
                         inquire::validator::ErrorMessage::Custom(

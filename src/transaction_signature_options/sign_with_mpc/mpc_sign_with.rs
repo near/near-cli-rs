@@ -5,7 +5,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// Select a tool for signing transaction to send to MPC:
 pub enum MpcSignWith {
-    // NOTE: There should be a better naming for user as "sign-with-keychain" kinda misleading
     #[strum_discriminants(strum(
         message = "sign-mpc-tx-with-keychain                - Sign MPC contract call a key saved in the secure keychain"
     ))]
