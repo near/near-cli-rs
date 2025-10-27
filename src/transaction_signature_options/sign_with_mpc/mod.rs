@@ -4,6 +4,7 @@ use near_primitives::transaction::{Transaction, TransactionV0};
 
 use crate::common::{JsonRpcClientExt, RpcQueryResponseExt};
 
+mod mpc_sign_request;
 mod mpc_sign_result;
 mod mpc_sign_with;
 
@@ -16,8 +17,8 @@ pub struct SignMpc {
     admin_account_id: crate::types::account_id::AccountId,
 
     #[interactive_clap(subargs)]
-    /// MPC key retrival and SECP256K1 derivation logic
-    mpc_derive: MpcDerive,
+    /// MPC key retrival and derivation logic
+    mpc_derive: MpcDeriveKey,
 }
 
 #[derive(Clone)]
@@ -68,31 +69,31 @@ impl SignMpc {
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = SignMpcContext)]
-#[interactive_clap(output_context = MpcDeriveContext)]
-pub struct MpcDerive {
+#[interactive_clap(output_context = MpcDeriveKeyContext)]
+pub struct MpcDeriveKey {
+    #[interactive_clap(skip_default_input_arg)]
+    /// What is the MPC key type for derivation (if unsure choose Secp256K1)?
+    key_type: crate::types::key_type::KeyType,
     #[interactive_clap(named_arg)]
     /// Prepaid Gas for calling MPC contract
     prepaid_gas: PrepaidGas,
 }
 
 #[derive(Clone)]
-pub struct MpcDeriveContext {
+pub struct MpcDeriveKeyContext {
     admin_account_id: near_primitives::types::AccountId,
     mpc_contract_address: near_primitives::types::AccountId,
-    derived_public_key: near_crypto::Secp256K1PublicKey,
+    derived_public_key: near_crypto::PublicKey,
     nounce: near_primitives::types::Nonce,
     block_hash: near_primitives::hash::CryptoHash,
     tx_context: crate::commands::TransactionContext,
 }
 
-impl MpcDeriveContext {
+impl MpcDeriveKeyContext {
     pub fn from_previous_context(
         previous_context: SignMpcContext,
-        _scope: &<MpcDerive as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<MpcDeriveKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        // NOTE: as of now, default key in v1.signer and v1.signer-prod.testnet MPC contracts is Secp256K1
-        // This code works using this key only
-
         let network_config = previous_context.tx_context.network_config.clone();
         let controlable_account = previous_context
             .tx_context
@@ -116,23 +117,42 @@ impl MpcDeriveContext {
             &previous_context.mpc_contract_address,
             &previous_context.admin_account_id,
             &derive_path,
+            &scope.key_type,
             &network_config,
         )?;
 
         tracing::info!(
-            "Derived public key for <{controlable_account}>:\n     secp256k1:{}",
-            bs58::encode(&derived_public_key).into_string()
+            "Derived public key for <{}>:{}",
+            controlable_account,
+            crate::common::indent_payload(&format!("\n{derived_public_key}\n"))
         );
 
         let json_rpc_response = network_config
                 .json_rpc_client()
                 .blocking_call_view_access_key(
                     &controlable_account,
-                    &derived_public_key.clone().into(),
+                    &derived_public_key.clone(),
                     near_primitives::types::BlockReference::latest(),
                 )
+                .inspect_err(|err| {
+                    if let near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                        near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                            near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccessKey { .. },
+                        ),
+                    ) = &**err {
+                        tracing::info!(
+                            "Couldn't find a key on rpc. You can add it to controllable account using following command: {} ",
+                            format!(
+                                "\n    {} account add-key {} grant-full-access use-manually-provided-public-key {}",
+                                crate::common::get_near_exec_path(),
+                                controlable_account,
+                                derived_public_key
+                            )
+                        );
+                    }
+                })
                 .wrap_err_with(||
-                    format!("Cannot sign a transaction due to an error while checking if derived key exists on network <{}>", network_config.network_name)
+                    format!("Cannot sign MPC transaction for <{}> due to an error while checking if derived key exists on network <{}>", controlable_account, network_config.network_name)
                 )?;
 
         tracing::info!("Found derived key in controllable account <{controlable_account}>.");
@@ -152,13 +172,33 @@ impl MpcDeriveContext {
     }
 }
 
+impl MpcDeriveKey {
+    pub fn input_key_type(
+        _context: &SignMpcContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::key_type::KeyType>> {
+        let options = vec![
+            crate::types::key_type::KeyType(near_crypto::KeyType::SECP256K1),
+            crate::types::key_type::KeyType(near_crypto::KeyType::ED25519),
+        ];
+
+        let selection = inquire::Select::new(
+            "What is the MPC key type for derivation (if unsure choose Secp256K1)?",
+            options,
+        )
+        .prompt()?;
+
+        Ok(Some(selection))
+    }
+}
+
 #[tracing::instrument(name = "Retrieving derived public key from MPC contract ...", skip_all)]
 pub fn derive_public_key(
     mpc_contract_address: &near_primitives::types::AccountId,
     admin_account_id: &near_primitives::types::AccountId,
     derive_path: &str,
+    key_type: &crate::types::key_type::KeyType,
     network_config: &crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<near_crypto::Secp256K1PublicKey> {
+) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
     let rpc_result = network_config
         .json_rpc_client()
         .blocking_call_view_function(
@@ -167,17 +207,18 @@ pub fn derive_public_key(
             serde_json::to_vec(&serde_json::json!({
                 "path": derive_path,
                 "predecessor": admin_account_id,
+                "domain_id": key_type.to_mpc_domain_id(),
             }))?,
             near_primitives::types::BlockReference::latest(),
         )?;
 
     let public_key: near_crypto::PublicKey = serde_json::from_slice(&rpc_result.result)?;
 
-    Ok(public_key.unwrap_as_secp256k1().clone())
+    Ok(public_key)
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = MpcDeriveContext)]
+#[interactive_clap(input_context = MpcDeriveKeyContext)]
 #[interactive_clap(output_context = PrepaidGasContext)]
 pub struct PrepaidGas {
     #[interactive_clap(skip_default_input_arg)]
@@ -193,7 +234,7 @@ pub struct PrepaidGas {
 pub struct PrepaidGasContext {
     admin_account_id: near_primitives::types::AccountId,
     mpc_contract_address: near_primitives::types::AccountId,
-    derived_public_key: near_crypto::Secp256K1PublicKey,
+    derived_public_key: near_crypto::PublicKey,
     nounce: near_primitives::types::Nonce,
     block_hash: near_primitives::hash::CryptoHash,
     tx_context: crate::commands::TransactionContext,
@@ -202,7 +243,7 @@ pub struct PrepaidGasContext {
 
 impl PrepaidGasContext {
     pub fn from_previous_context(
-        previous_context: MpcDeriveContext,
+        previous_context: MpcDeriveKeyContext,
         scope: &<PrepaidGas as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(PrepaidGasContext {
@@ -219,13 +260,23 @@ impl PrepaidGasContext {
 
 impl PrepaidGas {
     pub fn input_gas(
-        _context: &MpcDeriveContext,
+        _context: &MpcDeriveKeyContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         Ok(Some(
             CustomType::new("What is the gas limit for signing MPC (if unsure, keep 15 Tgas)?")
                 .with_starting_input("15 Tgas")
                 .with_validator(move |gas: &crate::common::NearGas| {
-                    if gas > &near_gas::NearGas::from_tgas(300) {
+                    // NOTE: MPC contract requires minimum of 15 TeraGas
+                    // https://github.com/near/mpc/blob/64e026635538f2380093005b31f43267bee8a995/crates/contract/src/lib.rs#L63
+
+                    if gas < &near_gas::NearGas::from_tgas(15) {
+                        Ok(inquire::validator::Validation::Invalid(
+                            inquire::validator::ErrorMessage::Custom(
+                                "Sign call to MPC contract requires minimum of 15 TeraGas"
+                                    .to_string(),
+                            ),
+                        ))
+                    } else if gas > &near_gas::NearGas::from_tgas(300) {
                         Ok(inquire::validator::Validation::Invalid(
                             inquire::validator::ErrorMessage::Custom(
                                 "You need to enter a value of no more than 300 TeraGas".to_string(),
@@ -280,7 +331,7 @@ impl DepositContext {
                 .tx_context
                 .prepopulated_transaction
                 .receiver_id,
-            public_key: previous_context.derived_public_key.into(),
+            public_key: previous_context.derived_public_key.clone(),
             nonce: previous_context.nounce,
             block_hash: previous_context.block_hash,
             actions: previous_context.tx_context.prepopulated_transaction.actions,
@@ -292,18 +343,29 @@ impl DepositContext {
         )?;
 
         let mpc_tx_payload = Transaction::V0(payload);
+        let hashed_payload = near_primitives::hash::CryptoHash::hash_borsh(&mpc_tx_payload).0;
 
-        let hashed_transaction = near_primitives::hash::CryptoHash::hash_borsh(&mpc_tx_payload).0;
-        let sign_request = mpc_sign_result::SignRequest::new(
-            hashed_transaction,
-            format!(
-                "{}-{}",
-                previous_context.admin_account_id, controllable_account
-            ),
-            0u32,
-        );
+        let payload: mpc_sign_request::SignPayload = match previous_context
+            .derived_public_key
+            .key_type()
+        {
+            near_crypto::KeyType::ED25519 => {
+                mpc_sign_request::SignPayload::Eddsa(hashed_payload.to_vec())
+            }
+            near_crypto::KeyType::SECP256K1 => mpc_sign_request::SignPayload::Ecdsa(hashed_payload),
+        };
+
         let mpc_tx_args = serde_json::to_vec(&serde_json::json!({
-            "request": sign_request
+            "request": mpc_sign_request::SignRequest {
+                payload,
+                path: format!(
+                    "{}-{}",
+                    previous_context.admin_account_id, controllable_account
+                ),
+                domain_id:  crate::types::key_type::near_key_type_to_mpc_domain_id(
+                    previous_context.derived_public_key.key_type(),
+                ),
+            }
         }))?;
 
         Ok(Self {
@@ -323,10 +385,28 @@ impl Deposit {
     pub fn input_deposit(
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
+        // NOTE: "Fee changes depending on how busy network is" - how?
+        // https://github.com/near/mpc/blob/2.2.0-rc1/libs/chain-signatures/contract/src/lib.rs#L324C1-L324C58
         Ok(Some(
-            CustomType::new("Enter deposit for MPC contract call (if unsure, keep 0.1 NEAR):")
-                .with_starting_input("0.1 NEAR")
-                .prompt()?,
+            CustomType::new(
+                "What is the deposit for MPC contract call (if unsure, keep 1 yoctoNEAR)?",
+            )
+            .with_starting_input("1 yoctoNEAR")
+            .with_validator(move |deposit: &crate::types::near_token::NearToken| {
+                // NOTE: MPC contract requires minimum of 1 yoctoNEAR as deposit
+                // https://github.com/near/mpc/blob/64e026635538f2380093005b31f43267bee8a995/crates/contract/src/lib.rs#L87
+                if deposit < &crate::types::near_token::NearToken::from_yoctonear(1) {
+                    Ok(inquire::validator::Validation::Invalid(
+                        inquire::validator::ErrorMessage::Custom(
+                            "Sign call to MPC contract requires deposit no lower than 1 yoctoNEAR"
+                                .to_string(),
+                        ),
+                    ))
+                } else {
+                    Ok(inquire::validator::Validation::Valid)
+                }
+            })
+            .prompt()?,
         ))
     }
 }
@@ -348,7 +428,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
 
         tracing::info!(
             "{}{}",
-            "Unsigned transaction to send to MPC. It's needed to be signed and sent to MPC contract.",
+            "Unsigned transaction for signing with MPC contract",
             crate::common::indent_payload(&crate::common::print_unsigned_transaction(
                 &mpc_sign_transaction,
             ))
@@ -374,12 +454,12 @@ impl From<DepositContext> for crate::commands::TransactionContext {
 
                     let signed_transaction = match sign_outcome_view.status {
                         near_primitives::views::FinalExecutionStatus::SuccessValue(result) => {
-                            let success_val: mpc_sign_result::SignResult =
+                            let sign_result: mpc_sign_result::SignResult =
                                 serde_json::from_slice(&result)?;
-                            let signature: near_crypto::Secp256K1Signature = success_val.into();
+                            let signature: near_crypto::Signature = sign_result.into();
 
                             near_primitives::transaction::SignedTransaction::new(
-                                near_crypto::Signature::SECP256K1(signature),
+                                signature,
                                 unsigned_transaction,
                             )
                         }
