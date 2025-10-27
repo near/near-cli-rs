@@ -36,6 +36,7 @@ impl Default for Config {
                 fastnear_url: Some("https://api.fastnear.com/".parse().unwrap()),
                 staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
                 coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
+                mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
             },
         );
         network_connection.insert(
@@ -55,6 +56,7 @@ impl Default for Config {
                 fastnear_url: Some("https://api.fastnear.com/".parse().unwrap()),
                 staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
                 coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
+                mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
             },
         );
         network_connection.insert(
@@ -74,6 +76,7 @@ impl Default for Config {
                 fastnear_url: Some("https://api.fastnear.com/".parse().unwrap()),
                 staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
                 coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
+                mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
             },
         );
 
@@ -94,6 +97,7 @@ impl Default for Config {
                 fastnear_url: Some("https://test.api.fastnear.com/".parse().unwrap()),
                 staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
                 coingecko_url: None,
+                mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
             },
         );
         network_connection.insert(
@@ -113,6 +117,7 @@ impl Default for Config {
                 fastnear_url: Some("https://test.api.fastnear.com/".parse().unwrap()),
                 staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
                 coingecko_url: None,
+                mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
             },
         );
         network_connection.insert(
@@ -132,6 +137,7 @@ impl Default for Config {
                 fastnear_url: Some("https://test.api.fastnear.com/".parse().unwrap()),
                 staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
                 coingecko_url: None,
+                mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
             },
         );
 
@@ -151,7 +157,7 @@ impl Config {
     }
 
     pub fn into_latest_version(self) -> migrations::ConfigVersion {
-        migrations::ConfigVersion::V3(self)
+        migrations::ConfigVersion::V4(self)
     }
 
     pub fn get_config_toml() -> color_eyre::eyre::Result<Self> {
@@ -225,6 +231,7 @@ pub struct NetworkConfig {
     pub fastnear_url: Option<url::Url>,
     pub staking_pools_factory_account_id: Option<near_primitives::types::AccountId>,
     pub coingecko_url: Option<url::Url>,
+    pub mpc_contract_account_id: Option<near_primitives::types::AccountId>,
 }
 
 impl NetworkConfig {
@@ -267,6 +274,25 @@ impl NetworkConfig {
             )),
         }
     }
+
+    pub fn get_mpc_contract_account_id(
+        &self,
+    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+        if let Some(mpc_contract_account_id) = self.mpc_contract_account_id.clone() {
+            return Ok(mpc_contract_account_id);
+        }
+
+        match self.network_name.as_str() {
+            "mainnet" => {
+                near_primitives::types::AccountId::from_str("v1.signer").wrap_err("Internal error")
+            }
+            "testnet" => near_primitives::types::AccountId::from_str("v1.signer-prod.testnet")
+                .wrap_err("Internal error"),
+            _ => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "This network does not provide the mpc contract"
+            )),
+        }
+    }
 }
 
 impl From<migrations::ConfigVersion> for Config {
@@ -282,7 +308,11 @@ impl From<migrations::ConfigVersion> for Config {
                     migrations::ConfigVersion::V3(config_v2.into())
                 }
                 migrations::ConfigVersion::V3(config_v3) => {
-                    break config_v3;
+                    eprintln!("Migrating config.toml form V3 to v4...");
+                    migrations::ConfigVersion::V4(config_v3.into())
+                }
+                migrations::ConfigVersion::V4(config_v4) => {
+                    break config_v4;
                 }
             };
         }

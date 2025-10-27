@@ -17,14 +17,13 @@ pub struct SignMpc {
     admin_account_id: crate::types::account_id::AccountId,
 
     #[interactive_clap(subargs)]
-    /// MPC key retrival and derivation logic
+    /// MPC key derivation logic
     mpc_derive: MpcDeriveKey,
 }
 
 #[derive(Clone)]
 pub struct SignMpcContext {
     admin_account_id: near_primitives::types::AccountId,
-    mpc_contract_address: near_primitives::types::AccountId,
     tx_context: crate::commands::TransactionContext,
 }
 
@@ -33,24 +32,12 @@ impl SignMpcContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignMpc as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        // TODO: check the smart_contract_address exists still...
-        let network_name = &previous_context.network_config.network_name;
-        let mpc_contract_address = if network_name.contains("mainnet") {
-            "v1.signer".parse()?
-        } else if network_name.contains("testnet") {
-            "v1.signer-prod.testnet".parse()?
-        } else {
-            return Err(color_eyre::eyre::eyre!(
-                "Network name should contain \"mainnet\" or \"testnet\" to get MPC contract address!"
-            ));
-        };
-
-        // TODO: can also check if MPC and admin account exists using common::is_account_exists
-        // function
+        let _ = previous_context
+            .network_config
+            .get_mpc_contract_account_id()?;
 
         Ok(SignMpcContext {
             admin_account_id: scope.admin_account_id.clone().into(),
-            mpc_contract_address,
             tx_context: previous_context,
         })
     }
@@ -82,7 +69,6 @@ pub struct MpcDeriveKey {
 #[derive(Clone)]
 pub struct MpcDeriveKeyContext {
     admin_account_id: near_primitives::types::AccountId,
-    mpc_contract_address: near_primitives::types::AccountId,
     derived_public_key: near_crypto::PublicKey,
     nounce: near_primitives::types::Nonce,
     block_hash: near_primitives::hash::CryptoHash,
@@ -100,12 +86,7 @@ impl MpcDeriveKeyContext {
             .prepopulated_transaction
             .signer_id
             .clone();
-        let derive_path = format!(
-            "{}-{}",
-            previous_context.admin_account_id, controlable_account
-        );
 
-        // TODO: Check if this is required and checked before
         if previous_context.tx_context.global_context.offline {
             eprintln!("\nInternet connection is required to retrieve and check derived key!");
             return Err(color_eyre::eyre::eyre!(
@@ -114,18 +95,15 @@ impl MpcDeriveKeyContext {
         }
 
         let derived_public_key = derive_public_key(
-            &previous_context.mpc_contract_address,
+            &network_config.get_mpc_contract_account_id()?,
             &previous_context.admin_account_id,
-            &derive_path,
+            &format!(
+                "{}-{}",
+                previous_context.admin_account_id, controlable_account
+            ),
             &scope.key_type,
             &network_config,
         )?;
-
-        tracing::info!(
-            "Derived public key for <{}>:{}",
-            controlable_account,
-            crate::common::indent_payload(&format!("\n{derived_public_key}\n"))
-        );
 
         let json_rpc_response = network_config
                 .json_rpc_client()
@@ -140,7 +118,7 @@ impl MpcDeriveKeyContext {
                             near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccessKey { .. },
                         ),
                     ) = &**err {
-                        tracing::info!(
+                        tracing::error!(
                             "Couldn't find a key on rpc. You can add it to controllable account using following command: {} ",
                             format!(
                                 "\n    {} account add-key {} grant-full-access use-manually-provided-public-key {}",
@@ -155,11 +133,14 @@ impl MpcDeriveKeyContext {
                     format!("Cannot sign MPC transaction for <{}> due to an error while checking if derived key exists on network <{}>", controlable_account, network_config.network_name)
                 )?;
 
-        tracing::info!("Found derived key in controllable account <{controlable_account}>.");
+        tracing::info!(
+            "Derived public key for <{}>:{}",
+            controlable_account,
+            crate::common::indent_payload(&format!("\n{derived_public_key}\n"))
+        );
 
         Ok(Self {
             admin_account_id: previous_context.admin_account_id,
-            mpc_contract_address: previous_context.mpc_contract_address,
             derived_public_key,
             nounce: json_rpc_response
                 .access_key_view()
@@ -222,18 +203,17 @@ pub fn derive_public_key(
 #[interactive_clap(output_context = PrepaidGasContext)]
 pub struct PrepaidGas {
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter gas amount for contract call:
+    /// What is the gas limit for signing MPC (if unsure, keep 15 Tgas)?
     gas: crate::common::NearGas,
 
     #[interactive_clap(named_arg)]
-    /// Enter deposit for contract call:
+    /// Deposit for contract call
     attached_deposit: Deposit,
 }
 
 #[derive(Clone)]
 pub struct PrepaidGasContext {
     admin_account_id: near_primitives::types::AccountId,
-    mpc_contract_address: near_primitives::types::AccountId,
     derived_public_key: near_crypto::PublicKey,
     nounce: near_primitives::types::Nonce,
     block_hash: near_primitives::hash::CryptoHash,
@@ -248,7 +228,6 @@ impl PrepaidGasContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(PrepaidGasContext {
             admin_account_id: previous_context.admin_account_id,
-            mpc_contract_address: previous_context.mpc_contract_address,
             derived_public_key: previous_context.derived_public_key,
             nounce: previous_context.nounce,
             block_hash: previous_context.block_hash,
@@ -268,7 +247,6 @@ impl PrepaidGas {
                 .with_validator(move |gas: &crate::common::NearGas| {
                     // NOTE: MPC contract requires minimum of 15 TeraGas
                     // https://github.com/near/mpc/blob/64e026635538f2380093005b31f43267bee8a995/crates/contract/src/lib.rs#L63
-
                     if gas < &near_gas::NearGas::from_tgas(15) {
                         Ok(inquire::validator::Validation::Invalid(
                             inquire::validator::ErrorMessage::Custom(
@@ -362,7 +340,7 @@ impl DepositContext {
                     "{}-{}",
                     previous_context.admin_account_id, controllable_account
                 ),
-                domain_id:  crate::types::key_type::near_key_type_to_mpc_domain_id(
+                domain_id: crate::types::key_type::near_key_type_to_mpc_domain_id(
                     previous_context.derived_public_key.key_type(),
                 ),
             }
@@ -370,7 +348,10 @@ impl DepositContext {
 
         Ok(Self {
             admin_account_id: previous_context.admin_account_id,
-            mpc_contract_address: previous_context.mpc_contract_address,
+            mpc_contract_address: previous_context
+                .tx_context
+                .network_config
+                .get_mpc_contract_account_id()?,
             gas: previous_context.gas,
             deposit: scope.deposit,
             original_payload_transaction: mpc_tx_payload,
