@@ -55,7 +55,7 @@ impl From<SignResultEd25519> for ed25519_dalek::Signature {
             .try_into()
             .expect("Invalid signature length for Ed25519");
 
-        // Sanity check form near_crypto
+        // Sanity check from near_crypto
         assert!(
             signature_bytes[ed25519_dalek::SIGNATURE_LENGTH - 1] & 0b1110_0000 == 0,
             "Signature error: Sanity check failed"
