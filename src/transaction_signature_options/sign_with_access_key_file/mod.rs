@@ -137,11 +137,6 @@ impl SignAccessKeyFileContext {
             unsigned_transaction,
         );
 
-        (previous_context.on_after_signing_callback)(
-            &mut signed_transaction,
-            &previous_context.network_config,
-        )?;
-
         tracing::info!(
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
@@ -151,6 +146,11 @@ impl SignAccessKeyFileContext {
                 signature
             ))
         );
+
+        (previous_context.on_after_signing_callback)(
+            &mut signed_transaction,
+            &previous_context.network_config,
+        )?;
 
         Ok(Self {
             network_config: previous_context.network_config,

@@ -131,11 +131,6 @@ impl SignPrivateKeyContext {
             unsigned_transaction,
         );
 
-        (previous_context.on_after_signing_callback)(
-            &mut signed_transaction,
-            &previous_context.network_config,
-        )?;
-
         tracing::info!(
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
@@ -143,6 +138,11 @@ impl SignPrivateKeyContext {
                 "\nPublic key: {public_key}\nSignature:  {signature}\n"
             ))
         );
+
+        (previous_context.on_after_signing_callback)(
+            &mut signed_transaction,
+            &previous_context.network_config,
+        )?;
 
         Ok(Self {
             network_config: previous_context.network_config,
