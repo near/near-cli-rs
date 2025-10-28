@@ -377,22 +377,6 @@ pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
     Ok(select_choose_input == ConfirmOptions::Yes)
 }
 
-pub fn ask_if_contract_is_global() -> color_eyre::eyre::Result<bool> {
-    #[derive(strum_macros::Display, PartialEq)]
-    enum ConfirmOptions {
-        #[strum(to_string = "Yes")]
-        Yes,
-        #[strum(to_string = "No")]
-        No,
-    }
-    let select_choose_input = Select::new(
-        "Is contract global?",
-        vec![ConfirmOptions::Yes, ConfirmOptions::No],
-    )
-    .prompt()?;
-    Ok(select_choose_input == ConfirmOptions::Yes)
-}
-
 #[tracing::instrument(name = "Getting account status information for", skip_all)]
 pub async fn get_account_state(
     network_config: &crate::config::NetworkConfig,
