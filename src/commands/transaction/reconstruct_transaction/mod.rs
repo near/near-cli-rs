@@ -212,8 +212,8 @@ fn action_transformation(
         }
         Action::DeployContract(deploy_contract_action) => {
             download_code(
-                crate::commands::contract::download_wasm::ContractType::Regular,
-                &receiver_id,
+                crate::commands::contract::download_wasm::ContractKind::Regular,
+                receiver_id.as_str(),
                 network_config,
                 block_reference,
                 "reconstruct-transaction-deploy-code.wasm",
@@ -268,10 +268,10 @@ fn action_transformation(
         }
         Action::DeployGlobalContract(action) => {
             download_code(
-                crate::commands::contract::download_wasm::ContractType::Global,
-                &receiver_id,
+                crate::commands::contract::download_wasm::ContractKind::Regular,
+                receiver_id.as_str(),
                 network_config,
-                near_primitives::types::BlockReference::latest(),
+                block_reference,
                 "reconstruct-transaction-deploy-code.wasm",
                 &action.code
             )?;
@@ -384,8 +384,8 @@ fn get_access_key_permission(
 }
 
 fn download_code(
-    contract_type: crate::commands::contract::download_wasm::ContractType,
-    receiver_id: &near_primitives::types::AccountId,
+    contract_kind: crate::commands::contract::download_wasm::ContractKind,
+    target: &str,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
     file_name: &str,
@@ -395,8 +395,8 @@ fn download_code(
     // So we need to fetch it from archive node.
 
     let code = crate::commands::contract::download_wasm::get_code(
-        contract_type,
-        receiver_id,
+        contract_kind,
+        target,
         network_config,
         block_reference,
     ).map_err(|e| {
@@ -406,8 +406,8 @@ fn download_code(
     let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
     tracing::info!(
         parent: &tracing::Span::none(),
-        "The code for the account <{}> was downloaded successfully with hash <{}>",
-        receiver_id,
+        "The code for <{}> was downloaded successfully with hash <{}>",
+        target,
         code_hash,
     );
     if code_hash.0 != hash_to_match {
@@ -422,7 +422,7 @@ fn download_code(
         parent: &tracing::Span::none(),
         "The file `{}` with contract code of `{}` was downloaded successfully",
         file_name,
-        receiver_id,
+        target,
     );
 
     Ok(())
