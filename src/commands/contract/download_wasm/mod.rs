@@ -9,9 +9,6 @@ use crate::common::JsonRpcClientExt;
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractContext)]
 pub struct Contract {
-    #[interactive_clap(long)]
-    /// Is it a global contract?
-    is_global_contract: bool,
     #[interactive_clap(skip_default_input_arg)]
     /// What is the contract account ID?
     account_id: crate::types::account_id::AccountId,
@@ -23,7 +20,6 @@ pub struct Contract {
 #[derive(Debug, Clone)]
 pub struct ContractContext {
     global_context: crate::GlobalContext,
-    is_global_contract: bool,
     account_id: near_primitives::types::AccountId,
 }
 
@@ -34,7 +30,6 @@ impl ContractContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context,
-            is_global_contract: scope.is_global_contract,
             account_id: scope.account_id.clone().into(),
         })
     }
@@ -72,12 +67,11 @@ impl DownloadContractContext {
         scope: &<DownloadContract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let is_global_contract = previous_context.is_global_contract;
             let account_id = previous_context.account_id.clone();
             let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
             move |network_config, block_reference| {
-                download_contract_code(is_global_contract, &account_id, &file_path, network_config, block_reference.clone())
+                download_contract_code(false, &account_id, &file_path, network_config, block_reference.clone())
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
