@@ -34,16 +34,36 @@ impl Contract {
     pub fn input_contract_kind(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<ContractKind>> {
+        #[derive(strum_macros::Display, PartialEq)]
+        enum Options {
+            #[strum(to_string = "Regular contract")]
+            Regular,
+            #[strum(to_string = "Global contract by account ID")]
+            GlobalContractByAccountId,
+            #[strum(to_string = "Global contract by hash")]
+            GlobalContractByHash,
+        }
+
+        impl From<Options> for ContractKind {
+            fn from(option: Options) -> Self {
+                match option {
+                    Options::Regular => ContractKind::Regular,
+                    Options::GlobalContractByAccountId => ContractKind::GlobalContractByAccountId,
+                    Options::GlobalContractByHash => ContractKind::GlobalContractByHash,
+                }
+            }
+        }
+
         let selection = inquire::Select::new(
             "Which type of contract do you want to download?",
             vec![
-                ContractKind::Regular,
-                ContractKind::GlobalContractByAccountId,
-                ContractKind::GlobalContractByHash,
+                Options::Regular,
+                Options::GlobalContractByAccountId,
+                Options::GlobalContractByHash,
             ],
         )
         .prompt()?;
-        Ok(Some(selection))
+        Ok(Some(selection.into()))
     }
 }
 
