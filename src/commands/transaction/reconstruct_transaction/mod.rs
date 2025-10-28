@@ -212,7 +212,7 @@ fn action_transformation(
         }
         Action::DeployContract(deploy_contract_action) => {
             download_code(
-                false,
+                crate::commands::contract::download_wasm::ContractType::Regular,
                 &receiver_id,
                 network_config,
                 block_reference,
@@ -268,7 +268,7 @@ fn action_transformation(
         }
         Action::DeployGlobalContract(action) => {
             download_code(
-                true,
+                crate::commands::contract::download_wasm::ContractType::Global,
                 &receiver_id,
                 network_config,
                 near_primitives::types::BlockReference::latest(),
@@ -384,7 +384,7 @@ fn get_access_key_permission(
 }
 
 fn download_code(
-    is_global_contract: bool,
+    contract_type: crate::commands::contract::download_wasm::ContractType,
     receiver_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
@@ -395,7 +395,7 @@ fn download_code(
     // So we need to fetch it from archive node.
 
     let code = crate::commands::contract::download_wasm::get_code(
-        is_global_contract,
+        contract_type,
         receiver_id,
         network_config,
         block_reference,
