@@ -63,7 +63,7 @@ impl Contract {
 #[interactive_clap(output_context = DownloadContractContext)]
 pub struct DownloadContract {
     #[interactive_clap(skip_default_input_arg)]
-    contract_type: Option<ContractType>,
+    contract_type: ContractType,
     #[interactive_clap(skip_default_input_arg)]
     /// Enter the name of the file to save the contract:
     file_path: crate::types::path_buf::PathBuf,
@@ -94,7 +94,7 @@ impl DownloadContractContext {
         scope: &<DownloadContract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let contract_type = scope.contract_type.unwrap_or(ContractType::Regular);
+            let contract_type = scope.contract_type;
             let account_id = previous_context.account_id.clone();
             let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
