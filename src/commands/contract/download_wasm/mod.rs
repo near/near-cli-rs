@@ -9,8 +9,8 @@ use crate::common::JsonRpcClientExt;
 #[derive(Debug, strum_macros::Display, PartialEq, ValueEnum, Clone, Copy)]
 #[strum(serialize_all = "lowercase")]
 pub enum ContractType {
-    Global,
     Regular,
+    Global,
 }
 
 impl interactive_clap::ToCli for ContractType {
@@ -78,7 +78,7 @@ impl DownloadContract {
     ) -> color_eyre::eyre::Result<Option<ContractType>> {
         let selection = Select::new(
             "Which type of contract do you want to download?",
-            vec![ContractType::Global, ContractType::Regular],
+            vec![ContractType::Regular, ContractType::Global],
         )
         .prompt()?;
         Ok(Some(selection))
