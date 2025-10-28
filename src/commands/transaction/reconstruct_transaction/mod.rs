@@ -212,6 +212,7 @@ fn action_transformation(
         }
         Action::DeployContract(deploy_contract_action) => {
             download_code(
+                false,
                 &receiver_id,
                 network_config,
                 block_reference,
@@ -265,8 +266,33 @@ fn action_transformation(
         Action::Delegate(_) => {
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
-        Action::DeployGlobalContract(_) => {
-            Err(color_eyre::eyre::eyre!("Reconstruction of Global Deploy transactions is not supported yet. This feature is being tracked at: https://github.com/near/nearcore/issues/13531"))
+        Action::DeployGlobalContract(action) => {
+            download_code(
+                true,
+                &receiver_id,
+                network_config,
+                near_primitives::types::BlockReference::latest(),
+                "reconstruct-transaction-deploy-code.wasm",
+                &action.code
+            )?;
+            let mode = match action.deploy_mode {
+                near_primitives::action::GlobalContractDeployMode::AccountId => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalAccountId(
+                    add_action::deploy_global_contract::CliNextCommand {
+                        next_action: None
+                    }
+                ),
+                near_primitives::action::GlobalContractDeployMode::CodeHash => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalHash(
+                    add_action::deploy_global_contract::CliNextCommand {
+                        next_action: None
+                    }
+                ),
+            };
+            Ok(Some(add_action::CliActionSubcommand::DeployGlobalContract(
+                add_action::deploy_global_contract::CliDeployGlobalContractAction {
+                    file_path: Some("reconstruct-transaction-deploy-code.wasm".parse()?),
+                    mode: Some(mode)
+                }
+            )))
         }
         Action::UseGlobalContract(use_global_contract_action) => {
             let mode = match use_global_contract_action.contract_identifier {
@@ -358,6 +384,7 @@ fn get_access_key_permission(
 }
 
 fn download_code(
+    is_global_contract: bool,
     receiver_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
@@ -368,12 +395,13 @@ fn download_code(
     // So we need to fetch it from archive node.
 
     let code = crate::commands::contract::download_wasm::get_code(
-                receiver_id,
-                network_config,
-                block_reference
-            ).map_err(|e| {
-                color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {e}"))
-            })?;
+        is_global_contract,
+        receiver_id,
+        network_config,
+        block_reference,
+    ).map_err(|e| {
+        color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {e}"))
+    })?;
 
     let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
     tracing::info!(
