@@ -17,8 +17,8 @@ pub struct SignMpc {
     admin_account_id: crate::types::account_id::AccountId,
 
     #[interactive_clap(subargs)]
-    /// MPC key derivation logic
-    mpc_derive: MpcDeriveKey,
+    /// What is key type for deriving key?
+    mpc_key_type: MpcKeyType,
 }
 
 #[derive(Clone)]
@@ -56,15 +56,63 @@ impl SignMpc {
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = SignMpcContext)]
-#[interactive_clap(output_context = MpcDeriveKeyContext)]
-pub struct MpcDeriveKey {
+#[interactive_clap(output_context = MpcKeyTypeContext)]
+pub struct MpcKeyType {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the MPC key type for derivation?
     key_type: crate::types::key_type::KeyType,
-    #[interactive_clap(long)]
-    #[interactive_clap(skip_default_input_arg)]
-    /// What is the derivation path for deriving a key (leave empty to use admin and controllable account ids)?
-    derivation_path: Option<String>,
+
+    #[interactive_clap(named_arg)]
+    /// What is the derivation path?
+    derivation_path: MpcDeriveKey,
+}
+
+#[derive(Clone)]
+pub struct MpcKeyTypeContext {
+    admin_account_id: near_primitives::types::AccountId,
+    key_type: crate::types::key_type::KeyType,
+    tx_context: crate::commands::TransactionContext,
+}
+
+impl MpcKeyTypeContext {
+    pub fn from_previous_context(
+        previous_context: SignMpcContext,
+        scope: &<MpcKeyType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            admin_account_id: previous_context.admin_account_id,
+            key_type: scope.key_type.clone(),
+            tx_context: previous_context.tx_context,
+        })
+    }
+}
+
+impl MpcKeyType {
+    pub fn input_key_type(
+        _context: &SignMpcContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::key_type::KeyType>> {
+        let options = vec![
+            crate::types::key_type::KeyType(near_crypto::KeyType::SECP256K1),
+            crate::types::key_type::KeyType(near_crypto::KeyType::ED25519),
+        ];
+
+        let selection = inquire::Select::new(
+            "What is the MPC key type for derivation (if unsure choose Secp256K1)?",
+            options,
+        )
+        .prompt()?;
+
+        Ok(Some(selection))
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = MpcKeyTypeContext)]
+#[interactive_clap(output_context = MpcDeriveKeyContext)]
+pub struct MpcDeriveKey {
+    #[interactive_clap(skip_default_input_arg, always_quote)]
+    /// What is the derivation path?
+    derivation_path: String,
     #[interactive_clap(named_arg)]
     /// Prepaid Gas for calling MPC contract
     prepaid_gas: PrepaidGas,
@@ -82,7 +130,7 @@ pub struct MpcDeriveKeyContext {
 
 impl MpcDeriveKeyContext {
     pub fn from_previous_context(
-        previous_context: SignMpcContext,
+        previous_context: MpcKeyTypeContext,
         scope: &<MpcDeriveKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let network_config = previous_context.tx_context.network_config.clone();
@@ -91,10 +139,6 @@ impl MpcDeriveKeyContext {
             .prepopulated_transaction
             .signer_id
             .clone();
-        let derivation_path = scope.derivation_path.clone().unwrap_or(format!(
-            "{}-{}",
-            previous_context.admin_account_id, controllable_account
-        ));
 
         if previous_context.tx_context.global_context.offline {
             eprintln!("\nInternet connection is required to retrieve and check derived key!");
@@ -106,8 +150,8 @@ impl MpcDeriveKeyContext {
         let derived_public_key = derive_public_key(
             &network_config.get_mpc_contract_account_id()?,
             &previous_context.admin_account_id,
-            &derivation_path,
-            &scope.key_type,
+            &scope.derivation_path,
+            &previous_context.key_type,
             &network_config,
         )?;
 
@@ -150,7 +194,7 @@ impl MpcDeriveKeyContext {
         Ok(Self {
             admin_account_id: previous_context.admin_account_id,
             derived_public_key,
-            derivation_path,
+            derivation_path: scope.derivation_path.clone(),
             nonce: json_rpc_response
                 .access_key_view()
                 .wrap_err("Error current_nonce")?
@@ -163,47 +207,16 @@ impl MpcDeriveKeyContext {
 }
 
 impl MpcDeriveKey {
-    pub fn input_key_type(
-        _context: &SignMpcContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::key_type::KeyType>> {
-        let options = vec![
-            crate::types::key_type::KeyType(near_crypto::KeyType::SECP256K1),
-            crate::types::key_type::KeyType(near_crypto::KeyType::ED25519),
-        ];
-
-        let selection = inquire::Select::new(
-            "What is the MPC key type for derivation (if unsure choose Secp256K1)?",
-            options,
-        )
-        .prompt()?;
-
-        Ok(Some(selection))
-    }
-
     pub fn input_derivation_path(
-        _context: &SignMpcContext,
+        context: &MpcKeyTypeContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        #[derive(strum_macros::Display)]
-        enum ConfirmOptions {
-            #[strum(to_string = "Yes, I want to enter derivation path")]
-            Yes,
-            #[strum(
-                to_string = "No, I want derivation path to be \"admin_account_id-controllable_account_id\""
-            )]
-            No,
-        }
-        let select_choose_input = inquire::Select::new(
-            "Do you want to input derivation path?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
-        if let ConfirmOptions::Yes = select_choose_input {
-            let derivation_path =
-                inquire::Text::new("What is the derivation path for deriving a key (leave empty to use admin and controllable account ids)?").prompt()?;
-            Ok(Some(derivation_path))
-        } else {
-            Ok(None)
-        }
+        let derivation_path = inquire::Text::new("What is the derivation path?")
+            .with_initial_value(&format!(
+                "{}-{}",
+                context.admin_account_id, context.tx_context.prepopulated_transaction.signer_id
+            ))
+            .prompt()?;
+        Ok(Some(derivation_path))
     }
 }
 
