@@ -1,4 +1,4 @@
-use color_eyre::eyre::Context;
+use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 use inquire::CustomType;
 use near_primitives::transaction::{Transaction, TransactionV0};
 
@@ -61,6 +61,10 @@ pub struct MpcDeriveKey {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the MPC key type for derivation?
     key_type: crate::types::key_type::KeyType,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    /// What is the derivation path for deriving a key (leave empty to use admin and controllable account ids)?
+    derivation_path: Option<String>,
     #[interactive_clap(named_arg)]
     /// Prepaid Gas for calling MPC contract
     prepaid_gas: PrepaidGas,
@@ -70,6 +74,7 @@ pub struct MpcDeriveKey {
 pub struct MpcDeriveKeyContext {
     admin_account_id: near_primitives::types::AccountId,
     derived_public_key: near_crypto::PublicKey,
+    derivation_path: String,
     nonce: near_primitives::types::Nonce,
     block_hash: near_primitives::hash::CryptoHash,
     tx_context: crate::commands::TransactionContext,
@@ -86,6 +91,10 @@ impl MpcDeriveKeyContext {
             .prepopulated_transaction
             .signer_id
             .clone();
+        let derivation_path = scope.derivation_path.clone().unwrap_or(format!(
+            "{}-{}",
+            previous_context.admin_account_id, controllable_account
+        ));
 
         if previous_context.tx_context.global_context.offline {
             eprintln!("\nInternet connection is required to retrieve and check derived key!");
@@ -97,10 +106,7 @@ impl MpcDeriveKeyContext {
         let derived_public_key = derive_public_key(
             &network_config.get_mpc_contract_account_id()?,
             &previous_context.admin_account_id,
-            &format!(
-                "{}-{}",
-                previous_context.admin_account_id, controllable_account
-            ),
+            &derivation_path,
             &scope.key_type,
             &network_config,
         )?;
@@ -119,13 +125,15 @@ impl MpcDeriveKeyContext {
                         ),
                     ) = &**err {
                         tracing::error!(
-                            "Couldn't find a key on rpc. You can add it to controllable account using following command: {} ",
+                            "Couldn't find a key on rpc. You can add it to controllable account using following command:"
+                        );
+                        eprintln!("{}",
                             format!(
-                                "\n    {} account add-key {} grant-full-access use-manually-provided-public-key {}",
+                                "    {} account add-key {} grant-full-access use-manually-provided-public-key {}",
                                 crate::common::get_near_exec_path(),
                                 controllable_account,
                                 derived_public_key
-                            )
+                            ).yellow()
                         );
                     }
                 })
@@ -142,6 +150,7 @@ impl MpcDeriveKeyContext {
         Ok(Self {
             admin_account_id: previous_context.admin_account_id,
             derived_public_key,
+            derivation_path,
             nonce: json_rpc_response
                 .access_key_view()
                 .wrap_err("Error current_nonce")?
@@ -170,13 +179,39 @@ impl MpcDeriveKey {
 
         Ok(Some(selection))
     }
+
+    pub fn input_derivation_path(
+        _context: &SignMpcContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter derivation path")]
+            Yes,
+            #[strum(
+                to_string = "No, I want derivation path to be \"admin_account_id-controllable_account_id\""
+            )]
+            No,
+        }
+        let select_choose_input = inquire::Select::new(
+            "Do you want to input derivation path?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let derivation_path =
+                inquire::Text::new("What is the derivation path for deriving a key (leave empty to use admin and controllable account ids)?").prompt()?;
+            Ok(Some(derivation_path))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[tracing::instrument(name = "Retrieving derived public key from MPC contract ...", skip_all)]
 pub fn derive_public_key(
     mpc_contract_address: &near_primitives::types::AccountId,
     admin_account_id: &near_primitives::types::AccountId,
-    derive_path: &str,
+    derivation_path: &str,
     key_type: &crate::types::key_type::KeyType,
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
@@ -186,7 +221,7 @@ pub fn derive_public_key(
             mpc_contract_address,
             "derived_public_key",
             serde_json::to_vec(&serde_json::json!({
-                "path": derive_path,
+                "path": derivation_path,
                 "predecessor": admin_account_id,
                 "domain_id": key_type.to_mpc_domain_id(),
             }))?,
@@ -215,6 +250,7 @@ pub struct PrepaidGas {
 pub struct PrepaidGasContext {
     admin_account_id: near_primitives::types::AccountId,
     derived_public_key: near_crypto::PublicKey,
+    derivation_path: String,
     nonce: near_primitives::types::Nonce,
     block_hash: near_primitives::hash::CryptoHash,
     tx_context: crate::commands::TransactionContext,
@@ -229,6 +265,7 @@ impl PrepaidGasContext {
         Ok(PrepaidGasContext {
             admin_account_id: previous_context.admin_account_id,
             derived_public_key: previous_context.derived_public_key,
+            derivation_path: previous_context.derivation_path,
             nonce: previous_context.nonce,
             block_hash: previous_context.block_hash,
             tx_context: previous_context.tx_context,
@@ -334,10 +371,7 @@ impl DepositContext {
         let mpc_tx_args = serde_json::to_vec(&serde_json::json!({
             "request": mpc_sign_request::SignRequest {
                 payload,
-                path: format!(
-                    "{}-{}",
-                    previous_context.admin_account_id, controllable_account
-                ),
+                path: previous_context.derivation_path,
                 domain_id: crate::types::key_type::near_key_type_to_mpc_domain_id(
                     previous_context.derived_public_key.key_type(),
                 ),

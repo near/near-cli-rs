@@ -1,5 +1,5 @@
 #[derive(serde::Serialize, Debug, Clone)]
-/// Payload for Sign request to MPC. Should be hashed TX
+/// Payload for Sign request to MPC
 pub enum SignPayload {
     #[serde(with = "hex::serde")]
     Ecdsa([u8; 32]),
