@@ -22,8 +22,8 @@ impl interactive_clap::ToCli for ContractKind {
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = ContractContext)]
 pub struct Contract {
-    /// Which type of contract do you want to download?
     #[interactive_clap(skip_default_input_arg)]
+    /// Which type of contract do you want to download?
     contract_kind: ContractKind,
     #[interactive_clap(named_arg)]
     /// Enter the name of the file to save the contract:
