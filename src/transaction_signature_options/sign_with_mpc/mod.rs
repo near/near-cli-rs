@@ -32,9 +32,24 @@ impl SignMpcContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignMpc as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let _ = previous_context
+        if previous_context.global_context.offline {
+            eprintln!("\nInternet connection is required to sign with MPC!");
+            return Err(color_eyre::eyre::eyre!(
+                "Internet connection is required to sign with MPC!"
+            ));
+        }
+
+        if let Err(err) = previous_context
             .network_config
-            .get_mpc_contract_account_id()?;
+            .get_mpc_contract_account_id()
+        {
+            eprintln!(
+                "\nCouldn't retrieve MPC contract account id from network config:\n    {err}"
+            );
+            return Err(color_eyre::eyre::eyre!(
+                "Couldn't retrieve MPC contract account id from network config!"
+            ));
+        }
 
         Ok(SignMpcContext {
             admin_account_id: scope.admin_account_id.clone().into(),
@@ -139,13 +154,6 @@ impl MpcDeriveKeyContext {
             .prepopulated_transaction
             .signer_id
             .clone();
-
-        if previous_context.tx_context.global_context.offline {
-            eprintln!("\nInternet connection is required to retrieve and check derived key!");
-            return Err(color_eyre::eyre::eyre!(
-                "Internet connection is required to retrieve and check derived key!"
-            ));
-        }
 
         let derived_public_key = derive_public_key(
             &network_config.get_mpc_contract_account_id()?,

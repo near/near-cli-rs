@@ -289,7 +289,7 @@ impl NetworkConfig {
             "testnet" => near_primitives::types::AccountId::from_str("v1.signer-prod.testnet")
                 .wrap_err("Internal error"),
             _ => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "This network does not provide the mpc contract"
+                "This network does not provide MPC contract account id"
             )),
         }
     }
