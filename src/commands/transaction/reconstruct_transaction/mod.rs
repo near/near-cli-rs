@@ -268,7 +268,7 @@ fn action_transformation(
         }
         Action::DeployGlobalContract(action) => {
             download_code(
-                crate::commands::contract::download_wasm::ContractKind::Regular,
+                crate::commands::contract::download_wasm::ContractKind::GlobalContractByAccountId,
                 receiver_id.as_str(),
                 network_config,
                 block_reference,
