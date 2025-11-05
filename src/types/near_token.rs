@@ -25,7 +25,7 @@ impl std::fmt::Display for NearToken {
             write!(f, "0 NEAR")
         } else if self.as_yoctonear() <= 1_000 {
             write!(f, "{} yoctoNEAR", self.as_yoctonear())
-        } else if self.as_yoctonear() % ONE_NEAR == 0 {
+        } else if self.as_yoctonear().is_multiple_of(ONE_NEAR) {
             write!(f, "{} NEAR", self.as_yoctonear() / ONE_NEAR,)
         } else {
             write!(
