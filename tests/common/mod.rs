@@ -43,6 +43,5 @@ explorer_transaction_url = "{}transactions/"
     );
     std::fs::write(&config_path, config_content)?;
 
-
     Ok((sandbox, temp_dir))
 }
