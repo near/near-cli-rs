@@ -19,17 +19,12 @@ pub struct GlobalContext {
     pub verbosity: Verbosity,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum Verbosity {
+    #[default]
     Interactive,
     TeachMe,
     Quiet,
-}
-
-impl Default for Verbosity {
-    fn default() -> Self {
-        Self::Interactive
-    }
 }
 
 pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
