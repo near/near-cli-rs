@@ -57,7 +57,7 @@ impl ViewAccountSummary {
 }
 
 #[tracing::instrument(name = "Receiving an inquiry about your account ...", skip_all)]
-fn get_account_inquiry(
+pub fn get_account_inquiry(
     account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,

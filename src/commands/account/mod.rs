@@ -10,7 +10,7 @@ mod import_account;
 mod list_keys;
 pub mod storage_management;
 pub mod update_social_profile;
-mod view_account_summary;
+pub mod view_account_summary;
 
 pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
 
