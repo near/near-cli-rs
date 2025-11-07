@@ -113,7 +113,7 @@ impl std::fmt::Display for FungibleToken {
             .unwrap();
         if self.amount == 0 {
             write!(f, "0 {}", self.symbol)
-        } else if self.amount % one_ft == 0 {
+        } else if self.amount.is_multiple_of(one_ft) {
             write!(f, "{} {}", self.amount / one_ft, self.symbol)
         } else {
             write!(

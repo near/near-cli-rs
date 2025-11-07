@@ -1,0 +1,24 @@
+name: Run Tests
+on:
+  push:
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        profile: minimal
+        components: rustfmt
+    - name: Install libudev-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install --assume-yes libudev-dev
+    - name: Run Tests
+      run: cargo test --all-features -- --nocapture
