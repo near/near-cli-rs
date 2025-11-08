@@ -19,7 +19,7 @@ pub struct GlobalContext {
     pub verbosity: Verbosity,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum Verbosity {
     #[default]
     Interactive,
