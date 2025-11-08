@@ -1,13 +1,14 @@
 use std::io::Write;
 
-use clap::ValueEnum;
 use color_eyre::eyre::Context;
 use inquire::CustomType;
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::JsonRpcClientExt;
 
-#[derive(Debug, strum::Display, PartialEq, ValueEnum, Clone, Copy)]
-#[strum(serialize_all = "kebab_case")]
+#[derive(Debug, EnumDiscriminants, Clone, clap::ValueEnum)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Which type of contract do you want to pass?
 pub enum ContractKind {
     Regular,
     GlobalContractByAccountId,
@@ -16,6 +17,47 @@ pub enum ContractKind {
 
 impl interactive_clap::ToCli for ContractKind {
     type CliVariant = ContractKind;
+}
+
+impl std::str::FromStr for ContractKind {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "regular" => Ok(Self::Regular),
+            "global-contract-by-account-id" => Ok(Self::GlobalContractByAccountId),
+            "global-contract-by-hash" => Ok(Self::GlobalContractByHash),
+            _ => Err("ContractKind: incorrect value entered".to_string()),
+        }
+    }
+}
+
+impl std::fmt::Display for ContractKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Regular => write!(f, "regular"),
+            Self::GlobalContractByAccountId => write!(f, "global-contract-by-account-id"),
+            Self::GlobalContractByHash => write!(f, "global-contract-by-hash"),
+        }
+    }
+}
+
+impl std::fmt::Display for ContractKindDiscriminants {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Regular => write!(
+                f,
+                "regular                     - Regular contract deployed to an account"
+            ),
+            Self::GlobalContractByAccountId => write!(
+                f,
+                "global-contract-by-account-id - Global contract identified by account ID"
+            ),
+            Self::GlobalContractByHash => write!(
+                f,
+                "global-contract-by-hash     - Global contract identified by code hash"
+            ),
+        }
+    }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -80,7 +122,7 @@ impl ContractContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context,
-            contract_kind: scope.contract_kind,
+            contract_kind: scope.contract_kind.clone(),
         })
     }
 }
@@ -163,12 +205,12 @@ impl DownloadContractContext {
         scope: &<DownloadContract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let contract_kind = previous_context.contract_kind;
+            let contract_kind = previous_context.contract_kind.clone();
             let target = scope.target.clone();
             let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
             move |network_config, block_reference| {
-                download_contract_code(contract_kind, &target, &file_path, network_config, block_reference.clone())
+                download_contract_code(&contract_kind, &target, &file_path, network_config, block_reference.clone())
             }
         });
 
@@ -208,7 +250,7 @@ impl DownloadContract {
 }
 
 fn download_contract_code(
-    contract_kind: ContractKind,
+    contract_kind: &ContractKind,
     target: &str,
     file_path: &std::path::PathBuf,
     network_config: &crate::config::NetworkConfig,
@@ -229,7 +271,7 @@ fn download_contract_code(
 
 #[tracing::instrument(name = "Trying to download contract code ...", skip_all)]
 pub fn get_code(
-    contract_kind: ContractKind,
+    contract_kind: &ContractKind,
     target: &str,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,

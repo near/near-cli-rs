@@ -212,7 +212,7 @@ fn action_transformation(
         }
         Action::DeployContract(deploy_contract_action) => {
             download_code(
-                crate::commands::contract::download_wasm::ContractKind::Regular,
+                &crate::commands::contract::download_wasm::ContractKind::Regular,
                 receiver_id.as_str(),
                 network_config,
                 block_reference,
@@ -268,7 +268,7 @@ fn action_transformation(
         }
         Action::DeployGlobalContract(action) => {
             download_code(
-                crate::commands::contract::download_wasm::ContractKind::GlobalContractByAccountId,
+                &crate::commands::contract::download_wasm::ContractKind::GlobalContractByAccountId,
                 receiver_id.as_str(),
                 network_config,
                 block_reference,
@@ -384,7 +384,7 @@ fn get_access_key_permission(
 }
 
 fn download_code(
-    contract_kind: crate::commands::contract::download_wasm::ContractKind,
+    contract_kind: &crate::commands::contract::download_wasm::ContractKind,
     target: &str,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
