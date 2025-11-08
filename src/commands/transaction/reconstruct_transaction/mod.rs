@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use color_eyre::eyre::{Context, ContextCompat};
+use inquire::CustomType;
 use interactive_clap::ToCliArgs;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -211,19 +212,23 @@ fn action_transformation(
             )))
         }
         Action::DeployContract(deploy_contract_action) => {
+            let file_path = CustomType::<String>::new("Enter the name of the file to save the contract:")
+                .with_starting_input("reconstruct-transaction-deploy-code.wasm")
+                .prompt()?;
+
             download_code(
                 &crate::commands::contract::download_wasm::ContractKind::Regular,
                 receiver_id.as_str(),
                 network_config,
                 block_reference,
-                "reconstruct-transaction-deploy-code.wasm",
+                &file_path,
                 &deploy_contract_action.code
             )?;
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
                 add_action::deploy_contract::CliDeployContractAction {
                     use_file: Some(add_action::deploy_contract::ClapNamedArgContractFileForDeployContractAction::UseFile(
                         add_action::deploy_contract::CliContractFile {
-                            file_path: Some("reconstruct-transaction-deploy-code.wasm".parse()?),
+                            file_path: Some(file_path.parse()?),
                             initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
                                 add_action::deploy_contract::initialize_mode::CliNoInitialize {
                                     next_action: None
@@ -267,12 +272,16 @@ fn action_transformation(
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
         Action::DeployGlobalContract(action) => {
+            let file_path = CustomType::<String>::new("Enter the name of the file to save the contract:")
+                .with_starting_input("reconstruct-transaction-deploy-code.wasm")
+                .prompt()?;
+
             download_code(
                 &crate::commands::contract::download_wasm::ContractKind::GlobalContractByAccountId,
                 receiver_id.as_str(),
                 network_config,
                 block_reference,
-                "reconstruct-transaction-deploy-code.wasm",
+                &file_path,
                 &action.code
             )?;
             let mode = match action.deploy_mode {
@@ -289,7 +298,7 @@ fn action_transformation(
             };
             Ok(Some(add_action::CliActionSubcommand::DeployGlobalContract(
                 add_action::deploy_global_contract::CliDeployGlobalContractAction {
-                    file_path: Some("reconstruct-transaction-deploy-code.wasm".parse()?),
+                    file_path: Some(file_path.parse()?),
                     mode: Some(mode)
                 }
             )))
