@@ -152,7 +152,10 @@ impl DownloadContract {
 }
 
 #[derive(Clone)]
-pub struct DownloadContractContext(crate::network_view_at_block::ArgsForViewContext);
+pub struct DownloadContractContext {
+    pub args: crate::network_view_at_block::ArgsForViewContext,
+    pub file_path: std::path::PathBuf,
+}
 
 impl DownloadContractContext {
     pub fn from_previous_context(
@@ -175,17 +178,20 @@ impl DownloadContractContext {
             ContractKind::GlobalContractByHash => vec![],
         };
 
-        Ok(Self(crate::network_view_at_block::ArgsForViewContext {
-            config: previous_context.global_context.config,
-            on_after_getting_block_reference_callback,
-            interacting_with_account_ids,
-        }))
+        Ok(Self {
+            args: crate::network_view_at_block::ArgsForViewContext {
+                config: previous_context.global_context.config,
+                on_after_getting_block_reference_callback,
+                interacting_with_account_ids,
+            },
+            file_path: scope.file_path.clone().into(),
+        })
     }
 }
 
 impl From<DownloadContractContext> for crate::network_view_at_block::ArgsForViewContext {
     fn from(item: DownloadContractContext) -> Self {
-        item.0
+        item.args
     }
 }
 
