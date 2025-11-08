@@ -2,7 +2,7 @@ use std::io::Write;
 
 use color_eyre::eyre::Context;
 use inquire::CustomType;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 use crate::common::JsonRpcClientExt;
 
@@ -46,7 +46,7 @@ impl std::fmt::Display for ContractKindDiscriminants {
         match self {
             Self::Regular => write!(
                 f,
-                "regular                     - Regular contract deployed to an account"
+                "regular                       - Regular contract deployed to an account"
             ),
             Self::GlobalContractByAccountId => write!(
                 f,
@@ -54,7 +54,7 @@ impl std::fmt::Display for ContractKindDiscriminants {
             ),
             Self::GlobalContractByHash => write!(
                 f,
-                "global-contract-by-hash     - Global contract identified by code hash"
+                "global-contract-by-hash       - Global contract identified by code hash"
             ),
         }
     }
@@ -76,36 +76,21 @@ impl Contract {
     pub fn input_contract_kind(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<ContractKind>> {
-        #[derive(strum_macros::Display, PartialEq)]
-        enum Options {
-            #[strum(to_string = "Regular contract")]
-            Regular,
-            #[strum(to_string = "Global contract by account ID")]
-            GlobalContractByAccountId,
-            #[strum(to_string = "Global contract by hash")]
-            GlobalContractByHash,
-        }
+        let variants = ContractKindDiscriminants::iter().collect::<Vec<_>>();
 
-        impl From<Options> for ContractKind {
-            fn from(option: Options) -> Self {
-                match option {
-                    Options::Regular => ContractKind::Regular,
-                    Options::GlobalContractByAccountId => ContractKind::GlobalContractByAccountId,
-                    Options::GlobalContractByHash => ContractKind::GlobalContractByHash,
-                }
+        let selected =
+            inquire::Select::new("Which type of contract do you want to download?", variants)
+                .prompt()?;
+
+        match selected {
+            ContractKindDiscriminants::Regular => Ok(Some(ContractKind::Regular)),
+            ContractKindDiscriminants::GlobalContractByAccountId => {
+                Ok(Some(ContractKind::GlobalContractByAccountId))
+            }
+            ContractKindDiscriminants::GlobalContractByHash => {
+                Ok(Some(ContractKind::GlobalContractByHash))
             }
         }
-
-        let selection = inquire::Select::new(
-            "Which type of contract do you want to download?",
-            vec![
-                Options::Regular,
-                Options::GlobalContractByAccountId,
-                Options::GlobalContractByHash,
-            ],
-        )
-        .prompt()?;
-        Ok(Some(selection.into()))
     }
 }
 
