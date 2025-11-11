@@ -1,6 +1,7 @@
 use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 use inquire::CustomType;
 use near_primitives::transaction::{Transaction, TransactionV0};
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::{JsonRpcClientExt, RpcQueryResponseExt};
 
@@ -16,7 +17,7 @@ pub struct SignMpc {
     /// What is the Admin account address?
     admin_account_id: crate::types::account_id::AccountId,
 
-    #[interactive_clap(subargs)]
+    #[interactive_clap(subcommand)]
     /// What is key type for deriving key?
     mpc_key_type: MpcKeyType,
 }
@@ -47,7 +48,7 @@ impl SignMpcContext {
                 "\nCouldn't retrieve MPC contract account id from network config:\n    {err}"
             );
             return Err(color_eyre::eyre::eyre!(
-                "Couldn't retrieve MPC contract account id from network config!"
+                "Couldn'tretrieve MPC contract account id from network config!"
             ));
         }
 
@@ -69,55 +70,85 @@ impl SignMpc {
     }
 }
 
+#[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = SignMpcContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// What is the MPC key type for derivation (if unsure choose Secp256K1)?
+pub enum MpcKeyType {
+    #[strum_discriminants(strum(message = "secp256k1 - use Secp256K1 key derivation"))]
+    /// Use Secp256K1 key
+    Secp256k1(MpcKeyTypeSecp),
+    #[strum_discriminants(strum(message = "ed25519   - use Ed25519 key for derivation"))]
+    /// Use Ed25519 key
+    Ed25519(MpcKeyTypeEd),
+}
+
+#[derive(Clone)]
+pub struct MpcKeyTypeContext {
+    admin_account_id: near_primitives::types::AccountId,
+    key_type: near_crypto::KeyType,
+    tx_context: crate::commands::TransactionContext,
+}
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = SignMpcContext)]
-#[interactive_clap(output_context = MpcKeyTypeContext)]
-pub struct MpcKeyType {
-    #[interactive_clap(skip_default_input_arg)]
-    /// What is the MPC key type for derivation?
-    key_type: crate::types::key_type::KeyType,
-
+#[interactive_clap(output_context = MpcKeyTypeSecpContext)]
+pub struct MpcKeyTypeSecp {
     #[interactive_clap(named_arg)]
     /// What is the derivation path?
     derivation_path: MpcDeriveKey,
 }
 
 #[derive(Clone)]
-pub struct MpcKeyTypeContext {
-    admin_account_id: near_primitives::types::AccountId,
-    key_type: crate::types::key_type::KeyType,
-    tx_context: crate::commands::TransactionContext,
-}
+pub struct MpcKeyTypeSecpContext(MpcKeyTypeContext);
 
-impl MpcKeyTypeContext {
-    pub fn from_previous_context(
+impl MpcKeyTypeSecpContext {
+    fn from_previous_context(
         previous_context: SignMpcContext,
-        scope: &<MpcKeyType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<MpcKeyTypeSecp as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        Ok(Self {
+        Ok(Self(MpcKeyTypeContext {
             admin_account_id: previous_context.admin_account_id,
-            key_type: scope.key_type.clone(),
+            key_type: near_crypto::KeyType::SECP256K1,
             tx_context: previous_context.tx_context,
-        })
+        }))
     }
 }
 
-impl MpcKeyType {
-    pub fn input_key_type(
-        _context: &SignMpcContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::key_type::KeyType>> {
-        let options = vec![
-            crate::types::key_type::KeyType(near_crypto::KeyType::SECP256K1),
-            crate::types::key_type::KeyType(near_crypto::KeyType::ED25519),
-        ];
+impl From<MpcKeyTypeSecpContext> for MpcKeyTypeContext {
+    fn from(item: MpcKeyTypeSecpContext) -> Self {
+        item.0
+    }
+}
 
-        let selection = inquire::Select::new(
-            "What is the MPC key type for derivation (if unsure choose Secp256K1)?",
-            options,
-        )
-        .prompt()?;
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = SignMpcContext)]
+#[interactive_clap(output_context = MpcKeyTypeEdContext)]
+pub struct MpcKeyTypeEd {
+    #[interactive_clap(named_arg)]
+    /// What is the derivation path?
+    derivation_path: MpcDeriveKey,
+}
 
-        Ok(Some(selection))
+#[derive(Clone)]
+pub struct MpcKeyTypeEdContext(MpcKeyTypeContext);
+
+impl MpcKeyTypeEdContext {
+    fn from_previous_context(
+        previous_context: SignMpcContext,
+        _scope: &<MpcKeyTypeEd as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self(MpcKeyTypeContext {
+            admin_account_id: previous_context.admin_account_id,
+            key_type: near_crypto::KeyType::ED25519,
+            tx_context: previous_context.tx_context,
+        }))
+    }
+}
+
+impl From<MpcKeyTypeEdContext> for MpcKeyTypeContext {
+    fn from(item: MpcKeyTypeEdContext) -> Self {
+        item.0
     }
 }
 
@@ -233,7 +264,7 @@ pub fn derive_public_key(
     mpc_contract_address: &near_primitives::types::AccountId,
     admin_account_id: &near_primitives::types::AccountId,
     derivation_path: &str,
-    key_type: &crate::types::key_type::KeyType,
+    key_type: &near_crypto::KeyType,
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
     let rpc_result = network_config
@@ -244,7 +275,7 @@ pub fn derive_public_key(
             serde_json::to_vec(&serde_json::json!({
                 "path": derivation_path,
                 "predecessor": admin_account_id,
-                "domain_id": key_type.to_mpc_domain_id(),
+                "domain_id": near_key_type_to_mpc_domain_id(*key_type)
             }))?,
             near_primitives::types::BlockReference::latest(),
         )?;
@@ -393,7 +424,7 @@ impl DepositContext {
             "request": mpc_sign_request::SignRequest {
                 payload,
                 path: previous_context.derivation_path,
-                domain_id: crate::types::key_type::near_key_type_to_mpc_domain_id(
+                domain_id: near_key_type_to_mpc_domain_id(
                     previous_context.derived_public_key.key_type(),
                 ),
             }
@@ -533,5 +564,12 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 |_outcome_view, _network_config| Ok(()),
             ),
         }
+    }
+}
+
+pub fn near_key_type_to_mpc_domain_id(key_type: near_crypto::KeyType) -> u64 {
+    match key_type {
+        near_crypto::KeyType::SECP256K1 => 0u64,
+        near_crypto::KeyType::ED25519 => 1u64,
     }
 }
