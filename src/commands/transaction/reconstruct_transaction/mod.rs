@@ -276,14 +276,30 @@ fn action_transformation(
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 
+            let (contract_kind, target) = match action.deploy_mode {
+                near_primitives::action::GlobalContractDeployMode::AccountId => {
+                    (
+                        &crate::commands::contract::download_wasm::ContractKind::GlobalContractByAccountId,
+                        receiver_id.to_string()
+                    )
+                }
+                near_primitives::action::GlobalContractDeployMode::CodeHash => {
+                    (
+                        &crate::commands::contract::download_wasm::ContractKind::GlobalContractByHash,
+                        format!("{}", near_primitives::hash::CryptoHash::hash_bytes(&action.code))
+                    )
+                }
+            };
+
             download_code(
-                &crate::commands::contract::download_wasm::ContractKind::GlobalContractByAccountId,
-                receiver_id.as_str(),
+                contract_kind,
+                &target,
                 network_config,
                 block_reference,
                 &file_path,
                 &action.code
             )?;
+
             let mode = match action.deploy_mode {
                 near_primitives::action::GlobalContractDeployMode::AccountId => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalAccountId(
                     add_action::deploy_global_contract::CliNextCommand {
