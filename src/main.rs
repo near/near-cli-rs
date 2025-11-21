@@ -71,7 +71,35 @@ impl From<CmdContext> for crate::GlobalContext {
     }
 }
 
+use cliclack::{set_theme, Theme, ThemeState};
+use console::Style;
+
+struct GreenTheme;
+
+impl Theme for GreenTheme {
+    fn bar_color(&self, state: &ThemeState) -> Style {
+        match state {
+            ThemeState::Active => Style::new().green(),
+            ThemeState::Error(_) => Style::new().red(),
+            ThemeState::Cancel => Style::new().red().dim(),
+            _ => Style::new().green().dim(),
+        }
+    }
+
+    fn state_symbol_color(&self, _state: &ThemeState) -> Style {
+        Style::new().green()
+    }
+
+    fn info_symbol(&self) -> String {
+        "⚙".into()
+    }
+}
+
 fn main() -> crate::common::CliResult {
+    set_theme(GreenTheme);
+    // Set a no-op Ctrl-C to make it behave as `Esc` (see the basic example).
+    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
+
     let config = crate::config::Config::get_config_toml()?;
 
     if !crate::common::is_used_account_list_exist(&config.credentials_home_dir) {
