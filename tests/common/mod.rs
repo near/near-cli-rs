@@ -25,9 +25,9 @@ pub async fn prepare_tests() -> Result<(Sandbox, tempfile::TempDir), Box<dyn std
     // Format the RPC URL properly
     let rpc_url = format!("{}/", sandbox.rpc_addr);
 
-    // Write a V3 config to avoid migration issues
+    // Write a V4 config to avoid migration issues
     let config_content = format!(
-        r#"version = "3"
+        r#"version = "4"
 credentials_home_dir = "{}"
 
 [network_connection.sandbox]
