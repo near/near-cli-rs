@@ -574,7 +574,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 let unsigned_transaction = original_transaction_for_after_send.clone();
                 let mpc_sign_request = item.mpc_sign_request.clone();
 
-                // NOTE: checking if outcome view status is not failure is not neccessary, as this
+                // NOTE: checking if outcome view status is not failure is not necessary, as this
                 // callback will be called only after `crate::common::print_transaction_status`,
                 // which will check for failure of transaction already
 
@@ -854,12 +854,13 @@ fn prompt_and_submit(submit_context: super::SubmitContext) -> color_eyre::eyre::
         }
         super::SubmitDiscriminants::SaveToFile => {
             let file_path: crate::types::path_buf::PathBuf = loop {
-                match CustomType::new(
-                    "What is the location of the file to save the transaction information?",
-                )
-                .with_starting_input("signed-transaction-info.json")
-                .prompt()
-                {
+                match tracing_indicatif::suspend_tracing_indicatif(|| {
+                    CustomType::new(
+                        "What is the location of the file to save the transaction information?",
+                    )
+                    .with_starting_input("signed-transaction-info.json")
+                    .prompt()
+                }) {
                     Ok(file_path) => break file_path,
                     Err(
                         inquire::error::InquireError::OperationCanceled
