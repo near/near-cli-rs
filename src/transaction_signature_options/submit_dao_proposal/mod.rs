@@ -1,7 +1,7 @@
 use inquire::CustomType;
 use inquire::Text;
 
-mod dao_kind_arguments;
+pub mod dao_kind_arguments;
 pub mod dao_sign_with;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -20,6 +20,8 @@ pub struct DaoProposal {
 pub struct DaoProposalContext {
     global_context: crate::GlobalContext,
     network_config: crate::config::NetworkConfig,
+    on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
     dao_account_id: near_primitives::types::AccountId,
     receiver_id: near_primitives::types::AccountId,
     proposal_kind: dao_kind_arguments::ProposalKind,
@@ -33,9 +35,23 @@ impl DaoProposalContext {
         let proposal_kind =
             dao_kind_arguments::ProposalKind::try_from(&previous_context.prepopulated_transaction)?;
 
+        let on_after_sending_transaction_callback = if proposal_kind
+            .clone()
+            .try_to_mpc_sign_request(&previous_context.network_config)
+            .is_ok()
+        {
+            previous_context.on_after_sending_transaction_callback
+        } else {
+            std::sync::Arc::new(
+                |_final_outcome_view: &near_primitives::views::FinalExecutionOutcomeView,
+                 _network_config: &crate::config::NetworkConfig| Ok(()),
+            )
+        };
+
         Ok(Self {
             global_context: previous_context.global_context,
             network_config: previous_context.network_config,
+            on_after_sending_transaction_callback,
             dao_account_id: scope.dao_account_id.clone().into(),
             receiver_id: previous_context.prepopulated_transaction.signer_id.clone(),
             proposal_kind,
@@ -70,6 +86,8 @@ pub struct DaoProposalArguments {
 pub struct DaoProposalArgumentsContext {
     global_context: crate::GlobalContext,
     network_config: crate::config::NetworkConfig,
+    on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
     dao_account_id: near_primitives::types::AccountId,
     receiver_id: near_primitives::types::AccountId,
     proposal_args: Vec<u8>,
@@ -90,6 +108,8 @@ impl DaoProposalArgumentsContext {
         Ok(Self {
             global_context: previous_context.global_context,
             network_config: previous_context.network_config,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
             dao_account_id: previous_context.dao_account_id,
             receiver_id: previous_context.receiver_id,
             proposal_args,
@@ -121,6 +141,8 @@ pub struct PrepaidGas {
 pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
     network_config: crate::config::NetworkConfig,
+    on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
     dao_account_id: near_primitives::types::AccountId,
     receiver_id: near_primitives::types::AccountId,
     proposal_args: Vec<u8>,
@@ -135,6 +157,8 @@ impl PrepaidGasContext {
         Ok(Self {
             global_context: previous_context.global_context,
             network_config: previous_context.network_config,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
             dao_account_id: previous_context.dao_account_id,
             receiver_id: previous_context.receiver_id,
             proposal_args: previous_context.proposal_args,
@@ -183,6 +207,8 @@ pub struct Deposit {
 pub struct DepositContext {
     global_context: crate::GlobalContext,
     network_config: crate::config::NetworkConfig,
+    on_after_sending_transaction_callback:
+        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
     dao_account_id: near_primitives::types::AccountId,
     receiver_id: near_primitives::types::AccountId,
     proposal_args: Vec<u8>,
@@ -198,6 +224,8 @@ impl DepositContext {
         Ok(Self {
             global_context: previous_context.global_context,
             network_config: previous_context.network_config,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
             dao_account_id: previous_context.dao_account_id,
             receiver_id: previous_context.receiver_id,
             proposal_args: previous_context.proposal_args,
@@ -255,9 +283,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config| Ok(String::new()),
             ),
-            on_after_sending_transaction_callback: std::sync::Arc::new(
-                |_outcome_view, _network_config| Ok(()),
-            ),
+            on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }
     }
 }

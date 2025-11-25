@@ -5,8 +5,8 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::{JsonRpcClientExt, RpcQueryResponseExt};
 
-mod mpc_sign_request;
-mod mpc_sign_result;
+pub mod mpc_sign_request;
+pub mod mpc_sign_result;
 mod mpc_sign_with;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -48,7 +48,7 @@ impl SignMpcContext {
                 "\nCouldn't retrieve MPC contract account id from network config:\n    {err}"
             );
             return Err(color_eyre::eyre::eyre!(
-                "Couldn'tretrieve MPC contract account id from network config!"
+                "Couldn't retrieve MPC contract account id from network config!"
             ));
         }
 
@@ -375,7 +375,8 @@ pub struct DepositContext {
     gas: crate::common::NearGas,
     deposit: crate::types::near_token::NearToken,
     original_payload_transaction: Transaction,
-    mpc_tx_args: Vec<u8>,
+    mpc_sign_request: mpc_sign_request::MpcSignRequest,
+    mpc_sign_request_serialized: Vec<u8>,
     global_context: crate::GlobalContext,
     network_config: crate::config::NetworkConfig,
 }
@@ -410,25 +411,27 @@ impl DepositContext {
         let mpc_tx_payload = Transaction::V0(payload);
         let hashed_payload = near_primitives::hash::CryptoHash::hash_borsh(&mpc_tx_payload).0;
 
-        let payload: mpc_sign_request::SignPayload = match previous_context
-            .derived_public_key
-            .key_type()
-        {
-            near_crypto::KeyType::ED25519 => {
-                mpc_sign_request::SignPayload::Eddsa(hashed_payload.to_vec())
-            }
-            near_crypto::KeyType::SECP256K1 => mpc_sign_request::SignPayload::Ecdsa(hashed_payload),
-        };
+        let payload: mpc_sign_request::MpcSignPayload =
+            match previous_context.derived_public_key.key_type() {
+                near_crypto::KeyType::ED25519 => {
+                    mpc_sign_request::MpcSignPayload::Eddsa(hashed_payload.to_vec())
+                }
+                near_crypto::KeyType::SECP256K1 => {
+                    mpc_sign_request::MpcSignPayload::Ecdsa(hashed_payload)
+                }
+            };
 
-        let mpc_tx_args = serde_json::to_vec(&serde_json::json!({
-            "request": mpc_sign_request::SignRequest {
+        let mpc_sign_request = mpc_sign_request::MpcSignRequest {
+            request: mpc_sign_request::MpcSignRequestArgs {
                 payload,
                 path: previous_context.derivation_path,
                 domain_id: near_key_type_to_mpc_domain_id(
                     previous_context.derived_public_key.key_type(),
                 ),
-            }
-        }))?;
+            },
+        };
+
+        let mpc_sign_request_serialized = serde_json::to_vec(&mpc_sign_request)?;
 
         Ok(Self {
             admin_account_id: previous_context.admin_account_id,
@@ -439,7 +442,8 @@ impl DepositContext {
             gas: previous_context.gas,
             deposit: scope.deposit,
             original_payload_transaction: mpc_tx_payload,
-            mpc_tx_args,
+            mpc_sign_request,
+            mpc_sign_request_serialized,
             global_context: previous_context.tx_context.global_context,
             network_config: previous_context.tx_context.network_config,
         })
@@ -480,7 +484,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
             actions: vec![near_primitives::transaction::Action::FunctionCall(
                 Box::new(near_primitives::transaction::FunctionCallAction {
                     method_name: "sign".to_string(),
-                    args: item.mpc_tx_args,
+                    args: item.mpc_sign_request_serialized,
                     gas: item.gas.as_gas(),
                     deposit: item.deposit.as_yoctonear(),
                 }),
@@ -495,10 +499,25 @@ impl From<DepositContext> for crate::commands::TransactionContext {
             ))
         );
 
+        let original_transaction_for_signing = item.original_payload_transaction.clone();
+        let original_transaction_for_after_send = item.original_payload_transaction.clone();
+        let global_context_for_after_send = item.global_context.clone();
+
         let on_after_signing_callback: crate::commands::OnAfterSigningCallback =
             std::sync::Arc::new({
                 move |signed_transaction_to_replace, network_config| {
-                    let unsigned_transaction = item.original_payload_transaction.clone();
+                    if let Some(near_primitives::action::Action::FunctionCall(fc)) =
+                        signed_transaction_to_replace.transaction.actions().first()
+                    {
+                        // NOTE: Early exit if it is a DAO, it will be required to enter different
+                        // flow for it
+                        if fc.method_name == "add_proposal" {
+                            return Ok(());
+                        }
+                    }
+
+                    let unsigned_transaction = original_transaction_for_signing.clone();
+
                     let sender_id = unsigned_transaction.signer_id().clone();
                     let receiver_id = unsigned_transaction.receiver_id().clone();
                     let contract_id = item.mpc_contract_address.clone();
@@ -549,6 +568,40 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 }
             });
 
+        let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
+            move |outcome_view, network_config| {
+                let global_context = global_context_for_after_send.clone();
+                let unsigned_transaction = original_transaction_for_after_send.clone();
+                let mpc_sign_request = item.mpc_sign_request.clone();
+
+                // NOTE: checking if outcome view status is not failure is not neccessary, as this
+                // callback will be called only after `crate::common::print_transaction_status`,
+                // which will check for failure of transaction already
+
+                if let Some(near_primitives::views::ActionView::FunctionCall { method_name, args, .. }) =
+      outcome_view.transaction.actions.first()
+                {
+                    if method_name == "add_proposal" {
+                        if let Ok(Some(proposal)) = serde_json::from_slice::<serde_json::Value>(args).map(|parsed_args| parsed_args.get("proposal").cloned()) {
+                            if let Some(kind) = proposal.get("kind") {
+                                if serde_json::from_value::<super::submit_dao_proposal::dao_kind_arguments::ProposalKind>(kind.clone()).is_ok() {
+                                    dao_sign_with_mpc_after_send_flow(
+                                        &global_context,
+                                        network_config,
+                                        outcome_view,
+                                        &unsigned_transaction,
+                                        &mpc_sign_request
+                                    )?;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Ok(())
+            }
+        });
+
         Self {
             global_context: item.global_context,
             network_config: item.network_config,
@@ -560,9 +613,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config| Ok(String::new()),
             ),
-            on_after_sending_transaction_callback: std::sync::Arc::new(
-                |_outcome_view, _network_config| Ok(()),
-            ),
+            on_after_sending_transaction_callback,
         }
     }
 }
@@ -572,4 +623,262 @@ pub fn near_key_type_to_mpc_domain_id(key_type: near_crypto::KeyType) -> u64 {
         near_crypto::KeyType::SECP256K1 => 0u64,
         near_crypto::KeyType::ED25519 => 1u64,
     }
+}
+
+pub fn dao_sign_with_mpc_after_send_flow(
+    global_context: &crate::GlobalContext,
+    network_config: &crate::config::NetworkConfig,
+    outcome_view: &near_primitives::views::FinalExecutionOutcomeView,
+    unsigned_mpc_transaction: &near_primitives::transaction::Transaction,
+    original_sign_request: &mpc_sign_request::MpcSignRequest,
+) -> color_eyre::eyre::Result<()> {
+    use tracing_indicatif::suspend_tracing_indicatif;
+
+    let signed_transaction = loop {
+        let transaction_hash = match suspend_tracing_indicatif(|| {
+            inquire::CustomType::new("Enter the transaction hash of the executed DAO proposal:")
+                .prompt()
+        }) {
+            Ok(tx_hash) => tx_hash,
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => {
+                return Ok(());
+            }
+            Err(err) => {
+                eprintln!("{}", format!("{err}").red());
+                continue;
+            }
+        };
+
+        let sender_id = match suspend_tracing_indicatif(|| {
+            inquire::CustomType::new("Enter the person who initiated execution of DAO proposal:")
+                .prompt()
+        }) {
+            Ok(tx_hash) => tx_hash,
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => {
+                return Ok(());
+            }
+            Err(err) => {
+                eprintln!("{}", format!("{err}").red());
+                continue;
+            }
+        };
+
+        let signed_transaction = match fetch_mpc_contract_response_from_dao_tx(
+            network_config,
+            original_sign_request,
+            transaction_hash,
+            sender_id,
+            outcome_view.transaction.receiver_id.clone(),
+        ) {
+            Ok(sign_result) => {
+                let signature: near_crypto::Signature = sign_result.into();
+
+                near_primitives::transaction::SignedTransaction::new(
+                    signature,
+                    unsigned_mpc_transaction.clone(),
+                )
+            }
+            Err(err) => {
+                eprintln!(
+                    "{}",
+                    format!("Failed to get signature from MPC contract:\n   {err}").red()
+                );
+                continue;
+            }
+        };
+
+        break signed_transaction;
+    };
+
+    let submit_context = super::SubmitContext {
+        network_config: network_config.clone(),
+        global_context: global_context.clone(),
+        signed_transaction_or_signed_delegate_action:
+            crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedTransaction(
+                signed_transaction
+            ),
+        on_before_sending_transaction_callback:
+            std::sync::Arc::new(
+                |_signed_transaction, _network_config| Ok(String::new()),
+        ),
+        on_after_sending_transaction_callback:
+            std::sync::Arc::new(
+                |_outcome_view, _network_config| Ok(()),
+        ),
+    };
+
+    prompt_and_submit(submit_context)
+}
+
+#[tracing::instrument(name = "Fetching executed DAO proposal ...", skip_all)]
+fn fetch_mpc_contract_response_from_dao_tx(
+    network_config: &crate::config::NetworkConfig,
+    original_sign_request: &mpc_sign_request::MpcSignRequest,
+    tx_hash: near_primitives::hash::CryptoHash,
+    sender_account_id: near_primitives::types::AccountId,
+    dao_address: near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<mpc_sign_result::SignResult> {
+    let request = near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
+        transaction_info: near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
+            tx_hash,
+            sender_account_id,
+        },
+        wait_until: near_primitives::views::TxExecutionStatus::Final,
+    };
+
+    let exec_outcome_view = network_config
+        .json_rpc_client()
+        .blocking_call(request)
+        .wrap_err("Couldn't fetch DAO transaction")?
+        .final_execution_outcome
+        .ok_or(color_eyre::eyre::eyre!("No final execution outcome"))?
+        .into_outcome();
+
+    if exec_outcome_view.transaction.receiver_id != *dao_address {
+        return Err(color_eyre::eyre::eyre!(
+            "Transaction receiver is not dao account!"
+        ));
+    }
+
+    if !matches!(
+        exec_outcome_view.status,
+        near_primitives::views::FinalExecutionStatus::SuccessValue(_)
+    ) {
+        return Err(color_eyre::eyre::eyre!("Transaction did not succeed"));
+    }
+
+    let act_proposal_args = exec_outcome_view
+        .transaction
+        .actions
+        .iter()
+        .find_map(|action| {
+            if let near_primitives::views::ActionView::FunctionCall {
+                method_name, args, ..
+            } = action
+            {
+                if method_name == "act_proposal" {
+                    return Some(args);
+                }
+            }
+            None
+        })
+        .ok_or(color_eyre::eyre::eyre!("No act_proposal action found"))?;
+
+    let act_proposal_args: serde_json::Value = serde_json::from_slice(act_proposal_args)?;
+
+    let proposal = act_proposal_args
+        .get("proposal")
+        .ok_or(color_eyre::eyre::eyre!(
+            "Couldn't find proposal in \"act_proposal\""
+        ))?;
+
+    let proposal_kind: super::submit_dao_proposal::dao_kind_arguments::ProposalKind =
+        serde_json::from_value(proposal.clone())?;
+
+    let mpc_sign_request = proposal_kind.try_to_mpc_sign_request(network_config)?;
+
+    if mpc_sign_request != *original_sign_request {
+        return Err(color_eyre::eyre::eyre!("Fetched sign request from DAO proposal doesn't match original that was made in this session"));
+    };
+
+    let mut sign_response_opt = None;
+    let mpc_contract_address = network_config
+        .get_mpc_contract_account_id()
+        .expect("Already checked it before calling");
+
+    for receipt in exec_outcome_view.receipts_outcome {
+        if receipt.outcome.executor_id == mpc_contract_address {
+            if let near_primitives::views::ExecutionStatusView::SuccessValue(success_response) =
+                receipt.outcome.status
+            {
+                sign_response_opt = Some(success_response);
+                break;
+            }
+        }
+    }
+
+    let Some(sign_response_vec) = sign_response_opt else {
+        return Err(color_eyre::eyre::eyre!(
+            "Couldn't find response from MPC contract"
+        ));
+    };
+
+    let mpc_contract_sign_result: mpc_sign_result::SignResult =
+        serde_json::from_slice(&sign_response_vec).map_err(|_| {
+            color_eyre::eyre::eyre!("Couldn't parse sign response from MPC contract")
+        })?;
+
+    Ok(mpc_contract_sign_result)
+}
+
+fn prompt_and_submit(submit_context: super::SubmitContext) -> color_eyre::eyre::Result<()> {
+    use strum::IntoEnumIterator;
+
+    let choices: Vec<_> = super::SubmitDiscriminants::iter()
+        .map(|variant| {
+            let message = variant.get_message().unwrap_or("Unknown");
+            (message.to_string(), variant)
+        })
+        .collect();
+
+    let display_options: Vec<&str> = choices.iter().map(|(msg, _)| msg.as_str()).collect();
+
+    let selected_msg = tracing_indicatif::suspend_tracing_indicatif(|| {
+        inquire::Select::new("How would you like to proceed?", display_options).prompt()
+    })?;
+
+    let selected = choices
+        .iter()
+        .find(|(msg, _)| msg.as_str() == selected_msg)
+        .map(|(_, variant)| variant)
+        .unwrap();
+
+    match selected {
+        super::SubmitDiscriminants::Send => {
+            super::send::SendContext::from_previous_context(
+                submit_context,
+                &super::send::InteractiveClapContextScopeForSend {},
+            )?;
+        }
+        super::SubmitDiscriminants::Display => {
+            super::display::DisplayContext::from_previous_context(
+                submit_context,
+                &super::display::InteractiveClapContextScopeForDisplay {},
+            )?;
+        }
+        super::SubmitDiscriminants::SaveToFile => {
+            let file_path: crate::types::path_buf::PathBuf = loop {
+                match CustomType::new(
+                    "What is the location of the file to save the transaction information?",
+                )
+                .with_starting_input("signed-transaction-info.json")
+                .prompt()
+                {
+                    Ok(file_path) => break file_path,
+                    Err(
+                        inquire::error::InquireError::OperationCanceled
+                        | inquire::error::InquireError::OperationInterrupted,
+                    ) => {
+                        return Ok(());
+                    }
+                    Err(err) => {
+                        eprintln!("{err}");
+                        continue;
+                    }
+                }
+            };
+            super::save_to_file::SaveToFileContext::from_previous_context(
+                submit_context,
+                &super::save_to_file::InteractiveClapContextScopeForSaveToFile { file_path },
+            )?;
+        }
+    }
+
+    Ok(())
 }
