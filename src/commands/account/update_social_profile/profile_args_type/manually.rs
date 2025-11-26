@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use inquire::{CustomType, Select, Text};
+use inquire::{Select, Text};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::UpdateSocialProfileContext)]
@@ -166,7 +166,7 @@ impl Manually {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let url: crate::types::url::Url =
-                CustomType::new("What is the account profile image URL?").prompt()?;
+                cliclack::input("What is the account profile image URL?").interact()?;
             Ok(Some(url))
         } else {
             Ok(None)
@@ -222,7 +222,7 @@ impl Manually {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let url: crate::types::url::Url =
-                CustomType::new("What is the account profile background image URL?").prompt()?;
+                cliclack::input("What is the account profile background image URL?").interact()?;
             Ok(Some(url))
         } else {
             Ok(None)
@@ -386,7 +386,7 @@ impl Manually {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let url: crate::types::url::Url =
-                CustomType::new("Enter the website URL for the account profile:").prompt()?;
+                cliclack::input("Enter the website URL for the account profile:").interact()?;
             Ok(Some(url))
         } else {
             Ok(None)
@@ -411,8 +411,8 @@ impl Manually {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let tags: crate::types::vec_string::VecString =
-                CustomType::new("Enter a comma-separated list of tags for account profile:")
-                    .prompt()?;
+                cliclack::input("Enter a comma-separated list of tags for account profile:")
+                    .interact()?;
             Ok(Some(tags))
         } else {
             Ok(None)

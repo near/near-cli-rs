@@ -1,4 +1,3 @@
-use inquire::CustomType;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod use_auto_generation;
@@ -64,15 +63,17 @@ impl SaveToFolder {
     fn input_folder_path(
         context: &SaveImplicitAccountContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
-        eprintln!();
-        Ok(Some(
-            CustomType::new("Where to save the implicit account file?")
-                .with_starting_input(&format!(
-                    "{}/implicit",
-                    context.config.credentials_home_dir.to_string_lossy()
-                ))
-                .prompt()?,
-        ))
+        match cliclack::input("Where to save the implicit account file?")
+            .default_input(&format!(
+                "{}/implicit",
+                context.config.credentials_home_dir.to_string_lossy()
+            ))
+            .interact()
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 

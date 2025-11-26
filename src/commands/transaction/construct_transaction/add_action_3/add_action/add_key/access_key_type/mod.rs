@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use inquire::{CustomType, Select, Text};
+use inquire::{Select, Text};
 
 #[derive(Debug, Clone)]
 pub struct AccessKeyPermissionContext {
@@ -135,10 +135,14 @@ impl FunctionCallType {
     pub fn input_allowance(
         _context: &super::super::super::super::ConstructTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_allowance::NearAllowance>> {
-        let allowance_near_balance: crate::types::near_allowance::NearAllowance =
-            CustomType::new("Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
-                .with_starting_input("unlimited")
-                .prompt()?;
-        Ok(Some(allowance_near_balance))
+        match cliclack::input(
+            "Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):"
+        )
+        .default_input("unlimited")
+        .interact() {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }

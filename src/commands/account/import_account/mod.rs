@@ -2,7 +2,7 @@
 use std::{str::FromStr, vec};
 
 use color_eyre::eyre::Context;
-use inquire::{CustomType, Select};
+use inquire::Select;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use near_primitives::account::id::AccountType;
@@ -109,7 +109,7 @@ pub fn login(
 }
 
 fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-    Ok(CustomType::new("Enter account ID:").prompt()?)
+    Ok(cliclack::input("Enter account ID:").interact()?)
 }
 
 fn save_access_key(

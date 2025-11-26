@@ -1,4 +1,4 @@
-use inquire::{CustomType, Select};
+use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -122,7 +122,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let api_key: crate::types::api_key::ApiKey =
-                CustomType::new("Enter an API key").prompt()?;
+                cliclack::input("Enter an API key:").interact()?;
             Ok(Some(api_key))
         } else {
             Ok(None)
@@ -149,7 +149,10 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let account_id: crate::types::account_id::AccountId =
-            CustomType::new("What is the name of the account that hosts the \"linkdrop\" program? (e.g. on mainnet it is near, and on testnet it is testnet)").prompt()?;
+                cliclack::input(
+                    "What is the name of the account that hosts the \"linkdrop\" program? (e.g. on mainnet it is near, and on testnet it is testnet)"
+                )
+                .interact()?;
             Ok(Some(account_id))
         } else {
             Ok(None)
@@ -176,7 +179,10 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let account_id: crate::types::account_id::AccountId =
-            CustomType::new("What is the name of the NEAR Social DB contract account ID (e.g. on mainnet it is social.near)").prompt()?;
+                cliclack::input(
+                    "What is the name of the NEAR Social DB contract account ID (e.g. on mainnet it is social.near)"
+                )
+                .interact()?;
             Ok(Some(account_id))
         } else {
             Ok(None)
@@ -201,7 +207,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let faucet_url: crate::types::url::Url =
-                CustomType::new("What is the faucet url?").prompt()?;
+                cliclack::input("What is the faucet url?").interact()?;
             Ok(Some(faucet_url))
         } else {
             Ok(None)
@@ -226,7 +232,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let meta_transaction_relayer_url: crate::types::url::Url =
-                CustomType::new("What is the relayer url?").prompt()?;
+                cliclack::input("What is the relayer url?").interact()?;
             Ok(Some(meta_transaction_relayer_url))
         } else {
             Ok(None)
@@ -251,7 +257,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let stake_delegators_api: crate::types::url::Url =
-                CustomType::new("What is the fastnear API url?").prompt()?;
+                cliclack::input("What is the fastnear API url?").interact()?;
             Ok(Some(stake_delegators_api))
         } else {
             Ok(None)
@@ -276,7 +282,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the staking pools factory account ID?").prompt()?;
+                cliclack::input("What is the staking pools factory account ID?").interact()?;
             Ok(Some(account_id))
         } else {
             Ok(None)
@@ -301,9 +307,9 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let coingecko_api: crate::types::url::Url =
-                CustomType::new("What is the coingecko API url?")
-                    .with_starting_input("https://api.coingecko.com/")
-                    .prompt()?;
+                cliclack::input("What is the coingecko API url?")
+                    .default_input("https://api.coingecko.com/")
+                    .interact()?;
             Ok(Some(coingecko_api))
         } else {
             Ok(None)

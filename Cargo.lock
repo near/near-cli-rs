@@ -1982,9 +1982,9 @@ dependencies = [
 [[package]]
 name = "interactive-clap"
 version = "0.3.2"
-source = "git+https://github.com/near-cli-rs/interactive-clap.git?rev=463e99aab172c31e9c56ab4882c210d0a1a61bc6#463e99aab172c31e9c56ab4882c210d0a1a61bc6"
+source = "git+https://github.com/near-cli-rs/interactive-clap.git?rev=baff8af#baff8af03d0fe6ab62ba00abe930521f72a54bf1"
 dependencies = [
- "interactive-clap-derive 0.3.2 (git+https://github.com/near-cli-rs/interactive-clap.git?rev=463e99aab172c31e9c56ab4882c210d0a1a61bc6)",
+ "interactive-clap-derive 0.3.2 (git+https://github.com/near-cli-rs/interactive-clap.git?rev=baff8af)",
  "strum",
  "strum_macros",
 ]
@@ -1992,7 +1992,7 @@ dependencies = [
 [[package]]
 name = "interactive-clap-derive"
 version = "0.3.2"
-source = "git+https://github.com/near-cli-rs/interactive-clap.git?rev=463e99aab172c31e9c56ab4882c210d0a1a61bc6#463e99aab172c31e9c56ab4882c210d0a1a61bc6"
+source = "git+https://github.com/near-cli-rs/interactive-clap.git?rev=baff8af#baff8af03d0fe6ab62ba00abe930521f72a54bf1"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",

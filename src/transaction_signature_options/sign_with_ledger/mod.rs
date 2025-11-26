@@ -1,5 +1,4 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
-use inquire::CustomType;
 use near_ledger::NEARLedgerError;
 use near_primitives::action::delegate::SignedDelegateAction;
 use near_primitives::borsh;
@@ -346,7 +345,7 @@ impl SignLedger {
     ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<u64>::new("Enter a nonce for the access key:").prompt()?,
+                cliclack::input("Enter a nonce for the access key:").interact()?,
             ));
         }
         Ok(None)
@@ -357,10 +356,7 @@ impl SignLedger {
     ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<crate::types::crypto_hash::CryptoHash>::new(
-                    "Enter recent block hash:",
-                )
-                .prompt()?,
+                cliclack::input("Enter recent block hash:").interact()?,
             ));
         }
         Ok(None)
@@ -369,9 +365,12 @@ impl SignLedger {
 
 pub fn input_seed_phrase_hd_path(
 ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
-    Ok(Some(
-        CustomType::new("Enter seed phrase HD Path (if you not sure leave blank for default):")
-            .with_starting_input("44'/397'/0'/0'/1'")
-            .prompt()?,
-    ))
+    match cliclack::input("Enter seed phrase HD Path (if you not sure leave blank for default):")
+        .default_input("44'/397'/0'/0'/1'")
+        .interact()
+    {
+        Ok(value) => Ok(Some(value)),
+        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+        Err(err) => Err(err.into()),
+    }
 }

@@ -1,5 +1,5 @@
-use inquire::CustomType;
 use inquire::Text;
+use std::str::FromStr;
 
 mod dao_kind_arguments;
 pub mod dao_sign_with;
@@ -147,24 +147,24 @@ impl PrepaidGas {
     pub fn input_gas(
         _context: &DaoProposalArgumentsContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
-        Ok(Some(
-            CustomType::new(
-                "What is the gas limit for adding DAO proposal (if unsure, keep 10 Tgas)?",
-            )
-            .with_starting_input("10 Tgas")
-            .with_validator(move |gas: &crate::common::NearGas| {
-                if gas > &near_gas::NearGas::from_tgas(300) {
-                    Ok(inquire::validator::Validation::Invalid(
-                        inquire::validator::ErrorMessage::Custom(
-                            "You need to enter a value of no more than 300 TeraGas".to_string(),
-                        ),
-                    ))
-                } else {
-                    Ok(inquire::validator::Validation::Valid)
-                }
-            })
-            .prompt()?,
-        ))
+        match cliclack::input(
+            "What is the gas limit for adding DAO proposal (if unsure, keep 10 Tgas)?",
+        )
+        .default_input("10 TeraGas")
+        .validate(|s: &String| {
+            let gas = near_gas::NearGas::from_str(s).map_err(|err| err.to_string())?;
+            if gas > near_gas::NearGas::from_tgas(300) {
+                Err("You need to enter a value of no more than 300 TeraGas".to_string())
+            } else {
+                Ok(())
+            }
+        })
+        .interact()
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 
@@ -211,11 +211,16 @@ impl Deposit {
     pub fn input_deposit(
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        Ok(Some(
-            CustomType::new("Enter deposit for adding DAO proposal:")
-                .with_starting_input("0 NEAR")
-                .prompt()?,
-        ))
+        match cliclack::input(
+            "Enter deposit for adding DAO proposal (example: 10 NEAR or 0.5 near or 10000 yoctonear):",
+        )
+        .default_input("0 NEAR")
+        .interact()
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 

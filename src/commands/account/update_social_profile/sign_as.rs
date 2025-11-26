@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use color_eyre::eyre::WrapErr;
-use inquire::{CustomType, Select};
+use inquire::Select;
 
 use crate::common::{CallResultExt, JsonRpcClientExt};
 
@@ -117,9 +117,14 @@ impl Signer {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let signer_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the signer account ID?")
-                    .with_default(context.account_id.clone().into())
-                    .prompt()?;
+                match cliclack::input("What is the signer account ID?")
+                    .default_input(context.account_id.as_ref())
+                    .interact()
+                {
+                    Ok(value) => value,
+                    Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+                    Err(err) => return Err(err.into()),
+                };
             if !crate::common::is_account_exist(
                 &context.global_context.config.network_connection,
                 signer_account_id.clone().into(),

@@ -3,7 +3,7 @@ extern crate dirs;
 use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
-use inquire::{CustomType, Select};
+use inquire::Select;
 use near_primitives::transaction::Transaction;
 use near_primitives::transaction::TransactionV0;
 
@@ -296,7 +296,7 @@ impl SignLegacyKeychain {
     ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<u64>::new("Enter a nonce for the access key:").prompt()?,
+                cliclack::input("Enter a nonce for the access key:").interact()?,
             ));
         }
         Ok(None)
@@ -307,10 +307,7 @@ impl SignLegacyKeychain {
     ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<crate::types::crypto_hash::CryptoHash>::new(
-                    "Enter recent block hash:",
-                )
-                .prompt()?,
+                cliclack::input("Enter recent block hash:").interact()?,
             ));
         }
         Ok(None)
@@ -321,10 +318,7 @@ impl SignLegacyKeychain {
     ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<near_primitives::types::BlockHeight>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                cliclack::input("Enter recent block height:").interact()?,
             ));
         }
         Ok(None)

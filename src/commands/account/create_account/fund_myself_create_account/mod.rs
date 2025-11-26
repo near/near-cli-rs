@@ -1,4 +1,4 @@
-use inquire::{CustomType, Select};
+use inquire::Select;
 
 use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
 
@@ -45,7 +45,11 @@ impl NewAccount {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let new_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the new account ID?").prompt()?;
+                match cliclack::input("What is the new account ID?").interact() {
+                    Ok(value) => value,
+                    Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+                    Err(err) => return Err(err.into()),
+                };
 
             if context.offline {
                 return Ok(Some(new_account_id));
@@ -131,12 +135,15 @@ impl NewAccount {
     fn input_initial_balance(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        eprintln!();
-        Ok(Some(
-            CustomType::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
-                .with_starting_input("0.1 NEAR")
-                .prompt()?
-        ))
+        match cliclack::input(
+            "Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):"
+        )
+        .default_input("0.1 NEAR")
+        .interact() {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 
