@@ -1,5 +1,4 @@
 use color_eyre::owo_colors::OwoColorize;
-use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
@@ -66,7 +65,7 @@ impl DeleteAccountAction {
                 return Ok(Some(beneficiary_account_id));
             }
 
-            #[derive(derive_more::Display)]
+            #[derive(Clone, derive_more::Display, PartialEq, Eq)]
             enum ConfirmOptions {
                 #[display(
                     fmt = "Yes, I want to check if account <{account_id}> exists. (It is free of charge, and only requires Internet access)"
@@ -77,11 +76,20 @@ impl DeleteAccountAction {
                 #[display(fmt = "No, I know this account exists and want to continue.")]
                 No,
             }
-            let select_choose_input =
-                Select::new("\nDo you want to check the existence of the specified account so that you don't lose tokens?",
-                    vec![ConfirmOptions::Yes{account_id: beneficiary_account_id.clone()}, ConfirmOptions::No],
-                    )
-                    .prompt()?;
+
+            let select_choose_input: ConfirmOptions = match cliclack::select(
+                "Do you want to check the existence of the specified account so that you don't lose tokens?",
+            )
+            .items(&[
+                (ConfirmOptions::Yes {account_id: beneficiary_account_id.clone()}, ConfirmOptions::Yes{account_id: beneficiary_account_id.clone()}, ""),
+                (ConfirmOptions::No, ConfirmOptions::No, "")
+            ])
+            .interact() {
+                Ok(value) => value,
+                Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+                Err(err) => return Err(err.into()),
+            };
+
             if let ConfirmOptions::Yes { account_id } = select_choose_input {
                 if crate::common::find_network_where_account_exist(
                     &context.global_context,

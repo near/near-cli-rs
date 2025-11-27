@@ -1,5 +1,3 @@
-use inquire::Select;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = AddNetworkConnectionContext)]
@@ -107,19 +105,20 @@ impl AddNetworkConnection {
     fn input_rpc_api_key(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, the RPC endpoint requires API key")]
             Yes,
             #[strum(to_string = "No, the RPC endpoint does not require API key")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to input an API key?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to input an API key?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let api_key: crate::types::api_key::ApiKey =
                 cliclack::input("Enter an API key:").interact()?;
@@ -132,8 +131,7 @@ impl AddNetworkConnection {
     fn input_linkdrop_account_id(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(
                 to_string = "Yes, and I want to enter the name of the account hosting the program \"linkdrop\""
@@ -142,11 +140,13 @@ impl AddNetworkConnection {
             #[strum(to_string = "I dont know")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Is there a \"linkdrop\" program on this network?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Is there a \"linkdrop\" program on this network?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let account_id: crate::types::account_id::AccountId =
                 cliclack::input(
@@ -162,8 +162,7 @@ impl AddNetworkConnection {
     fn input_near_social_db_contract_account_id(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, and I want to enter the NEAR Social DB contract account ID")]
             Yes,
@@ -172,11 +171,14 @@ impl AddNetworkConnection {
             )]
             No,
         }
-        let select_choose_input = Select::new(
+        let select_choose_input: ConfirmOptions = cliclack::select(
             "Do you want to enter the NEAR Social DB contract account ID on this network?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
-        .prompt()?;
+        .items(&[
+            (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+            (ConfirmOptions::No, ConfirmOptions::No, ""),
+        ])
+        .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let account_id: crate::types::account_id::AccountId =
                 cliclack::input(
@@ -192,19 +194,20 @@ impl AddNetworkConnection {
     fn input_faucet_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the URL of the faucet")]
             Yes,
             #[strum(to_string = "No, I don't want to enter the faucet URL")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter the faucet URL?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter the faucet URL?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let faucet_url: crate::types::url::Url =
                 cliclack::input("What is the faucet url?").interact()?;
@@ -217,19 +220,20 @@ impl AddNetworkConnection {
     fn input_meta_transaction_relayer_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the URL of the relayer")]
             Yes,
             #[strum(to_string = "No, I don't want to enter the relayer URL")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter the meta transaction relayer URL?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter the meta transaction relayer URL?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let meta_transaction_relayer_url: crate::types::url::Url =
                 cliclack::input("What is the relayer url?").interact()?;
@@ -242,19 +246,20 @@ impl AddNetworkConnection {
     fn input_fastnear_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the fastnear API url")]
             Yes,
             #[strum(to_string = "No, I don't want to enter the fastnear API url")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter the fastnear API url?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter the fastnear API url?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let stake_delegators_api: crate::types::url::Url =
                 cliclack::input("What is the fastnear API url?").interact()?;
@@ -267,19 +272,20 @@ impl AddNetworkConnection {
     fn input_staking_pools_factory_account_id(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the staking pools factory account ID")]
             Yes,
             #[strum(to_string = "No, I don't want to enter the staking pools factory account ID")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter the staking pools factory account ID?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter the staking pools factory account ID?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let account_id: crate::types::account_id::AccountId =
                 cliclack::input("What is the staking pools factory account ID?").interact()?;
@@ -292,19 +298,20 @@ impl AddNetworkConnection {
     fn input_coingecko_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the coingecko API url")]
             Yes,
             #[strum(to_string = "No, I don't want to enter the coingecko API url")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter the coingecko API url?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter the coingecko API url?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let coingecko_api: crate::types::url::Url =
                 cliclack::input("What is the coingecko API url?")

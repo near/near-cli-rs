@@ -1,5 +1,3 @@
-use inquire::Select;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::ContractContext)]
 #[interactive_clap(output_context = DepositArgsContext)]
@@ -63,18 +61,29 @@ impl DepositArgs {
                     "\nThe account <{receiver_account_id}> does not exist on [{}] networks.",
                     context.global_context.config.network_names().join(", ")
                 );
-                #[derive(strum_macros::Display)]
+
+                #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
                 enum ConfirmOptions {
                     #[strum(to_string = "Yes, I want to enter a new account name.")]
                     Yes,
                     #[strum(to_string = "No, I want to use this account name.")]
                     No,
                 }
-                let select_choose_input = Select::new(
-                    "Do you want to enter another receiver account id?",
-                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
-                )
-                .prompt()?;
+
+                let select_choose_input: ConfirmOptions =
+                    match cliclack::select("Do you want to enter another receiver account id?")
+                        .items(&[
+                            (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                            (ConfirmOptions::No, ConfirmOptions::No, ""),
+                        ])
+                        .interact()
+                    {
+                        Ok(value) => value,
+                        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => {
+                            return Ok(None)
+                        }
+                        Err(err) => return Err(err.into()),
+                    };
                 if let ConfirmOptions::No = select_choose_input {
                     return Ok(Some(receiver_account_id));
                 }

@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use color_eyre::eyre::WrapErr;
-use inquire::Select;
 
 use crate::common::{CallResultExt, JsonRpcClientExt};
 
@@ -133,18 +132,29 @@ impl Signer {
                     "\nThe account <{signer_account_id}> does not exist on [{}] networks.",
                     context.global_context.config.network_names().join(", ")
                 );
-                #[derive(strum_macros::Display)]
+
+                #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
                 enum ConfirmOptions {
                     #[strum(to_string = "Yes, I want to enter a new account name.")]
                     Yes,
                     #[strum(to_string = "No, I want to use this account name.")]
                     No,
                 }
-                let select_choose_input = Select::new(
-                    "Do you want to enter another signer account id?",
-                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
-                )
-                .prompt()?;
+
+                let select_choose_input: ConfirmOptions =
+                    match cliclack::select("Do you want to enter another signer account id?")
+                        .items(&[
+                            (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                            (ConfirmOptions::No, ConfirmOptions::No, ""),
+                        ])
+                        .interact()
+                    {
+                        Ok(value) => value,
+                        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => {
+                            return Ok(None)
+                        }
+                        Err(err) => return Err(err.into()),
+                    };
                 if let ConfirmOptions::No = select_choose_input {
                     return Ok(Some(signer_account_id));
                 }

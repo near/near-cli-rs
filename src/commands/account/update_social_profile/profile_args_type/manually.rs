@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use inquire::{Select, Text};
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::UpdateSocialProfileContext)]
 #[interactive_clap(output_context = ManuallyContext)]
@@ -126,22 +124,23 @@ impl Manually {
     fn input_name(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter a name for the account profile")]
             Yes,
             #[strum(to_string = "No, I don't want to enter a name for the account profile")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter a name for the account profile?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter a name for the account profile?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             Ok(Some(
-                Text::new("Enter a name for the account profile:").prompt()?,
+                cliclack::input("Enter a name for the account profile:").interact()?,
             ))
         } else {
             Ok(None)
@@ -151,19 +150,20 @@ impl Manually {
     fn input_image_url(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the URL for the account profile image")]
             Yes,
             #[strum(to_string = "No, I don't want to enter the URL of the account profile image")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter an account profile image URL?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter an account profile image URL?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let url: crate::types::url::Url =
                 cliclack::input("What is the account profile image URL?").interact()?;
@@ -176,8 +176,7 @@ impl Manually {
     fn input_image_ipfs_cid(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter ipfs_cid for the account profile image")]
             Yes,
@@ -186,14 +185,16 @@ impl Manually {
             )]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter ipfs_cid for the account profile image?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter ipfs_cid for the account profile image?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             Ok(Some(
-                Text::new("Enter ipfs_cid for the account's profile image:").prompt()?,
+                cliclack::input("Enter ipfs_cid for the account's profile image:").interact()?,
             ))
         } else {
             Ok(None)
@@ -203,8 +204,7 @@ impl Manually {
     fn input_background_image_url(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(
                 to_string = "Yes, I want to enter the URL for the account profile background image"
@@ -215,11 +215,13 @@ impl Manually {
             )]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter an account profile background image URL?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter an account profile background image URL?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let url: crate::types::url::Url =
                 cliclack::input("What is the account profile background image URL?").interact()?;
@@ -232,8 +234,7 @@ impl Manually {
     fn input_background_image_ipfs_cid(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(
                 to_string = "Yes, I want to enter ipfs_cid for the account profile background image"
@@ -244,14 +245,18 @@ impl Manually {
             )]
             No,
         }
-        let select_choose_input = Select::new(
+        let select_choose_input: ConfirmOptions = cliclack::select(
             "Do you want to enter ipfs_cid for the account profile background image?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
-        .prompt()?;
+        .items(&[
+            (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+            (ConfirmOptions::No, ConfirmOptions::No, ""),
+        ])
+        .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             Ok(Some(
-                Text::new("Enter ipfs_cid for the account profile background image:").prompt()?,
+                cliclack::input("Enter ipfs_cid for the account profile background image:")
+                    .interact()?,
             ))
         } else {
             Ok(None)
@@ -261,22 +266,23 @@ impl Manually {
     fn input_description(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter a description for the account profile")]
             Yes,
             #[strum(to_string = "No, I don't want to enter a description for the account profile")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter a description for the account profile?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter a description for the account profile?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             Ok(Some(
-                Text::new("Enter a description for the account profile:").prompt()?,
+                cliclack::input("Enter a description for the account profile:").interact()?,
             ))
         } else {
             Ok(None)
@@ -286,8 +292,7 @@ impl Manually {
     fn input_twitter(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter a Twitter nickname for the account profile")]
             Yes,
@@ -296,14 +301,16 @@ impl Manually {
             )]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter a Twitter nickname for the account profile?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter a Twitter nickname for the account profile?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             Ok(Some(
-                Text::new("Enter a Twitter nickname for the account profile:").prompt()?,
+                cliclack::input("Enter a Twitter nickname for the account profile:").interact()?,
             ))
         } else {
             Ok(None)
@@ -313,8 +320,7 @@ impl Manually {
     fn input_github(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter a Github nickname for the account profile")]
             Yes,
@@ -323,14 +329,16 @@ impl Manually {
             )]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter a Github nickname for the account profile?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter a Github nickname for the account profile?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             Ok(Some(
-                Text::new("Enter a Github nickname for the account profile:").prompt()?,
+                cliclack::input("Enter a Github nickname for the account profile:").interact()?,
             ))
         } else {
             Ok(None)
@@ -340,8 +348,7 @@ impl Manually {
     fn input_telegram(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(
                 to_string = "Yes, I want to enter a Telegram nickname for the account profile"
@@ -352,14 +359,16 @@ impl Manually {
             )]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter a Telegram nickname for the account profile?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter a Telegram nickname for the account profile?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             Ok(Some(
-                Text::new("Enter a Telegram nickname for the account profile:").prompt()?,
+                cliclack::input("Enter a Telegram nickname for the account profile:").interact()?,
             ))
         } else {
             Ok(None)
@@ -369,8 +378,7 @@ impl Manually {
     fn input_website(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the website URL for the account profile")]
             Yes,
@@ -379,11 +387,13 @@ impl Manually {
             )]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter the website URL for the account profile?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter the website URL for the account profile?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let url: crate::types::url::Url =
                 cliclack::input("Enter the website URL for the account profile:").interact()?;
@@ -396,19 +406,20 @@ impl Manually {
     fn input_tags(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
-        eprintln!();
-        #[derive(strum_macros::Display)]
+        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter tags for an account profile")]
             Yes,
             #[strum(to_string = "No, I don't want to enter tags for an account profile")]
             No,
         }
-        let select_choose_input = Select::new(
-            "Do you want to enter tags for the account profile?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
+        let select_choose_input: ConfirmOptions =
+            cliclack::select("Do you want to enter tags for the account profile?")
+                .items(&[
+                    (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                    (ConfirmOptions::No, ConfirmOptions::No, ""),
+                ])
+                .interact()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let tags: crate::types::vec_string::VecString =
                 cliclack::input("Enter a comma-separated list of tags for account profile:")

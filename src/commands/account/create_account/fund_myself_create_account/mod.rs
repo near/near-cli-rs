@@ -1,5 +1,3 @@
-use inquire::Select;
-
 use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
 
 mod add_key;
@@ -55,7 +53,7 @@ impl NewAccount {
                 return Ok(Some(new_account_id));
             }
 
-            #[derive(derive_more::Display)]
+            #[derive(Clone, derive_more::Display, PartialEq, Eq)]
             enum ConfirmOptions {
                 #[display(
                     fmt = "Yes, I want to check that <{account_id}> account does not exist. (It is free of charge, and only requires Internet access)"
@@ -68,11 +66,20 @@ impl NewAccount {
                 )]
                 No,
             }
-            let select_choose_input =
-            Select::new("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?",
-                vec![ConfirmOptions::Yes{account_id: new_account_id.clone()}, ConfirmOptions::No],
-                )
-                .prompt()?;
+
+            let select_choose_input: ConfirmOptions = match cliclack::select(
+             "Do you want to check the existence of the specified account so that you don't waste tokens with sending a transaction that won't succeed?"
+            )
+            .items(&[
+                (ConfirmOptions::Yes {account_id: new_account_id.clone()}, ConfirmOptions::Yes{account_id: new_account_id.clone()}, ""),
+                (ConfirmOptions::No, ConfirmOptions::No, "")
+            ])
+            .interact() {
+                Ok(value) => value,
+                Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+                Err(err) => return Err(err.into()),
+            };
+
             if let ConfirmOptions::Yes { account_id } = select_choose_input {
                 let network = crate::common::find_network_where_account_exist(
                     context,

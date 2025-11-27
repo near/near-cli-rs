@@ -1,8 +1,7 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
-use std::{str::FromStr, vec};
+use std::str::FromStr;
 
 use color_eyre::eyre::Context;
-use inquire::Select;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use near_primitives::account::id::AccountType;
@@ -78,18 +77,20 @@ pub fn login(
                 crate::common::indent_payload(error_message)
             );
 
-            #[derive(strum_macros::Display)]
+            #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
             enum ConfirmOptions {
                 #[strum(to_string = "Yes, I want to re-enter the account_id.")]
                 Yes,
                 #[strum(to_string = "No, I want to save the access key information.")]
                 No,
             }
-            let select_choose_input = Select::new(
-                "Would you like to re-enter the account_id?",
-                vec![ConfirmOptions::Yes, ConfirmOptions::No],
-            )
-            .prompt()?;
+            let select_choose_input: ConfirmOptions =
+                cliclack::select("Would you like to re-enter the account_id?")
+                    .items(&[
+                        (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                        (ConfirmOptions::No, ConfirmOptions::No, ""),
+                    ])
+                    .interact()?;
             if let ConfirmOptions::No = select_choose_input {
                 break account_id_from_cli;
             }
@@ -119,7 +120,7 @@ fn save_access_key(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
 ) -> crate::CliResult {
-    #[derive(strum_macros::Display)]
+    #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
     enum SelectStorage {
         #[strum(to_string = "Store the access key in my keychain")]
         SaveToKeychain,
@@ -128,14 +129,21 @@ fn save_access_key(
         )]
         SaveToLegacyKeychain,
     }
-    let selection = Select::new(
-        "Select a keychain to save the access key to:",
-        vec![
-            SelectStorage::SaveToKeychain,
-            SelectStorage::SaveToLegacyKeychain,
-        ],
-    )
-    .prompt()?;
+    let selection: SelectStorage = cliclack::select("Select a keychain to save the access key to:")
+        .items(&[
+            (
+                SelectStorage::SaveToKeychain,
+                SelectStorage::SaveToKeychain,
+                "",
+            ),
+            (
+                SelectStorage::SaveToLegacyKeychain,
+                SelectStorage::SaveToLegacyKeychain,
+                "",
+            ),
+        ])
+        .interact()?;
+
     if let SelectStorage::SaveToKeychain = selection {
         let storage_message =
             crate::common::save_access_key_to_keychain_or_save_to_legacy_keychain(

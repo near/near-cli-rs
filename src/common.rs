@@ -362,18 +362,20 @@ pub fn find_network_where_account_exist(
 }
 
 pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
-    #[derive(strum_macros::Display, PartialEq)]
+    #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
     enum ConfirmOptions {
         #[strum(to_string = "Yes, I want to enter a new name for account ID.")]
         Yes,
         #[strum(to_string = "No, I want to keep using this name for account ID.")]
         No,
     }
-    let select_choose_input = Select::new(
-        "Do you want to enter a different name for the new account ID?",
-        vec![ConfirmOptions::Yes, ConfirmOptions::No],
-    )
-    .prompt()?;
+    let select_choose_input: ConfirmOptions =
+        cliclack::select("Do you want to enter a different name for the new account ID?")
+            .items(&[
+                (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                (ConfirmOptions::No, ConfirmOptions::No, ""),
+            ])
+            .interact()?;
     Ok(select_choose_input == ConfirmOptions::Yes)
 }
 
@@ -541,18 +543,20 @@ async fn view_account(
 }
 
 fn need_check_account(message: String) -> color_eyre::eyre::Result<bool> {
-    #[derive(strum_macros::Display, PartialEq)]
+    #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
     enum ConfirmOptions {
         #[strum(to_string = "Yes, I want to check the account again.")]
         Yes,
         #[strum(to_string = "No, I want to skip the check and use the specified account ID.")]
         No,
     }
-    let select_choose_input = Select::new(
-        &format!("{message}\nDo you want to try again?"),
-        vec![ConfirmOptions::Yes, ConfirmOptions::No],
-    )
-    .prompt()?;
+    let select_choose_input: ConfirmOptions =
+        cliclack::select(format!("{message}\nDo you want to try again?"))
+            .items(&[
+                (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
+                (ConfirmOptions::No, ConfirmOptions::No, ""),
+            ])
+            .interact()?;
 
     Ok(select_choose_input == ConfirmOptions::Yes)
 }
