@@ -3,7 +3,6 @@ extern crate dirs;
 use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
-use inquire::Select;
 use near_primitives::transaction::Transaction;
 use near_primitives::transaction::TransactionV0;
 
@@ -280,10 +279,14 @@ impl SignLegacyKeychain {
                 .filter_map(|entry| entry.file_name().into_string().ok())
                 .filter(|file_name_str| file_name_str.starts_with("ed25519_"))
                 .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
+                .map(|s| (s.clone(), s, ""))
                 .collect::<Vec<_>>();
 
-            let selected_input = Select::new("Choose public_key:", key_list).prompt()?;
-
+            let selected_input = cliclack::select("Choose public_key:")
+                .items(&key_list)
+                .filter_mode()
+                .max_rows(7)
+                .interact()?;
             return Ok(Some(crate::types::public_key::PublicKey::from_str(
                 &selected_input,
             )?));

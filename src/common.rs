@@ -21,7 +21,7 @@ pub type CliResult = color_eyre::eyre::Result<()>;
 /// necessary to fix `clippy::result_large_err` warning
 pub type BoxedJsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::JsonRpcError<E>>>;
 
-use inquire::{Select, Text};
+use inquire::Text;
 use strum::IntoEnumIterator;
 
 use crate::types::partial_protocol_config::get_partial_protocol_config;
@@ -2325,18 +2325,24 @@ pub fn input_network_name(
             matches.extend(non_matches);
             matches
         };
-        variants.into_iter().map(|(k, _)| k).collect()
+        variants
+            .into_iter()
+            .map(|(k, _)| (k.clone(), k.clone(), ""))
+            .collect::<Vec<_>>()
     } else {
-        config.network_connection.keys().collect()
+        config
+            .network_connection
+            .keys()
+            .map(|k| (k.clone(), k.clone(), ""))
+            .collect::<Vec<_>>()
     };
 
-    let select_submit = Select::new("What is the name of the network?", variants).prompt();
-    match select_submit {
-        Ok(value) => Ok(Some(value.clone())),
-        Err(
-            inquire::error::InquireError::OperationCanceled
-            | inquire::error::InquireError::OperationInterrupted,
-        ) => Ok(None),
+    match cliclack::select("What is the name of the network?")
+        .items(&variants)
+        .interact()
+    {
+        Ok(value) => Ok(Some(value)),
+        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
         Err(err) => Err(err.into()),
     }
 }
