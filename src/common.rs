@@ -21,7 +21,6 @@ pub type CliResult = color_eyre::eyre::Result<()>;
 /// necessary to fix `clippy::result_large_err` warning
 pub type BoxedJsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::JsonRpcError<E>>>;
 
-use inquire::Text;
 use strum::IntoEnumIterator;
 
 use crate::types::partial_protocol_config::get_partial_protocol_config;
@@ -1759,31 +1758,16 @@ pub fn input_staking_pool_validator_account_id(
 ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
     let used_delegated_validator_list = get_used_delegated_validator_list(config)?
         .into_iter()
-        .map(String::from)
+        .map(|account| (account.to_string(), account.to_string(), ""))
         .collect::<Vec<_>>();
-    let validator_account_id_str = match Text::new("What is delegated validator account ID?")
-        .with_autocomplete(move |val: &str| {
-            Ok(used_delegated_validator_list
-                .iter()
-                .filter(|s| s.contains(val))
-                .cloned()
-                .collect())
-        })
-        .with_validator(|account_id_str: &str| {
-            match near_primitives::types::AccountId::validate(account_id_str) {
-                Ok(_) => Ok(inquire::validator::Validation::Valid),
-                Err(err) => Ok(inquire::validator::Validation::Invalid(
-                    inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
-                )),
-            }
-        })
-        .prompt()
+    let validator_account_id_str = match cliclack::select("What is delegated validator account ID?")
+        .items(&used_delegated_validator_list)
+        .filter_mode()
+        .max_rows(7)
+        .interact()
     {
         Ok(value) => value,
-        Err(
-            inquire::error::InquireError::OperationCanceled
-            | inquire::error::InquireError::OperationInterrupted,
-        ) => return Ok(None),
+        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
         Err(err) => return Err(err.into()),
     };
     let validator_account_id =
@@ -2998,31 +2982,22 @@ fn input_account_id_from_used_account_list(
     let used_account_list = get_used_account_list(credentials_home_dir)
         .into_iter()
         .filter(|account| !account_is_signer || account.used_as_signer)
-        .map(|account| account.account_id.to_string())
+        .map(|account| {
+            (
+                account.account_id.to_string(),
+                account.account_id.to_string(),
+                "",
+            )
+        })
         .collect::<Vec<_>>();
-    let account_id_str = match Text::new(message)
-        .with_autocomplete(move |val: &str| {
-            Ok(used_account_list
-                .iter()
-                .filter(|s| s.contains(val))
-                .cloned()
-                .collect())
-        })
-        .with_validator(|account_id_str: &str| {
-            match near_primitives::types::AccountId::validate(account_id_str) {
-                Ok(_) => Ok(inquire::validator::Validation::Valid),
-                Err(err) => Ok(inquire::validator::Validation::Invalid(
-                    inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
-                )),
-            }
-        })
-        .prompt()
+    let account_id_str = match cliclack::select(message)
+        .items(&used_account_list)
+        .filter_mode()
+        .max_rows(7)
+        .interact()
     {
         Ok(value) => value,
-        Err(
-            inquire::error::InquireError::OperationCanceled
-            | inquire::error::InquireError::OperationInterrupted,
-        ) => return Ok(None),
+        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
         Err(err) => return Err(err.into()),
     };
     let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;
