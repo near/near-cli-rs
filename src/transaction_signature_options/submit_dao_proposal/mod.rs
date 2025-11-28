@@ -1,4 +1,3 @@
-use inquire::Text;
 use std::str::FromStr;
 
 mod dao_kind_arguments;
@@ -101,7 +100,11 @@ impl DaoProposalArguments {
     pub fn input_proposal_description(
         _context: &DaoProposalContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        Ok(Some(Text::new("Input proposal description:").prompt()?))
+        match cliclack::input("Input proposal description:").interact() {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 
