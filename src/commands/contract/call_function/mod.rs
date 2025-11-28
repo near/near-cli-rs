@@ -1,4 +1,3 @@
-use inquire::{Select, Text};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod as_read_only;
@@ -76,17 +75,25 @@ fn input_function_name(
                 .functions
                 .into_iter()
                 .filter(|function| function_kind == function.kind)
-                .map(|function| function.name)
-                .collect::<Vec<String>>();
+                .map(|function| (function.name.clone(), function.name, ""))
+                .collect::<Vec<_>>();
             if !function_names.is_empty() {
-                return Ok(Some(
-                    Select::new(message, function_names).prompt()?.to_string(),
-                ));
+                match cliclack::select(message)
+                    .items(&function_names)
+                    .filter_mode()
+                    .interact()
+                {
+                    Ok(value) => return Ok(Some(value.to_string())),
+                    Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+                    Err(err) => return Err(err.into()),
+                }
             }
         }
     }
 
-    Ok(Some(
-        Text::new("What is the name of the function?").prompt()?,
-    ))
+    match cliclack::input("What is the name of the function?").interact() {
+        Ok(value) => Ok(Some(value)),
+        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+        Err(err) => Err(err.into()),
+    }
 }

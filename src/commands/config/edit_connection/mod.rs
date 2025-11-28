@@ -1,5 +1,3 @@
-use inquire::{Select, Text};
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = EditConnectionContext)]
@@ -168,17 +166,21 @@ impl ParameterContext {
 
 impl Parameter {
     fn input_key(context: &EditConnectionContext) -> color_eyre::eyre::Result<Option<String>> {
-        let variants = context.network_config.get_fields()?;
+        let variants = context
+            .network_config
+            .get_fields()?
+            .iter()
+            .map(|s| (s.clone(), s.clone(), ""))
+            .collect::<Vec<_>>();
 
-        let select_submit = Select::new("Which setting do you want to change?", variants).prompt();
-        match select_submit {
+        match cliclack::select("Which setting do you want to change?")
+            .items(&variants)
+            .interact()
+        {
             Ok(value) => Ok(Some(
                 value.split_once(':').expect("Internal error").0.to_string(),
             )),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
             Err(err) => Err(err.into()),
         }
     }
@@ -186,9 +188,12 @@ impl Parameter {
     pub fn input_value(
         _context: &EditConnectionContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        let value: String =
-            Text::new("Enter a new value for this parameter (if you want to remove an optional parameter, use \"null\"):")
-                .prompt()?;
-        Ok(Some(value))
+        match cliclack::input("Enter a new value for this parameter (if you want to remove an optional parameter, use \"null\"):")
+            .default_input("null")
+            .interact() {
+                Ok(value) => Ok(Some(value)),
+                Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+                Err(err) => Err(err.into()),
+            }
     }
 }

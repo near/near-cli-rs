@@ -1,4 +1,4 @@
-use inquire::CustomType;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::GenericDeployContext)]
@@ -103,23 +103,22 @@ impl PrepaidGas {
     fn input_gas(
         _context: &CallFunctionActionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
-        eprintln!();
-        Ok(Some(
-            CustomType::new("Enter gas for function call:")
-                .with_starting_input("100 TeraGas")
-                .with_validator(move |gas: &crate::common::NearGas| {
-                    if gas > &near_gas::NearGas::from_tgas(300) {
-                        Ok(inquire::validator::Validation::Invalid(
-                            inquire::validator::ErrorMessage::Custom(
-                                "You need to enter a value of no more than 300 TeraGas".to_string(),
-                            ),
-                        ))
-                    } else {
-                        Ok(inquire::validator::Validation::Valid)
-                    }
-                })
-                .prompt()?,
-        ))
+        match cliclack::input("Enter gas for function call:")
+            .default_input("100 TeraGas")
+            .validate(|s: &String| {
+                let gas = near_gas::NearGas::from_str(s).map_err(|err| err.to_string())?;
+                if gas > near_gas::NearGas::from_tgas(300) {
+                    Err("You need to enter a value of no more than 300 TeraGas".to_string())
+                } else {
+                    Ok(())
+                }
+            })
+            .interact()
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 
@@ -199,11 +198,15 @@ impl Deposit {
     fn input_deposit(
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        eprintln!();
-        Ok(Some(
-            CustomType::new("Enter deposit for a function call (example: 10 NEAR or 0.5 near or 10000 yoctonear):")
-                .with_starting_input("0 NEAR")
-                .prompt()?
-        ))
+        match cliclack::input(
+            "Enter deposit for a function call (example: 10 NEAR or 0.5 near or 10000 yoctonear):",
+        )
+        .default_input("0 NEAR")
+        .interact()
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }

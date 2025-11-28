@@ -1,5 +1,6 @@
+use std::str::FromStr;
+
 use color_eyre::eyre::ContextCompat;
-use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SendFtCommandContext)]
@@ -82,24 +83,23 @@ impl AmountFt {
             &network_config,
             near_primitives::types::Finality::Final.into(),
         )?;
-        eprintln!();
 
-        Ok(Some(
-            CustomType::<crate::types::ft_properties::FungibleTokenTransferAmount>::new(&format!(
-                "Enter an FT amount to transfer (example: 10 {symbol} or 0.5 {symbol} or \"all\" to transfer the entire amount of fungible tokens from your account):",
-                symbol = ft_metadata.symbol
-            ))
-            .with_validator(move |ft: &crate::types::ft_properties::FungibleTokenTransferAmount| {
-                match ft.normalize(&ft_metadata) {
-                    Err(err) => Ok(inquire::validator::Validation::Invalid(
-                        inquire::validator::ErrorMessage::Custom(err.to_string()),
-                    )),
-                    Ok(_) => Ok(inquire::validator::Validation::Valid),
-                }
-            })
-            .with_formatter(&|ft| ft.to_string())
-            .prompt()?,
+        match cliclack::input(format!(
+            "Enter an FT amount to transfer (example: 10 {symbol} or 0.5 {symbol} or \"all\" to transfer the entire amount of fungible tokens from your account):",
+            symbol = ft_metadata.symbol
         ))
+        .validate(move |s: &String| {
+            let ft = crate::types::ft_properties::FungibleTokenTransferAmount::from_str(s)?;
+            match ft.normalize(&ft_metadata) {
+                Err(err) => Err(err.to_string()),
+                Ok(_) => Ok(()),
+            }
+        })
+        .interact() {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 

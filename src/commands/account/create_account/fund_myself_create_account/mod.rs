@@ -1,5 +1,3 @@
-use inquire::{CustomType, Select};
-
 use crate::commands::account::MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH;
 
 mod add_key;
@@ -45,13 +43,17 @@ impl NewAccount {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let new_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the new account ID?").prompt()?;
+                match cliclack::input("What is the new account ID?").interact() {
+                    Ok(value) => value,
+                    Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+                    Err(err) => return Err(err.into()),
+                };
 
             if context.offline {
                 return Ok(Some(new_account_id));
             }
 
-            #[derive(derive_more::Display)]
+            #[derive(Clone, derive_more::Display, PartialEq, Eq)]
             enum ConfirmOptions {
                 #[display(
                     fmt = "Yes, I want to check that <{account_id}> account does not exist. (It is free of charge, and only requires Internet access)"
@@ -64,11 +66,20 @@ impl NewAccount {
                 )]
                 No,
             }
-            let select_choose_input =
-            Select::new("\nDo you want to check the existence of the specified account so that you don’t waste tokens with sending a transaction that won't succeed?",
-                vec![ConfirmOptions::Yes{account_id: new_account_id.clone()}, ConfirmOptions::No],
-                )
-                .prompt()?;
+
+            let select_choose_input: ConfirmOptions = match cliclack::select(
+             "Do you want to check the existence of the specified account so that you don't waste tokens with sending a transaction that won't succeed?"
+            )
+            .items(&[
+                (ConfirmOptions::Yes {account_id: new_account_id.clone()}, ConfirmOptions::Yes{account_id: new_account_id.clone()}, ""),
+                (ConfirmOptions::No, ConfirmOptions::No, "")
+            ])
+            .interact() {
+                Ok(value) => value,
+                Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+                Err(err) => return Err(err.into()),
+            };
+
             if let ConfirmOptions::Yes { account_id } = select_choose_input {
                 let network = crate::common::find_network_where_account_exist(
                     context,
@@ -131,12 +142,15 @@ impl NewAccount {
     fn input_initial_balance(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        eprintln!();
-        Ok(Some(
-            CustomType::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
-                .with_starting_input("0.1 NEAR")
-                .prompt()?
-        ))
+        match cliclack::input(
+            "Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):"
+        )
+        .default_input("0.1 NEAR")
+        .interact() {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 

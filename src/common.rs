@@ -21,7 +21,6 @@ pub type CliResult = color_eyre::eyre::Result<()>;
 /// necessary to fix `clippy::result_large_err` warning
 pub type BoxedJsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::JsonRpcError<E>>>;
 
-use inquire::{Select, Text};
 use strum::IntoEnumIterator;
 
 use crate::types::partial_protocol_config::get_partial_protocol_config;
@@ -362,19 +361,12 @@ pub fn find_network_where_account_exist(
 }
 
 pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
-    #[derive(strum_macros::Display, PartialEq)]
-    enum ConfirmOptions {
-        #[strum(to_string = "Yes, I want to enter a new name for account ID.")]
-        Yes,
-        #[strum(to_string = "No, I want to keep using this name for account ID.")]
-        No,
-    }
-    let select_choose_input = Select::new(
-        "Do you want to enter a different name for the new account ID?",
-        vec![ConfirmOptions::Yes, ConfirmOptions::No],
-    )
-    .prompt()?;
-    Ok(select_choose_input == ConfirmOptions::Yes)
+    let confirm_yes = "Yes, I want to enter a new name for account ID.";
+    let confirm_no = "No, I want to keep using this name for account ID.";
+    cliclack::select("Do you want to enter a different name for the new account ID?")
+        .items(&[(true, confirm_yes, ""), (false, confirm_no, "")])
+        .interact()
+        .map_err(color_eyre::eyre::Report::msg)
 }
 
 #[tracing::instrument(name = "Getting account status information for", skip_all)]
@@ -541,20 +533,12 @@ async fn view_account(
 }
 
 fn need_check_account(message: String) -> color_eyre::eyre::Result<bool> {
-    #[derive(strum_macros::Display, PartialEq)]
-    enum ConfirmOptions {
-        #[strum(to_string = "Yes, I want to check the account again.")]
-        Yes,
-        #[strum(to_string = "No, I want to skip the check and use the specified account ID.")]
-        No,
-    }
-    let select_choose_input = Select::new(
-        &format!("{message}\nDo you want to try again?"),
-        vec![ConfirmOptions::Yes, ConfirmOptions::No],
-    )
-    .prompt()?;
-
-    Ok(select_choose_input == ConfirmOptions::Yes)
+    let confirm_yes = "Yes, I want to check the account again.";
+    let confirm_no = "No, I want to skip the check and use the specified account ID.";
+    cliclack::select(format!("{message}\nDo you want to try again?"))
+        .items(&[(true, confirm_yes, ""), (false, confirm_no, "")])
+        .interact()
+        .map_err(color_eyre::eyre::Report::msg)
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1774,31 +1758,16 @@ pub fn input_staking_pool_validator_account_id(
 ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
     let used_delegated_validator_list = get_used_delegated_validator_list(config)?
         .into_iter()
-        .map(String::from)
+        .map(|account| (account.to_string(), account.to_string(), ""))
         .collect::<Vec<_>>();
-    let validator_account_id_str = match Text::new("What is delegated validator account ID?")
-        .with_autocomplete(move |val: &str| {
-            Ok(used_delegated_validator_list
-                .iter()
-                .filter(|s| s.contains(val))
-                .cloned()
-                .collect())
-        })
-        .with_validator(|account_id_str: &str| {
-            match near_primitives::types::AccountId::validate(account_id_str) {
-                Ok(_) => Ok(inquire::validator::Validation::Valid),
-                Err(err) => Ok(inquire::validator::Validation::Invalid(
-                    inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
-                )),
-            }
-        })
-        .prompt()
+    let validator_account_id_str = match cliclack::select("What is delegated validator account ID?")
+        .items(&used_delegated_validator_list)
+        .filter_mode()
+        .max_rows(7)
+        .interact()
     {
         Ok(value) => value,
-        Err(
-            inquire::error::InquireError::OperationCanceled
-            | inquire::error::InquireError::OperationInterrupted,
-        ) => return Ok(None),
+        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
         Err(err) => return Err(err.into()),
     };
     let validator_account_id =
@@ -2340,18 +2309,24 @@ pub fn input_network_name(
             matches.extend(non_matches);
             matches
         };
-        variants.into_iter().map(|(k, _)| k).collect()
+        variants
+            .into_iter()
+            .map(|(k, _)| (k.clone(), k.clone(), ""))
+            .collect::<Vec<_>>()
     } else {
-        config.network_connection.keys().collect()
+        config
+            .network_connection
+            .keys()
+            .map(|k| (k.clone(), k.clone(), ""))
+            .collect::<Vec<_>>()
     };
 
-    let select_submit = Select::new("What is the name of the network?", variants).prompt();
-    match select_submit {
-        Ok(value) => Ok(Some(value.clone())),
-        Err(
-            inquire::error::InquireError::OperationCanceled
-            | inquire::error::InquireError::OperationInterrupted,
-        ) => Ok(None),
+    match cliclack::select("What is the name of the network?")
+        .items(&variants)
+        .interact()
+    {
+        Ok(value) => Ok(Some(value)),
+        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
         Err(err) => Err(err.into()),
     }
 }
@@ -3007,31 +2982,22 @@ fn input_account_id_from_used_account_list(
     let used_account_list = get_used_account_list(credentials_home_dir)
         .into_iter()
         .filter(|account| !account_is_signer || account.used_as_signer)
-        .map(|account| account.account_id.to_string())
+        .map(|account| {
+            (
+                account.account_id.to_string(),
+                account.account_id.to_string(),
+                "",
+            )
+        })
         .collect::<Vec<_>>();
-    let account_id_str = match Text::new(message)
-        .with_autocomplete(move |val: &str| {
-            Ok(used_account_list
-                .iter()
-                .filter(|s| s.contains(val))
-                .cloned()
-                .collect())
-        })
-        .with_validator(|account_id_str: &str| {
-            match near_primitives::types::AccountId::validate(account_id_str) {
-                Ok(_) => Ok(inquire::validator::Validation::Valid),
-                Err(err) => Ok(inquire::validator::Validation::Invalid(
-                    inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
-                )),
-            }
-        })
-        .prompt()
+    let account_id_str = match cliclack::select(message)
+        .items(&used_account_list)
+        .filter_mode()
+        .max_rows(7)
+        .interact()
     {
         Ok(value) => value,
-        Err(
-            inquire::error::InquireError::OperationCanceled
-            | inquire::error::InquireError::OperationInterrupted,
-        ) => return Ok(None),
+        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
         Err(err) => return Err(err.into()),
     };
     let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;

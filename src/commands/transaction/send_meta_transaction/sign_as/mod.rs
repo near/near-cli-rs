@@ -1,5 +1,3 @@
-use inquire::Select;
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SignedMetaTransactionContext)]
 #[interactive_clap(output_context = RelayerAccountIdContext)]
@@ -96,19 +94,20 @@ impl RelayerAccountId {
                     "\nThe account <{relayer_account_id}> does not exist on [{}] networks.",
                     context.global_context.config.network_names().join(", ")
                 );
-                #[derive(strum_macros::Display)]
-                enum ConfirmOptions {
-                    #[strum(to_string = "Yes, I want to enter a new account name.")]
-                    Yes,
-                    #[strum(to_string = "No, I want to use this account name.")]
-                    No,
-                }
-                let select_choose_input = Select::new(
-                    "Do you want to enter another relayer account id?",
-                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
-                )
-                .prompt()?;
-                if let ConfirmOptions::No = select_choose_input {
+                let confirm_yes = "Yes, I want to enter a new account name.";
+                let confirm_no = "No, I want to use this account name.";
+                let confirmed =
+                    match cliclack::select("Do you want to enter another relayer account id?")
+                        .items(&[(true, confirm_yes, ""), (false, confirm_no, "")])
+                        .interact()
+                    {
+                        Ok(value) => value,
+                        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => {
+                            return Ok(None)
+                        }
+                        Err(err) => return Err(err.into()),
+                    };
+                if !confirmed {
                     return Ok(Some(relayer_account_id));
                 }
             } else {

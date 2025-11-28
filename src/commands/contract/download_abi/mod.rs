@@ -1,7 +1,6 @@
 use std::io::Write;
 
 use color_eyre::eyre::Context;
-use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -90,14 +89,17 @@ impl DownloadContractAbi {
     fn input_file_path(
         context: &ContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
-        Ok(Some(
-            CustomType::new("Enter the file path where the contract ABI should be saved to:")
-                .with_starting_input(&format!(
-                    "{}.abi.json",
-                    context.account_id.as_str().replace('.', "_")
-                ))
-                .prompt()?,
-        ))
+        match cliclack::input("Enter the file path where the contract ABI should be saved to:")
+            .default_input(&format!(
+                "{}.abi.json",
+                context.account_id.as_str().replace('.', "_")
+            ))
+            .interact()
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 

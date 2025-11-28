@@ -3,7 +3,6 @@ extern crate dirs;
 use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
-use inquire::{CustomType, Select};
 use near_primitives::transaction::Transaction;
 use near_primitives::transaction::TransactionV0;
 
@@ -285,10 +284,14 @@ impl SignLegacyKeychain {
                 .filter_map(|entry| entry.file_name().into_string().ok())
                 .filter(|file_name_str| file_name_str.starts_with("ed25519_"))
                 .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
+                .map(|s| (s.clone(), s, ""))
                 .collect::<Vec<_>>();
 
-            let selected_input = Select::new("Choose public_key:", key_list).prompt()?;
-
+            let selected_input = cliclack::select("Choose public_key:")
+                .items(&key_list)
+                .filter_mode()
+                .max_rows(7)
+                .interact()?;
             return Ok(Some(crate::types::public_key::PublicKey::from_str(
                 &selected_input,
             )?));
@@ -301,7 +304,7 @@ impl SignLegacyKeychain {
     ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<u64>::new("Enter a nonce for the access key:").prompt()?,
+                cliclack::input("Enter a nonce for the access key:").interact()?,
             ));
         }
         Ok(None)
@@ -312,10 +315,7 @@ impl SignLegacyKeychain {
     ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<crate::types::crypto_hash::CryptoHash>::new(
-                    "Enter recent block hash:",
-                )
-                .prompt()?,
+                cliclack::input("Enter recent block hash:").interact()?,
             ));
         }
         Ok(None)
@@ -326,10 +326,7 @@ impl SignLegacyKeychain {
     ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<near_primitives::types::BlockHeight>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                cliclack::input("Enter recent block height:").interact()?,
             ));
         }
         Ok(None)

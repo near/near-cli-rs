@@ -1,7 +1,6 @@
 use std::io::Write;
 
 use color_eyre::eyre::Context;
-use inquire::CustomType;
 
 use crate::common::JsonRpcClientExt;
 
@@ -92,14 +91,17 @@ impl DownloadContract {
     fn input_file_path(
         context: &ContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
-        Ok(Some(
-            CustomType::new("Enter the name of the file to save the contract:")
-                .with_starting_input(&format!(
-                    "{}.wasm",
-                    context.account_id.as_str().replace('.', "_")
-                ))
-                .prompt()?,
-        ))
+        match cliclack::input("Enter the name of the file to save the contract:")
+            .default_input(&format!(
+                "{}.wasm",
+                context.account_id.as_str().replace('.', "_")
+            ))
+            .interact()
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 

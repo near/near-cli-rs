@@ -1,7 +1,5 @@
 use std::str::FromStr;
 
-use inquire::{CustomType, Select, Text};
-
 #[derive(Debug, Clone)]
 pub struct AccessTypeContext {
     pub global_context: crate::GlobalContext,
@@ -108,25 +106,26 @@ impl FunctionCallType {
     pub fn input_function_names(
         _context: &super::AddKeyCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
-        #[derive(strum_macros::Display)]
-        enum ConfirmOptions {
-            #[strum(
-                to_string = "Yes, I want to input a list of function names that can be called when transaction is signed by this access key"
-            )]
-            Yes,
-            #[strum(to_string = "No, I allow it to call any functions on the specified contract")]
-            No,
-        }
-
-        eprintln!();
-        let select_choose_input = Select::new(
-            "Would you like the access key to be valid exclusively for calling specific functions on the contract?",
-            vec![ConfirmOptions::Yes, ConfirmOptions::No],
-        )
-        .prompt()?;
-        if let ConfirmOptions::Yes = select_choose_input {
-            let mut input_function_names = Text::new("Enter a comma-separated list of function names that will be allowed to be called in a transaction signed by this access key:")
-                    .prompt()?;
+        let confirm_yes = "Yes, I want to input a list of function names that can be called when transaction is signed by this access key";
+        let confirm_no = "No, I allow it to call any functions on the specified contract";
+        let confirmed = match cliclack::select(
+            "Would you like the access key to be valid exclusively for calling specific functions on the contract?"
+            )
+        .items(&[(true, confirm_yes, ""), (false, confirm_no, "")])
+        .interact() {
+            Ok(value) => value,
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+            Err(err) => return Err(err.into()),
+        };
+        if confirmed {
+            let mut input_function_names: String = match cliclack::input(
+                "Enter a comma-separated list of function names that will be allowed to be called in a transaction signed by this access key:"
+            )
+            .interact() {
+                Ok(value) => value,
+                Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+                Err(err) => return Err(err.into()),
+            };
             if input_function_names.contains('\"') {
                 input_function_names.clear()
             };
@@ -145,10 +144,14 @@ impl FunctionCallType {
     pub fn input_allowance(
         _context: &super::AddKeyCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_allowance::NearAllowance>> {
-        let allowance_near_balance: crate::types::near_allowance::NearAllowance =
-            CustomType::new("Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
-                .with_starting_input("unlimited")
-                .prompt()?;
-        Ok(Some(allowance_near_balance))
+        match cliclack::input(
+            "Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):"
+        )
+        .default_input("unlimited")
+        .interact() {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }

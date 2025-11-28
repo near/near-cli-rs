@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use color_eyre::eyre::WrapErr;
-use inquire::{CustomType, Select};
 
 use crate::common::{CallResultExt, JsonRpcClientExt};
 
@@ -117,9 +116,14 @@ impl Signer {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         loop {
             let signer_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the signer account ID?")
-                    .with_default(context.account_id.clone().into())
-                    .prompt()?;
+                match cliclack::input("What is the signer account ID?")
+                    .default_input(context.account_id.as_ref())
+                    .interact()
+                {
+                    Ok(value) => value,
+                    Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+                    Err(err) => return Err(err.into()),
+                };
             if !crate::common::is_account_exist(
                 &context.global_context.config.network_connection,
                 signer_account_id.clone().into(),
@@ -128,19 +132,21 @@ impl Signer {
                     "\nThe account <{signer_account_id}> does not exist on [{}] networks.",
                     context.global_context.config.network_names().join(", ")
                 );
-                #[derive(strum_macros::Display)]
-                enum ConfirmOptions {
-                    #[strum(to_string = "Yes, I want to enter a new account name.")]
-                    Yes,
-                    #[strum(to_string = "No, I want to use this account name.")]
-                    No,
-                }
-                let select_choose_input = Select::new(
-                    "Do you want to enter another signer account id?",
-                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
-                )
-                .prompt()?;
-                if let ConfirmOptions::No = select_choose_input {
+
+                let confirm_yes = "Yes, I want to enter a new account name.";
+                let confirm_no = "No, I want to use this account name.";
+                let confirmed =
+                    match cliclack::select("Do you want to enter another signer account id?")
+                        .items(&[(true, confirm_yes, ""), (false, confirm_no, "")])
+                        .interact()
+                    {
+                        Ok(value) => value,
+                        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => {
+                            return Ok(None)
+                        }
+                        Err(err) => return Err(err.into()),
+                    };
+                if !confirmed {
                     return Ok(Some(signer_account_id));
                 }
             } else {
