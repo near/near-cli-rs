@@ -158,6 +158,7 @@ publish-jobs = ["npm"]
 targets = [
     "aarch64-apple-darwin",
     "aarch64-unknown-linux-gnu",
+    "aarch64-pc-windows-msvc",
     "x86_64-apple-darwin",
     "x86_64-unknown-linux-gnu",
     "x86_64-pc-windows-msvc",
@@ -177,6 +178,7 @@ install-updater = false
 aarch64-unknown-linux-gnu = "ubuntu-24.04-arm"
 x86_64-unknown-linux-gnu = "ubuntu-22.04"
 x86_64-pc-windows-msvc = "windows-2022"
+aarch64-pc-windows-msvc = "windows-2025"
 
 [workspace.metadata.dist.dependencies.apt]
 libudev-dev = { version = "*", targets = [
