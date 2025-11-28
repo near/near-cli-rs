@@ -106,30 +106,18 @@ impl FunctionCallType {
     pub fn input_function_names(
         _context: &super::AddKeyCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
-        #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
-        enum ConfirmOptions {
-            #[strum(
-                to_string = "Yes, I want to input a list of function names that can be called when transaction is signed by this access key"
-            )]
-            Yes,
-            #[strum(to_string = "No, I allow it to call any functions on the specified contract")]
-            No,
-        }
-
-        let select_choose_input: ConfirmOptions = match cliclack::select(
+        let confirm_yes = "Yes, I want to input a list of function names that can be called when transaction is signed by this access key";
+        let confirm_no = "No, I allow it to call any functions on the specified contract";
+        let confirmed = match cliclack::select(
             "Would you like the access key to be valid exclusively for calling specific functions on the contract?"
             )
-            .items(&[
-                (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
-                (ConfirmOptions::No, ConfirmOptions::No, ""),
-            ])
-            .interact() {
-                Ok(value) => value,
-                Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
-                Err(err) => return Err(err.into()),
-            };
-
-        if let ConfirmOptions::Yes = select_choose_input {
+        .items(&[(true, confirm_yes, ""), (false, confirm_no, "")])
+        .interact() {
+            Ok(value) => value,
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return Ok(None),
+            Err(err) => return Err(err.into()),
+        };
+        if confirmed {
             let mut input_function_names: String = match cliclack::input(
                 "Enter a comma-separated list of function names that will be allowed to be called in a transaction signed by this access key:"
             )

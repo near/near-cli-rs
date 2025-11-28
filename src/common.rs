@@ -362,21 +362,12 @@ pub fn find_network_where_account_exist(
 }
 
 pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
-    #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
-    enum ConfirmOptions {
-        #[strum(to_string = "Yes, I want to enter a new name for account ID.")]
-        Yes,
-        #[strum(to_string = "No, I want to keep using this name for account ID.")]
-        No,
-    }
-    let select_choose_input: ConfirmOptions =
-        cliclack::select("Do you want to enter a different name for the new account ID?")
-            .items(&[
-                (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
-                (ConfirmOptions::No, ConfirmOptions::No, ""),
-            ])
-            .interact()?;
-    Ok(select_choose_input == ConfirmOptions::Yes)
+    let confirm_yes = "Yes, I want to enter a new name for account ID.";
+    let confirm_no = "No, I want to keep using this name for account ID.";
+    cliclack::select("Do you want to enter a different name for the new account ID?")
+        .items(&[(true, confirm_yes, ""), (false, confirm_no, "")])
+        .interact()
+        .map_err(color_eyre::eyre::Report::msg)
 }
 
 #[tracing::instrument(name = "Getting account status information for", skip_all)]
@@ -543,22 +534,12 @@ async fn view_account(
 }
 
 fn need_check_account(message: String) -> color_eyre::eyre::Result<bool> {
-    #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
-    enum ConfirmOptions {
-        #[strum(to_string = "Yes, I want to check the account again.")]
-        Yes,
-        #[strum(to_string = "No, I want to skip the check and use the specified account ID.")]
-        No,
-    }
-    let select_choose_input: ConfirmOptions =
-        cliclack::select(format!("{message}\nDo you want to try again?"))
-            .items(&[
-                (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
-                (ConfirmOptions::No, ConfirmOptions::No, ""),
-            ])
-            .interact()?;
-
-    Ok(select_choose_input == ConfirmOptions::Yes)
+    let confirm_yes = "Yes, I want to check the account again.";
+    let confirm_no = "No, I want to skip the check and use the specified account ID.";
+    cliclack::select(format!("{message}\nDo you want to try again?"))
+        .items(&[(true, confirm_yes, ""), (false, confirm_no, "")])
+        .interact()
+        .map_err(color_eyre::eyre::Report::msg)
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

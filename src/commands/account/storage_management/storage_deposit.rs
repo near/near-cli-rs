@@ -62,20 +62,11 @@ impl DepositArgs {
                     context.global_context.config.network_names().join(", ")
                 );
 
-                #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
-                enum ConfirmOptions {
-                    #[strum(to_string = "Yes, I want to enter a new account name.")]
-                    Yes,
-                    #[strum(to_string = "No, I want to use this account name.")]
-                    No,
-                }
-
-                let select_choose_input: ConfirmOptions =
+                let confirm_yes = "Yes, I want to enter a new account name.";
+                let confirm_no = "No, I want to use this account name.";
+                let confirmed =
                     match cliclack::select("Do you want to enter another receiver account id?")
-                        .items(&[
-                            (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
-                            (ConfirmOptions::No, ConfirmOptions::No, ""),
-                        ])
+                        .items(&[(true, confirm_yes, ""), (false, confirm_no, "")])
                         .interact()
                     {
                         Ok(value) => value,
@@ -84,7 +75,7 @@ impl DepositArgs {
                         }
                         Err(err) => return Err(err.into()),
                     };
-                if let ConfirmOptions::No = select_choose_input {
+                if !confirmed {
                     return Ok(Some(receiver_account_id));
                 }
             } else {

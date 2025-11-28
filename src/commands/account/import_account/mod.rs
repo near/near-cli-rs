@@ -77,21 +77,13 @@ pub fn login(
                 crate::common::indent_payload(error_message)
             );
 
-            #[derive(Clone, strum_macros::Display, PartialEq, Eq)]
-            enum ConfirmOptions {
-                #[strum(to_string = "Yes, I want to re-enter the account_id.")]
-                Yes,
-                #[strum(to_string = "No, I want to save the access key information.")]
-                No,
-            }
-            let select_choose_input: ConfirmOptions =
+            let confirm_yes = "Yes, I want to re-enter the account_id.";
+            let confirm_no = "No, I want to save the access key information.";
+            let select_choose_input =
                 cliclack::select("Would you like to re-enter the account_id?")
-                    .items(&[
-                        (ConfirmOptions::Yes, ConfirmOptions::Yes, ""),
-                        (ConfirmOptions::No, ConfirmOptions::No, ""),
-                    ])
+                    .items(&[(true, confirm_yes, ""), (false, confirm_no, "")])
                     .interact()?;
-            if let ConfirmOptions::No = select_choose_input {
+            if !select_choose_input {
                 break account_id_from_cli;
             }
         } else {
