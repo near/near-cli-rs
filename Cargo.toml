@@ -153,7 +153,8 @@ lto = "thin"
 # Config for 'dist'
 [workspace.metadata.dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.28.0"
+cargo-dist-version = "0.29.0"
+# Skip checking whether the specified configuration files are up to date
 allow-dirty = ["ci"]
 # CI backends to support
 ci = "github"
@@ -165,6 +166,7 @@ publish-jobs = ["npm"]
 targets = [
     "aarch64-apple-darwin",
     "aarch64-unknown-linux-gnu",
+    "aarch64-pc-windows-msvc",
     "x86_64-apple-darwin",
     "x86_64-unknown-linux-gnu",
     "x86_64-pc-windows-msvc",
@@ -184,6 +186,7 @@ install-updater = false
 aarch64-unknown-linux-gnu = "ubuntu-24.04-arm"
 x86_64-unknown-linux-gnu = "ubuntu-22.04"
 x86_64-pc-windows-msvc = "windows-2022"
+aarch64-pc-windows-msvc = "windows-2025"
 
 [workspace.metadata.dist.dependencies.apt]
 libudev-dev = { version = "*", targets = [
