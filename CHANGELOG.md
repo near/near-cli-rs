@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0](https://github.com/near/near-cli-rs/compare/v0.22.2...v0.23.0) - 2025-11-28
+
+### Added
+
+- Sign transactions with MPC from a different account or even through a DAO proposal ([#520](https://github.com/near/near-cli-rs/pull/520))
+- Enabled aarch64 Windows binary builds (upgraded cargo-dist to 0.29.0) ([#518](https://github.com/near/near-cli-rs/pull/518))
+- introduce tests ([#522](https://github.com/near/near-cli-rs/pull/522))
+
 ## [0.22.2](https://github.com/near/near-cli-rs/compare/v0.22.1...v0.22.2) - 2025-08-31
 
 ### Fixed
