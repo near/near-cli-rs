@@ -44,7 +44,7 @@ bip39 = { version = "2.0.0", features = ["rand"] }
 bs58 = "0.5"
 borsh = "1.5.7"
 ed25519-dalek = { version = "2", default-features = false }
-hex = "0.4.2"
+hex = { version = "0.4.2", features = ["serde"] }
 linked-hash-map = { version = "0.5", features = ["serde_impl"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
@@ -114,10 +114,10 @@ interactive-clap-derive = "0.3"
 rust_decimal = "1.35.0"
 
 # verify_contract dependencies
-near-verify-rs = {version = "0.3.0", optional = true}
-camino = {version = "1.1.1", optional = true}
-git2 = {version = "0.19", optional = true}
-tempfile = {version = "3.10.1", optional = true}
+near-verify-rs = { version = "0.3.0", optional = true }
+camino = { version = "1.1.1", optional = true }
+git2 = { version = "0.19", optional = true }
+tempfile = { version = "3.10.1", optional = true }
 
 [dev-dependencies]
 near-sandbox = "0.2"
@@ -135,7 +135,7 @@ verify_contract = [
     "dep:near-verify-rs",
     "dep:camino",
     "dep:git2",
-    "dep:tempfile"
+    "dep:tempfile",
 ]
 
 # The profile that 'cargo dist' will build with
@@ -146,8 +146,7 @@ lto = "thin"
 # Config for 'dist'
 [workspace.metadata.dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.29.0"
-# Skip checking whether the specified configuration files are up to date
+cargo-dist-version = "0.30.2"
 allow-dirty = ["ci"]
 # CI backends to support
 ci = "github"

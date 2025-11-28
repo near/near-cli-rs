@@ -1,4 +1,4 @@
-use color_eyre::eyre::eyre;
+use color_eyre::eyre::{eyre, Context};
 use near_primitives::action::Action;
 use serde::{Deserialize, Serialize};
 use serde_with::{base64::Base64, serde_as};
@@ -95,6 +95,50 @@ impl TryFrom<&crate::commands::PrepopulatedTransaction> for ProposalKind {
             }
             action => Err(eyre!(
                 "Passed {action:?} type is not supported for DAO proposal"
+            )),
+        }
+    }
+}
+
+impl ProposalKind {
+    pub fn try_to_mpc_sign_request(
+        self,
+        network_config: &crate::config::NetworkConfig,
+    ) -> Result<
+        crate::transaction_signature_options::sign_with_mpc::mpc_sign_request::MpcSignRequest,
+        color_eyre::eyre::Error,
+    > {
+        match self {
+            ProposalKind::FunctionCall(fc_args) => {
+                if fc_args.receiver_id != network_config.get_mpc_contract_account_id()? {
+                    return Err(color_eyre::eyre::eyre!(
+                    "ReceiverId of Function Call proposal doesn't match MPC contract AccountId in selected NetworkConfig!"
+                ));
+                }
+
+                let mpc_sign_action = fc_args.actions.first().ok_or_else(|| {
+                    color_eyre::eyre::eyre!(
+                        "Function Call proposal has no actions, but MPC sign requires at least one"
+                    )
+                })?;
+
+                if mpc_sign_action.method_name != "sign" {
+                    return Err(color_eyre::eyre::eyre!(
+                        "Method name for MPC sign Function Call is not \"sign\""
+                    ));
+                }
+
+                serde_json::from_slice(&mpc_sign_action.args).wrap_err_with(|| {
+                    format!(
+                        "{}{}",
+                        "Failed to parse MPC sign request from Function Call action arguments.\n",
+                        "Expected SignRequest structure with 'request' field containing
+  payload_v2, path, and domain_id."
+                    )
+                })
+            }
+            _ => Err(eyre!(
+                "Proposal Kind is not FunctionCall and cannot be turned to MpcSignRequest!"
             )),
         }
     }
