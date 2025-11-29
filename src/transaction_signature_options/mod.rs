@@ -10,6 +10,7 @@ pub mod sign_with_keychain;
 #[cfg(feature = "ledger")]
 pub mod sign_with_ledger;
 pub mod sign_with_legacy_keychain;
+pub mod sign_with_mpc;
 pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
 pub mod submit_dao_proposal;
@@ -52,6 +53,11 @@ pub enum SignWith {
     ))]
     /// Sign the transaction using the seed phrase
     SignWithSeedPhrase(self::sign_with_seed_phrase::SignSeedPhrase),
+    #[strum_discriminants(strum(
+        message = "sign-with-mpc                    - Sign and send the transaction with MPC"
+    ))]
+    /// Sign and send the transaction with MPC
+    SignWithMpc(crate::transaction_signature_options::sign_with_mpc::SignMpc),
     #[strum_discriminants(strum(
         message = "sign-later                       - Prepare an unsigned transaction to sign it later"
     ))]

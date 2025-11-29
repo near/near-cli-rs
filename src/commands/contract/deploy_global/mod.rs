@@ -163,7 +163,7 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
             interacting_with_account_ids: vec![account_id],
             get_prepopulated_transaction_after_getting_network_callback,
             on_before_signing_callback: std::sync::Arc::new(
-                |_prepolulated_unsinged_transaction, _network_config| Ok(()),
+                |_prepopulated_unsigned_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
                 |_signed_transaction, _network_config| Ok(String::new()),
