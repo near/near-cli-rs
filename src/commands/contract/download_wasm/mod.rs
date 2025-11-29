@@ -2,134 +2,85 @@ use std::io::Write;
 
 use color_eyre::eyre::Context;
 use inquire::CustomType;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::JsonRpcClientExt;
 
-#[derive(Debug, EnumDiscriminants, Clone, clap::ValueEnum)]
+#[derive(Debug, Clone)]
+pub enum ContractType {
+    Regular(near_primitives::types::AccountId),
+    GlobalContractByAccountId(near_primitives::types::AccountId),
+    GlobalContractByContractHash(near_primitives::hash::CryptoHash),
+}
+
+impl std::fmt::Display for ContractType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ContractType::Regular(account_id) => {
+                write!(f, "regular:{}", account_id)
+            }
+            ContractType::GlobalContractByAccountId(account_id) => {
+                write!(f, "global-contract-by-account-id:{}", account_id)
+            }
+            ContractType::GlobalContractByContractHash(contract_hash) => {
+                write!(f, "global-contract-by-hash:{}", contract_hash)
+            }
+        }
+    }
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[non_exhaustive]
 /// Which type of contract do you want to pass?
 pub enum ContractKind {
-    Regular,
-    GlobalContractByAccountId,
-    GlobalContractByHash,
-}
-
-impl interactive_clap::ToCli for ContractKind {
-    type CliVariant = ContractKind;
-}
-
-impl std::str::FromStr for ContractKind {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "regular" => Ok(Self::Regular),
-            "global-contract-by-account-id" => Ok(Self::GlobalContractByAccountId),
-            "global-contract-by-hash" => Ok(Self::GlobalContractByHash),
-            _ => Err("ContractKind: incorrect value entered".to_string()),
-        }
-    }
-}
-
-impl std::fmt::Display for ContractKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Regular => write!(f, "regular"),
-            Self::GlobalContractByAccountId => write!(f, "global-contract-by-account-id"),
-            Self::GlobalContractByHash => write!(f, "global-contract-by-hash"),
-        }
-    }
-}
-
-impl std::fmt::Display for ContractKindDiscriminants {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Regular => write!(
-                f,
-                "regular                       - Regular contract deployed to an account"
-            ),
-            Self::GlobalContractByAccountId => write!(
-                f,
-                "global-contract-by-account-id - Global contract identified by account ID"
-            ),
-            Self::GlobalContractByHash => write!(
-                f,
-                "global-contract-by-hash       - Global contract identified by code hash"
-            ),
-        }
-    }
+    #[strum_discriminants(strum(
+        message = "Regular                       - Regular contract deployed to an account"
+    ))]
+    Regular(DownloadRegularContract),
+    #[strum_discriminants(strum(
+        message = "Global contract by account id - Global contract identified by account ID"
+    ))]
+    GlobalContractByAccountId(DownloadGlobalContractByAccountId),
+    #[strum_discriminants(strum(
+        message = "Global contract by hash       - Global contract identified by code hash"
+    ))]
+    GlobalContractByContractHash(DownloadGlobalContractByContractHash),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = ContractContext)]
-pub struct Contract {
-    #[interactive_clap(skip_default_input_arg)]
-    /// Which type of contract do you want to download?
-    contract_kind: ContractKind,
+#[interactive_clap(output_context = DownloadRegularContractContext)]
+pub struct DownloadRegularContract {
+    /// What is the contract account ID?
+    account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    /// Enter the name of the file to save the contract:
-    save_to_file: DownloadContract,
+    save_to_file: DownloadRegularContractAction,
 }
 
-impl Contract {
-    pub fn input_contract_kind(
-        _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<ContractKind>> {
-        let variants = ContractKindDiscriminants::iter().collect::<Vec<_>>();
-
-        let selected =
-            inquire::Select::new("Which type of contract do you want to download?", variants)
-                .prompt()?;
-
-        match selected {
-            ContractKindDiscriminants::Regular => Ok(Some(ContractKind::Regular)),
-            ContractKindDiscriminants::GlobalContractByAccountId => {
-                Ok(Some(ContractKind::GlobalContractByAccountId))
-            }
-            ContractKindDiscriminants::GlobalContractByHash => {
-                Ok(Some(ContractKind::GlobalContractByHash))
-            }
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ContractContext {
+#[derive(Clone)]
+pub struct DownloadRegularContractContext {
     global_context: crate::GlobalContext,
-    contract_kind: ContractKind,
+    account_id: crate::types::account_id::AccountId,
 }
 
-impl ContractContext {
+impl DownloadRegularContractContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
-        scope: &<Contract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<DownloadRegularContract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context,
-            contract_kind: scope.contract_kind.clone(),
+            account_id: scope.account_id.clone(),
         })
     }
 }
 
-impl Contract {
-    pub fn input_account_id(
-        context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_non_signer_account_id_from_used_account_list(
-            &context.config.credentials_home_dir,
-            "What is the contract account ID?",
-        )
-    }
-}
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = ContractContext)]
-#[interactive_clap(output_context = DownloadContractContext)]
-pub struct DownloadContract {
-    /// Account ID (regular/global-contract-by-account-id) or code hash (global-by-hash)
-    #[interactive_clap(skip_default_input_arg)]
-    target: String,
+#[interactive_clap(input_context = DownloadRegularContractContext)]
+#[interactive_clap(output_context = DownloadRegularContractActionContext)]
+pub struct DownloadRegularContractAction {
     #[interactive_clap(skip_default_input_arg)]
     /// Enter the name of the file to save the contract:
     file_path: crate::types::path_buf::PathBuf,
@@ -138,104 +89,240 @@ pub struct DownloadContract {
     network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
 }
 
-impl DownloadContract {
-    pub fn input_target(context: &ContractContext) -> color_eyre::eyre::Result<Option<String>> {
-        use inquire::CustomType;
-
-        let target = match context.contract_kind {
-            ContractKind::Regular => {
-                let Some(account_id) =
-                    crate::common::input_non_signer_account_id_from_used_account_list(
-                        &context.global_context.config.credentials_home_dir,
-                        "What is the contract account ID?",
-                    )?
-                else {
-                    return Ok(None);
-                };
-                account_id.to_string()
-            }
-            ContractKind::GlobalContractByAccountId => {
-                let Some(account_id) =
-                    crate::common::input_non_signer_account_id_from_used_account_list(
-                        &context.global_context.config.credentials_home_dir,
-                        "What is the global contract account ID?",
-                    )?
-                else {
-                    return Ok(None);
-                };
-                account_id.to_string()
-            }
-            ContractKind::GlobalContractByHash => {
-                CustomType::<near_primitives::hash::CryptoHash>::new(
-                    "What is the global contract code hash?",
-                )
-                .prompt()?
-                .to_string()
-            }
-        };
-
-        Ok(Some(target))
-    }
-}
-
 #[derive(Clone)]
-pub struct DownloadContractContext(crate::network_view_at_block::ArgsForViewContext);
+pub struct DownloadRegularContractActionContext(crate::network_view_at_block::ArgsForViewContext);
 
-impl DownloadContractContext {
+impl DownloadRegularContractActionContext {
     pub fn from_previous_context(
-        previous_context: ContractContext,
-        scope: &<DownloadContract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        previous_context: DownloadRegularContractContext,
+        scope: &<DownloadRegularContractAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let contract_kind = previous_context.contract_kind.clone();
-            let target = scope.target.clone();
+            let contract_type = ContractType::Regular(previous_context.account_id.clone().into());
             let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
             move |network_config, block_reference| {
-                download_contract_code(&contract_kind, &target, &file_path, network_config, block_reference.clone())
+                download_contract_code(&contract_type, &file_path, network_config, block_reference.clone())
             }
         });
-
-        let interacting_with_account_ids = match previous_context.contract_kind {
-            ContractKind::Regular => vec![scope.target.parse()?],
-            ContractKind::GlobalContractByAccountId => vec![scope.target.parse()?],
-            ContractKind::GlobalContractByHash => vec![],
-        };
 
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
             config: previous_context.global_context.config,
             on_after_getting_block_reference_callback,
-            interacting_with_account_ids,
+            interacting_with_account_ids: vec![previous_context.account_id.into()],
         }))
     }
 }
 
-impl From<DownloadContractContext> for crate::network_view_at_block::ArgsForViewContext {
-    fn from(item: DownloadContractContext) -> Self {
+impl From<DownloadRegularContractActionContext>
+    for crate::network_view_at_block::ArgsForViewContext
+{
+    fn from(item: DownloadRegularContractActionContext) -> Self {
         item.0
     }
 }
 
-impl DownloadContract {
+impl DownloadRegularContractAction {
     fn input_file_path(
-        _context: &ContractContext,
+        _context: &DownloadRegularContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
         Ok(Some(
             CustomType::new("Enter the name of the file to save the contract:")
-                .with_starting_input("config.wasm")
+                .with_starting_input("contract.wasm")
                 .prompt()?,
         ))
     }
 }
 
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = DownloadGlobalContractByAccountIdContext)]
+pub struct DownloadGlobalContractByAccountId {
+    /// What is the account ID of the global contract?
+    account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(named_arg)]
+    save_to_file: DownloadGlobalContractByAccountIdAction,
+}
+
+#[derive(Clone)]
+pub struct DownloadGlobalContractByAccountIdContext {
+    global_context: crate::GlobalContext,
+    account_id: crate::types::account_id::AccountId,
+}
+
+impl DownloadGlobalContractByAccountIdContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<DownloadGlobalContractByAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            global_context: previous_context,
+            account_id: scope.account_id.clone(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = DownloadGlobalContractByAccountIdContext)]
+#[interactive_clap(output_context = DownloadGlobalContractByAccountIdActionContext)]
+pub struct DownloadGlobalContractByAccountIdAction {
+    #[interactive_clap(skip_default_input_arg)]
+    /// Enter the name of the file to save the contract:
+    file_path: crate::types::path_buf::PathBuf,
+    #[interactive_clap(named_arg)]
+    /// Select network
+    network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
+}
+
+#[derive(Clone)]
+pub struct DownloadGlobalContractByAccountIdActionContext(
+    crate::network_view_at_block::ArgsForViewContext,
+);
+
+impl DownloadGlobalContractByAccountIdActionContext {
+    pub fn from_previous_context(
+        previous_context: DownloadGlobalContractByAccountIdContext,
+        scope: &<DownloadGlobalContractByAccountIdAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+            let contract_type = ContractType::GlobalContractByAccountId(previous_context.account_id.clone().into());
+            let file_path: std::path::PathBuf = scope.file_path.clone().into();
+
+            move |network_config, block_reference| {
+                download_contract_code(&contract_type, &file_path, network_config, block_reference.clone())
+            }
+        });
+
+        Ok(Self(crate::network_view_at_block::ArgsForViewContext {
+            config: previous_context.global_context.config,
+            on_after_getting_block_reference_callback,
+            interacting_with_account_ids: vec![previous_context.account_id.into()],
+        }))
+    }
+}
+
+impl From<DownloadGlobalContractByAccountIdActionContext>
+    for crate::network_view_at_block::ArgsForViewContext
+{
+    fn from(item: DownloadGlobalContractByAccountIdActionContext) -> Self {
+        item.0
+    }
+}
+
+impl DownloadGlobalContractByAccountIdAction {
+    fn input_file_path(
+        _context: &DownloadGlobalContractByAccountIdContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
+        Ok(Some(
+            CustomType::new("Enter the name of the file to save the contract:")
+                .with_starting_input("contract.wasm")
+                .prompt()?,
+        ))
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = DownloadGlobalContractByContractHashContext)]
+pub struct DownloadGlobalContractByContractHash {
+    /// What is the contract hash of the global contract?
+    contrach_hash: crate::types::crypto_hash::CryptoHash,
+    #[interactive_clap(named_arg)]
+    save_to_file: DownloadGlobalContractByContractHashAction,
+}
+
+#[derive(Clone)]
+pub struct DownloadGlobalContractByContractHashContext {
+    global_context: crate::GlobalContext,
+    contrach_hash: crate::types::crypto_hash::CryptoHash,
+}
+
+impl DownloadGlobalContractByContractHashContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<DownloadGlobalContractByContractHash as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            global_context: previous_context,
+            contrach_hash: scope.contrach_hash,
+        })
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = DownloadGlobalContractByContractHashContext)]
+#[interactive_clap(output_context = DownloadGlobalContractByContractHashActionContext)]
+pub struct DownloadGlobalContractByContractHashAction {
+    #[interactive_clap(skip_default_input_arg)]
+    /// Enter the name of the file to save the contract:
+    file_path: crate::types::path_buf::PathBuf,
+    #[interactive_clap(named_arg)]
+    /// Select network
+    network_config: crate::network_view_at_block::NetworkViewAtBlockArgs,
+}
+
+#[derive(Clone)]
+pub struct DownloadGlobalContractByContractHashActionContext(
+    crate::network_view_at_block::ArgsForViewContext,
+);
+
+impl DownloadGlobalContractByContractHashActionContext {
+    pub fn from_previous_context(
+        previous_context: DownloadGlobalContractByContractHashContext,
+        scope: &<DownloadGlobalContractByContractHashAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
+            let contract_type = ContractType::GlobalContractByContractHash(previous_context.contrach_hash.into());
+            let file_path: std::path::PathBuf = scope.file_path.clone().into();
+
+            move |network_config, block_reference| {
+                download_contract_code(&contract_type, &file_path, network_config, block_reference.clone())
+            }
+        });
+
+        Ok(Self(crate::network_view_at_block::ArgsForViewContext {
+            config: previous_context.global_context.config,
+            on_after_getting_block_reference_callback,
+            interacting_with_account_ids: vec![],
+        }))
+    }
+}
+
+impl From<DownloadGlobalContractByContractHashActionContext>
+    for crate::network_view_at_block::ArgsForViewContext
+{
+    fn from(item: DownloadGlobalContractByContractHashActionContext) -> Self {
+        item.0
+    }
+}
+
+impl DownloadGlobalContractByContractHashAction {
+    fn input_file_path(
+        _context: &DownloadGlobalContractByContractHashContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
+        Ok(Some(
+            CustomType::new("Enter the name of the file to save the contract:")
+                .with_starting_input("contract.wasm")
+                .prompt()?,
+        ))
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = crate::GlobalContext)]
+pub struct Contract {
+    #[interactive_clap(subcommand)]
+    /// Which type of contract do you want to download?
+    contract_kind: ContractKind,
+}
+
 fn download_contract_code(
-    contract_kind: &ContractKind,
-    target: &str,
+    contract_type: &ContractType,
     file_path: &std::path::PathBuf,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
 ) -> crate::CliResult {
-    let code = get_code(contract_kind, target, network_config, block_reference)?;
+    let code = get_code(contract_type, network_config, block_reference)?;
     std::fs::File::create(file_path)
         .wrap_err_with(|| format!("Failed to create file: {file_path:?}"))?
         .write(&code)
@@ -250,25 +337,20 @@ fn download_contract_code(
 
 #[tracing::instrument(name = "Trying to download contract code ...", skip_all)]
 pub fn get_code(
-    contract_kind: &ContractKind,
-    target: &str,
+    contract_type: &ContractType,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
-    let request = match contract_kind {
-        ContractKind::Regular => near_primitives::views::QueryRequest::ViewCode {
-            account_id: target.parse()?,
-        },
-        ContractKind::GlobalContractByAccountId => {
-            near_primitives::views::QueryRequest::ViewGlobalContractCodeByAccountId {
-                account_id: target.parse()?,
-            }
+    let request = match contract_type.clone() {
+        ContractType::Regular(account_id) => {
+            near_primitives::views::QueryRequest::ViewCode { account_id }
         }
-        ContractKind::GlobalContractByHash => {
+        ContractType::GlobalContractByAccountId(account_id) => {
+            near_primitives::views::QueryRequest::ViewGlobalContractCodeByAccountId { account_id }
+        }
+        ContractType::GlobalContractByContractHash(contract_hash) => {
             near_primitives::views::QueryRequest::ViewGlobalContractCode {
-                code_hash: target.parse().map_err(|e| {
-                    color_eyre::eyre::eyre!("Failed to parse code hash <{}>: {}", target, e)
-                })?,
+                code_hash: contract_hash,
             }
         }
     };
@@ -307,7 +389,7 @@ pub fn get_code(
         tracing::info!(
         parent: &tracing::Span::none(),
             "Trying to fetch contract code for <{}> at block height {} on network <{}>...",
-            target, block_height, network_config.network_name
+            contract_type, block_height, network_config.network_name
         );
 
         let Ok(query_view_method_response) = network_config.json_rpc_client().blocking_call(
@@ -335,7 +417,7 @@ pub fn get_code(
 
     Err(color_eyre::Report::msg(format!(
         "Failed to fetch contract code for <{}> on network <{}> after trying {} block heights.",
-        target,
+        contract_type,
         network_config.network_name,
         block_height + number_of_shards * 2 - block_height + 1
     )))

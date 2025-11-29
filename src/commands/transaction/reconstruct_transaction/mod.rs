@@ -217,8 +217,7 @@ fn action_transformation(
                 .prompt()?;
 
             download_code(
-                &crate::commands::contract::download_wasm::ContractKind::Regular,
-                receiver_id.as_str(),
+                &crate::commands::contract::download_wasm::ContractType::Regular(receiver_id),
                 network_config,
                 block_reference,
                 &file_path,
@@ -276,24 +275,17 @@ fn action_transformation(
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 
-            let (contract_kind, target) = match action.deploy_mode {
+            let contract_type = match action.deploy_mode {
                 near_primitives::action::GlobalContractDeployMode::AccountId => {
-                    (
-                        &crate::commands::contract::download_wasm::ContractKind::GlobalContractByAccountId,
-                        receiver_id.to_string()
-                    )
+                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId(receiver_id)
                 }
                 near_primitives::action::GlobalContractDeployMode::CodeHash => {
-                    (
-                        &crate::commands::contract::download_wasm::ContractKind::GlobalContractByHash,
-                        format!("{}", near_primitives::hash::CryptoHash::hash_bytes(&action.code))
-                    )
+                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByContractHash(near_primitives::hash::CryptoHash::hash_bytes(&action.code))
                 }
             };
 
             download_code(
-                contract_kind,
-                &target,
+                contract_type,
                 network_config,
                 block_reference,
                 &file_path,
@@ -409,8 +401,7 @@ fn get_access_key_permission(
 }
 
 fn download_code(
-    contract_kind: &crate::commands::contract::download_wasm::ContractKind,
-    target: &str,
+    contract_type: &crate::commands::contract::download_wasm::ContractType,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
     file_name: &str,
@@ -420,8 +411,7 @@ fn download_code(
     // So we need to fetch it from archive node.
 
     let code = crate::commands::contract::download_wasm::get_code(
-        contract_kind,
-        target,
+        contract_type,
         network_config,
         block_reference,
     ).map_err(|e| {
@@ -432,7 +422,7 @@ fn download_code(
     tracing::info!(
         parent: &tracing::Span::none(),
         "The code for <{}> was downloaded successfully with hash <{}>",
-        target,
+        contract_type,
         code_hash,
     );
     if code_hash.0 != hash_to_match {
@@ -447,7 +437,7 @@ fn download_code(
         parent: &tracing::Span::none(),
         "The file `{}` with contract code of `{}` was downloaded successfully",
         file_name,
-        target,
+        contract_type,
     );
 
     Ok(())
