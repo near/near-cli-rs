@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use color_eyre::eyre::{Context, ContextCompat};
+use inquire::CustomType;
 use interactive_clap::ToCliArgs;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -211,18 +212,22 @@ fn action_transformation(
             )))
         }
         Action::DeployContract(deploy_contract_action) => {
+            let file_path = CustomType::<String>::new("Enter the name of the file to save the contract:")
+                .with_starting_input("reconstruct-transaction-deploy-code.wasm")
+                .prompt()?;
+
             download_code(
-                &receiver_id,
+                &crate::commands::contract::download_wasm::ContractType::Regular(receiver_id),
                 network_config,
                 block_reference,
-                "reconstruct-transaction-deploy-code.wasm",
+                &file_path,
                 &deploy_contract_action.code
             )?;
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
                 add_action::deploy_contract::CliDeployContractAction {
                     use_file: Some(add_action::deploy_contract::ClapNamedArgContractFileForDeployContractAction::UseFile(
                         add_action::deploy_contract::CliContractFile {
-                            file_path: Some("reconstruct-transaction-deploy-code.wasm".parse()?),
+                            file_path: Some(file_path.parse()?),
                             initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
                                 add_action::deploy_contract::initialize_mode::CliNoInitialize {
                                     next_action: None
@@ -265,8 +270,46 @@ fn action_transformation(
         Action::Delegate(_) => {
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
-        Action::DeployGlobalContract(_) => {
-            Err(color_eyre::eyre::eyre!("Reconstruction of Global Deploy transactions is not supported yet. This feature is being tracked at: https://github.com/near/nearcore/issues/13531"))
+        Action::DeployGlobalContract(action) => {
+            let file_path = CustomType::<String>::new("Enter the name of the file to save the contract:")
+                .with_starting_input("reconstruct-transaction-deploy-code.wasm")
+                .prompt()?;
+
+            let contract_type = match action.deploy_mode {
+                near_primitives::action::GlobalContractDeployMode::AccountId => {
+                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId(receiver_id)
+                }
+                near_primitives::action::GlobalContractDeployMode::CodeHash => {
+                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByContractHash(near_primitives::hash::CryptoHash::hash_bytes(&action.code))
+                }
+            };
+
+            download_code(
+                contract_type,
+                network_config,
+                block_reference,
+                &file_path,
+                &action.code
+            )?;
+
+            let mode = match action.deploy_mode {
+                near_primitives::action::GlobalContractDeployMode::AccountId => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalAccountId(
+                    add_action::deploy_global_contract::CliNextCommand {
+                        next_action: None
+                    }
+                ),
+                near_primitives::action::GlobalContractDeployMode::CodeHash => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalHash(
+                    add_action::deploy_global_contract::CliNextCommand {
+                        next_action: None
+                    }
+                ),
+            };
+            Ok(Some(add_action::CliActionSubcommand::DeployGlobalContract(
+                add_action::deploy_global_contract::CliDeployGlobalContractAction {
+                    file_path: Some(file_path.parse()?),
+                    mode: Some(mode)
+                }
+            )))
         }
         Action::UseGlobalContract(use_global_contract_action) => {
             let mode = match use_global_contract_action.contract_identifier {
@@ -358,7 +401,7 @@ fn get_access_key_permission(
 }
 
 fn download_code(
-    receiver_id: &near_primitives::types::AccountId,
+    contract_type: &crate::commands::contract::download_wasm::ContractType,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
     file_name: &str,
@@ -368,18 +411,18 @@ fn download_code(
     // So we need to fetch it from archive node.
 
     let code = crate::commands::contract::download_wasm::get_code(
-                receiver_id,
-                network_config,
-                block_reference
-            ).map_err(|e| {
-                color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {e}"))
-            })?;
+        contract_type,
+        network_config,
+        block_reference,
+    ).map_err(|e| {
+        color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {e}"))
+    })?;
 
     let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
     tracing::info!(
         parent: &tracing::Span::none(),
-        "The code for the account <{}> was downloaded successfully with hash <{}>",
-        receiver_id,
+        "The code for <{}> was downloaded successfully with hash <{}>",
+        contract_type,
         code_hash,
     );
     if code_hash.0 != hash_to_match {
@@ -394,7 +437,7 @@ fn download_code(
         parent: &tracing::Span::none(),
         "The file `{}` with contract code of `{}` was downloaded successfully",
         file_name,
-        receiver_id,
+        contract_type,
     );
 
     Ok(())
