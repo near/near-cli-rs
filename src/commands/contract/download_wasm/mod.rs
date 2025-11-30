@@ -9,7 +9,10 @@ use crate::common::JsonRpcClientExt;
 #[derive(Debug, Clone)]
 pub enum ContractType {
     Regular(near_primitives::types::AccountId),
-    GlobalContractByAccountId(near_primitives::types::AccountId),
+    GlobalContractByAccountId {
+        account_id: near_primitives::types::AccountId,
+        code_hash: Option<near_primitives::hash::CryptoHash>,
+    },
     GlobalContractByCodeHash(near_primitives::hash::CryptoHash),
 }
 
@@ -19,7 +22,7 @@ impl std::fmt::Display for ContractType {
             ContractType::Regular(account_id) => {
                 write!(f, "regular:{}", account_id)
             }
-            ContractType::GlobalContractByAccountId(account_id) => {
+            ContractType::GlobalContractByAccountId { account_id, .. } => {
                 write!(f, "global-contract-by-account-id:{}", account_id)
             }
             ContractType::GlobalContractByCodeHash(code_hash) => {
@@ -174,6 +177,8 @@ impl From<DownloadRegularContractContext> for ArgsForDownloadContract {
 pub struct DownloadGlobalContractByAccountId {
     #[interactive_clap(skip_default_input_arg)]
     account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(skip_default_input_arg)]
+    code_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(named_arg)]
     save_to_file: DownloadContract,
 }
@@ -187,12 +192,40 @@ impl DownloadGlobalContractByAccountId {
             "What is the account ID of the global contract?",
         )
     }
+
+    pub fn input_code_hash(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter a code hash for the global contract")]
+            Yes,
+            #[strum(to_string = "No, I don't want to enter a code hash for the global contract")]
+            No,
+        }
+
+        let select_choose_input = inquire::Select::new(
+            "Do you want to enter a code hash for a global contract?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            Ok(Some(
+                inquire::Text::new("Enter a code hash for a global contract:")
+                    .prompt()?
+                    .parse()?,
+            ))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[derive(Clone)]
 pub struct DownloadGlobalContractByAccountIdContext {
     global_context: crate::GlobalContext,
     account_id: crate::types::account_id::AccountId,
+    code_hash: Option<crate::types::crypto_hash::CryptoHash>,
 }
 
 impl DownloadGlobalContractByAccountIdContext {
@@ -203,6 +236,7 @@ impl DownloadGlobalContractByAccountIdContext {
         Ok(Self {
             global_context: previous_context,
             account_id: scope.account_id.clone(),
+            code_hash: scope.code_hash,
         })
     }
 }
@@ -213,7 +247,10 @@ impl From<DownloadGlobalContractByAccountIdContext> for ArgsForDownloadContract 
 
         Self {
             config: context.global_context.config,
-            contract_type: ContractType::GlobalContractByAccountId(account_id.clone()),
+            contract_type: ContractType::GlobalContractByAccountId {
+                account_id: account_id.clone(),
+                code_hash: context.code_hash.map(|code_hash| code_hash.into()),
+            },
             interacting_with_account_ids: vec![account_id],
         }
     }
@@ -292,16 +329,22 @@ pub fn get_code(
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
-    let request = match contract_type.clone() {
-        ContractType::Regular(account_id) => {
-            near_primitives::views::QueryRequest::ViewCode { account_id }
-        }
-        ContractType::GlobalContractByAccountId(account_id) => {
-            near_primitives::views::QueryRequest::ViewGlobalContractCodeByAccountId { account_id }
-        }
-        ContractType::GlobalContractByCodeHash(code_hash) => {
-            near_primitives::views::QueryRequest::ViewGlobalContractCode { code_hash }
-        }
+    let (request, hash_to_match) = match contract_type.clone() {
+        ContractType::Regular(account_id) => (
+            near_primitives::views::QueryRequest::ViewCode { account_id },
+            None,
+        ),
+        ContractType::GlobalContractByAccountId {
+            account_id,
+            code_hash,
+        } => (
+            near_primitives::views::QueryRequest::ViewGlobalContractCodeByAccountId { account_id },
+            code_hash,
+        ),
+        ContractType::GlobalContractByCodeHash(code_hash) => (
+            near_primitives::views::QueryRequest::ViewGlobalContractCode { code_hash },
+            Some(code_hash),
+        ),
     };
 
     let block_height = network_config
@@ -360,6 +403,19 @@ pub fn get_code(
             } else {
                 return Err(color_eyre::Report::msg("Error call result".to_string()));
             };
+
+        if let Some(hash_to_match) = hash_to_match {
+            let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&call_access_view.code);
+            if code_hash != hash_to_match {
+                tracing::warn!(
+                parent: &tracing::Span::none(),
+                    "Fetched code hash {} does not match the expected code hash {}. Trying next block height...",
+                    code_hash,
+                    hash_to_match
+                );
+                continue;
+            }
+        }
 
         return Ok(call_access_view.code);
     }

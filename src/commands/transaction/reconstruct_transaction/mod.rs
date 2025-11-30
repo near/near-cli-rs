@@ -221,7 +221,7 @@ fn action_transformation(
                 network_config,
                 block_reference,
                 &file_path,
-                &deploy_contract_action.code
+                &near_primitives::hash::CryptoHash::hash_bytes(&deploy_contract_action.code)
             )?;
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
                 add_action::deploy_contract::CliDeployContractAction {
@@ -275,12 +275,18 @@ fn action_transformation(
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 
+            let code_hash = near_primitives::hash::CryptoHash::try_from(action.code.as_ref()).map_err(|_| {
+                color_eyre::Report::msg("Internal error: Failed to calculate code hash from the deploy global contract action code.".to_string())
+            })?;
             let contract_type = match action.deploy_mode {
                 near_primitives::action::GlobalContractDeployMode::AccountId => {
-                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId(receiver_id)
+                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId {
+                        account_id: receiver_id.clone(),
+                        code_hash: Some(code_hash)
+                    }
                 }
                 near_primitives::action::GlobalContractDeployMode::CodeHash => {
-                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByCodeHash(near_primitives::hash::CryptoHash::hash_bytes(&action.code))
+                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByCodeHash(code_hash)
                 }
             };
 
@@ -289,7 +295,7 @@ fn action_transformation(
                 network_config,
                 block_reference,
                 &file_path,
-                &action.code
+                &code_hash
             )?;
 
             let mode = match action.deploy_mode {
@@ -405,7 +411,7 @@ fn download_code(
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
     file_path: &crate::types::path_buf::PathBuf,
-    hash_to_match: &[u8],
+    hash_to_match: &near_primitives::hash::CryptoHash,
 ) -> color_eyre::eyre::Result<()> {
     // Unfortunately, RPC doesn't return the code for the deployed contract. Only the hash.
     // So we need to fetch it from archive node.
@@ -425,7 +431,7 @@ fn download_code(
         contract_type,
         code_hash,
     );
-    if code_hash.0 != hash_to_match {
+    if &code_hash != hash_to_match {
         return Err(color_eyre::Report::msg("The code hash of the contract deploy action does not match the code that we retrieved from the archive node.".to_string()));
     }
 
