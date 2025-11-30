@@ -212,7 +212,7 @@ fn action_transformation(
             )))
         }
         Action::DeployContract(deploy_contract_action) => {
-            let file_path = CustomType::<String>::new("Enter the name of the file to save the contract:")
+            let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the name of the file to save the contract:")
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 
@@ -227,7 +227,7 @@ fn action_transformation(
                 add_action::deploy_contract::CliDeployContractAction {
                     use_file: Some(add_action::deploy_contract::ClapNamedArgContractFileForDeployContractAction::UseFile(
                         add_action::deploy_contract::CliContractFile {
-                            file_path: Some(file_path.parse()?),
+                            file_path: Some(file_path),
                             initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
                                 add_action::deploy_contract::initialize_mode::CliNoInitialize {
                                     next_action: None
@@ -271,7 +271,7 @@ fn action_transformation(
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
         Action::DeployGlobalContract(action) => {
-            let file_path = CustomType::<String>::new("Enter the name of the file to save the contract:")
+            let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the name of the file to save the contract:")
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 
@@ -306,7 +306,7 @@ fn action_transformation(
             };
             Ok(Some(add_action::CliActionSubcommand::DeployGlobalContract(
                 add_action::deploy_global_contract::CliDeployGlobalContractAction {
-                    file_path: Some(file_path.parse()?),
+                    file_path: Some(file_path),
                     mode: Some(mode)
                 }
             )))
@@ -404,7 +404,7 @@ fn download_code(
     contract_type: &crate::commands::contract::download_wasm::ContractType,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
-    file_name: &str,
+    file_path: &crate::types::path_buf::PathBuf,
     hash_to_match: &[u8],
 ) -> color_eyre::eyre::Result<()> {
     // Unfortunately, RPC doesn't return the code for the deployed contract. Only the hash.
@@ -429,14 +429,14 @@ fn download_code(
         return Err(color_eyre::Report::msg("The code hash of the contract deploy action does not match the code that we retrieved from the archive node.".to_string()));
     }
 
-    std::fs::write(file_name, code).wrap_err(format!(
-        "Failed to write the deploy command code to file: '{file_name}' in the current folder"
+    std::fs::write(file_path, code).wrap_err(format!(
+        "Failed to write the deploy command code to file: '{file_path}' in the current folder"
     ))?;
 
     tracing::info!(
         parent: &tracing::Span::none(),
         "The file `{}` with contract code of `{}` was downloaded successfully",
-        file_name,
+        file_path,
         contract_type,
     );
 
