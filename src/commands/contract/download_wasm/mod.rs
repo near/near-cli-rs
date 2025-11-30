@@ -10,7 +10,7 @@ use crate::common::JsonRpcClientExt;
 pub enum ContractType {
     Regular(near_primitives::types::AccountId),
     GlobalContractByAccountId(near_primitives::types::AccountId),
-    GlobalContractByContractHash(near_primitives::hash::CryptoHash),
+    GlobalContractByCodeHash(near_primitives::hash::CryptoHash),
 }
 
 impl std::fmt::Display for ContractType {
@@ -22,8 +22,8 @@ impl std::fmt::Display for ContractType {
             ContractType::GlobalContractByAccountId(account_id) => {
                 write!(f, "global-contract-by-account-id:{}", account_id)
             }
-            ContractType::GlobalContractByContractHash(contract_hash) => {
-                write!(f, "global-contract-by-hash:{}", contract_hash)
+            ContractType::GlobalContractByCodeHash(code_hash) => {
+                write!(f, "global-contract-by-hash:{}", code_hash)
             }
         }
     }
@@ -46,7 +46,7 @@ pub enum ContractKind {
     #[strum_discriminants(strum(
         message = "Global contract by hash       - Global contract identified by code hash"
     ))]
-    GlobalContractByContractHash(DownloadGlobalContractByContractHash),
+    GlobalContractByCodeHash(DownloadGlobalContractByCodeHash),
 }
 
 #[derive(Clone)]
@@ -221,8 +221,8 @@ impl From<DownloadGlobalContractByAccountIdContext> for ArgsForDownloadContract 
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = DownloadGlobalContractByContractHashContext)]
-pub struct DownloadGlobalContractByContractHash {
+#[interactive_clap(output_context = DownloadGlobalContractByCodeHashContext)]
+pub struct DownloadGlobalContractByCodeHash {
     /// What is the contract hash of the global contract?
     contrach_hash: crate::types::crypto_hash::CryptoHash,
     #[interactive_clap(named_arg)]
@@ -230,30 +230,30 @@ pub struct DownloadGlobalContractByContractHash {
 }
 
 #[derive(Clone)]
-pub struct DownloadGlobalContractByContractHashContext {
+pub struct DownloadGlobalContractByCodeHashContext {
     global_context: crate::GlobalContext,
-    contrach_hash: crate::types::crypto_hash::CryptoHash,
+    code_hash: crate::types::crypto_hash::CryptoHash,
 }
 
-impl DownloadGlobalContractByContractHashContext {
+impl DownloadGlobalContractByCodeHashContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
-        scope: &<DownloadGlobalContractByContractHash as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<DownloadGlobalContractByCodeHash as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context,
-            contrach_hash: scope.contrach_hash,
+            code_hash: scope.contrach_hash,
         })
     }
 }
 
-impl From<DownloadGlobalContractByContractHashContext> for ArgsForDownloadContract {
-    fn from(context: DownloadGlobalContractByContractHashContext) -> Self {
-        let contract_hash: near_primitives::hash::CryptoHash = context.contrach_hash.into();
+impl From<DownloadGlobalContractByCodeHashContext> for ArgsForDownloadContract {
+    fn from(context: DownloadGlobalContractByCodeHashContext) -> Self {
+        let code_hash: near_primitives::hash::CryptoHash = context.code_hash.into();
 
         Self {
             config: context.global_context.config,
-            contract_type: ContractType::GlobalContractByContractHash(contract_hash),
+            contract_type: ContractType::GlobalContractByCodeHash(code_hash),
             interacting_with_account_ids: vec![],
         }
     }
@@ -299,10 +299,8 @@ pub fn get_code(
         ContractType::GlobalContractByAccountId(account_id) => {
             near_primitives::views::QueryRequest::ViewGlobalContractCodeByAccountId { account_id }
         }
-        ContractType::GlobalContractByContractHash(contract_hash) => {
-            near_primitives::views::QueryRequest::ViewGlobalContractCode {
-                code_hash: contract_hash,
-            }
+        ContractType::GlobalContractByCodeHash(code_hash) => {
+            near_primitives::views::QueryRequest::ViewGlobalContractCode { code_hash }
         }
     };
 

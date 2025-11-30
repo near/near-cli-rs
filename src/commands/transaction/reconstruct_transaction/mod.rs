@@ -280,7 +280,7 @@ fn action_transformation(
                     &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId(receiver_id)
                 }
                 near_primitives::action::GlobalContractDeployMode::CodeHash => {
-                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByContractHash(near_primitives::hash::CryptoHash::hash_bytes(&action.code))
+                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByCodeHash(near_primitives::hash::CryptoHash::hash_bytes(&action.code))
                 }
             };
 
