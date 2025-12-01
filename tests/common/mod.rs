@@ -1,8 +1,15 @@
-use near_sandbox::Sandbox;
+use near_sandbox::{Sandbox, SandboxConfig};
 
 pub async fn prepare_tests() -> Result<(Sandbox, tempfile::TempDir), Box<dyn std::error::Error>> {
+    // Configure the sandbox with a custom epoch length
+    let config = SandboxConfig {
+        additional_genesis: Some(serde_json::json!({
+            "epoch_length": 43200,
+        })),
+        ..Default::default()
+    };
     // Start a local sandbox
-    let sandbox = Sandbox::start_sandbox().await?;
+    let sandbox = Sandbox::start_sandbox_with_config(config).await?;
 
     // Create a temporary config directory for this test
     let temp_dir = tempfile::tempdir()?;
