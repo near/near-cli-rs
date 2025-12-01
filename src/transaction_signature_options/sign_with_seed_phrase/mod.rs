@@ -135,7 +135,7 @@ impl SignSeedPhraseContext {
             });
         }
 
-        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+        let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
             unsigned_transaction,
         );
@@ -147,6 +147,11 @@ impl SignSeedPhraseContext {
                 "\nPublic key: {signer_public_key}\nSignature:  {signature}\n"
             ))
         );
+
+        (previous_context.on_after_signing_callback)(
+            &mut signed_transaction,
+            &previous_context.network_config,
+        )?;
 
         Ok(Self {
             network_config: previous_context.network_config,

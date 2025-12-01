@@ -191,7 +191,7 @@ impl SignLedgerContext {
             }
         };
 
-        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+        let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
             unsigned_transaction,
         );
@@ -205,6 +205,11 @@ impl SignLedgerContext {
                 signature
             ))
         );
+
+        (previous_context.on_after_signing_callback)(
+            &mut signed_transaction,
+            &previous_context.network_config,
+        )?;
 
         Ok(Self {
             network_config: previous_context.network_config,

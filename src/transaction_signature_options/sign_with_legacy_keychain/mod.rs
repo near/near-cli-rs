@@ -217,7 +217,7 @@ impl SignLegacyKeychainContext {
             .private_key
             .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
-        let signed_transaction = near_primitives::transaction::SignedTransaction::new(
+        let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
             signature.clone(),
             unsigned_transaction,
         );
@@ -231,6 +231,11 @@ impl SignLegacyKeychainContext {
                 signature
             ))
         );
+
+        (previous_context.on_after_signing_callback)(
+            &mut signed_transaction,
+            &previous_context.network_config,
+        )?;
 
         Ok(Self {
             network_config: previous_context.network_config,

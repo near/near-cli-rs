@@ -41,6 +41,9 @@ pub struct AddNetworkConnection {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     coingecko_url: Option<crate::types::url::Url>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    mpc_contract_account_id: Option<crate::types::account_id::AccountId>,
 }
 
 #[derive(Debug, Clone)]
@@ -89,6 +92,10 @@ impl AddNetworkConnectionContext {
                     .coingecko_url
                     .clone()
                     .map(|coingecko_url| coingecko_url.into()),
+                mpc_contract_account_id: scope
+                    .mpc_contract_account_id
+                    .clone()
+                    .map(|mpc_contract_account_id| mpc_contract_account_id.into()),
             },
         );
         eprintln!();
@@ -244,6 +251,31 @@ impl AddNetworkConnection {
                     .default_input("https://api.coingecko.com/")
                     .interact()?;
             Ok(Some(coingecko_api))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_mpc_contract_account_id(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        eprintln!();
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter the MPC contract account ID")]
+            Yes,
+            #[strum(to_string = "No, I don't want to enter the MPC contract account ID")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the MPC contract account ID?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let mpc_contract_account_id: crate::types::account_id::AccountId =
+                CustomType::new("What is the MPC contract account ID?").prompt()?;
+            Ok(Some(mpc_contract_account_id))
         } else {
             Ok(None)
         }

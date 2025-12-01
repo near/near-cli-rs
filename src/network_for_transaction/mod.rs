@@ -62,6 +62,9 @@ impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionCont
             network_config: item.network_config,
             prepopulated_transaction: item.prepopulated_transaction,
             on_before_signing_callback: item.on_before_signing_callback,
+            on_after_signing_callback: std::sync::Arc::new(
+                |_signed_transaction, _network_config| Ok(()),
+            ),
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
         }
