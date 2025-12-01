@@ -23,7 +23,9 @@ impl Default for Config {
             "mainnet".to_string(),
             NetworkConfig {
                 network_name: "mainnet".to_string(),
-                rpc_url: "https://archival-rpc.mainnet.near.org/".parse().unwrap(),
+                rpc_url: "https://archival-rpc.mainnet.fastnear.com/"
+                    .parse()
+                    .unwrap(),
                 wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
                 explorer_transaction_url: "https://explorer.near.org/transactions/"
                     .parse()
@@ -43,7 +45,7 @@ impl Default for Config {
             "mainnet-fastnear".to_string(),
             NetworkConfig {
                 network_name: "mainnet".to_string(),
-                rpc_url: "https://free.rpc.fastnear.com/".parse().unwrap(),
+                rpc_url: "https://rpc.mainnet.fastnear.com/".parse().unwrap(),
                 rpc_api_key: None,
                 wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
                 explorer_transaction_url: "https://explorer.near.org/transactions/"
@@ -84,7 +86,9 @@ impl Default for Config {
             "testnet".to_string(),
             NetworkConfig {
                 network_name: "testnet".to_string(),
-                rpc_url: "https://archival-rpc.testnet.near.org/".parse().unwrap(),
+                rpc_url: "https://archival-rpc.testnet.fastnear.com/"
+                    .parse()
+                    .unwrap(),
                 wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
                 explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
                     .parse()
