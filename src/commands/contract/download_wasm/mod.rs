@@ -260,8 +260,8 @@ impl From<DownloadGlobalContractByAccountIdContext> for ArgsForDownloadContract 
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = DownloadGlobalContractByCodeHashContext)]
 pub struct DownloadGlobalContractByCodeHash {
-    /// What is the contract hash of the global contract?
-    contrach_hash: crate::types::crypto_hash::CryptoHash,
+    /// What is the code hash of the global contract?
+    code_hash: crate::types::crypto_hash::CryptoHash,
     #[interactive_clap(named_arg)]
     save_to_file: DownloadContract,
 }
@@ -279,7 +279,7 @@ impl DownloadGlobalContractByCodeHashContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context,
-            code_hash: scope.contrach_hash,
+            code_hash: scope.code_hash,
         })
     }
 }
