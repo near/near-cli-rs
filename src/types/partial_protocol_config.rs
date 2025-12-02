@@ -13,7 +13,7 @@ pub struct PartialRuntimeConfigView {
     /// Amount of yN per byte required to have on the account.  See
     /// <https://nomicon.io/Economics/Economic#state-stake> for details.
     #[serde(with = "dec_format")]
-    pub storage_amount_per_byte: near_primitives::types::Balance,
+    pub storage_amount_per_byte: u128,
 }
 
 pub async fn get_partial_protocol_config(

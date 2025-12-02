@@ -66,8 +66,8 @@ impl SignerAccountIdContext {
                                 args: serde_json::to_vec(&serde_json::json!({
                                     "amount": amount.clone().as_yoctonear().to_string()
                                 }))?,
-                                gas: crate::common::NearGas::from_tgas(50).as_gas(),
-                                deposit: near_token::NearToken::from_yoctonear(1).as_yoctonear(),
+                                gas: near_primitives::gas::Gas::from_teragas(50),
+                                deposit: near_token::NearToken::from_yoctonear(1),
                             }),
                         )],
                     })

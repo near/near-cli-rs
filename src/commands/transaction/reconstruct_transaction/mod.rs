@@ -205,7 +205,7 @@ fn action_transformation(
         Action::Transfer(transfer_action) => {
             Ok(Some(add_action::CliActionSubcommand::Transfer(
                 add_action::transfer::CliTransferAction {
-                    amount_in_near: Some(crate::types::near_token::NearToken::from_yoctonear(transfer_action.deposit)),
+                    amount_in_near: Some(transfer_action.deposit.into()),
                     next_action: None
                 }
             )))
@@ -241,10 +241,10 @@ fn action_transformation(
                     function_args: Some(String::from_utf8(function_call_action.args)?),
                     prepaid_gas: Some(add_action::call_function::ClapNamedArgPrepaidGasForFunctionCallAction::PrepaidGas(
                         add_action::call_function::CliPrepaidGas {
-                            gas: Some(near_gas::NearGas::from_gas(function_call_action.gas)),
+                            gas: Some(near_gas::NearGas::from_gas(function_call_action.gas.as_gas())),
                             attached_deposit: Some(add_action::call_function::ClapNamedArgDepositForPrepaidGas::AttachedDeposit(
                                 add_action::call_function::CliDeposit {
-                                    deposit: Some(crate::types::near_token::NearToken::from_yoctonear(function_call_action.deposit)),
+                                    deposit: Some(function_call_action.deposit.into()),
                                     next_action: None
                                 }
                             ))
@@ -256,7 +256,7 @@ fn action_transformation(
         Action::Stake(stake_action) => {
                 Ok(Some(add_action::CliActionSubcommand::Stake(
                 add_action::stake::CliStakeAction {
-                    stake_amount: Some(crate::types::near_token::NearToken::from_yoctonear(stake_action.stake)),
+                    stake_amount: Some(stake_action.stake.into()),
                     public_key: Some(stake_action.public_key.into()),
                     next_action: None
                 }
@@ -298,6 +298,10 @@ fn action_transformation(
                 }
             )))
         }
+        Action::DeterministicStateInit(_deterministic_state_action) => {
+            // TODO: impl
+            Err(color_eyre::eyre::eyre!("Deterministic state init is not yet implemented"))
+        }
     }
 }
 
@@ -335,7 +339,7 @@ fn get_access_key_permission(
                         match allowance {
                             Some(yoctonear) => {
                                 Some(crate::types::near_allowance::NearAllowance::from_yoctonear(
-                                    yoctonear,
+                                    yoctonear.as_yoctonear(),
                                 ))
                             }
                             None => Some(crate::types::near_allowance::NearAllowance::from_str(

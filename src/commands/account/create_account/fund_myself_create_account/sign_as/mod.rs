@@ -65,7 +65,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                 ),
                                 near_primitives::transaction::Action::Transfer(
                                     near_primitives::transaction::TransferAction {
-                                        deposit: item.account_properties.initial_balance.as_yoctonear(),
+                                        deposit: item.account_properties.initial_balance.into(),
                                     },
                                 ),
                                 near_primitives::transaction::Action::AddKey(
@@ -96,11 +96,10 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                             near_primitives::transaction::FunctionCallAction {
                                                 method_name: "create_account".to_string(),
                                                 args,
-                                                gas: crate::common::NearGas::from_tgas(30).as_gas(),
+                                                gas: near_primitives::gas::Gas::from_teragas(30),
                                                 deposit: item
                                                     .account_properties
-                                                    .initial_balance
-                                                    .as_yoctonear(),
+                                                    .initial_balance.into(),
                                             },
                                         ),
                                     )],

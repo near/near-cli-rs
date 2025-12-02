@@ -94,8 +94,8 @@ pub fn get_prepopulated_transaction(
         near_primitives::transaction::FunctionCallAction {
             method_name: "ft_transfer".to_string(),
             args: args_ft_transfer,
-            gas: gas.as_gas(),
-            deposit: deposit.as_yoctonear(),
+            gas: near_primitives::gas::Gas::from_gas(gas.as_gas()),
+            deposit: deposit.into(),
         },
     ));
 
@@ -121,8 +121,8 @@ pub fn get_prepopulated_transaction(
             near_primitives::transaction::FunctionCallAction {
                 method_name: "storage_deposit".to_string(),
                 args,
-                gas: gas.as_gas(),
-                deposit: near_token::NearToken::from_millinear(100).as_yoctonear(),
+                gas: near_primitives::gas::Gas::from_gas(gas.as_gas()),
+                deposit: near_token::NearToken::from_millinear(100),
             },
         ));
         return Ok(crate::commands::PrepopulatedTransaction {

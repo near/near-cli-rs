@@ -71,9 +71,8 @@ impl From<SignerContext> for crate::commands::ActionContext {
                         &account_id,
                         "profile",
                         &receiver_id,
-                        near_token::NearToken::from_yoctonear(action.deposit),
-                    )?
-                    .as_yoctonear();
+                        action.deposit,
+                    )?;
                     Ok(())
                 } else {
                     color_eyre::eyre::bail!("Unexpected action to change components",);
@@ -197,8 +196,8 @@ fn get_prepopulated_transaction(
         Box::new(near_primitives::transaction::FunctionCallAction {
             method_name: "set".to_string(),
             args,
-            gas: crate::common::NearGas::from_tgas(300).as_gas(),
-            deposit: deposit.as_yoctonear(),
+            gas: near_primitives::gas::Gas::from_teragas(300),
+            deposit,
         }),
     )];
 

@@ -160,8 +160,8 @@ impl DepositContext {
                                 near_primitives::transaction::FunctionCallAction {
                                     method_name: previous_context.function_name.clone(),
                                     args: previous_context.function_args.clone(),
-                                    gas: previous_context.gas.as_gas(),
-                                    deposit: deposit.as_yoctonear(),
+                                    gas: near_primitives::gas::Gas::from_gas(previous_context.gas.as_gas()),
+                                    deposit: deposit.into(),
                                 },
                             )),
                         ],
