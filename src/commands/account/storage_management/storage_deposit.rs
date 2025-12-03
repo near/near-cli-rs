@@ -124,7 +124,7 @@ impl SignerAccountIdContext {
                                     "account_id": &receiver_account_id
                                 }))?,
                                 gas:  near_primitives::gas::Gas::from_teragas(50),
-                                deposit: deposit.into(),
+                                deposit: deposit.0,
                             }),
                         )],
                     })

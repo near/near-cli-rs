@@ -973,7 +973,7 @@ checksum = "bda628edc44c4bb645fbe0f758797143e4e07926f7ebf4e9bdfbd3d2ce621df3"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.105",
+ "syn 2.0.109",
  "unicode-xid",
 ]
 
@@ -2668,7 +2668,7 @@ dependencies = [
  "near-gas",
  "near-schema-checker-lib",
  "near-token",
- "num-rational 0.3.2",
+ "num-rational",
  "serde",
  "serde_repr",
  "serde_with",
@@ -2685,7 +2685,7 @@ dependencies = [
  "binary-install",
  "fs4",
  "json-patch",
- "near-account-id 1.1.3",
+ "near-account-id 1.1.4",
  "near-token",
  "reqwest",
  "serde",

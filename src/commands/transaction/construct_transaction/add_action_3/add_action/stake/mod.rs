@@ -20,7 +20,7 @@ impl StakeActionContext {
     ) -> color_eyre::eyre::Result<Self> {
         let action = near_primitives::transaction::Action::Stake(Box::new(
             near_primitives::transaction::StakeAction {
-                stake: scope.stake_amount.into(),
+                stake: scope.stake_amount.0,
                 public_key: scope.public_key.clone().into(),
             },
         ));

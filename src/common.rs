@@ -793,9 +793,7 @@ pub fn print_unsigned_transaction(
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "",
-                    "stake:",
-                    crate::types::near_token::NearToken(stake_action.stake)
+                    "", "stake:", stake_action.stake
                 ));
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
@@ -933,7 +931,7 @@ fn print_value_successful_transaction(
                 info_str.push_str(&format!(
                     "\n<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
-                    crate::types::near_token::NearToken(deposit),
+                    deposit,
                     transaction_info.transaction.receiver_id,
                 ));
             }
@@ -1134,7 +1132,7 @@ pub fn convert_action_error_to_cli_result(
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                crate::types::near_token::NearToken(*amount)
+                amount
             ))
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -1152,8 +1150,8 @@ pub fn convert_action_error_to_cli_result(
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                crate::types::near_token::NearToken(*balance),
-                crate::types::near_token::NearToken(*stake)
+                balance,
+                stake
             ))
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -1163,8 +1161,8 @@ pub fn convert_action_error_to_cli_result(
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                crate::types::near_token::NearToken(*stake),
-                crate::types::near_token::NearToken(*minimum_stake)
+                stake,
+                minimum_stake
             ))
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -1245,8 +1243,8 @@ pub fn convert_invalid_tx_error_to_cli_result(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        crate::types::near_token::NearToken(*allowance),
-                        crate::types::near_token::NearToken(*cost),
+                        allowance,
+                        cost,
                     ))
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -1275,14 +1273,14 @@ pub fn convert_invalid_tx_error_to_cli_result(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                crate::types::near_token::NearToken(*balance),
-                crate::types::near_token::NearToken(*cost)
+                balance,
+                cost
             ))
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                crate::types::near_token::NearToken(*amount)
+                amount
             ))
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
@@ -1544,7 +1542,7 @@ pub fn print_transaction_status(
 
     result_output.push_str(&format!(
         "\nTransaction fee: {}{}",
-        crate::types::near_token::NearToken::from(total_tokens_burnt),
+        total_tokens_burnt,
         match near_usd_exchange_rate {
             Some(Ok(exchange_rate)) => calculate_usd_amount(total_tokens_burnt.as_yoctonear(), exchange_rate).map_or_else(
                 || format!(" (USD equivalent is too big to be displayed, using ${exchange_rate:.2} USD/NEAR exchange rate)"),
@@ -2320,7 +2318,7 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                 method_names,
             } => {
                 let allowance_message = match allowance {
-                    Some(amount) => format!("with an allowance of {}", *amount),
+                    Some(allowance) => format!("with an allowance of {}", *allowance),
                     None => "with no limit".to_string(),
                 };
                 if method_names.is_empty() {

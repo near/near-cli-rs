@@ -95,7 +95,7 @@ pub fn get_prepopulated_transaction(
             method_name: "ft_transfer".to_string(),
             args: args_ft_transfer,
             gas: near_primitives::gas::Gas::from_gas(gas.as_gas()),
-            deposit: deposit.into(),
+            deposit: deposit.0,
         },
     ));
 

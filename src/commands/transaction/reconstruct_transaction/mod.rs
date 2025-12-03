@@ -206,7 +206,7 @@ fn action_transformation(
         Action::Transfer(transfer_action) => {
             Ok(Some(add_action::CliActionSubcommand::Transfer(
                 add_action::transfer::CliTransferAction {
-                    amount_in_near: Some(transfer_action.deposit.into()),
+                    amount_in_near: Some(crate::types::near_token::NearToken(transfer_action.deposit)),
                     next_action: None
                 }
             )))
@@ -249,7 +249,7 @@ fn action_transformation(
                             gas: Some(near_gas::NearGas::from_gas(function_call_action.gas.as_gas())),
                             attached_deposit: Some(add_action::call_function::ClapNamedArgDepositForPrepaidGas::AttachedDeposit(
                                 add_action::call_function::CliDeposit {
-                                    deposit: Some(function_call_action.deposit.into()),
+                                    deposit: Some(crate::types::near_token::NearToken(function_call_action.deposit)),
                                     next_action: None
                                 }
                             ))
@@ -261,7 +261,7 @@ fn action_transformation(
         Action::Stake(stake_action) => {
                 Ok(Some(add_action::CliActionSubcommand::Stake(
                 add_action::stake::CliStakeAction {
-                    stake_amount: Some(stake_action.stake.into()),
+                    stake_amount: Some(crate::types::near_token::NearToken(stake_action.stake)),
                     public_key: Some(stake_action.public_key.into()),
                     next_action: None
                 }
@@ -386,9 +386,9 @@ fn get_access_key_permission(
                 add_key::access_key_type::CliFunctionCallType {
                     allowance: {
                         match allowance {
-                            Some(yoctonear) => {
+                            Some(allowance) => {
                                 Some(crate::types::near_allowance::NearAllowance::from_yoctonear(
-                                    yoctonear.as_yoctonear(),
+                                    allowance.as_yoctonear(),
                                 ))
                             }
                             None => Some(crate::types::near_allowance::NearAllowance::from_str(
