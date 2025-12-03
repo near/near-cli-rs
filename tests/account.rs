@@ -58,7 +58,7 @@ fn normalize_output(output: &str) -> String {
     let normalized = block_regex.replace_all(&normalized, "At block #[BLOCK_NUM]");
 
     // Replace block hashes (e.g., "(Gqo3Sym99tdtKm9Ha2aVFUvPPcqNVX8qfQ3dvpUk9B51)" -> "([BLOCK_HASH])")
-    let hash_regex = Regex::new(r"\([A-Za-z0-9]{44}\)").unwrap();
+    let hash_regex = Regex::new(r"\([A-Za-z0-9]{43,44}\)").unwrap();
     let normalized = hash_regex.replace_all(&normalized, "([BLOCK_HASH])");
 
     normalized.to_string()
