@@ -776,13 +776,17 @@ pub fn print_unsigned_transaction(
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "", "deposit:", function_call_action.deposit
+                    "",
+                    "deposit:",
+                    function_call_action.deposit.exact_amount_display()
                 ));
             }
             near_primitives::transaction::Action::Transfer(transfer_action) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
-                    "--", "transfer deposit:", transfer_action.deposit
+                    "--",
+                    "transfer deposit:",
+                    transfer_action.deposit.exact_amount_display()
                 ));
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
@@ -793,7 +797,9 @@ pub fn print_unsigned_transaction(
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "", "stake:", stake_action.stake
+                    "",
+                    "stake:",
+                    stake_action.stake.exact_amount_display()
                 ));
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
@@ -931,7 +937,7 @@ fn print_value_successful_transaction(
                 info_str.push_str(&format!(
                     "\n<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
-                    deposit,
+                    deposit.exact_amount_display(),
                     transaction_info.transaction.receiver_id,
                 ));
             }
@@ -947,7 +953,8 @@ fn print_value_successful_transaction(
                 } else {
                     info_str.push_str(&format!(
                         "\nValidator <{}> has successfully staked {}.",
-                        transaction_info.transaction.signer_id, stake,
+                        transaction_info.transaction.signer_id,
+                        stake.exact_amount_display(),
                     ));
                 }
             }
@@ -1132,7 +1139,7 @@ pub fn convert_action_error_to_cli_result(
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                amount
+                amount.exact_amount_display()
             ))
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -1150,8 +1157,8 @@ pub fn convert_action_error_to_cli_result(
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                balance,
-                stake
+                balance.exact_amount_display(),
+                stake.exact_amount_display()
             ))
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -1161,8 +1168,8 @@ pub fn convert_action_error_to_cli_result(
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                stake,
-                minimum_stake
+                stake.exact_amount_display(),
+                minimum_stake.exact_amount_display()
             ))
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -1243,8 +1250,8 @@ pub fn convert_invalid_tx_error_to_cli_result(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        allowance,
-                        cost,
+                        allowance.exact_amount_display(),
+                        cost.exact_amount_display(),
                     ))
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -1273,14 +1280,14 @@ pub fn convert_invalid_tx_error_to_cli_result(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                balance,
-                cost
+                balance.exact_amount_display(),
+                cost.exact_amount_display()
             ))
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                amount
+                amount.exact_amount_display()
             ))
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
@@ -1542,7 +1549,7 @@ pub fn print_transaction_status(
 
     result_output.push_str(&format!(
         "\nTransaction fee: {}{}",
-        total_tokens_burnt,
+        total_tokens_burnt.exact_amount_display(),
         match near_usd_exchange_rate {
             Some(Ok(exchange_rate)) => calculate_usd_amount(total_tokens_burnt.as_yoctonear(), exchange_rate).map_or_else(
                 || format!(" (USD equivalent is too big to be displayed, using ${exchange_rate:.2} USD/NEAR exchange rate)"),
@@ -2087,11 +2094,11 @@ pub fn display_account_info(
 
     table.add_row(prettytable::row![
         Fg->"Native account balance",
-        Fy->account_view.amount
+        Fy->account_view.amount.exact_amount_display()
     ]);
     table.add_row(prettytable::row![
         Fg->"Validator stake",
-        Fy->account_view.locked
+        Fy->account_view.locked.exact_amount_display()
     ]);
 
     match delegated_stake {
@@ -2099,7 +2106,7 @@ pub fn display_account_info(
             for (validator_id, stake) in delegated_stake {
                 table.add_row(prettytable::row![
                     Fg->format!("Delegated stake with <{validator_id}>"),
-                    Fy->stake
+                    Fy->stake.exact_amount_display()
                 ]);
             }
         }
@@ -2318,7 +2325,9 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                 method_names,
             } => {
                 let allowance_message = match allowance {
-                    Some(allowance) => format!("with an allowance of {}", *allowance),
+                    Some(allowance) => {
+                        format!("with an allowance of {}", allowance.exact_amount_display())
+                    }
                     None => "with no limit".to_string(),
                 };
                 if method_names.is_empty() {
