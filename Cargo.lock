@@ -1906,7 +1906,7 @@ dependencies = [
 [[package]]
 name = "inquire"
 version = "0.9.1"
-source = "git+https://github.com/FroVolod/inquire.git?rev=640c4ddcab7bb05f32c9f738413e74899454d67f#640c4ddcab7bb05f32c9f738413e74899454d67f"
+source = "git+https://github.com/FroVolod/inquire.git?rev=27ade4e#27ade4e24e8ae3467f9da11fc3dbc2d4d55af3d1"
 dependencies = [
  "bitflags",
  "crossterm",

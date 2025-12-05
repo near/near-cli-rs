@@ -8,7 +8,6 @@ use clap::Parser;
 #[cfg(feature = "self-update")]
 use color_eyre::eyre::WrapErr;
 use color_eyre::owo_colors::OwoColorize;
-use inquire::ui::{Attributes, Color, RenderConfig, StyleSheet, Styled};
 use interactive_clap::ToCliArgs;
 
 pub use near_cli_rs::commands;
@@ -73,7 +72,7 @@ impl From<CmdContext> for crate::GlobalContext {
 }
 
 fn main() -> crate::common::CliResult {
-    inquire::set_global_render_config(get_render_config());
+    inquire::set_global_render_config(near_cli_rs::get_global_render_config());
 
     let config = crate::config::Config::get_config_toml()?;
 
@@ -236,31 +235,4 @@ fn main() -> crate::common::CliResult {
     };
 
     cli_cmd.map(|_| ())
-}
-
-fn get_render_config() -> RenderConfig<'static> {
-    let mut render_config = RenderConfig::default_colored();
-    render_config.prompt_prefix = Styled::new("☐").with_fg(Color::LightYellow);
-    render_config.answered_prompt_prefix = Styled::new("▪").with_fg(Color::DarkGreen);
-    render_config.highlighted_option_prefix = Styled::new("➠").with_fg(Color::LightYellow);
-    render_config.selected_checkbox = Styled::new("☑").with_fg(Color::LightGreen);
-    render_config.scroll_up_prefix = Styled::new("⇞");
-    render_config.scroll_down_prefix = Styled::new("⇟");
-    render_config.unselected_checkbox = Styled::new("☐");
-
-    render_config.error_message = render_config
-        .error_message
-        .with_prefix(Styled::new("❌").with_fg(Color::LightRed));
-
-    render_config.text_input = StyleSheet::new()
-        .with_fg(Color::LightYellow)
-        .with_attr(Attributes::ITALIC);
-
-    render_config.answer = StyleSheet::new()
-        .with_attr(Attributes::ITALIC)
-        .with_fg(Color::DarkGreen);
-
-    render_config.help_message = StyleSheet::new().with_fg(Color::DarkYellow);
-
-    render_config
 }
