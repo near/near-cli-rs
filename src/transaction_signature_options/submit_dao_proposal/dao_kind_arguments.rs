@@ -93,8 +93,8 @@ impl TryFrom<&crate::commands::PrepopulatedTransaction> for ProposalKind {
                     }))
                 }
             }
-            action => Err(eyre!(
-                "Passed {action:?} type is not supported for DAO proposal"
+            _action => Err(eyre!(
+                "Passed action type is not supported for DAO proposal",
             )),
         }
     }
