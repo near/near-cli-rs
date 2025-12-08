@@ -1,7 +1,7 @@
 #![allow(clippy::arc_with_non_send_sync)]
 pub use common::CliResult;
 
-use inquire::ui::{Attributes, Color, RenderConfig, StyleSheet, Styled};
+use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
 
 pub mod commands;
 pub mod common;
