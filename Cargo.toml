@@ -24,7 +24,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.0.18", features = ["derive"] }
-inquire = {git = "https://github.com/FroVolod/inquire.git", rev = "27ade4e"}
+inquire = {git = "https://github.com/FroVolod/inquire.git"}
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 smart-default = "0.7.1"
