@@ -138,7 +138,7 @@ impl PublicKeyList {
                 .iter()
                 .map(|list_option| list_option.value.to_string())
                 .collect::<Vec<_>>();
-            format!("\n{}", public_key_list.join("\n"))
+            format!("{}", public_key_list.join("\n"))
         };
 
         let selected_public_keys = MultiSelect::new(
@@ -229,5 +229,7 @@ fn get_multi_select_render_config() -> RenderConfig<'static> {
     let mut render_config = crate::get_global_render_config();
     render_config.highlighted_option_prefix = Styled::new(">").with_fg(Color::DarkGreen);
     render_config.unhighlighted_option_prefix = Styled::new(" ").with_fg(Color::DarkGrey);
+    render_config.scroll_up_prefix = Styled::new("↑").with_fg(Color::DarkGrey);
+    render_config.scroll_down_prefix = Styled::new("↓").with_fg(Color::DarkGrey);
     render_config
 }
