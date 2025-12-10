@@ -1904,9 +1904,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "inquire"
-version = "0.9.1"
-source = "git+https://github.com/FroVolod/inquire.git#52fb8070632463e3c201767344bdd0fb8dd286f7"
+name = "inquire-clack"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a10cedfa14f14aaae2a68f33285baafb1b47a133abcc9ebe8471479e64b6f73"
 dependencies = [
  "bitflags",
  "crossterm",
@@ -2415,7 +2416,7 @@ dependencies = [
  "git2",
  "hex",
  "indenter",
- "inquire",
+ "inquire-clack",
  "insta",
  "interactive-clap",
  "interactive-clap-derive",
