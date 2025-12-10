@@ -226,9 +226,7 @@ pub async fn get_account_transfer_allowance(
         account_id,
         account_liquid_balance: account_view.amount,
         account_locked_balance: account_view.locked,
-        storage_stake: near_token::NearToken::from_yoctonear(
-            u128::from(account_view.storage_usage) * storage_amount_per_byte,
-        ),
+        storage_stake: storage_amount_per_byte.saturating_mul(account_view.storage_usage.into()),
         // pessimistic_transaction_fee = 10^21 - this value is set temporarily
         // In the future, its value will be calculated by the function: fn tx_cost(...)
         // https://github.com/near/nearcore/blob/8a377fda0b4ce319385c463f1ae46e4b0b29dcd9/runtime/runtime/src/config.rs#L178-L232
@@ -880,7 +878,7 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "deposit:", deterministic_init_action.deposit
                 ));
-                let state_init = match deterministic_init_action.state_init.clone() {
+                let state_init = match &deterministic_init_action.state_init {
                     near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(deterministic_account_state_init_v1) => {
                         let mut ret = "V1".to_string();
                         ret.push_str(&format!("\n{:>31} {:<13} {:?}", "", "data", deterministic_account_state_init_v1.data));
@@ -1436,7 +1434,7 @@ pub fn print_transaction_status(
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
 
-    for receipt in transaction_info.receipts_outcome.iter() {
+    for receipt in &transaction_info.receipts_outcome {
         total_gas_burnt = total_gas_burnt
             .checked_add(receipt.outcome.gas_burnt)
             .context("overflow while adding transaction status total gas")?;

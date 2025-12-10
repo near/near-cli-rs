@@ -36,7 +36,7 @@ impl DepositAndStakeContext {
                                 method_name: "deposit_and_stake".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({}))?,
                                 gas: near_primitives::gas::Gas::from_teragas(50),
-                                deposit: amount.0,
+                                deposit: amount.into(),
                             }),
                         )],
                     })

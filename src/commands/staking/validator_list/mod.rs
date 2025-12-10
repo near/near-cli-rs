@@ -57,7 +57,7 @@ fn display_validators_info(network_config: &crate::config::NetworkConfig) -> cra
             validator.validator_id,
             fee,
             delegators,
-            validator.stake.exact_amount_display(),
+            validator.stake,
         ]);
     }
     table.set_format(*prettytable::format::consts::FORMAT_NO_LINESEP_WITH_TITLE);

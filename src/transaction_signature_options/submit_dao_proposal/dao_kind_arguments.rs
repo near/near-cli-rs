@@ -55,7 +55,7 @@ impl TryFrom<&crate::commands::PrepopulatedTransaction> for ProposalKind {
                     Ok(ProposalKind::Transfer(TransferArgs {
                         token_id: String::new(),
                         receiver_id: transaction.receiver_id.clone(),
-                        amount: crate::types::near_token::NearToken(transfer_action.deposit),
+                        amount: transfer_action.deposit.into(),
                         msg: None,
                     }))
                 }

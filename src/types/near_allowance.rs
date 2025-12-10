@@ -37,14 +37,16 @@ impl std::str::FromStr for NearAllowance {
 }
 
 impl NearAllowance {
-    pub fn optional_near_token(&self) -> Option<crate::types::near_token::NearToken> {
-        self.0
+    pub fn unlimited() -> Self {
+        Self(None)
     }
 
-    pub fn from_yoctonear(value: u128) -> Self {
-        Self(Some(crate::types::near_token::NearToken::from_yoctonear(
-            value,
-        )))
+    pub fn from_near(value: crate::types::near_token::NearToken) -> Self {
+        Self(Some(value))
+    }
+
+    pub fn optional_near_token(&self) -> Option<crate::types::near_token::NearToken> {
+        self.0
     }
 }
 
@@ -92,13 +94,12 @@ mod tests {
                 .unwrap()
                 .optional_near_token(),
             None
-        )
+        );
+        assert_eq!(NearAllowance::unlimited().optional_near_token(), None);
     }
     #[test]
-    fn near_allowance_from_yoctonear() {
-        assert_eq!(
-            NearAllowance::from_yoctonear(20_000_000_000_000_000_000_000).0,
-            crate::types::near_token::NearToken::from_str("0.02 NEAR").ok()
-        )
+    fn near_allowance_from_near() {
+        let amount = crate::types::near_token::NearToken::from_str("0.02 NEAR").unwrap();
+        assert_eq!(NearAllowance::from_near(amount).0, Some(amount));
     }
 }

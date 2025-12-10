@@ -120,7 +120,7 @@ git2 = { version = "0.19", optional = true }
 tempfile = { version = "3.10.1", optional = true }
 
 [dev-dependencies]
-near-sandbox = "0.2"
+near-sandbox = "0.3"
 tokio-test = "0.4"
 tempfile = "3.10.1"
 insta = "1.40"

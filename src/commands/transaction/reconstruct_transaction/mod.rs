@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use color_eyre::eyre::{Context, ContextCompat};
 use inquire::CustomType;
 use interactive_clap::ToCliArgs;
@@ -206,7 +204,7 @@ fn action_transformation(
         Action::Transfer(transfer_action) => {
             Ok(Some(add_action::CliActionSubcommand::Transfer(
                 add_action::transfer::CliTransferAction {
-                    amount_in_near: Some(crate::types::near_token::NearToken(transfer_action.deposit)),
+                    amount_in_near: Some(transfer_action.deposit.into()),
                     next_action: None
                 }
             )))
@@ -249,7 +247,7 @@ fn action_transformation(
                             gas: Some(near_gas::NearGas::from_gas(function_call_action.gas.as_gas())),
                             attached_deposit: Some(add_action::call_function::ClapNamedArgDepositForPrepaidGas::AttachedDeposit(
                                 add_action::call_function::CliDeposit {
-                                    deposit: Some(crate::types::near_token::NearToken(function_call_action.deposit)),
+                                    deposit: Some(function_call_action.deposit.into()),
                                     next_action: None
                                 }
                             ))
@@ -261,7 +259,7 @@ fn action_transformation(
         Action::Stake(stake_action) => {
                 Ok(Some(add_action::CliActionSubcommand::Stake(
                 add_action::stake::CliStakeAction {
-                    stake_amount: Some(crate::types::near_token::NearToken(stake_action.stake)),
+                    stake_amount: Some(stake_action.stake.into()),
                     public_key: Some(stake_action.public_key.into()),
                     next_action: None
                 }
@@ -387,13 +385,11 @@ fn get_access_key_permission(
                     allowance: {
                         match allowance {
                             Some(allowance) => {
-                                Some(crate::types::near_allowance::NearAllowance::from_yoctonear(
-                                    allowance.as_yoctonear(),
+                                Some(crate::types::near_allowance::NearAllowance::from_near(
+                                    allowance.into(),
                                 ))
                             }
-                            None => Some(crate::types::near_allowance::NearAllowance::from_str(
-                                "unlimited",
-                            )?),
+                            None => Some(crate::types::near_allowance::NearAllowance::unlimited()),
                         }
                     },
                     contract_account_id: Some(receiver_id.parse()?),

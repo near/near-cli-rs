@@ -158,7 +158,7 @@ impl DepositContext {
                 method_name: previous_context.function_name,
                 args: previous_context.function_args,
                 gas: near_primitives::gas::Gas::from_gas(previous_context.gas.as_gas()),
-                deposit: scope.deposit.0,
+                deposit: scope.deposit.into(),
             },
         ));
         let mut actions = previous_context.actions;

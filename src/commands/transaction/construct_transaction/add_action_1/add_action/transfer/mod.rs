@@ -18,7 +18,7 @@ impl TransferActionContext {
     ) -> color_eyre::eyre::Result<Self> {
         let action = near_primitives::transaction::Action::Transfer(
             near_primitives::transaction::TransferAction {
-                deposit: scope.amount_in_near.0,
+                deposit: scope.amount_in_near.into(),
             },
         );
         let mut actions = previous_context.actions;

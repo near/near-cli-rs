@@ -1,5 +1,4 @@
 use near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigError;
-use near_primitives::serialize::dec_format;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct PartialProtocolConfigView {
@@ -12,8 +11,7 @@ impl near_jsonrpc_client::methods::RpcHandlerResponse for PartialProtocolConfigV
 pub struct PartialRuntimeConfigView {
     /// Amount of yN per byte required to have on the account.  See
     /// <https://nomicon.io/Economics/Economic#state-stake> for details.
-    #[serde(with = "dec_format")]
-    pub storage_amount_per_byte: u128,
+    pub storage_amount_per_byte: near_token::NearToken,
 }
 
 pub async fn get_partial_protocol_config(

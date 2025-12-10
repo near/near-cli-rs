@@ -266,7 +266,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                 method_name: item.function_name.clone(),
                                 args: item.function_args.clone(),
                                 gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),
-                                deposit: item.deposit.0,
+                                deposit: item.deposit.into(),
                             }),
                         )],
                     })
