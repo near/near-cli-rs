@@ -131,7 +131,6 @@ impl NewAccount {
     fn input_initial_balance(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        eprintln!();
         Ok(Some(
             CustomType::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
                 .with_starting_input("0.1 NEAR")

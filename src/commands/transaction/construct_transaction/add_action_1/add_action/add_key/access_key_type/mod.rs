@@ -95,7 +95,6 @@ impl FunctionCallType {
     pub fn input_function_names(
         _context: &super::super::super::super::ConstructTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(

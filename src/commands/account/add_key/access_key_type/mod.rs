@@ -118,7 +118,6 @@ impl FunctionCallType {
             No,
         }
 
-        eprintln!();
         let select_choose_input = Select::new(
             "Would you like the access key to be valid exclusively for calling specific functions on the contract?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],

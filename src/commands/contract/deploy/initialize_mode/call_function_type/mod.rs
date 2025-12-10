@@ -103,7 +103,6 @@ impl PrepaidGas {
     fn input_gas(
         _context: &CallFunctionActionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
-        eprintln!();
         Ok(Some(
             CustomType::new("Enter gas for function call:")
                 .with_starting_input("100 TeraGas")
@@ -199,7 +198,6 @@ impl Deposit {
     fn input_deposit(
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        eprintln!();
         Ok(Some(
             CustomType::new("Enter deposit for a function call (example: 10 NEAR or 0.5 near or 10000 yoctonear):")
                 .with_starting_input("0 NEAR")
