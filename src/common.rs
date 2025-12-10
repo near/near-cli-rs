@@ -188,10 +188,10 @@ pub async fn get_account_transfer_allowance(
         )) if account_id.get_account_type().is_implicit() => {
             return Ok(AccountTransferAllowance {
                 account_id,
-                account_liquid_balance: near_token::NearToken::from_near(0),
-                account_locked_balance: near_token::NearToken::from_near(0),
-                storage_stake: near_token::NearToken::from_near(0),
-                pessimistic_transaction_fee: near_token::NearToken::from_near(0),
+                account_liquid_balance: near_token::NearToken::ZERO,
+                account_locked_balance: near_token::NearToken::ZERO,
+                storage_stake: near_token::NearToken::ZERO,
+                pessimistic_transaction_fee: near_token::NearToken::ZERO,
             });
         }
         Err(AccountStateError::JsonRpcError(
@@ -224,11 +224,9 @@ pub async fn get_account_transfer_allowance(
 
     Ok(AccountTransferAllowance {
         account_id,
-        account_liquid_balance: near_token::NearToken::from_yoctonear(account_view.amount),
-        account_locked_balance: near_token::NearToken::from_yoctonear(account_view.locked),
-        storage_stake: near_token::NearToken::from_yoctonear(
-            u128::from(account_view.storage_usage) * storage_amount_per_byte,
-        ),
+        account_liquid_balance: account_view.amount,
+        account_locked_balance: account_view.locked,
+        storage_stake: storage_amount_per_byte.saturating_mul(account_view.storage_usage.into()),
         // pessimistic_transaction_fee = 10^21 - this value is set temporarily
         // In the future, its value will be calculated by the function: fn tx_cost(...)
         // https://github.com/near/nearcore/blob/8a377fda0b4ce319385c463f1ae46e4b0b29dcd9/runtime/runtime/src/config.rs#L178-L232
@@ -772,17 +770,13 @@ pub fn print_unsigned_transaction(
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "",
-                    "gas:",
-                    crate::common::NearGas::from_gas(function_call_action.gas)
+                    "", "gas:", function_call_action.gas
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "",
                     "deposit:",
-                    crate::types::near_token::NearToken::from_yoctonear(
-                        function_call_action.deposit
-                    )
+                    function_call_action.deposit.exact_amount_display()
                 ));
             }
             near_primitives::transaction::Action::Transfer(transfer_action) => {
@@ -790,7 +784,7 @@ pub fn print_unsigned_transaction(
                     "\n{:>5} {:<20} {}",
                     "--",
                     "transfer deposit:",
-                    crate::types::near_token::NearToken::from_yoctonear(transfer_action.deposit)
+                    transfer_action.deposit.exact_amount_display()
                 ));
             }
             near_primitives::transaction::Action::Stake(stake_action) => {
@@ -803,7 +797,7 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "",
                     "stake:",
-                    crate::types::near_token::NearToken::from_yoctonear(stake_action.stake)
+                    stake_action.stake.exact_amount_display()
                 ));
             }
             near_primitives::transaction::Action::AddKey(add_key_action) => {
@@ -873,6 +867,36 @@ pub fn print_unsigned_transaction(
                 };
                 info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
             }
+            near_primitives::transaction::Action::DeterministicStateInit(
+                deterministic_init_action,
+            ) => {
+                info_str.push_str(&format!(
+                    "\n{:>5} {:<20}",
+                    "--", "initizalize deterministic account id:"
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
+                    "", "deposit:", deterministic_init_action.deposit
+                ));
+                let state_init = match &deterministic_init_action.state_init {
+                    near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(deterministic_account_state_init_v1) => {
+                        let mut ret = "V1".to_string();
+                        ret.push_str(&format!("\n{:>31} {:<13} {:?}", "", "data", deterministic_account_state_init_v1.data));
+                        ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code", match deterministic_account_state_init_v1.code {
+                            GlobalContractIdentifier::CodeHash(hash) => {
+                                format!("use global <{hash}> code to deploy from")
+                            }
+                            GlobalContractIdentifier::AccountId(ref account_id) => {
+                                format!("use global <{account_id}> code to deploy from")
+                            }
+                        }));
+
+                        ret
+                    },
+                };
+
+                info_str.push_str(&format!("\n{:>18} {:<13} {}", "", "state:", state_init));
+            }
         }
     }
     info_str.push('\n');
@@ -911,7 +935,7 @@ fn print_value_successful_transaction(
                 info_str.push_str(&format!(
                     "\n<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
-                    crate::types::near_token::NearToken::from_yoctonear(deposit),
+                    deposit.exact_amount_display(),
                     transaction_info.transaction.receiver_id,
                 ));
             }
@@ -919,7 +943,7 @@ fn print_value_successful_transaction(
                 stake,
                 public_key: _,
             } => {
-                if stake == 0 {
+                if stake == near_token::NearToken::ZERO {
                     info_str.push_str(&format!(
                         "\nValidator <{}> successfully unstaked.",
                         transaction_info.transaction.signer_id,
@@ -928,7 +952,7 @@ fn print_value_successful_transaction(
                     info_str.push_str(&format!(
                         "\nValidator <{}> has successfully staked {}.",
                         transaction_info.transaction.signer_id,
-                        crate::types::near_token::NearToken::from_yoctonear(stake),
+                        stake.exact_amount_display(),
                     ));
                 }
             }
@@ -971,6 +995,16 @@ fn print_value_successful_transaction(
             }
             near_primitives::views::ActionView::UseGlobalContract { code_hash } => {
                 info_str.push_str(&format!("Contract has been successfully deployed with the code from the global hash <{code_hash}>."));
+            }
+            near_primitives::views::ActionView::DeterministicStateInit {
+                code: _,
+                data: _,
+                deposit: _,
+            } => {
+                info_str.push_str(&format!(
+                    "\nNew deterministic account <{}> has been successfully created.",
+                    transaction_info.transaction.receiver_id,
+                ));
             }
         }
     }
@@ -1103,7 +1137,7 @@ pub fn convert_action_error_to_cli_result(
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
-                crate::types::near_token::NearToken::from_yoctonear(*amount)
+                amount.exact_amount_display()
             ))
         }
         near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
@@ -1121,8 +1155,8 @@ pub fn convert_action_error_to_cli_result(
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
                 account_id,
-                crate::types::near_token::NearToken::from_yoctonear(*balance),
-                crate::types::near_token::NearToken::from_yoctonear(*stake)
+                balance.exact_amount_display(),
+                stake.exact_amount_display()
             ))
         }
         near_primitives::errors::ActionErrorKind::InsufficientStake {
@@ -1132,8 +1166,8 @@ pub fn convert_action_error_to_cli_result(
         } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                crate::types::near_token::NearToken::from_yoctonear(*stake),
-                crate::types::near_token::NearToken::from_yoctonear(*minimum_stake)
+                stake.exact_amount_display(),
+                minimum_stake.exact_amount_display()
             ))
         }
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
@@ -1214,8 +1248,8 @@ pub fn convert_invalid_tx_error_to_cli_result(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
                         public_key,
                         account_id,
-                        crate::types::near_token::NearToken::from_yoctonear(*allowance),
-                        crate::types::near_token::NearToken::from_yoctonear(*cost)
+                        allowance.exact_amount_display(),
+                        cost.exact_amount_display(),
                     ))
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
@@ -1244,14 +1278,14 @@ pub fn convert_invalid_tx_error_to_cli_result(
         near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
                 signer_id,
-                crate::types::near_token::NearToken::from_yoctonear(*balance),
-                crate::types::near_token::NearToken::from_yoctonear(*cost)
+                balance.exact_amount_display(),
+                cost.exact_amount_display()
             ))
         },
         near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
                 signer_id,
-                crate::types::near_token::NearToken::from_yoctonear(*amount)
+                amount.exact_amount_display()
             ))
         },
         near_primitives::errors::InvalidTxError::CostOverflow => {
@@ -1310,6 +1344,15 @@ pub fn convert_invalid_tx_error_to_cli_result(
                 near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Protocol Feature {} is unsupported in version {}", protocol_feature, version))
                 }
+                near_primitives::errors::ActionsValidationError::InvalidDeterministicStateInitReceiver { receiver_id, derived_id } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid reciever account id <{}> for deterministic account id <{}>.", receiver_id, derived_id))
+                },
+                near_primitives::errors::ActionsValidationError::DeterministicStateInitKeyLengthExceeded { length, limit } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DeterministicStateInit key length is {} but the limit is {}.", length, limit))
+                },
+                near_primitives::errors::ActionsValidationError::DeterministicStateInitValueLengthExceeded { length, limit } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DeterministicStateInit contains value of length {} but at most {} is allowed.", length, limit))
+                },
             }
         },
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
@@ -1391,9 +1434,13 @@ pub fn print_transaction_status(
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
 
-    for receipt in transaction_info.receipts_outcome.iter() {
-        total_gas_burnt += receipt.outcome.gas_burnt;
-        total_tokens_burnt += receipt.outcome.tokens_burnt;
+    for receipt in &transaction_info.receipts_outcome {
+        total_gas_burnt = total_gas_burnt
+            .checked_add(receipt.outcome.gas_burnt)
+            .context("overflow while adding transaction status total gas")?;
+        total_tokens_burnt = total_tokens_burnt
+            .checked_add(receipt.outcome.tokens_burnt)
+            .context("overflow while adding transaction status total tokens burnt")?;
 
         if receipt.outcome.logs.is_empty() {
             logs_info.push_str(&format!(
@@ -1496,16 +1543,13 @@ pub fn print_transaction_status(
         }
     };
 
-    result_output.push_str(&format!(
-        "\nGas burned: {}",
-        NearGas::from_gas(total_gas_burnt)
-    ));
+    result_output.push_str(&format!("\nGas burned: {}", total_gas_burnt));
 
     result_output.push_str(&format!(
         "\nTransaction fee: {}{}",
-        crate::types::near_token::NearToken::from_yoctonear(total_tokens_burnt),
+        total_tokens_burnt.exact_amount_display(),
         match near_usd_exchange_rate {
-            Some(Ok(exchange_rate)) => calculate_usd_amount(total_tokens_burnt, exchange_rate).map_or_else(
+            Some(Ok(exchange_rate)) => calculate_usd_amount(total_tokens_burnt.as_yoctonear(), exchange_rate).map_or_else(
                 || format!(" (USD equivalent is too big to be displayed, using ${exchange_rate:.2} USD/NEAR exchange rate)"),
                 |amount| format!(" (approximately ${amount:.8} USD, using ${exchange_rate:.2} USD/NEAR exchange rate)")
             ),
@@ -1955,7 +1999,7 @@ pub fn get_validators_stake(
 async fn get_staking_pool_info(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     validator_account_id: near_primitives::types::AccountId,
-    stake: u128,
+    stake: near_token::NearToken,
 ) -> color_eyre::Result<StakingPoolInfo> {
     let fee = match json_rpc_client
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
@@ -2048,11 +2092,11 @@ pub fn display_account_info(
 
     table.add_row(prettytable::row![
         Fg->"Native account balance",
-        Fy->near_token::NearToken::from_yoctonear(account_view.amount)
+        Fy->account_view.amount.exact_amount_display()
     ]);
     table.add_row(prettytable::row![
         Fg->"Validator stake",
-        Fy->near_token::NearToken::from_yoctonear(account_view.locked)
+        Fy->account_view.locked.exact_amount_display()
     ]);
 
     match delegated_stake {
@@ -2060,7 +2104,7 @@ pub fn display_account_info(
             for (validator_id, stake) in delegated_stake {
                 table.add_row(prettytable::row![
                     Fg->format!("Delegated stake with <{validator_id}>"),
-                    Fy->stake
+                    Fy->stake.exact_amount_display()
                 ]);
             }
         }
@@ -2279,10 +2323,9 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                 method_names,
             } => {
                 let allowance_message = match allowance {
-                    Some(amount) => format!(
-                        "with an allowance of {}",
-                        near_token::NearToken::from_yoctonear(*amount)
-                    ),
+                    Some(allowance) => {
+                        format!("with an allowance of {}", allowance.exact_amount_display())
+                    }
                     None => "with no limit".to_string(),
                 };
                 if method_names.is_empty() {

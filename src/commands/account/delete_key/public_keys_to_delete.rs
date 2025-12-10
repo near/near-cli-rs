@@ -192,10 +192,7 @@ impl std::fmt::Display for AccessKeyInfo {
                 method_names,
             } => {
                 let allowance_message = match allowance {
-                    Some(amount) => format!(
-                        "with a remaining fee allowance of {}",
-                        near_token::NearToken::from_yoctonear(*amount)
-                    ),
+                    Some(amount) => format!("with a remaining fee allowance of {}", amount),
                     None => "with no limit".to_string(),
                 };
                 if method_names.is_empty() {

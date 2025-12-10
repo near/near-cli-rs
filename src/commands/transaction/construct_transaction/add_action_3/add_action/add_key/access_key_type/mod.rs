@@ -70,10 +70,7 @@ impl FunctionCallTypeContext {
     ) -> color_eyre::eyre::Result<Self> {
         let access_key_permission = near_primitives::account::AccessKeyPermission::FunctionCall(
             near_primitives::account::FunctionCallPermission {
-                allowance: scope
-                    .allowance
-                    .optional_near_token()
-                    .map(|allowance| allowance.as_yoctonear()),
+                allowance: scope.allowance.optional_near_token().map(Into::into),
                 receiver_id: scope.contract_account_id.to_string(),
                 method_names: scope.function_names.clone().into(),
             },
