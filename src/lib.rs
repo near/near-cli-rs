@@ -30,11 +30,48 @@ pub enum Verbosity {
 }
 
 pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
+    use tracing::{Event, Level, Subscriber};
     use tracing_indicatif::style::ProgressStyle;
     use tracing_indicatif::IndicatifLayer;
     use tracing_subscriber::layer::SubscriberExt;
     use tracing_subscriber::util::SubscriberInitExt;
     use tracing_subscriber::EnvFilter;
+    use tracing_subscriber::{
+        fmt::{format::Writer, FmtContext, FormatEvent, FormatFields},
+        registry::LookupSpan,
+    };
+
+    struct SimpleFormatter;
+
+    impl<S, N> FormatEvent<S, N> for SimpleFormatter
+    where
+        S: Subscriber + for<'a> LookupSpan<'a>,
+        N: for<'a> FormatFields<'a> + 'static,
+    {
+        fn format_event(
+            &self,
+            ctx: &FmtContext<'_, S, N>,
+            mut writer: Writer<'_>,
+            event: &Event<'_>,
+        ) -> std::fmt::Result {
+            let level = *event.metadata().level();
+            let (icon, color_code) = match level {
+                Level::TRACE => ("TRACE ", "\x1b[35m"),  // Magenta
+                Level::DEBUG => ("DEBUG ", "\x1b[34m"),  // Blue
+                Level::INFO => ("", ""),                 // Default
+                Level::WARN => ("Warning ", "\x1b[33m"), // Yellow
+                Level::ERROR => ("ERROR ", "\x1b[31m"),  // Red
+            };
+
+            write!(writer, "{}├  {}", color_code, icon)?;
+
+            write!(writer, "\x1b[0m")?;
+
+            ctx.field_format().format_fields(writer.by_ref(), event)?;
+
+            writeln!(writer)
+        }
+    }
 
     match verbosity {
         Verbosity::TeachMe => {
@@ -43,11 +80,7 @@ pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
                 .add_directive("near_teach_me=info".parse()?)
                 .add_directive("near_cli_rs=info".parse()?);
             tracing_subscriber::registry()
-                .with(
-                    tracing_subscriber::fmt::layer()
-                        .without_time()
-                        .with_target(false),
-                )
+                .with(tracing_subscriber::fmt::layer().event_format(SimpleFormatter))
                 .with(env_filter)
                 .init();
         }
@@ -58,15 +91,7 @@ pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
                         "{spinner:.blue}{span_child_prefix} {span_name} {msg} {span_fields}",
                     )
                     .unwrap()
-                    .tick_strings(&[
-                        "▹▹▹▹▹",
-                        "▸▹▹▹▹",
-                        "▹▸▹▹▹",
-                        "▹▹▸▹▹",
-                        "▹▹▹▸▹",
-                        "▹▹▹▹▸",
-                        "▪▪▪▪▪",
-                    ]),
+                    .tick_strings(&["◐", "◓", "◑", "◒"]),
                 )
                 .with_span_child_prefix_symbol("↳ ");
             let env_filter = EnvFilter::from_default_env()
@@ -75,9 +100,8 @@ pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
             tracing_subscriber::registry()
                 .with(
                     tracing_subscriber::fmt::layer()
-                        .without_time()
-                        .with_writer(indicatif_layer.get_stderr_writer())
-                        .with_target(false),
+                        .event_format(SimpleFormatter)
+                        .with_writer(indicatif_layer.get_stderr_writer()),
                 )
                 .with(indicatif_layer)
                 .with(env_filter)

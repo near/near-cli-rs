@@ -17,13 +17,14 @@ pub async fn prepare_tests() -> Result<(Sandbox, tempfile::TempDir), Box<dyn std
     // Create the config directory structure that near-cli expects:
     // $XDG_CONFIG_HOME/near-cli/config.toml
     let config_home = temp_dir.path();
-    let near_cli_config_dir = config_home.join("near-cli");
-    std::fs::create_dir_all(&near_cli_config_dir)?;
-    let config_path = near_cli_config_dir.join("config.toml");
 
     std::env::set_var("XDG_CONFIG_HOME", config_home); // Linux
     std::env::set_var("HOME", config_home); // macOS
     std::env::set_var("APPDATA", config_home); // Windows
+
+    let near_cli_config_dir = dirs::config_dir().unwrap().join("near-cli");
+    std::fs::create_dir_all(&near_cli_config_dir)?;
+    let config_path = near_cli_config_dir.join("config.toml");
 
     // Write a config file pointing to our sandbox
     let credentials_dir = temp_dir.path().join("credentials");
