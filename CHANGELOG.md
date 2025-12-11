@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0](https://github.com/near/near-cli-rs/compare/v0.22.2...v0.23.0) - 2025-12-11
+
+### Added
+
+- Updated user interface for interactive mode ([#524](https://github.com/near/near-cli-rs/pull/524))
+- Added support for reconstructing transaction with global contracts deploy or use actions ([#521](https://github.com/near/near-cli-rs/pull/521))
+- Sign transactions with MPC from a different account or even through a DAO proposal ([#520](https://github.com/near/near-cli-rs/pull/520))
+- Enabled aarch64 Windows binary builds (upgraded cargo-dist to 0.29.0) ([#518](https://github.com/near/near-cli-rs/pull/518))
+- introduce tests ([#522](https://github.com/near/near-cli-rs/pull/522))
+
+### Fixed
+
+- Fixed a flaky test (block hash can be 43 or 44 characters long when base58-encoded) ([#529](https://github.com/near/near-cli-rs/pull/529))
+
+### Other
+
+- bump near-* dependencies to 0.34 (nearcore release 2.10) ([#528](https://github.com/near/near-cli-rs/pull/528))
+- changed default rpc to archival fastnear ([#527](https://github.com/near/near-cli-rs/pull/527))
+
 ## [0.22.2](https://github.com/near/near-cli-rs/compare/v0.22.1...v0.22.2) - 2025-08-31
 
 ### Fixed
