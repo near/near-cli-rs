@@ -114,7 +114,6 @@ impl AddNetworkConnection {
     fn input_rpc_api_key(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, the RPC endpoint requires API key")]
@@ -139,7 +138,6 @@ impl AddNetworkConnection {
     fn input_linkdrop_account_id(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(
@@ -166,7 +164,6 @@ impl AddNetworkConnection {
     fn input_near_social_db_contract_account_id(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, and I want to enter the NEAR Social DB contract account ID")]
@@ -193,7 +190,6 @@ impl AddNetworkConnection {
     fn input_faucet_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the URL of the faucet")]
@@ -218,7 +214,6 @@ impl AddNetworkConnection {
     fn input_meta_transaction_relayer_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the URL of the relayer")]
@@ -243,7 +238,6 @@ impl AddNetworkConnection {
     fn input_fastnear_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the fastnear API url")]
@@ -268,7 +262,6 @@ impl AddNetworkConnection {
     fn input_staking_pools_factory_account_id(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the staking pools factory account ID")]
@@ -293,7 +286,6 @@ impl AddNetworkConnection {
     fn input_coingecko_url(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the coingecko API url")]
@@ -320,7 +312,6 @@ impl AddNetworkConnection {
     fn input_mpc_contract_account_id(
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the MPC contract account ID")]

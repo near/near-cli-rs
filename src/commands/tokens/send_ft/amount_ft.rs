@@ -82,7 +82,6 @@ impl AmountFt {
             &network_config,
             near_primitives::types::Finality::Final.into(),
         )?;
-        eprintln!();
 
         Ok(Some(
             CustomType::<crate::types::ft_properties::FungibleTokenTransferAmount>::new(&format!(

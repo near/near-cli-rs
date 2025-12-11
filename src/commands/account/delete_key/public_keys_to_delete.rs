@@ -1,4 +1,5 @@
 use color_eyre::owo_colors::OwoColorize;
+use inquire::ui::{Color, RenderConfig, Styled};
 use inquire::{formatter::MultiOptionFormatter, CustomType, MultiSelect};
 
 use crate::common::JsonRpcClientExt;
@@ -137,13 +138,14 @@ impl PublicKeyList {
                 .iter()
                 .map(|list_option| list_option.value.to_string())
                 .collect::<Vec<_>>();
-            format!("\n{}", public_key_list.join("\n"))
+            public_key_list.join("\n").to_string()
         };
 
         let selected_public_keys = MultiSelect::new(
             "Select the public keys you want to delete:",
             access_key_list,
         )
+        .with_render_config(get_multi_select_render_config())
         .with_formatter(formatter)
         .with_validator(
             |list: &[inquire::list_option::ListOption<&AccessKeyInfo>]| {
@@ -221,4 +223,13 @@ impl std::fmt::Display for AccessKeyInfo {
             }
         }
     }
+}
+
+fn get_multi_select_render_config() -> RenderConfig<'static> {
+    let mut render_config = crate::get_global_render_config();
+    render_config.highlighted_option_prefix = Styled::new(">").with_fg(Color::DarkGreen);
+    render_config.unhighlighted_option_prefix = Styled::new(" ").with_fg(Color::DarkGrey);
+    render_config.scroll_up_prefix = Styled::new("↑").with_fg(Color::DarkGrey);
+    render_config.scroll_down_prefix = Styled::new("↓").with_fg(Color::DarkGrey);
+    render_config
 }

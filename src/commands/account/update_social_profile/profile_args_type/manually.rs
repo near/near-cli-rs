@@ -126,7 +126,6 @@ impl Manually {
     fn input_name(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter a name for the account profile")]
@@ -151,7 +150,6 @@ impl Manually {
     fn input_image_url(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the URL for the account profile image")]
@@ -176,7 +174,6 @@ impl Manually {
     fn input_image_ipfs_cid(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter ipfs_cid for the account profile image")]
@@ -203,7 +200,6 @@ impl Manually {
     fn input_background_image_url(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(
@@ -232,7 +228,6 @@ impl Manually {
     fn input_background_image_ipfs_cid(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(
@@ -261,7 +256,6 @@ impl Manually {
     fn input_description(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter a description for the account profile")]
@@ -286,7 +280,6 @@ impl Manually {
     fn input_twitter(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter a Twitter nickname for the account profile")]
@@ -313,7 +306,6 @@ impl Manually {
     fn input_github(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter a Github nickname for the account profile")]
@@ -340,7 +332,6 @@ impl Manually {
     fn input_telegram(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(
@@ -369,7 +360,6 @@ impl Manually {
     fn input_website(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter the website URL for the account profile")]
@@ -396,7 +386,6 @@ impl Manually {
     fn input_tags(
         _context: &super::super::UpdateSocialProfileContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
-        eprintln!();
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter tags for an account profile")]
