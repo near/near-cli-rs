@@ -2815,7 +2815,7 @@ pub fn indent_payload(s: &str) -> String {
 
     let mut indented_string = String::new();
     indenter::indented(&mut indented_string)
-        .with_str(" |    ")
+        .with_str("│    ")
         .write_str(s)
         .ok();
     indented_string
