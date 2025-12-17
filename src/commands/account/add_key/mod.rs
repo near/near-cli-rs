@@ -5,6 +5,7 @@ mod autogenerate_new_keypair;
 #[cfg(feature = "ledger")]
 mod use_ledger;
 mod use_manually_provided_seed_phrase;
+mod use_mpc;
 mod use_public_key;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -86,6 +87,11 @@ pub enum AccessKeyMode {
     ))]
     /// Use the provided public key manually
     UseManuallyProvidedPublicKey(self::use_public_key::AddAccessKeyAction),
+    #[strum_discriminants(strum(
+        message = "use-mpc-contract                  - Use MPC contract to derive key"
+    ))]
+    /// Use MPC contract to derive key
+    UseMpcContract(self::use_mpc::AddKeyWithMpcDerivedKey),
     #[cfg(feature = "ledger")]
     #[strum_discriminants(strum(message = "use-ledger                        - Use a ledger"))]
     /// Use the Ledger Hardware wallet
