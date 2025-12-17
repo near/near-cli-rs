@@ -55,9 +55,7 @@ impl TryFrom<&crate::commands::PrepopulatedTransaction> for ProposalKind {
                     Ok(ProposalKind::Transfer(TransferArgs {
                         token_id: String::new(),
                         receiver_id: transaction.receiver_id.clone(),
-                        amount: crate::types::near_token::NearToken::from_yoctonear(
-                            transfer_action.deposit,
-                        ),
+                        amount: transfer_action.deposit.into(),
                         msg: None,
                     }))
                 }
@@ -71,10 +69,8 @@ impl TryFrom<&crate::commands::PrepopulatedTransaction> for ProposalKind {
                             Some(ActionCall {
                                 method_name: function_call_action.method_name.clone(),
                                 args: function_call_action.args.clone(),
-                                deposit: near_token::NearToken::from_yoctonear(
-                                    function_call_action.deposit,
-                                ),
-                                gas: near_gas::NearGas::from_gas(function_call_action.gas),
+                                deposit: function_call_action.deposit,
+                                gas: near_gas::NearGas::from_gas(function_call_action.gas.as_gas()),
                             })
                         } else {
                             None

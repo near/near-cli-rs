@@ -73,8 +73,8 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                                     "receiver_id": receiver_account_id.to_string(),
                                     "token_id": token_id
                                 }))?,
-                                gas: item.gas.as_gas(),
-                                deposit: item.deposit.as_yoctonear(),
+                                gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),
+                                deposit: item.deposit.into(),
                             }),
                         )],
                     })

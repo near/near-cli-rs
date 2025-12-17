@@ -256,8 +256,8 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 Box::new(near_primitives::transaction::FunctionCallAction {
                     method_name: "add_proposal".to_string(),
                     args: item.proposal_args.clone(),
-                    gas: item.gas.as_gas(),
-                    deposit: item.deposit.as_yoctonear(),
+                    gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),
+                    deposit: item.deposit.into(),
                 }),
             )],
         };

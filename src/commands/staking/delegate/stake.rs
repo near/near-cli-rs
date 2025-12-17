@@ -37,8 +37,8 @@ impl StakeContext {
                                 args: serde_json::to_vec(&serde_json::json!({
                                     "amount": amount,
                                 }))?,
-                                gas: crate::common::NearGas::from_tgas(50).as_gas(),
-                                deposit: 0,
+                                gas: near_primitives::gas::Gas::from_teragas(50),
+                                deposit: near_token::NearToken::ZERO,
                             }),
                         )],
                     })

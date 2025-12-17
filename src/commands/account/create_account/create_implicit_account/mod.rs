@@ -64,7 +64,6 @@ impl SaveToFolder {
     fn input_folder_path(
         context: &SaveImplicitAccountContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
-        eprintln!();
         Ok(Some(
             CustomType::new("Where to save the implicit account file?")
                 .with_starting_input(&format!(

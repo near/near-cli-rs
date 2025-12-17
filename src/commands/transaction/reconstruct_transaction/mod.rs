@@ -1,6 +1,5 @@
-use std::str::FromStr;
-
 use color_eyre::eyre::{Context, ContextCompat};
+use inquire::CustomType;
 use interactive_clap::ToCliArgs;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -205,24 +204,28 @@ fn action_transformation(
         Action::Transfer(transfer_action) => {
             Ok(Some(add_action::CliActionSubcommand::Transfer(
                 add_action::transfer::CliTransferAction {
-                    amount_in_near: Some(crate::types::near_token::NearToken::from_yoctonear(transfer_action.deposit)),
+                    amount_in_near: Some(transfer_action.deposit.into()),
                     next_action: None
                 }
             )))
         }
         Action::DeployContract(deploy_contract_action) => {
+            let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the name of the file to save the contract:")
+                .with_starting_input("reconstruct-transaction-deploy-code.wasm")
+                .prompt()?;
+
             download_code(
-                &receiver_id,
+                &crate::commands::contract::download_wasm::ContractType::Regular(receiver_id),
                 network_config,
                 block_reference,
-                "reconstruct-transaction-deploy-code.wasm",
-                &deploy_contract_action.code
+                &file_path,
+                &near_primitives::hash::CryptoHash::hash_bytes(&deploy_contract_action.code)
             )?;
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
                 add_action::deploy_contract::CliDeployContractAction {
                     use_file: Some(add_action::deploy_contract::ClapNamedArgContractFileForDeployContractAction::UseFile(
                         add_action::deploy_contract::CliContractFile {
-                            file_path: Some("reconstruct-transaction-deploy-code.wasm".parse()?),
+                            file_path: Some(file_path),
                             initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
                                 add_action::deploy_contract::initialize_mode::CliNoInitialize {
                                     next_action: None
@@ -241,10 +244,10 @@ fn action_transformation(
                     function_args: Some(String::from_utf8(function_call_action.args)?),
                     prepaid_gas: Some(add_action::call_function::ClapNamedArgPrepaidGasForFunctionCallAction::PrepaidGas(
                         add_action::call_function::CliPrepaidGas {
-                            gas: Some(near_gas::NearGas::from_gas(function_call_action.gas)),
+                            gas: Some(near_gas::NearGas::from_gas(function_call_action.gas.as_gas())),
                             attached_deposit: Some(add_action::call_function::ClapNamedArgDepositForPrepaidGas::AttachedDeposit(
                                 add_action::call_function::CliDeposit {
-                                    deposit: Some(crate::types::near_token::NearToken::from_yoctonear(function_call_action.deposit)),
+                                    deposit: Some(function_call_action.deposit.into()),
                                     next_action: None
                                 }
                             ))
@@ -256,7 +259,7 @@ fn action_transformation(
         Action::Stake(stake_action) => {
                 Ok(Some(add_action::CliActionSubcommand::Stake(
                 add_action::stake::CliStakeAction {
-                    stake_amount: Some(crate::types::near_token::NearToken::from_yoctonear(stake_action.stake)),
+                    stake_amount: Some(stake_action.stake.into()),
                     public_key: Some(stake_action.public_key.into()),
                     next_action: None
                 }
@@ -265,8 +268,52 @@ fn action_transformation(
         Action::Delegate(_) => {
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
-        Action::DeployGlobalContract(_) => {
-            Err(color_eyre::eyre::eyre!("Reconstruction of Global Deploy transactions is not supported yet. This feature is being tracked at: https://github.com/near/nearcore/issues/13531"))
+        Action::DeployGlobalContract(action) => {
+            let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the name of the file to save the contract:")
+                .with_starting_input("reconstruct-transaction-deploy-code.wasm")
+                .prompt()?;
+
+            let code_hash = near_primitives::hash::CryptoHash::try_from(action.code.as_ref()).map_err(|_| {
+                color_eyre::Report::msg("Internal error: Failed to calculate code hash from the deploy global contract action code.".to_string())
+            })?;
+            let contract_type = match action.deploy_mode {
+                near_primitives::action::GlobalContractDeployMode::AccountId => {
+                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId {
+                        account_id: receiver_id.clone(),
+                        code_hash: Some(code_hash)
+                    }
+                }
+                near_primitives::action::GlobalContractDeployMode::CodeHash => {
+                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByCodeHash(code_hash)
+                }
+            };
+
+            download_code(
+                contract_type,
+                network_config,
+                block_reference,
+                &file_path,
+                &code_hash
+            )?;
+
+            let mode = match action.deploy_mode {
+                near_primitives::action::GlobalContractDeployMode::AccountId => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalAccountId(
+                    add_action::deploy_global_contract::CliNextCommand {
+                        next_action: None
+                    }
+                ),
+                near_primitives::action::GlobalContractDeployMode::CodeHash => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalHash(
+                    add_action::deploy_global_contract::CliNextCommand {
+                        next_action: None
+                    }
+                ),
+            };
+            Ok(Some(add_action::CliActionSubcommand::DeployGlobalContract(
+                add_action::deploy_global_contract::CliDeployGlobalContractAction {
+                    file_path: Some(file_path),
+                    mode: Some(mode)
+                }
+            )))
         }
         Action::UseGlobalContract(use_global_contract_action) => {
             let mode = match use_global_contract_action.contract_identifier {
@@ -297,6 +344,10 @@ fn action_transformation(
                     mode: Some(mode)
                 }
             )))
+        }
+        Action::DeterministicStateInit(_deterministic_state_action) => {
+            // TODO: impl
+            Err(color_eyre::eyre::eyre!("Deterministic state init is not yet implemented"))
         }
     }
 }
@@ -333,14 +384,12 @@ fn get_access_key_permission(
                 add_key::access_key_type::CliFunctionCallType {
                     allowance: {
                         match allowance {
-                            Some(yoctonear) => {
-                                Some(crate::types::near_allowance::NearAllowance::from_yoctonear(
-                                    yoctonear,
+                            Some(allowance) => {
+                                Some(crate::types::near_allowance::NearAllowance::from_near(
+                                    allowance.into(),
                                 ))
                             }
-                            None => Some(crate::types::near_allowance::NearAllowance::from_str(
-                                "unlimited",
-                            )?),
+                            None => Some(crate::types::near_allowance::NearAllowance::unlimited()),
                         }
                     },
                     contract_account_id: Some(receiver_id.parse()?),
@@ -358,43 +407,43 @@ fn get_access_key_permission(
 }
 
 fn download_code(
-    receiver_id: &near_primitives::types::AccountId,
+    contract_type: &crate::commands::contract::download_wasm::ContractType,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
-    file_name: &str,
-    hash_to_match: &[u8],
+    file_path: &crate::types::path_buf::PathBuf,
+    hash_to_match: &near_primitives::hash::CryptoHash,
 ) -> color_eyre::eyre::Result<()> {
     // Unfortunately, RPC doesn't return the code for the deployed contract. Only the hash.
     // So we need to fetch it from archive node.
 
     let code = crate::commands::contract::download_wasm::get_code(
-                receiver_id,
-                network_config,
-                block_reference
-            ).map_err(|e| {
-                color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {e}"))
-            })?;
+        contract_type,
+        network_config,
+        block_reference,
+    ).map_err(|e| {
+        color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {e}"))
+    })?;
 
     let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
     tracing::info!(
         parent: &tracing::Span::none(),
-        "The code for the account <{}> was downloaded successfully with hash <{}>",
-        receiver_id,
+        "The code for <{}> was downloaded successfully with hash <{}>",
+        contract_type,
         code_hash,
     );
-    if code_hash.0 != hash_to_match {
+    if &code_hash != hash_to_match {
         return Err(color_eyre::Report::msg("The code hash of the contract deploy action does not match the code that we retrieved from the archive node.".to_string()));
     }
 
-    std::fs::write(file_name, code).wrap_err(format!(
-        "Failed to write the deploy command code to file: '{file_name}' in the current folder"
+    std::fs::write(file_path, code).wrap_err(format!(
+        "Failed to write the deploy command code to file: '{file_path}' in the current folder"
     ))?;
 
     tracing::info!(
         parent: &tracing::Span::none(),
         "The file `{}` with contract code of `{}` was downloaded successfully",
-        file_name,
-        receiver_id,
+        file_path,
+        contract_type,
     );
 
     Ok(())

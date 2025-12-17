@@ -47,7 +47,7 @@ impl From<SendNearCommandContext> for crate::commands::ActionContext {
                         receiver_id: receiver_account_id.clone(),
                         actions: vec![near_primitives::transaction::Action::Transfer(
                             near_primitives::transaction::TransferAction {
-                                deposit: item.amount_in_near.as_yoctonear(),
+                                deposit: item.amount_in_near.into(),
                             },
                         )],
                     })

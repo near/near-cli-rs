@@ -72,6 +72,8 @@ impl From<CmdContext> for crate::GlobalContext {
 }
 
 fn main() -> crate::common::CliResult {
+    inquire::set_global_render_config(near_cli_rs::get_global_render_config());
+
     let config = crate::config::Config::get_config_toml()?;
 
     if !crate::common::is_used_account_list_exist(&config.credentials_home_dir) {

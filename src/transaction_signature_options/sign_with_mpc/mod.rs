@@ -485,8 +485,8 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 Box::new(near_primitives::transaction::FunctionCallAction {
                     method_name: "sign".to_string(),
                     args: item.mpc_sign_request_serialized,
-                    gas: item.gas.as_gas(),
-                    deposit: item.deposit.as_yoctonear(),
+                    gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),
+                    deposit: item.deposit.into(),
                 }),
             )],
         };

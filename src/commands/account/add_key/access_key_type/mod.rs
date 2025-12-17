@@ -95,7 +95,7 @@ impl From<FunctionCallTypeContext> for AccessTypeContext {
             signer_account_id: item.signer_account_id,
             permission: near_primitives::account::AccessKeyPermission::FunctionCall(
                 near_primitives::account::FunctionCallPermission {
-                    allowance: item.allowance.map(|allowance| allowance.as_yoctonear()),
+                    allowance: item.allowance.map(Into::into),
                     receiver_id: item.contract_account_id.to_string(),
                     method_names: item.function_names.into(),
                 },
@@ -118,7 +118,6 @@ impl FunctionCallType {
             No,
         }
 
-        eprintln!();
         let select_choose_input = Select::new(
             "Would you like the access key to be valid exclusively for calling specific functions on the contract?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],

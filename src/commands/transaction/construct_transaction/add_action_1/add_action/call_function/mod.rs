@@ -114,7 +114,6 @@ impl PrepaidGas {
     fn input_gas(
         _context: &FunctionCallActionContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
-        eprintln!();
         Ok(Some(
             CustomType::new("Enter gas for function call:")
                 .with_starting_input("100 TeraGas")
@@ -157,8 +156,8 @@ impl DepositContext {
             near_primitives::transaction::FunctionCallAction {
                 method_name: previous_context.function_name,
                 args: previous_context.function_args,
-                gas: previous_context.gas.as_gas(),
-                deposit: scope.deposit.clone().as_yoctonear(),
+                gas: near_primitives::gas::Gas::from_gas(previous_context.gas.as_gas()),
+                deposit: scope.deposit.into(),
             },
         ));
         let mut actions = previous_context.actions;
@@ -182,7 +181,6 @@ impl Deposit {
     fn input_deposit(
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        eprintln!();
         Ok(Some(
             CustomType::new("Enter deposit for a function call (example: 10 NEAR or 0.5 near or 10000 yoctonear):")
                 .with_starting_input("0 NEAR")

@@ -123,8 +123,8 @@ impl SignerAccountIdContext {
                                 args: serde_json::to_vec(&serde_json::json!({
                                     "account_id": &receiver_account_id
                                 }))?,
-                                gas: crate::common::NearGas::from_tgas(50).as_gas(),
-                                deposit: deposit.as_yoctonear(),
+                                gas: near_primitives::gas::Gas::from_teragas(50),
+                                deposit: deposit.into(),
                             }),
                         )],
                     })

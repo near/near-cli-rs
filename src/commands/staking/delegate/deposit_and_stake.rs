@@ -35,8 +35,8 @@ impl DepositAndStakeContext {
                             Box::new(near_primitives::transaction::FunctionCallAction {
                                 method_name: "deposit_and_stake".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({}))?,
-                                gas: crate::common::NearGas::from_tgas(50).as_gas(),
-                                deposit: amount.as_yoctonear(),
+                                gas: near_primitives::gas::Gas::from_teragas(50),
+                                deposit: amount.into(),
                             }),
                         )],
                     })

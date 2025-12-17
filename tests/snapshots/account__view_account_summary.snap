@@ -10,9 +10,9 @@ expression: normalized_stdout
                                   or using the cli command: [34mbos social-db manage-profile[39m 
                                   (https://github.com/bos-cli-rs/bos-cli-rs) 
 -------------------------------------------------------------------------------------------
- Native account balance           1000000000.00 NEAR 
+ Native account balance           1000000000 NEAR 
 -------------------------------------------------------------------------------------------
- Validator stake                  50000000.00 NEAR 
+ Validator stake                  50000000 NEAR 
 -------------------------------------------------------------------------------------------
  Storage used by the account      182 B 
 -------------------------------------------------------------------------------------------
