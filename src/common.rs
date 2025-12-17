@@ -899,7 +899,7 @@ pub fn print_unsigned_transaction(
             }
         }
     }
-    info_str.push('\n');
+    info_str.push_str("\n ");
     info_str
 }
 

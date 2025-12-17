@@ -141,7 +141,7 @@ impl SignAccessKeyFileContext {
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
             crate::common::indent_payload(&format!(
-                "\nPublic key: {}\nSignature:  {}\n",
+                "\nPublic key: {}\nSignature:  {}\n ",
                 account_json.public_key,
                 signature
             ))

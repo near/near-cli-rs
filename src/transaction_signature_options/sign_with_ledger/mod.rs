@@ -201,7 +201,7 @@ impl SignLedgerContext {
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
             crate::common::indent_payload(&format!(
-                "\nPublic key: {}\nSignature:  {}\n",
+                "\nPublic key: {}\nSignature:  {}\n ",
                 scope.signer_public_key,
                 signature
             ))
@@ -265,7 +265,14 @@ impl interactive_clap::FromCli for SignLedger {
             .clone()
             .expect("Unexpected error");
 
-        eprintln!("Opening the NEAR application... Please approve opening the application");
+        if let crate::Verbosity::Quiet = context.global_context.verbosity {
+            println!("Opening the NEAR application... Please approve opening the application");
+        }
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "Opening the NEAR application... Please approve opening the application"
+        );
+
         if let Err(err) = near_ledger::open_near_application().map_err(|ledger_error| {
             color_eyre::Report::msg(format!("An error happened while trying to open the NEAR application on the ledger: {ledger_error:?}"))
         }) {
@@ -274,9 +281,15 @@ impl interactive_clap::FromCli for SignLedger {
 
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-        eprintln!(
-            "Please allow getting the PublicKey on Ledger device (HD Path: {seed_phrase_hd_path})"
+        if let crate::Verbosity::Quiet = context.global_context.verbosity {
+            println!("Please allow getting the PublicKey on Ledger device (HD Path: {seed_phrase_hd_path})");
+        }
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "Please allow getting the PublicKey on Ledger device (HD Path: {seed_phrase_hd_path})\n{}",
+            crate::common::indent_payload(" ")
         );
+
         let public_key = match near_ledger::get_public_key(seed_phrase_hd_path.clone().into())
             .map_err(|near_ledger_error| {
                 color_eyre::Report::msg(format!(
