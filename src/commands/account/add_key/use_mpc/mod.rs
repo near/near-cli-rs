@@ -57,7 +57,7 @@ impl AddKeyWithMpcDerivedKey {
 #[interactive_clap(input_context = AddKeyWithMpcDerivedKeyContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// What is the key type for derivation (if unsure choose Ed25519)?
-pub enum MpcKeyType {
+enum MpcKeyType {
     #[strum_discriminants(strum(message = "ed25519   - use Ed25519 key derivation"))]
     /// Use Ed25519 key
     Ed25519(MpcKeyTypeEd),
@@ -67,7 +67,7 @@ pub enum MpcKeyType {
 }
 
 #[derive(Clone)]
-pub struct MpcKeyTypeContext {
+struct MpcKeyTypeContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     key_permission: near_primitives::account::AccessKeyPermission,
@@ -78,14 +78,14 @@ pub struct MpcKeyTypeContext {
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = AddKeyWithMpcDerivedKeyContext)]
 #[interactive_clap(output_context = MpcKeyTypeSecpContext)]
-pub struct MpcKeyTypeSecp {
+struct MpcKeyTypeSecp {
     #[interactive_clap(named_arg)]
     /// What is the derivation path?
     derivation_path: MpcDeriveKeyToAdd,
 }
 
 #[derive(Clone)]
-pub struct MpcKeyTypeSecpContext(MpcKeyTypeContext);
+struct MpcKeyTypeSecpContext(MpcKeyTypeContext);
 
 impl MpcKeyTypeSecpContext {
     fn from_previous_context(
@@ -111,14 +111,14 @@ impl From<MpcKeyTypeSecpContext> for MpcKeyTypeContext {
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = AddKeyWithMpcDerivedKeyContext)]
 #[interactive_clap(output_context = MpcKeyTypeEdContext)]
-pub struct MpcKeyTypeEd {
+struct MpcKeyTypeEd {
     #[interactive_clap(named_arg)]
     /// What is the derivation path?
     derivation_path: MpcDeriveKeyToAdd,
 }
 
 #[derive(Clone)]
-pub struct MpcKeyTypeEdContext(MpcKeyTypeContext);
+struct MpcKeyTypeEdContext(MpcKeyTypeContext);
 
 impl MpcKeyTypeEdContext {
     fn from_previous_context(
