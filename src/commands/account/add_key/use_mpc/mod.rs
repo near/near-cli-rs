@@ -33,7 +33,7 @@ impl AddKeyWithMpcDerivedKeyContext {
             ));
         }
 
-        Ok(AddKeyWithMpcDerivedKeyContext {
+        Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             key_permission: previous_context.permission,
