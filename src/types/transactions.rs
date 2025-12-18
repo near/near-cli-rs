@@ -145,11 +145,23 @@ pub enum GlobalContractIdentifier {
 #[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 pub struct NonDelegateAction(pub Action);
 
+/// Error type for NonDelegateAction conversion
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DelegateActionNotAllowedError;
+
+impl std::fmt::Display for DelegateActionNotAllowedError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Delegate action cannot be nested inside another delegate action")
+    }
+}
+
+impl std::error::Error for DelegateActionNotAllowedError {}
+
 impl TryFrom<Action> for NonDelegateAction {
-    type Error = ();
+    type Error = DelegateActionNotAllowedError;
     fn try_from(action: Action) -> Result<Self, Self::Error> {
         if let Action::Delegate(_) = action {
-            return Err(());
+            return Err(DelegateActionNotAllowedError);
         }
         Ok(Self(action))
     }
@@ -172,7 +184,9 @@ pub struct SignedDelegateAction {
 }
 
 impl Transaction {
-    pub fn build_for_signing(&self) -> Vec<u8> {
-        borsh::to_vec(self).expect("failed to serialize NEAR transaction")
+    /// Serialize the transaction for signing
+    /// Returns an error if serialization fails
+    pub fn build_for_signing(&self) -> Result<Vec<u8>, std::io::Error> {
+        borsh::to_vec(self)
     }
 }

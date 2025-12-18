@@ -1,9 +1,28 @@
 /// Conversion functions between near-primitives and our internal transaction types
 use super::transactions as omni;
 
-/// Convert near_primitives::transaction::Action to omni_transaction Action
-pub fn near_action_to_omni(action: near_primitives::transaction::Action) -> omni::Action {
-    match action {
+/// Error type for action conversion
+#[derive(Debug, Clone)]
+pub enum ActionConversionError {
+    /// DeterministicStateInit action is not supported
+    UnsupportedDeterministicStateInit,
+}
+
+impl std::fmt::Display for ActionConversionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ActionConversionError::UnsupportedDeterministicStateInit => {
+                write!(f, "DeterministicStateInit action is not supported in internal transaction types")
+            }
+        }
+    }
+}
+
+impl std::error::Error for ActionConversionError {}
+
+/// Convert near_primitives::transaction::Action to our internal Action
+pub fn near_action_to_omni(action: near_primitives::transaction::Action) -> Result<omni::Action, ActionConversionError> {
+    Ok(match action {
         near_primitives::transaction::Action::CreateAccount(_) => {
             omni::Action::CreateAccount(omni::CreateAccountAction {})
         }
@@ -62,11 +81,9 @@ pub fn near_action_to_omni(action: near_primitives::transaction::Action) -> omni
             }))
         }
         near_primitives::transaction::Action::DeterministicStateInit(_) => {
-            // DeterministicStateInit is not in omni-transaction, this is a rare case
-            // For now, we'll panic - this should be handled if it's actually used
-            panic!("DeterministicStateInit action is not supported in omni-transaction")
+            return Err(ActionConversionError::UnsupportedDeterministicStateInit);
         }
-    }
+    })
 }
 
 /// Convert omni_transaction Action to near_primitives::transaction::Action
@@ -205,6 +222,7 @@ fn near_signed_delegate_action_to_omni(
                 .into_iter()
                 .map(|a| {
                     near_action_to_omni(a.into())
+                        .expect("Failed to convert action")
                         .try_into()
                         .expect("Delegate action should not contain another delegate action")
                 })
@@ -314,7 +332,7 @@ pub fn near_transaction_to_omni(
         nonce: omni::U64(tx.nonce),
         receiver_id: tx.receiver_id,
         block_hash: omni::BlockHash(tx.block_hash.0),
-        actions: tx.actions.into_iter().map(near_action_to_omni).collect(),
+        actions: tx.actions.into_iter().map(|a| near_action_to_omni(a).expect("Failed to convert action")).collect(),
     }
 }
 
@@ -332,20 +350,40 @@ pub fn omni_transaction_to_near(
     }
 }
 
+/// Error type for transaction conversion
+#[derive(Debug, Clone)]
+pub enum TransactionConversionError {
+    /// Transaction V1 is not yet supported
+    UnsupportedTransactionV1,
+}
+
+impl std::fmt::Display for TransactionConversionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TransactionConversionError::UnsupportedTransactionV1 => {
+                write!(f, "Transaction V1 is not yet supported in internal transaction types")
+            }
+        }
+    }
+}
+
+impl std::error::Error for TransactionConversionError {}
+
 /// Convert near_primitives::transaction::SignedTransaction to our internal SignedTransaction
+/// Returns an error if the transaction version is not supported
 pub fn near_signed_transaction_to_omni(
     signed_tx: near_primitives::transaction::SignedTransaction,
-) -> omni::SignedTransaction {
+) -> Result<omni::SignedTransaction, TransactionConversionError> {
     let transaction = match signed_tx.transaction {
         near_primitives::transaction::Transaction::V0(v0) => near_transaction_to_omni(v0),
         near_primitives::transaction::Transaction::V1(_) => {
-            panic!("Transaction V1 is not yet supported in this conversion")
+            return Err(TransactionConversionError::UnsupportedTransactionV1);
         }
     };
-    omni::SignedTransaction {
+    Ok(omni::SignedTransaction {
         transaction,
         signature: near_signature_to_omni(signed_tx.signature),
-    }
+    })
 }
 
 /// Convert omni_transaction SignedTransaction to near_primitives::transaction::SignedTransaction
