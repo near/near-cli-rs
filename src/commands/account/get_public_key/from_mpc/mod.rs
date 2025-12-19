@@ -1,9 +1,11 @@
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = PublicKeyFromMpcContext)]
 pub struct PublicKeyFromMpc {
     #[interactive_clap(skip_default_input_arg)]
-    /// What is the controllable account address (where public key woudl've been published)?
+    /// What is the controllable account address (where public key would've been published)?
     controllable_account_id: crate::types::account_id::AccountId,
 
     #[interactive_clap(skip_default_input_arg)]
@@ -48,7 +50,7 @@ impl PublicKeyFromMpc {
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_non_signer_account_id_from_used_account_list(
             &context.config.credentials_home_dir,
-            "What is the controllable account address (where public key woudl've been published)?",
+            "What is the controllable account address (where public key would've been published)?",
         )
     }
 
@@ -62,11 +64,11 @@ impl PublicKeyFromMpc {
     }
 }
 
-#[derive(Debug, Clone, strum::EnumDiscriminants, interactive_clap::InteractiveClap)]
+#[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = PublicKeyFromMpcContext)]
-#[strum_discriminants(derive(strum::EnumMessage, strum::EnumIter))]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// What is the key type for derivation (if unsure choose Ed25519)?
-enum MpcKeyType {
+pub enum MpcKeyType {
     #[strum_discriminants(strum(message = "ed25519   - use Ed25519 key derivation"))]
     /// Use Ed25519 key
     Ed25519(MpcKeyTypeEd),
@@ -76,7 +78,7 @@ enum MpcKeyType {
 }
 
 #[derive(Clone)]
-struct MpcKeyTypeContext {
+pub struct MpcKeyTypeContext {
     global_context: crate::GlobalContext,
     controllable_account_id: near_primitives::types::AccountId,
     admin_account_id: near_primitives::types::AccountId,
@@ -86,7 +88,7 @@ struct MpcKeyTypeContext {
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = PublicKeyFromMpcContext)]
 #[interactive_clap(output_context = MpcKeyTypeSecpContext)]
-struct MpcKeyTypeSecp {
+pub struct MpcKeyTypeSecp {
     #[interactive_clap(named_arg)]
     /// What is the derivation path?
     derivation_path: MpcDerivationPath,
@@ -118,7 +120,7 @@ impl From<MpcKeyTypeSecpContext> for MpcKeyTypeContext {
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = PublicKeyFromMpcContext)]
 #[interactive_clap(output_context = MpcKeyTypeEdContext)]
-struct MpcKeyTypeEd {
+pub struct MpcKeyTypeEd {
     #[interactive_clap(named_arg)]
     /// What is the derivation path?
     derivation_path: MpcDerivationPath,
@@ -163,7 +165,6 @@ pub struct MpcDerivationPath {
 #[derive(Clone)]
 pub struct MpcDerivationPathContext {
     global_context: crate::GlobalContext,
-    controllable_account_id: near_primitives::types::AccountId,
     admin_account_id: near_primitives::types::AccountId,
     key_type: near_crypto::KeyType,
     derivation_path: String,
@@ -176,7 +177,6 @@ impl MpcDerivationPathContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context.global_context,
-            controllable_account_id: previous_context.controllable_account_id,
             admin_account_id: previous_context.admin_account_id,
             key_type: previous_context.key_type,
             derivation_path: scope.derivation_path.clone(),
