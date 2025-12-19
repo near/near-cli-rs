@@ -145,7 +145,7 @@ impl FunctionCallType {
         _context: &super::AddKeyCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_allowance::NearAllowance>> {
         let allowance_near_balance: crate::types::near_allowance::NearAllowance =
-            CustomType::new("Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
+            CustomType::new("Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10 NEAR or 0.5 NEAR or 10000 yoctonear):")
                 .with_starting_input("unlimited")
                 .prompt()?;
         Ok(Some(allowance_near_balance))

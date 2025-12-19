@@ -331,7 +331,7 @@ impl PrepaidGas {
         _context: &MpcDeriveKeyContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         Ok(Some(
-            CustomType::new("What is the gas limit for signing MPC (if unsure, keep 15 Tgas)?")
+            CustomType::new("What is the gas limit for signing with MPC (if you're not sure, keep 15 Tgas)?")
                 .with_starting_input("15 Tgas")
                 .with_validator(move |gas: &crate::common::NearGas| {
                     if gas < &near_gas::NearGas::from_tgas(15) {

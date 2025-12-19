@@ -5,7 +5,7 @@ pub struct SendNearCommand {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the receiver account ID?
     receiver_account_id: crate::types::account_id::AccountId,
-    /// How many NEAR Tokens do you want to transfer? (example: 10NEAR or 0.5near or 10000yoctonear)
+    /// How many NEAR Tokens do you want to transfer? (example: 10 NEAR or 0.5 NEAR or 10000 yoctonear)
     amount_in_near: crate::types::near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// Select network

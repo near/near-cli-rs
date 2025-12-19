@@ -128,7 +128,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let api_key: crate::types::api_key::ApiKey =
-                CustomType::new("Enter an API key").prompt()?;
+                CustomType::new("Enter an API key:").prompt()?;
             Ok(Some(api_key))
         } else {
             Ok(None)
@@ -144,7 +144,7 @@ impl AddNetworkConnection {
                 to_string = "Yes, and I want to enter the name of the account hosting the program \"linkdrop\""
             )]
             Yes,
-            #[strum(to_string = "I dont know")]
+            #[strum(to_string = "I don't know")]
             No,
         }
         let select_choose_input = Select::new(
@@ -154,7 +154,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let account_id: crate::types::account_id::AccountId =
-            CustomType::new("What is the name of the account that hosts the \"linkdrop\" program? (e.g. on mainnet it is near, and on testnet it is testnet)").prompt()?;
+            CustomType::new("What is the name of the account that hosts the linkdrop program? (e.g. on mainnet it is 'near', on testnet it is 'testnet')").prompt()?;
             Ok(Some(account_id))
         } else {
             Ok(None)
@@ -180,7 +180,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let account_id: crate::types::account_id::AccountId =
-            CustomType::new("What is the name of the NEAR Social DB contract account ID (e.g. on mainnet it is social.near)").prompt()?;
+            CustomType::new("What is the NEAR Social DB contract account ID? (e.g. on mainnet it is 'social.near')").prompt()?;
             Ok(Some(account_id))
         } else {
             Ok(None)
@@ -204,7 +204,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let faucet_url: crate::types::url::Url =
-                CustomType::new("What is the faucet url?").prompt()?;
+                CustomType::new("What is the faucet URL?").prompt()?;
             Ok(Some(faucet_url))
         } else {
             Ok(None)
@@ -228,7 +228,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let meta_transaction_relayer_url: crate::types::url::Url =
-                CustomType::new("What is the relayer url?").prompt()?;
+                CustomType::new("What is the meta transaction relayer URL?").prompt()?;
             Ok(Some(meta_transaction_relayer_url))
         } else {
             Ok(None)
@@ -252,7 +252,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let stake_delegators_api: crate::types::url::Url =
-                CustomType::new("What is the fastnear API url?").prompt()?;
+                CustomType::new("What is the FastNEAR API URL?").prompt()?;
             Ok(Some(stake_delegators_api))
         } else {
             Ok(None)
@@ -300,7 +300,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let coingecko_api: crate::types::url::Url =
-                CustomType::new("What is the coingecko API url?")
+                CustomType::new("What is the CoinGecko API URL?")
                     .with_starting_input("https://api.coingecko.com/")
                     .prompt()?;
             Ok(Some(coingecko_api))
@@ -326,7 +326,7 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let mpc_contract_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the MPC contract account ID?").prompt()?;
+                CustomType::new("What is the MPC (Multi-Party Computation) contract account ID?").prompt()?;
             Ok(Some(mpc_contract_account_id))
         } else {
             Ok(None)
