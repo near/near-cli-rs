@@ -11,7 +11,7 @@ pub struct Contract {
     /// What is the contract account ID?
     account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    /// Enter the name of the file to save the contract ABI:
+    /// Enter the file path where to save the contract ABI:
     save_to_file: DownloadContractAbi,
 }
 
@@ -49,7 +49,7 @@ impl Contract {
 #[interactive_clap(output_context = DownloadContractContext)]
 pub struct DownloadContractAbi {
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter the name of the file to save the contract ABI:
+    /// Enter the file path where to save the contract ABI:
     file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(named_arg)]
     /// Select network

@@ -51,7 +51,7 @@ pub struct FunctionCallType {
     #[interactive_clap(skip_default_input_arg)]
     allowance: crate::types::near_allowance::NearAllowance,
     #[interactive_clap(long)]
-    /// You chose to limit the access key to only sign transactions for a specific contract. Enter the contract account ID:
+    /// Enter the contract account ID that this access key is limited to:
     contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]

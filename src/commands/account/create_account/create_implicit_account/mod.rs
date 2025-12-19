@@ -41,7 +41,7 @@ pub enum Mode {
 #[interactive_clap(output_context = SaveToFolderContext)]
 pub struct SaveToFolder {
     #[interactive_clap(skip_default_input_arg)]
-    /// Where to save the implicit account file?
+    /// Enter the file path where to save the implicit account:
     folder_path: crate::types::path_buf::PathBuf,
 }
 
@@ -65,7 +65,7 @@ impl SaveToFolder {
         context: &SaveImplicitAccountContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
         Ok(Some(
-            CustomType::new("Where to save the implicit account file?")
+            CustomType::new("Enter the file path where to save the implicit account:")
                 .with_starting_input(&format!(
                     "{}/implicit",
                     context.config.credentials_home_dir.to_string_lossy()
