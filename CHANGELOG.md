@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.2](https://github.com/near/near-cli-rs/compare/v0.23.1...v0.23.2) - 2025-12-19
+
+### Added
+
+- New commands for getting and adding MPC-derived access key to account (`account -> get-public-key -> from-mpc`, `account -> add-key -> use-mpc-contract`) ([#535](https://github.com/near/near-cli-rs/pull/535))
+
 ## [0.23.1](https://github.com/near/near-cli-rs/compare/v0.23.0...v0.23.1) - 2025-12-17
 
 ### Fixed
