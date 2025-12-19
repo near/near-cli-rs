@@ -116,13 +116,13 @@ impl AddNetworkConnection {
     ) -> color_eyre::eyre::Result<Option<crate::types::api_key::ApiKey>> {
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
-            #[strum(to_string = "Yes, the RPC endpoint requires API key")]
+            #[strum(to_string = "Yes, the RPC endpoint requires an API key")]
             Yes,
-            #[strum(to_string = "No, the RPC endpoint does not require API key")]
+            #[strum(to_string = "No, the RPC endpoint does not require an API key")]
             No,
         }
         let select_choose_input = Select::new(
-            "Do you want to input an API key?",
+            "Do you want to enter an API key?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
@@ -240,13 +240,13 @@ impl AddNetworkConnection {
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
-            #[strum(to_string = "Yes, I want to enter the fastnear API url")]
+            #[strum(to_string = "Yes, I want to enter the FastNEAR API URL")]
             Yes,
-            #[strum(to_string = "No, I don't want to enter the fastnear API url")]
+            #[strum(to_string = "No, I don't want to enter the FastNEAR API URL")]
             No,
         }
         let select_choose_input = Select::new(
-            "Do you want to enter the fastnear API url?",
+            "Do you want to enter the FastNEAR API URL?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
@@ -288,13 +288,13 @@ impl AddNetworkConnection {
     ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
-            #[strum(to_string = "Yes, I want to enter the coingecko API url")]
+            #[strum(to_string = "Yes, I want to enter the CoinGecko API URL")]
             Yes,
-            #[strum(to_string = "No, I don't want to enter the coingecko API url")]
+            #[strum(to_string = "No, I don't want to enter the CoinGecko API URL")]
             No,
         }
         let select_choose_input = Select::new(
-            "Do you want to enter the coingecko API url?",
+            "Do you want to enter the CoinGecko API URL?",
             vec![ConfirmOptions::Yes, ConfirmOptions::No],
         )
         .prompt()?;
