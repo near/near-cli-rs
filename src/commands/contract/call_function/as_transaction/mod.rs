@@ -259,8 +259,8 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: receiver_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            Box::new(near_primitives::transaction::FunctionCallAction {
+                        actions: vec![omni_transaction::near::types::Action::FunctionCall(
+                            Box::new(omni_transaction::near::types::FunctionCallAction {
                                 method_name: item.function_name.clone(),
                                 args: item.function_args.clone(),
                                 gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),

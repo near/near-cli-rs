@@ -60,16 +60,16 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     }
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
                         (vec![
-                                near_primitives::transaction::Action::CreateAccount(
-                                    near_primitives::transaction::CreateAccountAction {},
+                                omni_transaction::near::types::Action::CreateAccount(
+                                    omni_transaction::near::types::CreateAccountAction {},
                                 ),
-                                near_primitives::transaction::Action::Transfer(
-                                    near_primitives::transaction::TransferAction {
+                                omni_transaction::near::types::Action::Transfer(
+                                    omni_transaction::near::types::TransferAction {
                                         deposit: item.account_properties.initial_balance.into(),
                                     },
                                 ),
-                                near_primitives::transaction::Action::AddKey(
-                                    Box::new(near_primitives::transaction::AddKeyAction {
+                                omni_transaction::near::types::Action::AddKey(
+                                    Box::new(omni_transaction::near::types::AddKeyAction {
                                         public_key: item.account_properties.public_key.clone(),
                                         access_key: near_primitives::account::AccessKey {
                                             nonce: 0,
@@ -91,9 +91,9 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                 || new_account_id.is_top_level()
                             {
                                 (
-                                    vec![near_primitives::transaction::Action::FunctionCall(
+                                    vec![omni_transaction::near::types::Action::FunctionCall(
                                         Box::new(
-                                            near_primitives::transaction::FunctionCallAction {
+                                            omni_transaction::near::types::FunctionCallAction {
                                                 method_name: "create_account".to_string(),
                                                 args,
                                                 gas: near_primitives::gas::Gas::from_teragas(30),

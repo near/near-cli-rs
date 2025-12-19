@@ -45,7 +45,7 @@ impl TransactionInfoContext {
                             .transaction
                             .actions
                             .into_iter()
-                            .map(near_primitives::transaction::Action::try_from)
+                            .map(omni_transaction::near::types::Action::try_from)
                             .collect::<Result<Vec<near_primitives::transaction::Action>, _>>()
                             .expect("Internal error: can not convert the action_view to action."),
                     };
@@ -60,7 +60,7 @@ impl TransactionInfoContext {
                     );
 
                     if prepopulated_transaction.actions.len() == 1 {
-                        if let near_primitives::transaction::Action::Delegate(
+                        if let omni_transaction::near::types::Action::Delegate(
                             signed_delegate_action,
                         ) = &prepopulated_transaction.actions[0]
                         {
@@ -166,7 +166,7 @@ fn action_transformation(
 ) -> color_eyre::eyre::Result<
     Option<super::construct_transaction::add_action_1::add_action::CliActionSubcommand>,
 > {
-    use near_primitives::transaction::Action;
+    use omni_transaction::near::types::Action;
 
     use super::construct_transaction::add_action_1::add_action;
 

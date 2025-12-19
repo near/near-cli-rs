@@ -18,8 +18,8 @@ impl StakeActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<StakeAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::Stake(Box::new(
-            near_primitives::transaction::StakeAction {
+        let action = omni_transaction::near::types::Action::Stake(Box::new(
+            omni_transaction::near::types::StakeAction {
                 stake: scope.stake_amount.into(),
                 public_key: scope.public_key.clone().into(),
             },
