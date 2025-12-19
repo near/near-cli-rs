@@ -64,7 +64,7 @@ pub struct ArgsForDownloadContract {
 #[interactive_clap(output_context = DownloadContractContext)]
 pub struct DownloadContract {
     #[interactive_clap(skip_default_input_arg)]
-    /// Enter the name of the file to save the contract:
+    /// Enter the file path where to save the contract:
     file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(named_arg)]
     /// Select network
@@ -76,7 +76,7 @@ impl DownloadContract {
         _context: &ArgsForDownloadContract,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
         Ok(Some(
-            CustomType::new("Enter the name of the file to save the contract:")
+            CustomType::new("Enter the file path where to save the contract:")
                 .with_starting_input("contract.wasm")
                 .prompt()?,
         ))

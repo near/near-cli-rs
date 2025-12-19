@@ -2,7 +2,7 @@
 #[interactive_clap(input_context = super::ContractContext)]
 #[interactive_clap(output_context = WithdrawArgsContext)]
 pub struct WithdrawArgs {
-    /// Enter the amount to withdraw from the storage (example: 10NEAR or 0.5near or 10000yoctonear):
+    /// Enter the amount to withdraw from the storage (example: 10 NEAR or 0.5 NEAR or 10000 yoctonear):
     amount: crate::types::near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?

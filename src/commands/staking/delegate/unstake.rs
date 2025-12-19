@@ -2,7 +2,7 @@
 #[interactive_clap(input_context = super::StakeDelegationContext)]
 #[interactive_clap(output_context = UnstakeContext)]
 pub struct Unstake {
-    /// Enter the amount to unstake from the inner account of the predecessor (example: 10NEAR or 0.5near or 10000yoctonear):
+    /// Enter the amount to unstake from the inner account of the predecessor (example: 10 NEAR or 0.5 NEAR or 10000 yoctonear):
     amount: crate::types::near_token::NearToken,
     #[interactive_clap(skip_default_input_arg)]
     /// What is validator account ID?

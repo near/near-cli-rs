@@ -132,7 +132,7 @@ impl NewAccount {
         _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         Ok(Some(
-            CustomType::new("Enter the amount of the NEAR tokens you want to fund the new account with (example: 10NEAR or 0.5near or 10000yoctonear):")
+            CustomType::new("Enter the amount of NEAR tokens you want to fund the new account with (example: 10 NEAR or 0.5 NEAR or 10000 yoctonear):")
                 .with_starting_input("0.1 NEAR")
                 .prompt()?
         ))

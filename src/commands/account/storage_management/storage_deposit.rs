@@ -7,7 +7,7 @@ pub struct DepositArgs {
     #[interactive_clap(skip_default_input_arg)]
     /// Which account ID do you want to add a deposit to?
     receiver_account_id: crate::types::account_id::AccountId,
-    /// Enter the amount to deposit into the storage (example: 10NEAR or 0.5near or 10000yoctonear):
+    /// Enter the amount to deposit into the storage (example: 10 NEAR or 0.5 NEAR or 10000 yoctonear):
     deposit: crate::types::near_token::NearToken,
     #[interactive_clap(named_arg)]
     /// What is the signer account ID?

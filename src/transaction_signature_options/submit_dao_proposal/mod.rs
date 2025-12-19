@@ -121,7 +121,9 @@ impl DaoProposalArguments {
     pub fn input_proposal_description(
         _context: &DaoProposalContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        Ok(Some(Text::new("Input proposal description:").prompt()?))
+        Ok(Some(
+            Text::new("Enter a description for the DAO proposal:").prompt()?,
+        ))
     }
 }
 
@@ -173,7 +175,7 @@ impl PrepaidGas {
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         Ok(Some(
             CustomType::new(
-                "What is the gas limit for adding DAO proposal (if unsure, keep 10 Tgas)?",
+                "What is the gas limit for adding a DAO proposal (if you're not sure, keep 10 Tgas)?",
             )
             .with_starting_input("10 Tgas")
             .with_validator(move |gas: &crate::common::NearGas| {
@@ -240,7 +242,7 @@ impl Deposit {
         _context: &PrepaidGasContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
         Ok(Some(
-            CustomType::new("Enter deposit for adding DAO proposal:")
+            CustomType::new("Enter deposit for adding a DAO proposal:")
                 .with_starting_input("0 NEAR")
                 .prompt()?,
         ))
