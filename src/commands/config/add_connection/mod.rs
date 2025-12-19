@@ -326,7 +326,8 @@ impl AddNetworkConnection {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let mpc_contract_account_id: crate::types::account_id::AccountId =
-                CustomType::new("What is the MPC (Multi-Party Computation) contract account ID?").prompt()?;
+                CustomType::new("What is the MPC (Multi-Party Computation) contract account ID?")
+                    .prompt()?;
             Ok(Some(mpc_contract_account_id))
         } else {
             Ok(None)

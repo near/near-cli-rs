@@ -331,27 +331,28 @@ impl PrepaidGas {
         _context: &MpcDeriveKeyContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         Ok(Some(
-            CustomType::new("What is the gas limit for signing with MPC (if you're not sure, keep 15 Tgas)?")
-                .with_starting_input("15 Tgas")
-                .with_validator(move |gas: &crate::common::NearGas| {
-                    if gas < &near_gas::NearGas::from_tgas(15) {
-                        Ok(inquire::validator::Validation::Invalid(
-                            inquire::validator::ErrorMessage::Custom(
-                                "Sign call to MPC contract requires minimum of 15 TeraGas"
-                                    .to_string(),
-                            ),
-                        ))
-                    } else if gas > &near_gas::NearGas::from_tgas(300) {
-                        Ok(inquire::validator::Validation::Invalid(
-                            inquire::validator::ErrorMessage::Custom(
-                                "You need to enter a value of no more than 300 TeraGas".to_string(),
-                            ),
-                        ))
-                    } else {
-                        Ok(inquire::validator::Validation::Valid)
-                    }
-                })
-                .prompt()?,
+            CustomType::new(
+                "What is the gas limit for signing with MPC (if you're not sure, keep 15 Tgas)?",
+            )
+            .with_starting_input("15 Tgas")
+            .with_validator(move |gas: &crate::common::NearGas| {
+                if gas < &near_gas::NearGas::from_tgas(15) {
+                    Ok(inquire::validator::Validation::Invalid(
+                        inquire::validator::ErrorMessage::Custom(
+                            "Sign call to MPC contract requires minimum of 15 TeraGas".to_string(),
+                        ),
+                    ))
+                } else if gas > &near_gas::NearGas::from_tgas(300) {
+                    Ok(inquire::validator::Validation::Invalid(
+                        inquire::validator::ErrorMessage::Custom(
+                            "You need to enter a value of no more than 300 TeraGas".to_string(),
+                        ),
+                    ))
+                } else {
+                    Ok(inquire::validator::Validation::Valid)
+                }
+            })
+            .prompt()?,
         ))
     }
 }

@@ -121,7 +121,9 @@ impl DaoProposalArguments {
     pub fn input_proposal_description(
         _context: &DaoProposalContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        Ok(Some(Text::new("Enter a description for the DAO proposal:").prompt()?))
+        Ok(Some(
+            Text::new("Enter a description for the DAO proposal:").prompt()?,
+        ))
     }
 }
 
