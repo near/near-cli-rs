@@ -4,6 +4,7 @@ mod from_keychain;
 #[cfg(feature = "ledger")]
 mod from_ledger;
 mod from_legacy_keychain;
+mod from_mpc;
 mod from_plaintext_private_key;
 mod from_seed_phrase;
 
@@ -45,4 +46,9 @@ pub enum GetPublicKeyMode {
     ))]
     /// Get the public key (full access key) stored in the legacy keychain (compatible with the old near CLI)
     FromLegacyKeychain(self::from_legacy_keychain::PublicKeyFromKeychain),
+    #[strum_discriminants(strum(
+        message = "from-mpc                    - Get the public key by deriving it from AccountIds and derivation path with MPC contract"
+    ))]
+    /// Get the public key by deriving it from AccountIds and derivation path with MPC contract
+    FromMpc(self::from_mpc::PublicKeyFromMpc),
 }

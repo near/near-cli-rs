@@ -652,28 +652,11 @@ pub fn dao_sign_with_mpc_after_send_flow(
             }
         };
 
-        let sender_id = match suspend_tracing_indicatif(|| {
-            inquire::CustomType::new("Enter the person who initiated execution of DAO proposal:")
-                .prompt()
-        }) {
-            Ok(tx_hash) => tx_hash,
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => {
-                return Ok(());
-            }
-            Err(err) => {
-                eprintln!("{}", format!("{err}").red());
-                continue;
-            }
-        };
-
         let signed_transaction = match fetch_mpc_contract_response_from_dao_tx(
             network_config,
             original_sign_request,
             transaction_hash,
-            sender_id,
+            "near".parse()?,
             outcome_view.transaction.receiver_id.clone(),
         ) {
             Ok(sign_result) => {
