@@ -56,7 +56,7 @@ pub enum TopLevelCommand {
 
 pub type OnBeforeSigningCallback = std::sync::Arc<
     dyn Fn(
-        &mut near_primitives::transaction::TransactionV0,
+        &mut omni_transaction::near::NearTransaction,
         &crate::config::NetworkConfig,
     ) -> crate::CliResult,
 >;
@@ -76,11 +76,11 @@ pub type GetPrepopulatedTransactionAfterGettingNetworkCallback = std::sync::Arc<
 pub struct PrepopulatedTransaction {
     pub signer_id: near_primitives::types::AccountId,
     pub receiver_id: near_primitives::types::AccountId,
-    pub actions: Vec<near_primitives::transaction::Action>,
+    pub actions: Vec<omni_transaction::near::types::Action>,
 }
 
-impl From<near_primitives::transaction::TransactionV0> for PrepopulatedTransaction {
-    fn from(value: near_primitives::transaction::TransactionV0) -> Self {
+impl From<omni_transaction::near::NearTransaction> for PrepopulatedTransaction {
+    fn from(value: omni_transaction::near::NearTransaction) -> Self {
         Self {
             signer_id: value.signer_id,
             receiver_id: value.receiver_id,
@@ -91,10 +91,12 @@ impl From<near_primitives::transaction::TransactionV0> for PrepopulatedTransacti
 
 impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction {
     fn from(value: near_primitives::transaction::Transaction) -> Self {
+        let omni_tx = crate::types::omni_transaction_helpers::near_primitives_transaction_to_omni(&value)
+            .expect("Failed to convert near-primitives to omni-transaction");
         Self {
-            signer_id: value.signer_id().clone(),
-            receiver_id: value.receiver_id().clone(),
-            actions: value.take_actions(),
+            signer_id: omni_tx.signer_id,
+            receiver_id: omni_tx.receiver_id,
+            actions: omni_tx.actions,
         }
     }
 }

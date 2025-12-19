@@ -29,8 +29,8 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: signer_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::AddKey(Box::new(
-                            near_primitives::transaction::AddKeyAction {
+                        actions: vec![omni_transaction::near::types::Action::AddKey(Box::new(
+                            omni_transaction::near::types::AddKeyAction {
                                 public_key: item.0.public_key.clone(),
                                 access_key: near_primitives::account::AccessKey {
                                     nonce: 0,

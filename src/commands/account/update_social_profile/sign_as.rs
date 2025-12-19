@@ -61,7 +61,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
                 let public_key = prepopulated_unsigned_transaction.public_key.clone();
                 let receiver_id = prepopulated_unsigned_transaction.receiver_id.clone();
 
-                if let Some(near_primitives::transaction::Action::FunctionCall(action)) =
+                if let Some(omni_transaction::near::types::Action::FunctionCall(action)) =
                     prepopulated_unsigned_transaction.actions.first_mut()
                 {
                     action.deposit = get_deposit(
@@ -192,8 +192,8 @@ fn get_prepopulated_transaction(
     })?
     .into_bytes();
 
-    prepopulated_transaction.actions = vec![near_primitives::transaction::Action::FunctionCall(
-        Box::new(near_primitives::transaction::FunctionCallAction {
+    prepopulated_transaction.actions = vec![omni_transaction::near::types::Action::FunctionCall(
+        Box::new(omni_transaction::near::types::FunctionCallAction {
             method_name: "set".to_string(),
             args,
             gas: near_primitives::gas::Gas::from_teragas(300),

@@ -254,8 +254,8 @@ impl From<DepositContext> for crate::commands::TransactionContext {
         let new_prepopulated_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.dao_account_id,
             receiver_id: item.receiver_id,
-            actions: vec![near_primitives::transaction::Action::FunctionCall(
-                Box::new(near_primitives::transaction::FunctionCallAction {
+            actions: vec![omni_transaction::near::types::Action::FunctionCall(
+                Box::new(omni_transaction::near::types::FunctionCallAction {
                     method_name: "add_proposal".to_string(),
                     args: item.proposal_args.clone(),
                     gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),

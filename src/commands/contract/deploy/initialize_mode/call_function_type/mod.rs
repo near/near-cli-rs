@@ -155,8 +155,8 @@ impl DepositContext {
                         receiver_id: receiver_account_id.clone(),
                         actions: vec![
                             previous_context.deploy_action.clone(),
-                            near_primitives::transaction::Action::FunctionCall(Box::new(
-                                near_primitives::transaction::FunctionCallAction {
+                            omni_transaction::near::types::Action::FunctionCall(Box::new(
+                                omni_transaction::near::types::FunctionCallAction {
                                     method_name: previous_context.function_name.clone(),
                                     args: previous_context.function_args.clone(),
                                     gas: near_primitives::gas::Gas::from_gas(previous_context.gas.as_gas()),

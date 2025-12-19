@@ -103,7 +103,7 @@ impl ContractFileContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            deploy_action: near_primitives::transaction::Action::DeployContract(
+            deploy_action: omni_transaction::near::types::Action::DeployContract(
                 near_primitives::action::DeployContractAction { code },
             ),
         }))
@@ -137,7 +137,7 @@ impl ContractHashContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            deploy_action: near_primitives::transaction::Action::UseGlobalContract(Box::new(
+            deploy_action: omni_transaction::near::types::Action::UseGlobalContract(Box::new(
                 near_primitives::action::UseGlobalContractAction {
                     contract_identifier:
                         near_primitives::action::GlobalContractIdentifier::CodeHash(
@@ -188,7 +188,7 @@ impl ContractAccountIdContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            deploy_action: near_primitives::transaction::Action::UseGlobalContract(Box::new(
+            deploy_action: omni_transaction::near::types::Action::UseGlobalContract(Box::new(
                 near_primitives::action::UseGlobalContractAction {
                     contract_identifier:
                         near_primitives::action::GlobalContractIdentifier::AccountId(

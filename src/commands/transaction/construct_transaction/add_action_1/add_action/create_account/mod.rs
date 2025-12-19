@@ -14,8 +14,8 @@ impl CreateAccountActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         _scope: &<CreateAccountAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::CreateAccount(
-            near_primitives::transaction::CreateAccountAction {},
+        let action = omni_transaction::near::types::Action::CreateAccount(
+            omni_transaction::near::types::CreateAccountAction {},
         );
         let mut actions = previous_context.actions;
         actions.push(action);

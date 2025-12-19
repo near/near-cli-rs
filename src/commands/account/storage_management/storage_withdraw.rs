@@ -60,8 +60,8 @@ impl SignerAccountIdContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: get_contract_account_id(network_config)?,
-                        actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            Box::new(near_primitives::transaction::FunctionCallAction {
+                        actions: vec![omni_transaction::near::types::Action::FunctionCall(
+                            Box::new(omni_transaction::near::types::FunctionCallAction {
                                 method_name: "storage_withdraw".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({
                                     "amount": amount.clone().as_yoctonear().to_string()
