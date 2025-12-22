@@ -331,27 +331,28 @@ impl PrepaidGas {
         _context: &MpcDeriveKeyContext,
     ) -> color_eyre::eyre::Result<Option<crate::common::NearGas>> {
         Ok(Some(
-            CustomType::new("What is the gas limit for signing MPC (if unsure, keep 15 Tgas)?")
-                .with_starting_input("15 Tgas")
-                .with_validator(move |gas: &crate::common::NearGas| {
-                    if gas < &near_gas::NearGas::from_tgas(15) {
-                        Ok(inquire::validator::Validation::Invalid(
-                            inquire::validator::ErrorMessage::Custom(
-                                "Sign call to MPC contract requires minimum of 15 TeraGas"
-                                    .to_string(),
-                            ),
-                        ))
-                    } else if gas > &near_gas::NearGas::from_tgas(300) {
-                        Ok(inquire::validator::Validation::Invalid(
-                            inquire::validator::ErrorMessage::Custom(
-                                "You need to enter a value of no more than 300 TeraGas".to_string(),
-                            ),
-                        ))
-                    } else {
-                        Ok(inquire::validator::Validation::Valid)
-                    }
-                })
-                .prompt()?,
+            CustomType::new(
+                "What is the gas limit for signing with MPC (if you're not sure, keep 15 Tgas)?",
+            )
+            .with_starting_input("15 Tgas")
+            .with_validator(move |gas: &crate::common::NearGas| {
+                if gas < &near_gas::NearGas::from_tgas(15) {
+                    Ok(inquire::validator::Validation::Invalid(
+                        inquire::validator::ErrorMessage::Custom(
+                            "Sign call to MPC contract requires minimum of 15 TeraGas".to_string(),
+                        ),
+                    ))
+                } else if gas > &near_gas::NearGas::from_tgas(300) {
+                    Ok(inquire::validator::Validation::Invalid(
+                        inquire::validator::ErrorMessage::Custom(
+                            "You need to enter a value of no more than 300 TeraGas".to_string(),
+                        ),
+                    ))
+                } else {
+                    Ok(inquire::validator::Validation::Valid)
+                }
+            })
+            .prompt()?,
         ))
     }
 }
@@ -652,28 +653,11 @@ pub fn dao_sign_with_mpc_after_send_flow(
             }
         };
 
-        let sender_id = match suspend_tracing_indicatif(|| {
-            inquire::CustomType::new("Enter the person who initiated execution of DAO proposal:")
-                .prompt()
-        }) {
-            Ok(tx_hash) => tx_hash,
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => {
-                return Ok(());
-            }
-            Err(err) => {
-                eprintln!("{}", format!("{err}").red());
-                continue;
-            }
-        };
-
         let signed_transaction = match fetch_mpc_contract_response_from_dao_tx(
             network_config,
             original_sign_request,
             transaction_hash,
-            sender_id,
+            "near".parse()?,
             outcome_view.transaction.receiver_id.clone(),
         ) {
             Ok(sign_result) => {

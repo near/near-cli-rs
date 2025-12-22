@@ -48,7 +48,7 @@ impl SaveToFile {
         _context: &super::SignLaterContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
         Ok(Some(
-            CustomType::new("What is the location of the file to save the unsigned transaction?")
+            CustomType::new("Enter the file path where to save the unsigned transaction:")
                 .with_starting_input("unsigned-transaction-info.json")
                 .prompt()?,
         ))

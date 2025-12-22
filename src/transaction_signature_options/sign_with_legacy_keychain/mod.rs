@@ -287,7 +287,7 @@ impl SignLegacyKeychain {
                 .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
                 .collect::<Vec<_>>();
 
-            let selected_input = Select::new("Choose public_key:", key_list).prompt()?;
+            let selected_input = Select::new("Choose a public key:", key_list).prompt()?;
 
             return Ok(Some(crate::types::public_key::PublicKey::from_str(
                 &selected_input,

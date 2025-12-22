@@ -51,7 +51,7 @@ pub struct FunctionCallType {
     #[interactive_clap(skip_default_input_arg)]
     allowance: crate::types::near_allowance::NearAllowance,
     #[interactive_clap(long)]
-    /// You chose to limit the access key to only sign transactions for a specific contract. Enter the contract account ID:
+    /// Enter the contract account ID that this access key can be used to sign call function transactions for:
     contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
@@ -132,7 +132,7 @@ impl FunctionCallType {
         _context: &super::super::super::super::ConstructTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_allowance::NearAllowance>> {
         let allowance_near_balance: crate::types::near_allowance::NearAllowance =
-            CustomType::new("Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10NEAR or 0.5near or 10000yoctonear):")
+            CustomType::new("Enter the allowance, a budget this access key can use to pay for transaction fees (example: 10 NEAR or 0.5 NEAR or 10000 yoctonear):")
                 .with_starting_input("unlimited")
                 .prompt()?;
         Ok(Some(allowance_near_balance))

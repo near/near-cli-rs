@@ -210,7 +210,7 @@ fn action_transformation(
             )))
         }
         Action::DeployContract(deploy_contract_action) => {
-            let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the name of the file to save the contract:")
+            let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the file path where to save the contract:")
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 
@@ -269,7 +269,7 @@ fn action_transformation(
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
         Action::DeployGlobalContract(action) => {
-            let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the name of the file to save the contract:")
+            let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the file path where to save the contract:")
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 

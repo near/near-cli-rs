@@ -400,7 +400,7 @@ impl Manually {
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
             let tags: crate::types::vec_string::VecString =
-                CustomType::new("Enter a comma-separated list of tags for account profile:")
+                CustomType::new("Enter a comma-separated list of tags for the account profile:")
                     .prompt()?;
             Ok(Some(tags))
         } else {

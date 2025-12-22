@@ -841,8 +841,7 @@ pub fn print_unsigned_transaction(
                 info_str.push_str(&print_unsigned_transaction(&prepopulated_transaction));
             }
             near_primitives::transaction::Action::DeployGlobalContract(deploy) => {
-                let code_hash = near_primitives::hash::CryptoHash::try_from(deploy.code.as_ref())
-                    .expect("The code hash must be valid since it is derived from the code bytes.");
+                let code_hash = CryptoHash::hash_bytes(&deploy.code);
                 let identifier = match deploy.deploy_mode {
                     GlobalContractDeployMode::CodeHash => {
                         format!("deploy code <{code_hash:?}> as a global hash")
