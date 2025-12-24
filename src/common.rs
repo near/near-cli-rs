@@ -1429,41 +1429,11 @@ pub fn print_transaction_status(
         .as_ref()
         .map(get_near_usd_exchange_rate);
 
-    let mut logs_info = String::new();
-    let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
-    let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
-
-    for receipt in &transaction_info.receipts_outcome {
-        total_gas_burnt = total_gas_burnt
-            .checked_add(receipt.outcome.gas_burnt)
-            .context("overflow while adding transaction status total gas")?;
-        total_tokens_burnt = total_tokens_burnt
-            .checked_add(receipt.outcome.tokens_burnt)
-            .context("overflow while adding transaction status total tokens burnt")?;
-
-        if receipt.outcome.logs.is_empty() {
-            logs_info.push_str(&format!(
-                "\nLogs [{}]:   No logs",
-                receipt.outcome.executor_id
-            ));
-        } else {
-            logs_info.push_str(&format!("\nLogs [{}]:", receipt.outcome.executor_id));
-            logs_info.push_str(&format!("\n  {}", receipt.outcome.logs.join("\n  ")));
-        };
-    }
-    logs_info.push_str("\n------------------------------------");
-
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "--- Logs ---------------------------{}",
-        crate::common::indent_payload(&logs_info)
-    );
-
     let mut result_info = String::new();
-    let mut result_output = String::new();
+    let mut return_value = String::new();
+    let mut returned_value_bytes: Vec<u8> = Vec::new();
 
-    let return_value = match &transaction_info.status {
+    let result = match &transaction_info.status {
         near_primitives::views::FinalExecutionStatus::NotStarted => {
             if let crate::Verbosity::Quiet = verbosity {
                 return Ok(());
@@ -1499,8 +1469,9 @@ pub fn print_transaction_status(
                 std::io::stdout().write_all(bytes_result)?;
                 return Ok(());
             };
-            let result = if bytes_result.is_empty() {
-                "Empty result".to_string()
+            returned_value_bytes.append(&mut bytes_result.clone());
+            return_value = if bytes_result.is_empty() {
+                "Empty return value".to_string()
             } else if let Ok(json_result) =
                 serde_json::from_slice::<serde_json::Value>(bytes_result)
             {
@@ -1510,41 +1481,18 @@ pub fn print_transaction_status(
             } else {
                 "The returned value is not printable (binary data)".to_string()
             };
-            if let crate::Verbosity::Interactive = verbosity {
-                for action in &transaction_info.transaction.actions {
-                    if let near_primitives::views::ActionView::FunctionCall { .. } = action {
-                        tracing::info!(
-                            parent: &tracing::Span::none(),
-                            "Function execution logs ------------{}",
-                            crate::common::indent_payload(&logs_info)
-                        );
-                        tracing::info!(
-                            parent: &tracing::Span::none(),
-                            "Function execution return value (printed to stdout):"
-                        );
-                        suspend_tracing_indicatif(|| println!("{result}"));
-                    }
-                }
-            }
-            result_info.push_str(&result);
-            result_info.push_str("\n------------------------------------");
-
-            result_output.push_str(&print_value_successful_transaction(
-                transaction_info.clone(),
-            ));
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "--- Result -------------------------\n{}",
-                crate::common::indent_payload(&result_info)
-            );
+            result_info.push_str(&return_value);
             Ok(())
         }
     };
 
-    result_output.push_str(&format!("\nGas burned: {}", total_gas_burnt));
+    let mut transaction_execution_info = String::new();
+    let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
+    let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
 
-    result_output.push_str(&format!(
+    transaction_execution_info.push_str(&format!("\nGas burned: {}", total_gas_burnt));
+
+    transaction_execution_info.push_str(&format!(
         "\nTransaction fee: {}{}",
         total_tokens_burnt.exact_amount_display(),
         match near_usd_exchange_rate {
@@ -1557,8 +1505,8 @@ pub fn print_transaction_status(
         }
     ));
 
-    result_output.push_str(&format!(
-        "\nTransaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
+    transaction_execution_info.push_str(&format!(
+        "\nTransaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n ",
         id=transaction_info.transaction_outcome.id,
         path=network_config.explorer_transaction_url
     ));
@@ -1567,16 +1515,67 @@ pub fn print_transaction_status(
         tracing::error!(
             parent: &tracing::Span::none(),
             "Transaction failed{}",
-            crate::common::indent_payload(&result_output)
+            crate::common::indent_payload(&transaction_execution_info)
         );
     } else {
         tracing::info!(
             parent: &tracing::Span::none(),
-            "{}",
-            crate::common::indent_payload(&result_output)
+            "Transaction Execution Info:{}",
+            crate::common::indent_payload(&transaction_execution_info)
         );
     }
-    return_value
+
+    let mut logs_info = String::new();
+
+    for receipt in &transaction_info.receipts_outcome {
+        total_gas_burnt = total_gas_burnt
+            .checked_add(receipt.outcome.gas_burnt)
+            .context("overflow while adding transaction status total gas")?;
+        total_tokens_burnt = total_tokens_burnt
+            .checked_add(receipt.outcome.tokens_burnt)
+            .context("overflow while adding transaction status total tokens burnt")?;
+
+        if receipt.outcome.logs.is_empty() {
+            logs_info.push_str(&format!(
+                "\nLogs [{}]:   No logs",
+                receipt.outcome.executor_id
+            ));
+        } else {
+            logs_info.push_str(&format!("\nLogs [{}]:", receipt.outcome.executor_id));
+            logs_info.push_str(&format!("\n  {}", receipt.outcome.logs.join("\n  ")));
+        };
+    }
+
+    for action in &transaction_info.transaction.actions {
+        if let near_primitives::views::ActionView::FunctionCall { .. } = action {
+            tracing::info!(
+                parent: &tracing::Span::none(),
+                "Function execution logs:{}",
+                crate::common::indent_payload(&format!("{}\n ",logs_info))
+            );
+            if returned_value_bytes.is_empty() {
+                tracing::info!(
+                    parent: &tracing::Span::none(),
+                    "Function execution return value:\n{}",
+                    crate::common::indent_payload("Empty return value\n ")
+                );
+            } else {
+                suspend_tracing_indicatif(|| {
+                    eprintln!("\nFunction execution return value (printed to stdout):")
+                });
+                suspend_tracing_indicatif(|| println!("{return_value}"));
+            }
+        }
+    }
+
+    if !result_info.is_empty() {
+        eprintln!(
+            "{}",
+            print_value_successful_transaction(transaction_info.clone(),)
+        );
+    }
+
+    result
 }
 
 pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
@@ -2578,10 +2577,10 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                     target: "near_teach_me",
                     parent: &tracing::Span::none(),
                     "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
-                    indent_payload(
+                    indent_payload(&format!("{}\n ", 
                         &String::from_utf8(call_result.result.clone())
                             .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
-                    )
+                    ))
                 );
             })
             .inspect_err(|_| {
@@ -2894,14 +2893,15 @@ pub impl near_primitives::views::CallResult {
         if self.logs.is_empty() {
             info_str.push_str("\nNo logs")
         } else {
-            info_str.push_str("\nLogs:");
+            // info_str.push_str("\nLogs:");
             info_str.push_str(&format!("\n  {}", self.logs.join("\n  ")));
         }
-        info_str.push_str("\n------------------------------------");
+        // info_str.push_str("\n------------------------------------");
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
-            "--- Logs ---------------------------{}\n",
+            // "--- Logs ---------------------------{}\n",
+            "Logs:{}",
             indent_payload(&info_str)
         );
     }
