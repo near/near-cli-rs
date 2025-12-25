@@ -227,7 +227,7 @@ impl SignLegacyKeychainContext {
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
             crate::common::indent_payload(&format!(
-                "\nPublic key: {}\nSignature:  {}\n",
+                "\nPublic key: {}\nSignature:  {}\n ",
                 signer_access_key.public_key,
                 signature
             ))
