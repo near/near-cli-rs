@@ -89,13 +89,8 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
 
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    let info_str = format!(
+                    println!(
                         "<{signer_account_id}> has successfully transferred NFT token_id=\"{token_id}\" to <{receiver_account_id}> on contract <{nft_contract_account_id}>.",
-                    );
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "\n{}",
-                        crate::common::indent_payload(&info_str)
                     );
                 }
                 Ok(())
