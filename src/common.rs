@@ -141,7 +141,7 @@ pub struct AccountTransferAllowance {
 impl std::fmt::Display for AccountTransferAllowance {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(fmt,
-            "\n{} account has {} available for transfer (the total balance is {}, but {} is locked for storage)",
+            "{} account has {} available for transfer (the total balance is {}, but {} is locked for storage)",
             self.account_id,
             self.transfer_allowance(),
             self.account_liquid_balance,
