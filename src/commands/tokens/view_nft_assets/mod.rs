@@ -80,6 +80,7 @@ fn get_nft_balance(
     args: Vec<u8>,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    tracing::info!(target: "near_teach_me", "Getting NFT balance ...");
     network_config
         .json_rpc_client()
         .blocking_call_view_function(
@@ -92,6 +93,6 @@ fn get_nft_balance(
             format!("Failed to fetch query for view method: 'nft_tokens_for_owner' (contract <{}> on network <{}>)",
                 nft_contract_account_id,
                 network_config.network_name
-        )
-})
+            )
+        })
 }

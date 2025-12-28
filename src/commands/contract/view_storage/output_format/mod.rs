@@ -30,6 +30,7 @@ pub fn get_contract_state(
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::query::RpcQueryResponse> {
+    tracing::info!(target: "near_teach_me", "Obtaining the state of the contract ...");
     network_config
         .json_rpc_client()
         .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {

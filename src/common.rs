@@ -175,6 +175,7 @@ pub async fn get_account_transfer_allowance(
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
+    tracing::info!(target: "near_teach_me", "Getting the transfer allowance for the account ...");
     let account_state =
         get_account_state(network_config, &account_id, block_reference.clone()).await;
     let account_view = match account_state {
@@ -244,6 +245,7 @@ pub fn verify_account_access_key(
     near_primitives::views::AccessKeyView,
     AccountStateError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
+    tracing::info!(target: "near_teach_me", "Account access key verification ...");
     loop {
         match network_config
             .json_rpc_client()
@@ -309,6 +311,7 @@ pub fn is_account_exist(
     networks: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<bool> {
+    tracing::info!(target: "near_teach_me", "Checking the existence of the account ...");
     for (_, network_config) in networks {
         let result = tokio::runtime::Runtime::new()
             .unwrap()
@@ -337,6 +340,7 @@ pub fn find_network_where_account_exist(
     new_account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<crate::config::NetworkConfig>> {
     tracing::Span::current().pb_set_message(new_account_id.as_str());
+    tracing::info!(target: "near_teach_me", "Searching for a network where an account exists for {new_account_id} ...");
     for (_, network_config) in context.config.network_connection.iter() {
         let result = tokio::runtime::Runtime::new()
             .unwrap()
@@ -389,7 +393,7 @@ pub async fn get_account_state(
             "<{account_id}> on network <{}> ...",
             network_config.network_name
         ));
-        tracing::info!(target: "near_teach_me", "<{account_id}> on network <{}> ...", network_config.network_name);
+        tracing::info!(target: "near_teach_me", "Getting account status information for <{account_id}> on network <{}> ...", network_config.network_name);
 
         let query_view_method_response = view_account(
             format!("{}", network_config.rpc_url),
@@ -474,6 +478,7 @@ async fn view_account(
     near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
     tracing::Span::current().pb_set_message(&instrument_message);
+    tracing::info!(target: "near_teach_me", "Receiving request via RPC {instrument_message}");
 
     let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
         block_reference,
@@ -1795,6 +1800,7 @@ pub fn get_delegated_validator_list_from_mainnet(
 pub fn get_used_delegated_validator_list(
     config: &crate::config::Config,
 ) -> color_eyre::eyre::Result<VecDeque<near_primitives::types::AccountId>> {
+    tracing::info!(target: "near_teach_me", "Retrieving a list of delegated validators from \"mainnet\" ...");
     let used_account_list: VecDeque<UsedAccount> =
         get_used_account_list(&config.credentials_home_dir);
     let mut delegated_validator_list =
@@ -1871,6 +1877,8 @@ pub struct RewardFeeFraction {
 pub fn get_validator_list(
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<Vec<StakingPoolInfo>> {
+    tracing::info!(target: "near_teach_me", "Getting a list of validators ...");
+
     let json_rpc_client = network_config.json_rpc_client();
 
     let validators_stake = get_validators_stake(&json_rpc_client)?;
@@ -1912,6 +1920,7 @@ pub fn fetch_historically_delegated_staking_pools(
     fastnear_url: &url::Url,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    tracing::info!(target: "near_teach_me", "Getting historically delegated staking pools ...");
     let request =
         reqwest::blocking::get(fastnear_url.join(&format!("v1/account/{account_id}/staking"))?)?;
     let response: StakingResponse = request.json()?;
@@ -1928,6 +1937,7 @@ pub fn fetch_currently_active_staking_pools(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     staking_pools_factory_account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    tracing::info!(target: "near_teach_me", "Getting currently active staking pools ...");
     let query_view_method_response = json_rpc_client
         .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),
@@ -1957,6 +1967,7 @@ pub fn get_validators_stake(
 ) -> color_eyre::eyre::Result<
     std::collections::HashMap<near_primitives::types::AccountId, near_primitives::types::Balance>,
 > {
+    tracing::info!(target: "near_teach_me", "Getting a stake of validators ...");
     let epoch_validator_info = json_rpc_client
         .blocking_call(
             &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
@@ -2536,7 +2547,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         tracing::Span::current().pb_set_message(&format!(
             "a read-only function '{function_name}' of the <{account_id}> contract ..."
         ));
-        tracing::info!(target: "near_teach_me", "a read-only function '{function_name}' of the <{account_id}> contract ...");
+        tracing::info!(target: "near_teach_me", "Getting the result of executing a read-only function '{function_name}' of the <{account_id}> contract ...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2606,7 +2617,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         tracing::Span::current().pb_set_message(&format!(
             "public key {public_key} on account <{account_id}>..."
         ));
-        tracing::info!(target: "near_teach_me", "public key {public_key} on account <{account_id}>...");
+        tracing::info!(target: "near_teach_me", "Getting access key information for public key {public_key} on account <{account_id}>...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2639,7 +2650,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     > {
         tracing::Span::current()
             .pb_set_message(&format!("access keys on account <{account_id}>..."));
-        tracing::info!(target: "near_teach_me", "access keys on account <{account_id}>...");
+        tracing::info!(target: "near_teach_me", "Getting a list of access keys on account <{account_id}>...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2669,7 +2680,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         near_jsonrpc_primitives::types::query::RpcQueryError,
     > {
         tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
-        tracing::info!(target: "near_teach_me", "account <{account_id}>...");
+        tracing::info!(target: "near_teach_me", "Getting information about account <{account_id}>...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,

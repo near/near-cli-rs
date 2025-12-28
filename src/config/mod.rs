@@ -253,6 +253,7 @@ impl NetworkConfig {
     #[tracing::instrument(name = "Connecting to RPC", skip_all)]
     pub fn json_rpc_client(&self) -> near_jsonrpc_client::JsonRpcClient {
         tracing::Span::current().pb_set_message(self.rpc_url.as_str());
+        tracing::info!(target: "near_teach_me", "Connecting to RPC {}", self.rpc_url.as_str());
         let mut json_rpc_client =
             near_jsonrpc_client::JsonRpcClient::connect(self.rpc_url.as_ref());
         if let Some(rpc_api_key) = &self.rpc_api_key {

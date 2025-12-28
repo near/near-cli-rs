@@ -267,6 +267,7 @@ pub fn derive_public_key(
     key_type: &near_crypto::KeyType,
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
+    tracing::info!(target: "near_teach_me", "Retrieving derived public key from MPC contract ...");
     let rpc_result = network_config
         .json_rpc_client()
         .blocking_call_view_function(
@@ -708,6 +709,8 @@ fn fetch_mpc_contract_response_from_dao_tx(
     sender_account_id: near_primitives::types::AccountId,
     dao_address: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<mpc_sign_result::SignResult> {
+    tracing::info!(target: "near_teach_me", "Fetching executed DAO proposal ...");
+
     let request = near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
         transaction_info: near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
             tx_hash,

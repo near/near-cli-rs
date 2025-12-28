@@ -80,6 +80,7 @@ pub fn get_prepopulated_transaction(
     deposit: crate::types::near_token::NearToken,
     gas: crate::common::NearGas,
 ) -> color_eyre::eyre::Result<crate::commands::PrepopulatedTransaction> {
+    tracing::info!(target: "near_teach_me", "Creating a pre-populated transaction for signature ...");
     let args_ft_transfer = serde_json::to_vec(&crate::types::ft_properties::FtTransfer {
         receiver_id: receiver_account_id.clone(),
         amount: amount_ft.amount(),

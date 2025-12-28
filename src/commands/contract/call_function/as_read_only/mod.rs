@@ -128,6 +128,7 @@ fn call_view_function(
     block_reference: &near_primitives::types::BlockReference,
     verbosity: &crate::Verbosity,
 ) -> crate::CliResult {
+    tracing::info!(target: "near_teach_me", "Getting a response to a read-only function call ...");
     let args = super::call_function_args_type::function_args(function_args, function_args_type)?;
     let call_result = network_config
         .json_rpc_client()
@@ -162,7 +163,7 @@ fn call_view_function(
     tracing::info!(
         target: "near_teach_me",
         parent: &tracing::Span::none(),
-        "--- Result -------------------------\n{}",
+        "Result:\n{}",
         crate::common::indent_payload(&info_str)
     );
     Ok(())

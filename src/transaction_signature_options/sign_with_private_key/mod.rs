@@ -48,6 +48,8 @@ impl SignPrivateKeyContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        tracing::info!(target: "near_teach_me", "Signing the transaction with a plaintext private key ...");
+
         let network_config = previous_context.network_config.clone();
         let signer_secret_key: near_crypto::SecretKey = scope.signer_private_key.clone().into();
         let public_key = signer_secret_key.public_key();

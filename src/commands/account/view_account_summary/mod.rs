@@ -62,6 +62,8 @@ pub fn get_account_inquiry(
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> crate::CliResult {
+    tracing::info!(target: "near_teach_me", "Receiving an inquiry about your account ...");
+
     let json_rpc_client = network_config.json_rpc_client();
 
     let rpc_query_response = json_rpc_client
@@ -218,6 +220,7 @@ async fn get_delegated_staked_balance(
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
     tracing::Span::current().pb_set_message(staking_pool_account_id.as_str());
+    tracing::info!(target: "near_teach_me", "Receiving the delegated staked balance from validator {staking_pool_account_id}");
     let account_staked_balance_response = json_rpc_client
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: block_reference.clone(),
@@ -258,6 +261,7 @@ fn get_account_profile(
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> color_eyre::Result<Option<near_socialdb_client::types::socialdb_types::AccountProfile>> {
+    tracing::info!(target: "near_teach_me", "Getting an account profile ...");
     if let Ok(contract_account_id) = network_config.get_near_social_account_id_from_network() {
         let mut social_db = network_config
             .json_rpc_client()

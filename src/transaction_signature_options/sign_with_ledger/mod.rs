@@ -62,6 +62,8 @@ impl SignLedgerContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        tracing::info!(target: "near_teach_me", "Signing the transaction with Ledger Nano device. Follow the instructions on the ledger ...");
+
         let network_config = previous_context.network_config.clone();
         let seed_phrase_hd_path: slipped10::BIP32Path = scope.seed_phrase_hd_path.clone().into();
         let public_key: near_crypto::PublicKey = scope.signer_public_key.clone().into();

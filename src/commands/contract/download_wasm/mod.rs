@@ -329,6 +329,7 @@ pub fn get_code(
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
+    tracing::info!(target: "near_teach_me", "Trying to download contract code ...");
     let (request, hash_to_match) = match contract_type.clone() {
         ContractType::Regular(account_id) => (
             near_primitives::views::QueryRequest::ViewCode { account_id },

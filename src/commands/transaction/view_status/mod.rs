@@ -61,6 +61,7 @@ pub fn get_transaction_info(
     tx_hash: near_primitives::hash::CryptoHash,
 ) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::tx::RpcTransactionResponse> {
     tracing::Span::current().pb_set_message(&format!("{tx_hash} ..."));
+    tracing::info!(target: "near_teach_me", "Getting information about transaction {tx_hash} ...");
     network_config
         .json_rpc_client()
         .blocking_call(

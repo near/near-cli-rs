@@ -63,6 +63,8 @@ impl SignKeychainContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        tracing::info!(target: "near_teach_me", "Signing the transaction with a key saved in the secure keychain ...");
+
         let network_config = previous_context.network_config.clone();
 
         let service_name = std::borrow::Cow::Owned(format!(
@@ -258,6 +260,7 @@ impl SignKeychainContext {
 #[tracing::instrument(name = "Warning:", skip_all)]
 fn warning_message(instrument_message: &str) {
     tracing::Span::current().pb_set_message(instrument_message);
+    tracing::warn!(target: "near_teach_me", "{instrument_message}");
     std::thread::sleep(std::time::Duration::from_secs(1));
 }
 
@@ -266,6 +269,7 @@ fn from_legacy_keychain(
     previous_context: crate::commands::TransactionContext,
     scope:  &<SignKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
 ) -> color_eyre::eyre::Result<SignKeychainContext> {
+    tracing::info!(target: "near_teach_me", "Trying to sign with the legacy keychain ...");
     let legacy_scope =
         super::sign_with_legacy_keychain::InteractiveClapContextScopeForSignLegacyKeychain {
             signer_public_key: scope.signer_public_key.clone(),

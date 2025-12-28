@@ -48,6 +48,8 @@ impl SignAccessKeyFileContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignAccessKeyFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        tracing::info!(target: "near_teach_me", "Signing the transaction using the account access key file ...");
+
         let network_config = previous_context.network_config.clone();
 
         let data =

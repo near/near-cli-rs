@@ -70,6 +70,8 @@ impl SubmitContext {
         previous_context: NetworkContext,
         _scope: &<Submit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> crate::CliResult {
+        tracing::info!(target: "near_teach_me", "Sending transaction ...");
+
         let transaction_info =
             crate::transaction_signature_options::send::sending_signed_transaction(
                 &previous_context.network_config,

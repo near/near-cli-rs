@@ -50,6 +50,8 @@ impl SignSeedPhraseContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        tracing::info!(target: "near_teach_me", "Signing the transaction using the seed phrase ...");
+
         let network_config = previous_context.network_config.clone();
 
         let key_pair_properties = crate::common::get_key_pair_properties_from_seed_phrase(

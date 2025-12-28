@@ -72,6 +72,7 @@ pub async fn get_contract_abi(
     block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
 ) -> Result<near_abi::AbiRoot, FetchAbiError> {
+    tracing::info!(target: "near_teach_me", "Obtaining the ABI for the contract ...");
     let mut retries_left = (0..5).rev();
     loop {
         let contract_abi_response = json_rpc_client

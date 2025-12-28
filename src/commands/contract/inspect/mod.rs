@@ -76,6 +76,7 @@ async fn get_contract_code(
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::query::RpcQueryResponse> {
+    tracing::info!(target: "near_teach_me", "Obtaining the contract code ...");
     network_config
         .json_rpc_client()
         .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
@@ -99,6 +100,7 @@ async fn display_inspect_contract(
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> crate::CliResult {
+    tracing::info!(target: "near_teach_me", "Contract inspection ...");
     let json_rpc_client = network_config.json_rpc_client();
     let view_code_response = get_contract_code(account_id, network_config, block_reference).await?;
     let contract_code_view =
@@ -414,6 +416,7 @@ async fn get_account_view(
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<near_primitives::views::AccountView> {
     tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
+    tracing::info!(target: "near_teach_me", "Getting information about {account_id} ...");
     for _ in 0..5 {
         let account_view_response = json_rpc_client
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
@@ -452,6 +455,7 @@ async fn get_access_keys(
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Vec<near_primitives::views::AccessKeyInfoView>> {
     tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
+    tracing::info!(target: "near_teach_me", "Getting a list of {account_id} access keys ...");
     for _ in 0..5 {
         let access_keys_response = json_rpc_client
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
@@ -507,7 +511,7 @@ pub async fn get_contract_source_metadata(
     FetchContractSourceMetadataError,
 > {
     tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
-    tracing::info!(target: "near_teach_me", "{}", format!("{account_id} ..."));
+    tracing::info!(target: "near_teach_me", "Getting contract source metadata for account {account_id} ...");
     tracing::info!(
         target: "near_teach_me",
         parent: &tracing::Span::none(),
@@ -577,10 +581,10 @@ pub async fn get_contract_source_metadata(
                             target: "near_teach_me",
                             parent: &tracing::Span::none(),
                             "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
-                            crate::common::indent_payload(
+                            crate::common::indent_payload(&format!("{}\n ",
                                 &String::from_utf8(call_result.result.clone())
                                     .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
-                            )
+                            ))
                         );
                     })
                     .inspect_err(|err| {
@@ -605,6 +609,6 @@ pub async fn get_contract_source_metadata(
 #[tracing::instrument(name = "Waiting 3 seconds before sending a request via RPC", skip_all)]
 fn sleep_after_error(additional_message_for_name: String) {
     tracing::Span::current().pb_set_message(&additional_message_for_name);
-    tracing::info!(target: "near_teach_me", "{}", &additional_message_for_name);
+    tracing::info!(target: "near_teach_me", "Waiting 3 seconds before sending a request via RPC {additional_message_for_name}");
     std::thread::sleep(std::time::Duration::from_secs(3));
 }

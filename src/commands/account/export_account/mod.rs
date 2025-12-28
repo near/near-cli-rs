@@ -87,6 +87,7 @@ pub fn get_password_from_keychain(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<String> {
+    tracing::info!(target: "near_teach_me", "Receiving the account key pair from the keychain ...");
     let service_name: std::borrow::Cow<'_, str> = std::borrow::Cow::Owned(format!(
         "near-{}-{}",
         network_config.network_name,
@@ -161,6 +162,7 @@ pub fn get_account_properties_data_path(
     credentials_home_dir: &std::path::Path,
     check_if_seed_phrase_exists: bool,
 ) -> color_eyre::eyre::Result<std::path::PathBuf> {
+    tracing::info!(target: "near_teach_me", "Receiving the account key pair from a legacy keychain ...");
     let file_name = format!("{account_id}.json");
     let mut path = std::path::PathBuf::from(credentials_home_dir);
 

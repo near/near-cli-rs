@@ -87,6 +87,7 @@ pub fn get_ft_balance(
     args: Vec<u8>,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    tracing::info!(target: "near_teach_me", "Getting FT balance ...");
     network_config
         .json_rpc_client()
         .blocking_call_view_function(

@@ -93,6 +93,7 @@ impl SubmitContext {
         previous_context: NetworkContext,
         _scope: &<Submit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        tracing::info!(target: "near_teach_me", "Creating a new account ...");
         let storage_message =
             (previous_context.on_after_getting_network_callback)(&previous_context.network_config)?;
         (previous_context.on_before_creating_account_callback)(

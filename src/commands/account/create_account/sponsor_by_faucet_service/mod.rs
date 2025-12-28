@@ -81,7 +81,7 @@ pub fn before_creating_account(
         )))
     };
     tracing::Span::current().pb_set_message(faucet_service_url.as_str());
-    tracing::info!(target: "near_teach_me", "{}", faucet_service_url.as_str());
+    tracing::info!(target: "near_teach_me", "Receiving request via faucet service {}", faucet_service_url.as_str());
     let mut data = std::collections::HashMap::new();
     data.insert("newAccountId", new_account_id.to_string());
     data.insert("newAccountPublicKey", public_key.to_string());

@@ -108,6 +108,7 @@ fn download_contract_abi(
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> crate::CliResult {
+    tracing::info!(target: "near_teach_me", "Download the ABI for the contract ...");
     let abi_root = tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(super::get_contract_abi(
