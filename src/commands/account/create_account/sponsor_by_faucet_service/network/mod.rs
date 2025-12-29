@@ -48,7 +48,7 @@ impl NetworkContext {
             "", "public key:", &previous_context.public_key
         ));
         info_str.push_str(&format!("\n{:>18} {:<13} FullAccess", "", "permission:"));
-        info_str.push('\n');
+        info_str.push_str("\n ");
 
         tracing::info!(
             "Your transaction:{}",
