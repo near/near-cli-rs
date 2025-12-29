@@ -409,7 +409,7 @@ pub fn get_code(
             let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&call_access_view.code);
             if code_hash != hash_to_match {
                 tracing::warn!(
-                parent: &tracing::Span::none(),
+                    parent: &tracing::Span::none(),
                     "Fetched code hash {} does not match the expected code hash {}. Trying next block height...",
                     code_hash,
                     hash_to_match

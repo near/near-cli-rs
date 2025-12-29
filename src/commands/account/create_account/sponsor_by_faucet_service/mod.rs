@@ -134,7 +134,7 @@ fn print_account_creation_status(
             if response.status() >= reqwest::StatusCode::BAD_REQUEST {
                 tracing::warn!(
                     parent: &tracing::Span::none(),
-                    "WARNING!{}",
+                    "{}",
                     crate::common::indent_payload(&format!(
                         "\nThe new account <{new_account_id}> could not be created successfully.\n{storage_message}\n"
                     ))
@@ -159,7 +159,7 @@ fn print_account_creation_status(
                     if value == b"false" {
                         tracing::warn!(
                             parent: &tracing::Span::none(),
-                            "WARNING!{}",
+                            "{}",
                             crate::common::indent_payload(&format!(
                                 "\nThe new account <{new_account_id}> could not be created successfully.\n{storage_message}\n"
                             ))
@@ -192,7 +192,7 @@ fn print_account_creation_status(
                 near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
                     tracing::warn!(
                         parent: &tracing::Span::none(),
-                        "WARNING!{}",
+                        "{}",
                         crate::common::indent_payload(&format!(
                             "\nThe new account <{new_account_id}> could not be created successfully.\n{storage_message}\n"
                         ))
@@ -224,7 +224,7 @@ fn print_account_creation_status(
             );
             tracing::warn!(
                 parent: &tracing::Span::none(),
-                "WARNING!{}",
+                "{}",
                 crate::common::indent_payload(&format!(
                     "\nThe new account <{new_account_id}> could not be created successfully.\n{storage_message}\n"
                 ))

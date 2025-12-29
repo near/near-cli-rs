@@ -74,7 +74,7 @@ pub fn login(
         if access_key_view.is_err() {
             tracing::warn!(
                 parent: &tracing::Span::none(),
-                "WARNING!{}",
+                "{}",
                 crate::common::indent_payload(error_message)
             );
 

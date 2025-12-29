@@ -1445,7 +1445,7 @@ pub fn print_transaction_status(
             }
             tracing::warn!(
                 parent: &tracing::Span::none(),
-                "WARNING! The execution has not yet started."
+                "The execution has not yet started."
             );
             Ok(())
         }
@@ -1455,7 +1455,7 @@ pub fn print_transaction_status(
             }
             tracing::warn!(
                 parent: &tracing::Span::none(),
-                "WARNING! The execution has started and still going."
+                "The execution has started and still going."
             );
             Ok(())
         }
