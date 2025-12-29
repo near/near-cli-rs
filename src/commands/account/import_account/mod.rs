@@ -145,11 +145,7 @@ fn save_access_key(
                 public_key_str,
                 account_id.as_ref(),
             )?;
-        tracing::info!(
-            parent: &tracing::Span::none(),
-            "\n{}",
-            crate::common::indent_payload(&storage_message)
-        );
+        eprintln!("{storage_message}");
         return Ok(());
     }
 
@@ -161,10 +157,6 @@ fn save_access_key(
         account_id.as_ref(),
     )
     .wrap_err_with(|| format!("Failed to save a file with access key: {public_key_str}"))?;
-    tracing::info!(
-        parent: &tracing::Span::none(),
-        "\n{}",
-        crate::common::indent_payload(&storage_message)
-    );
+    eprintln!("{storage_message}");
     Ok(())
 }
