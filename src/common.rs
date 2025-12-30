@@ -1574,10 +1574,12 @@ pub fn print_transaction_status(
     }
 
     if !result_info.is_empty() {
-        eprintln!(
-            "{}",
-            print_value_successful_transaction(transaction_info.clone(),)
-        );
+        suspend_tracing_indicatif(|| {
+            eprintln!(
+                "{}",
+                print_value_successful_transaction(transaction_info.clone(),)
+            )
+        });
     }
 
     result
