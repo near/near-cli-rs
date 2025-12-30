@@ -65,11 +65,11 @@ impl SaveWithLedgerContext {
                         .write(buf.as_bytes())
                         .wrap_err_with(|| format!("Failed to write to file: {file_path:?}"))?;
 
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "The file {:?} was saved successfully",
-                        &file_path
-                    );
+                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
+                        previous_context.verbosity
+                    {
+                        eprintln!("\nThe file {file_path:?} was saved successfully");
+                    }
 
                     Ok(())
                 }
