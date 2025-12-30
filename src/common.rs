@@ -2906,14 +2906,10 @@ pub impl near_primitives::views::CallResult {
         if self.logs.is_empty() {
             info_str.push_str("\nNo logs")
         } else {
-            // info_str.push_str("\nLogs:");
             info_str.push_str(&format!("\n  {}", self.logs.join("\n  ")));
         }
-        // info_str.push_str("\n------------------------------------");
         tracing::info!(
-            target: "near_teach_me",
             parent: &tracing::Span::none(),
-            // "--- Logs ---------------------------{}\n",
             "Logs:{}",
             indent_payload(&info_str)
         );

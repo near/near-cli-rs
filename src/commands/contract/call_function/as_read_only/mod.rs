@@ -141,7 +141,7 @@ fn call_view_function(
         })?;
 
     let info_str = if call_result.result.is_empty() {
-        "Empty result".to_string()
+        "Empty return value".to_string()
     } else if let Ok(json_result) = call_result.parse_result_from_json::<serde_json::Value>() {
         serde_json::to_string_pretty(&json_result)?
     } else if let Ok(string_result) = String::from_utf8(call_result.result.clone()) {
@@ -150,21 +150,16 @@ fn call_view_function(
         "The returned value is not printable (binary data)".to_string()
     };
 
+    call_result.print_logs();
+
     if let crate::Verbosity::Quiet = verbosity {
         std::io::stdout().write_all(&call_result.result)?;
-        return Ok(());
-    } else if let crate::Verbosity::Interactive = verbosity {
-        eprintln!("Function execution return value (printed to stdout):");
-        println!("{info_str}");
-        return Ok(());
+    } else {
+        tracing_indicatif::suspend_tracing_indicatif(|| {
+            eprintln!("Function execution return value (printed to stdout):")
+        });
+        tracing_indicatif::suspend_tracing_indicatif(|| println!("{info_str}"));
     };
 
-    call_result.print_logs();
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "Result:\n{}",
-        crate::common::indent_payload(&info_str)
-    );
     Ok(())
 }
