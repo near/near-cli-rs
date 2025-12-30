@@ -115,9 +115,11 @@ fn calculation_delegated_stake_balance(
         "\n      Total balance:      {:>38}",
         near_token::NearToken::from_yoctonear(user_total_balance).to_string()
     ));
-    println!(
-        "Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:{info_str}"
-    );
+    tracing_indicatif::suspend_tracing_indicatif(|| {
+        println!(
+            "Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:{info_str}"
+        );
+    });
     Ok(())
 }
 

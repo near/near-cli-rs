@@ -49,14 +49,15 @@ impl UnstakeContext {
             let signer_id = previous_context.account_id.clone();
             let validator_id = scope.validator_account_id.clone();
             let amount = scope.amount;
+            let verbosity = previous_context.global_context.verbosity.clone();
 
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "\n{}",
-                        crate::common::indent_payload(&format!("<{signer_id}> has successfully unstaked {amount} from <{validator_id}>."))
-                    );
+                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
+                        tracing_indicatif::suspend_tracing_indicatif(|| {
+                            eprintln!("<{signer_id}> has successfully unstaked {amount} from <{validator_id}>.");
+                        })
+                    }
                 }
                 Ok(())
             }
