@@ -70,13 +70,12 @@ impl SendContext {
                 };
             }
         }
-        if !storage_message.is_empty() {
-            tracing::info!(
-                parent: &tracing::Span::none(),
-                "\n{}",
-                crate::common::indent_payload(&storage_message)
-            );
+        if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
+            previous_context.global_context.verbosity
+        {
+            tracing_indicatif::suspend_tracing_indicatif(|| eprintln!("{storage_message}"));
         }
+
         Ok(Self)
     }
 }
