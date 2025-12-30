@@ -134,19 +134,18 @@ impl SignerAccountIdContext {
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
             let signer_account_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
             let receiver_account_id = previous_context.receiver_account_id.clone();
+            let verbosity = previous_context.global_context.verbosity.clone();
 
             move |outcome_view, network_config| {
                 let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
 
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "\n{}",
-                        crate::common::indent_payload(&format!(
+                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
+                        tracing_indicatif::suspend_tracing_indicatif(|| {eprintln!(
                             "<{signer_account_id}> has successfully added a deposit of {deposit} to <{receiver_account_id}> on contract <{contract_account_id}>.",
-                            deposit = previous_context.deposit,
-                        ))
-                    );
+                            deposit = previous_context.deposit
+                        );
+                    })}
                 }
                 Ok(())
             }
