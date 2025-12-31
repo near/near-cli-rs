@@ -43,7 +43,7 @@ impl UseHashActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<UseHashAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::UseGlobalContract(Box::new(
+        let action = omni_transaction::near::types::Action::UseGlobalContract(Box::new(
             near_primitives::action::UseGlobalContractAction {
                 contract_identifier: near_primitives::action::GlobalContractIdentifier::CodeHash(
                     scope.hash.into(),
@@ -96,7 +96,7 @@ impl UseAccountIdActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<UseAccountIdAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::UseGlobalContract(Box::new(
+        let action = omni_transaction::near::types::Action::UseGlobalContract(Box::new(
             near_primitives::action::UseGlobalContractAction {
                 contract_identifier: near_primitives::action::GlobalContractIdentifier::AccountId(
                     scope.account_id.clone().into(),

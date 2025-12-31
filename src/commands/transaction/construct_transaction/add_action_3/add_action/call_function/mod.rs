@@ -152,8 +152,8 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::FunctionCall(Box::new(
-            near_primitives::transaction::FunctionCallAction {
+        let action = omni_transaction::near::types::Action::FunctionCall(Box::new(
+            omni_transaction::near::types::FunctionCallAction {
                 method_name: previous_context.function_name,
                 args: previous_context.function_args,
                 gas: near_primitives::gas::Gas::from_gas(previous_context.gas.as_gas()),

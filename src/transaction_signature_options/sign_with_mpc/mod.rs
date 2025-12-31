@@ -483,8 +483,8 @@ impl From<DepositContext> for crate::commands::TransactionContext {
         let mpc_sign_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.admin_account_id.clone(),
             receiver_id: item.mpc_contract_address.clone(),
-            actions: vec![near_primitives::transaction::Action::FunctionCall(
-                Box::new(near_primitives::transaction::FunctionCallAction {
+            actions: vec![omni_transaction::near::types::Action::FunctionCall(
+                Box::new(omni_transaction::near::types::FunctionCallAction {
                     method_name: "sign".to_string(),
                     args: item.mpc_sign_request_serialized,
                     gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),

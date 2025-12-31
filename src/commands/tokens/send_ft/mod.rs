@@ -91,8 +91,8 @@ pub fn get_prepopulated_transaction(
         },
     })?;
 
-    let action_ft_transfer = near_primitives::transaction::Action::FunctionCall(Box::new(
-        near_primitives::transaction::FunctionCallAction {
+    let action_ft_transfer = omni_transaction::near::types::Action::FunctionCall(Box::new(
+        omni_transaction::near::types::FunctionCallAction {
             method_name: "ft_transfer".to_string(),
             args: args_ft_transfer,
             gas: near_primitives::gas::Gas::from_gas(gas.as_gas()),
@@ -118,8 +118,8 @@ pub fn get_prepopulated_transaction(
         })?;
 
     if call_result.parse_result_from_json::<Value>()?.is_null() {
-        let action_storage_deposit = near_primitives::transaction::Action::FunctionCall(Box::new(
-            near_primitives::transaction::FunctionCallAction {
+        let action_storage_deposit = omni_transaction::near::types::Action::FunctionCall(Box::new(
+            omni_transaction::near::types::FunctionCallAction {
                 method_name: "storage_deposit".to_string(),
                 args,
                 gas: near_primitives::gas::Gas::from_gas(gas.as_gas()),

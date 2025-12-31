@@ -10,6 +10,7 @@ pub mod json;
 pub mod near_allowance;
 pub mod near_token;
 pub mod nonce32_bytes;
+pub mod omni_transaction_helpers;
 pub mod partial_protocol_config;
 pub mod path_buf;
 pub mod public_key;

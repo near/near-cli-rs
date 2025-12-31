@@ -16,8 +16,8 @@ impl TransferActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<TransferAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::Transfer(
-            near_primitives::transaction::TransferAction {
+        let action = omni_transaction::near::types::Action::Transfer(
+            omni_transaction::near::types::TransferAction {
                 deposit: scope.amount_in_near.into(),
             },
         );

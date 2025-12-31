@@ -2,39 +2,27 @@ use near_primitives::{borsh, borsh::BorshDeserialize};
 
 #[derive(Debug, Clone)]
 pub struct TransactionAsBase64 {
-    pub inner: near_primitives::transaction::TransactionV0,
+    pub inner: omni_transaction::near::NearTransaction,
 }
 
-impl From<TransactionAsBase64> for near_primitives::transaction::TransactionV0 {
+impl From<TransactionAsBase64> for near_primitives::transaction::Transaction {
     fn from(transaction: TransactionAsBase64) -> Self {
-        transaction.inner
+        crate::types::omni_transaction_helpers::omni_transaction_to_near_primitives(&transaction.inner)
+            .expect("Failed to convert omni-transaction to near-primitives")
     }
 }
 
 impl From<near_primitives::transaction::Transaction> for TransactionAsBase64 {
     fn from(value: near_primitives::transaction::Transaction) -> Self {
-        Self {
-            inner: near_primitives::transaction::TransactionV0 {
-                public_key: value.public_key().clone(),
-                nonce: value.nonce(),
-                signer_id: value.signer_id().clone(),
-                receiver_id: value.receiver_id().clone(),
-                block_hash: *value.block_hash(),
-                actions: value.take_actions(),
-            },
-        }
+        let inner = crate::types::omni_transaction_helpers::near_primitives_transaction_to_omni(&value)
+            .expect("Failed to convert near-primitives to omni-transaction");
+        Self { inner }
     }
 }
 
-impl From<near_primitives::transaction::TransactionV0> for TransactionAsBase64 {
-    fn from(value: near_primitives::transaction::TransactionV0) -> Self {
+impl From<omni_transaction::near::NearTransaction> for TransactionAsBase64 {
+    fn from(value: omni_transaction::near::NearTransaction) -> Self {
         Self { inner: value }
-    }
-}
-
-impl From<TransactionAsBase64> for near_primitives::transaction::Transaction {
-    fn from(transaction: TransactionAsBase64) -> Self {
-        Self::V0(transaction.inner)
     }
 }
 
@@ -46,7 +34,7 @@ impl std::str::FromStr for TransactionAsBase64 {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
-            inner: near_primitives::transaction::TransactionV0::try_from_slice(
+            inner: omni_transaction::near::NearTransaction::try_from_slice(
                 &near_primitives::serialize::from_base64(s)
                     .map_err(|err| format!("base64 transaction sequence is invalid: {err}"))?,
             )

@@ -148,7 +148,7 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.account_id.clone(),
                     receiver_id: item.account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::DeployGlobalContract(
+                    actions: vec![omni_transaction::near::types::Action::DeployGlobalContract(
                         near_primitives::action::DeployGlobalContractAction {
                             code: item.code.clone().into(),
                             deploy_mode: item.mode.clone(),

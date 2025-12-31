@@ -59,7 +59,7 @@ impl DeployGlobalModeContext {
         previous_context: DeployGlobalContractActionContext,
         scope: &<DeployGlobalMode as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::DeployGlobalContract(
+        let action = omni_transaction::near::types::Action::DeployGlobalContract(
             near_primitives::action::DeployGlobalContractAction {
                 code: previous_context.code.into(),
                 deploy_mode: match scope {

@@ -31,8 +31,8 @@ impl ContractFileContext {
         let code = std::fs::read(&scope.file_path).wrap_err_with(|| {
             format!("Failed to open or read the file: {:?}.", &scope.file_path.0,)
         })?;
-        let action = near_primitives::transaction::Action::DeployContract(
-            near_primitives::transaction::DeployContractAction { code },
+        let action = omni_transaction::near::types::Action::DeployContract(
+            omni_transaction::near::types::DeployContractAction { code },
         );
         let mut actions = previous_context.actions;
         actions.push(action);

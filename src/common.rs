@@ -719,7 +719,7 @@ pub fn print_unsigned_transaction(
     if transaction
         .actions
         .iter()
-        .any(|action| matches!(action, near_primitives::transaction::Action::Delegate(_)))
+        .any(|action| matches!(action, omni_transaction::near::types::Action::Delegate(_)))
     {
         info_str.push_str("\nsigned delegate action:");
     } else {
@@ -728,13 +728,13 @@ pub fn print_unsigned_transaction(
 
     for action in &transaction.actions {
         match action {
-            near_primitives::transaction::Action::CreateAccount(_) => {
+            omni_transaction::near::types::Action::CreateAccount(_) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
                     "--", "create account:", &transaction.receiver_id
                 ));
             }
-            near_primitives::transaction::Action::DeployContract(code) => {
+            omni_transaction::near::types::Action::DeployContract(code) => {
                 let code_hash = CryptoHash::hash_bytes(&code.code);
                 info_str.push_str(&format!(
                     "\n{:>5} {:<70}",
@@ -745,7 +745,7 @@ pub fn print_unsigned_transaction(
                     )
                 ))
             }
-            near_primitives::transaction::Action::FunctionCall(function_call_action) => {
+            omni_transaction::near::types::Action::FunctionCall(function_call_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "function call:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -784,7 +784,7 @@ pub fn print_unsigned_transaction(
                     function_call_action.deposit.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::Transfer(transfer_action) => {
+            omni_transaction::near::types::Action::Transfer(transfer_action) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
                     "--",
@@ -792,7 +792,7 @@ pub fn print_unsigned_transaction(
                     transfer_action.deposit.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::Stake(stake_action) => {
+            omni_transaction::near::types::Action::Stake(stake_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "stake:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -805,7 +805,7 @@ pub fn print_unsigned_transaction(
                     stake_action.stake.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::AddKey(add_key_action) => {
+            omni_transaction::near::types::Action::AddKey(add_key_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "add access key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -820,14 +820,14 @@ pub fn print_unsigned_transaction(
                     "", "permission:", &add_key_action.access_key.permission
                 ));
             }
-            near_primitives::transaction::Action::DeleteKey(delete_key_action) => {
+            omni_transaction::near::types::Action::DeleteKey(delete_key_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "delete access key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", &delete_key_action.public_key
                 ));
             }
-            near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
+            omni_transaction::near::types::Action::DeleteAccount(delete_account_action) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
                     "--", "delete account:", &transaction.receiver_id
@@ -837,7 +837,7 @@ pub fn print_unsigned_transaction(
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
                 ));
             }
-            near_primitives::transaction::Action::Delegate(signed_delegate_action) => {
+            omni_transaction::near::types::Action::Delegate(signed_delegate_action) => {
                 let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                     signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
                     receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
@@ -845,7 +845,7 @@ pub fn print_unsigned_transaction(
                 };
                 info_str.push_str(&print_unsigned_transaction(&prepopulated_transaction));
             }
-            near_primitives::transaction::Action::DeployGlobalContract(deploy) => {
+            omni_transaction::near::types::Action::DeployGlobalContract(deploy) => {
                 let code_hash = CryptoHash::hash_bytes(&deploy.code);
                 let identifier = match deploy.deploy_mode {
                     GlobalContractDeployMode::CodeHash => {
@@ -860,7 +860,7 @@ pub fn print_unsigned_transaction(
                 };
                 info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
             }
-            near_primitives::transaction::Action::UseGlobalContract(contract_identifier) => {
+            omni_transaction::near::types::Action::UseGlobalContract(contract_identifier) => {
                 let identifier = match contract_identifier.contract_identifier {
                     GlobalContractIdentifier::CodeHash(hash) => {
                         format!("use global <{hash}> code to deploy from")
@@ -871,7 +871,7 @@ pub fn print_unsigned_transaction(
                 };
                 info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
             }
-            near_primitives::transaction::Action::DeterministicStateInit(
+            omni_transaction::near::types::Action::DeterministicStateInit(
                 deterministic_init_action,
             ) => {
                 info_str.push_str(&format!(

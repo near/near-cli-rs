@@ -28,8 +28,8 @@ impl WithdrawAllContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_id.clone(),
                         receiver_id: validator_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            Box::new(near_primitives::transaction::FunctionCallAction {
+                        actions: vec![omni_transaction::near::types::Action::FunctionCall(
+                            Box::new(omni_transaction::near::types::FunctionCallAction {
                                 method_name: "withdraw_all".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({}))?,
                                 gas: near_primitives::gas::Gas::from_teragas(50),

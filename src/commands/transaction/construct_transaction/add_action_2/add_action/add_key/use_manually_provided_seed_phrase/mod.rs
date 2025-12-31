@@ -29,8 +29,8 @@ impl AddAccessWithSeedPhraseActionContext {
             nonce: 0,
             permission: previous_context.access_key_permission,
         };
-        let action = near_primitives::transaction::Action::AddKey(Box::new(
-            near_primitives::transaction::AddKeyAction {
+        let action = omni_transaction::near::types::Action::AddKey(Box::new(
+            omni_transaction::near::types::AddKeyAction {
                 public_key,
                 access_key,
             },
