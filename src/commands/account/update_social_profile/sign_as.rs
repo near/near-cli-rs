@@ -81,7 +81,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
         });
 
         let account_id = item.account_id.clone();
-        let verbosity = item.global_context.verbosity.clone();
+        let verbosity = item.global_context.verbosity;
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = Arc::new({
             move |transaction_info, _network_config| {

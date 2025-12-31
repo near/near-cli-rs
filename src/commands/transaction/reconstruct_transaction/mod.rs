@@ -125,7 +125,7 @@ impl TransactionInfoContext {
 
                     let near_cli_exec_path = crate::common::get_near_exec_path();
                     if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
-                        &previous_context.verbosity
+                        previous_context.verbosity
                     {
                         eprintln!("Here is your console command to run archive transaction. You can to edit it or re-run (printed to stdout):")
                     }

@@ -37,7 +37,7 @@ impl SendContext {
                 crate::common::print_transaction_status(
                     &transaction_info,
                     &previous_context.network_config,
-                    &previous_context.global_context.verbosity,
+                    previous_context.global_context.verbosity,
                 )?;
 
                 (previous_context.on_after_sending_transaction_callback)(

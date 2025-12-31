@@ -124,7 +124,7 @@ impl ContractAccountIdContext {
                 )?;
 
                 verify_contract(
-                    &previous_context.global_context.verbosity,
+                    previous_context.global_context.verbosity,
                     contract_code_from_contract_account_id,
                     contract_properties,
                 );
@@ -147,7 +147,7 @@ impl From<ContractAccountIdContext> for crate::network_view_at_block::ArgsForVie
 }
 
 fn verify_contract(
-    verbosity: &crate::Verbosity,
+    verbosity: crate::Verbosity,
     contract_code: Vec<u8>,
     contract_properties: ContractProperties,
 ) {

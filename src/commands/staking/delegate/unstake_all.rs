@@ -43,7 +43,7 @@ impl UnstakeAllContext {
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
             let signer_id = previous_context.account_id.clone();
             let validator_id = scope.validator_account_id.clone();
-            let verbosity = previous_context.global_context.verbosity.clone();
+            let verbosity = previous_context.global_context.verbosity;
 
             move |outcome_view, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {

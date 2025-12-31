@@ -30,7 +30,7 @@ impl TransactionInfoContext {
                     let query_view_transaction_status =
                         get_transaction_info(network_config, tx_hash)?;
                     if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
-                        &previous_context.verbosity
+                        previous_context.verbosity
                     {
                         eprintln!("Transaction status:");
                         println!("{query_view_transaction_status:#?}");

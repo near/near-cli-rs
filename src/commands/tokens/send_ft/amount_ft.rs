@@ -166,7 +166,7 @@ impl FtTransferParamsContext {
             let signer_account_id = previous_context.signer_account_id.clone();
             let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
             let receiver_account_id = previous_context.receiver_account_id.clone();
-            let verbosity = previous_context.global_context.verbosity.clone();
+            let verbosity = previous_context.global_context.verbosity;
 
             move |outcome_view, network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {

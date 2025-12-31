@@ -45,7 +45,7 @@ impl NewAccountContext {
                         public_key,
                         &credentials_home_dir,
                         storage_message,
-                        &previous_context.verbosity,
+                        previous_context.verbosity,
                     )
                 }
             });
@@ -73,7 +73,7 @@ pub fn before_creating_account(
     public_key: &near_crypto::PublicKey,
     credentials_home_dir: &std::path::Path,
     storage_message: String,
-    verbosity: &crate::Verbosity,
+    verbosity: crate::Verbosity,
 ) -> crate::CliResult {
     let faucet_service_url = match &network_config.faucet_url {
         Some(url) => url,
@@ -125,7 +125,7 @@ fn print_account_creation_status(
     new_account_id: &crate::types::account_id::AccountId,
     credentials_home_dir: &std::path::Path,
     storage_message: String,
-    verbosity: &crate::Verbosity,
+    verbosity: crate::Verbosity,
 ) -> crate::CliResult {
     match result {
         Ok(response) => {

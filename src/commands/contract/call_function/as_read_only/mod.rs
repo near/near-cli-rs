@@ -85,7 +85,7 @@ impl FunctionContext {
                     function_args.clone(),
                     function_args_type.clone(),
                     block_reference,
-                    &previous_context.global_context.verbosity,
+                    previous_context.global_context.verbosity,
                 )
             }
         });
@@ -126,7 +126,7 @@ fn call_view_function(
     function_args: String,
     function_args_type: super::call_function_args_type::FunctionArgsType,
     block_reference: &near_primitives::types::BlockReference,
-    verbosity: &crate::Verbosity,
+    verbosity: crate::Verbosity,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Getting a response to a read-only function call ...");
     let args = super::call_function_args_type::function_args(function_args, function_args_type)?;
