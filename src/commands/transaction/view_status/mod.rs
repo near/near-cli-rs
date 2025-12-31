@@ -29,14 +29,14 @@ impl TransactionInfoContext {
                 move |network_config| {
                     let query_view_transaction_status =
                         get_transaction_info(network_config, tx_hash)?;
-                    if let crate::Verbosity::Quiet = previous_context.verbosity {
-                        println!("Transaction status:\n{query_view_transaction_status:#?}");
+                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
+                        &previous_context.verbosity
+                    {
+                        eprintln!("Transaction status:");
+                        println!("{query_view_transaction_status:#?}");
+                    } else {
+                        println!("{query_view_transaction_status:?}");
                     }
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "Transaction status:\n{}",
-                        crate::common::indent_payload(&format!("{query_view_transaction_status:#?}"))
-                    );
                     Ok(())
                 }
             });
