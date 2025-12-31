@@ -212,12 +212,12 @@ impl From<MpcDerivationPathContext> for crate::network::NetworkContext {
                             network_config,
                         )?;
 
-                    if let crate::Verbosity::Quiet = item.global_context.verbosity {
-                        println!("{derived_public_key}");
-                    } else {
-                        eprintln!("\nPublic key (printed to stdout): ");
-                        println!("{derived_public_key}");
+                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
+                        item.global_context.verbosity
+                    {
+                        eprint!("Public key (printed to stdout): ");
                     }
+                    println!("{derived_public_key}");
 
                     Ok(())
                 }

@@ -22,12 +22,12 @@ impl PublicKeyFromSeedPhraseContext {
             &scope.master_seed_phrase,
         )?;
 
-        if let crate::Verbosity::Quiet = previous_context.verbosity {
-            println!("{public_key}");
-        } else {
-            eprintln!("\nPublic key (printed to stdout): ");
-            println!("{public_key}");
+        if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
+            previous_context.verbosity
+        {
+            eprint!("Public key (printed to stdout): ");
         }
+        println!("{public_key}");
 
         Ok(Self)
     }

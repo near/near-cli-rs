@@ -17,12 +17,12 @@ impl PublicKeyFromPlaintextPrivateKeyContext {
         let private_key: near_crypto::SecretKey = scope.private_key.clone().into();
         let public_key = private_key.public_key();
 
-        if let crate::Verbosity::Quiet = previous_context.verbosity {
-            println!("{public_key}");
-        } else {
-            eprintln!("\nPublic key (printed to stdout): ");
-            println!("{public_key}");
+        if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
+            previous_context.verbosity
+        {
+            eprint!("Public key (printed to stdout): ");
         }
+        println!("{public_key}");
 
         Ok(Self {})
     }
