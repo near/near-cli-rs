@@ -69,7 +69,7 @@ impl DownloadContractContext {
             let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
             move |network_config, block_reference| {
-                download_contract_abi(&account_id, &file_path, network_config, block_reference)
+                download_contract_abi(&account_id, &file_path, network_config, block_reference, &previous_context.global_context.verbosity)
             }
         });
         Ok(Self(crate::network_view_at_block::ArgsForViewContext {
@@ -107,6 +107,7 @@ fn download_contract_abi(
     file_path: &std::path::PathBuf,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
+    verbosity: &crate::Verbosity,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Download the ABI for the contract ...");
     let abi_root = tokio::runtime::Runtime::new()
@@ -120,10 +121,10 @@ fn download_contract_abi(
         .wrap_err_with(|| format!("Failed to create file: {file_path:?}"))?
         .write(&serde_json::to_vec_pretty(&abi_root)?)
         .wrap_err_with(|| format!("Failed to write to file: {file_path:?}"))?;
-    tracing::info!(
-        parent: &tracing::Span::none(),
-        "The file {:?} was downloaded successfully",
-        file_path
-    );
+    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
+        tracing_indicatif::suspend_tracing_indicatif(|| {
+            eprintln!("The file {file_path:?} was downloaded successfully");
+        })
+    }
     Ok(())
 }

@@ -26,21 +26,8 @@ impl AsJsonContext {
                 if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
                     query_view_method_response.kind
                 {
-                    if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
-                        println!("Contract state (values):\n{}\n", serde_json::to_string_pretty(&result.values)?);
-                        println!("Contract state (proof):\n{:#?}\n", result.proof);
-                        return Ok(());
-                    }
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "Contract state (values):\n{}\n",
-                        crate::common::indent_payload(&serde_json::to_string_pretty(&result.values)?)
-                    );
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "Contract state (proof):\n{}\n",
-                        crate::common::indent_payload(&format!("{:#?}", result.proof))
-                    );
+                    println!("Contract state (values):\n{}\n", serde_json::to_string_pretty(&result.values)?);
+                    println!("Contract state (proof):\n{:#?}\n", result.proof);
                 } else {
                     return Err(color_eyre::Report::msg("Error call result".to_string()));
                 };
