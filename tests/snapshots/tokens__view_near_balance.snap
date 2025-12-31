@@ -2,9 +2,5 @@
 source: tests/tokens.rs
 expression: normalize_output
 ---
-├  [0m
-│    test.near account has 1000000000.00 NEAR available for transfer (the total balance is 1000000000.00 NEAR, but 0 NEAR is locked for storage)
-
-
 Here is your console command if you need to script it or re-run:
     [33mtarget/debug/near tokens test.near view-near-balance network-config sandbox now[39m

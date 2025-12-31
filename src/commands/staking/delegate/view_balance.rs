@@ -35,7 +35,6 @@ impl ViewBalanceContext {
                     &validator_account_id,
                     network_config,
                     block_reference,
-                    &previous_context.global_context.verbosity
                 )
             }
         });
@@ -70,8 +69,8 @@ fn calculation_delegated_stake_balance(
     validator_account_id: &near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
-    verbosity: &crate::Verbosity,
 ) -> crate::CliResult {
+    tracing::info!(target: "near_teach_me", "Calculation of the delegated stake balance for your account ...");
     let user_staked_balance: u128 = get_user_staked_balance(
         network_config,
         block_reference,
@@ -116,18 +115,11 @@ fn calculation_delegated_stake_balance(
         "\n      Total balance:      {:>38}",
         near_token::NearToken::from_yoctonear(user_total_balance).to_string()
     ));
-    tracing::info!(
-        parent: &tracing::Span::none(),
-        "{}{}",
-        format!("Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:"),
-        crate::common::indent_payload(&info_str)
-    );
-    if let crate::Verbosity::Quiet = verbosity {
+    tracing_indicatif::suspend_tracing_indicatif(|| {
         println!(
-            "Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:{}",
-            crate::common::indent_payload(&info_str)
+            "Delegated stake balance with validator <{validator_account_id}> by <{account_id}>:{info_str}"
         );
-    };
+    });
     Ok(())
 }
 
@@ -138,6 +130,7 @@ pub fn get_user_staked_balance(
     validator_account_id: &near_primitives::types::AccountId,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<u128> {
+    tracing::info!(target: "near_teach_me", "Getting the staked balance for the user ...");
     Ok(network_config
         .json_rpc_client()
         .blocking_call_view_function(
@@ -166,6 +159,7 @@ pub fn get_user_unstaked_balance(
     validator_account_id: &near_primitives::types::AccountId,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<u128> {
+    tracing::info!(target: "near_teach_me", "Getting the unstaked balance for the user ...");
     Ok(network_config
         .json_rpc_client()
         .blocking_call_view_function(
@@ -194,6 +188,7 @@ pub fn get_user_total_balance(
     validator_account_id: &near_primitives::types::AccountId,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<u128> {
+    tracing::info!(target: "near_teach_me", "Getting the total balance for the user ...");
     Ok(network_config
         .json_rpc_client()
         .blocking_call_view_function(
@@ -224,6 +219,7 @@ pub fn is_account_unstaked_balance_available_for_withdrawal(
     validator_account_id: &near_primitives::types::AccountId,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<bool> {
+    tracing::info!(target: "near_teach_me", "Getting account unstaked balance available for withdrawal ...");
     network_config
         .json_rpc_client()
         .blocking_call_view_function(

@@ -141,7 +141,7 @@ pub struct AccountTransferAllowance {
 impl std::fmt::Display for AccountTransferAllowance {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(fmt,
-            "\n{} account has {} available for transfer (the total balance is {}, but {} is locked for storage)",
+            "{} account has {} available for transfer (the total balance is {}, but {} is locked for storage)",
             self.account_id,
             self.transfer_allowance(),
             self.account_liquid_balance,
@@ -175,6 +175,7 @@ pub async fn get_account_transfer_allowance(
     account_id: near_primitives::types::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
+    tracing::info!(target: "near_teach_me", "Getting the transfer allowance for the account ...");
     let account_state =
         get_account_state(network_config, &account_id, block_reference.clone()).await;
     let account_view = match account_state {
@@ -244,6 +245,7 @@ pub fn verify_account_access_key(
     near_primitives::views::AccessKeyView,
     AccountStateError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
+    tracing::info!(target: "near_teach_me", "Account access key verification ...");
     loop {
         match network_config
             .json_rpc_client()
@@ -309,6 +311,7 @@ pub fn is_account_exist(
     networks: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<bool> {
+    tracing::info!(target: "near_teach_me", "Checking the existence of the account ...");
     for (_, network_config) in networks {
         let result = tokio::runtime::Runtime::new()
             .unwrap()
@@ -337,6 +340,7 @@ pub fn find_network_where_account_exist(
     new_account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<Option<crate::config::NetworkConfig>> {
     tracing::Span::current().pb_set_message(new_account_id.as_str());
+    tracing::info!(target: "near_teach_me", "Searching for a network where an account exists for {new_account_id} ...");
     for (_, network_config) in context.config.network_connection.iter() {
         let result = tokio::runtime::Runtime::new()
             .unwrap()
@@ -389,7 +393,7 @@ pub async fn get_account_state(
             "<{account_id}> on network <{}> ...",
             network_config.network_name
         ));
-        tracing::info!(target: "near_teach_me", "<{account_id}> on network <{}> ...", network_config.network_name);
+        tracing::info!(target: "near_teach_me", "Getting account status information for <{account_id}> on network <{}> ...", network_config.network_name);
 
         let query_view_method_response = view_account(
             format!("{}", network_config.rpc_url),
@@ -474,6 +478,7 @@ async fn view_account(
     near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
     tracing::Span::current().pb_set_message(&instrument_message);
+    tracing::info!(target: "near_teach_me", "Receiving request via RPC {instrument_message}");
 
     let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
         block_reference,
@@ -898,7 +903,7 @@ pub fn print_unsigned_transaction(
             }
         }
     }
-    info_str.push('\n');
+    info_str.push_str("\n ");
     info_str
 }
 
@@ -1422,16 +1427,110 @@ fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decima
 pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
-    verbosity: &crate::Verbosity,
+    verbosity: crate::Verbosity,
 ) -> crate::CliResult {
     let near_usd_exchange_rate: Option<Result<f64, color_eyre::eyre::Error>> = network_config
         .coingecko_url
         .as_ref()
         .map(get_near_usd_exchange_rate);
 
-    let mut logs_info = String::new();
+    let mut result_info = String::new();
+    let mut return_value = String::new();
+    let mut returned_value_bytes: Vec<u8> = Vec::new();
+
+    let result = match &transaction_info.status {
+        near_primitives::views::FinalExecutionStatus::NotStarted => {
+            if let crate::Verbosity::Quiet = verbosity {
+                return Ok(());
+            }
+            tracing::warn!(
+                parent: &tracing::Span::none(),
+                "The execution has not yet started."
+            );
+            Ok(())
+        }
+        near_primitives::views::FinalExecutionStatus::Started => {
+            if let crate::Verbosity::Quiet = verbosity {
+                return Ok(());
+            }
+            tracing::warn!(
+                parent: &tracing::Span::none(),
+                "The execution has started and still going."
+            );
+            Ok(())
+        }
+        near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+            match tx_execution_error {
+                near_primitives::errors::TxExecutionError::ActionError(action_error) => {
+                    convert_action_error_to_cli_result(action_error)
+                }
+                near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
+                    convert_invalid_tx_error_to_cli_result(invalid_tx_error)
+                }
+            }
+        }
+        near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
+            if let crate::Verbosity::Quiet = verbosity {
+                std::io::stdout().write_all(bytes_result)?;
+                return Ok(());
+            };
+            returned_value_bytes.append(&mut bytes_result.clone());
+            return_value = if bytes_result.is_empty() {
+                "Empty return value".to_string()
+            } else if let Ok(json_result) =
+                serde_json::from_slice::<serde_json::Value>(bytes_result)
+            {
+                serde_json::to_string_pretty(&json_result)?
+            } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
+                string_result
+            } else {
+                "The returned value is not printable (binary data)".to_string()
+            };
+            result_info.push_str(&return_value);
+            Ok(())
+        }
+    };
+
+    let mut transaction_execution_info = String::new();
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
+
+    transaction_execution_info.push_str(&format!("\nGas burned: {}", total_gas_burnt));
+
+    transaction_execution_info.push_str(&format!(
+        "\nTransaction fee: {}{}",
+        total_tokens_burnt.exact_amount_display(),
+        match near_usd_exchange_rate {
+            Some(Ok(exchange_rate)) => calculate_usd_amount(total_tokens_burnt.as_yoctonear(), exchange_rate).map_or_else(
+                || format!(" (USD equivalent is too big to be displayed, using ${exchange_rate:.2} USD/NEAR exchange rate)"),
+                |amount| format!(" (approximately ${amount:.8} USD, using ${exchange_rate:.2} USD/NEAR exchange rate)")
+            ),
+            Some(Err(err)) => format!(" (USD equivalent is unavailable due to an error: {err})"),
+            None => String::new(),
+        }
+    ));
+
+    transaction_execution_info.push_str(&format!(
+        "\nTransaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n ",
+        id=transaction_info.transaction_outcome.id,
+        path=network_config.explorer_transaction_url
+    ));
+
+    if result_info.is_empty() {
+        tracing::error!(
+            parent: &tracing::Span::none(),
+            "Transaction failed{}",
+            crate::common::indent_payload(&transaction_execution_info)
+        );
+    } else {
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "Transaction Execution Info:{}",
+            crate::common::indent_payload(&transaction_execution_info)
+        );
+    }
+
+    let mut logs_info = String::new();
 
     for receipt in &transaction_info.receipts_outcome {
         total_gas_burnt = total_gas_burnt
@@ -1451,132 +1550,39 @@ pub fn print_transaction_status(
             logs_info.push_str(&format!("\n  {}", receipt.outcome.logs.join("\n  ")));
         };
     }
-    logs_info.push_str("\n------------------------------------");
 
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "--- Logs ---------------------------{}",
-        crate::common::indent_payload(&logs_info)
-    );
-
-    let mut result_info = String::new();
-    let mut result_output = String::new();
-
-    let return_value = match &transaction_info.status {
-        near_primitives::views::FinalExecutionStatus::NotStarted => {
-            if let crate::Verbosity::Quiet = verbosity {
-                return Ok(());
-            }
-            tracing::warn!(
-                parent: &tracing::Span::none(),
-                "WARNING! The execution has not yet started."
-            );
-            Ok(())
-        }
-        near_primitives::views::FinalExecutionStatus::Started => {
-            if let crate::Verbosity::Quiet = verbosity {
-                return Ok(());
-            }
-            tracing::warn!(
-                parent: &tracing::Span::none(),
-                "WARNING! The execution has started and still going."
-            );
-            Ok(())
-        }
-        near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-            match tx_execution_error {
-                near_primitives::errors::TxExecutionError::ActionError(action_error) => {
-                    convert_action_error_to_cli_result(action_error)
-                }
-                near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
-                    convert_invalid_tx_error_to_cli_result(invalid_tx_error)
-                }
-            }
-        }
-        near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
-            if let crate::Verbosity::Quiet = verbosity {
-                std::io::stdout().write_all(bytes_result)?;
-                return Ok(());
-            };
-            let result = if bytes_result.is_empty() {
-                "Empty result".to_string()
-            } else if let Ok(json_result) =
-                serde_json::from_slice::<serde_json::Value>(bytes_result)
-            {
-                serde_json::to_string_pretty(&json_result)?
-            } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
-                string_result
-            } else {
-                "The returned value is not printable (binary data)".to_string()
-            };
-            if let crate::Verbosity::Interactive = verbosity {
-                for action in &transaction_info.transaction.actions {
-                    if let near_primitives::views::ActionView::FunctionCall { .. } = action {
-                        tracing::info!(
-                            parent: &tracing::Span::none(),
-                            "Function execution logs ------------{}",
-                            crate::common::indent_payload(&logs_info)
-                        );
-                        tracing::info!(
-                            parent: &tracing::Span::none(),
-                            "Function execution return value (printed to stdout):"
-                        );
-                        suspend_tracing_indicatif(|| println!("{result}"));
-                    }
-                }
-            }
-            result_info.push_str(&result);
-            result_info.push_str("\n------------------------------------");
-
-            result_output.push_str(&print_value_successful_transaction(
-                transaction_info.clone(),
-            ));
+    for action in &transaction_info.transaction.actions {
+        if let near_primitives::views::ActionView::FunctionCall { .. } = action {
             tracing::info!(
-                target: "near_teach_me",
                 parent: &tracing::Span::none(),
-                "--- Result -------------------------\n{}",
-                crate::common::indent_payload(&result_info)
+                "Function execution logs:{}",
+                crate::common::indent_payload(&format!("{}\n ",logs_info))
             );
-            Ok(())
+            if returned_value_bytes.is_empty() {
+                tracing::info!(
+                    parent: &tracing::Span::none(),
+                    "Function execution return value:\n{}",
+                    crate::common::indent_payload("Empty return value\n ")
+                );
+            } else {
+                suspend_tracing_indicatif(|| {
+                    eprintln!("\nFunction execution return value (printed to stdout):")
+                });
+                suspend_tracing_indicatif(|| println!("{return_value}"));
+            }
         }
-    };
-
-    result_output.push_str(&format!("\nGas burned: {}", total_gas_burnt));
-
-    result_output.push_str(&format!(
-        "\nTransaction fee: {}{}",
-        total_tokens_burnt.exact_amount_display(),
-        match near_usd_exchange_rate {
-            Some(Ok(exchange_rate)) => calculate_usd_amount(total_tokens_burnt.as_yoctonear(), exchange_rate).map_or_else(
-                || format!(" (USD equivalent is too big to be displayed, using ${exchange_rate:.2} USD/NEAR exchange rate)"),
-                |amount| format!(" (approximately ${amount:.8} USD, using ${exchange_rate:.2} USD/NEAR exchange rate)")
-            ),
-            Some(Err(err)) => format!(" (USD equivalent is unavailable due to an error: {err})"),
-            None => String::new(),
-        }
-    ));
-
-    result_output.push_str(&format!(
-        "\nTransaction ID: {id}\nTo see the transaction in the transaction explorer, please open this url in your browser:\n{path}{id}\n",
-        id=transaction_info.transaction_outcome.id,
-        path=network_config.explorer_transaction_url
-    ));
-
-    if result_info.is_empty() {
-        tracing::error!(
-            parent: &tracing::Span::none(),
-            "Transaction failed{}",
-            crate::common::indent_payload(&result_output)
-        );
-    } else {
-        tracing::info!(
-            parent: &tracing::Span::none(),
-            "{}",
-            crate::common::indent_payload(&result_output)
-        );
     }
-    return_value
+
+    if !result_info.is_empty() {
+        suspend_tracing_indicatif(|| {
+            eprintln!(
+                "{}",
+                print_value_successful_transaction(transaction_info.clone(),)
+            )
+        });
+    }
+
+    result
 }
 
 pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
@@ -1796,6 +1802,7 @@ pub fn get_delegated_validator_list_from_mainnet(
 pub fn get_used_delegated_validator_list(
     config: &crate::config::Config,
 ) -> color_eyre::eyre::Result<VecDeque<near_primitives::types::AccountId>> {
+    tracing::info!(target: "near_teach_me", "Retrieving a list of delegated validators from \"mainnet\" ...");
     let used_account_list: VecDeque<UsedAccount> =
         get_used_account_list(&config.credentials_home_dir);
     let mut delegated_validator_list =
@@ -1872,6 +1879,8 @@ pub struct RewardFeeFraction {
 pub fn get_validator_list(
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<Vec<StakingPoolInfo>> {
+    tracing::info!(target: "near_teach_me", "Getting a list of validators ...");
+
     let json_rpc_client = network_config.json_rpc_client();
 
     let validators_stake = get_validators_stake(&json_rpc_client)?;
@@ -1913,6 +1922,7 @@ pub fn fetch_historically_delegated_staking_pools(
     fastnear_url: &url::Url,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    tracing::info!(target: "near_teach_me", "Getting historically delegated staking pools ...");
     let request =
         reqwest::blocking::get(fastnear_url.join(&format!("v1/account/{account_id}/staking"))?)?;
     let response: StakingResponse = request.json()?;
@@ -1929,6 +1939,7 @@ pub fn fetch_currently_active_staking_pools(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     staking_pools_factory_account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    tracing::info!(target: "near_teach_me", "Getting currently active staking pools ...");
     let query_view_method_response = json_rpc_client
         .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference: near_primitives::types::Finality::Final.into(),
@@ -1958,6 +1969,7 @@ pub fn get_validators_stake(
 ) -> color_eyre::eyre::Result<
     std::collections::HashMap<near_primitives::types::AccountId, near_primitives::types::Balance>,
 > {
+    tracing::info!(target: "near_teach_me", "Getting a stake of validators ...");
     let epoch_validator_info = json_rpc_client
         .blocking_call(
             &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
@@ -2537,7 +2549,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         tracing::Span::current().pb_set_message(&format!(
             "a read-only function '{function_name}' of the <{account_id}> contract ..."
         ));
-        tracing::info!(target: "near_teach_me", "a read-only function '{function_name}' of the <{account_id}> contract ...");
+        tracing::info!(target: "near_teach_me", "Getting the result of executing a read-only function '{function_name}' of the <{account_id}> contract ...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2578,10 +2590,10 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                     target: "near_teach_me",
                     parent: &tracing::Span::none(),
                     "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
-                    indent_payload(
+                    indent_payload(&format!("{}\n ", 
                         &String::from_utf8(call_result.result.clone())
                             .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
-                    )
+                    ))
                 );
             })
             .inspect_err(|_| {
@@ -2607,7 +2619,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         tracing::Span::current().pb_set_message(&format!(
             "public key {public_key} on account <{account_id}>..."
         ));
-        tracing::info!(target: "near_teach_me", "public key {public_key} on account <{account_id}>...");
+        tracing::info!(target: "near_teach_me", "Getting access key information for public key {public_key} on account <{account_id}>...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2640,7 +2652,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     > {
         tracing::Span::current()
             .pb_set_message(&format!("access keys on account <{account_id}>..."));
-        tracing::info!(target: "near_teach_me", "access keys on account <{account_id}>...");
+        tracing::info!(target: "near_teach_me", "Getting a list of access keys on account <{account_id}>...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2670,7 +2682,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         near_jsonrpc_primitives::types::query::RpcQueryError,
     > {
         tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
-        tracing::info!(target: "near_teach_me", "account <{account_id}>...");
+        tracing::info!(target: "near_teach_me", "Getting information about account <{account_id}>...");
 
         let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
             block_reference,
@@ -2894,14 +2906,11 @@ pub impl near_primitives::views::CallResult {
         if self.logs.is_empty() {
             info_str.push_str("\nNo logs")
         } else {
-            info_str.push_str("\nLogs:");
             info_str.push_str(&format!("\n  {}", self.logs.join("\n  ")));
         }
-        info_str.push_str("\n------------------------------------");
         tracing::info!(
-            target: "near_teach_me",
             parent: &tracing::Span::none(),
-            "--- Logs ---------------------------{}\n",
+            "Logs:{}",
             indent_payload(&info_str)
         );
     }

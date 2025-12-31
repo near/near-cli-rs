@@ -166,6 +166,7 @@ impl FtTransferParamsContext {
             let signer_account_id = previous_context.signer_account_id.clone();
             let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
             let receiver_account_id = previous_context.receiver_account_id.clone();
+            let verbosity = previous_context.global_context.verbosity;
 
             move |outcome_view, network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
@@ -183,27 +184,21 @@ impl FtTransferParamsContext {
                                         ft_balance.decimals(),
                                         ft_balance.symbol().to_string()
                                     );
-                                    let info_str = format!(
-                                        "<{signer_account_id}> has successfully transferred {ft_transfer_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.\nRemaining balance: {ft_balance}",
-                                    );
-                                    tracing::info!(
-                                        parent: &tracing::Span::none(),
-                                        "\n{}",
-                                        crate::common::indent_payload(&info_str)
-                                    );
+                                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
+                                        tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
+                                            "<{signer_account_id}> has successfully transferred {ft_transfer_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.\nRemaining balance: {ft_balance}",
+                                        ));
+                                    }
                                     return Ok(());
                                 }
                             }
                         }
                     }
-                    let info_str = format!(
-                        "<{signer_account_id}> has successfully transferred fungible tokens (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.",
-                    );
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "\n{}",
-                        crate::common::indent_payload(&info_str)
-                    );
+                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
+                        tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
+                            "<{signer_account_id}> has successfully transferred fungible tokens (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.",
+                        ));
+                    }
                 }
                 Ok(())
             }

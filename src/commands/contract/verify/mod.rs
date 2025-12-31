@@ -124,7 +124,7 @@ impl ContractAccountIdContext {
                 )?;
 
                 verify_contract(
-                    previous_context.global_context.verbosity.clone(),
+                    previous_context.global_context.verbosity,
                     contract_code_from_contract_account_id,
                     contract_properties,
                 );
@@ -181,6 +181,7 @@ fn get_contract_properties_from_repository(
     save_contract_source_code_into: Option<std::path::PathBuf>,
     no_image_whitelist: bool,
 ) -> color_eyre::eyre::Result<ContractProperties> {
+    tracing::info!(target: "near_teach_me", "Getting the contract properties from the repository ...");
     let contract_source_metadata = tokio::runtime::Runtime::new().unwrap().block_on(
         super::inspect::get_contract_source_metadata(
             &network_config.json_rpc_client(),
@@ -204,6 +205,7 @@ fn get_contract_properties_from_docker_build(
     save_contract_source_code_into: Option<std::path::PathBuf>,
     no_image_whitelist: bool,
 ) -> color_eyre::eyre::Result<ContractProperties> {
+    tracing::info!(target: "near_teach_me", "Getting contract properties from docker build ...");
     let whitelist: Option<Whitelist> = if no_image_whitelist {
         None
     } else {
@@ -284,7 +286,7 @@ fn get_contract_code_from_contract_account_id(
     block_reference: &near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
     tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
-    tracing::info!(target: "near_teach_me", "{}", format!("{account_id} ..."));
+    tracing::info!(target: "near_teach_me", "Getting the contract code from {account_id} ...");
     tracing::info!(
         target: "near_teach_me",
         parent: &tracing::Span::none(),

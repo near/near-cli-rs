@@ -34,16 +34,8 @@ impl AsTextContext {
                         info_str.push_str(&format!("\n\tvalue: {}", key_value_to_string(&value.value)?.yellow()));
                         info_str.push_str("\n\t--------------------------------");
                     }
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "Contract state (values):{}\n",
-                        crate::common::indent_payload(&info_str)
-                    );
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "Contract state (proof):\n{}\n",
-                        crate::common::indent_payload(&format!("{:#?}", result.proof))
-                    );
+                    println!("Contract state (values):{info_str}\n");
+                    println!("Contract state (proof):\n{:#?}\n", result.proof);
                 } else {
                     return Err(color_eyre::Report::msg("Error call result".to_string()));
                 };

@@ -37,16 +37,11 @@ impl ViewNftAssetsContext {
                 call_result.print_logs();
                 let serde_call_result: serde_json::Value = call_result.parse_result_from_json()?;
 
-                if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
-                    println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
-                    return Ok(());
-                };
-                tracing::info!(
-                    parent: &tracing::Span::none(),
-                    "{} account has NFT tokens:\n{}",
-                    owner_account_id,
-                    crate::common::indent_payload(&serde_json::to_string_pretty(&serde_call_result)?)
-                );
+                if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = previous_context.global_context.verbosity {
+                    eprintln!("\n{} account has NFT tokens (printed to stdout):", owner_account_id);
+                }
+                println!("{}", serde_json::to_string_pretty(&serde_call_result)?);
+
                 Ok(())
             }
         });
@@ -85,6 +80,7 @@ fn get_nft_balance(
     args: Vec<u8>,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    tracing::info!(target: "near_teach_me", "Getting NFT balance ...");
     network_config
         .json_rpc_client()
         .blocking_call_view_function(
@@ -97,6 +93,6 @@ fn get_nft_balance(
             format!("Failed to fetch query for view method: 'nft_tokens_for_owner' (contract <{}> on network <{}>)",
                 nft_contract_account_id,
                 network_config.network_name
-        )
-})
+            )
+        })
 }

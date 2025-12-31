@@ -182,6 +182,7 @@ fn validate_new_account_id(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
 ) -> crate::CliResult {
+    tracing::info!(target: "near_teach_me", "Validation new account_id ...");
     let account_state =
         tokio::runtime::Runtime::new()
             .unwrap()

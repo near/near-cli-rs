@@ -202,6 +202,7 @@ pub fn params_ft_metadata(
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<FtMetadata> {
+    tracing::info!(target: "near_teach_me", "Getting FT metadata ...");
     let ft_metadata: FtMetadata = network_config
         .json_rpc_client()
         .blocking_call_view_function(

@@ -83,12 +83,12 @@ impl PublicKeyFromKeychainContext {
                     let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
                         serde_json::from_str(&password).wrap_err("Error reading data")?;
 
-                    if let crate::Verbosity::Quiet = previous_context.verbosity {
-                        println!("{}", account_key_pair.public_key);
-                    } else {
-                        eprintln!("\nPublic key (printed to stdout): ");
-                        println!("{}", account_key_pair.public_key);
+                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
+                        previous_context.verbosity
+                    {
+                        eprint!("Public key (printed to stdout): ");
                     }
+                    println!("{}", account_key_pair.public_key);
 
                     Ok(())
                 }

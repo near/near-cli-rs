@@ -21,7 +21,7 @@ pub struct GlobalContext {
     pub verbosity: Verbosity,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub enum Verbosity {
     #[default]
     Interactive,
@@ -56,11 +56,11 @@ pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
         ) -> std::fmt::Result {
             let level = *event.metadata().level();
             let (icon, color_code) = match level {
-                Level::TRACE => ("TRACE ", "\x1b[35m"),  // Magenta
-                Level::DEBUG => ("DEBUG ", "\x1b[34m"),  // Blue
-                Level::INFO => ("", ""),                 // Default
-                Level::WARN => ("Warning ", "\x1b[33m"), // Yellow
-                Level::ERROR => ("ERROR ", "\x1b[31m"),  // Red
+                Level::TRACE => ("TRACE ", "\x1b[35m"),   // Magenta
+                Level::DEBUG => ("DEBUG ", "\x1b[34m"),   // Blue
+                Level::INFO => ("", ""),                  // Default
+                Level::WARN => ("Warning: ", "\x1b[33m"), // Yellow
+                Level::ERROR => ("ERROR ", "\x1b[31m"),   // Red
             };
 
             write!(writer, "{}├  {}", color_code, icon)?;

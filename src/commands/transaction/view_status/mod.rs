@@ -29,14 +29,14 @@ impl TransactionInfoContext {
                 move |network_config| {
                     let query_view_transaction_status =
                         get_transaction_info(network_config, tx_hash)?;
-                    if let crate::Verbosity::Quiet = previous_context.verbosity {
-                        println!("Transaction status:\n{query_view_transaction_status:#?}");
+                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
+                        previous_context.verbosity
+                    {
+                        eprintln!("Transaction status:");
+                        println!("{query_view_transaction_status:#?}");
+                    } else {
+                        println!("{query_view_transaction_status:?}");
                     }
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "Transaction status:\n{}",
-                        crate::common::indent_payload(&format!("{query_view_transaction_status:#?}"))
-                    );
                     Ok(())
                 }
             });
@@ -61,6 +61,7 @@ pub fn get_transaction_info(
     tx_hash: near_primitives::hash::CryptoHash,
 ) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::tx::RpcTransactionResponse> {
     tracing::Span::current().pb_set_message(&format!("{tx_hash} ..."));
+    tracing::info!(target: "near_teach_me", "Getting information about transaction {tx_hash} ...");
     network_config
         .json_rpc_client()
         .blocking_call(

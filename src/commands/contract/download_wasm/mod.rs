@@ -329,6 +329,7 @@ pub fn get_code(
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
+    tracing::info!(target: "near_teach_me", "Trying to download contract code ...");
     let (request, hash_to_match) = match contract_type.clone() {
         ContractType::Regular(account_id) => (
             near_primitives::views::QueryRequest::ViewCode { account_id },
@@ -408,7 +409,7 @@ pub fn get_code(
             let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&call_access_view.code);
             if code_hash != hash_to_match {
                 tracing::warn!(
-                parent: &tracing::Span::none(),
+                    parent: &tracing::Span::none(),
                     "Fetched code hash {} does not match the expected code hash {}. Trying next block height...",
                     code_hash,
                     hash_to_match

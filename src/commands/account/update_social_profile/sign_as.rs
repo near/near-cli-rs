@@ -81,15 +81,14 @@ impl From<SignerContext> for crate::commands::ActionContext {
         });
 
         let account_id = item.account_id.clone();
+        let verbosity = item.global_context.verbosity;
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = Arc::new({
             move |transaction_info, _network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = transaction_info.status {
-                    tracing::info!(
-                        parent: &tracing::Span::none(),
-                        "Profile for {} updated successfully",
-                        account_id
-                    );
+                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
+                        eprintln!("Profile for {account_id} updated successfully");
+                    }
                 } else {
                     color_eyre::eyre::bail!("Failed to update profile!");
                 };
@@ -159,6 +158,7 @@ fn get_prepopulated_transaction(
     signer_id: &near_primitives::types::AccountId,
     data: &[u8],
 ) -> color_eyre::eyre::Result<crate::commands::PrepopulatedTransaction> {
+    tracing::info!(target: "near_teach_me", "Creating a pre-populated transaction for signature ...");
     let contract_account_id = network_config.get_near_social_account_id_from_network()?;
     let mut prepopulated_transaction = crate::commands::PrepopulatedTransaction {
         signer_id: signer_id.clone(),
@@ -212,6 +212,7 @@ fn required_deposit(
     data: &serde_json::Value,
     prev_data: Option<&serde_json::Value>,
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
+    tracing::info!(target: "near_teach_me", "Calculation of the required deposit ...");
     tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(near_socialdb_client::required_deposit(
@@ -233,6 +234,7 @@ fn get_deposit(
     near_social_account_id: &near_primitives::types::AccountId,
     required_deposit: near_token::NearToken,
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
+    tracing::info!(target: "near_teach_me", "Update the required deposit ...");
     tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(near_socialdb_client::get_deposit(
@@ -252,6 +254,7 @@ fn get_remote_profile(
     near_social_account_id: &near_primitives::types::AccountId,
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<serde_json::Value> {
+    tracing::info!(target: "near_teach_me", "Getting data about a remote profile ...");
     match network_config
         .json_rpc_client()
         .blocking_call_view_function(

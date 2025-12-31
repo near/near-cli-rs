@@ -54,6 +54,8 @@ impl SignLegacyKeychainContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignLegacyKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        tracing::info!(target: "near_teach_me", "Signing the transaction with a key saved in legacy keychain ...");
+
         let network_config = previous_context.network_config.clone();
 
         let keychain_folder = previous_context
@@ -227,7 +229,7 @@ impl SignLegacyKeychainContext {
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
             crate::common::indent_payload(&format!(
-                "\nPublic key: {}\nSignature:  {}\n",
+                "\nPublic key: {}\nSignature:  {}\n ",
                 signer_access_key.public_key,
                 signature
             ))

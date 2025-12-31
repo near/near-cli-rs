@@ -17,6 +17,8 @@ impl SendContext {
         previous_context: super::SubmitContext,
         _scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        tracing::info!(target: "near_teach_me", "Sending transaction ...");
+
         let storage_message = (previous_context.on_before_sending_transaction_callback)(
             &previous_context.signed_transaction_or_signed_delegate_action,
             &previous_context.network_config,
@@ -35,7 +37,7 @@ impl SendContext {
                 crate::common::print_transaction_status(
                     &transaction_info,
                     &previous_context.network_config,
-                    &previous_context.global_context.verbosity,
+                    previous_context.global_context.verbosity,
                 )?;
 
                 (previous_context.on_after_sending_transaction_callback)(
@@ -68,13 +70,12 @@ impl SendContext {
                 };
             }
         }
-        if !storage_message.is_empty() {
-            tracing::info!(
-                parent: &tracing::Span::none(),
-                "\n{}",
-                crate::common::indent_payload(&storage_message)
-            );
+        if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
+            previous_context.global_context.verbosity
+        {
+            tracing_indicatif::suspend_tracing_indicatif(|| eprintln!("{storage_message}"));
         }
+
         Ok(Self)
     }
 }
@@ -85,7 +86,7 @@ pub fn sending_signed_transaction(
     signed_transaction: &near_primitives::transaction::SignedTransaction,
 ) -> color_eyre::Result<near_primitives::views::FinalExecutionOutcomeView> {
     tracing::Span::current().pb_set_message(network_config.rpc_url.as_str());
-    tracing::info!(target: "near_teach_me", "{}", network_config.rpc_url.as_str());
+    tracing::info!(target: "near_teach_me", "Broadcasting transaction via RPC {}", network_config.rpc_url.as_str());
 
     let retries_number = 5;
     let mut retries = (1..=retries_number).rev();
@@ -136,7 +137,7 @@ pub fn sending_signed_transaction(
 )]
 pub fn sleep_after_error(additional_message_for_name: String) {
     tracing::Span::current().pb_set_message(&additional_message_for_name);
-    tracing::info!(target: "near_teach_me", "{}", &additional_message_for_name);
+    tracing::info!(target: "near_teach_me", "Waiting 5 seconds before broadcasting transaction via RPC {additional_message_for_name}");
     std::thread::sleep(std::time::Duration::from_secs(5));
 }
 
@@ -146,7 +147,7 @@ fn sending_delegate_action(
     meta_transaction_relayer_url: url::Url,
 ) -> Result<reqwest::blocking::Response, reqwest::Error> {
     tracing::Span::current().pb_set_message(meta_transaction_relayer_url.as_str());
-    tracing::info!(target: "near_teach_me", "{}", meta_transaction_relayer_url.as_str());
+    tracing::info!(target: "near_teach_me", "Broadcasting delegate action via a relayer url {}", meta_transaction_relayer_url.as_str());
 
     let client = reqwest::blocking::Client::new();
     let request_payload = serde_json::json!({

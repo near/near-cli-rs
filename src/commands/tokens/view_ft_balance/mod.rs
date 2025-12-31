@@ -47,15 +47,8 @@ impl ViewFtBalanceContext {
                     symbol
                 );
 
-                if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
-                    println!("<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})");
-                    return Ok(());
-                };
-                tracing::info!(
-                    parent: &tracing::Span::none(),
-                    "{}",
-                    format!("<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})")
-                );
+                println!("<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})");
+
                 Ok(())
             }
         });
@@ -94,6 +87,7 @@ pub fn get_ft_balance(
     args: Vec<u8>,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    tracing::info!(target: "near_teach_me", "Getting FT balance ...");
     network_config
         .json_rpc_client()
         .blocking_call_view_function(

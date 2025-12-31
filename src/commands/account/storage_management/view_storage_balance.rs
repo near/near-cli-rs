@@ -84,6 +84,7 @@ fn get_storage_balance(
     block_reference: &near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<near_socialdb_client::StorageBalance> {
     tracing::Span::current().pb_set_message(account_id.as_ref());
+    tracing::info!(target: "near_teach_me", "Getting storage balance for {account_id}");
     network_config
         .json_rpc_client()
         .blocking_call_view_function(

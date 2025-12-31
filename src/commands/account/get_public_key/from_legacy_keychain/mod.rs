@@ -101,12 +101,12 @@ impl PublicKeyFromLegacyKeychainContext {
                             )
                         })?;
 
-                    if let crate::Verbosity::Quiet = previous_context.verbosity {
-                        println!("{}", account_key_pair.public_key);
-                    } else {
-                        eprintln!("\nPublic key (printed to stdout): ");
-                        println!("{}", account_key_pair.public_key);
+                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
+                        previous_context.verbosity
+                    {
+                        eprint!("Public key (printed to stdout): ");
                     }
+                    println!("{}", account_key_pair.public_key);
 
                     Ok(())
                 }
