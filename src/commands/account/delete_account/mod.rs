@@ -136,13 +136,11 @@ impl BeneficiaryAccount {
 
             #[derive(derive_more::Display)]
             enum ConfirmOptions {
-                #[display(
-                    fmt = "Yes, I want to check if account <{account_id}> exists. (It is free of charge, and only requires Internet access)"
-                )]
+                #[display("Yes, I want to check if account <{account_id}> exists. (It is free of charge, and only requires Internet access)")]
                 Yes {
                     account_id: crate::types::account_id::AccountId,
                 },
-                #[display(fmt = "No, I know this account exists and want to continue.")]
+                #[display("No, I know this account exists and want to continue.")]
                 No,
             }
             let select_choose_input =
