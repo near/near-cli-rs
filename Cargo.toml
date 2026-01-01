@@ -28,7 +28,7 @@ inquire-clack = "0.1.0"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 smart-default = "0.7.1"
-derive_more = "0.99.9"
+derive_more = "2"
 easy-ext = "1"
 
 reqwest = { version = "0.12", features = ["blocking", "json"] }
@@ -50,7 +50,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
 serde_with = "3.12.0"
 toml = "0.8"
-dirs = "5"
+dirs = "6"
 shellexpand = "3"
 slipped10 = { version = "0.4.6" }
 url = { version = "2", features = ["serde"] }
@@ -62,10 +62,10 @@ tracing = "0.1.40"
 tracing-indicatif = "0.3.6"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-wasmparser = "0.217"
+wasmparser = "0.243"
 
 semver = { version = "1.0.4", optional = true }
-self_update = { version = "0.41.0", features = [
+self_update = { version = "0.42", features = [
     "archive-tar",
     "compression-flate2",
 ], optional = true }

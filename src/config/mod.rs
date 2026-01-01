@@ -14,7 +14,7 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
+        let home_dir = std::env::home_dir().expect("Impossible to get your home dir!");
         let mut credentials_home_dir = std::path::PathBuf::from(&home_dir);
         credentials_home_dir.push(".near-credentials");
 
