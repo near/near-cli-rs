@@ -65,7 +65,7 @@ impl Default for Config {
             "mainnet-lava".to_string(),
             NetworkConfig {
                 network_name: "mainnet".to_string(),
-                rpc_url: "https://near.lava.build:443/".parse().unwrap(),
+                rpc_url: "https://near.lava.build/".parse().unwrap(),
                 rpc_api_key: None,
                 wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
                 explorer_transaction_url: "https://explorer.near.org/transactions/"
@@ -128,7 +128,7 @@ impl Default for Config {
             "testnet-lava".to_string(),
             NetworkConfig {
                 network_name: "testnet".to_string(),
-                rpc_url: "https://near-testnet.lava.build:433/".parse().unwrap(),
+                rpc_url: "https://neart.lava.build/".parse().unwrap(),
                 rpc_api_key: None,
                 wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
                 explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
