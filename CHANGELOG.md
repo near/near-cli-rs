@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.4](https://github.com/near/near-cli-rs/compare/v0.23.3...v0.23.4) - 2026-01-01
+
+### Other
+
+- Upgraded dependencies to the latest major dependencies ([#540](https://github.com/near/near-cli-rs/pull/540))
+
 ## [0.23.3](https://github.com/near/near-cli-rs/compare/v0.23.2...v0.23.3) - 2025-12-31
 
 ### Fixed
