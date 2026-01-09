@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.6](https://github.com/near/near-cli-rs/compare/v0.23.5...v0.23.6) - 2026-01-09
+
+### Other
+
+- Replaced macos-13, being browned out ([#549](https://github.com/near/near-cli-rs/pull/549))
+- added DevEx to CODEOWNERS ([#548](https://github.com/near/near-cli-rs/pull/548))
+- Updated the copyright year to 2026 ([#544](https://github.com/near/near-cli-rs/pull/544))
+
 ## [0.23.5](https://github.com/near/near-cli-rs/compare/v0.23.4...v0.23.5) - 2026-01-01
 
 ### Fixed
