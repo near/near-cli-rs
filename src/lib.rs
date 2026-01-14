@@ -30,6 +30,13 @@ pub enum Verbosity {
 }
 
 pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
+    setup_tracing_with_extra_directives(verbosity, &[])
+}
+
+pub fn setup_tracing_with_extra_directives(
+    verbosity: Verbosity,
+    extra_directives: &[&str],
+) -> CliResult {
     use tracing::{Event, Level, Subscriber};
     use tracing_indicatif::style::ProgressStyle;
     use tracing_indicatif::IndicatifLayer;
@@ -75,10 +82,13 @@ pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
 
     match verbosity {
         Verbosity::TeachMe => {
-            let env_filter = EnvFilter::from_default_env()
+            let mut env_filter = EnvFilter::from_default_env()
                 .add_directive(tracing::Level::WARN.into())
                 .add_directive("near_teach_me=info".parse()?)
                 .add_directive("near_cli_rs=info".parse()?);
+            for directive in extra_directives {
+                env_filter = env_filter.add_directive(directive.parse()?);
+            }
             tracing_subscriber::registry()
                 .with(tracing_subscriber::fmt::layer().event_format(SimpleFormatter))
                 .with(env_filter)
@@ -94,9 +104,12 @@ pub fn setup_tracing(verbosity: Verbosity) -> CliResult {
                     .tick_strings(&["◐", "◓", "◑", "◒"]),
                 )
                 .with_span_child_prefix_symbol("↳ ");
-            let env_filter = EnvFilter::from_default_env()
+            let mut env_filter = EnvFilter::from_default_env()
                 .add_directive(tracing::Level::WARN.into())
                 .add_directive("near_cli_rs=info".parse()?);
+            for directive in extra_directives {
+                env_filter = env_filter.add_directive(directive.parse()?);
+            }
             tracing_subscriber::registry()
                 .with(
                     tracing_subscriber::fmt::layer()
