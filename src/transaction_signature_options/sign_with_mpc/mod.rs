@@ -745,9 +745,10 @@ fn fetch_mpc_contract_response_from_dao_tx(
             if let near_primitives::views::ActionView::FunctionCall {
                 method_name, args, ..
             } = action
-                && method_name == "act_proposal" {
-                    return Some(args);
-                }
+                && method_name == "act_proposal"
+            {
+                return Some(args);
+            }
             None
         })
         .ok_or(color_eyre::eyre::eyre!("No act_proposal action found"))?;
@@ -780,10 +781,10 @@ fn fetch_mpc_contract_response_from_dao_tx(
         if receipt.outcome.executor_id == mpc_contract_address
             && let near_primitives::views::ExecutionStatusView::SuccessValue(success_response) =
                 receipt.outcome.status
-            {
-                sign_response_opt = Some(success_response);
-                break;
-            }
+        {
+            sign_response_opt = Some(success_response);
+            break;
+        }
     }
 
     let Some(sign_response_vec) = sign_response_opt else {

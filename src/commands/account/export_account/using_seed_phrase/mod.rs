@@ -27,15 +27,15 @@ impl ExportAccountFromSeedPhraseContext {
                         super::get_password_from_keychain(network_config, &account_id)
                         && let Ok(key_pair_properties) =
                             serde_json::from_str::<crate::common::KeyPairProperties>(&password)
-                        {
-                            println!(
-                                "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
-                                account_id,
-                                key_pair_properties.master_seed_phrase,
-                                key_pair_properties.seed_phrase_hd_path
-                            );
-                            return Ok(());
-                        }
+                    {
+                        println!(
+                            "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",
+                            account_id,
+                            key_pair_properties.master_seed_phrase,
+                            key_pair_properties.seed_phrase_hd_path
+                        );
+                        return Ok(());
+                    }
 
                     let data_path = get_seed_phrase_data_path(
                         network_config,

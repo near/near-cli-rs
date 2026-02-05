@@ -1759,9 +1759,10 @@ pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
     };
 
     if let Some(perr) = err.downcast_ref::<cargo_util::ProcessError>()
-        && let Some(code) = perr.code {
-            return Err(color_eyre::eyre::eyre!("perror occurred, code: {}", code));
-        }
+        && let Some(code) = perr.code
+    {
+        return Err(color_eyre::eyre::eyre!("perror occurred, code: {}", code));
+    }
     Err(color_eyre::eyre::eyre!(err))
 }
 
@@ -2488,43 +2489,44 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
     {
         if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method)
-            && tracing::enabled!(target: "near_teach_me", tracing::Level::INFO) {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "HTTP POST {}",
-                    self.server_addr()
-                );
+            && tracing::enabled!(target: "near_teach_me", tracing::Level::INFO)
+        {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "HTTP POST {}",
+                self.server_addr()
+            );
 
-                let (request_payload, message_about_saving_payload) =
-                    check_request_payload_for_broadcast_tx_commit(request_payload);
+            let (request_payload, message_about_saving_payload) =
+                check_request_payload_for_broadcast_tx_commit(request_payload);
 
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON Request Body:\n{}",
-                    indent_payload(&format!("{request_payload:#}"))
-                );
-                match message_about_saving_payload {
-                    Ok(Some(message)) => {
-                        tracing::event!(
-                            target: "near_teach_me",
-                            parent: &tracing::Span::none(),
-                            tracing::Level::INFO,
-                            "{}", message
-                        );
-                    }
-                    Err(message) => {
-                        tracing::event!(
-                            target: "near_teach_me",
-                            parent: &tracing::Span::none(),
-                            tracing::Level::WARN,
-                            "{}", message
-                        );
-                    }
-                    _ => {}
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON Request Body:\n{}",
+                indent_payload(&format!("{request_payload:#}"))
+            );
+            match message_about_saving_payload {
+                Ok(Some(message)) => {
+                    tracing::event!(
+                        target: "near_teach_me",
+                        parent: &tracing::Span::none(),
+                        tracing::Level::INFO,
+                        "{}", message
+                    );
                 }
+                Err(message) => {
+                    tracing::event!(
+                        target: "near_teach_me",
+                        parent: &tracing::Span::none(),
+                        tracing::Level::WARN,
+                        "{}", message
+                    );
+                }
+                _ => {}
             }
+        }
 
         tokio::runtime::Runtime::new()
             .unwrap()
@@ -2735,10 +2737,10 @@ fn check_request_payload_for_broadcast_tx_commit(
     let params_value = request_payload.get("params").cloned();
     if let Some(method) = method
         && method.to_string().contains("broadcast_tx_commit")
-            && let Some(params_value) = params_value {
-                message_about_saving_payload =
-                    replace_params_with_file(&mut request_payload, params_value);
-            }
+        && let Some(params_value) = params_value
+    {
+        message_about_saving_payload = replace_params_with_file(&mut request_payload, params_value);
+    }
     (request_payload, message_about_saving_payload)
 }
 

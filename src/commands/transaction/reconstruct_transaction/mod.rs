@@ -63,16 +63,13 @@ impl TransactionInfoContext {
                         && let near_primitives::transaction::Action::Delegate(
                             signed_delegate_action,
                         ) = &prepopulated_transaction.actions[0]
-                        {
-                            prepopulated_transaction = crate::commands::PrepopulatedTransaction {
-                                signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
-                                receiver_id: signed_delegate_action
-                                    .delegate_action
-                                    .receiver_id
-                                    .clone(),
-                                actions: signed_delegate_action.delegate_action.get_actions(),
-                            };
-                        }
+                    {
+                        prepopulated_transaction = crate::commands::PrepopulatedTransaction {
+                            signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
+                            receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
+                            actions: signed_delegate_action.delegate_action.get_actions(),
+                        };
+                    }
 
                     let cmd =
                         crate::commands::CliTopLevelCommand::Transaction(CliTransactionCommands {
