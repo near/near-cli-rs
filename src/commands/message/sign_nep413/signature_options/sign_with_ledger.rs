@@ -35,7 +35,9 @@ impl SignLedgerContext {
 
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-        eprintln!("Please approve the message signing on your Ledger device (HD Path: {seed_phrase_hd_path})");
+        eprintln!(
+            "Please approve the message signing on your Ledger device (HD Path: {seed_phrase_hd_path})"
+        );
 
         let signature_bytes = near_ledger::sign_message_nep413(
             &previous_context.payload.into(),

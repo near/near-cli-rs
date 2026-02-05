@@ -163,7 +163,9 @@ fn verify_contract(
             )
         }
     } else if let crate::Verbosity::Quiet = verbosity {
-        println!("The code obtained from the contract account ID and the code calculated from the repository do not match.")
+        println!(
+            "The code obtained from the contract account ID and the code calculated from the repository do not match."
+        )
     } else {
         tracing::info!("{}", "The code obtained from the contract account ID and the code calculated from the repository do not match.".red())
     }

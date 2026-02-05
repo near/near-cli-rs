@@ -53,7 +53,9 @@ impl NewAccount {
 
             #[derive(derive_more::Display)]
             enum ConfirmOptions {
-                #[display("Yes, I want to check that <{account_id}> account does not exist. (It is free of charge, and only requires Internet access)")]
+                #[display(
+                    "Yes, I want to check that <{account_id}> account does not exist. (It is free of charge, and only requires Internet access)"
+                )]
                 Yes {
                     account_id: crate::types::account_id::AccountId,
                 },
@@ -103,7 +105,8 @@ impl NewAccount {
                         )?
                         .is_none()
                         {
-                            eprintln!("\nThe parent account <{}> does not exist on [{}] networks. Therefore, you cannot create an account <{}>.",
+                            eprintln!(
+                                "\nThe parent account <{}> does not exist on [{}] networks. Therefore, you cannot create an account <{}>.",
                                 parent_account_id,
                                 context.config.network_names().join(", "),
                                 account_id

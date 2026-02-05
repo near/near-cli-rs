@@ -77,10 +77,12 @@ pub fn before_creating_account(
 ) -> crate::CliResult {
     let faucet_service_url = match &network_config.faucet_url {
         Some(url) => url,
-        None => return Err(color_eyre::Report::msg(format!(
-            "The <{}> network does not have a faucet (helper service) that can sponsor the creation of an account.",
-            &network_config.network_name
-        )))
+        None => {
+            return Err(color_eyre::Report::msg(format!(
+                "The <{}> network does not have a faucet (helper service) that can sponsor the creation of an account.",
+                &network_config.network_name
+            )));
+        }
     };
     tracing::Span::current().pb_set_message(faucet_service_url.as_str());
     tracing::info!(target: "near_teach_me", "Receiving request via faucet service {}", faucet_service_url.as_str());
@@ -186,8 +188,8 @@ fn print_account_creation_status(
                         {
                             tracing_indicatif::suspend_tracing_indicatif(|| {
                                 eprintln!(
-                                "New account <{new_account_id}> created successfully.\n{storage_message}"
-                            )
+                                    "New account <{new_account_id}> created successfully.\n{storage_message}"
+                                )
                             });
                         }
                     }

@@ -36,8 +36,8 @@ impl PublicKeyFromLegacyKeychainContext {
                     let signer_access_key_file_path: std::path::PathBuf = {
                         if previous_context.offline {
                             eprintln!(
-                            "\nThe signer's public key cannot be verified and retrieved offline."
-                        );
+                                "\nThe signer's public key cannot be verified and retrieved offline."
+                            );
                             return Ok(());
                         }
                         if signer_keychain_folder.exists() {

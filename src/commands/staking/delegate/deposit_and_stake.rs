@@ -50,13 +50,12 @@ impl DepositAndStakeContext {
             let verbosity = previous_context.global_context.verbosity;
 
             move |outcome_view, _network_config| {
-                if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
+                if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status
+                    && let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
                         tracing_indicatif::suspend_tracing_indicatif(|| {
                             eprintln!("<{signer_id}> has successfully delegated {amount} to stake with <{validator_id}>.");
                         })
                     }
-                }
                 Ok(())
             }
         });

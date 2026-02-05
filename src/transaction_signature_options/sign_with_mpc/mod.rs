@@ -546,7 +546,9 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                             )
                         }
                         _ => {
-                            let error_msg = format!("Failed to sign MPC transaction for <{sender_id}>\nUnexpected outcome view after sending to \"sign\" to <{contract_id}> contract.");
+                            let error_msg = format!(
+                                "Failed to sign MPC transaction for <{sender_id}>\nUnexpected outcome view after sending to \"sign\" to <{contract_id}> contract."
+                            );
                             eprintln!("{error_msg}");
                             return Err(color_eyre::eyre::eyre!(error_msg));
                         }
@@ -582,11 +584,10 @@ impl From<DepositContext> for crate::commands::TransactionContext {
 
                 if let Some(near_primitives::views::ActionView::FunctionCall { method_name, args, .. }) =
       outcome_view.transaction.actions.first()
-                {
-                    if method_name == "add_proposal" {
-                        if let Ok(Some(proposal)) = serde_json::from_slice::<serde_json::Value>(args).map(|parsed_args| parsed_args.get("proposal").cloned()) {
-                            if let Some(kind) = proposal.get("kind") {
-                                if serde_json::from_value::<super::submit_dao_proposal::dao_kind_arguments::ProposalKind>(kind.clone()).is_ok() {
+                    && method_name == "add_proposal"
+                        && let Ok(Some(proposal)) = serde_json::from_slice::<serde_json::Value>(args).map(|parsed_args| parsed_args.get("proposal").cloned())
+                            && let Some(kind) = proposal.get("kind")
+                                && serde_json::from_value::<super::submit_dao_proposal::dao_kind_arguments::ProposalKind>(kind.clone()).is_ok() {
                                     dao_sign_with_mpc_after_send_flow(
                                         &global_context,
                                         network_config,
@@ -595,10 +596,6 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                                         &mpc_sign_request
                                     )?;
                                 }
-                            }
-                        }
-                    }
-                }
 
                 Ok(())
             }
@@ -748,11 +745,9 @@ fn fetch_mpc_contract_response_from_dao_tx(
             if let near_primitives::views::ActionView::FunctionCall {
                 method_name, args, ..
             } = action
-            {
-                if method_name == "act_proposal" {
+                && method_name == "act_proposal" {
                     return Some(args);
                 }
-            }
             None
         })
         .ok_or(color_eyre::eyre::eyre!("No act_proposal action found"))?;
@@ -771,7 +766,9 @@ fn fetch_mpc_contract_response_from_dao_tx(
     let mpc_sign_request = proposal_kind.try_to_mpc_sign_request(network_config)?;
 
     if mpc_sign_request != *original_sign_request {
-        return Err(color_eyre::eyre::eyre!("Fetched sign request from DAO proposal doesn't match original that was made in this session"));
+        return Err(color_eyre::eyre::eyre!(
+            "Fetched sign request from DAO proposal doesn't match original that was made in this session"
+        ));
     };
 
     let mut sign_response_opt = None;
@@ -780,14 +777,13 @@ fn fetch_mpc_contract_response_from_dao_tx(
         .expect("Already checked it before calling");
 
     for receipt in exec_outcome_view.receipts_outcome {
-        if receipt.outcome.executor_id == mpc_contract_address {
-            if let near_primitives::views::ExecutionStatusView::SuccessValue(success_response) =
+        if receipt.outcome.executor_id == mpc_contract_address
+            && let near_primitives::views::ExecutionStatusView::SuccessValue(success_response) =
                 receipt.outcome.status
             {
                 sign_response_opt = Some(success_response);
                 break;
             }
-        }
     }
 
     let Some(sign_response_vec) = sign_response_opt else {

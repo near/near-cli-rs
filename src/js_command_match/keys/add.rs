@@ -77,60 +77,102 @@ mod tests {
     fn add_key() {
         for (input, expected_output) in [
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{} contract.testnet", CONTRACT_ID_ALIASES[0]),
-                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{} contract.testnet",
+                    CONTRACT_ID_ALIASES[0]
+                ),
+                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{} contract.testnet", CONTRACT_ID_ALIASES[1]),
-                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{} contract.testnet",
+                    CONTRACT_ID_ALIASES[1]
+                ),
+                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{} get,set", METHOD_NAMES_ALIASES[0]),
-                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names get,set use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{} get,set",
+                    METHOD_NAMES_ALIASES[0]
+                ),
+                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names get,set use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{} get,set", METHOD_NAMES_ALIASES[1]),
-                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names get,set use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{} get,set",
+                    METHOD_NAMES_ALIASES[1]
+                ),
+                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names get,set use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{}", SIGN_WITH_LEDGER_ALIASES[0]),
-                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{}",
+                    SIGN_WITH_LEDGER_ALIASES[0]
+                ),
+                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{}", SIGN_WITH_LEDGER_ALIASES[1]),
-                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{}",
+                    SIGN_WITH_LEDGER_ALIASES[1]
+                ),
+                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{}", SIGN_WITH_LEDGER_ALIASES[2]),
-                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{}",
+                    SIGN_WITH_LEDGER_ALIASES[2]
+                ),
+                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{}", SIGN_WITH_LEDGER_ALIASES[3]),
-                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --{}",
+                    SIGN_WITH_LEDGER_ALIASES[3]
+                ),
+                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[0]),
-                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"",
+                    LEDGER_PATH_ALIASES[0]
+                ),
+                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[1]),
-                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --contractId contract.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"",
+                    LEDGER_PATH_ALIASES[1]
+                ),
+                "account add-key bob.testnet grant-function-call-access --allowance unlimited --contract-account-id contract.testnet --function-names '' use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{} testnet", NETWORK_ID_ALIASES[0]),
-                "account add-key bob.testnet grant-full-access use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{} testnet",
+                    NETWORK_ID_ALIASES[0]
+                ),
+                "account add-key bob.testnet grant-full-access use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config testnet sign-with-keychain send",
             ),
             (
-                format!("near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{} mainnet", NETWORK_ID_ALIASES[1]),
-                "account add-key bob.testnet grant-full-access use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config mainnet sign-with-keychain send"
+                format!(
+                    "near add-key bob.testnet ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq --{} mainnet",
+                    NETWORK_ID_ALIASES[1]
+                ),
+                "account add-key bob.testnet grant-full-access use-manually-provided-public-key ed25519:DReZmNmnGhpsYcCFFeYgPsJ9YCm9xH16GGujCPe3KQEq network-config mainnet sign-with-keychain send",
             ),
         ] {
-            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let input_cmd =
+                shell_words::split(&input).expect("Input command must be a valid shell command");
             let JsCmd::AddKey(add_key_args) = JsCmd::parse_from(&input_cmd) else {
-                panic!("AddKey command was expected, but something else was parsed out from {input}");
+                panic!(
+                    "AddKey command was expected, but something else was parsed out from {input}"
+                );
             };
             assert_eq!(
-                shell_words::join(AddKeyArgs::to_cli_args(&add_key_args, "testnet".to_string())),
+                shell_words::join(AddKeyArgs::to_cli_args(
+                    &add_key_args,
+                    "testnet".to_string()
+                )),
                 expected_output
             );
         }

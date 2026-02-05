@@ -16,9 +16,7 @@ pub enum OutputFormat {
     ))]
     /// View contract storage state in JSON format
     AsJson(self::as_json::AsJson),
-    #[strum_discriminants(strum(
-        message = "as-text    - View contract storage state in the text"
-    ))]
+    #[strum_discriminants(strum(message = "as-text    - View contract storage state in the text"))]
     /// View contract storage state in the text
     AsText(self::as_text::AsText),
 }

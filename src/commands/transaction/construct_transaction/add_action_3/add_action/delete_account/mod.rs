@@ -68,7 +68,9 @@ impl DeleteAccountAction {
 
             #[derive(derive_more::Display)]
             enum ConfirmOptions {
-                #[display("Yes, I want to check if account <{account_id}> exists. (It is free of charge, and only requires Internet access)")]
+                #[display(
+                    "Yes, I want to check if account <{account_id}> exists. (It is free of charge, and only requires Internet access)"
+                )]
                 Yes {
                     account_id: crate::types::account_id::AccountId,
                 },

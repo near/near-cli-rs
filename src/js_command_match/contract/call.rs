@@ -95,67 +95,142 @@ mod tests {
 
         for (input, expected_output) in [
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[0]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --{} bob.testnet",
+                    USE_ACCOUNT_ALIASES[0]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[1]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --{} bob.testnet",
+                    USE_ACCOUNT_ALIASES[1]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[2]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --{} bob.testnet",
+                    USE_ACCOUNT_ALIASES[2]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[3]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --{} bob.testnet",
+                    USE_ACCOUNT_ALIASES[3]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[4]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --{} bob.testnet",
+                    USE_ACCOUNT_ALIASES[4]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --{} bob.testnet", USE_ACCOUNT_ALIASES[5]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --{} bob.testnet",
+                    USE_ACCOUNT_ALIASES[5]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin {base64_args} --useAccount bob.testnet --base64"),
-                format!("contract call-function as-transaction contract.testnet flip_coin base64-args {base64_args} prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send")
+                format!(
+                    "near call contract.testnet flip_coin {base64_args} --useAccount bob.testnet --base64"
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin base64-args {base64_args} prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-keychain send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}", SIGN_WITH_LEDGER_ALIASES[0]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}",
+                    SIGN_WITH_LEDGER_ALIASES[0]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}", SIGN_WITH_LEDGER_ALIASES[1]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}",
+                    SIGN_WITH_LEDGER_ALIASES[1]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}", SIGN_WITH_LEDGER_ALIASES[2]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}",
+                    SIGN_WITH_LEDGER_ALIASES[2]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}", SIGN_WITH_LEDGER_ALIASES[3]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{}",
+                    SIGN_WITH_LEDGER_ALIASES[3]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[0]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"",
+                    LEDGER_PATH_ALIASES[0]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[1]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --signWithLedger --{} \"44'/397'/0'/0'/2'\"",
+                    LEDGER_PATH_ALIASES[1]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{} mainnet", NETWORK_ID_ALIASES[0]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config mainnet sign-with-keychain send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{} mainnet",
+                    NETWORK_ID_ALIASES[0]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config mainnet sign-with-keychain send"
+                ),
             ),
             (
-                format!("near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{} mainnet", NETWORK_ID_ALIASES[1]),
-                format!("contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config mainnet sign-with-keychain send")
+                format!(
+                    "near call contract.testnet flip_coin '{json_args}' --useAccount bob.testnet --{} mainnet",
+                    NETWORK_ID_ALIASES[1]
+                ),
+                format!(
+                    "contract call-function as-transaction contract.testnet flip_coin json-args '{json_args}' prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as bob.testnet network-config mainnet sign-with-keychain send"
+                ),
             ),
         ] {
-            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let input_cmd =
+                shell_words::split(&input).expect("Input command must be a valid shell command");
             let JsCmd::Call(call_args) = JsCmd::parse_from(&input_cmd) else {
                 panic!("Call command was expected, but something else was parsed out from {input}");
             };

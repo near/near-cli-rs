@@ -52,43 +52,71 @@ mod tests {
     fn send() {
         for (input, expected_output) in [
             (
-                format!("near send bob.testnet alice.testnet 1 --{}", SIGN_WITH_LEDGER_ALIASES[0]),
-                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                format!(
+                    "near send bob.testnet alice.testnet 1 --{}",
+                    SIGN_WITH_LEDGER_ALIASES[0]
+                ),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send",
             ),
             (
-                format!("near send-near bob.testnet alice.testnet 1 --{}", SIGN_WITH_LEDGER_ALIASES[0]),
-                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                format!(
+                    "near send-near bob.testnet alice.testnet 1 --{}",
+                    SIGN_WITH_LEDGER_ALIASES[0]
+                ),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send",
             ),
             (
-                format!("near send-near bob.testnet alice.testnet 1 --{}", SIGN_WITH_LEDGER_ALIASES[1]),
-                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                format!(
+                    "near send-near bob.testnet alice.testnet 1 --{}",
+                    SIGN_WITH_LEDGER_ALIASES[1]
+                ),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send",
             ),
             (
-                format!("near send-near bob.testnet alice.testnet 1 --{}", SIGN_WITH_LEDGER_ALIASES[2]),
-                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                format!(
+                    "near send-near bob.testnet alice.testnet 1 --{}",
+                    SIGN_WITH_LEDGER_ALIASES[2]
+                ),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send",
             ),
             (
-                format!("near send-near bob.testnet alice.testnet 1 --{}", SIGN_WITH_LEDGER_ALIASES[3]),
-                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send"
+                format!(
+                    "near send-near bob.testnet alice.testnet 1 --{}",
+                    SIGN_WITH_LEDGER_ALIASES[3]
+                ),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/1'\\''' send",
             ),
             (
-                format!("near send-near bob.testnet alice.testnet 1 --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[0]),
-                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+                format!(
+                    "near send-near bob.testnet alice.testnet 1 --signWithLedger --{} \"44'/397'/0'/0'/2'\"",
+                    LEDGER_PATH_ALIASES[0]
+                ),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send",
             ),
             (
-                format!("near send-near bob.testnet alice.testnet 1 --signWithLedger --{} \"44'/397'/0'/0'/2'\"", LEDGER_PATH_ALIASES[1]),
-                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send"
+                format!(
+                    "near send-near bob.testnet alice.testnet 1 --signWithLedger --{} \"44'/397'/0'/0'/2'\"",
+                    LEDGER_PATH_ALIASES[1]
+                ),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-ledger --seed-phrase-hd-path '44'\\''/397'\\''/0'\\''/0'\\''/2'\\''' send",
             ),
             (
-                format!("near send-near bob.testnet alice.testnet 1 --{} testnet", NETWORK_ID_ALIASES[0]),
-                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-keychain send"
+                format!(
+                    "near send-near bob.testnet alice.testnet 1 --{} testnet",
+                    NETWORK_ID_ALIASES[0]
+                ),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config testnet sign-with-keychain send",
             ),
             (
-                format!("near send-near bob.testnet alice.testnet 1 --{} mainnet", NETWORK_ID_ALIASES[1]),
-                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config mainnet sign-with-keychain send"
+                format!(
+                    "near send-near bob.testnet alice.testnet 1 --{} mainnet",
+                    NETWORK_ID_ALIASES[1]
+                ),
+                "tokens bob.testnet send-near alice.testnet '1 NEAR' network-config mainnet sign-with-keychain send",
             ),
         ] {
-            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let input_cmd =
+                shell_words::split(&input).expect("Input command must be a valid shell command");
             let JsCmd::Send(send_args) = JsCmd::parse_from(&input_cmd) else {
                 panic!("Send command was expected, but something else was parsed out from {input}");
             };

@@ -1,4 +1,4 @@
-use color_eyre::eyre::{eyre, Context};
+use color_eyre::eyre::{Context, eyre};
 use near_primitives::action::Action;
 use serde::{Deserialize, Serialize};
 use serde_with::{base64::Base64, serde_as};
@@ -108,8 +108,8 @@ impl ProposalKind {
             ProposalKind::FunctionCall(fc_args) => {
                 if fc_args.receiver_id != network_config.get_mpc_contract_account_id()? {
                     return Err(color_eyre::eyre::eyre!(
-                    "ReceiverId of Function Call proposal doesn't match MPC contract AccountId in selected NetworkConfig!"
-                ));
+                        "ReceiverId of Function Call proposal doesn't match MPC contract AccountId in selected NetworkConfig!"
+                    ));
                 }
 
                 let mpc_sign_action = fc_args.actions.first().ok_or_else(|| {

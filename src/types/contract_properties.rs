@@ -13,10 +13,16 @@ pub struct ContractProperties {
 
 impl std::fmt::Display for ContractProperties {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Contract code hash: {}\nContract version:\t{}\nStandards used by the contract:\t[{}]\nView the contract's source code on:\t{}\nBuild Environment:\t{}\nBuild Command:\t{}",
+        write!(
+            f,
+            "Contract code hash: {}\nContract version:\t{}\nStandards used by the contract:\t[{}]\nView the contract's source code on:\t{}\nBuild Environment:\t{}\nBuild Command:\t{}",
             self.hash.to_base58_string(),
             self.version.clone().unwrap_or("N/A".to_string()),
-            self.standards.iter().map(|standard| format!("{}:{}", standard.standard, standard.version)).collect::<Vec<String>>().join(", "),
+            self.standards
+                .iter()
+                .map(|standard| format!("{}:{}", standard.standard, standard.version))
+                .collect::<Vec<String>>()
+                .join(", "),
             if let Some(link) = &self.link {
                 link
             } else {

@@ -10,6 +10,8 @@ use color_eyre::eyre::WrapErr;
 use color_eyre::owo_colors::OwoColorize;
 use interactive_clap::ToCliArgs;
 
+pub use near_cli_rs::GlobalContext;
+pub use near_cli_rs::Verbosity;
 pub use near_cli_rs::commands;
 pub use near_cli_rs::common::{self, CliResult};
 pub use near_cli_rs::config;
@@ -20,8 +22,6 @@ pub use near_cli_rs::network_view_at_block;
 pub use near_cli_rs::transaction_signature_options;
 pub use near_cli_rs::types;
 pub use near_cli_rs::utils_command;
-pub use near_cli_rs::GlobalContext;
-pub use near_cli_rs::Verbosity;
 
 type ConfigContext = (crate::config::Config,);
 
@@ -196,8 +196,8 @@ fn main() -> crate::common::CliResult {
             )),
             ..
         }))
-    ) {
-        if let Ok(Ok(latest_version)) = handle.join() {
+    )
+        && let Ok(Ok(latest_version)) = handle.join() {
             let current_version = semver::Version::parse(self_update::cargo_crate_version!())
                 .wrap_err("Failed to parse current version of `near` CLI")?;
 
@@ -231,8 +231,7 @@ fn main() -> crate::common::CliResult {
                     .yellow()
                 );
             }
-        }
-    };
+        };
 
     cli_cmd.map(|_| ())
 }

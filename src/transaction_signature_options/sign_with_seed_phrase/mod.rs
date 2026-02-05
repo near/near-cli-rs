@@ -228,8 +228,8 @@ impl SignSeedPhrase {
     }
 }
 
-pub fn input_seed_phrase_hd_path(
-) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
+pub fn input_seed_phrase_hd_path()
+-> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
     Ok(Some(
         CustomType::new("Enter seed phrase HD Path (if you're not sure, keep the default):")
             .with_starting_input("m/44'/397'/0'")

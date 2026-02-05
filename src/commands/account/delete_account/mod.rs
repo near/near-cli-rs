@@ -136,7 +136,9 @@ impl BeneficiaryAccount {
 
             #[derive(derive_more::Display)]
             enum ConfirmOptions {
-                #[display("Yes, I want to check if account <{account_id}> exists. (It is free of charge, and only requires Internet access)")]
+                #[display(
+                    "Yes, I want to check if account <{account_id}> exists. (It is free of charge, and only requires Internet access)"
+                )]
                 Yes {
                     account_id: crate::types::account_id::AccountId,
                 },
@@ -155,7 +157,8 @@ impl BeneficiaryAccount {
                 )?
                 .is_none()
                 {
-                    eprintln!("\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{}> as the beneficiary as it does not exist on [{}] networks.",
+                    eprintln!(
+                        "\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{}> as the beneficiary as it does not exist on [{}] networks.",
                         account_id,
                         context.global_context.config.network_names().join(", ")
                     );

@@ -42,7 +42,10 @@ impl SaveToFileContext {
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
                     .write(&serde_json::to_vec(&data_signed_transaction)?)
                     .wrap_err_with(|| format!("Failed to write to file: {:?}", &file_path))?;
-                eprintln!("\nThe file {:?} was created successfully. It has a signed transaction (serialized as base64).", &file_path);
+                eprintln!(
+                    "\nThe file {:?} was created successfully. It has a signed transaction (serialized as base64).",
+                    &file_path
+                );
 
                 eprintln!(
                     "This base64-encoded signed transaction is ready to be sent to the network. You can call RPC server directly, or use a helper command on near CLI:\n$ {} transaction send-signed-transaction\n",
@@ -62,7 +65,10 @@ impl SaveToFileContext {
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
                     .write(&serde_json::to_vec(&data_signed_delegate_action)?)
                     .wrap_err_with(|| format!("Failed to write to file: {:?}", &file_path))?;
-                eprintln!("\nThe file {:?} was created successfully. It has a signed delegate action (serialized as base64).", &file_path);
+                eprintln!(
+                    "\nThe file {:?} was created successfully. It has a signed delegate action (serialized as base64).",
+                    &file_path
+                );
 
                 eprintln!(
                     "This base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n",
