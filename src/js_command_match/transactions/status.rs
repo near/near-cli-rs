@@ -36,23 +36,35 @@ mod tests {
         for (input, expected_output) in [
             (
                 "near tx-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo".to_string(),
-                "transaction view-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo network-config testnet"
+                "transaction view-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo network-config testnet",
             ),
             (
-                format!("near tx-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo --{} testnet", NETWORK_ID_ALIASES[0]),
-                "transaction view-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo network-config testnet"
+                format!(
+                    "near tx-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo --{} testnet",
+                    NETWORK_ID_ALIASES[0]
+                ),
+                "transaction view-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo network-config testnet",
             ),
             (
-                format!("near tx-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo --{} mainnet", NETWORK_ID_ALIASES[1]),
-                "transaction view-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo network-config mainnet"
+                format!(
+                    "near tx-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo --{} mainnet",
+                    NETWORK_ID_ALIASES[1]
+                ),
+                "transaction view-status 4HxfV69Brk7fJd3NC63ti2H3QCgwiUiMAPvwNmGWbVXo network-config mainnet",
             ),
         ] {
-            let input_cmd = shell_words::split(&input).expect("Input command must be a valid shell command");
+            let input_cmd =
+                shell_words::split(&input).expect("Input command must be a valid shell command");
             let JsCmd::TxStatus(tx_status_args) = JsCmd::parse_from(&input_cmd) else {
-                panic!("TxStatus command was expected, but something else was parsed out from {input}");
+                panic!(
+                    "TxStatus command was expected, but something else was parsed out from {input}"
+                );
             };
             assert_eq!(
-                shell_words::join(TxStatusArgs::to_cli_args(&tx_status_args, "testnet".to_string())),
+                shell_words::join(TxStatusArgs::to_cli_args(
+                    &tx_status_args,
+                    "testnet".to_string()
+                )),
                 expected_output
             );
         }

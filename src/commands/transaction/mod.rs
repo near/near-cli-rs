@@ -22,9 +22,7 @@ pub struct TransactionCommands {
 #[non_exhaustive]
 /// Сhoose action for transaction:
 pub enum TransactionActions {
-    #[strum_discriminants(strum(
-        message = "view-status              - View a transaction status"
-    ))]
+    #[strum_discriminants(strum(message = "view-status              - View a transaction status"))]
     /// Execute function (contract method)
     ViewStatus(self::view_status::TransactionInfo),
     #[strum_discriminants(strum(
@@ -47,9 +45,7 @@ pub enum TransactionActions {
     ))]
     /// Print previously prepared unsigned transaction without modification
     PrintTransaction(self::print_transaction::PrintTransactionCommands),
-    #[strum_discriminants(strum(
-        message = "send-signed-transaction  - Send a signed transaction"
-    ))]
+    #[strum_discriminants(strum(message = "send-signed-transaction  - Send a signed transaction"))]
     /// Send a signed transaction
     SendSignedTransaction(self::send_signed_transaction::SignedTransaction),
     #[strum_discriminants(strum(

@@ -140,7 +140,8 @@ pub struct AccountTransferAllowance {
 
 impl std::fmt::Display for AccountTransferAllowance {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(fmt,
+        write!(
+            fmt,
             "{} account has {} available for transfer (the total balance is {}, but {} is locked for storage)",
             self.account_id,
             self.transfer_allowance(),
@@ -198,18 +199,18 @@ pub async fn get_account_transfer_allowance(
         Err(AccountStateError::JsonRpcError(
             near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
         )) => {
-            return color_eyre::eyre::Result::Err(
-                color_eyre::eyre::eyre!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.\n{err}",
-                    network_config.network_name
-                ));
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.\n{err}",
+                network_config.network_name
+            ));
         }
         Err(AccountStateError::JsonRpcError(
             near_jsonrpc_client::errors::JsonRpcError::ServerError(err),
         )) => {
-            return color_eyre::eyre::Result::Err(
-                color_eyre::eyre::eyre!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.\n{err}",
-                    network_config.network_name
-                ));
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.\n{err}",
+                network_config.network_name
+            ));
         }
         Err(AccountStateError::Cancel) => {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
@@ -281,7 +282,10 @@ pub fn verify_account_access_key(
                 return Err(AccountStateError::JsonRpcError(err));
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                let need_check_account = need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.", network_config.network_name));
+                let need_check_account = need_check_account(format!(
+                    "\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
+                    network_config.network_name
+                ));
                 if need_check_account.is_err() {
                     return Err(AccountStateError::Cancel);
                 }
@@ -292,7 +296,10 @@ pub fn verify_account_access_key(
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                let need_check_account = need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.", network_config.network_name));
+                let need_check_account = need_check_account(format!(
+                    "\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.",
+                    network_config.network_name
+                ));
                 if need_check_account.is_err() {
                     return Err(AccountStateError::Cancel);
                 }
@@ -434,8 +441,10 @@ pub async fn get_account_state(
                     _,
                     color_eyre::eyre::Result<bool>,
                 >(|| {
-                    need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
-                        network_config.network_name))
+                    need_check_account(format!(
+                        "\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
+                        network_config.network_name
+                    ))
                 });
                 if need_check_account.is_err() {
                     return Err(AccountStateError::Cancel);
@@ -451,8 +460,10 @@ pub async fn get_account_state(
                     _,
                     color_eyre::eyre::Result<bool>,
                 >(|| {
-                    need_check_account(format!("\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.",
-                    network_config.network_name))
+                    need_check_account(format!(
+                        "\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.",
+                        network_config.network_name
+                    ))
                 });
                 if need_check_account.is_err() {
                     return Err(AccountStateError::Cancel);
@@ -1087,7 +1098,10 @@ pub fn convert_action_error_to_cli_result(
 ) -> crate::CliResult {
     match &action_error.kind {
         near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.", account_id))
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.",
+                account_id
+            ))
         }
         near_primitives::errors::ActionErrorKind::AccountDoesNotExist { account_id } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
@@ -1099,39 +1113,39 @@ pub fn convert_action_error_to_cli_result(
             account_id: _,
             registrar_account_id: _,
             predecessor_id: _,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A top-level account ID can only be created by registrar."))
-        }
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: A top-level account ID can only be created by registrar."
+        )),
         near_primitives::errors::ActionErrorKind::CreateAccountNotAllowed {
             account_id,
             predecessor_id,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A newly created account <{}> must be under a namespace of the creator account <{}>.", account_id, predecessor_id))
-        }
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: A newly created account <{}> must be under a namespace of the creator account <{}>.",
+            account_id,
+            predecessor_id
+        )),
         near_primitives::errors::ActionErrorKind::ActorNoPermission {
             account_id: _,
             actor_id: _,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Administrative actions can be proceed only if sender=receiver or the first TX action is a \"Create Account\" action."))
-        }
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Administrative actions can be proceed only if sender=receiver or the first TX action is a \"Create Account\" action."
+        )),
         near_primitives::errors::ActionErrorKind::DeleteKeyDoesNotExist {
             account_id,
             public_key,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Account <{}>  tries to remove an access key <{}> that doesn't exist.",
-                account_id, public_key
-            ))
-        }
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Account <{}>  tries to remove an access key <{}> that doesn't exist.",
+            account_id,
+            public_key
+        )),
         near_primitives::errors::ActionErrorKind::AddKeyAlreadyExists {
             account_id,
             public_key,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Public key <{}> is already used for an existing account ID <{}>.",
-                public_key, account_id
-            ))
-        }
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Public key <{}> is already used for an existing account ID <{}>.",
+            public_key,
+            account_id
+        )),
         near_primitives::errors::ActionErrorKind::DeleteAccountStaking { account_id } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Account <{}> is staking and can not be deleted",
@@ -1139,7 +1153,8 @@ pub fn convert_action_error_to_cli_result(
             ))
         }
         near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
                 account_id,
                 amount.exact_amount_display()
             ))
@@ -1155,38 +1170,38 @@ pub fn convert_action_error_to_cli_result(
             stake,
             locked: _,
             balance,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
-                account_id,
-                balance.exact_amount_display(),
-                stake.exact_amount_display()
-            ))
-        }
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
+            account_id,
+            balance.exact_amount_display(),
+            stake.exact_amount_display()
+        )),
         near_primitives::errors::ActionErrorKind::InsufficientStake {
             account_id: _,
             stake,
             minimum_stake,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-                stake.exact_amount_display(),
-                minimum_stake.exact_amount_display()
-            ))
-        }
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
+            stake.exact_amount_display(),
+            minimum_stake.exact_amount_display()
+        )),
         near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An error occurred during a `FunctionCall` action.\n{:?}", function_call_error_ser))
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: An error occurred during a `FunctionCall` action.\n{:?}",
+                function_call_error_ser
+            ))
         }
         near_primitives::errors::ActionErrorKind::NewReceiptValidationError(
             receipt_validation_error,
-        ) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Error occurs when a new `ActionReceipt` created by the `FunctionCall` action fails.\n{:?}", receipt_validation_error))
-        }
+        ) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Error occurs when a new `ActionReceipt` created by the `FunctionCall` action fails.\n{:?}",
+            receipt_validation_error
+        )),
         near_primitives::errors::ActionErrorKind::OnlyImplicitAccountCreationAllowed {
             account_id: _,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71"))
-        }
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71"
+        )),
         near_primitives::errors::ActionErrorKind::DeleteAccountWithLargeState { account_id } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "Error: Delete account <{}> whose state is large is temporarily banned.",
@@ -1194,38 +1209,49 @@ pub fn convert_action_error_to_cli_result(
             ))
         }
         near_primitives::errors::ActionErrorKind::DelegateActionInvalidSignature => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid Signature on DelegateAction"))
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Invalid Signature on DelegateAction"
+            ))
         }
         near_primitives::errors::ActionErrorKind::DelegateActionSenderDoesNotMatchTxReceiver {
             sender_id,
             receiver_id,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Delegate Action sender {sender_id} does not match transaction receiver {receiver_id}"))
-        }
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Delegate Action sender {sender_id} does not match transaction receiver {receiver_id}"
+        )),
         near_primitives::errors::ActionErrorKind::DelegateActionExpired => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Expired"))
         }
         near_primitives::errors::ActionErrorKind::DelegateActionAccessKeyError(_) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The given public key doesn't exist for the sender"))
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: The given public key doesn't exist for the sender"
+            ))
         }
         near_primitives::errors::ActionErrorKind::DelegateActionInvalidNonce {
             delegate_nonce,
             ak_nonce,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} ak_nonce: {ak_nonce}"))
-        }
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} ak_nonce: {ak_nonce}"
+        )),
         near_primitives::errors::ActionErrorKind::DelegateActionNonceTooLarge {
             delegate_nonce,
             upper_bound,
-        } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}"))
-        },
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}"
+        )),
         near_primitives::errors::ActionErrorKind::GlobalContractDoesNotExist { identifier } => {
             let identifier = match identifier {
-                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => format!("hash<{hash}>"),
-                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => format!("account id<{account_id}>"),
+                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => {
+                    format!("hash<{hash}>")
+                }
+                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => {
+                    format!("account id<{account_id}>")
+                }
             };
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Global contract with identifier {} does not exist.", identifier))
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Global contract with identifier {} does not exist.",
+                identifier
+            ))
         }
     }
 }
@@ -1732,10 +1758,10 @@ pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
         Err(e) => e,
     };
 
-    if let Some(perr) = err.downcast_ref::<cargo_util::ProcessError>() {
-        if let Some(code) = perr.code {
-            return Err(color_eyre::eyre::eyre!("perror occurred, code: {}", code));
-        }
+    if let Some(perr) = err.downcast_ref::<cargo_util::ProcessError>()
+        && let Some(code) = perr.code
+    {
+        return Err(color_eyre::eyre::eyre!("perror occurred, code: {}", code));
     }
     Err(color_eyre::eyre::eyre!(err))
 }
@@ -2462,43 +2488,43 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         M: near_jsonrpc_client::methods::RpcMethod,
         M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
     {
-        if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method) {
-            if tracing::enabled!(target: "near_teach_me", tracing::Level::INFO) {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "HTTP POST {}",
-                    self.server_addr()
-                );
+        if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method)
+            && tracing::enabled!(target: "near_teach_me", tracing::Level::INFO)
+        {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "HTTP POST {}",
+                self.server_addr()
+            );
 
-                let (request_payload, message_about_saving_payload) =
-                    check_request_payload_for_broadcast_tx_commit(request_payload);
+            let (request_payload, message_about_saving_payload) =
+                check_request_payload_for_broadcast_tx_commit(request_payload);
 
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON Request Body:\n{}",
-                    indent_payload(&format!("{request_payload:#}"))
-                );
-                match message_about_saving_payload {
-                    Ok(Some(message)) => {
-                        tracing::event!(
-                            target: "near_teach_me",
-                            parent: &tracing::Span::none(),
-                            tracing::Level::INFO,
-                            "{}", message
-                        );
-                    }
-                    Err(message) => {
-                        tracing::event!(
-                            target: "near_teach_me",
-                            parent: &tracing::Span::none(),
-                            tracing::Level::WARN,
-                            "{}", message
-                        );
-                    }
-                    _ => {}
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON Request Body:\n{}",
+                indent_payload(&format!("{request_payload:#}"))
+            );
+            match message_about_saving_payload {
+                Ok(Some(message)) => {
+                    tracing::event!(
+                        target: "near_teach_me",
+                        parent: &tracing::Span::none(),
+                        tracing::Level::INFO,
+                        "{}", message
+                    );
                 }
+                Err(message) => {
+                    tracing::event!(
+                        target: "near_teach_me",
+                        parent: &tracing::Span::none(),
+                        tracing::Level::WARN,
+                        "{}", message
+                    );
+                }
+                _ => {}
             }
         }
 
@@ -2709,13 +2735,11 @@ fn check_request_payload_for_broadcast_tx_commit(
     let mut message_about_saving_payload = Ok(None);
     let method = request_payload.get("method").cloned();
     let params_value = request_payload.get("params").cloned();
-    if let Some(method) = method {
-        if method.to_string().contains("broadcast_tx_commit") {
-            if let Some(params_value) = params_value {
-                message_about_saving_payload =
-                    replace_params_with_file(&mut request_payload, params_value);
-            }
-        }
+    if let Some(method) = method
+        && method.to_string().contains("broadcast_tx_commit")
+        && let Some(params_value) = params_value
+    {
+        message_about_saving_payload = replace_params_with_file(&mut request_payload, params_value);
     }
     (request_payload, message_about_saving_payload)
 }
@@ -2754,9 +2778,10 @@ fn replace_params_with_file(
         let result = match std::fs::File::create(&file_path) {
             Ok(mut file) => match serde_json::to_vec_pretty(&file_content) {
                 Ok(buf) => match file.write(&buf) {
-                    Ok(_) => {
-                        Ok(Some(format!("The file `{}` was created successfully. It has a signed transaction (serialized as base64).", &file_path.display())))
-                    }
+                    Ok(_) => Ok(Some(format!(
+                        "The file `{}` was created successfully. It has a signed transaction (serialized as base64).",
+                        &file_path.display()
+                    ))),
                     Err(err) => Err(format!(
                         "Failed to save payload to `{}`. Failed to write file:\n{}",
                         &file_path.display(),

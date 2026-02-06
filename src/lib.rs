@@ -38,13 +38,13 @@ pub fn setup_tracing_with_extra_directives(
     extra_directives: &[&str],
 ) -> CliResult {
     use tracing::{Event, Level, Subscriber};
-    use tracing_indicatif::style::ProgressStyle;
     use tracing_indicatif::IndicatifLayer;
+    use tracing_indicatif::style::ProgressStyle;
+    use tracing_subscriber::EnvFilter;
     use tracing_subscriber::layer::SubscriberExt;
     use tracing_subscriber::util::SubscriberInitExt;
-    use tracing_subscriber::EnvFilter;
     use tracing_subscriber::{
-        fmt::{format::Writer, FmtContext, FormatEvent, FormatFields},
+        fmt::{FmtContext, FormatEvent, FormatFields, format::Writer},
         registry::LookupSpan,
     };
 

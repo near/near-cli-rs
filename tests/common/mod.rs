@@ -18,9 +18,12 @@ pub async fn prepare_tests() -> Result<(Sandbox, tempfile::TempDir), Box<dyn std
     // $XDG_CONFIG_HOME/near-cli/config.toml
     let config_home = temp_dir.path();
 
-    std::env::set_var("XDG_CONFIG_HOME", config_home); // Linux
-    std::env::set_var("HOME", config_home); // macOS
-    std::env::set_var("APPDATA", config_home); // Windows
+    // SAFETY: These are test setup calls in a controlled environment
+    unsafe {
+        std::env::set_var("XDG_CONFIG_HOME", config_home); // Linux
+        std::env::set_var("HOME", config_home); // macOS
+        std::env::set_var("APPDATA", config_home); // Windows
+    }
 
     let near_cli_config_dir = dirs::config_dir().unwrap().join("near-cli");
     std::fs::create_dir_all(&near_cli_config_dir)?;

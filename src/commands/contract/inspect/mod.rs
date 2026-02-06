@@ -430,7 +430,9 @@ async fn get_account_view(
         if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
             &account_view_response
         {
-            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            eprintln!(
+                "Transport error.\nPlease wait. The next try to send this query is happening right now ..."
+            );
             std::thread::sleep(std::time::Duration::from_millis(100))
         } else {
             return account_view_response
@@ -469,7 +471,9 @@ async fn get_access_keys(
         if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
             &access_keys_response
         {
-            eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+            eprintln!(
+                "Transport error.\nPlease wait. The next try to send this query is happening right now ..."
+            );
             std::thread::sleep(std::time::Duration::from_millis(100))
         } else {
             return Ok(access_keys_response
@@ -489,15 +493,21 @@ async fn get_access_keys(
 
 #[derive(Error, Debug)]
 pub enum FetchContractSourceMetadataError {
-    #[error("Contract Source Metadata (https://nomicon.io/Standards/SourceMetadata) is not supported by the contract, so there is no way to get detailed information.")]
+    #[error(
+        "Contract Source Metadata (https://nomicon.io/Standards/SourceMetadata) is not supported by the contract, so there is no way to get detailed information."
+    )]
     ContractSourceMetadataNotSupported,
-    #[error("'contract_source_metadata' function call failed due to RPC error, so there is no way to get Contract Source Metadata. See more details about the error:\n\n{0}")]
+    #[error(
+        "'contract_source_metadata' function call failed due to RPC error, so there is no way to get Contract Source Metadata. See more details about the error:\n\n{0}"
+    )]
     RpcError(
         near_jsonrpc_client::errors::JsonRpcError<
             near_jsonrpc_primitives::types::query::RpcQueryError,
         >,
     ),
-    #[error("The contract source metadata format is unknown (https://nomicon.io/Standards/SourceMetadata), so there is no way to get detailed information. See more details about the error:\n\n{0}")]
+    #[error(
+        "The contract source metadata format is unknown (https://nomicon.io/Standards/SourceMetadata), so there is no way to get detailed information. See more details about the error:\n\n{0}"
+    )]
     ContractSourceMetadataUnknownFormat(Report),
 }
 

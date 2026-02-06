@@ -21,7 +21,7 @@ impl TransactionInfoContext {
         previous_context: crate::GlobalContext,
         scope: &<TransactionInfo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        use super::construct_transaction::{add_action_1, skip_action, CliConstructTransaction};
+        use super::construct_transaction::{CliConstructTransaction, add_action_1, skip_action};
         use super::{CliTransactionActions, CliTransactionCommands};
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
@@ -59,20 +59,16 @@ impl TransactionInfoContext {
                         ))
                     );
 
-                    if prepopulated_transaction.actions.len() == 1 {
-                        if let near_primitives::transaction::Action::Delegate(
+                    if prepopulated_transaction.actions.len() == 1
+                        && let near_primitives::transaction::Action::Delegate(
                             signed_delegate_action,
                         ) = &prepopulated_transaction.actions[0]
-                        {
-                            prepopulated_transaction = crate::commands::PrepopulatedTransaction {
-                                signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
-                                receiver_id: signed_delegate_action
-                                    .delegate_action
-                                    .receiver_id
-                                    .clone(),
-                                actions: signed_delegate_action.delegate_action.get_actions(),
-                            };
-                        }
+                    {
+                        prepopulated_transaction = crate::commands::PrepopulatedTransaction {
+                            signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
+                            receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
+                            actions: signed_delegate_action.delegate_action.get_actions(),
+                        };
                     }
 
                     let cmd =
@@ -127,7 +123,9 @@ impl TransactionInfoContext {
                     if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
                         previous_context.verbosity
                     {
-                        eprintln!("Here is your console command to run archive transaction. You can to edit it or re-run (printed to stdout):")
+                        eprintln!(
+                            "Here is your console command to run archive transaction. You can to edit it or re-run (printed to stdout):"
+                        )
                     }
                     println!(
                         "{}",

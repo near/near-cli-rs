@@ -90,7 +90,9 @@ pub async fn get_contract_abi(
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_))
                 if retries_left.next().is_some() =>
             {
-                eprintln!("Transport error.\nPlease wait. The next try to send this query is happening right now ...");
+                eprintln!(
+                    "Transport error.\nPlease wait. The next try to send this query is happening right now ..."
+                );
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
                 near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
@@ -126,11 +128,17 @@ pub async fn get_contract_abi(
 }
 #[derive(Error, Debug)]
 pub enum FetchAbiError {
-    #[error("Contract does not support NEAR ABI (https://github.com/near/abi), so there is no way to get details about the function argument and return values.")]
+    #[error(
+        "Contract does not support NEAR ABI (https://github.com/near/abi), so there is no way to get details about the function argument and return values."
+    )]
     AbiNotSupported,
-    #[error("The contract has unknown NEAR ABI format (https://github.com/near/abi), so there is no way to get details about the function argument and return values. See more details about the error:\n\n{0}")]
+    #[error(
+        "The contract has unknown NEAR ABI format (https://github.com/near/abi), so there is no way to get details about the function argument and return values. See more details about the error:\n\n{0}"
+    )]
     AbiUnknownFormat(Report),
-    #[error("'__contract_abi' function call failed due to RPC error, so there is no way to get details about the function argument and return values. See more details about the error:\n\n{0}")]
+    #[error(
+        "'__contract_abi' function call failed due to RPC error, so there is no way to get details about the function argument and return values. See more details about the error:\n\n{0}"
+    )]
     RpcError(
         near_jsonrpc_client::errors::JsonRpcError<
             near_jsonrpc_primitives::types::query::RpcQueryError,

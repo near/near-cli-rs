@@ -35,7 +35,8 @@ impl SaveToFileContext {
         if let crate::Verbosity::Quiet = previous_context.global_context.verbosity {
             return Ok(Self);
         }
-        eprintln!("\nThe file {:?} was created successfully. It has a unsigned transaction (serialized as base64).\nThis base64-encoded transaction can be signed and sent later. There is a helper command on near CLI that can do that:\n$ {} transaction sign-transaction",
+        eprintln!(
+            "\nThe file {:?} was created successfully. It has a unsigned transaction (serialized as base64).\nThis base64-encoded transaction can be signed and sent later. There is a helper command on near CLI that can do that:\n$ {} transaction sign-transaction",
             &file_path,
             crate::common::get_near_exec_path()
         );

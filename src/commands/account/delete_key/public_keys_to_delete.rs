@@ -1,6 +1,6 @@
 use color_eyre::owo_colors::OwoColorize;
 use inquire::ui::{Color, RenderConfig, Styled};
-use inquire::{formatter::MultiOptionFormatter, CustomType, MultiSelect};
+use inquire::{CustomType, MultiSelect, formatter::MultiOptionFormatter};
 
 use crate::common::JsonRpcClientExt;
 use crate::common::RpcQueryResponseExt;
@@ -79,8 +79,8 @@ impl From<PublicKeyListContext> for crate::commands::ActionContext {
 }
 
 impl PublicKeyList {
-    fn input_public_keys_manually(
-    ) -> color_eyre::eyre::Result<Option<crate::types::public_key_list::PublicKeyList>> {
+    fn input_public_keys_manually()
+    -> color_eyre::eyre::Result<Option<crate::types::public_key_list::PublicKeyList>> {
         Ok(Some(
                 CustomType::new("Enter a comma-separated list of public keys you want to delete (for example, ed25519:FAXX...RUQa, ed25519:FgVF...oSWJ, ...):")
                     .prompt()?,
@@ -127,9 +127,11 @@ impl PublicKeyList {
             for error in errors {
                 println!("WARNING! {error}");
             }
-            println!("Automatic search of access keys for <{}> is not possible on [{}] network(s).\nYou can enter access keys to remove manually.",
+            println!(
+                "Automatic search of access keys for <{}> is not possible on [{}] network(s).\nYou can enter access keys to remove manually.",
                 context.owner_account_id,
-                context.global_context.config.network_names().join(", "));
+                context.global_context.config.network_names().join(", ")
+            );
             return Self::input_public_keys_manually();
         }
 

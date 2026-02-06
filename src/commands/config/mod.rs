@@ -29,9 +29,7 @@ pub enum ConfigActions {
     #[strum_discriminants(strum(message = "edit-connection        - Edit a network connection"))]
     /// Edit a network connection
     EditConnection(self::edit_connection::EditConnection),
-    #[strum_discriminants(strum(
-        message = "delete-connection      - Delete a network connection"
-    ))]
+    #[strum_discriminants(strum(message = "delete-connection      - Delete a network connection"))]
     /// Delete a network connection
     DeleteConnection(self::delete_connection::DeleteNetworkConnection),
 }

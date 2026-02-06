@@ -10,6 +10,8 @@ use color_eyre::eyre::WrapErr;
 use color_eyre::owo_colors::OwoColorize;
 use interactive_clap::ToCliArgs;
 
+pub use near_cli_rs::GlobalContext;
+pub use near_cli_rs::Verbosity;
 pub use near_cli_rs::commands;
 pub use near_cli_rs::common::{self, CliResult};
 pub use near_cli_rs::config;
@@ -20,8 +22,6 @@ pub use near_cli_rs::network_view_at_block;
 pub use near_cli_rs::transaction_signature_options;
 pub use near_cli_rs::types;
 pub use near_cli_rs::utils_command;
-pub use near_cli_rs::GlobalContext;
-pub use near_cli_rs::Verbosity;
 
 type ConfigContext = (crate::config::Config,);
 
@@ -196,41 +196,39 @@ fn main() -> crate::common::CliResult {
             )),
             ..
         }))
-    ) {
-        if let Ok(Ok(latest_version)) = handle.join() {
-            let current_version = semver::Version::parse(self_update::cargo_crate_version!())
-                .wrap_err("Failed to parse current version of `near` CLI")?;
+    ) && let Ok(Ok(latest_version)) = handle.join()
+    {
+        let current_version = semver::Version::parse(self_update::cargo_crate_version!())
+            .wrap_err("Failed to parse current version of `near` CLI")?;
 
-            let latest_version = semver::Version::parse(&latest_version)
-                .wrap_err("Failed to parse latest version of `near` CLI")?;
+        let latest_version = semver::Version::parse(&latest_version)
+            .wrap_err("Failed to parse latest version of `near` CLI")?;
 
-            if current_version < latest_version {
-                eprintln!(
-                    "\n`near` CLI has a new update available \x1b[2m{current_version}\x1b[0m →  \x1b[32m{latest_version}\x1b[0m"
-                );
-                let self_update_cli_cmd = CliCmd {
-                    offline: false,
-                    quiet: false,
-                    teach_me: false,
-                    top_level:
-                        Some(crate::commands::CliTopLevelCommand::Extensions(
-                            crate::commands::extensions::CliExtensionsCommands {
-                                extensions_actions:
-                                    Some(crate::commands::extensions::CliExtensionsActions::SelfUpdate(
-                                        crate::commands::extensions::self_update::CliSelfUpdateCommand {},
-                                    )),
-                            },
-                        )),
-                };
-                eprintln!(
-                    "To update `near` CLI use: {}",
-                    shell_words::join(
-                        std::iter::once(near_cli_exec_path)
-                            .chain(self_update_cli_cmd.to_cli_args())
-                    )
-                    .yellow()
-                );
-            }
+        if current_version < latest_version {
+            eprintln!(
+                "\n`near` CLI has a new update available \x1b[2m{current_version}\x1b[0m →  \x1b[32m{latest_version}\x1b[0m"
+            );
+            let self_update_cli_cmd = CliCmd {
+                offline: false,
+                quiet: false,
+                teach_me: false,
+                top_level: Some(crate::commands::CliTopLevelCommand::Extensions(
+                    crate::commands::extensions::CliExtensionsCommands {
+                        extensions_actions: Some(
+                            crate::commands::extensions::CliExtensionsActions::SelfUpdate(
+                                crate::commands::extensions::self_update::CliSelfUpdateCommand {},
+                            ),
+                        ),
+                    },
+                )),
+            };
+            eprintln!(
+                "To update `near` CLI use: {}",
+                shell_words::join(
+                    std::iter::once(near_cli_exec_path).chain(self_update_cli_cmd.to_cli_args())
+                )
+                .yellow()
+            );
         }
     };
 

@@ -168,9 +168,7 @@ impl AddNetworkConnection {
         enum ConfirmOptions {
             #[strum(to_string = "Yes, and I want to enter the NEAR Social DB contract account ID")]
             Yes,
-            #[strum(
-                to_string = "No, I don't want to enter the NEAR Social DB contract account ID"
-            )]
+            #[strum(to_string = "No, I don't want to enter the NEAR Social DB contract account ID")]
             No,
         }
         let select_choose_input = Select::new(

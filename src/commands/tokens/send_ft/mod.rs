@@ -1,5 +1,5 @@
 use color_eyre::eyre::Context;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;

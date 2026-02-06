@@ -80,8 +80,8 @@ impl SignerAccountIdContext {
 
             move |outcome_view, network_config| {
                 let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
-                if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
+                if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status
+                    && let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
                         tracing_indicatif::suspend_tracing_indicatif(|| {
                             eprintln!(
                                 "<{signer_account_id}> has successfully withdraw {amount} from <{contract_account_id}>.",
@@ -89,7 +89,6 @@ impl SignerAccountIdContext {
                             );
                         });
                     }
-                }
                 Ok(())
             }
         });

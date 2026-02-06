@@ -171,9 +171,9 @@ impl FtTransferParamsContext {
             move |outcome_view, network_config| {
                 if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
                     for action in outcome_view.transaction.actions.clone() {
-                        if let near_primitives::views::ActionView::FunctionCall { method_name: _, args, gas: _, deposit: _ } = action {
-                            if let Ok(ft_transfer) = serde_json::from_slice::<crate::types::ft_properties::FtTransfer>(&args) {
-                                if let Ok(ft_balance) = super::get_ft_balance_for_account(
+                        if let near_primitives::views::ActionView::FunctionCall { method_name: _, args, gas: _, deposit: _ } = action
+                            && let Ok(ft_transfer) = serde_json::from_slice::<crate::types::ft_properties::FtTransfer>(&args)
+                                && let Ok(ft_balance) = super::get_ft_balance_for_account(
                                     network_config,
                                     &signer_account_id,
                                     &ft_contract_account_id,
@@ -191,8 +191,6 @@ impl FtTransferParamsContext {
                                     }
                                     return Ok(());
                                 }
-                            }
-                        }
                     }
                     if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
                         tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(

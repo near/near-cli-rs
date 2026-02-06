@@ -178,9 +178,7 @@ impl Manually {
         enum ConfirmOptions {
             #[strum(to_string = "Yes, I want to enter ipfs_cid for the account profile image")]
             Yes,
-            #[strum(
-                to_string = "No, I don't want to enter ipfs_cid for the account profile image"
-            )]
+            #[strum(to_string = "No, I don't want to enter ipfs_cid for the account profile image")]
             No,
         }
         let select_choose_input = Select::new(
@@ -334,9 +332,7 @@ impl Manually {
     ) -> color_eyre::eyre::Result<Option<String>> {
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
-            #[strum(
-                to_string = "Yes, I want to enter a Telegram nickname for the account profile"
-            )]
+            #[strum(to_string = "Yes, I want to enter a Telegram nickname for the account profile")]
             Yes,
             #[strum(
                 to_string = "No, I don't want to enter a Telegram nickname for the account profile"
