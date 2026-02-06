@@ -4,6 +4,7 @@ version = "0.23.6"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
 license = "MIT OR Apache-2.0"
 edition = "2024"
+rust-version = "1.88"
 homepage = "https://near.cli.rs"
 repository = "https://github.com/near/near-cli-rs"
 description = "human-friendly console utility that helps to interact with NEAR Protocol from command line."
