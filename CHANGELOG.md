@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.6](https://github.com/near/near-cli-rs/compare/v0.23.5...v0.23.6) - 2026-02-06
+
+### Added
+
+- Added styling options for "newline", "option selection" and "answer" for "inquire" crate ([#554](https://github.com/near/near-cli-rs/pull/554))
+- added flexibility in using "setup_tracing" ([#550](https://github.com/near/near-cli-rs/pull/550))
+
+### Other
+
+- upgrade to Rust edition 2024 ([#553](https://github.com/near/near-cli-rs/pull/553))
+- Replaced macos-13, being browned out ([#549](https://github.com/near/near-cli-rs/pull/549))
+- added DevEx to CODEOWNERS ([#548](https://github.com/near/near-cli-rs/pull/548))
+- Updated the copyright year to 2026 ([#544](https://github.com/near/near-cli-rs/pull/544))
+
 ## [0.23.5](https://github.com/near/near-cli-rs/compare/v0.23.4...v0.23.5) - 2026-01-01
 
 ### Fixed
