@@ -70,7 +70,7 @@ pub fn setup_tracing_with_extra_directives(
                 Level::ERROR => ("ERROR ", "\x1b[31m"),   // Red
             };
 
-            write!(writer, "{}├  {}", color_code, icon)?;
+            write!(writer, "{color_code}├  {icon}")?;
 
             write!(writer, "\x1b[0m")?;
 

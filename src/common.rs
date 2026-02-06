@@ -1521,7 +1521,7 @@ pub fn print_transaction_status(
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
 
-    transaction_execution_info.push_str(&format!("\nGas burned: {}", total_gas_burnt));
+    transaction_execution_info.push_str(&format!("\nGas burned: {total_gas_burnt}"));
 
     transaction_execution_info.push_str(&format!(
         "\nTransaction fee: {}{}",
@@ -1582,7 +1582,7 @@ pub fn print_transaction_status(
             tracing::info!(
                 parent: &tracing::Span::none(),
                 "Function execution logs:{}",
-                crate::common::indent_payload(&format!("{}\n ",logs_info))
+                crate::common::indent_payload(&format!("{logs_info}\n "))
             );
             if returned_value_bytes.is_empty() {
                 tracing::info!(
