@@ -24,7 +24,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.0.18", features = ["derive"] }
-inquire-clack = "0.1.0"
+inquire = "0.9.3"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 smart-default = "0.7.1"
