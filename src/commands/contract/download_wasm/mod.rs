@@ -20,13 +20,13 @@ impl std::fmt::Display for ContractType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ContractType::Regular(account_id) => {
-                write!(f, "regular:{}", account_id)
+                write!(f, "regular:{account_id}")
             }
             ContractType::GlobalContractByAccountId { account_id, .. } => {
-                write!(f, "global-contract-by-account-id:{}", account_id)
+                write!(f, "global-contract-by-account-id:{account_id}")
             }
             ContractType::GlobalContractByCodeHash(code_hash) => {
-                write!(f, "global-contract-by-hash:{}", code_hash)
+                write!(f, "global-contract-by-hash:{code_hash}")
             }
         }
     }

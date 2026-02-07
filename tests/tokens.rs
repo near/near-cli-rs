@@ -7,7 +7,7 @@ async fn test_view_near_balance() -> Result<(), Box<dyn std::error::Error>> {
     let (_sandbox, _temp_dir) = prepare_tests().await?;
 
     let output = Command::new("target/debug/near")
-        .args(&[
+        .args([
             "tokens",
             "test.near",
             "view-near-balance",
