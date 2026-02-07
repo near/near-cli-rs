@@ -37,6 +37,7 @@ pub fn setup_tracing_with_extra_directives(
     verbosity: Verbosity,
     extra_directives: &[&str],
 ) -> CliResult {
+    use tracing::field::{Field, Visit};
     use tracing::{Event, Level, Subscriber};
     use tracing_indicatif::IndicatifLayer;
     use tracing_indicatif::style::ProgressStyle;
@@ -48,6 +49,25 @@ pub fn setup_tracing_with_extra_directives(
         registry::LookupSpan,
     };
 
+    struct RawMessageVisitor<'a> {
+        writer: Writer<'a>,
+        result: std::fmt::Result,
+    }
+
+    impl<'a> Visit for RawMessageVisitor<'a> {
+        fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+            if field.name() == "message" {
+                self.result = write!(self.writer, "{:?}", value);
+            }
+        }
+
+        fn record_str(&mut self, field: &Field, value: &str) {
+            if field.name() == "message" {
+                self.result = write!(self.writer, "{}", value);
+            }
+        }
+    }
+
     struct SimpleFormatter;
 
     impl<S, N> FormatEvent<S, N> for SimpleFormatter
@@ -57,7 +77,7 @@ pub fn setup_tracing_with_extra_directives(
     {
         fn format_event(
             &self,
-            ctx: &FmtContext<'_, S, N>,
+            _ctx: &FmtContext<'_, S, N>,
             mut writer: Writer<'_>,
             event: &Event<'_>,
         ) -> std::fmt::Result {
@@ -72,9 +92,14 @@ pub fn setup_tracing_with_extra_directives(
 
             write!(writer, "{color_code}├  {icon}")?;
 
-            write!(writer, "\x1b[0m")?;
+            let mut visitor = RawMessageVisitor {
+                writer: writer.by_ref(),
+                result: Ok(()),
+            };
+            event.record(&mut visitor);
+            visitor.result?;
 
-            ctx.field_format().format_fields(writer.by_ref(), event)?;
+            write!(writer, "\x1b[0m")?;
 
             writeln!(writer)
         }
