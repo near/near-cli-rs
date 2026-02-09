@@ -6,13 +6,13 @@ use crate::js_command_match::constants::{
 pub struct DeleteAccountArgs {
     account_id: String,
     beneficiary_id: String,
-    #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
+    #[arg(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
     sign_with_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    #[arg(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
     ledger_path: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES)]
+    #[arg(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
-    #[clap(long, default_value_t = false)]
+    #[arg(long, default_value_t = false)]
     force: bool,
 }
 

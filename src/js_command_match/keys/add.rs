@@ -7,17 +7,17 @@ use crate::js_command_match::constants::{
 pub struct AddKeyArgs {
     account_id: String,
     public_key: String,
-    #[clap(long, aliases = CONTRACT_ID_ALIASES)]
+    #[arg(long, aliases = CONTRACT_ID_ALIASES)]
     contract_id: Option<String>,
-    #[clap(long, aliases = METHOD_NAMES_ALIASES, requires = "contract_id", default_value="", value_delimiter = ',', num_args = 0..)]
+    #[arg(long, aliases = METHOD_NAMES_ALIASES, requires = "contract_id", default_value="", value_delimiter = ',', num_args = 0..)]
     method_names: Vec<String>,
-    #[clap(long, default_value = "0")]
+    #[arg(long, default_value = "0")]
     allowance: String,
-    #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
+    #[arg(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
     sign_with_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    #[arg(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
     ledger_path: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES)]
+    #[arg(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 

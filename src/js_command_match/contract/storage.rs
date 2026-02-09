@@ -3,15 +3,15 @@ use crate::js_command_match::constants::{BLOCK_ID_ALIASES, NETWORK_ID_ALIASES};
 #[derive(Debug, Clone, clap::Parser)]
 pub struct ViewStateArgs {
     account_id: String,
-    #[clap(long)]
+    #[arg(long)]
     prefix: Option<String>,
-    #[clap(long, default_value_t = false)]
+    #[arg(long, default_value_t = false)]
     utf8: bool,
-    #[clap(long, aliases = BLOCK_ID_ALIASES)]
+    #[arg(long, aliases = BLOCK_ID_ALIASES)]
     block_id: Option<String>,
-    #[clap(long, conflicts_with = "block_id")]
+    #[arg(long, conflicts_with = "block_id")]
     finality: Option<String>,
-    #[clap(long, aliases = NETWORK_ID_ALIASES)]
+    #[arg(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 

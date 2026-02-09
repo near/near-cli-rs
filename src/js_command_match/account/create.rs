@@ -7,25 +7,25 @@ use crate::js_command_match::constants::{
 #[derive(Debug, Clone, clap::Parser)]
 pub struct CreateAccountArgs {
     new_account_id: String,
-    #[clap(long, aliases = USE_FAUCET_ALIASES, default_value_t = false)]
+    #[arg(long, aliases = USE_FAUCET_ALIASES, default_value_t = false)]
     use_faucet: bool,
-    #[clap(long, aliases = USE_ACCOUNT_ALIASES, conflicts_with = "use_faucet")]
+    #[arg(long, aliases = USE_ACCOUNT_ALIASES, conflicts_with = "use_faucet")]
     use_account: Option<String>,
-    #[clap(long, aliases = INITIAL_BALANCE_ALIASES, default_value = "1")]
+    #[arg(long, aliases = INITIAL_BALANCE_ALIASES, default_value = "1")]
     initial_balance: String,
-    #[clap(long, aliases = PUBLIC_KEY_ALIASES)]
+    #[arg(long, aliases = PUBLIC_KEY_ALIASES)]
     public_key: Option<String>,
-    #[clap(long, aliases = SEED_PHRASE_ALIASES, conflicts_with = "public_key")]
+    #[arg(long, aliases = SEED_PHRASE_ALIASES, conflicts_with = "public_key")]
     seed_phrase: Option<String>,
-    #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false, conflicts_with="use_faucet")]
+    #[arg(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false, conflicts_with="use_faucet")]
     sign_with_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    #[arg(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
     ledger_path: String,
-    #[clap(long, aliases = USE_LEDGER_PK_ALIASES, default_value_t = false, conflicts_with = "public_key")]
+    #[arg(long, aliases = USE_LEDGER_PK_ALIASES, default_value_t = false, conflicts_with = "public_key")]
     use_ledger_pk: bool,
-    #[clap(long, aliases = PK_LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    #[arg(long, aliases = PK_LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
     pk_ledger_path: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES)]
+    #[arg(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 
