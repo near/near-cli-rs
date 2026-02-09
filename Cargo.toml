@@ -24,7 +24,7 @@ name = "near"
 path = "src/main.rs"
 
 [dependencies]
-clap = { version = "4.0.18", features = ["derive"] }
+fast_clap = { version = "4.5.57", features = ["derive", "unstable-v5"] }
 inquire = "0.9.3"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
