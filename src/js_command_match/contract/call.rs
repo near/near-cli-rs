@@ -9,25 +9,25 @@ use crate::js_command_match::constants::{
 pub struct CallArgs {
     contract_name: String,
     method_name: String,
-    #[clap(default_value = "{}")]
+    #[arg(default_value = "{}")]
     args: String,
-    #[clap(long, aliases = USE_ACCOUNT_ALIASES)]
+    #[arg(long, aliases = USE_ACCOUNT_ALIASES)]
     use_account: String,
-    #[clap(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
+    #[arg(long, aliases = SIGN_WITH_LEDGER_ALIASES, default_value_t = false)]
     sign_with_ledger: bool,
-    #[clap(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
+    #[arg(long, aliases = LEDGER_PATH_ALIASES, default_value = DEFAULT_SEED_PHRASE_PATH)]
     ledger_path: String,
-    #[clap(long, default_value_t = 30_000_000_000_000)]
+    #[arg(long, default_value_t = 30_000_000_000_000)]
     gas: u64,
-    #[clap(long, default_value = "0")]
+    #[arg(long, default_value = "0")]
     deposit: String,
-    #[clap(long, default_value = "0", conflicts_with = "deposit", aliases = ["depositYocto"])]
+    #[arg(long, default_value = "0", conflicts_with = "deposit", aliases = ["depositYocto"])]
     deposit_yocto: String,
-    #[clap(long, default_value_t = false)]
+    #[arg(long, default_value_t = false)]
     base64: bool,
-    #[clap(long, aliases = ["privateKey"])]
+    #[arg(long, aliases = ["privateKey"])]
     private_key: Option<String>,
-    #[clap(long, aliases = NETWORK_ID_ALIASES)]
+    #[arg(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 

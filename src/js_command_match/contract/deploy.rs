@@ -8,19 +8,19 @@ use crate::js_command_match::constants::{
 #[derive(Debug, Clone, clap::Parser)]
 pub struct DeployArgs {
     account_id: String,
-    #[clap(required_unless_present = "wasm_file")]
+    #[arg(required_unless_present = "wasm_file")]
     wasm_file_path: Option<String>,
-    #[clap(long, aliases = WASM_FILE_ALIASES )]
+    #[arg(long, aliases = WASM_FILE_ALIASES )]
     wasm_file: Option<String>,
-    #[clap(long, aliases = INIT_FUNCTION_ALIASES)]
+    #[arg(long, aliases = INIT_FUNCTION_ALIASES)]
     init_function: Option<String>,
-    #[clap(long, aliases = INIT_ARGS_ALIASES, default_value = "{}")]
+    #[arg(long, aliases = INIT_ARGS_ALIASES, default_value = "{}")]
     init_args: String,
-    #[clap(long, aliases = INIT_GAS_ALIASES, default_value_t = 30_000_000_000_000)]
+    #[arg(long, aliases = INIT_GAS_ALIASES, default_value_t = 30_000_000_000_000)]
     init_gas: u64,
-    #[clap(long, aliases = INIT_DEPOSIT_ALIASES, default_value = "0")]
+    #[arg(long, aliases = INIT_DEPOSIT_ALIASES, default_value = "0")]
     init_deposit: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES)]
+    #[arg(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 
