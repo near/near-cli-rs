@@ -3,9 +3,9 @@ use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 #[derive(Debug, Clone, clap::Parser)]
 pub struct TxStatusArgs {
     hash: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES)]
+    #[arg(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
-    #[clap(allow_hyphen_values = true, num_args = 0..)]
+    #[arg(allow_hyphen_values = true, num_args = 0..)]
     _unknown_args: Vec<String>,
 }
 

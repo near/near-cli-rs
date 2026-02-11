@@ -5,9 +5,9 @@ use crate::js_command_match::constants::NETWORK_ID_ALIASES;
 pub struct ViewArgs {
     contract_name: String,
     method_name: String,
-    #[clap(default_value = "{}")]
+    #[arg(default_value = "{}")]
     args: String,
-    #[clap(long, aliases = NETWORK_ID_ALIASES)]
+    #[arg(long, aliases = NETWORK_ID_ALIASES)]
     network_id: Option<String>,
 }
 

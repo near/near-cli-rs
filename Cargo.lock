@@ -510,16 +510,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "clap"
-version = "4.5.57"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6899ea499e3fb9305a65d5ebf6e3d2248c5fab291f300ad0a704fbe142eae31a"
-dependencies = [
- "clap_builder",
- "clap_derive",
-]
-
-[[package]]
 name = "clap_builder"
 version = "4.5.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -529,18 +519,6 @@ dependencies = [
  "anstyle",
  "clap_lex",
  "strsim",
-]
-
-[[package]]
-name = "clap_derive"
-version = "4.5.55"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a92793da1a46a5f2a02a6f4c46c6496b28c43638adea8306fcb0caa1634f24e5"
-dependencies = [
- "heck 0.5.0",
- "proc-macro2",
- "quote",
- "syn 2.0.114",
 ]
 
 [[package]]
@@ -1148,6 +1126,28 @@ checksum = "7cd915d99f24784cdc19fd37ef22b97e3ff0ae756c7e492e9fbfe897d61e2aec"
 dependencies = [
  "indenter",
  "once_cell",
+]
+
+[[package]]
+name = "fast_clap"
+version = "4.5.57"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bda8fd22146f1b4a401b785628998703be73e09eadc1afab0969fe163d2ff63e"
+dependencies = [
+ "clap_builder",
+ "fast_clap_derive",
+]
+
+[[package]]
+name = "fast_clap_derive"
+version = "4.5.55"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04bfa9fed95d90dcfdb6970d40f131e52b0d980910af127a21e871f49d20b69b"
+dependencies = [
+ "heck 0.5.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.114",
 ]
 
 [[package]]
@@ -2373,12 +2373,12 @@ dependencies = [
  "bytesize",
  "camino",
  "cargo-util",
- "clap",
  "color-eyre",
  "derive_more",
  "dirs",
  "easy-ext 1.0.2",
  "ed25519-dalek",
+ "fast_clap",
  "futures",
  "git2",
  "hex",

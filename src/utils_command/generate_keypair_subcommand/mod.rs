@@ -4,13 +4,13 @@ use std::str::FromStr;
 /// Ed25519 keys)
 #[derive(Debug, Clone, clap::Parser)]
 pub struct CliGenerateKeypair {
-    #[clap(long)]
+    #[arg(long)]
     pub master_seed_phrase: Option<String>,
-    #[clap(long, default_value = "12")]
+    #[arg(long, default_value = "12")]
     pub new_master_seed_phrase_words_count: usize,
-    #[clap(long, default_value = "m/44'/397'/0'")]
+    #[arg(long, default_value = "m/44'/397'/0'")]
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
-    #[clap(long, default_value = "plaintext")]
+    #[arg(long, default_value = "plaintext")]
     pub format: crate::common::OutputFormat,
 }
 

@@ -9,31 +9,31 @@ mod transactions;
 #[derive(Debug, Clone, clap::Parser)]
 /// Legacy CLI commands are only supported at best-effort
 pub enum JsCmd {
-    #[clap(alias("create"))]
+    #[command(alias("create"))]
     CreateAccount(self::account::create::CreateAccountArgs),
-    #[clap(alias("delete"))]
+    #[command(alias("delete"))]
     DeleteAccount(self::account::delete::DeleteAccountArgs),
-    #[clap(alias("import-account"))]
+    #[command(alias("import-account"))]
     Login(self::account::login::LoginArgs),
     State(self::account::state::StateArgs),
 
     Call(self::contract::call::CallArgs),
     Deploy(self::contract::deploy::DeployArgs),
-    #[clap(alias("storage"))]
+    #[command(alias("storage"))]
     ViewState(self::contract::storage::ViewStateArgs),
     View(self::contract::view::ViewArgs),
 
     AddKey(self::keys::add::AddKeyArgs),
     DeleteKey(self::keys::delete::DeleteKeyArgs),
-    #[clap(alias("keys"))]
+    #[command(alias("keys"))]
     ListKeys(self::keys::list::KeysArgs),
 
-    #[clap(alias("send-near"))]
+    #[command(alias("send-near"))]
     Send(self::transactions::send::SendArgs),
     TxStatus(self::transactions::status::TxStatusArgs),
 
     Validators(self::deprecated::ValidatorsArgs),
-    #[clap(alias("validator-stake"))]
+    #[command(alias("validator-stake"))]
     Stake(self::deprecated::StakeArgs),
 }
 
