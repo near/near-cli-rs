@@ -179,10 +179,10 @@ impl PrepaidGas {
             )
             .with_starting_input("10 Tgas")
             .with_validator(move |gas: &crate::common::NearGas| {
-                if gas > &near_gas::NearGas::from_tgas(300) {
+                if gas > &near_gas::NearGas::from_tgas(1000) {
                     Ok(inquire::validator::Validation::Invalid(
                         inquire::validator::ErrorMessage::Custom(
-                            "You need to enter a value of no more than 300 TeraGas".to_string(),
+                            "You need to enter a value of no more than 1000 TeraGas".to_string(),
                         ),
                     ))
                 } else {
