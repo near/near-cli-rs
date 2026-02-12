@@ -157,6 +157,8 @@ impl Config {
         self.network_connection
             .iter()
             .map(|(_, network_config)| network_config.network_name.clone())
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
             .collect()
     }
 

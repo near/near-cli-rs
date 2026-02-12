@@ -36,7 +36,7 @@ impl LoginFromPrivateKeyContext {
                         &key_pair_properties_buf,
                         &public_key.to_string(),
                         &format!(
-                            "\nIt is currently not possible to verify the account access key on network <{}>.\nYou may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n",
+                            "\nIt is currently not possible to verify the account access key on network <{}>.\nYou may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n ",
                             network_config.network_name
                         ),
                     )
