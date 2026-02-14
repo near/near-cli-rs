@@ -126,7 +126,7 @@ impl BeneficiaryAccount {
             };
 
             if beneficiary_account_id.0 == context.account_id {
-                eprintln!("{}", "You have selected a beneficiary account ID that will now be deleted. This will result in the loss of your funds. So make your choice again.".red());
+                tracing::warn!("{}", "You have selected a beneficiary account ID that will now be deleted. This will result in the loss of your funds. So make your choice again.".red());
                 continue;
             }
 
@@ -151,16 +151,27 @@ impl BeneficiaryAccount {
                     )
                     .prompt()?;
             if let ConfirmOptions::Yes { account_id } = select_choose_input {
-                if crate::common::find_network_where_account_exist(
-                    &context.global_context,
-                    account_id.clone().into(),
-                )?
-                .is_none()
-                {
-                    eprintln!(
-                        "\nHeads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{}> as the beneficiary as it does not exist on [{}] networks.",
-                        account_id,
-                        context.global_context.config.network_names().join(", ")
+                let network_where_account_exist =
+                    match crate::common::find_network_where_account_exist(
+                        &context.global_context,
+                        account_id.clone().into(),
+                    ) {
+                        Ok(network_config) => network_config,
+                        Err(crate::common::AccountStateError::Skip) => {
+                            tracing::warn!("{}", "Cannot verify beneficiary. Proceeding may result in total loss of NEAR tokens of the deleting account.".red());
+                            return Ok(Some(account_id));
+                        }
+                        Err(err) => {
+                            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err));
+                        }
+                    };
+                if network_where_account_exist.is_none() {
+                    tracing::warn!("{}",
+                        format!(
+                            "Heads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{}> as the beneficiary as it does not exist on [{}] networks.",
+                            account_id,
+                            context.global_context.config.network_names().join(", ")
+                        ).red()
                     );
                     if !crate::common::ask_if_different_account_id_wanted()? {
                         return Ok(Some(account_id));

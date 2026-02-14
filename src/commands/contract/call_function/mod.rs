@@ -55,34 +55,29 @@ fn input_function_name(
     function_kind: near_abi::AbiFunctionKind,
     message: &str,
 ) -> color_eyre::eyre::Result<Option<String>> {
-    let network_config = crate::common::find_network_where_account_exist(
-        global_context,
-        contract_account_id.clone(),
-    )?;
-
-    if let Some(network_config) = network_config {
-        let json_rpc_client = network_config.json_rpc_client();
-        if let Ok(contract_abi) =
+    if let Ok(network) =
+        crate::common::find_network_where_account_exist(global_context, contract_account_id.clone())
+        && let Some(network_config) = network
+        && let Ok(contract_abi) =
             tokio::runtime::Runtime::new()
                 .unwrap()
                 .block_on(super::get_contract_abi(
-                    &json_rpc_client,
+                    &network_config.json_rpc_client(),
                     &near_primitives::types::Finality::Final.into(),
                     contract_account_id,
                 ))
-        {
-            let function_names = contract_abi
-                .body
-                .functions
-                .into_iter()
-                .filter(|function| function_kind == function.kind)
-                .map(|function| function.name)
-                .collect::<Vec<String>>();
-            if !function_names.is_empty() {
-                return Ok(Some(
-                    Select::new(message, function_names).prompt()?.to_string(),
-                ));
-            }
+    {
+        let function_names = contract_abi
+            .body
+            .functions
+            .into_iter()
+            .filter(|function| function_kind == function.kind)
+            .map(|function| function.name)
+            .collect::<Vec<String>>();
+        if !function_names.is_empty() {
+            return Ok(Some(
+                Select::new(message, function_names).prompt()?.to_string(),
+            ));
         }
     }
 

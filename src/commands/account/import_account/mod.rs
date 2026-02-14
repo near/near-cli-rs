@@ -66,10 +66,8 @@ pub fn login(
             public_key.clone(),
             network_config.clone(),
         );
-        if let Err(crate::common::AccountStateError::Cancel) = access_key_view {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Operation was canceled by the user"
-            ));
+        if let Err(err @ crate::common::AccountStateError::Cancel) = access_key_view {
+            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err));
         }
         if access_key_view.is_err() {
             tracing::warn!(
