@@ -95,7 +95,7 @@ impl DeleteAccountAction {
                         }
                         Err(err) => {
                             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                                "{err:?}"
+                                "{err}"
                             ));
                         }
                     };
