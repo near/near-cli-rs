@@ -154,12 +154,15 @@ impl Default for Config {
 
 impl Config {
     pub fn network_names(&self) -> Vec<String> {
-        self.network_connection
-            .iter()
-            .map(|(_, network_config)| network_config.network_name.clone())
+        let mut network_names: Vec<String> = self
+            .network_connection
+            .values()
+            .map(|network_config| network_config.network_name.clone())
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
-            .collect()
+            .collect();
+        network_names.sort();
+        network_names
     }
 
     pub fn into_latest_version(self) -> migrations::ConfigVersion {
