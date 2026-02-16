@@ -52,18 +52,21 @@ pub fn setup_tracing_with_extra_directives(
     struct RawMessageVisitor<'a> {
         writer: Writer<'a>,
         result: std::fmt::Result,
+        is_message_printed: bool,
     }
 
     impl<'a> Visit for RawMessageVisitor<'a> {
         fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
             if field.name() == "message" {
                 self.result = write!(self.writer, "{:?}", value);
+                self.is_message_printed = true;
             }
         }
 
         fn record_str(&mut self, field: &Field, value: &str) {
             if field.name() == "message" {
                 self.result = write!(self.writer, "{}", value);
+                self.is_message_printed = true;
             }
         }
     }
@@ -95,9 +98,23 @@ pub fn setup_tracing_with_extra_directives(
             let mut visitor = RawMessageVisitor {
                 writer: writer.by_ref(),
                 result: Ok(()),
+                is_message_printed: false,
             };
             event.record(&mut visitor);
             visitor.result?;
+
+            let mut has_fields = false;
+            event.record(
+                &mut |field: &tracing::field::Field, value: &dyn std::fmt::Debug| {
+                    if field.name() != "message" {
+                        if !has_fields {
+                            let _ = write!(writer, " ");
+                            has_fields = true;
+                        }
+                        let _ = write!(writer, " {}={:?}", field.name(), value);
+                    }
+                },
+            );
 
             write!(writer, "\x1b[0m")?;
 
