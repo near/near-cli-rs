@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.7](https://github.com/near/near-cli-rs/compare/v0.23.6...v0.23.7) - 2026-02-09
+
+### Fixed
+
+- Speed up startup time from 5s -> 10ms (500x faster) ([#557](https://github.com/near/near-cli-rs/pull/557))
+
+### Other
+
+- set MSRV to 1.88 ([#556](https://github.com/near/near-cli-rs/pull/556))
+- migrate to org-wide NEARPROTOCOL_CI_PR_ACCESS token ([#552](https://github.com/near/near-cli-rs/pull/552))
+
 ## [0.23.6](https://github.com/near/near-cli-rs/compare/v0.23.5...v0.23.6) - 2026-02-06
 
 ### Added
