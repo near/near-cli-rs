@@ -251,6 +251,7 @@ impl Deposit {
 
 impl From<DepositContext> for crate::commands::TransactionContext {
     fn from(item: DepositContext) -> Self {
+        let sign_as_delegate_action = item.network_config.meta_transaction_relayer_url.is_some();
         let new_prepopulated_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.dao_account_id,
             receiver_id: item.receiver_id,
@@ -286,7 +287,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
-            sign_as_delegate_action: false,
+            sign_as_delegate_action,
         }
     }
 }
