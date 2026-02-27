@@ -9,6 +9,7 @@ pub struct AccessKeyPermissionContext {
     pub receiver_account_id: near_primitives::types::AccountId,
     pub actions: Vec<near_primitives::transaction::Action>,
     pub access_key_permission: near_primitives::account::AccessKeyPermission,
+    pub sign_as_delegate_action: bool,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -33,6 +34,7 @@ impl FullAccessTypeContext {
             receiver_account_id: previous_context.receiver_account_id,
             actions: previous_context.actions,
             access_key_permission: near_primitives::account::AccessKeyPermission::FullAccess,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
         }))
     }
 }
@@ -81,6 +83,7 @@ impl FunctionCallTypeContext {
             receiver_account_id: previous_context.receiver_account_id,
             actions: previous_context.actions,
             access_key_permission,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
         }))
     }
 }
