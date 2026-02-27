@@ -885,9 +885,14 @@ pub fn print_unsigned_transaction(
             near_primitives::transaction::Action::DeterministicStateInit(
                 deterministic_init_action,
             ) => {
+                let deterministic_account_id =
+                    near_primitives::utils::derive_near_deterministic_account_id(
+                        &deterministic_init_action.state_init,
+                    );
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20}",
-                    "--", "initizalize deterministic account id:"
+                    "--",
+                    format!("create deterministic account <{deterministic_account_id}>:")
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -896,13 +901,26 @@ pub fn print_unsigned_transaction(
                 let state_init = match &deterministic_init_action.state_init {
                     near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(deterministic_account_state_init_v1) => {
                         let mut ret = "V1".to_string();
-                        ret.push_str(&format!("\n{:>31} {:<13} {:?}", "", "data", deterministic_account_state_init_v1.data));
+                        if deterministic_account_state_init_v1.data.is_empty() {
+                            ret.push_str(&format!("\n{:>31} {:<13} {{}}", "", "data"));
+                        } else {
+                            ret.push_str(&format!("\n{:>31} {:<13} {{", "", "data"));
+                            let last_idx = deterministic_account_state_init_v1.data.len() - 1;
+                            for (i, (key, value)) in deterministic_account_state_init_v1.data.iter().enumerate() {
+                                let comma = if i < last_idx { "," } else { "" };
+                                ret.push_str(&format!(
+                                    "\n{:>45} \"{}\" : \"{}\"{}",
+                                    "", hex::encode(key), hex::encode(value), comma,
+                                ));
+                            }
+                            ret.push_str(&format!("\n{:>31} {:<13} }}", "", ""));
+                        }
                         ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code", match deterministic_account_state_init_v1.code {
                             GlobalContractIdentifier::CodeHash(hash) => {
-                                format!("use global <{hash}> code to deploy from")
+                                format!("hash: {hash}")
                             }
                             GlobalContractIdentifier::AccountId(ref account_id) => {
-                                format!("use global <{account_id}> code to deploy from")
+                                format!("account ref: {account_id}")
                             }
                         }));
 
@@ -3132,4 +3150,24 @@ pub fn save_cli_command(cli_cmd_str: &str) {
     if let Err(err) = writeln!(tmp_file, "{cli_cmd_str}") {
         eprintln!("Failed to store a cli command in a temporary file: {err}");
     }
+}
+
+/// Parses a JSON object with hex-encoded keys and values (no `0x` prefix) into a `BTreeMap<Vec<u8>, Vec<u8>>`.
+///
+/// Example input: `{"deadbeef": "cafebabe", "0102": "0304"}`
+/// Empty state: `{}`
+pub fn parse_hex_kv_map(
+    input: &str,
+) -> color_eyre::eyre::Result<std::collections::BTreeMap<Vec<u8>, Vec<u8>>> {
+    let map: std::collections::BTreeMap<String, String> = serde_json::from_str(input)
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to parse JSON: {e}"))?;
+    let mut result = std::collections::BTreeMap::new();
+    for (k, v) in map {
+        let key = hex::decode(&k)
+            .map_err(|e| color_eyre::eyre::eyre!("Failed to hex-decode key '{k}': {e}"))?;
+        let value = hex::decode(&v)
+            .map_err(|e| color_eyre::eyre::eyre!("Failed to hex-decode value '{v}': {e}"))?;
+        result.insert(key, value);
+    }
+    Ok(result)
 }
