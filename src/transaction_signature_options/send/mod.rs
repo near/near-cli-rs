@@ -48,19 +48,16 @@ impl SendContext {
             }
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
-            ) => {
-                let relayer_url = previous_context
-                    .network_config
-                    .meta_transaction_relayer_url
-                    .ok_or_else(|| color_eyre::eyre::eyre!(
-                        "This network configuration does not have a meta-transaction relayer URL. \
-                        To send a signed delegate action, either configure 'meta_transaction_relayer_url' \
-                        for this network in the config file, or use 'transaction send-meta-transaction' \
-                        with a relayer URL."
-                    ))?;
+            ) if previous_context
+                .network_config
+                .meta_transaction_relayer_url
+                .is_some() =>
+            {
                 match sending_delegate_action(
                     signed_delegate_action,
-                    relayer_url,
+                    previous_context.network_config
+                        .meta_transaction_relayer_url
+                        .expect("Internal error: Meta-transaction relayer URL must be Some() at this point"),
                 ){
                     Ok(relayer_response) => {
                         if relayer_response.status().is_success() {
@@ -75,6 +72,13 @@ impl SendContext {
                     }
                     Err(report) => return Err(color_eyre::Report::msg(report)),
                 };
+            }
+            super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(..) => {
+                // Fallback to `display` command when `meta_transaction_relayer_url` is not configured.
+                super::display::DisplayContext::from_previous_context(
+                    previous_context.clone(),
+                    &super::display::InteractiveClapContextScopeForDisplay {},
+                )?;
             }
         }
         if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
