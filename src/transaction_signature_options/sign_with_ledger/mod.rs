@@ -117,7 +117,7 @@ impl SignLedgerContext {
 
         let unsigned_transaction = Transaction::V0(unsigned_transaction);
 
-        if network_config.meta_transaction_relayer_url.is_some() {
+        if previous_context.sign_as_delegate_action {
             let max_block_height = block_height
                 + scope
                     .meta_transaction_valid_for

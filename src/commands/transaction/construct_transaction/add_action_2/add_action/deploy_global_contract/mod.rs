@@ -79,6 +79,7 @@ impl DeployGlobalModeContext {
             signer_account_id: previous_context.context.signer_account_id,
             receiver_account_id: previous_context.context.receiver_account_id,
             actions,
+            sign_as_delegate_action: previous_context.context.sign_as_delegate_action,
         }))
     }
 }
