@@ -57,6 +57,7 @@ impl UseHashActionContext {
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
         }))
     }
 }
@@ -110,6 +111,7 @@ impl UseAccountIdActionContext {
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
         }))
     }
 }

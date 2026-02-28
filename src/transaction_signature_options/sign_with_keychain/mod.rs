@@ -201,7 +201,7 @@ impl SignKeychainContext {
             .private_key
             .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
-        if network_config.meta_transaction_relayer_url.is_some() {
+        if previous_context.sign_as_delegate_action {
             let max_block_height = block_height
                 + scope
                     .meta_transaction_valid_for

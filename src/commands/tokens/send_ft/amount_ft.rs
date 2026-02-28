@@ -219,6 +219,7 @@ impl FtTransferParamsContext {
                 |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback,
+            sign_as_delegate_action: false,
         }))
     }
 }

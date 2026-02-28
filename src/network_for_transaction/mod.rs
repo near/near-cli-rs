@@ -22,6 +22,7 @@ pub struct NetworkForTransactionArgsContext {
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    sign_as_delegate_action: bool,
 }
 
 impl NetworkForTransactionArgsContext {
@@ -42,6 +43,8 @@ impl NetworkForTransactionArgsContext {
             .get_prepopulated_transaction_after_getting_network_callback)(
             &network_config
         )?;
+        let sign_as_delegate_action = previous_context.sign_as_delegate_action
+            || network_config.meta_transaction_relayer_url.is_some();
         Ok(Self {
             global_context: previous_context.global_context,
             network_config,
@@ -51,6 +54,7 @@ impl NetworkForTransactionArgsContext {
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
+            sign_as_delegate_action,
         })
     }
 }
@@ -67,6 +71,7 @@ impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionCont
             ),
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+            sign_as_delegate_action: item.sign_as_delegate_action,
         }
     }
 }
@@ -111,11 +116,7 @@ impl interactive_clap::FromCli for NetworkForTransactionArgs {
         if new_context.prepopulated_transaction.actions.is_empty() {
             return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
         }
-        let info_str = if new_context
-            .network_config
-            .meta_transaction_relayer_url
-            .is_some()
-        {
+        let info_str = if new_context.sign_as_delegate_action {
             "Unsigned delegate action:"
         } else {
             "Unsigned transaction:"
