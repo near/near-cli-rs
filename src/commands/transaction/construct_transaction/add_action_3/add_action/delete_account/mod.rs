@@ -95,9 +95,7 @@ impl DeleteAccountAction {
                             return Ok(Some(account_id));
                         }
                         Err(err) => {
-                            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                                "{err}"
-                            ));
+                            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("{err}"));
                         }
                     };
                 if network_where_account_exist.is_none() {
