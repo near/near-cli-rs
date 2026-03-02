@@ -2542,7 +2542,7 @@ near contract \
  ... Return Value (JSON Schema):
        No return value
   
- fn add_member(...) -> ... (read-write function - transcation required)  
+ fn add_member(...) -> ... (read-write function - transaction required)  
  ... Arguments (JSON Schema):
        {
          "serialization_type": "json",
@@ -2564,7 +2564,7 @@ near contract \
  ... Return Value (JSON Schema):
        No return value
   
- fn add_post(...) -> ... (read-write function - transcation required) payable  
+ fn add_post(...) -> ... (read-write function - transaction required) payable  
  ... Arguments (JSON Schema):
        {
          "serialization_type": "json",

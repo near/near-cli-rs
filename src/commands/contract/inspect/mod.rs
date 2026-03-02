@@ -305,7 +305,7 @@ async fn display_inspect_contract(
                     ),
                     match function.kind {
                         near_abi::AbiFunctionKind::Call =>
-                            "read-write function - transcation required",
+                            "read-write function - transaction required",
                         near_abi::AbiFunctionKind::View => "read-only function",
                     },
                     function
