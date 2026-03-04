@@ -1,0 +1,268 @@
+use color_eyre::eyre::Context;
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = super::ConstructTransactionSenderContext)]
+pub struct StateInitReceiver {
+    #[interactive_clap(subcommand)]
+    state_init: StateInitModeCommand,
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = super::ConstructTransactionSenderContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[non_exhaustive]
+/// How do you want to identify the global contract code?
+pub enum StateInitModeCommand {
+    #[strum_discriminants(strum(
+        message = "use-global-hash       - Use a global contract code hash (immutable)"
+    ))]
+    /// Use a global contract code hash (immutable)
+    UseGlobalHash(StateInitWithContractHashRef),
+    #[strum_discriminants(strum(
+        message = "use-global-account-id - Use a global contract account ID (mutable)"
+    ))]
+    /// Use a global contract account ID (mutable)
+    UseGlobalAccountId(StateInitWithContractRefByAccount),
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
+#[interactive_clap(output_context = StateInitWithContractHashRefContext)]
+pub struct StateInitWithContractHashRef {
+    /// What is the hash of the global contract?
+    pub hash: crate::types::crypto_hash::CryptoHash,
+    #[interactive_clap(subcommand)]
+    data: Data,
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
+#[interactive_clap(output_context = StateInitWithContractRefByAccountContext)]
+pub struct StateInitWithContractRefByAccount {
+    /// What is the account ID of the global contract?
+    pub account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(subcommand)]
+    data: Data,
+}
+
+#[derive(Debug, Clone)]
+pub struct StateInitModeContext {
+    pub global_context: crate::GlobalContext,
+    pub signer_account_id: near_primitives::types::AccountId,
+    pub code: near_primitives::action::GlobalContractIdentifier,
+}
+
+#[derive(Debug, Clone)]
+pub struct StateInitWithContractHashRefContext(StateInitModeContext);
+
+impl StateInitWithContractHashRefContext {
+    pub fn from_previous_context(
+        previous_context: super::ConstructTransactionSenderContext,
+        scope: &<StateInitWithContractHashRef as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self(StateInitModeContext {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.signer_account_id,
+            code: near_primitives::action::GlobalContractIdentifier::CodeHash(scope.hash.into()),
+        }))
+    }
+}
+
+impl From<StateInitWithContractHashRefContext> for StateInitModeContext {
+    fn from(item: StateInitWithContractHashRefContext) -> Self {
+        item.0
+    }
+}
+
+impl From<StateInitWithContractRefByAccountContext> for StateInitModeContext {
+    fn from(item: StateInitWithContractRefByAccountContext) -> Self {
+        item.0
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct StateInitWithContractRefByAccountContext(StateInitModeContext);
+
+impl StateInitWithContractRefByAccountContext {
+    pub fn from_previous_context(
+        previous_context: super::ConstructTransactionSenderContext,
+        scope: &<StateInitWithContractRefByAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self(StateInitModeContext {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.signer_account_id,
+            code: near_primitives::action::GlobalContractIdentifier::AccountId(
+                scope.account_id.clone().into(),
+            ),
+        }))
+    }
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = StateInitModeContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[non_exhaustive]
+/// How do you want to provide the initial state data?
+pub enum Data {
+    #[strum_discriminants(strum(
+        message = "data-from-file - Read hex-encoded key-value JSON data from a file"
+    ))]
+    /// Read hex-encoded key-value JSON data from a file
+    DataFromFile(DataFromFile),
+    #[strum_discriminants(strum(
+        message = "data-from-json - Provide hex-encoded key-value JSON data inline"
+    ))]
+    /// Provide hex-encoded key-value JSON data inline
+    DataFromJson(DataFromJson),
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = StateInitModeContext)]
+#[interactive_clap(output_context = DataFromFileContext)]
+pub struct DataFromFile {
+    /// What is the file path of the JSON state data?
+    pub file_path: crate::types::path_buf::PathBuf,
+    #[interactive_clap(named_arg)]
+    /// Specify deposit
+    deposit: Deposit,
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = StateInitModeContext)]
+#[interactive_clap(output_context = DataFromJsonContext)]
+pub struct DataFromJson {
+    /// Enter hex-encoded key-value JSON data (e.g. '{"deadbeef": "cafebabe"}' or '{}' for empty state):
+    pub data: String,
+    #[interactive_clap(named_arg)]
+    /// Specify deposit
+    deposit: Deposit,
+}
+
+#[derive(Debug, Clone)]
+pub struct StateInitDataContext {
+    pub global_context: crate::GlobalContext,
+    pub signer_account_id: near_primitives::types::AccountId,
+    pub state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+    pub receiver_account_id: near_primitives::types::AccountId,
+}
+
+impl StateInitDataContext {
+    fn build(
+        code: near_primitives::action::GlobalContractIdentifier,
+        global_context: crate::GlobalContext,
+        signer_account_id: near_primitives::types::AccountId,
+        data: std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
+    ) -> color_eyre::eyre::Result<Self> {
+        let state_init =
+            near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(
+                near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
+                    code,
+                    data,
+                },
+            );
+        let receiver_account_id =
+            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        Ok(Self {
+            global_context,
+            signer_account_id,
+            state_init,
+            receiver_account_id,
+        })
+    }
+}
+
+impl From<DataFromFileContext> for StateInitDataContext {
+    fn from(item: DataFromFileContext) -> Self {
+        item.0
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DataFromFileContext(StateInitDataContext);
+
+impl DataFromFileContext {
+    pub fn from_previous_context(
+        previous_context: StateInitModeContext,
+        scope: &<DataFromFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let json_str = std::fs::read_to_string(&scope.file_path).wrap_err_with(|| {
+            format!(
+                "Failed to open or read the file: {}",
+                scope.file_path.0.display()
+            )
+        })?;
+        let data = crate::common::parse_hex_kv_map(&json_str)?;
+        Ok(Self(StateInitDataContext::build(
+            previous_context.code,
+            previous_context.global_context,
+            previous_context.signer_account_id,
+            data,
+        )?))
+    }
+}
+
+impl From<DataFromJsonContext> for StateInitDataContext {
+    fn from(item: DataFromJsonContext) -> Self {
+        item.0
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DataFromJsonContext(StateInitDataContext);
+
+impl DataFromJsonContext {
+    pub fn from_previous_context(
+        previous_context: StateInitModeContext,
+        scope: &<DataFromJson as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let data = crate::common::parse_hex_kv_map(&scope.data)?;
+        Ok(Self(StateInitDataContext::build(
+            previous_context.code,
+            previous_context.global_context,
+            previous_context.signer_account_id,
+            data,
+        )?))
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = StateInitDataContext)]
+#[interactive_clap(output_context = DepositContext)]
+pub struct Deposit {
+    /// How much do you want to deposit with the state init (e.g. '1 NEAR' or '0 NEAR')?
+    pub deposit: crate::types::near_token::NearToken,
+    #[interactive_clap(subcommand)]
+    pub next_actions: super::add_action_1::NextAction,
+}
+
+#[derive(Debug, Clone)]
+pub struct DepositContext(super::ConstructTransactionContext);
+
+impl DepositContext {
+    pub fn from_previous_context(
+        previous_context: StateInitDataContext,
+        scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let deposit: near_token::NearToken = scope.deposit.into();
+        Ok(Self(super::ConstructTransactionContext {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.signer_account_id,
+            receiver_account_id: previous_context.receiver_account_id,
+            actions: vec![
+                near_primitives::transaction::Action::DeterministicStateInit(Box::new(
+                    near_primitives::action::DeterministicStateInitAction {
+                        state_init: previous_context.state_init,
+                        deposit,
+                    },
+                )),
+            ],
+        }))
+    }
+}
+
+impl From<DepositContext> for super::ConstructTransactionContext {
+    fn from(item: DepositContext) -> Self {
+        item.0
+    }
+}

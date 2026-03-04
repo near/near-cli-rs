@@ -102,26 +102,35 @@ fn main() -> crate::common::CliResult {
                 cmd_error.exit()
             }
             _ => {
-                match crate::js_command_match::JsCmd::try_parse() {
-                    Ok(js_cmd) => {
-                        let vec_cmd = js_cmd.rust_command_generation();
-                        let cmd = std::iter::once(near_cli_exec_path.to_owned()).chain(vec_cmd);
-                        Parser::parse_from(cmd)
+                // Backward compat: old `construct-transaction <sender> <receiver>` syntax
+                // Insert "account-id" subcommand before the bare receiver account ID.
+                if let Some(rewritten) = try_rewrite_construct_transaction_args() {
+                    match Cmd::try_parse_from(rewritten) {
+                        Ok(cli) => cli,
+                        Err(_) => cmd_error.exit(),
                     }
-                    Err(js_cmd_error) => {
-                        // js and rust both don't understand the subcommand
-                        if cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
-                            && js_cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
-                        {
-                            return crate::common::try_external_subcommand_execution(cmd_error);
+                } else {
+                    match crate::js_command_match::JsCmd::try_parse() {
+                        Ok(js_cmd) => {
+                            let vec_cmd = js_cmd.rust_command_generation();
+                            let cmd = std::iter::once(near_cli_exec_path.to_owned()).chain(vec_cmd);
+                            Parser::parse_from(cmd)
                         }
+                        Err(js_cmd_error) => {
+                            // js and rust both don't understand the subcommand
+                            if cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
+                                && js_cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
+                            {
+                                return crate::common::try_external_subcommand_execution(cmd_error);
+                            }
 
-                        // js understand the subcommand
-                        if js_cmd_error.kind() != clap::error::ErrorKind::InvalidSubcommand {
-                            js_cmd_error.exit();
+                            // js understand the subcommand
+                            if js_cmd_error.kind() != clap::error::ErrorKind::InvalidSubcommand {
+                                js_cmd_error.exit();
+                            }
+
+                            cmd_error.exit();
                         }
-
-                        cmd_error.exit();
                     }
                 }
             }
@@ -233,4 +242,35 @@ fn main() -> crate::common::CliResult {
     };
 
     cli_cmd.map(|_| ())
+}
+
+/// Detect the old `construct-transaction <sender> <bare-account-id>` syntax and
+/// rewrite it to `construct-transaction <sender> account-id <bare-account-id>`.
+fn try_rewrite_construct_transaction_args() -> Option<Vec<String>> {
+    let args: Vec<String> = std::env::args().collect();
+    let ct_idx = args.iter().position(|a| a == "construct-transaction")?;
+    // We expect at least: ... construct-transaction <sender> <receiver> ...
+    let receiver_idx = ct_idx + 2;
+    if receiver_idx >= args.len() {
+        return None;
+    }
+    let receiver_arg = &args[receiver_idx];
+    // If it's already the new syntax subcommand, no rewrite needed.
+    if receiver_arg == "account-id" || receiver_arg == "state-init" {
+        return None;
+    }
+    // Only rewrite if it looks like a valid account ID (not a flag).
+    if receiver_arg.starts_with('-') {
+        return None;
+    }
+    if receiver_arg
+        .parse::<near_primitives::types::AccountId>()
+        .is_err()
+    {
+        return None;
+    }
+    // Insert "account-id" before the receiver.
+    let mut rewritten = args;
+    rewritten.insert(receiver_idx, "account-id".to_string());
+    Some(rewritten)
 }
