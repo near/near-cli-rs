@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0](https://github.com/near/near-cli-rs/compare/v0.23.7...v0.24.0) - 2026-02-27
+
+### Added
+
+- Add `construct-meta-transaction` command ([#562](https://github.com/near/near-cli-rs/pull/562))
+
 ## [0.23.7](https://github.com/near/near-cli-rs/compare/v0.23.6...v0.23.7) - 2026-02-09
 
 ### Fixed
