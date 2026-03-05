@@ -24,13 +24,18 @@ pub enum StateInitModeCommand {
     ))]
     /// Use a global contract account ID (mutable)
     UseGlobalAccountId(StateInitWithContractRefByAccount),
+    #[strum_discriminants(strum(
+        message = "from-borsh-base64     - Provide the entire state init as a borsh+base64 blob"
+    ))]
+    /// Provide the entire DeterministicAccountStateInit as a borsh-serialized + base64-encoded blob
+    FromBorshBase64(StateInitFromBorshBase64),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
 #[interactive_clap(output_context = StateInitWithContractHashRefContext)]
 pub struct StateInitWithContractHashRef {
-    /// What is the hash of the global contract?
+    /// What is the base58-encoded hash of the global contract?
     pub hash: crate::types::crypto_hash::CryptoHash,
     #[interactive_clap(subcommand)]
     data: Data,
@@ -99,6 +104,43 @@ impl StateInitWithContractRefByAccountContext {
     }
 }
 
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
+#[interactive_clap(output_context = StateInitFromBorshBase64Context)]
+pub struct StateInitFromBorshBase64 {
+    /// Enter the borsh-serialized + base64-encoded DeterministicAccountStateInit blob:
+    pub state_init_base64: String,
+    #[interactive_clap(named_arg)]
+    /// Specify deposit
+    deposit: Deposit,
+}
+
+#[derive(Debug, Clone)]
+pub struct StateInitFromBorshBase64Context(StateInitDataContext);
+
+impl StateInitFromBorshBase64Context {
+    pub fn from_previous_context(
+        previous_context: super::ConstructTransactionSenderContext,
+        scope: &<StateInitFromBorshBase64 as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let state_init = crate::common::parse_borsh_base64_state_init(&scope.state_init_base64)?;
+        let receiver_account_id =
+            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        Ok(Self(StateInitDataContext {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.signer_account_id,
+            state_init,
+            receiver_account_id,
+        }))
+    }
+}
+
+impl From<StateInitFromBorshBase64Context> for StateInitDataContext {
+    fn from(item: StateInitFromBorshBase64Context) -> Self {
+        item.0
+    }
+}
+
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = StateInitModeContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -106,14 +148,14 @@ impl StateInitWithContractRefByAccountContext {
 /// How do you want to provide the initial state data?
 pub enum Data {
     #[strum_discriminants(strum(
-        message = "data-from-file - Read hex-encoded key-value JSON data from a file"
+        message = "data-from-file - Read base64-encoded key-value JSON data from a file"
     ))]
-    /// Read hex-encoded key-value JSON data from a file
+    /// Read base64-encoded key-value JSON data from a file
     DataFromFile(DataFromFile),
     #[strum_discriminants(strum(
-        message = "data-from-json - Provide hex-encoded key-value JSON data inline"
+        message = "data-from-json - Provide base64-encoded key-value JSON data inline"
     ))]
-    /// Provide hex-encoded key-value JSON data inline
+    /// Provide base64-encoded key-value JSON data inline
     DataFromJson(DataFromJson),
 }
 
@@ -132,7 +174,7 @@ pub struct DataFromFile {
 #[interactive_clap(input_context = StateInitModeContext)]
 #[interactive_clap(output_context = DataFromJsonContext)]
 pub struct DataFromJson {
-    /// Enter hex-encoded key-value JSON data (e.g. '{"deadbeef": "cafebabe"}' or '{}' for empty state):
+    /// Enter base64-encoded key-value JSON data (e.g. '{"AAEC": "AwQF"}' or '{}' for empty state):
     pub data: String,
     #[interactive_clap(named_arg)]
     /// Specify deposit
@@ -192,7 +234,7 @@ impl DataFromFileContext {
                 scope.file_path.0.display()
             )
         })?;
-        let data = crate::common::parse_hex_kv_map(&json_str)?;
+        let data = crate::common::parse_base64_kv_map(&json_str)?;
         Ok(Self(StateInitDataContext::build(
             previous_context.code,
             previous_context.global_context,
@@ -216,7 +258,7 @@ impl DataFromJsonContext {
         previous_context: StateInitModeContext,
         scope: &<DataFromJson as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let data = crate::common::parse_hex_kv_map(&scope.data)?;
+        let data = crate::common::parse_base64_kv_map(&scope.data)?;
         Ok(Self(StateInitDataContext::build(
             previous_context.code,
             previous_context.global_context,

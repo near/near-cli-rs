@@ -910,7 +910,7 @@ pub fn print_unsigned_transaction(
                                 let comma = if i < last_idx { "," } else { "" };
                                 ret.push_str(&format!(
                                     "\n{:>45} \"{}\" : \"{}\"{}",
-                                    "", hex::encode(key), hex::encode(value), comma,
+                                    "", near_primitives::serialize::to_base64(key), near_primitives::serialize::to_base64(value), comma,
                                 ));
                             }
                             ret.push_str(&format!("\n{:>31} {:<13} }}", "", ""));
@@ -3152,22 +3152,35 @@ pub fn save_cli_command(cli_cmd_str: &str) {
     }
 }
 
-/// Parses a JSON object with hex-encoded keys and values (no `0x` prefix) into a `BTreeMap<Vec<u8>, Vec<u8>>`.
+/// Parses a JSON object with base64-encoded keys and values into a `BTreeMap<Vec<u8>, Vec<u8>>`.
 ///
-/// Example input: `{"deadbeef": "cafebabe", "0102": "0304"}`
+/// Example input: `{"AAEC": "AwQF"}` (standard base64, padding optional)
 /// Empty state: `{}`
-pub fn parse_hex_kv_map(
+pub fn parse_base64_kv_map(
     input: &str,
 ) -> color_eyre::eyre::Result<std::collections::BTreeMap<Vec<u8>, Vec<u8>>> {
     let map: std::collections::BTreeMap<String, String> = serde_json::from_str(input)
         .map_err(|e| color_eyre::eyre::eyre!("Failed to parse JSON: {e}"))?;
     let mut result = std::collections::BTreeMap::new();
     for (k, v) in map {
-        let key = hex::decode(&k)
-            .map_err(|e| color_eyre::eyre::eyre!("Failed to hex-decode key '{k}': {e}"))?;
-        let value = hex::decode(&v)
-            .map_err(|e| color_eyre::eyre::eyre!("Failed to hex-decode value '{v}': {e}"))?;
+        let key = near_primitives::serialize::from_base64(&k)
+            .map_err(|e| color_eyre::eyre::eyre!("Failed to base64-decode key '{k}': {e}"))?;
+        let value = near_primitives::serialize::from_base64(&v)
+            .map_err(|e| color_eyre::eyre::eyre!("Failed to base64-decode value '{v}': {e}"))?;
         result.insert(key, value);
     }
     Ok(result)
+}
+
+/// Deserializes a `DeterministicAccountStateInit` from a borsh-serialized + base64-encoded string.
+pub fn parse_borsh_base64_state_init(
+    input: &str,
+) -> color_eyre::eyre::Result<
+    near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+> {
+    use borsh::BorshDeserialize;
+    let bytes = near_primitives::serialize::from_base64(input.trim())
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to base64-decode state init: {e}"))?;
+    near_primitives::deterministic_account_id::DeterministicAccountStateInit::try_from_slice(&bytes)
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-deserialize state init: {e}"))
 }
