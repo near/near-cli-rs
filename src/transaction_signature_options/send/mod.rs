@@ -103,14 +103,15 @@ pub fn sending_signed_transaction(
     let mut retries = (1..=retries_number).rev();
     let transaction_info = loop {
         let request =
-            near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
+            near_jsonrpc_client::methods::send_tx::RpcSendTransactionRequest {
                 signed_transaction: signed_transaction.clone(),
+                wait_until: near_primitives::views::TxExecutionStatus::Final,
             };
 
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to broadcast a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx"
+            "I am making HTTP call to NEAR JSON RPC to send a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx"
         );
 
         let transaction_info_result = network_config
@@ -119,7 +120,14 @@ pub fn sending_signed_transaction(
             .inspect(crate::common::teach_me_call_response);
         match transaction_info_result {
             Ok(response) => {
-                break response;
+                break response
+                    .final_execution_outcome
+                    .ok_or_else(|| {
+                        color_eyre::eyre::eyre!(
+                            "No final execution outcome received from the RPC"
+                        )
+                    })?
+                    .into_outcome();
             }
             Err(ref err) => match crate::common::rpc_transaction_error(err) {
                 Ok(message) => {
