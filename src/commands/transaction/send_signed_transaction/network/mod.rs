@@ -76,6 +76,7 @@ impl SubmitContext {
             crate::transaction_signature_options::send::sending_signed_transaction(
                 &previous_context.network_config,
                 &previous_context.signed_transaction,
+                near_primitives::views::TxExecutionStatus::Final,
             )?;
 
         crate::common::print_transaction_status(
