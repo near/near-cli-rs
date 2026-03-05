@@ -6,7 +6,12 @@ use crate::common::JsonRpcClientExt;
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
 #[interactive_clap(output_context = SendContext)]
-pub struct Send;
+pub struct Send {
+    /// Wait until the transaction reaches a specific execution status before returning (default: final)
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_interactive_input)]
+    wait_until: Option<crate::types::tx_execution_status::TxExecutionStatus>,
+}
 
 #[derive(Debug, Clone)]
 pub struct SendContext;
@@ -15,9 +20,15 @@ impl SendContext {
     #[tracing::instrument(name = "Sending transaction ...", skip_all)]
     pub fn from_previous_context(
         previous_context: super::SubmitContext,
-        _scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         tracing::info!(target: "near_teach_me", "Sending transaction ...");
+
+        let wait_until = scope
+            .wait_until
+            .clone()
+            .map(|s| s.into())
+            .unwrap_or(near_primitives::views::TxExecutionStatus::Final);
 
         let storage_message = (previous_context.on_before_sending_transaction_callback)(
             &previous_context.signed_transaction_or_signed_delegate_action,
@@ -32,6 +43,7 @@ impl SendContext {
                 let transaction_info = sending_signed_transaction(
                     &previous_context.network_config,
                     &signed_transaction,
+                    wait_until,
                 )?;
 
                 crate::common::print_transaction_status(
@@ -95,6 +107,7 @@ impl SendContext {
 pub fn sending_signed_transaction(
     network_config: &crate::config::NetworkConfig,
     signed_transaction: &near_primitives::transaction::SignedTransaction,
+    wait_until: near_primitives::views::TxExecutionStatus,
 ) -> color_eyre::Result<near_primitives::views::FinalExecutionOutcomeView> {
     tracing::Span::current().pb_set_message(network_config.rpc_url.as_str());
     tracing::info!(target: "near_teach_me", "Broadcasting transaction via RPC {}", network_config.rpc_url.as_str());
@@ -104,7 +117,7 @@ pub fn sending_signed_transaction(
     let transaction_info = loop {
         let request = near_jsonrpc_client::methods::send_tx::RpcSendTransactionRequest {
             signed_transaction: signed_transaction.clone(),
-            wait_until: near_primitives::views::TxExecutionStatus::Final,
+            wait_until: wait_until.clone(),
         };
 
         tracing::info!(
