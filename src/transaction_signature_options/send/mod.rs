@@ -102,11 +102,10 @@ pub fn sending_signed_transaction(
     let retries_number = 5;
     let mut retries = (1..=retries_number).rev();
     let transaction_info = loop {
-        let request =
-            near_jsonrpc_client::methods::send_tx::RpcSendTransactionRequest {
-                signed_transaction: signed_transaction.clone(),
-                wait_until: near_primitives::views::TxExecutionStatus::Final,
-            };
+        let request = near_jsonrpc_client::methods::send_tx::RpcSendTransactionRequest {
+            signed_transaction: signed_transaction.clone(),
+            wait_until: near_primitives::views::TxExecutionStatus::Final,
+        };
 
         tracing::info!(
             target: "near_teach_me",
@@ -123,9 +122,7 @@ pub fn sending_signed_transaction(
                 break response
                     .final_execution_outcome
                     .ok_or_else(|| {
-                        color_eyre::eyre::eyre!(
-                            "No final execution outcome received from the RPC"
-                        )
+                        color_eyre::eyre::eyre!("No final execution outcome received from the RPC")
                     })?
                     .into_outcome();
             }

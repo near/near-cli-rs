@@ -2499,7 +2499,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             );
 
             let (request_payload, message_about_saving_payload) =
-                check_request_payload_for_broadcast_tx_commit(request_payload);
+                check_request_payload_for_send_transaction(request_payload);
 
             tracing::info!(
                 target: "near_teach_me",
@@ -2729,7 +2729,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     }
 }
 
-fn check_request_payload_for_broadcast_tx_commit(
+fn check_request_payload_for_send_transaction(
     mut request_payload: serde_json::Value,
 ) -> (serde_json::Value, Result<Option<String>, String>) {
     let mut message_about_saving_payload = Ok(None);
@@ -2749,7 +2749,7 @@ fn replace_params_with_file(
     request_payload: &mut serde_json::Value,
     params_value: serde_json::Value,
 ) -> Result<Option<String>, String> {
-    let file_path = std::path::PathBuf::from("broadcast_tx_commit__params_field.json");
+    let file_path = std::path::PathBuf::from("send_tx__params_field.json");
 
     let total_params_length = {
         match serde_json::to_vec_pretty(&params_value) {
