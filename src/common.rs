@@ -1029,7 +1029,7 @@ fn print_value_successful_transaction(
 
 pub fn rpc_transaction_error(
     err: &near_jsonrpc_client::errors::JsonRpcError<
-        near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError,
+        near_jsonrpc_client::methods::send_tx::RpcTransactionError,
     >,
 ) -> color_eyre::Result<String> {
     match &err {
@@ -1038,25 +1038,25 @@ pub fn rpc_transaction_error(
         }
         near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::TimeoutError => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::TimeoutError => {
                     Ok("Timeout error transaction".to_string())
                 }
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::InvalidTransaction { context } => {
                     match convert_invalid_tx_error_to_cli_result(context) {
                         Ok(_) => Ok("".to_string()),
                         Err(err) => Err(err)
                     }
                 }
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::DoesNotTrackShard => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err))
                 }
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::RequestRouted{transaction_hash} => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::RequestRouted{transaction_hash} => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", transaction_hash, err))
                 }
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::UnknownTransaction{requested_transaction_hash} => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::UnknownTransaction{requested_transaction_hash} => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", requested_transaction_hash, err))
                 }
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InternalError{debug_info} => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::InternalError{debug_info} => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", debug_info))
                 }
             }
@@ -2499,7 +2499,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             );
 
             let (request_payload, message_about_saving_payload) =
-                check_request_payload_for_broadcast_tx_commit(request_payload);
+                check_request_payload_for_send_transaction(request_payload);
 
             tracing::info!(
                 target: "near_teach_me",
@@ -2729,14 +2729,15 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     }
 }
 
-fn check_request_payload_for_broadcast_tx_commit(
+fn check_request_payload_for_send_transaction(
     mut request_payload: serde_json::Value,
 ) -> (serde_json::Value, Result<Option<String>, String>) {
     let mut message_about_saving_payload = Ok(None);
     let method = request_payload.get("method").cloned();
     let params_value = request_payload.get("params").cloned();
     if let Some(method) = method
-        && method.to_string().contains("broadcast_tx_commit")
+        && (method.to_string().contains("broadcast_tx_commit")
+            || method.to_string().contains("send_tx"))
         && let Some(params_value) = params_value
     {
         message_about_saving_payload = replace_params_with_file(&mut request_payload, params_value);
@@ -2748,7 +2749,7 @@ fn replace_params_with_file(
     request_payload: &mut serde_json::Value,
     params_value: serde_json::Value,
 ) -> Result<Option<String>, String> {
-    let file_path = std::path::PathBuf::from("broadcast_tx_commit__params_field.json");
+    let file_path = std::path::PathBuf::from("send_tx__params_field.json");
 
     let total_params_length = {
         match serde_json::to_vec_pretty(&params_value) {
