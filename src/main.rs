@@ -263,26 +263,7 @@ fn try_rewrite_construct_transaction_args() -> Option<Vec<String>> {
         .get_subcommands()
         .any(|sc| sc.get_name() == receiver_arg);
     if is_receiver_subcommand {
-        if receiver_arg == "state-init" {
-            // Look ahead: only treat "state-init" as the subcommand if the next arg
-            // is a valid state-init sub-subcommand (or there is no next arg, i.e.
-            // interactive mode). Otherwise "state-init" is a literal account ID.
-            let next_idx = receiver_idx + 1;
-            if next_idx >= args.len() {
-                return None; // No more args → interactive state-init mode
-            }
-            let state_init_cmd = clap::Command::new("tmp");
-            let state_init_cmd = commands::transaction::construct_transaction::state_init_receiver::CliStateInitModeCommand::augment_subcommands(state_init_cmd);
-            let is_state_init_subcommand = state_init_cmd
-                .get_subcommands()
-                .any(|sc| sc.get_name() == args[next_idx]);
-            if is_state_init_subcommand {
-                return None; // New state-init syntax
-            }
-            // Next arg doesn't match any state-init subcommand → "state-init" is an account ID
-        } else {
-            return None; // Already new syntax (e.g. "account-id")
-        }
+        return None; // Already new syntax (e.g. "account-id" or "state-init")
     }
     // Only rewrite if it looks like a valid account ID (not a flag).
     if receiver_arg.starts_with('-') {
