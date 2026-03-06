@@ -22,7 +22,7 @@ pub enum StateInitModeCommand {
     ))]
     UseGlobalAccountId(StateInitWithContractRefByAccount),
     #[strum_discriminants(strum(
-        message = "from-borsh-base64     - Provide the entire state init as a borsh+base64 blob"
+        message = "from-borsh-base64     - Provide borsh serialized base64 encoded state init"
     ))]
     FromBorshBase64(StateInitFromBorshBase64),
 }
@@ -350,6 +350,7 @@ impl From<DepositContext> for crate::commands::ActionContext {
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
             ),
+            sign_as_delegate_action: false,
         }
     }
 }

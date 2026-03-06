@@ -258,7 +258,10 @@ fn try_rewrite_construct_transaction_args() -> Option<Vec<String>> {
     // Check if receiver_arg matches any ReceiverMode subcommand name.
     use clap::Subcommand;
     let receiver_cmd = clap::Command::new("tmp");
-    let receiver_cmd = commands::transaction::construct_transaction::CliReceiverMode::augment_subcommands(receiver_cmd);
+    let receiver_cmd =
+        commands::transaction::construct_transaction::CliReceiverMode::augment_subcommands(
+            receiver_cmd,
+        );
     let is_receiver_subcommand = receiver_cmd
         .get_subcommands()
         .any(|sc| sc.get_name() == receiver_arg);

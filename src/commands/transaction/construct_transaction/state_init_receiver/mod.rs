@@ -22,7 +22,7 @@ pub enum StateInitModeCommand {
     ))]
     UseGlobalAccountId(StateInitWithContractRefByAccount),
     #[strum_discriminants(strum(
-        message = "from-borsh-base64     - Provide the entire state init as a borsh+base64 blob"
+        message = "from-borsh-base64     - Provide borsh serialized base64 encoded state init"
     ))]
     FromBorshBase64(StateInitFromBorshBase64),
 }
@@ -283,6 +283,7 @@ impl DepositContext {
                     },
                 )),
             ],
+            sign_as_delegate_action: false,
         }))
     }
 }

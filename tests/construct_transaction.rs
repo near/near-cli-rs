@@ -51,7 +51,10 @@ async fn test_construct_transaction_old_syntax() -> Result<(), Box<dyn std::erro
         String::from_utf8_lossy(&output.stderr)
     );
 
-    insta::assert_snapshot!("construct_transaction_old_syntax", normalize_output(&stdout));
+    insta::assert_snapshot!(
+        "construct_transaction_old_syntax",
+        normalize_output(&stdout)
+    );
 
     Ok(())
 }
@@ -83,7 +86,10 @@ async fn test_construct_transaction_new_syntax() -> Result<(), Box<dyn std::erro
     );
 
     // Old syntax and new syntax should produce identical output
-    insta::assert_snapshot!("construct_transaction_new_syntax", normalize_output(&stdout));
+    insta::assert_snapshot!(
+        "construct_transaction_new_syntax",
+        normalize_output(&stdout)
+    );
 
     Ok(())
 }
@@ -119,7 +125,10 @@ async fn test_construct_transaction_state_init() -> Result<(), Box<dyn std::erro
         String::from_utf8_lossy(&output.stderr)
     );
 
-    insta::assert_snapshot!("construct_transaction_state_init", normalize_output(&stdout));
+    insta::assert_snapshot!(
+        "construct_transaction_state_init",
+        normalize_output(&stdout)
+    );
 
     Ok(())
 }

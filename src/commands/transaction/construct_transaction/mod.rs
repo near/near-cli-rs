@@ -50,15 +50,12 @@ impl ConstructTransaction {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = ConstructTransactionSenderContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// How do you want to specify the receiver?
 pub enum ReceiverMode {
     #[strum_discriminants(strum(message = "account-id  - Specify receiver account ID directly"))]
-    /// Specify receiver account ID directly
     AccountId(DirectReceiver),
     #[strum_discriminants(strum(
         message = "state-init  - Derive receiver from deterministic state init (NEP-616)"
     ))]
-    /// Derive receiver from deterministic state init (NEP-616)
     StateInit(self::state_init_receiver::StateInitReceiver),
 }
 
@@ -67,7 +64,6 @@ pub enum ReceiverMode {
 #[interactive_clap(output_context = ConstructTransactionContext)]
 pub struct DirectReceiver {
     #[interactive_clap(skip_default_input_arg)]
-    /// What is the receiver account ID?
     pub receiver_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     pub next_actions: self::add_action_1::NextAction,
@@ -90,6 +86,7 @@ pub struct ConstructTransactionContext {
     pub signer_account_id: near_primitives::types::AccountId,
     pub receiver_account_id: near_primitives::types::AccountId,
     pub actions: Vec<near_primitives::transaction::Action>,
+    pub sign_as_delegate_action: bool,
 }
 
 impl ConstructTransactionContext {
@@ -102,6 +99,7 @@ impl ConstructTransactionContext {
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: scope.receiver_account_id.clone().into(),
             actions: vec![],
+            sign_as_delegate_action: false,
         })
     }
 }
