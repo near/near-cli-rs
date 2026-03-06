@@ -12,22 +12,18 @@ pub struct StateInit {
 #[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[non_exhaustive]
-/// How do you want to identify the global contract code?
 pub enum StateInitModeCommand {
     #[strum_discriminants(strum(
-        message = "use-global-hash       - Use a global contract code hash (immutable)"
+        message = "use-global-hash       - Use a global contract code hash"
     ))]
-    /// Use a global contract code hash (immutable)
     UseGlobalHash(StateInitWithContractHashRef),
     #[strum_discriminants(strum(
-        message = "use-global-account-id - Use a global contract account ID (mutable)"
+        message = "use-global-account-id - Use a global contract account ID"
     ))]
-    /// Use a global contract account ID (mutable)
     UseGlobalAccountId(StateInitWithContractRefByAccount),
     #[strum_discriminants(strum(
         message = "from-borsh-base64     - Provide the entire state init as a borsh+base64 blob"
     ))]
-    /// Provide the entire DeterministicAccountStateInit as a borsh-serialized + base64-encoded blob
     FromBorshBase64(StateInitFromBorshBase64),
 }
 
@@ -35,7 +31,6 @@ pub enum StateInitModeCommand {
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = StateInitWithContractHashRefContext)]
 pub struct StateInitWithContractHashRef {
-    /// What is the base58-encoded hash of the global contract?
     pub hash: crate::types::crypto_hash::CryptoHash,
     #[interactive_clap(subcommand)]
     data: Data,
@@ -45,7 +40,6 @@ pub struct StateInitWithContractHashRef {
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = StateInitWithContractRefByAccountContext)]
 pub struct StateInitWithContractRefByAccount {
-    /// What is the account ID of the global contract?
     pub account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     data: Data,
@@ -105,10 +99,8 @@ impl StateInitWithContractRefByAccountContext {
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = StateInitFromBorshBase64Context)]
 pub struct StateInitFromBorshBase64 {
-    /// Enter the borsh-serialized + base64-encoded DeterministicAccountStateInit blob:
     pub state_init_base64: String,
     #[interactive_clap(named_arg)]
-    /// Specify deposit
     deposit: Deposit,
 }
 
@@ -141,17 +133,14 @@ impl From<StateInitFromBorshBase64Context> for StateInitDataContext {
 #[interactive_clap(context = StateInitModeContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[non_exhaustive]
-/// How do you want to provide the initial state data?
 pub enum Data {
     #[strum_discriminants(strum(
         message = "data-from-file - Read base64-encoded key-value JSON data from a file"
     ))]
-    /// Read base64-encoded key-value JSON data from a file
     DataFromFile(DataFromFile),
     #[strum_discriminants(strum(
-        message = "data-from-json - Provide base64-encoded key-value JSON data inline"
+        message = "data-from-json - Provide base64-encoded key-value JSON data inline (e.g. '{\"AAEC\": \"AwQF\"})')"
     ))]
-    /// Provide base64-encoded key-value JSON data inline
     DataFromJson(DataFromJson),
 }
 
@@ -159,10 +148,8 @@ pub enum Data {
 #[interactive_clap(input_context = StateInitModeContext)]
 #[interactive_clap(output_context = DataFromFileContext)]
 pub struct DataFromFile {
-    /// What is the file path of the JSON state data?
     pub file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(named_arg)]
-    /// Specify deposit
     deposit: Deposit,
 }
 
@@ -170,10 +157,8 @@ pub struct DataFromFile {
 #[interactive_clap(input_context = StateInitModeContext)]
 #[interactive_clap(output_context = DataFromJsonContext)]
 pub struct DataFromJson {
-    /// Enter base64-encoded key-value JSON data (e.g. '{"AAEC": "AwQF"}' or '{}' for empty state):
     pub data: String,
     #[interactive_clap(named_arg)]
-    /// Specify deposit
     deposit: Deposit,
 }
 
@@ -263,13 +248,10 @@ impl DataFromJsonContext {
 #[interactive_clap(input_context = StateInitDataContext)]
 #[interactive_clap(output_context = DepositContext)]
 pub struct Deposit {
-    /// How much do you want to deposit with the state init (e.g. '1 NEAR' or '0 NEAR')?
     pub deposit: crate::types::near_token::NearToken,
     #[interactive_clap(skip_default_input_arg)]
-    /// What is the signer account ID?
     pub signer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    /// Select network
     network_config: crate::network_for_transaction::NetworkForTransactionArgs,
 }
 
