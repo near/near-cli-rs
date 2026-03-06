@@ -48,7 +48,11 @@ impl SendContext {
             }
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
-            ) => {
+            ) if previous_context
+                .network_config
+                .meta_transaction_relayer_url
+                .is_some() =>
+            {
                 match sending_delegate_action(
                     signed_delegate_action,
                     previous_context.network_config
@@ -68,6 +72,13 @@ impl SendContext {
                     }
                     Err(report) => return Err(color_eyre::Report::msg(report)),
                 };
+            }
+            super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(..) => {
+                // Fallback to `display` command when `meta_transaction_relayer_url` is not configured.
+                super::display::DisplayContext::from_previous_context(
+                    previous_context.clone(),
+                    &super::display::InteractiveClapContextScopeForDisplay {},
+                )?;
             }
         }
         if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =

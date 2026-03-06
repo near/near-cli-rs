@@ -1,6 +1,7 @@
 #![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
+pub mod construct_meta_transaction;
 pub mod construct_transaction;
 mod print_transaction;
 mod reconstruct_transaction;
@@ -35,6 +36,11 @@ pub enum TransactionActions {
     ))]
     /// Construct a new transaction
     ConstructTransaction(self::construct_transaction::ConstructTransaction),
+    #[strum_discriminants(strum(
+        message = "construct-meta-transaction  - Construct a new meta-transaction"
+    ))]
+    /// Construct a new meta-transaction
+    ConstructMetaTransaction(self::construct_meta_transaction::ConstructMetaTransaction),
     #[strum_discriminants(strum(
         message = "sign-transaction         - Sign previously prepared unsigned transaction"
     ))]

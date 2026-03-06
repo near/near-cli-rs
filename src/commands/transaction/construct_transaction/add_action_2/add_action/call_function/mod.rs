@@ -27,6 +27,7 @@ pub struct FunctionCallActionContext {
     actions: Vec<near_primitives::transaction::Action>,
     function_name: String,
     function_args: Vec<u8>,
+    sign_as_delegate_action: bool,
 }
 
 impl FunctionCallActionContext {
@@ -46,6 +47,7 @@ impl FunctionCallActionContext {
             actions: previous_context.actions,
             function_name: scope.function_name.clone(),
             function_args,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
         })
     }
 }
@@ -91,6 +93,7 @@ pub struct PrepaidGasContext {
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
+    sign_as_delegate_action: bool,
 }
 
 impl PrepaidGasContext {
@@ -106,6 +109,7 @@ impl PrepaidGasContext {
             function_name: previous_context.function_name,
             function_args: previous_context.function_args,
             gas: scope.gas,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
         })
     }
 }
@@ -167,6 +171,7 @@ impl DepositContext {
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
         }))
     }
 }
