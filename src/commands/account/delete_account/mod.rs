@@ -158,12 +158,16 @@ impl BeneficiaryAccount {
                         account_id.clone().into(),
                     ) {
                         Ok(network_config) => network_config,
-                        Err(crate::common::AccountStateError::Skip) => {
-                            tracing::warn!("{}", "Cannot verify beneficiary. Proceeding may result in total loss of NEAR tokens of the deleting account.".red());
-                            return Ok(Some(account_id));
-                        }
                         Err(err) => {
-                            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err));
+                            tracing::warn!("{}{}", 
+                                "Cannot verify beneficiary. Proceeding may result in total loss of NEAR tokens of the deleting account.".red(),
+                                crate::common::indent_payload(&format!("\n{}{}",
+                                    format!("{err}").red(),
+                                    "\nIt is currently possible to continue deleting an account offline.\nYou can sign and send the created transaction later.\n "
+                                    .yellow()
+                                ))
+                            );
+                            return Ok(Some(account_id));
                         }
                     };
                 if network_where_account_exist.is_none() {

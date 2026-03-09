@@ -69,19 +69,26 @@ impl NewAccount {
                 )
                 .prompt()?;
             if let ConfirmOptions::Yes { account_id } = select_choose_input {
-                let network = crate::common::find_network_where_account_exist(
-                    context,
-                    account_id.clone().into(),
-                );
+                let network_where_account_exist =
+                    match crate::common::find_network_where_account_exist(
+                        context,
+                        account_id.clone().into(),
+                    ) {
+                        Ok(network_config) => network_config,
+                        Err(err) => {
+                            tracing::warn!("{}{}",
+                                "Missing account information.".red(),
+                                crate::common::indent_payload(&format!("\n{}{}",
+                                    format!("{err}").red(),
+                                    "\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.\n "
+                                    .yellow()
+                                ))
+                            );
+                            return Ok(Some(new_account_id));
+                        }
+                    };
 
-                if let Err(crate::common::AccountStateError::Skip) = network {
-                    tracing::warn!(
-                        "It was not checked whether <{account_id}> was available on the network."
-                    );
-                    return Ok(Some(new_account_id));
-                };
-
-                if let Some(network_config) = network.map_err(color_eyre::Report::msg)? {
+                if let Some(network_config) = network_where_account_exist {
                     tracing::warn!("{}", format!(
                         "Heads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
                         &account_id, network_config.network_name
@@ -119,13 +126,16 @@ impl NewAccount {
                                 parent_account_id.clone().into(),
                             ) {
                                 Ok(network_config) => network_config,
-                                Err(crate::common::AccountStateError::Skip) => {
-                                    return Ok(Some(account_id));
-                                }
                                 Err(err) => {
-                                    return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                                        err
-                                    ));
+                                    tracing::warn!("{}{}",
+                                        "Missing parent account information.".red(),
+                                        crate::common::indent_payload(&format!("\n{}{}",
+                                            format!("{err}").red(),
+                                            "\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.\n "
+                                            .yellow()
+                                        ))
+                                    );
+                                    return Ok(Some(new_account_id));
                                 }
                             };
                         if network_where_account_exist.is_none() {

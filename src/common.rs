@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::convert::{TryFrom, TryInto};
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -184,6 +184,13 @@ where
     }
 }
 
+#[tracing::instrument(name = "Waiting 3 seconds before sending a request via RPC", skip_all)]
+pub fn sleep_after_error(additional_message_for_name: String) {
+    tracing::Span::current().pb_set_message(&additional_message_for_name);
+    tracing::info!(target: "near_teach_me", "Waiting 3 seconds before sending a request via RPC {additional_message_for_name}");
+    std::thread::sleep(std::time::Duration::from_secs(3));
+}
+
 #[tracing::instrument(name = "Getting the transfer allowance for the account ...", skip_all)]
 pub async fn get_account_transfer_allowance(
     network_config: &crate::config::NetworkConfig,
@@ -195,11 +202,9 @@ pub async fn get_account_transfer_allowance(
         get_account_state(network_config, &account_id, block_reference.clone()).await;
     let account_view = match account_state {
         Ok(account_view) => account_view,
-        Err(AccountStateError::JsonRpcError(
-            near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-                ),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
             ),
         )) if account_id.get_account_type().is_implicit() => {
             return Ok(AccountTransferAllowance {
@@ -210,24 +215,17 @@ pub async fn get_account_transfer_allowance(
                 pessimistic_transaction_fee: near_token::NearToken::ZERO,
             });
         }
-        Err(AccountStateError::JsonRpcError(
-            near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
-        )) => {
+        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.\n{err}",
                 network_config.network_name
             ));
         }
-        Err(AccountStateError::JsonRpcError(
-            near_jsonrpc_client::errors::JsonRpcError::ServerError(err),
-        )) => {
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.\n{err}",
                 network_config.network_name
             ));
-        }
-        Err(err @ (AccountStateError::Cancel | AccountStateError::Skip)) => {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err));
         }
     };
     let storage_amount_per_byte =
@@ -337,70 +335,60 @@ pub fn verify_account_access_key(
 
 #[tracing::instrument(name = "Checking the existence of the account ...", skip_all)]
 pub fn is_account_exist(
-    networks: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
+    context: &crate::GlobalContext,
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<bool> {
     tracing::info!(target: "near_teach_me", "Checking the existence of the account ...");
-    let mut checked_networks: Vec<String> = Vec::new();
-    for (_, network_config) in networks {
-        if checked_networks.contains(&network_config.network_name) {
-            continue;
-        } else {
-            checked_networks.push(network_config.network_name.clone());
+    loop {
+        match find_network_where_account_exist(context, account_id.clone()) {
+            Ok(network) => {
+                if network.is_some() {
+                    return Ok(true);
+                } else {
+                    return Ok(false);
+                }
+            }
+            Err(err) => {
+                tracing::warn!("{}", format!("{err}").red());
+                let need_check_account =
+                    suspend_tracing_indicatif::<_, color_eyre::eyre::Result<bool>>(|| {
+                        need_check_account(format!(
+                            "Failed to check account existence for {account_id}."
+                        ))
+                    });
+                if !need_check_account.wrap_err_with(|| format!("{err}"))? {
+                    return Ok(true);
+                }
+            }
         }
-
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(get_account_state(
-                network_config,
-                &account_id,
-                near_primitives::types::Finality::Final.into(),
-            ));
-
-        if result.is_ok() {
-            return Ok(true);
-        }
-
-        if let Err(err @ (AccountStateError::Cancel | AccountStateError::Skip)) = result {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err));
-        }
-
-        if let Err(AccountStateError::JsonRpcError(
-            near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-                ),
-            ),
-        )) = result
-        {
-            continue;
-        }
-
-        checked_networks.pop();
     }
-    Ok(false)
 }
 
 #[tracing::instrument(name = "Searching for a network where an account exists for", skip_all)]
 pub fn find_network_where_account_exist(
     context: &crate::GlobalContext,
     new_account_id: near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<
-    Option<crate::config::NetworkConfig>,
-    AccountStateError<near_jsonrpc_primitives::types::query::RpcQueryError>,
-> {
+) -> color_eyre::eyre::Result<Option<crate::config::NetworkConfig>> {
     tracing::Span::current().pb_set_message(new_account_id.as_str());
     tracing::info!(target: "near_teach_me", "Searching for a network where an account exists for {new_account_id} ...");
-    let mut networks: Vec<String> = Vec::new();
-    let mut returned_result: color_eyre::eyre::Result<
-        Option<crate::config::NetworkConfig>,
-        AccountStateError<near_jsonrpc_primitives::types::query::RpcQueryError>,
-    > = Ok(None);
+    let networks: HashSet<String> = context
+        .config
+        .network_connection
+        .iter()
+        .map(|(_, network_config)| network_config.network_name.clone())
+        .collect();
+    if networks.is_empty() {
+        return Err(color_eyre::eyre::eyre!(
+            "No network connections are configured, so it's impossible to check the existence of the account."
+        ));
+    }
+    let mut checked_networks: HashSet<String> = HashSet::new();
+    let mut unknown_account_result: HashSet<String> = HashSet::new();
     for (_, network_config) in context.config.network_connection.iter() {
-        if networks.contains(&network_config.network_name) {
+        if checked_networks.contains(&network_config.network_name) {
             continue;
         } else {
-            networks.push(network_config.network_name.clone());
+            checked_networks.insert(network_config.network_name.clone());
         }
 
         let result = tokio::runtime::Runtime::new()
@@ -413,27 +401,43 @@ pub fn find_network_where_account_exist(
 
         match result {
             Ok(_) => return Ok(Some(network_config.clone())),
-            Err(err @ (AccountStateError::Cancel | AccountStateError::Skip)) => {
-                return Err(err);
-            }
-            Err(AccountStateError::JsonRpcError(
-                near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                            ..
-                        },
-                    ),
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
                 ),
             )) => {
-                returned_result = Ok(None);
+                unknown_account_result.insert(network_config.network_name.clone());
             }
-            Err(err) => {
-                networks.pop();
-                returned_result = Err(err);
+            Err(_err) => {
+                checked_networks.remove(&network_config.network_name);
             }
         }
     }
-    returned_result
+    if networks == unknown_account_result {
+        Ok(None)
+    } else if unknown_account_result.is_empty() {
+        Err(color_eyre::eyre::eyre!(
+            "Account information ({new_account_id}) cannot be fetched on the following networks due to errors: {}.",
+            networks
+                .difference(&unknown_account_result)
+                .cloned()
+                .collect::<Vec<String>>()
+                .join(", "),
+        ))
+    } else {
+        Err(color_eyre::eyre::eyre!(
+            "Account information ({new_account_id}) cannot be fetched on the following networks due to errors: {}.\nIt was checked that the account does not exist on the following networks: {}.",
+            networks
+                .difference(&unknown_account_result)
+                .cloned()
+                .collect::<Vec<String>>()
+                .join(", "),
+            unknown_account_result
+                .into_iter()
+                .collect::<Vec<String>>()
+                .join(", ")
+        ))
+    }
 }
 
 pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
@@ -459,7 +463,7 @@ pub async fn get_account_state(
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<
     near_primitives::views::AccountView,
-    AccountStateError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
     tracing::Span::current().pb_set_message(&format!(
         "<{account_id}> on network <{}> ...",
@@ -467,75 +471,56 @@ pub async fn get_account_state(
     ));
     tracing::info!(target: "near_teach_me", "Getting account status information for <{account_id}> on network <{}> ...", network_config.network_name);
 
-    let query_view_method_response = view_account(
-        format!("{}", network_config.rpc_url),
-        &network_config.json_rpc_client(),
-        account_id,
-        block_reference.clone(),
-    )
-    .await;
+    let mut retries_left = (0..5).rev();
+    loop {
+        let query_view_method_response = view_account(
+            format!("{}", network_config.rpc_url),
+            &network_config.json_rpc_client(),
+            account_id,
+            block_reference.clone(),
+        )
+        .await;
 
-    match query_view_method_response {
-        Ok(rpc_query_response) => {
-            if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
-                account_view,
-            ) = rpc_query_response.kind
-            {
-                return Ok(account_view);
-            } else {
-                return Err(AccountStateError::JsonRpcError(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
+        match query_view_method_response {
+            Ok(rpc_query_response) => {
+                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
+                    account_view,
+                ) = rpc_query_response.kind
+                {
+                    return Ok(account_view);
+                } else {
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
                         near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
                             near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
                         ),
-                    ))));
+                    )));
+                }
             }
-        }
-        Err(
-            err @ near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
+            Err(
+                err @ near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
+                            ..
+                        },
+                    ),
                 ),
-            ),
-        ) => {
-            return Err(AccountStateError::JsonRpcError(err));
-        }
-        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-            let need_check_account = suspend_tracing_indicatif::<_, color_eyre::eyre::Result<bool>>(
-                || {
-                    need_check_account(format!(
-                        "Account information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
-                        network_config.network_name
-                    ))
-                },
-            );
-            if need_check_account.is_err() {
-                return Err(AccountStateError::Cancel);
+            ) => {
+                return Err(err);
             }
-            if let Ok(true) = need_check_account {
-                return Err(AccountStateError::JsonRpcError(
-                    near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
-                ));
+            Err(
+                err @ (near_jsonrpc_client::errors::JsonRpcError::TransportError(_)
+                | near_jsonrpc_client::errors::JsonRpcError::ServerError(_)),
+            ) => {
+                if let Some(retries_left) = retries_left.next() {
+                    sleep_after_error(format!(
+                        "(Previous attempt failed with error: `{}`. Will retry {} more times)",
+                        err.to_string().red(),
+                        retries_left
+                    ));
+                } else {
+                    return Err(err);
+                }
             }
-            return Err(AccountStateError::Skip);
-        }
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-            let need_check_account = suspend_tracing_indicatif::<_, color_eyre::eyre::Result<bool>>(
-                || {
-                    need_check_account(format!(
-                        "Account information ({account_id}) cannot be fetched on <{}> network due to server error.",
-                        network_config.network_name
-                    ))
-                },
-            );
-            if need_check_account.is_err() {
-                return Err(AccountStateError::Cancel);
-            }
-            if let Ok(true) = need_check_account {
-                return Err(AccountStateError::JsonRpcError(
-                    near_jsonrpc_client::errors::JsonRpcError::ServerError(err),
-                ));
-            }
-            return Err(AccountStateError::Skip);
         }
     }
 }
@@ -3193,5 +3178,487 @@ pub fn save_cli_command(cli_cmd_str: &str) {
 
     if let Err(err) = writeln!(tmp_file, "{cli_cmd_str}") {
         eprintln!("Failed to store a cli command in a temporary file: {err}");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::config::NetworkConfig;
+
+    use super::find_network_where_account_exist;
+
+    fn create_test_context_with_default() -> crate::GlobalContext {
+        let config = crate::config::Config::default();
+        crate::GlobalContext {
+            config,
+            offline: false,
+            verbosity: crate::Verbosity::Interactive,
+        }
+    }
+
+    fn create_test_context_with_empty_network_connection() -> crate::GlobalContext {
+        let config = crate::config::Config {
+            network_connection: linked_hash_map::LinkedHashMap::new(),
+            credentials_home_dir: std::env::home_dir().expect("Impossible to get your home dir!"),
+        };
+        crate::GlobalContext {
+            config,
+            offline: false,
+            verbosity: crate::Verbosity::Interactive,
+        }
+    }
+
+    fn create_test_context_with_failed_rpc_on_testnet() -> crate::GlobalContext {
+        let mut network_connection = linked_hash_map::LinkedHashMap::new();
+        network_connection.insert(
+            "mainnet".to_string(),
+            NetworkConfig {
+                network_name: "mainnet".to_string(),
+                rpc_url: "https://archival-rpc.mainnet.fastnear.com/"
+                    .parse()
+                    .unwrap(),
+                wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.near.org/transactions/"
+                    .parse()
+                    .unwrap(),
+                rpc_api_key: None,
+                linkdrop_account_id: Some("near".parse().unwrap()),
+                near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
+                faucet_url: None,
+                meta_transaction_relayer_url: None,
+                fastnear_url: Some("https://api.fastnear.com/".parse().unwrap()),
+                staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
+                coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
+                mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            },
+        );
+        network_connection.insert(
+            "mainnet-fastnear".to_string(),
+            NetworkConfig {
+                network_name: "mainnet".to_string(),
+                rpc_url: "https://rpc.mainnet.fastnear.com/".parse().unwrap(),
+                rpc_api_key: None,
+                wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.near.org/transactions/"
+                    .parse()
+                    .unwrap(),
+                linkdrop_account_id: Some("near".parse().unwrap()),
+                near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
+                faucet_url: None,
+                meta_transaction_relayer_url: None,
+                fastnear_url: Some("https://api.fastnear.com/".parse().unwrap()),
+                staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
+                coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
+                mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            },
+        );
+        network_connection.insert(
+            "mainnet-lava".to_string(),
+            NetworkConfig {
+                network_name: "mainnet".to_string(),
+                rpc_url: "https://near.lava.build/".parse().unwrap(),
+                rpc_api_key: None,
+                wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.near.org/transactions/"
+                    .parse()
+                    .unwrap(),
+                linkdrop_account_id: Some("near".parse().unwrap()),
+                near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
+                faucet_url: None,
+                meta_transaction_relayer_url: None,
+                fastnear_url: Some("https://api.fastnear.com/".parse().unwrap()),
+                staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
+                coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
+                mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            },
+        );
+        network_connection.insert(
+            "testnet".to_string(),
+            NetworkConfig {
+                network_name: "testnet".to_string(),
+                rpc_url: "https://xxx-archival-rpc.testnet.fastnear.com/"
+                    .parse()
+                    .unwrap(),
+                wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
+                    .parse()
+                    .unwrap(),
+                rpc_api_key: None,
+                linkdrop_account_id: Some("testnet".parse().unwrap()),
+                near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
+                faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
+                meta_transaction_relayer_url: None,
+                fastnear_url: Some("https://test.api.fastnear.com/".parse().unwrap()),
+                staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
+                coingecko_url: None,
+                mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            },
+        );
+
+        let config = crate::config::Config {
+            network_connection,
+            credentials_home_dir: std::env::home_dir().expect("Impossible to get your home dir!"),
+        };
+        crate::GlobalContext {
+            config,
+            offline: false,
+            verbosity: crate::Verbosity::Interactive,
+        }
+    }
+
+    fn create_test_context_with_failed_rpc_on_mainnet() -> crate::GlobalContext {
+        let mut network_connection = linked_hash_map::LinkedHashMap::new();
+        network_connection.insert(
+            "mainnet".to_string(),
+            NetworkConfig {
+                network_name: "mainnet".to_string(),
+                rpc_url: "https://xxx-archival-rpc.mainnet.fastnear.com/"
+                    .parse()
+                    .unwrap(),
+                wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.near.org/transactions/"
+                    .parse()
+                    .unwrap(),
+                rpc_api_key: None,
+                linkdrop_account_id: Some("near".parse().unwrap()),
+                near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
+                faucet_url: None,
+                meta_transaction_relayer_url: None,
+                fastnear_url: Some("https://api.fastnear.com/".parse().unwrap()),
+                staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
+                coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
+                mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            },
+        );
+        network_connection.insert(
+            "testnet".to_string(),
+            NetworkConfig {
+                network_name: "testnet".to_string(),
+                rpc_url: "https://archival-rpc.testnet.fastnear.com/"
+                    .parse()
+                    .unwrap(),
+                wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
+                    .parse()
+                    .unwrap(),
+                rpc_api_key: None,
+                linkdrop_account_id: Some("testnet".parse().unwrap()),
+                near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
+                faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
+                meta_transaction_relayer_url: None,
+                fastnear_url: Some("https://test.api.fastnear.com/".parse().unwrap()),
+                staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
+                coingecko_url: None,
+                mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            },
+        );
+        network_connection.insert(
+            "testnet-fastnear".to_string(),
+            NetworkConfig {
+                network_name: "testnet".to_string(),
+                rpc_url: "https://test.rpc.fastnear.com/".parse().unwrap(),
+                rpc_api_key: None,
+                wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
+                    .parse()
+                    .unwrap(),
+                linkdrop_account_id: Some("testnet".parse().unwrap()),
+                near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
+                faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
+                meta_transaction_relayer_url: None,
+                fastnear_url: Some("https://test.api.fastnear.com/".parse().unwrap()),
+                staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
+                coingecko_url: None,
+                mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            },
+        );
+        network_connection.insert(
+            "testnet-lava".to_string(),
+            NetworkConfig {
+                network_name: "testnet".to_string(),
+                rpc_url: "https://neart.lava.build/".parse().unwrap(),
+                rpc_api_key: None,
+                wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
+                    .parse()
+                    .unwrap(),
+                linkdrop_account_id: Some("testnet".parse().unwrap()),
+                near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
+                faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
+                meta_transaction_relayer_url: None,
+                fastnear_url: Some("https://test.api.fastnear.com/".parse().unwrap()),
+                staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
+                coingecko_url: None,
+                mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            },
+        );
+
+        let config = crate::config::Config {
+            network_connection,
+            credentials_home_dir: std::env::home_dir().expect("Impossible to get your home dir!"),
+        };
+        crate::GlobalContext {
+            config,
+            offline: false,
+            verbosity: crate::Verbosity::Interactive,
+        }
+    }
+
+    fn create_test_context_with_failed_rpc() -> crate::GlobalContext {
+        let mut network_connection = linked_hash_map::LinkedHashMap::new();
+        network_connection.insert(
+            "mainnet".to_string(),
+            NetworkConfig {
+                network_name: "mainnet".to_string(),
+                rpc_url: "https://xxx-archival-rpc.mainnet.fastnear.com/"
+                    .parse()
+                    .unwrap(),
+                wallet_url: "https://app.mynearwallet.com/".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.near.org/transactions/"
+                    .parse()
+                    .unwrap(),
+                rpc_api_key: None,
+                linkdrop_account_id: Some("near".parse().unwrap()),
+                near_social_db_contract_account_id: Some("social.near".parse().unwrap()),
+                faucet_url: None,
+                meta_transaction_relayer_url: None,
+                fastnear_url: Some("https://api.fastnear.com/".parse().unwrap()),
+                staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
+                coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
+                mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            },
+        );
+        network_connection.insert(
+            "testnet".to_string(),
+            NetworkConfig {
+                network_name: "testnet".to_string(),
+                rpc_url: "https://xxx-archival-rpc.testnet.fastnear.com/"
+                    .parse()
+                    .unwrap(),
+                wallet_url: "https://testnet.mynearwallet.com/".parse().unwrap(),
+                explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
+                    .parse()
+                    .unwrap(),
+                rpc_api_key: None,
+                linkdrop_account_id: Some("testnet".parse().unwrap()),
+                near_social_db_contract_account_id: Some("v1.social08.testnet".parse().unwrap()),
+                faucet_url: Some("https://helper.nearprotocol.com/account".parse().unwrap()),
+                meta_transaction_relayer_url: None,
+                fastnear_url: Some("https://test.api.fastnear.com/".parse().unwrap()),
+                staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
+                coingecko_url: None,
+                mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            },
+        );
+
+        let config = crate::config::Config {
+            network_connection,
+            credentials_home_dir: std::env::home_dir().expect("Impossible to get your home dir!"),
+        };
+        crate::GlobalContext {
+            config,
+            offline: false,
+            verbosity: crate::Verbosity::Interactive,
+        }
+    }
+
+    #[test]
+    fn test_find_network_account_exists_with_empty_network_connection() {
+        // Test: Search for an account that exists on all networks (testnet, mainnet)
+        let context = create_test_context_with_empty_network_connection();
+
+        // Expected result: Error, because there are no networks in configuration, so it's impossible to be sure that account does not exist on all networks
+        let existent_account_id: near_primitives::types::AccountId = "test.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_find_network_account_exists_with_default_context() {
+        // Test: Search for an account that exists on all networks (testnet, mainnet)
+        let context = create_test_context_with_default();
+
+        // Expected result: Returns the network that comes first in the configuration (mainnet)
+        let existent_account_id: near_primitives::types::AccountId = "test.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert_eq!(result.unwrap().unwrap().network_name, "mainnet");
+    }
+
+    #[test]
+    fn test_for_testnet_find_network_account_exists_with_default_context() {
+        // Test: Search for accounts across all networks (for *.testnet)
+        let context = create_test_context_with_default();
+
+        // Expected result: Account found on the testnet
+        let existent_account_id: near_primitives::types::AccountId =
+            "volodymyr.testnet".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert_eq!(result.unwrap().unwrap().network_name, "testnet");
+
+        // Expected result: Account does not exist on the testnet
+        let non_existent_account_id: near_primitives::types::AccountId =
+            "nonexistent.volodymyr.testnet".parse().unwrap();
+        let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
+        assert!(result.unwrap().is_none());
+    }
+
+    #[test]
+    fn test_for_mainnet_find_network_account_exists_with_default_context() {
+        // Test: Search for accounts across all networks (for *.near)
+        let context = create_test_context_with_default();
+
+        // Expected result: Account found on the mainnet
+        let existent_account_id: near_primitives::types::AccountId = "devhub.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert_eq!(result.unwrap().unwrap().network_name, "mainnet");
+
+        // Expected result: Account does not exist on the mainnet
+        let non_existent_account_id: near_primitives::types::AccountId =
+            "nonexistent.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
+        assert!(result.unwrap().is_none());
+    }
+
+    #[test]
+    fn test_find_network_account_exists_with_context_with_failed_rpc_on_testnet() {
+        // Test: Search for an account that exists on all networks (testnet, mainnet) with failed RPC on testnet
+        let context = create_test_context_with_failed_rpc_on_testnet();
+
+        // Expected result: Returns mainnet, because testnet RPC is failed
+        let existent_account_id: near_primitives::types::AccountId = "test.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert_eq!(result.unwrap().unwrap().network_name, "mainnet");
+    }
+
+    #[test]
+    fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc_on_testnet() {
+        // Test: Search for accounts across all networks (for *.near) with failed RPC on testnet
+        let context = create_test_context_with_failed_rpc_on_testnet();
+
+        // Expected result: Account found on the mainnet
+        let existent_account_id: near_primitives::types::AccountId = "devhub.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert_eq!(result.unwrap().unwrap().network_name, "mainnet");
+
+        // Expected result: Error, because testnet RPC is failed, so it's impossible to be sure that account does not exist on the testnet
+        let non_existent_account_id: near_primitives::types::AccountId =
+            "nonexistent.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_for_testnet_find_network_account_exists_with_context_with_failed_rpc_on_testnet() {
+        // Test: Search for accounts across all networks (for *.testnet) with failed RPC on testnet
+        let context = create_test_context_with_failed_rpc_on_testnet();
+
+        // Expected result: Error, because testnet RPC is failed, so it's impossible to be sure that account exists on the testnet
+        let existent_account_id: near_primitives::types::AccountId =
+            "volodymyr.testnet".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert!(result.is_err());
+
+        // Expected result: Error, because testnet RPC is failed, so it's impossible to be sure that account does not exist on the testnet
+        let non_existent_account_id: near_primitives::types::AccountId =
+            "nonexistent.volodymyr.testnet".parse().unwrap();
+        let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_find_network_account_exists_with_context_with_failed_rpc_on_mainnet() {
+        // Test: Search for an account that exists on all networks (testnet, mainnet) with failed RPC on mainnet
+        let context = create_test_context_with_failed_rpc_on_mainnet();
+
+        // Expected result: Returns testnet, because mainnet RPC is failed
+        let existent_account_id: near_primitives::types::AccountId = "test.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert_eq!(result.unwrap().unwrap().network_name, "testnet");
+    }
+
+    #[test]
+    fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc_on_mainnet() {
+        // Test: Search for accounts across all networks (for *.near) with failed RPC on mainnet
+        let context = create_test_context_with_failed_rpc_on_mainnet();
+
+        // Expected result: Error, because mainnet RPC is failed, so it's impossible to be sure that account exists on the mainnet
+        let existent_account_id: near_primitives::types::AccountId = "devhub.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert!(result.is_err());
+
+        // Expected result: Error, because mainnet RPC is failed, so it's impossible to be sure that account does not exist on the mainnet
+        let non_existent_account_id: near_primitives::types::AccountId =
+            "nonexistent.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_for_testnet_find_network_account_exists_with_context_with_failed_rpc_on_mainnet() {
+        // Test: Search for accounts across all networks (for *.testnet) with failed RPC on mainnet
+        let context = create_test_context_with_failed_rpc_on_mainnet();
+
+        // Expected result: Account found on the testnet
+        let existent_account_id: near_primitives::types::AccountId =
+            "volodymyr.testnet".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert_eq!(result.unwrap().unwrap().network_name, "testnet");
+
+        // Expected result: Error, because mainnet RPC is failed, so it's impossible to be sure that account does not exist on the mainnet
+        let non_existent_account_id: near_primitives::types::AccountId =
+            "nonexistent.volodymyr.testnet".parse().unwrap();
+        let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_find_network_account_exists_with_context_with_failed_rpc() {
+        // Test: Search for an account that exists on all networks (testnet, mainnet) with failed RPC on all networks
+        let context = create_test_context_with_failed_rpc();
+
+        // Expected result: Error, because RPC is failed on all networks
+        let existent_account_id: near_primitives::types::AccountId = "test.near".parse().unwrap();
+        let result = find_network_where_account_exist(&context, existent_account_id.clone());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_for_testnet_find_network_account_exists_with_context_with_failed_rpc() {
+        // Test: Search for accounts across all networks (for *.testnet) with failed RPC on all networks
+        let context = create_test_context_with_failed_rpc();
+
+        // Expected result: Error, because RPC is failed on all networks
+        let existent_account_id_testnet: near_primitives::types::AccountId =
+            "volodymyr.testnet".parse().unwrap();
+        let result =
+            find_network_where_account_exist(&context, existent_account_id_testnet.clone());
+        assert!(result.is_err());
+
+        // Expected result: Error, because RPC is failed on all networks
+        let non_existent_account_id_testnet: near_primitives::types::AccountId =
+            "nonexistent.volodymyr.testnet".parse().unwrap();
+        let result =
+            find_network_where_account_exist(&context, non_existent_account_id_testnet.clone());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc() {
+        // Test: Search for accounts across all networks (for *.near) with failed RPC on all networks
+        let context = create_test_context_with_failed_rpc();
+
+        // Expected result: Error, because RPC is failed on all networks
+        let existent_account_id_mainnet: near_primitives::types::AccountId =
+            "devhub.near".parse().unwrap();
+        let result =
+            find_network_where_account_exist(&context, existent_account_id_mainnet.clone());
+        assert!(result.is_err());
+
+        // Expected result: Error, because RPC is failed on all networks
+        let non_existent_account_id_mainnet: near_primitives::types::AccountId =
+            "nonexistent.near".parse().unwrap();
+        let result =
+            find_network_where_account_exist(&context, non_existent_account_id_mainnet.clone());
+        assert!(result.is_err());
     }
 }

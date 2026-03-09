@@ -1,3 +1,4 @@
+use color_eyre::owo_colors::OwoColorize;
 use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -56,7 +57,7 @@ impl DepositArgs {
             }
 
             if !crate::common::is_account_exist(
-                &context.global_context.config.network_connection,
+                &context.global_context,
                 receiver_account_id.clone().into(),
             )? {
                 tracing::warn!(
@@ -65,6 +66,7 @@ impl DepositArgs {
                         "The account <{receiver_account_id}> does not exist on [{}] networks.",
                         context.global_context.config.network_names().join(", ")
                     )
+                    .red()
                 );
                 #[derive(strum_macros::Display)]
                 enum ConfirmOptions {

@@ -60,10 +60,6 @@ fn input_function_name(
         contract_account_id.clone(),
     );
 
-    if let Err(err @ crate::common::AccountStateError::Cancel) = network_config {
-        return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err));
-    }
-
     if let Ok(network) = network_config
         && let Some(network_config) = network
         && let Ok(contract_abi) =
