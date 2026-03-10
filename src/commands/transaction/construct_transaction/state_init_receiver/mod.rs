@@ -12,6 +12,7 @@ pub struct StateInitReceiver {
 #[interactive_clap(context = super::ConstructTransactionSenderContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[non_exhaustive]
+/// Provide state-init details:
 pub enum StateInitModeCommand {
     #[strum_discriminants(strum(
         message = "use-global-hash       - Use a global contract code hash"
@@ -31,18 +32,40 @@ pub enum StateInitModeCommand {
 #[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
 #[interactive_clap(output_context = StateInitWithContractHashRefContext)]
 pub struct StateInitWithContractHashRef {
+    #[interactive_clap(skip_default_input_arg)]
     pub hash: crate::types::crypto_hash::CryptoHash,
     #[interactive_clap(subcommand)]
     data: Data,
+}
+
+impl StateInitWithContractHashRef {
+    pub fn input_hash(
+        _context: &super::ConstructTransactionSenderContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
+        Ok(Some(
+            inquire::CustomType::new("Enter the global contract code hash:").prompt()?,
+        ))
+    }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
 #[interactive_clap(output_context = StateInitWithContractRefByAccountContext)]
 pub struct StateInitWithContractRefByAccount {
+    #[interactive_clap(skip_default_input_arg)]
     pub account_id: crate::types::account_id::AccountId,
     #[interactive_clap(subcommand)]
     data: Data,
+}
+
+impl StateInitWithContractRefByAccount {
+    pub fn input_account_id(
+        _context: &super::ConstructTransactionSenderContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        Ok(Some(
+            inquire::CustomType::new("Enter the global contract account ID:").prompt()?,
+        ))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -102,9 +125,20 @@ impl StateInitWithContractRefByAccountContext {
 #[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
 #[interactive_clap(output_context = StateInitFromBorshBase64Context)]
 pub struct StateInitFromBorshBase64 {
+    #[interactive_clap(skip_default_input_arg)]
     pub state_init_base64: String,
     #[interactive_clap(named_arg)]
     deposit: Deposit,
+}
+
+impl StateInitFromBorshBase64 {
+    pub fn input_state_init_base64(
+        _context: &super::ConstructTransactionSenderContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
+        Ok(Some(
+            inquire::Text::new("Enter the borsh-base64 encoded StateInit:").prompt()?,
+        ))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -137,6 +171,7 @@ impl From<StateInitFromBorshBase64Context> for StateInitDataContext {
 #[interactive_clap(context = StateInitModeContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[non_exhaustive]
+/// How would you like to provide the initial state data?
 pub enum Data {
     #[strum_discriminants(strum(
         message = "data-from-file - Read base64-encoded key-value JSON data from a file"
@@ -152,18 +187,44 @@ pub enum Data {
 #[interactive_clap(input_context = StateInitModeContext)]
 #[interactive_clap(output_context = DataFromFileContext)]
 pub struct DataFromFile {
+    #[interactive_clap(skip_default_input_arg)]
     pub file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(named_arg)]
     deposit: Deposit,
+}
+
+impl DataFromFile {
+    pub fn input_file_path(
+        _context: &StateInitModeContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::path_buf::PathBuf>> {
+        Ok(Some(
+            inquire::CustomType::new(
+                "Enter the path to the file with base64-encoded key-value JSON data:",
+            )
+            .prompt()?,
+        ))
+    }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = StateInitModeContext)]
 #[interactive_clap(output_context = DataFromJsonContext)]
 pub struct DataFromJson {
+    #[interactive_clap(skip_default_input_arg)]
     pub data: String,
     #[interactive_clap(named_arg)]
     deposit: Deposit,
+}
+
+impl DataFromJson {
+    pub fn input_data(_context: &StateInitModeContext) -> color_eyre::eyre::Result<Option<String>> {
+        Ok(Some(
+            inquire::Text::new(
+                "Enter the base64-encoded key-value JSON data (e.g. '{\"AAEC\": \"AwQF\"}'):",
+            )
+            .prompt()?,
+        ))
+    }
 }
 
 #[derive(Debug, Clone)]

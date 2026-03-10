@@ -50,6 +50,7 @@ impl ConstructTransaction {
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = ConstructTransactionSenderContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// How would you like to specify the receiver?
 pub enum ReceiverMode {
     #[strum_discriminants(strum(message = "account-id  - Specify receiver account ID directly"))]
     AccountId(DirectReceiver),
