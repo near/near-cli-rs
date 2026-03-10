@@ -185,10 +185,10 @@ where
 }
 
 #[tracing::instrument(name = "Waiting 3 seconds before sending a request via RPC", skip_all)]
-pub fn sleep_after_error(additional_message_for_name: String) {
+pub async fn sleep_after_error(additional_message_for_name: String) {
     tracing::Span::current().pb_set_message(&additional_message_for_name);
     tracing::info!(target: "near_teach_me", "Waiting 3 seconds before sending a request via RPC {additional_message_for_name}");
-    std::thread::sleep(std::time::Duration::from_secs(3));
+    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
 }
 
 #[tracing::instrument(name = "Getting the transfer allowance for the account ...", skip_all)]
@@ -516,7 +516,8 @@ pub async fn get_account_state(
                         "(Previous attempt failed with error: `{}`. Will retry {} more times)",
                         err.to_string().red(),
                         retries_left
-                    ));
+                    ))
+                    .await;
                 } else {
                     return Err(err);
                 }

@@ -551,7 +551,8 @@ pub async fn get_contract_source_metadata(
                         "(Previous attempt failed with error: `{}`. Will retry {} more times)",
                         err.to_string().red(),
                         retries_left
-                    ));
+                    ))
+                    .await;
                 } else {
                     return Err(FetchContractSourceMetadataError::RpcError(
                         near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
