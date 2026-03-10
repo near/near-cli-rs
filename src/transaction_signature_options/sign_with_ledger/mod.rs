@@ -117,7 +117,7 @@ impl interactive_clap::FromCli for UsbConnection {
         let mut clap_variant = optional_clap_variant.unwrap_or_default();
 
         let seed_phrase_hd_path = context.seed_phrase_hd_path.clone();
-        let verbosity = context.transaction_context.global_context.verbosity.clone();
+        let verbosity = context.transaction_context.global_context.verbosity;
 
         if let crate::Verbosity::Quiet = verbosity {
             println!("Opening the NEAR application... Please approve opening the application");
@@ -459,6 +459,7 @@ impl interactive_clap::FromCli for BluetoothConnection {
     name = "Signing the transaction with Ledger device via Bluetooth. Follow the instructions on the ledger ...",
     skip_all
 )]
+#[allow(clippy::too_many_arguments)]
 fn sign_transaction_with_ble(
     previous_context: &crate::commands::TransactionContext,
     signer_public_key: &crate::types::public_key::PublicKey,

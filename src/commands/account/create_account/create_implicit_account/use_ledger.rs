@@ -66,7 +66,7 @@ impl UsbSaveWithLedgerContext {
         let on_after_getting_folder_path_callback: super::OnAfterGettingFolderPathCallback =
             std::sync::Arc::new({
                 let seed_phrase_hd_path = previous_context.seed_phrase_hd_path.clone();
-                let verbosity = previous_context.global_context.verbosity.clone();
+                let verbosity = previous_context.global_context.verbosity;
                 move |folder_path| {
                     eprintln!(
                         "Opening the NEAR application... Please approve opening the application"
@@ -124,7 +124,7 @@ impl BleSaveWithLedgerContext {
         let on_after_getting_folder_path_callback: super::OnAfterGettingFolderPathCallback =
             std::sync::Arc::new({
                 let seed_phrase_hd_path = previous_context.seed_phrase_hd_path.clone();
-                let verbosity = previous_context.global_context.verbosity.clone();
+                let verbosity = previous_context.global_context.verbosity;
                 move |folder_path| {
                     let public_key = crate::transaction_signature_options::sign_with_ledger::ble_helpers::ble_connect_and_get_public_key(seed_phrase_hd_path.clone().into())?;
                     save_implicit_account(&seed_phrase_hd_path, public_key, folder_path, &verbosity)
