@@ -2693,7 +2693,7 @@ dependencies = [
 [[package]]
 name = "near-ledger"
 version = "0.9.1"
-source = "git+https://github.com/frolvanya/near-ledger-rs?rev=5a72ea3#5a72ea347fe13ebb8f7068d92e112b1981a0f181"
+source = "git+https://github.com/frolvanya/near-ledger-rs?rev=033ab848f65830ef6e646b27426852a48be26ab4#033ab848f65830ef6e646b27426852a48be26ab4"
 dependencies = [
  "borsh",
  "btleplug",

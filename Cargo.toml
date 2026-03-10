@@ -85,7 +85,7 @@ near-jsonrpc-primitives = "0.34"
 near-parameters = "0.34"
 near-socialdb-client = "0.14"
 
-near-ledger = { git = "https://github.com/frolvanya/near-ledger-rs", rev = "5a72ea3", optional = true }
+near-ledger = { git = "https://github.com/frolvanya/near-ledger-rs", rev = "033ab848f65830ef6e646b27426852a48be26ab4", optional = true }
 
 near-gas = { version = "0.3", features = [
     "serde",
