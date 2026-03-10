@@ -1,4 +1,5 @@
 use inquire::Text;
+use near_abi::AbiFunctionKind;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod as_read_only;
@@ -77,7 +78,9 @@ fn input_function_name(
                 .body
                 .functions
                 .into_iter()
-                .filter(|function| function_kind == function.kind)
+                .filter(|function| {
+                    function_kind == AbiFunctionKind::View || function_kind == function.kind
+                })
                 .map(|function| function.name)
                 .collect();
         }
