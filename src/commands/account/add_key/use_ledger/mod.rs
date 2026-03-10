@@ -1,3 +1,5 @@
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::access_key_type::AccessTypeContext)]
 #[interactive_clap(output_context = AddLedgerKeyActionContext)]
@@ -5,17 +7,16 @@ pub struct AddLedgerKeyAction {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
-    #[interactive_clap(named_arg)]
-    /// Select network
-    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+    #[interactive_clap(subcommand)]
+    connection: LedgerConnectionType,
 }
 
 #[derive(Debug, Clone)]
 pub struct AddLedgerKeyActionContext {
-    global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
-    public_key: crate::types::public_key::PublicKey,
+    pub global_context: crate::GlobalContext,
+    pub signer_account_id: near_primitives::types::AccountId,
+    pub permission: near_primitives::account::AccessKeyPermission,
+    pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
 }
 
 impl AddLedgerKeyActionContext {
@@ -23,7 +24,52 @@ impl AddLedgerKeyActionContext {
         previous_context: super::access_key_type::AccessTypeContext,
         scope: &<AddLedgerKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let seed_phrase_hd_path = scope.seed_phrase_hd_path.clone();
+        Ok(Self {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.signer_account_id,
+            permission: previous_context.permission,
+            seed_phrase_hd_path: scope.seed_phrase_hd_path.clone(),
+        })
+    }
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = AddLedgerKeyActionContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Select Ledger connection type:
+pub enum LedgerConnectionType {
+    #[strum_discriminants(strum(message = "usb        - Connect to Ledger via USB"))]
+    /// Connect to Ledger via USB
+    Usb(UsbAddLedgerKeyAction),
+    #[cfg(feature = "ledger-ble")]
+    #[strum_discriminants(strum(message = "bluetooth  - Connect to Ledger via Bluetooth"))]
+    /// Connect to Ledger via Bluetooth
+    Bluetooth(BluetoothAddLedgerKeyAction),
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = AddLedgerKeyActionContext)]
+#[interactive_clap(output_context = UsbAddLedgerKeyContext)]
+pub struct UsbAddLedgerKeyAction {
+    #[interactive_clap(named_arg)]
+    /// Select network
+    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+}
+
+#[derive(Debug, Clone)]
+pub struct UsbAddLedgerKeyContext {
+    global_context: crate::GlobalContext,
+    signer_account_id: near_primitives::types::AccountId,
+    permission: near_primitives::account::AccessKeyPermission,
+    public_key: crate::types::public_key::PublicKey,
+}
+
+impl UsbAddLedgerKeyContext {
+    pub fn from_previous_context(
+        previous_context: AddLedgerKeyActionContext,
+        _scope: &<UsbAddLedgerKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let seed_phrase_hd_path = previous_context.seed_phrase_hd_path.clone();
         eprintln!("Opening the NEAR application... Please approve opening the application");
         near_ledger::open_near_application().map_err(|ledger_error| {
             color_eyre::Report::msg(format!("An error happened while trying to open the NEAR application on the ledger: {ledger_error:?}"))
@@ -54,8 +100,91 @@ impl AddLedgerKeyActionContext {
     }
 }
 
-impl From<AddLedgerKeyActionContext> for crate::commands::ActionContext {
-    fn from(item: AddLedgerKeyActionContext) -> Self {
+impl From<UsbAddLedgerKeyContext> for crate::commands::ActionContext {
+    fn from(item: UsbAddLedgerKeyContext) -> Self {
+        let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
+            std::sync::Arc::new({
+                let signer_account_id = item.signer_account_id.clone();
+
+                move |_network_config| {
+                    Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_account_id.clone(),
+                        receiver_id: signer_account_id.clone(),
+                        actions: vec![near_primitives::transaction::Action::AddKey(Box::new(
+                            near_primitives::transaction::AddKeyAction {
+                                public_key: item.public_key.clone().into(),
+                                access_key: near_primitives::account::AccessKey {
+                                    nonce: 0,
+                                    permission: item.permission.clone(),
+                                },
+                            },
+                        ))],
+                    })
+                }
+            });
+
+        Self {
+            global_context: item.global_context,
+            interacting_with_account_ids: vec![item.signer_account_id],
+            get_prepopulated_transaction_after_getting_network_callback,
+            on_before_signing_callback: std::sync::Arc::new(
+                |_prepopulated_unsigned_transaction, _network_config| Ok(()),
+            ),
+            on_before_sending_transaction_callback: std::sync::Arc::new(
+                |_signed_transaction, _network_config| Ok(String::new()),
+            ),
+            on_after_sending_transaction_callback: std::sync::Arc::new(
+                |_outcome_view, _network_config| Ok(()),
+            ),
+            sign_as_delegate_action: false,
+        }
+    }
+}
+
+#[cfg(feature = "ledger-ble")]
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = AddLedgerKeyActionContext)]
+#[interactive_clap(output_context = BleAddLedgerKeyContext)]
+pub struct BluetoothAddLedgerKeyAction {
+    #[interactive_clap(named_arg)]
+    /// Select network
+    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+}
+
+#[cfg(feature = "ledger-ble")]
+#[derive(Debug, Clone)]
+pub struct BleAddLedgerKeyContext {
+    global_context: crate::GlobalContext,
+    signer_account_id: near_primitives::types::AccountId,
+    permission: near_primitives::account::AccessKeyPermission,
+    public_key: crate::types::public_key::PublicKey,
+}
+
+#[cfg(feature = "ledger-ble")]
+impl BleAddLedgerKeyContext {
+    pub fn from_previous_context(
+        previous_context: AddLedgerKeyActionContext,
+        _scope: &<BluetoothAddLedgerKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let seed_phrase_hd_path = previous_context.seed_phrase_hd_path.clone();
+
+        let public_key = crate::transaction_signature_options::sign_with_ledger::ble_helpers::ble_connect_and_get_public_key(seed_phrase_hd_path.into())?;
+        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+            public_key.to_bytes(),
+        ));
+
+        Ok(Self {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.signer_account_id,
+            permission: previous_context.permission,
+            public_key: public_key.into(),
+        })
+    }
+}
+
+#[cfg(feature = "ledger-ble")]
+impl From<BleAddLedgerKeyContext> for crate::commands::ActionContext {
+    fn from(item: BleAddLedgerKeyContext) -> Self {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_account_id = item.signer_account_id.clone();
