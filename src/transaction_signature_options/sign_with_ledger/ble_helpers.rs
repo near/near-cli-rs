@@ -28,8 +28,6 @@ pub fn ble_get_public_key_and_sign_nep413(
         open_near_app(&transport).await?;
         let public_key = get_public_key(&transport, seed_phrase_hd_path.clone()).await?;
 
-        eprintln!("Please approve the message signing on your Ledger device...");
-
         let signature =
             near_ledger::sign_message_nep413_ble(&transport, &payload, seed_phrase_hd_path)
                 .await
@@ -99,14 +97,12 @@ fn new_ble_runtime() -> color_eyre::eyre::Result<tokio::runtime::Runtime> {
         .map_err(|e| color_eyre::Report::msg(format!("Failed to create async runtime: {e}")))
 }
 
+#[tracing::instrument(name = "Scanning for Ledger devices via Bluetooth ...", skip_all)]
 async fn scan_and_connect() -> color_eyre::eyre::Result<near_ledger::TransportBle> {
-    eprintln!("Scanning for Ledger devices via Bluetooth...");
-
     let mut last_err = None;
     for attempt in 1..=BLE_SCAN_MAX_RETRIES {
         match near_ledger::TransportBle::new().await {
             Ok(t) => {
-                eprintln!("Connected to Ledger via Bluetooth");
                 return Ok(t);
             }
             Err(e) => {
@@ -133,9 +129,11 @@ async fn scan_and_connect() -> color_eyre::eyre::Result<near_ledger::TransportBl
     )))
 }
 
+#[tracing::instrument(
+    name = "Opening the NEAR application on the Ledger via Bluetooth ...",
+    skip_all
+)]
 async fn open_near_app(transport: &near_ledger::TransportBle) -> color_eyre::eyre::Result<()> {
-    eprintln!("Opening the NEAR application... Please approve opening the application");
-
     near_ledger::open_near_application_ble(transport)
         .await
         .map_err(|e| {
@@ -146,15 +144,14 @@ async fn open_near_app(transport: &near_ledger::TransportBle) -> color_eyre::eyr
         })
 }
 
+#[tracing::instrument(
+    name = "Getting the PublicKey from Ledger device via Bluetooth ...",
+    skip_all
+)]
 async fn get_public_key(
     transport: &near_ledger::TransportBle,
     seed_phrase_hd_path: slipped10::BIP32Path,
 ) -> color_eyre::eyre::Result<ed25519_dalek::VerifyingKey> {
-    eprintln!(
-        "Please allow getting the PublicKey on Ledger device (HD Path: {})",
-        seed_phrase_hd_path
-    );
-
     near_ledger::get_public_key_ble(transport, seed_phrase_hd_path)
         .await
         .map_err(|e| {
