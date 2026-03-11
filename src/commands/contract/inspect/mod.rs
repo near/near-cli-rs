@@ -10,7 +10,7 @@ use tracing_indicatif::span_ext::IndicatifSpanExt;
 use near_primitives::types::BlockReference;
 
 use super::FetchAbiError;
-use crate::common::{CallResultExt, RpcQueryResponseExt};
+use crate::common::{CallResultExt, RpcQueryResponseExt, sleep_after_error};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -551,7 +551,8 @@ pub async fn get_contract_source_metadata(
                         "(Previous attempt failed with error: `{}`. Will retry {} more times)",
                         err.to_string().red(),
                         retries_left
-                    ));
+                    ))
+                    .await;
                 } else {
                     return Err(FetchContractSourceMetadataError::RpcError(
                         near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
@@ -614,11 +615,4 @@ pub async fn get_contract_source_metadata(
             }
         }
     }
-}
-
-#[tracing::instrument(name = "Waiting 3 seconds before sending a request via RPC", skip_all)]
-fn sleep_after_error(additional_message_for_name: String) {
-    tracing::Span::current().pb_set_message(&additional_message_for_name);
-    tracing::info!(target: "near_teach_me", "Waiting 3 seconds before sending a request via RPC {additional_message_for_name}");
-    std::thread::sleep(std::time::Duration::from_secs(3));
 }
