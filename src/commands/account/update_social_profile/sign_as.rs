@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use color_eyre::eyre::WrapErr;
+use color_eyre::{eyre::WrapErr, owo_colors::OwoColorize};
 use inquire::{CustomType, Select};
 
 use crate::common::{CallResultExt, JsonRpcClientExt};
@@ -120,12 +120,16 @@ impl Signer {
                     .with_default(context.account_id.clone().into())
                     .prompt()?;
             if !crate::common::is_account_exist(
-                &context.global_context.config.network_connection,
+                &context.global_context,
                 signer_account_id.clone().into(),
             )? {
-                eprintln!(
-                    "\nThe account <{signer_account_id}> does not exist on [{}] networks.",
-                    context.global_context.config.network_names().join(", ")
+                tracing::warn!(
+                    "{}",
+                    format!(
+                        "The account <{signer_account_id}> does not exist on [{}] networks.",
+                        context.global_context.config.network_names().join(", ")
+                    )
+                    .red()
                 );
                 #[derive(strum_macros::Display)]
                 enum ConfirmOptions {
