@@ -79,7 +79,7 @@ fn input_function_name(
                 .functions
                 .into_iter()
                 .filter(|function| {
-                    function_kind == AbiFunctionKind::View || function_kind == function.kind
+                    function.kind == AbiFunctionKind::View || function.kind == function_kind
                 })
                 .map(|function| function.name)
                 .collect();
