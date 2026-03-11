@@ -2692,8 +2692,9 @@ dependencies = [
 
 [[package]]
 name = "near-ledger"
-version = "0.9.1"
-source = "git+https://github.com/frolvanya/near-ledger-rs?rev=033ab848f65830ef6e646b27426852a48be26ab4#033ab848f65830ef6e646b27426852a48be26ab4"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cbc04735bd42debf28c620d52897f7b2ea81dc3d1477db8536563a6a519872c6"
 dependencies = [
  "borsh",
  "btleplug",
