@@ -73,16 +73,17 @@ fn input_function_name(
                     &near_primitives::types::Finality::Final.into(),
                     contract_account_id,
                 ))
-    {
-        function_names = contract_abi
-            .body
-            .functions
-            .into_iter()
-            .filter(|function| {
-                function_kind == AbiFunctionKind::View || function_kind == function.kind
-            })
-            .map(|function| function.name)
-            .collect();
+        {
+            function_names = contract_abi
+                .body
+                .functions
+                .into_iter()
+                .filter(|function| {
+                    function.kind == AbiFunctionKind::View || function.kind == function_kind
+                })
+                .map(|function| function.name)
+                .collect();
+        }
     }
 
     Ok(Some(
