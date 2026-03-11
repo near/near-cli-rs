@@ -416,26 +416,29 @@ pub fn find_network_where_account_exist(
     if networks == unknown_account_result {
         Ok(None)
     } else if unknown_account_result.is_empty() {
+        let mut error_networks: Vec<String> = networks
+            .difference(&unknown_account_result)
+            .cloned()
+            .collect();
+        error_networks.sort();
+
         Err(color_eyre::eyre::eyre!(
             "Account information ({new_account_id}) cannot be fetched on the following networks due to errors: {}.",
-            networks
-                .difference(&unknown_account_result)
-                .cloned()
-                .collect::<Vec<String>>()
-                .join(", "),
+            error_networks.join(", "),
         ))
     } else {
+        let mut error_networks: Vec<String> = networks
+            .difference(&unknown_account_result)
+            .cloned()
+            .collect();
+        error_networks.sort();
+        let mut unknown_vec: Vec<String> = unknown_account_result.iter().cloned().collect();
+        unknown_vec.sort();
+
         Err(color_eyre::eyre::eyre!(
             "Account information ({new_account_id}) cannot be fetched on the following networks due to errors: {}.\nIt was checked that the account does not exist on the following networks: {}.",
-            networks
-                .difference(&unknown_account_result)
-                .cloned()
-                .collect::<Vec<String>>()
-                .join(", "),
-            unknown_account_result
-                .into_iter()
-                .collect::<Vec<String>>()
-                .join(", ")
+            error_networks.join(", "),
+            unknown_vec.join(", ")
         ))
     }
 }
