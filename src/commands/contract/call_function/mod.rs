@@ -1,4 +1,5 @@
-use inquire::{Select, Text};
+use inquire::Text;
+use near_abi::AbiFunctionKind;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod as_read_only;
@@ -33,7 +34,7 @@ pub fn input_call_function_name(
         global_context,
         contract_account_id,
         near_abi::AbiFunctionKind::Call,
-        "Select the as-transaction function for your contract:",
+        "What is the name of the transaction function?",
     )
 }
 
@@ -45,7 +46,7 @@ pub fn input_view_function_name(
         global_context,
         contract_account_id,
         near_abi::AbiFunctionKind::View,
-        "Select the viewing function for your contract:",
+        "What is the name of the view function?",
     )
 }
 
@@ -55,6 +56,8 @@ fn input_function_name(
     function_kind: near_abi::AbiFunctionKind,
     message: &str,
 ) -> color_eyre::eyre::Result<Option<String>> {
+    let mut function_names: Vec<String> = Vec::new();
+
     let network_config = crate::common::find_network_where_account_exist(
         global_context,
         contract_account_id.clone(),
@@ -71,22 +74,27 @@ fn input_function_name(
                     contract_account_id,
                 ))
         {
-            let function_names = contract_abi
+            function_names = contract_abi
                 .body
                 .functions
                 .into_iter()
-                .filter(|function| function_kind == function.kind)
+                .filter(|function| {
+                    function_kind == AbiFunctionKind::View || function_kind == function.kind
+                })
                 .map(|function| function.name)
-                .collect::<Vec<String>>();
-            if !function_names.is_empty() {
-                return Ok(Some(
-                    Select::new(message, function_names).prompt()?.to_string(),
-                ));
-            }
+                .collect();
         }
     }
 
     Ok(Some(
-        Text::new("What is the name of the function?").prompt()?,
+        Text::new(message)
+            .with_autocomplete(move |val: &str| {
+                Ok(function_names
+                    .iter()
+                    .filter(|s| s.contains(val))
+                    .cloned()
+                    .collect())
+            })
+            .prompt()?,
     ))
 }
