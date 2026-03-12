@@ -1,3 +1,4 @@
+use color_eyre::owo_colors::OwoColorize;
 use serde_json::json;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -198,28 +199,22 @@ fn validate_new_account_id(
             account_id,
             network_config.network_name
         )),
-        Err(crate::common::AccountStateError::Cancel) => color_eyre::eyre::Result::Err(
-            color_eyre::eyre::eyre!("Operation was canceled by the user"),
-        ),
-        Err(crate::common::AccountStateError::JsonRpcError(
-            near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-                ),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
             ),
         )) => Ok(()),
-        Err(crate::common::AccountStateError::JsonRpcError(
-            near_jsonrpc_client::errors::JsonRpcError::TransportError(_),
-        )) => {
+        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
             tracing::warn!(
                 parent: &tracing::Span::none(),
-                "Transport error.{}",
+                "{}{}",
+                "Transport error.".red(),
                 crate::common::indent_payload(
-                    "\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.\n"
-                )
+                    "\nIt is currently possible to continue creating an account offline.\nYou can sign and send the created transaction later.\n "
+                ).yellow()
             );
             Ok(())
         }
-        Err(err) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("{:?}", err)),
+        Err(err) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err)),
     }
 }

@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::convert::{TryFrom, TryInto};
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -168,6 +168,27 @@ impl AccountTransferAllowance {
 pub enum AccountStateError<E> {
     JsonRpcError(near_jsonrpc_client::errors::JsonRpcError<E>),
     Cancel,
+    Skip,
+}
+
+impl<E> std::fmt::Display for AccountStateError<E>
+where
+    E: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::JsonRpcError(err) => write!(f, "{err:?}"),
+            Self::Cancel => write!(f, "Operation was canceled by the user"),
+            Self::Skip => write!(f, "Operation was skipped by the user"),
+        }
+    }
+}
+
+#[tracing::instrument(name = "Waiting 3 seconds before sending a request via RPC", skip_all)]
+pub async fn sleep_after_error(additional_message_for_name: String) {
+    tracing::Span::current().pb_set_message(&additional_message_for_name);
+    tracing::info!(target: "near_teach_me", "Waiting 3 seconds before sending a request via RPC {additional_message_for_name}");
+    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
 }
 
 #[tracing::instrument(name = "Getting the transfer allowance for the account ...", skip_all)]
@@ -181,11 +202,9 @@ pub async fn get_account_transfer_allowance(
         get_account_state(network_config, &account_id, block_reference.clone()).await;
     let account_view = match account_state {
         Ok(account_view) => account_view,
-        Err(AccountStateError::JsonRpcError(
-            near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-                ),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
             ),
         )) if account_id.get_account_type().is_implicit() => {
             return Ok(AccountTransferAllowance {
@@ -196,25 +215,16 @@ pub async fn get_account_transfer_allowance(
                 pessimistic_transaction_fee: near_token::NearToken::ZERO,
             });
         }
-        Err(AccountStateError::JsonRpcError(
-            near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
-        )) => {
+        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.\n{err}",
                 network_config.network_name
             ));
         }
-        Err(AccountStateError::JsonRpcError(
-            near_jsonrpc_client::errors::JsonRpcError::ServerError(err),
-        )) => {
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.\n{err}",
                 network_config.network_name
-            ));
-        }
-        Err(AccountStateError::Cancel) => {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Operation was canceled by the user"
             ));
         }
     };
@@ -282,10 +292,15 @@ pub fn verify_account_access_key(
                 return Err(AccountStateError::JsonRpcError(err));
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                let need_check_account = need_check_account(format!(
-                    "\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
-                    network_config.network_name
-                ));
+                let need_check_account = suspend_tracing_indicatif::<
+                    _,
+                    color_eyre::eyre::Result<bool>,
+                >(|| {
+                    need_check_account(format!(
+                        "Account information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
+                        network_config.network_name
+                    ))
+                });
                 if need_check_account.is_err() {
                     return Err(AccountStateError::Cancel);
                 }
@@ -296,10 +311,15 @@ pub fn verify_account_access_key(
                 }
             }
             Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                let need_check_account = need_check_account(format!(
-                    "\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.",
-                    network_config.network_name
-                ));
+                let need_check_account = suspend_tracing_indicatif::<
+                    _,
+                    color_eyre::eyre::Result<bool>,
+                >(|| {
+                    need_check_account(format!(
+                        "Account information ({account_id}) cannot be fetched on <{}> network due to server error.",
+                        network_config.network_name
+                    ))
+                });
                 if need_check_account.is_err() {
                     return Err(AccountStateError::Cancel);
                 }
@@ -315,30 +335,33 @@ pub fn verify_account_access_key(
 
 #[tracing::instrument(name = "Checking the existence of the account ...", skip_all)]
 pub fn is_account_exist(
-    networks: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
+    context: &crate::GlobalContext,
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<bool> {
     tracing::info!(target: "near_teach_me", "Checking the existence of the account ...");
-    for (_, network_config) in networks {
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(get_account_state(
-                network_config,
-                &account_id,
-                near_primitives::types::Finality::Final.into(),
-            ));
-
-        if result.is_ok() {
-            return Ok(true);
-        }
-
-        if let Err(AccountStateError::Cancel) = result {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Operation was canceled by the user"
-            ));
+    loop {
+        match find_network_where_account_exist(context, account_id.clone()) {
+            Ok(network) => {
+                if network.is_some() {
+                    return Ok(true);
+                } else {
+                    return Ok(false);
+                }
+            }
+            Err(err) => {
+                tracing::warn!("{}", format!("{err}").red());
+                let need_check_account =
+                    suspend_tracing_indicatif::<_, color_eyre::eyre::Result<bool>>(|| {
+                        need_check_account(format!(
+                            "Failed to check account existence for {account_id}."
+                        ))
+                    });
+                if !need_check_account.wrap_err_with(|| format!("{err}"))? {
+                    return Ok(true);
+                }
+            }
         }
     }
-    Ok(false)
 }
 
 #[tracing::instrument(name = "Searching for a network where an account exists for", skip_all)]
@@ -348,7 +371,26 @@ pub fn find_network_where_account_exist(
 ) -> color_eyre::eyre::Result<Option<crate::config::NetworkConfig>> {
     tracing::Span::current().pb_set_message(new_account_id.as_str());
     tracing::info!(target: "near_teach_me", "Searching for a network where an account exists for {new_account_id} ...");
+    let networks: HashSet<String> = context
+        .config
+        .network_connection
+        .iter()
+        .map(|(_, network_config)| network_config.network_name.clone())
+        .collect();
+    if networks.is_empty() {
+        return Err(color_eyre::eyre::eyre!(
+            "No network connections are configured, so it's impossible to check the existence of the account."
+        ));
+    }
+    let mut checked_networks: HashSet<String> = HashSet::new();
+    let mut unknown_account_result: HashSet<String> = HashSet::new();
     for (_, network_config) in context.config.network_connection.iter() {
+        if checked_networks.contains(&network_config.network_name) {
+            continue;
+        } else {
+            checked_networks.insert(network_config.network_name.clone());
+        }
+
         let result = tokio::runtime::Runtime::new()
             .unwrap()
             .block_on(get_account_state(
@@ -357,17 +399,48 @@ pub fn find_network_where_account_exist(
                 near_primitives::types::BlockReference::latest(),
             ));
 
-        if result.is_ok() {
-            return Ok(Some(network_config.clone()));
-        }
-
-        if let Err(AccountStateError::Cancel) = result {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Operation was canceled by the user"
-            ));
+        match result {
+            Ok(_) => return Ok(Some(network_config.clone())),
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
+                ),
+            )) => {
+                unknown_account_result.insert(network_config.network_name.clone());
+            }
+            Err(_err) => {
+                checked_networks.remove(&network_config.network_name);
+            }
         }
     }
-    Ok(None)
+    if networks == unknown_account_result {
+        Ok(None)
+    } else if unknown_account_result.is_empty() {
+        let mut error_networks: Vec<String> = networks
+            .difference(&unknown_account_result)
+            .cloned()
+            .collect();
+        error_networks.sort();
+
+        Err(color_eyre::eyre::eyre!(
+            "Account information ({new_account_id}) cannot be fetched on the following networks due to errors: {}.",
+            error_networks.join(", "),
+        ))
+    } else {
+        let mut error_networks: Vec<String> = networks
+            .difference(&unknown_account_result)
+            .cloned()
+            .collect();
+        error_networks.sort();
+        let mut unknown_vec: Vec<String> = unknown_account_result.iter().cloned().collect();
+        unknown_vec.sort();
+
+        Err(color_eyre::eyre::eyre!(
+            "Account information ({new_account_id}) cannot be fetched on the following networks due to errors: {}.\nIt was checked that the account does not exist on the following networks: {}.",
+            error_networks.join(", "),
+            unknown_vec.join(", ")
+        ))
+    }
 }
 
 pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
@@ -393,15 +466,16 @@ pub async fn get_account_state(
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<
     near_primitives::views::AccountView,
-    AccountStateError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
 > {
-    loop {
-        tracing::Span::current().pb_set_message(&format!(
-            "<{account_id}> on network <{}> ...",
-            network_config.network_name
-        ));
-        tracing::info!(target: "near_teach_me", "Getting account status information for <{account_id}> on network <{}> ...", network_config.network_name);
+    tracing::Span::current().pb_set_message(&format!(
+        "<{account_id}> on network <{}> ...",
+        network_config.network_name
+    ));
+    tracing::info!(target: "near_teach_me", "Getting account status information for <{account_id}> on network <{}> ...", network_config.network_name);
 
+    let mut retries_left = (0..5).rev();
+    loop {
         let query_view_method_response = view_account(
             format!("{}", network_config.rpc_url),
             &network_config.json_rpc_client(),
@@ -418,11 +492,11 @@ pub async fn get_account_state(
                 {
                     return Ok(account_view);
                 } else {
-                    return Err(AccountStateError::JsonRpcError(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
+                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
                         near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
                             near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
                         ),
-                    ))));
+                    )));
                 }
             }
             Err(
@@ -434,44 +508,21 @@ pub async fn get_account_state(
                     ),
                 ),
             ) => {
-                return Err(AccountStateError::JsonRpcError(err));
+                return Err(err);
             }
-            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                let need_check_account = suspend_tracing_indicatif::<
-                    _,
-                    color_eyre::eyre::Result<bool>,
-                >(|| {
-                    need_check_account(format!(
-                        "\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
-                        network_config.network_name
+            Err(
+                err @ (near_jsonrpc_client::errors::JsonRpcError::TransportError(_)
+                | near_jsonrpc_client::errors::JsonRpcError::ServerError(_)),
+            ) => {
+                if let Some(retries_left) = retries_left.next() {
+                    sleep_after_error(format!(
+                        "(Previous attempt failed with error: `{}`. Will retry {} more times)",
+                        err.to_string().red(),
+                        retries_left
                     ))
-                });
-                if need_check_account.is_err() {
-                    return Err(AccountStateError::Cancel);
-                }
-                if let Ok(false) = need_check_account {
-                    return Err(AccountStateError::JsonRpcError(
-                        near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
-                    ));
-                }
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                let need_check_account = suspend_tracing_indicatif::<
-                    _,
-                    color_eyre::eyre::Result<bool>,
-                >(|| {
-                    need_check_account(format!(
-                        "\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.",
-                        network_config.network_name
-                    ))
-                });
-                if need_check_account.is_err() {
-                    return Err(AccountStateError::Cancel);
-                }
-                if let Ok(false) = need_check_account {
-                    return Err(AccountStateError::JsonRpcError(
-                        near_jsonrpc_client::errors::JsonRpcError::ServerError(err),
-                    ));
+                    .await;
+                } else {
+                    return Err(err);
                 }
             }
         }
@@ -563,7 +614,7 @@ fn need_check_account(message: String) -> color_eyre::eyre::Result<bool> {
         No,
     }
     let select_choose_input = Select::new(
-        &format!("{message}\nDo you want to try again?"),
+        &format!("{message} Do you want to try again?"),
         vec![ConfirmOptions::Yes, ConfirmOptions::No],
     )
     .prompt()?;
