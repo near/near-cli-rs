@@ -533,9 +533,11 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                             near_primitives::views::TxExecutionStatus::Final,
                         ) {
                             Ok(Some(outcome_view)) => outcome_view,
-                            Ok(None) => return Err(color_eyre::eyre::eyre!(
-                                "No execution outcome received for MPC sign request"
-                            )),
+                            Ok(None) => {
+                                return Err(color_eyre::eyre::eyre!(
+                                    "No execution outcome received for MPC sign request"
+                                ));
+                            }
                             Err(error) => return Err(error),
                         };
 

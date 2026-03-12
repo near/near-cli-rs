@@ -61,14 +61,11 @@ impl SendContext {
                     }
                     None => {
                         let tx_hash = signed_transaction.get_hash();
-                        eprintln!(
-                            "\nTransaction sent successfully (wait level: {wait_until:?})."
-                        );
+                        eprintln!("\nTransaction sent successfully (wait level: {wait_until:?}).");
                         eprintln!("Transaction ID: {tx_hash}");
                         eprintln!(
                             "To see the transaction in the transaction explorer, please open this url in your browser:\n{}{}\n",
-                            previous_context.network_config.explorer_transaction_url,
-                            tx_hash,
+                            previous_context.network_config.explorer_transaction_url, tx_hash,
                         );
                     }
                 }
