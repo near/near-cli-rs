@@ -530,8 +530,14 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                         match crate::transaction_signature_options::send::sending_signed_transaction(
                             network_config,
                             &sign_request_tx,
+                            near_primitives::views::TxExecutionStatus::Final,
                         ) {
-                            Ok(outcome_view) => outcome_view,
+                            Ok(Some(outcome_view)) => outcome_view,
+                            Ok(None) => {
+                                return Err(color_eyre::eyre::eyre!(
+                                    "No execution outcome received for MPC sign request"
+                                ));
+                            }
                             Err(error) => return Err(error),
                         };
 
@@ -829,7 +835,7 @@ fn prompt_and_submit(submit_context: super::SubmitContext) -> color_eyre::eyre::
         super::SubmitDiscriminants::Send => {
             super::send::SendContext::from_previous_context(
                 submit_context,
-                &super::send::InteractiveClapContextScopeForSend {},
+                &super::send::InteractiveClapContextScopeForSend { wait_until: None },
             )?;
         }
         super::SubmitDiscriminants::Display => {
