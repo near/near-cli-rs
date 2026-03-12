@@ -1,3 +1,5 @@
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::NewAccountContext)]
 #[interactive_clap(output_context = AddAccessWithLedgerContext)]
@@ -5,18 +7,63 @@ pub struct AddAccessWithLedger {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
+    #[interactive_clap(subcommand)]
+    connection: LedgerConnectionType,
+}
+
+#[derive(Clone)]
+pub struct AddAccessWithLedgerContext {
+    pub config: crate::config::Config,
+    pub new_account_id: crate::types::account_id::AccountId,
+    pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
+    pub on_before_creating_account_callback: super::super::network::OnBeforeCreatingAccountCallback,
+}
+
+impl AddAccessWithLedgerContext {
+    pub fn from_previous_context(
+        previous_context: super::super::NewAccountContext,
+        scope: &<AddAccessWithLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            config: previous_context.config,
+            new_account_id: previous_context.new_account_id,
+            seed_phrase_hd_path: scope.seed_phrase_hd_path.clone(),
+            on_before_creating_account_callback: previous_context
+                .on_before_creating_account_callback,
+        })
+    }
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = AddAccessWithLedgerContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Select Ledger connection type:
+pub enum LedgerConnectionType {
+    #[strum_discriminants(strum(message = "usb        - Connect to Ledger via USB"))]
+    /// Connect to Ledger via USB
+    Usb(UsbAddAccessWithLedger),
+    #[cfg(feature = "ledger-ble")]
+    #[strum_discriminants(strum(message = "bluetooth  - Connect to Ledger via Bluetooth"))]
+    /// Connect to Ledger via Bluetooth
+    Bluetooth(BluetoothAddAccessWithLedger),
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = AddAccessWithLedgerContext)]
+#[interactive_clap(output_context = UsbAddAccessContext)]
+pub struct UsbAddAccessWithLedger {
     #[interactive_clap(named_arg)]
     /// Select network
     network_config: super::super::network::Network,
 }
 
 #[derive(Clone)]
-pub struct AddAccessWithLedgerContext(super::super::SponsorServiceContext);
+pub struct UsbAddAccessContext(super::super::SponsorServiceContext);
 
-impl AddAccessWithLedgerContext {
+impl UsbAddAccessContext {
     pub fn from_previous_context(
-        previous_context: super::super::NewAccountContext,
-        scope: &<AddAccessWithLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        previous_context: AddAccessWithLedgerContext,
+        _scope: &<UsbAddAccessWithLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         eprintln!("Opening the NEAR application... Please approve opening the application");
         near_ledger::open_near_application().map_err(|ledger_error| {
@@ -25,7 +72,7 @@ impl AddAccessWithLedgerContext {
 
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-        let seed_phrase_hd_path = scope.seed_phrase_hd_path.clone();
+        let seed_phrase_hd_path = previous_context.seed_phrase_hd_path.clone();
         eprintln!(
             "Please allow getting the PublicKey on Ledger device (HD Path: {seed_phrase_hd_path})"
         );
@@ -53,8 +100,55 @@ impl AddAccessWithLedgerContext {
     }
 }
 
-impl From<AddAccessWithLedgerContext> for super::super::SponsorServiceContext {
-    fn from(item: AddAccessWithLedgerContext) -> Self {
+impl From<UsbAddAccessContext> for super::super::SponsorServiceContext {
+    fn from(item: UsbAddAccessContext) -> Self {
+        item.0
+    }
+}
+
+#[cfg(feature = "ledger-ble")]
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = AddAccessWithLedgerContext)]
+#[interactive_clap(output_context = BleAddAccessContext)]
+pub struct BluetoothAddAccessWithLedger {
+    #[interactive_clap(named_arg)]
+    /// Select network
+    network_config: super::super::network::Network,
+}
+
+#[cfg(feature = "ledger-ble")]
+#[derive(Clone)]
+pub struct BleAddAccessContext(super::super::SponsorServiceContext);
+
+#[cfg(feature = "ledger-ble")]
+impl BleAddAccessContext {
+    pub fn from_previous_context(
+        previous_context: AddAccessWithLedgerContext,
+        _scope: &<BluetoothAddAccessWithLedger as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let seed_phrase_hd_path = previous_context.seed_phrase_hd_path.clone();
+
+        let public_key = crate::transaction_signature_options::sign_with_ledger::ble_helpers::ble_connect_and_get_public_key(seed_phrase_hd_path.into())?;
+        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+            public_key.to_bytes(),
+        ));
+
+        Ok(Self(super::super::SponsorServiceContext {
+            config: previous_context.config,
+            new_account_id: previous_context.new_account_id,
+            public_key,
+            on_after_getting_network_callback: std::sync::Arc::new(|_network_config| {
+                Ok(String::new())
+            }),
+            on_before_creating_account_callback: previous_context
+                .on_before_creating_account_callback,
+        }))
+    }
+}
+
+#[cfg(feature = "ledger-ble")]
+impl From<BleAddAccessContext> for super::super::SponsorServiceContext {
+    fn from(item: BleAddAccessContext) -> Self {
         item.0
     }
 }
