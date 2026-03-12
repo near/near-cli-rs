@@ -127,7 +127,8 @@ impl StateInitFromBorshBase64Context {
         previous_context: crate::GlobalContext,
         scope: &<StateInitFromBorshBase64 as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let state_init = crate::common::parse_borsh_base64_state_init(scope.state_init_base64.as_bytes())?;
+        let state_init =
+            crate::common::parse_borsh_base64_state_init(scope.state_init_base64.as_bytes())?;
         let receiver_account_id =
             near_primitives::utils::derive_near_deterministic_account_id(&state_init);
         Ok(Self(StateInitDataContext {
@@ -266,6 +267,7 @@ impl DataFromJsonContext {
 #[interactive_clap(input_context = StateInitDataContext)]
 #[interactive_clap(output_context = DepositContext)]
 pub struct Deposit {
+    #[interactive_clap(skip_default_input_arg)]
     pub deposit: crate::types::near_token::NearToken,
     #[interactive_clap(skip_default_input_arg)]
     pub signer_account_id: crate::types::account_id::AccountId,
@@ -274,6 +276,16 @@ pub struct Deposit {
 }
 
 impl Deposit {
+    pub fn input_deposit(
+        _context: &StateInitDataContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
+        Ok(Some(
+            inquire::CustomType::new("What is the deposit for the state init call?")
+                .with_starting_input("0 NEAR")
+                .prompt()?,
+        ))
+    }
+
     pub fn input_signer_account_id(
         context: &StateInitDataContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
