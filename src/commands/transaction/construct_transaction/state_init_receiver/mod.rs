@@ -32,20 +32,10 @@ pub enum StateInitModeCommand {
 #[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
 #[interactive_clap(output_context = StateInitWithContractHashRefContext)]
 pub struct StateInitWithContractHashRef {
-    #[interactive_clap(skip_default_input_arg)]
+    /// Enter the global contract code hash:
     pub hash: crate::types::crypto_hash::CryptoHash,
     #[interactive_clap(subcommand)]
     data: Data,
-}
-
-impl StateInitWithContractHashRef {
-    pub fn input_hash(
-        _context: &super::ConstructTransactionSenderContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::crypto_hash::CryptoHash>> {
-        Ok(Some(
-            inquire::CustomType::new("Enter the global contract code hash:").prompt()?,
-        ))
-    }
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -60,11 +50,12 @@ pub struct StateInitWithContractRefByAccount {
 
 impl StateInitWithContractRefByAccount {
     pub fn input_account_id(
-        _context: &super::ConstructTransactionSenderContext,
+        context: &super::ConstructTransactionSenderContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        Ok(Some(
-            inquire::CustomType::new("Enter the global contract account ID:").prompt()?,
-        ))
+        crate::common::input_signer_account_id_from_used_account_list(
+            &context.global_context.config.credentials_home_dir,
+            "Enter the global contract account ID: ",
+        )
     }
 }
 
@@ -125,20 +116,10 @@ impl StateInitWithContractRefByAccountContext {
 #[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
 #[interactive_clap(output_context = StateInitFromBorshBase64Context)]
 pub struct StateInitFromBorshBase64 {
-    #[interactive_clap(skip_default_input_arg)]
-    pub state_init_base64: String,
+    /// Enter the borsh-base64 encoded StateInit:
+    pub state_init_base64: crate::types::base64_bytes::Base64Bytes,
     #[interactive_clap(named_arg)]
     deposit: Deposit,
-}
-
-impl StateInitFromBorshBase64 {
-    pub fn input_state_init_base64(
-        _context: &super::ConstructTransactionSenderContext,
-    ) -> color_eyre::eyre::Result<Option<String>> {
-        Ok(Some(
-            inquire::Text::new("Enter the borsh-base64 encoded StateInit:").prompt()?,
-        ))
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -149,7 +130,7 @@ impl StateInitFromBorshBase64Context {
         previous_context: super::ConstructTransactionSenderContext,
         scope: &<StateInitFromBorshBase64 as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let state_init = crate::common::parse_borsh_base64_state_init(&scope.state_init_base64)?;
+        let state_init = crate::common::parse_borsh_base64_state_init(scope.state_init_base64.as_bytes())?;
         let receiver_account_id =
             near_primitives::utils::derive_near_deterministic_account_id(&state_init);
         Ok(Self(StateInitDataContext {

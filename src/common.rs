@@ -3172,15 +3172,13 @@ pub fn parse_base64_kv_map(
     Ok(result)
 }
 
-/// Deserializes a `DeterministicAccountStateInit` from a borsh-serialized + base64-encoded string.
+/// Deserializes a `DeterministicAccountStateInit` from borsh-serialized bytes.
 pub fn parse_borsh_base64_state_init(
-    input: &str,
+    bytes: &[u8],
 ) -> color_eyre::eyre::Result<
     near_primitives::deterministic_account_id::DeterministicAccountStateInit,
 > {
     use borsh::BorshDeserialize;
-    let bytes = near_primitives::serialize::from_base64(input.trim())
-        .map_err(|e| color_eyre::eyre::eyre!("Failed to base64-decode state init: {e}"))?;
-    near_primitives::deterministic_account_id::DeterministicAccountStateInit::try_from_slice(&bytes)
+    near_primitives::deterministic_account_id::DeterministicAccountStateInit::try_from_slice(bytes)
         .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-deserialize state init: {e}"))
 }
