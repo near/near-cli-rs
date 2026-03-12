@@ -24,9 +24,10 @@ impl SendContext {
     ) -> color_eyre::eyre::Result<Self> {
         tracing::info!(target: "near_teach_me", "Sending transaction ...");
 
-        let wait_until = scope
+        let wait_until: near_primitives::views::TxExecutionStatus = scope
             .wait_until
             .clone()
+            .or_else(|| previous_context.network_config.tx_wait_until.clone())
             .map(|s| s.into())
             .unwrap_or(near_primitives::views::TxExecutionStatus::Final);
 
@@ -40,23 +41,37 @@ impl SendContext {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                 signed_transaction,
             ) => {
-                let transaction_info = sending_signed_transaction(
+                match sending_signed_transaction(
                     &previous_context.network_config,
                     &signed_transaction,
-                    wait_until,
-                )?;
+                    wait_until.clone(),
+                )? {
+                    Some(transaction_info) => {
+                        crate::common::print_transaction_status(
+                            &transaction_info,
+                            &previous_context.network_config,
+                            previous_context.global_context.verbosity,
+                        )?;
 
-                crate::common::print_transaction_status(
-                    &transaction_info,
-                    &previous_context.network_config,
-                    previous_context.global_context.verbosity,
-                )?;
-
-                (previous_context.on_after_sending_transaction_callback)(
-                    &transaction_info,
-                    &previous_context.network_config,
-                )
-                .map_err(color_eyre::Report::msg)?;
+                        (previous_context.on_after_sending_transaction_callback)(
+                            &transaction_info,
+                            &previous_context.network_config,
+                        )
+                        .map_err(color_eyre::Report::msg)?;
+                    }
+                    None => {
+                        let tx_hash = signed_transaction.get_hash();
+                        eprintln!(
+                            "\nTransaction sent successfully (wait level: {wait_until:?})."
+                        );
+                        eprintln!("Transaction ID: {tx_hash}");
+                        eprintln!(
+                            "To see the transaction in the transaction explorer, please open this url in your browser:\n{}{}\n",
+                            previous_context.network_config.explorer_transaction_url,
+                            tx_hash,
+                        );
+                    }
+                }
             }
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
@@ -108,7 +123,7 @@ pub fn sending_signed_transaction(
     network_config: &crate::config::NetworkConfig,
     signed_transaction: &near_primitives::transaction::SignedTransaction,
     wait_until: near_primitives::views::TxExecutionStatus,
-) -> color_eyre::Result<near_primitives::views::FinalExecutionOutcomeView> {
+) -> color_eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
     tracing::Span::current().pb_set_message(network_config.rpc_url.as_str());
     tracing::info!(target: "near_teach_me", "Broadcasting transaction via RPC {}", network_config.rpc_url.as_str());
 
@@ -134,10 +149,7 @@ pub fn sending_signed_transaction(
             Ok(response) => {
                 break response
                     .final_execution_outcome
-                    .ok_or_else(|| {
-                        color_eyre::eyre::eyre!("No final execution outcome received from the RPC")
-                    })?
-                    .into_outcome();
+                    .map(|outcome| outcome.into_outcome());
             }
             Err(ref err) => match crate::common::rpc_transaction_error(err) {
                 Ok(message) => {

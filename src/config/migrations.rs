@@ -171,6 +171,7 @@ impl From<NetworkConfigV3> for NetworkConfigV4 {
             staking_pools_factory_account_id: network_config.staking_pools_factory_account_id,
             coingecko_url: network_config.coingecko_url,
             mpc_contract_account_id,
+            tx_wait_until: None,
         }
     }
 }
