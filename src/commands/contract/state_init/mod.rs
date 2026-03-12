@@ -156,7 +156,7 @@ pub enum Data {
     ))]
     DataFromFile(DataFromFile),
     #[strum_discriminants(strum(
-        message = "data-from-json - Provide base64-encoded key-value JSON data inline (e.g. '{\"AAEC\": \"AwQF\"})')"
+        message = "data-from-json - Provide base64-encoded key-value JSON inline"
     ))]
     DataFromJson(DataFromJson),
 }
@@ -165,7 +165,7 @@ pub enum Data {
 #[interactive_clap(input_context = StateInitModeContext)]
 #[interactive_clap(output_context = DataFromFileContext)]
 pub struct DataFromFile {
-    /// Enter the path to the file with base64-encoded key-value JSON data :
+    /// Enter the path to the file with base64-encoded key-value JSON data:
     pub file_path: crate::types::path_buf::PathBuf,
     #[interactive_clap(named_arg)]
     deposit: Deposit,
@@ -175,7 +175,7 @@ pub struct DataFromFile {
 #[interactive_clap(input_context = StateInitModeContext)]
 #[interactive_clap(output_context = DataFromJsonContext)]
 pub struct DataFromJson {
-    /// Enter the base64-encoded key-value JSON data (e.g. '{\"AAEC\": \"AwQF\"}'):
+    /// Enter the base64-encoded key-value JSON data (e.g. '{"AAEC": "AwQF"}'):
     pub data: String,
     #[interactive_clap(named_arg)]
     deposit: Deposit,

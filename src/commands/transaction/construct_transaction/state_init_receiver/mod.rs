@@ -160,7 +160,7 @@ pub enum Data {
     ))]
     DataFromFile(DataFromFile),
     #[strum_discriminants(strum(
-        message = "data-from-json - Provide base64-encoded key-value JSON data inline (e.g. '{\"AAEC\": \"AwQF\"})')"
+        message = "data-from-json - Provide base64-encoded key-value JSON inline"
     ))]
     DataFromJson(DataFromJson),
 }
