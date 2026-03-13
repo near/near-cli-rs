@@ -204,13 +204,13 @@ impl From<StateInitFromBorshBase64FileContext> for StateInitDataContext {
 /// How would you like to provide the initial state data?
 pub enum Data {
     #[strum_discriminants(strum(
-        message = "data-from-file - Read base64-encoded key-value JSON data from a file"
-    ))]
-    DataFromFile(DataFromFile),
-    #[strum_discriminants(strum(
         message = "data-from-json - Provide base64-encoded key-value JSON inline"
     ))]
     DataFromJson(DataFromJson),
+    #[strum_discriminants(strum(
+        message = "data-from-file - Read base64-encoded key-value JSON data from a file"
+    ))]
+    DataFromFile(DataFromFile),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
