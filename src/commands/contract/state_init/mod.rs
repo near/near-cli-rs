@@ -23,9 +23,13 @@ pub enum StateInitModeCommand {
     ))]
     UseGlobalAccountId(StateInitWithContractRefByAccount),
     #[strum_discriminants(strum(
-        message = "from-borsh-base64     - Provide borsh serialized base64 encoded state init"
+        message = "from-borsh-base64      - Provide borsh serialized base64 encoded state init"
     ))]
     FromBorshBase64(StateInitFromBorshBase64),
+    #[strum_discriminants(strum(
+        message = "from-borsh-base64-file - Read borsh serialized base64 encoded state init from a file"
+    ))]
+    FromBorshBase64File(StateInitFromBorshBase64File),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -141,6 +145,49 @@ impl StateInitFromBorshBase64Context {
 
 impl From<StateInitFromBorshBase64Context> for StateInitDataContext {
     fn from(item: StateInitFromBorshBase64Context) -> Self {
+        item.0
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = StateInitFromBorshBase64FileContext)]
+pub struct StateInitFromBorshBase64File {
+    /// Enter the path to a file containing borsh-base64 encoded StateInit:
+    pub file_path: crate::types::path_buf::PathBuf,
+    #[interactive_clap(named_arg)]
+    deposit: Deposit,
+}
+
+#[derive(Debug, Clone)]
+pub struct StateInitFromBorshBase64FileContext(StateInitDataContext);
+
+impl StateInitFromBorshBase64FileContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<StateInitFromBorshBase64File as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let base64_str = std::fs::read_to_string(&scope.file_path).wrap_err_with(|| {
+            format!(
+                "Failed to open or read the file: {}",
+                scope.file_path.0.display()
+            )
+        })?;
+        let data = near_primitives::serialize::from_base64(base64_str.trim())
+            .wrap_err("Failed to decode base64 from file content")?;
+        let state_init = crate::common::parse_borsh_base64_state_init(&data)?;
+        let receiver_account_id =
+            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        Ok(Self(StateInitDataContext {
+            global_context: previous_context,
+            state_init,
+            receiver_account_id,
+        }))
+    }
+}
+
+impl From<StateInitFromBorshBase64FileContext> for StateInitDataContext {
+    fn from(item: StateInitFromBorshBase64FileContext) -> Self {
         item.0
     }
 }
