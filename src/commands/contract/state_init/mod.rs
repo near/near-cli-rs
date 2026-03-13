@@ -269,10 +269,9 @@ impl DataFromJsonContext {
 pub struct Deposit {
     #[interactive_clap(skip_default_input_arg)]
     pub deposit: crate::types::near_token::NearToken,
-    #[interactive_clap(skip_default_input_arg)]
-    pub signer_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+    /// What is the signer account ID?
+    sign_as: SignerAccountId,
 }
 
 impl Deposit {
@@ -285,15 +284,6 @@ impl Deposit {
                 .prompt()?,
         ))
     }
-
-    pub fn input_signer_account_id(
-        context: &StateInitDataContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_signer_account_id_from_used_account_list(
-            &context.global_context.config.credentials_home_dir,
-            "What is the signer account ID?",
-        )
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -302,7 +292,6 @@ pub struct DepositContext {
     pub state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit,
     pub receiver_account_id: near_primitives::types::AccountId,
     pub deposit: near_token::NearToken,
-    pub signer_account_id: near_primitives::types::AccountId,
 }
 
 impl DepositContext {
@@ -315,13 +304,59 @@ impl DepositContext {
             state_init: previous_context.state_init,
             receiver_account_id: previous_context.receiver_account_id,
             deposit: scope.deposit.into(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = DepositContext)]
+#[interactive_clap(output_context = SignerAccountIdContext)]
+pub struct SignerAccountId {
+    #[interactive_clap(skip_default_input_arg)]
+    /// What is the signer account ID?
+    signer_account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(named_arg)]
+    /// Select network
+    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+}
+
+impl SignerAccountId {
+    pub fn input_signer_account_id(
+        context: &DepositContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        crate::common::input_signer_account_id_from_used_account_list(
+            &context.global_context.config.credentials_home_dir,
+            "What is the signer account ID?",
+        )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SignerAccountIdContext {
+    pub global_context: crate::GlobalContext,
+    pub state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+    pub receiver_account_id: near_primitives::types::AccountId,
+    pub deposit: near_token::NearToken,
+    pub signer_account_id: near_primitives::types::AccountId,
+}
+
+impl SignerAccountIdContext {
+    pub fn from_previous_context(
+        previous_context: DepositContext,
+        scope: &<SignerAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            global_context: previous_context.global_context,
+            state_init: previous_context.state_init,
+            receiver_account_id: previous_context.receiver_account_id,
+            deposit: previous_context.deposit,
             signer_account_id: scope.signer_account_id.clone().into(),
         })
     }
 }
 
-impl From<DepositContext> for crate::commands::ActionContext {
-    fn from(item: DepositContext) -> Self {
+impl From<SignerAccountIdContext> for crate::commands::ActionContext {
+    fn from(item: SignerAccountIdContext) -> Self {
         let signer_id = item.signer_account_id.clone();
         let receiver_id = item.receiver_account_id.clone();
 
