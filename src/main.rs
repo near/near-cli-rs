@@ -80,6 +80,10 @@ fn main() -> crate::common::CliResult {
         crate::common::create_used_account_list_from_legacy_keychain(&config.credentials_home_dir)?;
     }
 
+    if !crate::common::is_used_ft_contract_account_list_exist(&config.credentials_home_dir) {
+        crate::common::create_used_ft_contract_account_list(&config.credentials_home_dir)?;
+    }
+
     #[cfg(not(debug_assertions))]
     let display_env_section = false;
     #[cfg(debug_assertions)]

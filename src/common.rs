@@ -3167,6 +3167,72 @@ fn input_account_id_from_used_account_list(
     Ok(Some(account_id))
 }
 
+fn get_used_ft_contract_account_list_path(
+    credentials_home_dir: &std::path::Path,
+) -> std::path::PathBuf {
+    credentials_home_dir.join("ft_contracts.json")
+}
+
+pub fn is_used_ft_contract_account_list_exist(credentials_home_dir: &std::path::Path) -> bool {
+    get_used_ft_contract_account_list_path(credentials_home_dir).exists()
+}
+
+pub fn create_used_ft_contract_account_list(
+    credentials_home_dir: &std::path::Path,
+) -> color_eyre::eyre::Result<()> {
+    let ft_contract_account_list_path =
+        get_used_ft_contract_account_list_path(credentials_home_dir);
+    std::fs::create_dir_all(credentials_home_dir)?;
+    std::fs::File::create(&ft_contract_account_list_path).wrap_err_with(|| {
+        format!(
+            "Failed to create file: {:?}",
+            &ft_contract_account_list_path
+        )
+    })?;
+    Ok(())
+}
+
+pub fn get_used_ft_contract_account_list(
+    credentials_home_dir: &std::path::Path,
+) -> VecDeque<crate::types::ft_properties::FtContract> {
+    let ft_contract_account_list_path =
+        get_used_ft_contract_account_list_path(credentials_home_dir);
+    serde_json::from_str(
+        std::fs::read_to_string(ft_contract_account_list_path)
+            .as_deref()
+            .unwrap_or("[]"),
+    )
+    .unwrap_or_default()
+}
+
+pub fn update_used_ft_contract_account_list(
+    credentials_home_dir: &std::path::Path,
+    new_ft_contract_account: &crate::types::ft_properties::FtContract,
+) {
+    let mut ft_contract_accounts_list = get_used_ft_contract_account_list(credentials_home_dir);
+
+    let used_ft_contract_account = if let Some(used_ft_contract_account) = ft_contract_accounts_list
+        .iter()
+        .position(|ft_contract_account| {
+            ft_contract_account.ft_contract_account_id
+                == new_ft_contract_account.ft_contract_account_id
+        })
+        .and_then(|position| ft_contract_accounts_list.remove(position))
+    {
+        used_ft_contract_account
+    } else {
+        new_ft_contract_account.clone()
+    };
+
+    ft_contract_accounts_list.push_front(used_ft_contract_account);
+
+    let ft_contract_account_list_path =
+        get_used_ft_contract_account_list_path(credentials_home_dir);
+    if let Ok(ft_contract_account_list_buf) = serde_json::to_string(&ft_contract_accounts_list) {
+        let _ = std::fs::write(ft_contract_account_list_path, ft_contract_account_list_buf);
+    }
+}
+
 pub fn save_cli_command(cli_cmd_str: &str) {
     let tmp_file_path = std::env::temp_dir().join(FINAL_COMMAND_FILE_NAME);
 

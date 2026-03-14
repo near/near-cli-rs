@@ -1,4 +1,6 @@
-use color_eyre::eyre::Context;
+use std::str::FromStr;
+
+use color_eyre::eyre::{Context, ContextCompat};
 use serde_json::{Value, json};
 
 use crate::common::CallResultExt;
@@ -27,7 +29,7 @@ pub struct SendFtCommand {
 pub struct SendFtCommandContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
-    ft_contract_account_id: near_primitives::types::AccountId,
+    ft_contract: crate::types::ft_properties::FtContract,
     receiver_account_id: near_primitives::types::AccountId,
 }
 
@@ -36,10 +38,40 @@ impl SendFtCommandContext {
         previous_context: super::TokensCommandsContext,
         scope: &<SendFtCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        let ft_contract_account_id: near_primitives::types::AccountId =
+            scope.ft_contract_account_id.clone().into();
+
+        let network_config = crate::common::find_network_where_account_exist(
+            &previous_context.global_context,
+            ft_contract_account_id.clone(),
+        )?
+        .wrap_err_with(|| {
+            format!(
+                "Contract <{}> does not exist in networks",
+                ft_contract_account_id
+            )
+        })?;
+
+        let ft_metadata = crate::types::ft_properties::params_ft_metadata(
+            ft_contract_account_id.clone(),
+            &network_config,
+            near_primitives::types::Finality::Final.into(),
+        )?;
+
+        let ft_contract = crate::types::ft_properties::FtContract {
+            ft_metadata,
+            ft_contract_account_id,
+        };
+
+        crate::common::update_used_ft_contract_account_list(
+            &previous_context.global_context.config.credentials_home_dir,
+            &ft_contract,
+        );
+
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id,
-            ft_contract_account_id: scope.ft_contract_account_id.clone().into(),
+            ft_contract,
             receiver_account_id: scope.receiver_account_id.clone().into(),
         })
     }
@@ -49,10 +81,50 @@ impl SendFtCommand {
     pub fn input_ft_contract_account_id(
         context: &super::TokensCommandsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_non_signer_account_id_from_used_account_list(
+        let used_ft_contract_account_list = crate::common::get_used_ft_contract_account_list(
             &context.global_context.config.credentials_home_dir,
-            "What is the ft-contract account ID?",
         )
+        .into_iter()
+        .map(|ft_contract_account| {
+            format!(
+                "{} ({})",
+                ft_contract_account.ft_metadata.symbol, ft_contract_account.ft_contract_account_id
+            )
+        })
+        .collect::<Vec<_>>();
+        let account_id_str = match inquire::Text::new("What is the ft-contract account ID?")
+            .with_autocomplete(move |val: &str| {
+                Ok(used_ft_contract_account_list
+                    .iter()
+                    .filter(|s| s.contains(val))
+                    .cloned()
+                    .collect())
+            })
+            .with_validator(|ft_contract_account_str: &str| {
+                let account_id_str =
+                    &get_account_id_str_from_ft_contract_account_str(ft_contract_account_str);
+
+                match near_primitives::types::AccountId::validate(account_id_str) {
+                    Ok(_) => Ok(inquire::validator::Validation::Valid),
+                    Err(err) => Ok(inquire::validator::Validation::Invalid(
+                        inquire::validator::ErrorMessage::Custom(format!(
+                            "Invalid account ID: {err}"
+                        )),
+                    )),
+                }
+            })
+            .prompt()
+        {
+            Ok(value) => get_account_id_str_from_ft_contract_account_str(&value),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => return Ok(None),
+            Err(err) => return Err(err.into()),
+        };
+        let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;
+
+        Ok(Some(account_id))
     }
 
     pub fn input_receiver_account_id(
@@ -165,4 +237,13 @@ fn get_ft_balance_for_account(
         decimals,
         symbol,
     ))
+}
+
+fn get_account_id_str_from_ft_contract_account_str(ft_contract_account_str: &str) -> String {
+    ft_contract_account_str
+        .split_whitespace()
+        .last()
+        .unwrap_or_default()
+        .trim_matches(|c| c == '(' || c == ')')
+        .to_string()
 }
