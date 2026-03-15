@@ -62,7 +62,7 @@ pub enum TokensActions {
         message = "send-ft           - The transfer is carried out in FT tokens"
     ))]
     /// The transfer is carried out in FT tokens
-    SendFt(self::send_ft::SendFtCommand),
+    SendFt(self::send_ft::FtContract),
     #[strum_discriminants(strum(
         message = "send-nft          - The transfer is carried out in NFT tokens"
     ))]

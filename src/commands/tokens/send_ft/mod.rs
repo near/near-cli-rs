@@ -12,51 +12,66 @@ mod amount_ft;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
-#[interactive_clap(output_context = SendFtCommandContext)]
-pub struct SendFtCommand {
+#[interactive_clap(output_context = FtContractContext)]
+pub struct FtContract {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the ft-contract account ID?
     ft_contract_account_id: crate::types::account_id::AccountId,
-    #[interactive_clap(skip_default_input_arg)]
-    /// What is the receiver account ID?
-    receiver_account_id: crate::types::account_id::AccountId,
-    #[interactive_clap(subargs)]
-    /// Specify amount FT
-    amount_ft: self::amount_ft::AmountFt,
+    #[interactive_clap(named_arg)]
+    /// Specify sending FT command parameters:
+    send_ft_command: SendFtCommand,
 }
 
 #[derive(Debug, Clone)]
-pub struct SendFtCommandContext {
+pub struct FtContractContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     ft_contract: crate::types::ft_properties::FtContract,
-    receiver_account_id: near_primitives::types::AccountId,
 }
 
-impl SendFtCommandContext {
+impl FtContractContext {
     pub fn from_previous_context(
         previous_context: super::TokensCommandsContext,
-        scope: &<SendFtCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<FtContract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let ft_contract_account_id: near_primitives::types::AccountId =
             scope.ft_contract_account_id.clone().into();
 
-        let network_config = crate::common::find_network_where_account_exist(
-            &previous_context.global_context,
-            ft_contract_account_id.clone(),
-        )?
-        .wrap_err_with(|| {
-            format!(
-                "Contract <{}> does not exist in networks",
-                ft_contract_account_id
+        let hash_map: std::collections::HashMap<
+            near_primitives::types::AccountId,
+            crate::types::ft_properties::FtMetadata,
+        > = crate::common::get_used_ft_contract_account_list(
+            &previous_context.global_context.config.credentials_home_dir,
+        )
+        .into_iter()
+        .map(|ft_contract| {
+            (
+                ft_contract.ft_contract_account_id.clone(),
+                ft_contract.ft_metadata.clone(),
             )
-        })?;
+        })
+        .collect();
 
-        let ft_metadata = crate::types::ft_properties::params_ft_metadata(
-            ft_contract_account_id.clone(),
-            &network_config,
-            near_primitives::types::Finality::Final.into(),
-        )?;
+        let ft_metadata = if let Some(ft_metadata) = hash_map.get(&ft_contract_account_id) {
+            ft_metadata.clone()
+        } else {
+            let network_config = crate::common::find_network_where_account_exist(
+                &previous_context.global_context,
+                ft_contract_account_id.clone(),
+            )?
+            .wrap_err_with(|| {
+                format!(
+                    "Contract <{}> does not exist in networks",
+                    ft_contract_account_id
+                )
+            })?;
+
+            crate::types::ft_properties::params_ft_metadata(
+                ft_contract_account_id.clone(),
+                &network_config,
+                near_primitives::types::Finality::Final.into(),
+            )?
+        };
 
         let ft_contract = crate::types::ft_properties::FtContract {
             ft_metadata,
@@ -72,12 +87,11 @@ impl SendFtCommandContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id,
             ft_contract,
-            receiver_account_id: scope.receiver_account_id.clone().into(),
         })
     }
 }
 
-impl SendFtCommand {
+impl FtContract {
     pub fn input_ft_contract_account_id(
         context: &super::TokensCommandsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
@@ -126,9 +140,45 @@ impl SendFtCommand {
 
         Ok(Some(account_id))
     }
+}
 
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = FtContractContext)]
+#[interactive_clap(output_context = SendFtCommandContext)]
+pub struct SendFtCommand {
+    #[interactive_clap(skip_default_input_arg)]
+    /// What is the receiver account ID?
+    receiver_account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(subargs)]
+    /// Specify amount FT
+    amount_ft: self::amount_ft::AmountFt,
+}
+
+#[derive(Debug, Clone)]
+pub struct SendFtCommandContext {
+    global_context: crate::GlobalContext,
+    signer_account_id: near_primitives::types::AccountId,
+    ft_contract: crate::types::ft_properties::FtContract,
+    receiver_account_id: near_primitives::types::AccountId,
+}
+
+impl SendFtCommandContext {
+    pub fn from_previous_context(
+        previous_context: FtContractContext,
+        scope: &<SendFtCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.signer_account_id,
+            ft_contract: previous_context.ft_contract,
+            receiver_account_id: scope.receiver_account_id.clone().into(),
+        })
+    }
+}
+
+impl SendFtCommand {
     pub fn input_receiver_account_id(
-        context: &super::TokensCommandsContext,
+        context: &FtContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         crate::common::input_non_signer_account_id_from_used_account_list(
             &context.global_context.config.credentials_home_dir,
