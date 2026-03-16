@@ -119,8 +119,8 @@ impl StateInitWithContractRefByAccountContext {
 pub struct StateInitFromBorshBase64 {
     /// Enter the borsh-base64 encoded StateInit:
     pub state_init_base64: crate::types::base64_bytes::Base64Bytes,
-    #[interactive_clap(named_arg)]
-    deposit: Deposit,
+    #[interactive_clap(subcommand)]
+    action: StateInitAction,
 }
 
 #[derive(Debug, Clone)]
@@ -155,8 +155,8 @@ impl From<StateInitFromBorshBase64Context> for StateInitDataContext {
 pub struct StateInitFromBorshBase64File {
     /// Enter the path to a file containing borsh-base64 encoded StateInit:
     pub file_path: crate::types::path_buf::PathBuf,
-    #[interactive_clap(named_arg)]
-    deposit: Deposit,
+    #[interactive_clap(subcommand)]
+    action: StateInitAction,
 }
 
 #[derive(Debug, Clone)]
@@ -214,8 +214,8 @@ pub enum Data {
 pub struct DataFromFile {
     /// Enter the path to the file with base64-encoded key-value JSON data:
     pub file_path: crate::types::path_buf::PathBuf,
-    #[interactive_clap(named_arg)]
-    deposit: Deposit,
+    #[interactive_clap(subcommand)]
+    action: StateInitAction,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -224,8 +224,8 @@ pub struct DataFromFile {
 pub struct DataFromJson {
     /// Enter the base64-encoded key-value JSON data (e.g. '{"AAEC": "AwQF"}'):
     pub data: String,
-    #[interactive_clap(named_arg)]
-    deposit: Deposit,
+    #[interactive_clap(subcommand)]
+    action: StateInitAction,
 }
 
 #[derive(Debug, Clone)]
@@ -307,6 +307,123 @@ impl DataFromJsonContext {
             previous_context.global_context,
             data,
         )?))
+    }
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = StateInitDataContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[non_exhaustive]
+/// What would you like to do with the state-init?
+pub enum StateInitAction {
+    #[strum_discriminants(strum(
+        message = "send  - Submit a transaction to initialize the deterministic account"
+    ))]
+    /// Submit a transaction to initialize the deterministic account
+    Send(Deposit),
+    #[strum_discriminants(strum(message = "print - Print state-init details"))]
+    /// Print state-init details
+    Print(Print),
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = StateInitDataContext)]
+pub struct Print {
+    #[interactive_clap(subcommand)]
+    action: PrintAction,
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = StateInitDataContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+#[non_exhaustive]
+/// What would you like to print?
+pub enum PrintAction {
+    #[strum_discriminants(strum(
+        message = "account-id - Print the derived deterministic account ID"
+    ))]
+    /// Print the derived deterministic account ID
+    AccountId(PrintAccountId),
+    #[strum_discriminants(strum(
+        message = "state-init - Print the borsh-base64 encoded state-init"
+    ))]
+    /// Print the borsh-base64 encoded state-init
+    StateInit(PrintStateInit),
+    #[strum_discriminants(strum(message = "kv-map     - Print the key-value data map"))]
+    /// Print the key-value data map
+    KvMap(PrintKvMap),
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = StateInitDataContext)]
+#[interactive_clap(output_context = PrintAccountIdContext)]
+pub struct PrintAccountId {}
+
+#[derive(Debug, Clone)]
+pub struct PrintAccountIdContext;
+
+impl PrintAccountIdContext {
+    pub fn from_previous_context(
+        previous_context: StateInitDataContext,
+        _scope: &<PrintAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        println!("{}", previous_context.receiver_account_id);
+        Ok(Self)
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = StateInitDataContext)]
+#[interactive_clap(output_context = PrintStateInitContext)]
+pub struct PrintStateInit {}
+
+#[derive(Debug, Clone)]
+pub struct PrintStateInitContext;
+
+impl PrintStateInitContext {
+    pub fn from_previous_context(
+        previous_context: StateInitDataContext,
+        _scope: &<PrintStateInit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let bytes = borsh::to_vec(&previous_context.state_init)
+            .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-serialize state-init: {e}"))?;
+        println!("{}", near_primitives::serialize::to_base64(&bytes));
+        Ok(Self)
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = StateInitDataContext)]
+#[interactive_clap(output_context = PrintKvMapContext)]
+pub struct PrintKvMap {}
+
+#[derive(Debug, Clone)]
+pub struct PrintKvMapContext;
+
+impl PrintKvMapContext {
+    pub fn from_previous_context(
+        previous_context: StateInitDataContext,
+        _scope: &<PrintKvMap as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let data = match &previous_context.state_init {
+            near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(v1) => {
+                &v1.data
+            }
+        };
+        let map: std::collections::BTreeMap<String, String> = data
+            .iter()
+            .map(|(k, v)| {
+                (
+                    near_primitives::serialize::to_base64(k),
+                    near_primitives::serialize::to_base64(v),
+                )
+            })
+            .collect();
+        println!(
+            "{}",
+            serde_json::to_string(&map).expect("BTreeMap<String, String> should be serializable")
+        );
+        Ok(Self)
     }
 }
 
