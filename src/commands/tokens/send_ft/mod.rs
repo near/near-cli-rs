@@ -106,28 +106,28 @@ impl FtContract {
             )
         })
         .collect::<Vec<_>>();
-        let account_id_str = match inquire::Text::new("What is the ft-contract account ID?")
-            .with_autocomplete(move |val: &str| {
-                Ok(used_ft_contract_account_list
-                    .iter()
-                    .filter(|s| s.contains(val))
-                    .cloned()
-                    .collect())
-            })
-            .with_validator(|ft_contract_account_str: &str| {
-                let account_id_str =
-                    &get_account_id_str_from_ft_contract_account_str(ft_contract_account_str);
+        let account_id_str = match inquire::Text::new(
+            "Select from the list or enter a different ft-contract account ID:",
+        )
+        .with_autocomplete(move |val: &str| {
+            Ok(used_ft_contract_account_list
+                .iter()
+                .filter(|s| s.to_lowercase().contains(&val.to_lowercase()))
+                .cloned()
+                .collect())
+        })
+        .with_validator(|ft_contract_account_str: &str| {
+            let account_id_str =
+                &get_account_id_str_from_ft_contract_account_str(ft_contract_account_str);
 
-                match near_primitives::types::AccountId::validate(account_id_str) {
-                    Ok(_) => Ok(inquire::validator::Validation::Valid),
-                    Err(err) => Ok(inquire::validator::Validation::Invalid(
-                        inquire::validator::ErrorMessage::Custom(format!(
-                            "Invalid account ID: {err}"
-                        )),
-                    )),
-                }
-            })
-            .prompt()
+            match near_primitives::types::AccountId::validate(account_id_str) {
+                Ok(_) => Ok(inquire::validator::Validation::Valid),
+                Err(err) => Ok(inquire::validator::Validation::Invalid(
+                    inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
+                )),
+            }
+        })
+        .prompt()
         {
             Ok(value) => get_account_id_str_from_ft_contract_account_str(&value),
             Err(
