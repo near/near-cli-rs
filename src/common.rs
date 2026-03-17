@@ -3174,21 +3174,98 @@ fn get_used_ft_contract_account_list_path(
 }
 
 pub fn is_used_ft_contract_account_list_exist(credentials_home_dir: &std::path::Path) -> bool {
-    get_used_ft_contract_account_list_path(credentials_home_dir).exists()
-}
-
-pub fn create_used_ft_contract_account_list(
-    credentials_home_dir: &std::path::Path,
-) -> color_eyre::eyre::Result<()> {
     let ft_contract_account_list_path =
         get_used_ft_contract_account_list_path(credentials_home_dir);
+    if !ft_contract_account_list_path.exists() {
+        return false;
+    }
+
+    match std::fs::read_to_string(&ft_contract_account_list_path) {
+        Ok(content) => {
+            serde_json::from_str::<VecDeque<crate::types::ft_properties::FtContract>>(&content)
+                .map(|list| !list.is_empty())
+                .unwrap_or(false)
+        }
+        Err(_) => false,
+    }
+}
+
+fn get_top_ft_tokens_from_nearblocks() -> Result<
+    VecDeque<crate::types::ft_properties::FtContract>,
+    Box<dyn std::error::Error + Send + Sync>,
+> {
+    #[derive(serde::Deserialize)]
+    struct ApiResponse {
+        tokens: VecDeque<crate::types::ft_properties::FtContract>,
+    }
+
+    let url = url::Url::parse("https://api.nearblocks.io/v1/fts")?;
+    let mut last_error_message = String::new();
+
+    for _ in 0..10 {
+        match reqwest::blocking::get(url.clone()) {
+            Ok(response) => {
+                if response.status().is_success() {
+                    match response.json::<ApiResponse>() {
+                        Ok(data) => return Ok(data.tokens),
+                        Err(err) => {
+                            last_error_message = format!(
+                                "Failed to parse JSON response from nearblocks.io API: {err}"
+                            );
+                        }
+                    }
+                } else {
+                    last_error_message = format!(
+                        "HTTP error from nearblocks.io API: {} - {}",
+                        response.status(),
+                        response
+                            .text()
+                            .unwrap_or_else(|_| "Unable to read response body".to_string())
+                    );
+                }
+            }
+            Err(err) => {
+                last_error_message =
+                    format!("Failed to get response from nearblocks.io API: {err}");
+            }
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+
+    Err(last_error_message.into())
+}
+
+pub fn create_used_ft_contract_account_list(credentials_home_dir: &std::path::Path) -> CliResult {
+    const FT_CONTRACT_ACCOUNTS_LIST_SIZE_CAP: usize = 50;
+
+    let ft_contract_account_list_path =
+        get_used_ft_contract_account_list_path(credentials_home_dir);
+
     std::fs::create_dir_all(credentials_home_dir)?;
-    std::fs::File::create(&ft_contract_account_list_path).wrap_err_with(|| {
-        format!(
-            "Failed to create file: {:?}",
-            &ft_contract_account_list_path
-        )
-    })?;
+
+    if let Ok(ft_contract_accounts_list) = get_top_ft_tokens_from_nearblocks() {
+        let ft_contract_account_list_buf = serde_json::to_string(
+            &ft_contract_accounts_list
+                .into_iter()
+                .take(FT_CONTRACT_ACCOUNTS_LIST_SIZE_CAP)
+                .collect::<VecDeque<_>>(),
+        )?;
+        std::fs::write(&ft_contract_account_list_path, ft_contract_account_list_buf)
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to write to file: {}",
+                    ft_contract_account_list_path.display()
+                )
+            })?;
+    } else {
+        std::fs::File::create(&ft_contract_account_list_path).wrap_err_with(|| {
+            format!(
+                "Failed to create file: {}",
+                ft_contract_account_list_path.display()
+            )
+        })?;
+    }
+
     Ok(())
 }
 

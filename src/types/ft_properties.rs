@@ -225,7 +225,9 @@ pub fn params_ft_metadata(
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct FtContract {
+    #[serde(flatten)]
     pub ft_metadata: FtMetadata,
+    #[serde(rename = "contract")]
     pub ft_contract_account_id: near_primitives::types::AccountId,
 }
 
