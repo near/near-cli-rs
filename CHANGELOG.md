@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0](https://github.com/near/near-cli-rs/compare/v0.24.0...v0.25.0) - 2026-03-18
+
+### Added
+
+- Added `send-tf-call` command (`ft_transfer_call` function call) to `tokens` subcommand ([#576](https://github.com/near/near-cli-rs/pull/576))
+- *(ledger)* BLE support ([#570](https://github.com/near/near-cli-rs/pull/570))
+- Allow custom input as method name ([#568](https://github.com/near/near-cli-rs/pull/568))
+
+### Fixed
+
+- Fixed exiting the interactive account verification survey ([#558](https://github.com/near/near-cli-rs/pull/558))
+- typo in `function.kind` check ([#572](https://github.com/near/near-cli-rs/pull/572))
+
+### Other
+
+- *(docs)* extension executable name ([#573](https://github.com/near/near-cli-rs/pull/573))
+
 ## [0.24.0](https://github.com/near/near-cli-rs/compare/v0.23.7...v0.24.0) - 2026-02-27
 
 ### Added
