@@ -3190,16 +3190,14 @@ pub fn is_used_ft_contract_account_list_exist(credentials_home_dir: &std::path::
     }
 }
 
-fn get_top_ft_tokens_from_nearblocks() -> Result<
-    VecDeque<crate::types::ft_properties::FtContract>,
-    Box<dyn std::error::Error + Send + Sync>,
-> {
+fn get_top_ft_tokens_from_nearblocks()
+-> color_eyre::eyre::Result<VecDeque<crate::types::ft_properties::FtContract>, String> {
     #[derive(serde::Deserialize)]
     struct ApiResponse {
         tokens: VecDeque<crate::types::ft_properties::FtContract>,
     }
 
-    let url = url::Url::parse("https://api.nearblocks.io/v1/fts")?;
+    let url = url::Url::parse("https://api.nearblocks.io/v1/fts").map_err(|err| err.to_string())?;
     let mut last_error_message = String::new();
 
     for _ in 0..10 {
@@ -3209,9 +3207,9 @@ fn get_top_ft_tokens_from_nearblocks() -> Result<
                     match response.json::<ApiResponse>() {
                         Ok(data) => return Ok(data.tokens),
                         Err(err) => {
-                            last_error_message = format!(
+                            return Err(format!(
                                 "Failed to parse JSON response from nearblocks.io API: {err}"
-                            );
+                            ));
                         }
                     }
                 } else {
@@ -3232,7 +3230,7 @@ fn get_top_ft_tokens_from_nearblocks() -> Result<
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
 
-    Err(last_error_message.into())
+    Err(last_error_message)
 }
 
 pub fn create_used_ft_contract_account_list(credentials_home_dir: &std::path::Path) -> CliResult {
