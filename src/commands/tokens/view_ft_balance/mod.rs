@@ -4,6 +4,8 @@ use serde_json::json;
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
 
+use super::send_ft::input_ft_contract_account_id;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
 #[interactive_clap(output_context = ViewFtBalanceContext)]
@@ -28,13 +30,42 @@ impl ViewFtBalanceContext {
             let owner_account_id = previous_context.owner_account_id.clone();
             let ft_contract_account_id: near_primitives::types::AccountId =
                 scope.ft_contract_account_id.clone().into();
+            let credentials_home_dir = previous_context.global_context.config.credentials_home_dir.clone();
 
             move |network_config, block_reference| {
-                let crate::types::ft_properties::FtMetadata { decimals, symbol } = crate::types::ft_properties::params_ft_metadata(
-                    ft_contract_account_id.clone(),
-                    network_config,
-                    block_reference.clone(),
-                )?;
+                let hash_map: std::collections::HashMap<
+                    near_primitives::types::AccountId,
+                    crate::types::ft_properties::FtMetadata,
+                > = crate::common::get_used_ft_contract_account_list(&credentials_home_dir)
+                .into_iter()
+                .map(|ft_contract| {
+                    (
+                        ft_contract.ft_contract_account_id.clone(),
+                        ft_contract.ft_metadata.clone(),
+                    )
+                })
+                .collect();
+
+                let ft_metadata = if let Some(ft_metadata) = hash_map.get(&ft_contract_account_id) {
+                    ft_metadata.clone()
+                } else {
+                    crate::types::ft_properties::params_ft_metadata(
+                        ft_contract_account_id.clone(),
+                        network_config,
+                        block_reference.clone(),
+                    )?
+                };
+
+                let ft_contract = crate::types::ft_properties::FtContract {
+                    ft_metadata: ft_metadata.clone(),
+                    ft_contract_account_id: ft_contract_account_id.clone(),
+                };
+
+                crate::common::update_used_ft_contract_account_list(
+                    &credentials_home_dir,
+                    &ft_contract,
+                );
+
                 let args = serde_json::to_vec(&json!({
                     "account_id": owner_account_id.to_string(),
                     }))?;
@@ -43,8 +74,8 @@ impl ViewFtBalanceContext {
                 let amount: String = call_result.parse_result_from_json()?;
                 let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
                     amount.parse::<u128>()?,
-                    decimals,
-                    symbol
+                    ft_metadata.decimals,
+                    ft_metadata.symbol
                 );
 
                 println!("<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})");
@@ -73,10 +104,7 @@ impl ViewFtBalance {
     pub fn input_ft_contract_account_id(
         context: &super::TokensCommandsContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_non_signer_account_id_from_used_account_list(
-            &context.global_context.config.credentials_home_dir,
-            "What is the ft-contract account ID?",
-        )
+        input_ft_contract_account_id(&context.global_context.config.credentials_home_dir)
     }
 }
 
