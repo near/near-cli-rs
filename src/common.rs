@@ -967,7 +967,7 @@ pub fn print_unsigned_transaction(
                             }
                             ret.push_str(&format!("\n{:>31} {:<13} }}", "", ""));
                         }
-ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code:", match deterministic_account_state_init_v1.code {
+                        ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code:", match deterministic_account_state_init_v1.code {
                             GlobalContractIdentifier::CodeHash(hash) => {
                                 format!("hash: {hash}")
                             }
