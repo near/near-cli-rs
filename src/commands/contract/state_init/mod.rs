@@ -320,51 +320,51 @@ pub enum StateInitAction {
     ))]
     /// Submit a transaction to initialize the deterministic account
     Send(Deposit),
-    #[strum_discriminants(strum(message = "print - Print state-init details"))]
-    /// Print state-init details
-    Print(Print),
+    #[strum_discriminants(strum(message = "inspect - Inspect state-init details"))]
+    /// Inspect state-init details
+    Inspect(Inspect),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = StateInitDataContext)]
-pub struct Print {
+pub struct Inspect {
     #[interactive_clap(subcommand)]
-    action: PrintAction,
+    action: InspectAction,
 }
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = StateInitDataContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 #[non_exhaustive]
-/// What would you like to print?
-pub enum PrintAction {
+/// What would you like to inspect?
+pub enum InspectAction {
     #[strum_discriminants(strum(
-        message = "account-id - Print the derived deterministic account ID"
+        message = "account-id - Inspect the derived deterministic account ID"
     ))]
-    /// Print the derived deterministic account ID
-    AccountId(PrintAccountId),
+    /// Inspect the derived deterministic account ID
+    AccountId(InspectAccountId),
     #[strum_discriminants(strum(
-        message = "state-init - Print the borsh-base64 encoded state-init"
+        message = "state-init - Inspect the borsh-base64 encoded state-init"
     ))]
-    /// Print the borsh-base64 encoded state-init
-    StateInit(PrintStateInit),
-    #[strum_discriminants(strum(message = "kv-map     - Print the key-value data map"))]
-    /// Print the key-value data map
-    KvMap(PrintKvMap),
+    /// Inspect the borsh-base64 encoded state-init
+    StateInit(InspectStateInit),
+    #[strum_discriminants(strum(message = "kv-map     - Inspect the key-value data map"))]
+    /// Inspect the key-value data map
+    KvMap(InspectKvMap),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = StateInitDataContext)]
-#[interactive_clap(output_context = PrintAccountIdContext)]
-pub struct PrintAccountId {}
+#[interactive_clap(output_context = InspectAccountIdContext)]
+pub struct InspectAccountId {}
 
 #[derive(Debug, Clone)]
-pub struct PrintAccountIdContext;
+pub struct InspectAccountIdContext;
 
-impl PrintAccountIdContext {
+impl InspectAccountIdContext {
     pub fn from_previous_context(
         previous_context: StateInitDataContext,
-        _scope: &<PrintAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<InspectAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         println!("{}", previous_context.receiver_account_id);
         Ok(Self)
@@ -373,16 +373,16 @@ impl PrintAccountIdContext {
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = StateInitDataContext)]
-#[interactive_clap(output_context = PrintStateInitContext)]
-pub struct PrintStateInit {}
+#[interactive_clap(output_context = InspectStateInitContext)]
+pub struct InspectStateInit {}
 
 #[derive(Debug, Clone)]
-pub struct PrintStateInitContext;
+pub struct InspectStateInitContext;
 
-impl PrintStateInitContext {
+impl InspectStateInitContext {
     pub fn from_previous_context(
         previous_context: StateInitDataContext,
-        _scope: &<PrintStateInit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<InspectStateInit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let bytes = borsh::to_vec(&previous_context.state_init)
             .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-serialize state-init: {e}"))?;
@@ -393,16 +393,16 @@ impl PrintStateInitContext {
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = StateInitDataContext)]
-#[interactive_clap(output_context = PrintKvMapContext)]
-pub struct PrintKvMap {}
+#[interactive_clap(output_context = InspectKvMapContext)]
+pub struct InspectKvMap {}
 
 #[derive(Debug, Clone)]
-pub struct PrintKvMapContext;
+pub struct InspectKvMapContext;
 
-impl PrintKvMapContext {
+impl InspectKvMapContext {
     pub fn from_previous_context(
         previous_context: StateInitDataContext,
-        _scope: &<PrintKvMap as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<InspectKvMap as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let data = match &previous_context.state_init {
             near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(v1) => {
