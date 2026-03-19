@@ -954,9 +954,9 @@ pub fn print_unsigned_transaction(
                     near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(deterministic_account_state_init_v1) => {
                         let mut ret = "V1".to_string();
                         if deterministic_account_state_init_v1.data.is_empty() {
-                            ret.push_str(&format!("\n{:>31} {:<13} {{}}", "", "data"));
+                            ret.push_str(&format!("\n{:>31} {:<13} {{}}", "", "data:"));
                         } else {
-                            ret.push_str(&format!("\n{:>31} {:<13} {{", "", "data"));
+                            ret.push_str(&format!("\n{:>31} {:<13} {{", "", "data:"));
                             let last_idx = deterministic_account_state_init_v1.data.len() - 1;
                             for (i, (key, value)) in deterministic_account_state_init_v1.data.iter().enumerate() {
                                 let comma = if i < last_idx { "," } else { "" };
@@ -967,7 +967,7 @@ pub fn print_unsigned_transaction(
                             }
                             ret.push_str(&format!("\n{:>31} {:<13} }}", "", ""));
                         }
-                        ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code", match deterministic_account_state_init_v1.code {
+ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code:", match deterministic_account_state_init_v1.code {
                             GlobalContractIdentifier::CodeHash(hash) => {
                                 format!("hash: {hash}")
                             }
