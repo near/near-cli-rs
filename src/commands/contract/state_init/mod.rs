@@ -1,4 +1,5 @@
 use color_eyre::eyre::Context;
+use serde_with::{base64::Base64, serde_as};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -133,13 +134,10 @@ impl StateInitFromBorshBase64Context {
     ) -> color_eyre::eyre::Result<Self> {
         let state_init =
             crate::common::parse_borsh_base64_state_init(scope.state_init_base64.as_bytes())?;
-        let receiver_account_id =
-            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
-        Ok(Self(StateInitDataContext {
-            global_context: previous_context,
+        Ok(Self(StateInitDataContext::new(
+            previous_context,
             state_init,
-            receiver_account_id,
-        }))
+        )))
     }
 }
 
@@ -176,13 +174,10 @@ impl StateInitFromBorshBase64FileContext {
         let data = near_primitives::serialize::from_base64(base64_str.trim())
             .wrap_err("Failed to decode base64 from file content")?;
         let state_init = crate::common::parse_borsh_base64_state_init(&data)?;
-        let receiver_account_id =
-            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
-        Ok(Self(StateInitDataContext {
-            global_context: previous_context,
+        Ok(Self(StateInitDataContext::new(
+            previous_context,
             state_init,
-            receiver_account_id,
-        }))
+        )))
     }
 }
 
@@ -236,25 +231,17 @@ pub struct StateInitDataContext {
 }
 
 impl StateInitDataContext {
-    fn build(
-        code: near_primitives::action::GlobalContractIdentifier,
+    fn new(
         global_context: crate::GlobalContext,
-        data: std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
-    ) -> color_eyre::eyre::Result<Self> {
-        let state_init =
-            near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(
-                near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
-                    code,
-                    data,
-                },
-            );
+        state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+    ) -> Self {
         let receiver_account_id =
             near_primitives::utils::derive_near_deterministic_account_id(&state_init);
-        Ok(Self {
+        Self {
             global_context,
             state_init,
             receiver_account_id,
-        })
+        }
     }
 }
 
@@ -279,11 +266,17 @@ impl DataFromFileContext {
             )
         })?;
         let data = crate::common::parse_base64_kv_map(&json_str)?;
-        Ok(Self(StateInitDataContext::build(
-            previous_context.code,
+        let state_init =
+            near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(
+                near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
+                    code: previous_context.code,
+                    data,
+                },
+            );
+        Ok(Self(StateInitDataContext::new(
             previous_context.global_context,
-            data,
-        )?))
+            state_init,
+        )))
     }
 }
 
@@ -302,11 +295,17 @@ impl DataFromJsonContext {
         scope: &<DataFromJson as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let data = crate::common::parse_base64_kv_map(&scope.data)?;
-        Ok(Self(StateInitDataContext::build(
-            previous_context.code,
+        let state_init =
+            near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(
+                near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
+                    code: previous_context.code,
+                    data,
+                },
+            );
+        Ok(Self(StateInitDataContext::new(
             previous_context.global_context,
-            data,
-        )?))
+            state_init,
+        )))
     }
 }
 
@@ -410,18 +409,18 @@ impl PrintKvMapContext {
                 &v1.data
             }
         };
-        let map: std::collections::BTreeMap<String, String> = data
-            .iter()
-            .map(|(k, v)| {
-                (
-                    near_primitives::serialize::to_base64(k),
-                    near_primitives::serialize::to_base64(v),
-                )
-            })
-            .collect();
+
+        #[serde_as]
+        #[derive(serde::Serialize)]
+        struct Data(
+            #[serde_as(as = "std::collections::BTreeMap<Base64, Base64>")]
+            std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
+        );
+
+        let data = Data(data.clone());
         println!(
             "{}",
-            serde_json::to_string(&map).expect("BTreeMap<String, String> should be serializable")
+            serde_json::to_string(&data).expect("Data should be serializable")
         );
         Ok(Self)
     }

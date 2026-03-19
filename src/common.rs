@@ -10,6 +10,7 @@ use futures::{StreamExt, TryStreamExt};
 use near_primitives::action::{GlobalContractDeployMode, GlobalContractIdentifier};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
+use serde_with::{base64::Base64, serde_as};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
 
@@ -3210,17 +3211,16 @@ pub fn save_cli_command(cli_cmd_str: &str) {
 pub fn parse_base64_kv_map(
     input: &str,
 ) -> color_eyre::eyre::Result<std::collections::BTreeMap<Vec<u8>, Vec<u8>>> {
-    let map: std::collections::BTreeMap<String, String> = serde_json::from_str(input)
-        .map_err(|e| color_eyre::eyre::eyre!("Failed to parse JSON: {e}"))?;
-    let mut result = std::collections::BTreeMap::new();
-    for (k, v) in map {
-        let key = near_primitives::serialize::from_base64(&k)
-            .map_err(|e| color_eyre::eyre::eyre!("Failed to base64-decode key '{k}': {e}"))?;
-        let value = near_primitives::serialize::from_base64(&v)
-            .map_err(|e| color_eyre::eyre::eyre!("Failed to base64-decode value '{v}': {e}"))?;
-        result.insert(key, value);
-    }
-    Ok(result)
+    #[serde_as]
+    #[derive(serde::Deserialize)]
+    struct Data(
+        #[serde_as(as = "std::collections::BTreeMap<Base64, Base64>")]
+        std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
+    );
+
+    let data: Data = serde_json::from_str(input)
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to parse base64 KV map: {e}"))?;
+    Ok(data.0)
 }
 
 /// Deserializes a `DeterministicAccountStateInit` from borsh-serialized bytes.
