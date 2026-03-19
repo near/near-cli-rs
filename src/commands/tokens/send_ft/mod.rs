@@ -268,7 +268,7 @@ pub fn get_prepopulated_transaction(
     })
 }
 
-fn get_ft_balance_for_account(
+pub fn get_ft_balance_for_account(
     network_config: &crate::config::NetworkConfig,
     signer_account_id: &near_primitives::types::AccountId,
     ft_contract_account_id: &near_primitives::types::AccountId,

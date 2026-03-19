@@ -240,6 +240,16 @@ pub struct FtTransfer {
     pub memo: Option<String>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct FtTransferCall {
+    pub receiver_id: near_primitives::types::AccountId,
+    #[serde(deserialize_with = "parse_u128_string", serialize_with = "to_string")]
+    pub amount: u128,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memo: Option<String>,
+    pub msg: String,
+}
+
 fn parse_u128_string<'de, D>(deserializer: D) -> color_eyre::eyre::Result<u128, D::Error>
 where
     D: Deserializer<'de>,
