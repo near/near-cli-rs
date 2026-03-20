@@ -68,7 +68,7 @@ pub enum TokensActions {
         message = "send-ft-call      - Transfer FT tokens via ft_transfer_call"
     ))]
     /// Transfer FT tokens via ft_transfer_call to a receiving contract
-    SendFtCall(self::send_ft_call::SendFtCallCommand),
+    SendFtCall(self::send_ft_call::FtContract),
     #[strum_discriminants(strum(
         message = "send-nft          - The transfer is carried out in NFT tokens"
     ))]
