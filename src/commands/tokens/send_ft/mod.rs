@@ -37,24 +37,7 @@ impl FtContractContext {
         let ft_contract_account_id: near_primitives::types::AccountId =
             scope.ft_contract_account_id.clone().into();
 
-        let hash_map: std::collections::HashMap<
-            near_primitives::types::AccountId,
-            crate::types::ft_properties::FtMetadata,
-        > = crate::common::get_used_ft_contract_account_list(
-            &previous_context.global_context.config.credentials_home_dir,
-        )
-        .into_iter()
-        .map(|ft_contract| {
-            (
-                ft_contract.ft_contract_account_id.clone(),
-                ft_contract.ft_metadata.clone(),
-            )
-        })
-        .collect();
-
-        let ft_metadata = if let Some(ft_metadata) = hash_map.get(&ft_contract_account_id) {
-            ft_metadata.clone()
-        } else {
+        let ft_metadata = {
             let network_config = crate::common::find_network_where_account_exist(
                 &previous_context.global_context,
                 ft_contract_account_id.clone(),

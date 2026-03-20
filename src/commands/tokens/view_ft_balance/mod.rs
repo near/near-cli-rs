@@ -33,28 +33,11 @@ impl ViewFtBalanceContext {
             let credentials_home_dir = previous_context.global_context.config.credentials_home_dir.clone();
 
             move |network_config, block_reference| {
-                let hash_map: std::collections::HashMap<
-                    near_primitives::types::AccountId,
-                    crate::types::ft_properties::FtMetadata,
-                > = crate::common::get_used_ft_contract_account_list(&credentials_home_dir)
-                .into_iter()
-                .map(|ft_contract| {
-                    (
-                        ft_contract.ft_contract_account_id.clone(),
-                        ft_contract.ft_metadata.clone(),
-                    )
-                })
-                .collect();
-
-                let ft_metadata = if let Some(ft_metadata) = hash_map.get(&ft_contract_account_id) {
-                    ft_metadata.clone()
-                } else {
-                    crate::types::ft_properties::params_ft_metadata(
-                        ft_contract_account_id.clone(),
-                        network_config,
-                        block_reference.clone(),
-                    )?
-                };
+                let ft_metadata = crate::types::ft_properties::params_ft_metadata(
+                    ft_contract_account_id.clone(),
+                    network_config,
+                    block_reference.clone(),
+                )?;
 
                 let ft_contract = crate::types::ft_properties::FtContract {
                     ft_metadata: ft_metadata.clone(),
