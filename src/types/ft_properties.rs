@@ -190,7 +190,9 @@ impl interactive_clap::ToCli for FungibleToken {
     type CliVariant = FungibleToken;
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Default, PartialEq, Eq, PartialOrd, serde::Serialize, serde::Deserialize,
+)]
 pub struct FtMetadata {
     pub symbol: String,
     pub decimals: u8,
@@ -219,6 +221,14 @@ pub fn params_ft_metadata(
         })?
         .parse_result_from_json()?;
     Ok(ft_metadata)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct FtContract {
+    #[serde(flatten)]
+    pub ft_metadata: FtMetadata,
+    #[serde(rename = "contract")]
+    pub ft_contract_account_id: near_primitives::types::AccountId,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
