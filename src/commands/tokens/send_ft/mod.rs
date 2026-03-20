@@ -37,24 +37,22 @@ impl FtContractContext {
         let ft_contract_account_id: near_primitives::types::AccountId =
             scope.ft_contract_account_id.clone().into();
 
-        let ft_metadata = {
-            let network_config = crate::common::find_network_where_account_exist(
-                &previous_context.global_context,
-                ft_contract_account_id.clone(),
-            )?
-            .wrap_err_with(|| {
-                format!(
-                    "Contract <{}> does not exist in networks",
-                    ft_contract_account_id
-                )
-            })?;
+        let network_config = crate::common::find_network_where_account_exist(
+            &previous_context.global_context,
+            ft_contract_account_id.clone(),
+        )?
+        .wrap_err_with(|| {
+            format!(
+                "Contract <{}> does not exist in networks",
+                ft_contract_account_id
+            )
+        })?;
 
-            crate::types::ft_properties::params_ft_metadata(
-                ft_contract_account_id.clone(),
-                &network_config,
-                near_primitives::types::Finality::Final.into(),
-            )?
-        };
+        let ft_metadata = crate::types::ft_properties::params_ft_metadata(
+            ft_contract_account_id.clone(),
+            &network_config,
+            near_primitives::types::Finality::Final.into(),
+        )?;
 
         let ft_contract = crate::types::ft_properties::FtContract {
             ft_metadata,
