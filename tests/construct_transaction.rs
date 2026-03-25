@@ -67,7 +67,7 @@ async fn test_construct_transaction_new_syntax() -> Result<(), Box<dyn std::erro
         "transaction",
         "construct-transaction",
         "test.near",
-        "account-id",
+        "receiver-id",
         "test.near",
         "add-action",
         "transfer",

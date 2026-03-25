@@ -280,6 +280,6 @@ fn try_rewrite_construct_transaction_args() -> Option<Vec<String>> {
     }
     // Insert "account-id" before the receiver.
     let mut rewritten = args;
-    rewritten.insert(receiver_idx, "account-id".to_string());
+    rewritten.insert(receiver_idx, "receiver-id".to_string());
     Some(rewritten)
 }
