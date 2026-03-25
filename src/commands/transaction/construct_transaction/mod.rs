@@ -55,7 +55,7 @@ pub enum ReceiverMode {
     #[strum_discriminants(strum(message = "receiver-id  - Specify receiver account ID directly"))]
     ReceiverId(DirectReceiver),
     #[strum_discriminants(strum(
-        message = "state-init  - Derive receiver from deterministic state init (NEP-616)"
+        message = "state-init  - Derive receiver ID from deterministic StateInit (NEP-616)"
     ))]
     StateInit(self::state_init_receiver::StateInitReceiver),
 }

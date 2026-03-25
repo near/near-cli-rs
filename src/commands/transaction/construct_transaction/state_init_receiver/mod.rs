@@ -356,12 +356,8 @@ pub struct Deposit {
 
 impl Deposit {
     pub fn input_deposit(
-        context: &StateInitDataContext,
+        _context: &StateInitDataContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        eprintln!(
-            "\nDerived deterministic AccountId: {}",
-            context.receiver_account_id
-        );
         Ok(Some(
             inquire::CustomType::new("What is the deposit for the state init call?")
                 .with_starting_input("0 NEAR")
