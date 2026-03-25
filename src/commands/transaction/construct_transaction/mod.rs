@@ -52,8 +52,8 @@ impl ConstructTransaction {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// How would you like to specify the receiver?
 pub enum ReceiverMode {
-    #[strum_discriminants(strum(message = "account-id  - Specify receiver account ID directly"))]
-    AccountId(DirectReceiver),
+    #[strum_discriminants(strum(message = "receiver-id  - Specify receiver account ID directly"))]
+    ReceiverId(DirectReceiver),
     #[strum_discriminants(strum(
         message = "state-init  - Derive receiver from deterministic state init (NEP-616)"
     ))]

@@ -80,7 +80,7 @@ impl TransactionInfoContext {
                                     sender_account_id: Some(
                                         prepopulated_transaction.signer_id.into(),
                                     ),
-                                    receiver: Some(CliReceiverMode::AccountId(CliDirectReceiver {
+                                    receiver: Some(CliReceiverMode::ReceiverId(CliDirectReceiver {
                                         receiver_account_id: Some(
                                             prepopulated_transaction.receiver_id.clone().into(),
                                         ),
