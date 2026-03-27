@@ -190,7 +190,9 @@ impl interactive_clap::ToCli for FungibleToken {
     type CliVariant = FungibleToken;
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Default, PartialEq, Eq, PartialOrd, serde::Serialize, serde::Deserialize,
+)]
 pub struct FtMetadata {
     pub symbol: String,
     pub decimals: u8,
@@ -221,6 +223,14 @@ pub fn params_ft_metadata(
     Ok(ft_metadata)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct FtContract {
+    #[serde(flatten)]
+    pub ft_metadata: FtMetadata,
+    #[serde(rename = "contract")]
+    pub ft_contract_account_id: near_primitives::types::AccountId,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FtTransfer {
     pub receiver_id: near_primitives::types::AccountId,
@@ -228,6 +238,16 @@ pub struct FtTransfer {
     pub amount: u128,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub memo: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct FtTransferCall {
+    pub receiver_id: near_primitives::types::AccountId,
+    #[serde(deserialize_with = "parse_u128_string", serialize_with = "to_string")]
+    pub amount: u128,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memo: Option<String>,
+    pub msg: String,
 }
 
 fn parse_u128_string<'de, D>(deserializer: D) -> color_eyre::eyre::Result<u128, D::Error>

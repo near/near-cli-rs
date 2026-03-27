@@ -1,6 +1,7 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod send_ft;
+mod send_ft_call;
 mod send_near;
 mod send_nft;
 mod view_ft_balance;
@@ -62,7 +63,12 @@ pub enum TokensActions {
         message = "send-ft           - The transfer is carried out in FT tokens"
     ))]
     /// The transfer is carried out in FT tokens
-    SendFt(self::send_ft::SendFtCommand),
+    SendFt(self::send_ft::FtContract),
+    #[strum_discriminants(strum(
+        message = "send-ft-call      - Transfer FT tokens via ft_transfer_call"
+    ))]
+    /// Transfer FT tokens via ft_transfer_call to a receiving contract
+    SendFtCall(self::send_ft_call::FtContract),
     #[strum_discriminants(strum(
         message = "send-nft          - The transfer is carried out in NFT tokens"
     ))]

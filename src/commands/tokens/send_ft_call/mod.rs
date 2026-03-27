@@ -1,12 +1,10 @@
-use std::str::FromStr;
-
 use color_eyre::eyre::{Context, ContextCompat};
 use serde_json::{Value, json};
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
 
-use super::view_ft_balance::get_ft_balance;
+use super::send_ft::input_ft_contract_account_id;
 
 mod amount_ft;
 
@@ -18,8 +16,8 @@ pub struct FtContract {
     /// What is the ft-contract account ID?
     ft_contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(named_arg)]
-    /// Specify sending FT command parameters:
-    send_ft_command: SendFtCommand,
+    /// Specify sending FTCall command parameters:
+    send_ft_call_command: SendFtCallCommand,
 }
 
 #[derive(Debug, Clone)]
@@ -37,22 +35,24 @@ impl FtContractContext {
         let ft_contract_account_id: near_primitives::types::AccountId =
             scope.ft_contract_account_id.clone().into();
 
-        let network_config = crate::common::find_network_where_account_exist(
-            &previous_context.global_context,
-            ft_contract_account_id.clone(),
-        )?
-        .wrap_err_with(|| {
-            format!(
-                "Contract <{}> does not exist in networks",
-                ft_contract_account_id
-            )
-        })?;
+        let ft_metadata = {
+            let network_config = crate::common::find_network_where_account_exist(
+                &previous_context.global_context,
+                ft_contract_account_id.clone(),
+            )?
+            .wrap_err_with(|| {
+                format!(
+                    "Contract <{}> does not exist in networks",
+                    ft_contract_account_id
+                )
+            })?;
 
-        let ft_metadata = crate::types::ft_properties::params_ft_metadata(
-            ft_contract_account_id.clone(),
-            &network_config,
-            near_primitives::types::Finality::Final.into(),
-        )?;
+            crate::types::ft_properties::params_ft_metadata(
+                ft_contract_account_id.clone(),
+                &network_config,
+                near_primitives::types::Finality::Final.into(),
+            )?
+        };
 
         let ft_contract = crate::types::ft_properties::FtContract {
             ft_metadata,
@@ -80,59 +80,10 @@ impl FtContract {
     }
 }
 
-pub fn input_ft_contract_account_id(
-    credentials_home_dir: &std::path::Path,
-) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-    let used_ft_contract_account_list =
-        crate::common::get_used_ft_contract_account_list(credentials_home_dir)
-            .into_iter()
-            .map(|ft_contract_account| {
-                format!(
-                    "{} ({})",
-                    ft_contract_account.ft_metadata.symbol,
-                    ft_contract_account.ft_contract_account_id
-                )
-            })
-            .collect::<Vec<_>>();
-    let account_id_str = match inquire::Text::new(
-        "Select from the list or enter a different ft-contract account ID:",
-    )
-    .with_autocomplete(move |val: &str| {
-        Ok(used_ft_contract_account_list
-            .iter()
-            .filter(|s| s.to_lowercase().contains(&val.to_lowercase()))
-            .cloned()
-            .collect())
-    })
-    .with_validator(|ft_contract_account_str: &str| {
-        let account_id_str =
-            &get_account_id_str_from_ft_contract_account_str(ft_contract_account_str);
-
-        match near_primitives::types::AccountId::validate(account_id_str) {
-            Ok(_) => Ok(inquire::validator::Validation::Valid),
-            Err(err) => Ok(inquire::validator::Validation::Invalid(
-                inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
-            )),
-        }
-    })
-    .prompt()
-    {
-        Ok(value) => get_account_id_str_from_ft_contract_account_str(&value),
-        Err(
-            inquire::error::InquireError::OperationCanceled
-            | inquire::error::InquireError::OperationInterrupted,
-        ) => return Ok(None),
-        Err(err) => return Err(err.into()),
-    };
-    let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;
-
-    Ok(Some(account_id))
-}
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = FtContractContext)]
-#[interactive_clap(output_context = SendFtCommandContext)]
-pub struct SendFtCommand {
+#[interactive_clap(output_context = SendFtCallCommandContext)]
+pub struct SendFtCallCommand {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the receiver account ID?
     receiver_account_id: crate::types::account_id::AccountId,
@@ -142,17 +93,17 @@ pub struct SendFtCommand {
 }
 
 #[derive(Debug, Clone)]
-pub struct SendFtCommandContext {
+pub struct SendFtCallCommandContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     ft_contract: crate::types::ft_properties::FtContract,
     receiver_account_id: near_primitives::types::AccountId,
 }
 
-impl SendFtCommandContext {
+impl SendFtCallCommandContext {
     pub fn from_previous_context(
         previous_context: FtContractContext,
-        scope: &<SendFtCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<SendFtCallCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             global_context: previous_context.global_context,
@@ -163,7 +114,7 @@ impl SendFtCommandContext {
     }
 }
 
-impl SendFtCommand {
+impl SendFtCallCommand {
     pub fn input_receiver_account_id(
         context: &FtContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
@@ -186,11 +137,12 @@ pub fn get_prepopulated_transaction(
     signer_id: &near_primitives::types::AccountId,
     amount_ft: &crate::types::ft_properties::FungibleToken,
     memo: &str,
+    msg: &str,
     deposit: crate::types::near_token::NearToken,
     gas: crate::common::NearGas,
 ) -> color_eyre::eyre::Result<crate::commands::PrepopulatedTransaction> {
     tracing::info!(target: "near_teach_me", "Creating a pre-populated transaction for signature ...");
-    let args_ft_transfer = serde_json::to_vec(&crate::types::ft_properties::FtTransfer {
+    let args_ft_transfer_call = serde_json::to_vec(&crate::types::ft_properties::FtTransferCall {
         receiver_id: receiver_account_id.clone(),
         amount: amount_ft.amount(),
         memo: if memo.is_empty() {
@@ -198,12 +150,13 @@ pub fn get_prepopulated_transaction(
         } else {
             Some(memo.to_string())
         },
+        msg: msg.to_string(),
     })?;
 
-    let action_ft_transfer = near_primitives::transaction::Action::FunctionCall(Box::new(
+    let action_ft_transfer_call = near_primitives::transaction::Action::FunctionCall(Box::new(
         near_primitives::transaction::FunctionCallAction {
-            method_name: "ft_transfer".to_string(),
-            args: args_ft_transfer,
+            method_name: "ft_transfer_call".to_string(),
+            args: args_ft_transfer_call,
             gas: near_primitives::gas::Gas::from_gas(gas.as_gas()),
             deposit: deposit.into(),
         },
@@ -219,10 +172,10 @@ pub fn get_prepopulated_transaction(
             args.clone(),
             near_primitives::types::Finality::Final.into(),
         )
-        .wrap_err_with(||{
-            format!("Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
-                ft_contract_account_id,
-                network_config.network_name
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
+                ft_contract_account_id, network_config.network_name
             )
         })?;
 
@@ -238,49 +191,13 @@ pub fn get_prepopulated_transaction(
         return Ok(crate::commands::PrepopulatedTransaction {
             signer_id: signer_id.clone(),
             receiver_id: ft_contract_account_id.clone(),
-            actions: vec![action_storage_deposit, action_ft_transfer.clone()],
+            actions: vec![action_storage_deposit, action_ft_transfer_call.clone()],
         });
     }
 
     Ok(crate::commands::PrepopulatedTransaction {
         signer_id: signer_id.clone(),
         receiver_id: ft_contract_account_id.clone(),
-        actions: vec![action_ft_transfer.clone()],
+        actions: vec![action_ft_transfer_call.clone()],
     })
-}
-
-pub fn get_ft_balance_for_account(
-    network_config: &crate::config::NetworkConfig,
-    signer_account_id: &near_primitives::types::AccountId,
-    ft_contract_account_id: &near_primitives::types::AccountId,
-    block_reference: near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<crate::types::ft_properties::FungibleToken> {
-    let function_args = serde_json::to_vec(&json!({"account_id": signer_account_id}))?;
-    let amount = get_ft_balance(
-        network_config,
-        ft_contract_account_id,
-        function_args,
-        block_reference,
-    )?
-    .parse_result_from_json::<String>()?;
-    let crate::types::ft_properties::FtMetadata { decimals, symbol } =
-        crate::types::ft_properties::params_ft_metadata(
-            ft_contract_account_id.clone(),
-            network_config,
-            near_primitives::types::Finality::Final.into(),
-        )?;
-    Ok(crate::types::ft_properties::FungibleToken::from_params_ft(
-        amount.parse::<u128>()?,
-        decimals,
-        symbol,
-    ))
-}
-
-fn get_account_id_str_from_ft_contract_account_str(ft_contract_account_str: &str) -> String {
-    ft_contract_account_str
-        .split_whitespace()
-        .last()
-        .unwrap_or_default()
-        .trim_matches(|c| c == '(' || c == ')')
-        .to_string()
 }
