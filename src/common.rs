@@ -3243,6 +3243,13 @@ pub fn create_used_ft_contract_account_list(credentials_home_dir: &std::path::Pa
                     ft_contract_account_list_path.display()
                 )
             })?;
+    } else {
+        std::fs::write(&ft_contract_account_list_path, "[]").wrap_err_with(|| {
+            format!(
+                "Failed to write to file: {}",
+                ft_contract_account_list_path.display()
+            )
+        })?;
     }
 
     Ok(())
