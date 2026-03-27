@@ -43,6 +43,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -61,6 +62,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -79,6 +81,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -101,6 +104,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
 
@@ -135,6 +139,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -157,6 +162,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -177,6 +183,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -197,6 +204,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
 
@@ -231,6 +239,7 @@ fn create_test_context_with_failed_rpc() -> GlobalContext {
             staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -253,6 +262,7 @@ fn create_test_context_with_failed_rpc() -> GlobalContext {
             staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
 
