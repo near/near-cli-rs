@@ -1,4 +1,4 @@
-use color_eyre::eyre::{Context, ContextCompat};
+use color_eyre::eyre::Context;
 use inquire::CustomType;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
@@ -18,8 +18,8 @@ pub struct AmountFt {
 pub struct AmountFtContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
-    ft_contract_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
+    ft_contract: crate::types::ft_properties::FtContract,
     ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
 }
 
@@ -34,29 +34,16 @@ impl AmountFtContext {
             {
                 crate::types::ft_properties::FungibleTokenTransferAmount::MaxAmount
             } else {
-                let network_config = crate::common::find_network_where_account_exist(
-                    &previous_context.global_context,
-                    previous_context.ft_contract_account_id.clone(),
-                )?
-                .wrap_err_with(|| {
-                    format!(
-                        "Contract <{}> does not exist in networks",
-                        previous_context.ft_contract_account_id
-                    )
-                })?;
-                let ft_metadata = crate::types::ft_properties::params_ft_metadata(
-                    previous_context.ft_contract_account_id.clone(),
-                    &network_config,
-                    near_primitives::types::Finality::Final.into(),
-                )?;
-                scope.ft_transfer_amount.normalize(&ft_metadata)?
+                scope
+                    .ft_transfer_amount
+                    .normalize(&previous_context.ft_contract.ft_metadata)?
             };
 
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
-            ft_contract_account_id: previous_context.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
+            ft_contract: previous_context.ft_contract,
             ft_transfer_amount,
         })
     }
@@ -67,22 +54,7 @@ impl AmountFt {
         context: &super::SendFtCallCommandContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::ft_properties::FungibleTokenTransferAmount>>
     {
-        let network_config = crate::common::find_network_where_account_exist(
-            &context.global_context,
-            context.ft_contract_account_id.clone(),
-        )?
-        .wrap_err_with(|| {
-            format!(
-                "Contract <{}> does not exist in networks",
-                context.ft_contract_account_id
-            )
-        })?;
-
-        let ft_metadata = crate::types::ft_properties::params_ft_metadata(
-            context.ft_contract_account_id.clone(),
-            &network_config,
-            near_primitives::types::Finality::Final.into(),
-        )?;
+        let ft_metadata = context.ft_contract.ft_metadata.clone();
 
         Ok(Some(
             CustomType::<crate::types::ft_properties::FungibleTokenTransferAmount>::new(&format!(
@@ -145,7 +117,7 @@ impl FtTransferCallParamsContext {
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
-            ft_contract_account_id: previous_context.ft_contract_account_id,
+            ft_contract_account_id: previous_context.ft_contract.ft_contract_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             ft_transfer_amount: previous_context.ft_transfer_amount,
             memo: scope.memo.trim().to_string(),
