@@ -3,9 +3,12 @@ use std::process::Command;
 
 #[tokio::test]
 async fn test_view_account_summary_with_localnet() -> Result<(), Box<dyn std::error::Error>> {
-    let (_sandbox, _temp_dir) = common::prepare_tests().await?;
+    let ctx = common::prepare_tests().await?;
 
     let output = Command::new("target/debug/near")
+        .env("XDG_CONFIG_HOME", &ctx.config_home)
+        .env("HOME", &ctx.config_home)
+        .env("APPDATA", &ctx.config_home)
         .args(&[
             "account",
             "view-account-summary",
@@ -27,9 +30,12 @@ async fn test_view_account_summary_with_localnet() -> Result<(), Box<dyn std::er
 
 #[tokio::test]
 async fn test_view_account_summary_nonexistent() -> Result<(), Box<dyn std::error::Error>> {
-    let (_sandbox, _temp_dir) = common::prepare_tests().await?;
+    let ctx = common::prepare_tests().await?;
 
     let output = Command::new("target/debug/near")
+        .env("XDG_CONFIG_HOME", &ctx.config_home)
+        .env("HOME", &ctx.config_home)
+        .env("APPDATA", &ctx.config_home)
         .args(&[
             "account",
             "view-account-summary",

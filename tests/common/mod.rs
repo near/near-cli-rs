@@ -1,6 +1,14 @@
 use near_sandbox::{Sandbox, SandboxConfig};
 
-pub async fn prepare_tests() -> Result<(Sandbox, tempfile::TempDir), Box<dyn std::error::Error>> {
+pub struct TestContext {
+    #[allow(dead_code)]
+    pub sandbox: Sandbox,
+    #[allow(dead_code)]
+    pub temp_dir: tempfile::TempDir,
+    pub config_home: std::path::PathBuf,
+}
+
+pub async fn prepare_tests() -> Result<TestContext, Box<dyn std::error::Error>> {
     // Configure the sandbox with a custom epoch length
     let config = SandboxConfig {
         additional_genesis: Some(serde_json::json!({
@@ -13,25 +21,20 @@ pub async fn prepare_tests() -> Result<(Sandbox, tempfile::TempDir), Box<dyn std
 
     // Create a temporary config directory for this test
     let temp_dir = tempfile::tempdir()?;
+    let config_home = temp_dir.path().to_path_buf();
 
-    // Create the config directory structure that near-cli expects:
-    // $XDG_CONFIG_HOME/near-cli/config.toml
-    let config_home = temp_dir.path();
-
-    // SAFETY: These are test setup calls in a controlled environment
-    unsafe {
-        std::env::set_var("XDG_CONFIG_HOME", config_home); // Linux
-        std::env::set_var("HOME", config_home); // macOS
-        std::env::set_var("APPDATA", config_home); // Windows
-    }
-
-    let near_cli_config_dir = dirs::config_dir().unwrap().join("near-cli");
+    // Compute config dir directly (equivalent to dirs::config_dir() when
+    // XDG_CONFIG_HOME is set to config_home on Linux, or HOME on macOS)
+    let near_cli_config_dir = config_home.join("near-cli");
     std::fs::create_dir_all(&near_cli_config_dir)?;
     let config_path = near_cli_config_dir.join("config.toml");
 
     // Write a config file pointing to our sandbox
     let credentials_dir = temp_dir.path().join("credentials");
     std::fs::create_dir_all(&credentials_dir)?;
+
+    // Pre-create ft_contracts.json to avoid blocking HTTP calls to nearblocks API at startup
+    std::fs::write(credentials_dir.join("ft_contracts.json"), "[]")?;
 
     // Format the RPC URL properly
     let rpc_url = format!("{}/", sandbox.rpc_addr);
@@ -54,5 +57,9 @@ explorer_transaction_url = "{}transactions/"
     );
     std::fs::write(&config_path, config_content)?;
 
-    Ok((sandbox, temp_dir))
+    Ok(TestContext {
+        sandbox,
+        temp_dir,
+        config_home,
+    })
 }
