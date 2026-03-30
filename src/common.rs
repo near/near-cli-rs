@@ -3174,20 +3174,7 @@ fn get_used_ft_contract_account_list_path(
 }
 
 pub fn is_used_ft_contract_account_list_exist(credentials_home_dir: &std::path::Path) -> bool {
-    let ft_contract_account_list_path =
-        get_used_ft_contract_account_list_path(credentials_home_dir);
-    if !ft_contract_account_list_path.exists() {
-        return false;
-    }
-
-    match std::fs::read_to_string(&ft_contract_account_list_path) {
-        Ok(content) => {
-            serde_json::from_str::<VecDeque<crate::types::ft_properties::FtContract>>(&content)
-                .map(|list| !list.is_empty())
-                .unwrap_or(false)
-        }
-        Err(_) => false,
-    }
+    get_used_ft_contract_account_list_path(credentials_home_dir).exists()
 }
 
 fn get_top_ft_tokens_from_nearblocks()
@@ -3255,13 +3242,6 @@ pub fn create_used_ft_contract_account_list(credentials_home_dir: &std::path::Pa
                     ft_contract_account_list_path.display()
                 )
             })?;
-    } else {
-        std::fs::File::create(&ft_contract_account_list_path).wrap_err_with(|| {
-            format!(
-                "Failed to create file: {}",
-                ft_contract_account_list_path.display()
-            )
-        })?;
     }
 
     Ok(())

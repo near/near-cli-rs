@@ -1,12 +1,14 @@
 mod common;
-use common::prepare_tests;
 use std::process::Command;
 
 #[tokio::test]
 async fn test_view_near_balance() -> Result<(), Box<dyn std::error::Error>> {
-    let (_sandbox, _temp_dir) = prepare_tests().await?;
+    let ctx = common::prepare_tests().await?;
 
     let output = Command::new("target/debug/near")
+        .env("XDG_CONFIG_HOME", &ctx.config_home)
+        .env("HOME", &ctx.config_home)
+        .env("APPDATA", &ctx.config_home)
         .args([
             "tokens",
             "test.near",
