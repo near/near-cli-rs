@@ -23,9 +23,15 @@ pub async fn prepare_tests() -> Result<TestContext, Box<dyn std::error::Error>> 
     let temp_dir = tempfile::tempdir()?;
     let config_home = temp_dir.path().to_path_buf();
 
-    // Compute config dir directly (equivalent to dirs::config_dir() when
-    // XDG_CONFIG_HOME is set to config_home on Linux, or HOME on macOS)
-    let near_cli_config_dir = config_home.join("near-cli");
+    // Place config where dirs::config_dir() resolves for the child process:
+    //   Linux:   $XDG_CONFIG_HOME/near-cli  (we set XDG_CONFIG_HOME=config_home)
+    //   macOS:   $HOME/Library/Application Support/near-cli  (we set HOME=config_home)
+    //   Windows: $APPDATA/near-cli  (we set APPDATA=config_home)
+    let near_cli_config_dir = if cfg!(target_os = "macos") {
+        config_home.join("Library/Application Support/near-cli")
+    } else {
+        config_home.join("near-cli")
+    };
     std::fs::create_dir_all(&near_cli_config_dir)?;
     let config_path = near_cli_config_dir.join("config.toml");
 
