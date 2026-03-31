@@ -83,7 +83,7 @@ near-primitives = "0.35.0-rc.5"
 near-jsonrpc-client = { git = "https://github.com/near/near-jsonrpc-client-rs", branch = "bump-near-crates-0.35", features = ["any"] }
 near-jsonrpc-primitives = "0.35.0-rc.5"
 near-parameters = "0.35.0-rc.5"
-near-socialdb-client = { path = "/home/ricky/near-socialdb-client-rs" }
+near-socialdb-client = { git = "https://github.com/r-near/near-socialdb-client-rs", branch = "bump-near-crates-0.35" }
 
 near-ledger = { version = "0.9.2", optional = true }
 

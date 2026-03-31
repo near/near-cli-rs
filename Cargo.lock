@@ -2907,6 +2907,7 @@ checksum = "d612c8f3a51af52acb123367f9387117a4adb23beec9d52a997d99fbf78ebb06"
 [[package]]
 name = "near-socialdb-client"
 version = "0.14.0"
+source = "git+https://github.com/r-near/near-socialdb-client-rs?branch=bump-near-crates-0.35#4f7fa4c0232471711eb4091f95733643cf51d72b"
 dependencies = [
  "eyre",
  "near-crypto",
