@@ -348,7 +348,7 @@ pub fn get_code(
         ),
     };
 
-    let block_height = network_config
+    let block = network_config
         .json_rpc_client()
         .blocking_call(near_jsonrpc_client::methods::block::RpcBlockRequest {
             block_reference: block_reference.clone(),
@@ -358,25 +358,10 @@ pub fn get_code(
                 "Failed to fetch block info for block reference {:?} on network <{}>",
                 block_reference, network_config.network_name
             )
-        })?
-        .header
-        .height;
+        })?;
 
-    let number_of_shards = network_config
-        .json_rpc_client()
-        .blocking_call(
-            near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigRequest {
-                block_reference: block_reference.clone(),
-            },
-        )
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch shards info for block height {} on network <{}>",
-                block_height, network_config.network_name
-            )
-        })?
-        .shard_layout
-        .num_shards();
+    let block_height = block.header.height;
+    let number_of_shards = block.chunks.len() as u64;
 
     for block_height in block_height..=block_height + number_of_shards * 2 {
         tracing::info!(

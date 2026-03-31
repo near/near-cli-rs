@@ -330,7 +330,7 @@ fn test_for_mainnet_find_network_account_exists_with_default_context() {
 
     // Expected result: Account does not exist on the mainnet
     let non_existent_account_id: near_primitives::types::AccountId =
-        "nonexistent.near".parse().unwrap();
+        "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.unwrap().is_none());
 }
@@ -359,7 +359,7 @@ fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc_on_
 
     // Expected result: Error, because testnet RPC is failed, so it's impossible to be sure that account does not exist on the testnet
     let non_existent_account_id: near_primitives::types::AccountId =
-        "nonexistent.near".parse().unwrap();
+        "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.is_err());
 }
@@ -408,7 +408,7 @@ fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc_on_
 
     // Expected result: Error, because mainnet RPC is failed, so it's impossible to be sure that account does not exist on the mainnet
     let non_existent_account_id: near_primitives::types::AccountId =
-        "nonexistent.near".parse().unwrap();
+        "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.is_err());
 }
@@ -478,7 +478,7 @@ fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc() {
 
     // Expected result: Error, because RPC is failed on all networks
     let non_existent_account_id_mainnet: near_primitives::types::AccountId =
-        "nonexistent.near".parse().unwrap();
+        "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result =
         find_network_where_account_exist(&context, non_existent_account_id_mainnet.clone());
     assert!(result.is_err());
