@@ -46,6 +46,9 @@ pub struct AddNetworkConnection {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     mpc_contract_account_id: Option<crate::types::account_id::AccountId>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    tx_wait_until: Option<crate::types::tx_execution_status::TxExecutionStatus>,
 }
 
 #[derive(Debug, Clone)]
@@ -98,6 +101,7 @@ impl AddNetworkConnectionContext {
                     .mpc_contract_account_id
                     .clone()
                     .map(|mpc_contract_account_id| mpc_contract_account_id.into()),
+                tx_wait_until: scope.tx_wait_until.clone(),
             },
         );
         eprintln!();
@@ -302,6 +306,33 @@ impl AddNetworkConnection {
                     .with_starting_input("https://api.coingecko.com/")
                     .prompt()?;
             Ok(Some(coingecko_api))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_tx_wait_until(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::tx_execution_status::TxExecutionStatus>>
+    {
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(
+                to_string = "Yes, I want to set a custom transaction wait level (default: final)"
+            )]
+            Yes,
+            #[strum(to_string = "No, use the default (wait for finality)")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to configure the transaction wait level?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let tx_wait_until: crate::types::tx_execution_status::TxExecutionStatus =
+                CustomType::new("What transaction wait level? (none, included, executed-optimistic, included-final, executed, final)").prompt()?;
+            Ok(Some(tx_wait_until))
         } else {
             Ok(None)
         }

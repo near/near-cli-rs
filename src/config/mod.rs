@@ -39,6 +39,7 @@ impl Default for Config {
                 staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
                 coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
                 mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+                tx_wait_until: None,
             },
         );
         network_connection.insert(
@@ -59,6 +60,7 @@ impl Default for Config {
                 staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
                 coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
                 mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+                tx_wait_until: None,
             },
         );
         network_connection.insert(
@@ -79,6 +81,7 @@ impl Default for Config {
                 staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
                 coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
                 mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+                tx_wait_until: None,
             },
         );
 
@@ -102,6 +105,7 @@ impl Default for Config {
                 staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
                 coingecko_url: None,
                 mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+                tx_wait_until: None,
             },
         );
         network_connection.insert(
@@ -122,6 +126,7 @@ impl Default for Config {
                 staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
                 coingecko_url: None,
                 mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+                tx_wait_until: None,
             },
         );
         network_connection.insert(
@@ -142,6 +147,7 @@ impl Default for Config {
                 staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
                 coingecko_url: None,
                 mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+                tx_wait_until: None,
             },
         );
 
@@ -241,6 +247,7 @@ pub struct NetworkConfig {
     pub staking_pools_factory_account_id: Option<near_primitives::types::AccountId>,
     pub coingecko_url: Option<url::Url>,
     pub mpc_contract_account_id: Option<near_primitives::types::AccountId>,
+    pub tx_wait_until: Option<crate::types::tx_execution_status::TxExecutionStatus>,
 }
 
 impl NetworkConfig {
