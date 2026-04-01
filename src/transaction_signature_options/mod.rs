@@ -157,7 +157,7 @@ pub fn get_signed_delegate_action(
         sender_id: unsigned_transaction.signer_id().clone(),
         receiver_id: unsigned_transaction.receiver_id().clone(),
         actions: vec![],
-        nonce: unsigned_transaction.nonce(),
+        nonce: unsigned_transaction.nonce().nonce(),
         max_block_height,
         public_key: unsigned_transaction.public_key().clone(),
     };
