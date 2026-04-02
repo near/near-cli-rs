@@ -217,8 +217,21 @@ fn build_action_context(
             let msg = msg.clone();
             let gas = previous_context.gas;
             let deposit = previous_context.deposit;
+            let verbosity = previous_context.global_context.verbosity;
 
             move |network_config| {
+                if !crate::common::validate_receiver_account_id(
+                    network_config,
+                    &receiver_account_id,
+                    verbosity,
+                )? {
+                    return Ok(crate::commands::PrepopulatedTransaction {
+                        signer_id: signer_account_id.clone(),
+                        receiver_id: ft_contract_account_id.clone(),
+                        actions: vec![],
+                    });
+                }
+
                 let amount_ft = if let crate::types::ft_properties::FungibleTokenTransferAmount::ExactAmount(ft) = &ft_transfer_amount {
                     ft
                 } else {
