@@ -40,11 +40,13 @@ impl From<SendNearCommandContext> for crate::commands::ActionContext {
             std::sync::Arc::new({
                 let signer_account_id = item.signer_account_id.clone();
                 let receiver_account_id = item.receiver_account_id.clone();
+                let verbosity = item.global_context.verbosity;
 
                 move |network_config| {
                     if !crate::common::validate_receiver_account_id(
                         network_config,
                         &receiver_account_id,
+                        verbosity,
                     )? {
                         return Ok(crate::commands::PrepopulatedTransaction {
                             signer_id: signer_account_id.clone(),

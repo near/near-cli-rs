@@ -107,11 +107,13 @@ impl FtTransferParamsContext {
                 let memo = scope.memo.trim().to_string();
                 let gas = scope.gas.unwrap_or(near_gas::NearGas::from_tgas(100));
                 let deposit = scope.deposit.unwrap_or(crate::types::near_token::NearToken::from_yoctonear(1));
+                let verbosity = previous_context.global_context.verbosity;
 
                 move |network_config| {
                     if !crate::common::validate_receiver_account_id(
                         network_config,
                         &receiver_account_id,
+                        verbosity,
                     )? {
                         return Ok(crate::commands::PrepopulatedTransaction {
                             signer_id: signer_account_id.clone(),

@@ -462,7 +462,11 @@ pub fn is_receiver_on_wrong_network(
 pub fn validate_receiver_account_id(
     network_config: &crate::config::NetworkConfig,
     receiver_account_id: &near_primitives::types::AccountId,
+    verbosity: crate::Verbosity,
 ) -> color_eyre::eyre::Result<bool> {
+    if let crate::Verbosity::Quiet = verbosity {
+        return Ok(true);
+    }
     if is_receiver_on_wrong_network(
         network_config.linkdrop_account_id.as_ref(),
         receiver_account_id,

@@ -61,11 +61,13 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                 let nft_contract_account_id = item.nft_contract_account_id.clone();
                 let receiver_account_id = item.receiver_account_id.clone();
                 let token_id = item.token_id.clone();
+                let verbosity = item.global_context.verbosity;
 
                 move |network_config| {
                     if !crate::common::validate_receiver_account_id(
                         network_config,
                         &receiver_account_id,
+                        verbosity,
                     )? {
                         return Ok(crate::commands::PrepopulatedTransaction {
                             signer_id: signer_account_id.clone(),
