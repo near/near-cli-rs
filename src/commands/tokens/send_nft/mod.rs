@@ -62,7 +62,17 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                 let receiver_account_id = item.receiver_account_id.clone();
                 let token_id = item.token_id.clone();
 
-                move |_network_config| {
+                move |network_config| {
+                    if !crate::common::validate_receiver_account_id(
+                        network_config,
+                        &receiver_account_id,
+                    )? {
+                        return Ok(crate::commands::PrepopulatedTransaction {
+                            signer_id: signer_account_id.clone(),
+                            receiver_id: nft_contract_account_id.clone(),
+                            actions: vec![],
+                        });
+                    }
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: nft_contract_account_id.clone(),

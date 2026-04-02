@@ -109,6 +109,17 @@ impl FtTransferParamsContext {
                 let deposit = scope.deposit.unwrap_or(crate::types::near_token::NearToken::from_yoctonear(1));
 
                 move |network_config| {
+                    if !crate::common::validate_receiver_account_id(
+                        network_config,
+                        &receiver_account_id,
+                    )? {
+                        return Ok(crate::commands::PrepopulatedTransaction {
+                            signer_id: signer_account_id.clone(),
+                            receiver_id: ft_contract_account_id.clone(),
+                            actions: vec![],
+                        });
+                    }
+
                     let amount_ft = if let crate::types::ft_properties::FungibleTokenTransferAmount::ExactAmount(ft) = &ft_transfer_amount {
                         ft
                     } else {
