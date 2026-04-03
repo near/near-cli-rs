@@ -24,11 +24,11 @@ pub enum StateInitModeCommand {
     ))]
     UseGlobalAccountId(StateInitWithContractRefByAccount),
     #[strum_discriminants(strum(
-        message = "from-borsh-base64      - Provide borsh serialized base64 encoded state init"
+        message = "from-borsh-base64     - Provide borsh serialized base64 encoded state init"
     ))]
     FromBorshBase64(StateInitFromBorshBase64),
     #[strum_discriminants(strum(
-        message = "from-borsh-file        - Read borsh-serialized state init from a file"
+        message = "from-borsh-file       - Read borsh-serialized state init from a file"
     ))]
     FromBorshFile(StateInitFromBorshFile),
 }
@@ -309,10 +309,10 @@ impl DataFromJsonContext {
 /// What would you like to do with the state-init?
 pub enum StateInitAction {
     #[strum_discriminants(strum(
-        message = "send  - Submit a transaction to initialize the deterministic account"
+        message = "execute - Submit a transaction to initialize the deterministic account"
     ))]
     /// Submit a transaction to initialize the deterministic account
-    Send(Deposit),
+    Execute(Deposit),
     #[strum_discriminants(strum(message = "inspect - Inspect state-init details"))]
     /// Inspect state-init details
     Inspect(Inspect),
