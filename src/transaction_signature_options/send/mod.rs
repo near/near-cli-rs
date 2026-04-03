@@ -6,7 +6,12 @@ use crate::common::JsonRpcClientExt;
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
 #[interactive_clap(output_context = SendContext)]
-pub struct Send;
+pub struct Send {
+    /// Wait until the transaction reaches a specific execution status before returning (default: final)
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_interactive_input)]
+    wait_until: Option<crate::types::tx_execution_status::TxExecutionStatus>,
+}
 
 #[derive(Debug, Clone)]
 pub struct SendContext;
@@ -15,9 +20,16 @@ impl SendContext {
     #[tracing::instrument(name = "Sending transaction ...", skip_all)]
     pub fn from_previous_context(
         previous_context: super::SubmitContext,
-        _scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<Send as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         tracing::info!(target: "near_teach_me", "Sending transaction ...");
+
+        let wait_until: near_primitives::views::TxExecutionStatus = scope
+            .wait_until
+            .clone()
+            .or_else(|| previous_context.network_config.tx_wait_until.clone())
+            .map(|s| s.into())
+            .unwrap_or(near_primitives::views::TxExecutionStatus::Final);
 
         let storage_message = (previous_context.on_before_sending_transaction_callback)(
             &previous_context.signed_transaction_or_signed_delegate_action,
@@ -29,22 +41,34 @@ impl SendContext {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                 signed_transaction,
             ) => {
-                let transaction_info = sending_signed_transaction(
+                match sending_signed_transaction(
                     &previous_context.network_config,
                     &signed_transaction,
-                )?;
+                    wait_until.clone(),
+                )? {
+                    Some(transaction_info) => {
+                        crate::common::print_transaction_status(
+                            &transaction_info,
+                            &previous_context.network_config,
+                            previous_context.global_context.verbosity,
+                        )?;
 
-                crate::common::print_transaction_status(
-                    &transaction_info,
-                    &previous_context.network_config,
-                    previous_context.global_context.verbosity,
-                )?;
-
-                (previous_context.on_after_sending_transaction_callback)(
-                    &transaction_info,
-                    &previous_context.network_config,
-                )
-                .map_err(color_eyre::Report::msg)?;
+                        (previous_context.on_after_sending_transaction_callback)(
+                            &transaction_info,
+                            &previous_context.network_config,
+                        )
+                        .map_err(color_eyre::Report::msg)?;
+                    }
+                    None => {
+                        let tx_hash = signed_transaction.get_hash();
+                        eprintln!("\nTransaction sent successfully (wait level: {wait_until:?}).");
+                        eprintln!("Transaction ID: {tx_hash}");
+                        eprintln!(
+                            "To see the transaction in the transaction explorer, please open this url in your browser:\n{}{}\n",
+                            previous_context.network_config.explorer_transaction_url, tx_hash,
+                        );
+                    }
+                }
             }
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
@@ -95,22 +119,23 @@ impl SendContext {
 pub fn sending_signed_transaction(
     network_config: &crate::config::NetworkConfig,
     signed_transaction: &near_primitives::transaction::SignedTransaction,
-) -> color_eyre::Result<near_primitives::views::FinalExecutionOutcomeView> {
+    wait_until: near_primitives::views::TxExecutionStatus,
+) -> color_eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
     tracing::Span::current().pb_set_message(network_config.rpc_url.as_str());
     tracing::info!(target: "near_teach_me", "Broadcasting transaction via RPC {}", network_config.rpc_url.as_str());
 
     let retries_number = 5;
     let mut retries = (1..=retries_number).rev();
     let transaction_info = loop {
-        let request =
-            near_jsonrpc_client::methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
-                signed_transaction: signed_transaction.clone(),
-            };
+        let request = near_jsonrpc_client::methods::send_tx::RpcSendTransactionRequest {
+            signed_transaction: signed_transaction.clone(),
+            wait_until: wait_until.clone(),
+        };
 
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to broadcast a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx"
+            "I am making HTTP call to NEAR JSON RPC to send a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx"
         );
 
         let transaction_info_result = network_config
@@ -119,7 +144,9 @@ pub fn sending_signed_transaction(
             .inspect(crate::common::teach_me_call_response);
         match transaction_info_result {
             Ok(response) => {
-                break response;
+                break response
+                    .final_execution_outcome
+                    .map(|outcome| outcome.into_outcome());
             }
             Err(ref err) => match crate::common::rpc_transaction_error(err) {
                 Ok(message) => {

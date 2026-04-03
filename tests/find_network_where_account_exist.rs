@@ -43,6 +43,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -61,6 +62,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -79,6 +81,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -101,6 +104,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
 
@@ -135,6 +139,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -157,6 +162,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -177,6 +183,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -197,6 +204,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
 
@@ -231,6 +239,7 @@ fn create_test_context_with_failed_rpc() -> GlobalContext {
             staking_pools_factory_account_id: Some("poolv1.near".parse().unwrap()),
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
     network_connection.insert(
@@ -253,6 +262,7 @@ fn create_test_context_with_failed_rpc() -> GlobalContext {
             staking_pools_factory_account_id: Some("pool.f863973.m0".parse().unwrap()),
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
+            tx_wait_until: None,
         },
     );
 
@@ -320,7 +330,7 @@ fn test_for_mainnet_find_network_account_exists_with_default_context() {
 
     // Expected result: Account does not exist on the mainnet
     let non_existent_account_id: near_primitives::types::AccountId =
-        "nonexistent.dummy".parse().unwrap();
+        "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.unwrap().is_none());
 }
@@ -349,7 +359,7 @@ fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc_on_
 
     // Expected result: Error, because testnet RPC is failed, so it's impossible to be sure that account does not exist on the testnet
     let non_existent_account_id: near_primitives::types::AccountId =
-        "nonexistent.dummy".parse().unwrap();
+        "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.is_err());
 }
@@ -398,7 +408,7 @@ fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc_on_
 
     // Expected result: Error, because mainnet RPC is failed, so it's impossible to be sure that account does not exist on the mainnet
     let non_existent_account_id: near_primitives::types::AccountId =
-        "nonexistent.dummy".parse().unwrap();
+        "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.is_err());
 }
@@ -468,7 +478,7 @@ fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc() {
 
     // Expected result: Error, because RPC is failed on all networks
     let non_existent_account_id_mainnet: near_primitives::types::AccountId =
-        "nonexistent.dummy".parse().unwrap();
+        "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result =
         find_network_where_account_exist(&context, non_existent_account_id_mainnet.clone());
     assert!(result.is_err());

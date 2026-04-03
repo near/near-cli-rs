@@ -1099,7 +1099,7 @@ fn print_value_successful_transaction(
 
 pub fn rpc_transaction_error(
     err: &near_jsonrpc_client::errors::JsonRpcError<
-        near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError,
+        near_jsonrpc_client::methods::send_tx::RpcTransactionError,
     >,
 ) -> color_eyre::Result<String> {
     match &err {
@@ -1108,25 +1108,25 @@ pub fn rpc_transaction_error(
         }
         near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::TimeoutError => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::TimeoutError => {
                     Ok("Timeout error transaction".to_string())
                 }
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InvalidTransaction { context } => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::InvalidTransaction { context } => {
                     match convert_invalid_tx_error_to_cli_result(context) {
                         Ok(_) => Ok("".to_string()),
                         Err(err) => Err(err)
                     }
                 }
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::DoesNotTrackShard => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::DoesNotTrackShard => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err))
                 }
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::RequestRouted{transaction_hash} => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::RequestRouted{transaction_hash} => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", transaction_hash, err))
                 }
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::UnknownTransaction{requested_transaction_hash} => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::UnknownTransaction{requested_transaction_hash} => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", requested_transaction_hash, err))
                 }
-                near_jsonrpc_client::methods::broadcast_tx_commit::RpcTransactionError::InternalError{debug_info} => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::InternalError{debug_info} => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", debug_info))
                 }
             }
@@ -2569,7 +2569,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             );
 
             let (request_payload, message_about_saving_payload) =
-                check_request_payload_for_broadcast_tx_commit(request_payload);
+                check_request_payload_for_send_transaction(request_payload);
 
             tracing::info!(
                 target: "near_teach_me",
@@ -2799,14 +2799,15 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
     }
 }
 
-fn check_request_payload_for_broadcast_tx_commit(
+fn check_request_payload_for_send_transaction(
     mut request_payload: serde_json::Value,
 ) -> (serde_json::Value, Result<Option<String>, String>) {
     let mut message_about_saving_payload = Ok(None);
     let method = request_payload.get("method").cloned();
     let params_value = request_payload.get("params").cloned();
     if let Some(method) = method
-        && method.to_string().contains("broadcast_tx_commit")
+        && (method.to_string().contains("broadcast_tx_commit")
+            || method.to_string().contains("send_tx"))
         && let Some(params_value) = params_value
     {
         message_about_saving_payload = replace_params_with_file(&mut request_payload, params_value);
@@ -2818,7 +2819,7 @@ fn replace_params_with_file(
     request_payload: &mut serde_json::Value,
     params_value: serde_json::Value,
 ) -> Result<Option<String>, String> {
-    let file_path = std::path::PathBuf::from("broadcast_tx_commit__params_field.json");
+    let file_path = std::path::PathBuf::from("send_tx__params_field.json");
 
     let total_params_length = {
         match serde_json::to_vec_pretty(&params_value) {
@@ -3184,6 +3185,127 @@ fn input_account_id_from_used_account_list(
     let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;
     update_used_account_list(credentials_home_dir, account_id.as_ref(), account_is_signer);
     Ok(Some(account_id))
+}
+
+fn get_used_ft_contract_account_list_path(
+    credentials_home_dir: &std::path::Path,
+) -> std::path::PathBuf {
+    credentials_home_dir.join("ft_contracts.json")
+}
+
+pub fn is_used_ft_contract_account_list_exist(credentials_home_dir: &std::path::Path) -> bool {
+    get_used_ft_contract_account_list_path(credentials_home_dir).exists()
+}
+
+fn get_top_ft_tokens_from_nearblocks()
+-> color_eyre::eyre::Result<VecDeque<crate::types::ft_properties::FtContract>, String> {
+    #[derive(serde::Deserialize)]
+    struct ApiResponse {
+        tokens: VecDeque<crate::types::ft_properties::FtContract>,
+    }
+
+    let url = url::Url::parse("https://api.nearblocks.io/v1/fts").map_err(|err| err.to_string())?;
+    let mut last_error_message = String::new();
+
+    for _ in 0..10 {
+        match reqwest::blocking::get(url.clone()) {
+            Ok(response) => {
+                if response.status().is_success() {
+                    match response.json::<ApiResponse>() {
+                        Ok(data) => return Ok(data.tokens),
+                        Err(err) => {
+                            return Err(format!(
+                                "Failed to parse JSON response from nearblocks.io API: {err}"
+                            ));
+                        }
+                    }
+                } else {
+                    last_error_message = format!(
+                        "HTTP error from nearblocks.io API: {} - {}",
+                        response.status(),
+                        response
+                            .text()
+                            .unwrap_or_else(|_| "Unable to read response body".to_string())
+                    );
+                }
+            }
+            Err(err) => {
+                last_error_message =
+                    format!("Failed to get response from nearblocks.io API: {err}");
+            }
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+
+    Err(last_error_message)
+}
+
+pub fn create_used_ft_contract_account_list(credentials_home_dir: &std::path::Path) -> CliResult {
+    const FT_CONTRACT_ACCOUNTS_LIST_SIZE_CAP: usize = 50;
+
+    let ft_contract_account_list_path =
+        get_used_ft_contract_account_list_path(credentials_home_dir);
+
+    std::fs::create_dir_all(credentials_home_dir)?;
+
+    if let Ok(ft_contract_accounts_list) = get_top_ft_tokens_from_nearblocks() {
+        let ft_contract_account_list_buf = serde_json::to_string(
+            &ft_contract_accounts_list
+                .into_iter()
+                .take(FT_CONTRACT_ACCOUNTS_LIST_SIZE_CAP)
+                .collect::<VecDeque<_>>(),
+        )?;
+        std::fs::write(&ft_contract_account_list_path, ft_contract_account_list_buf)
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to write to file: {}",
+                    ft_contract_account_list_path.display()
+                )
+            })?;
+    }
+
+    Ok(())
+}
+
+pub fn get_used_ft_contract_account_list(
+    credentials_home_dir: &std::path::Path,
+) -> VecDeque<crate::types::ft_properties::FtContract> {
+    let ft_contract_account_list_path =
+        get_used_ft_contract_account_list_path(credentials_home_dir);
+    serde_json::from_str(
+        std::fs::read_to_string(ft_contract_account_list_path)
+            .as_deref()
+            .unwrap_or("[]"),
+    )
+    .unwrap_or_default()
+}
+
+pub fn update_used_ft_contract_account_list(
+    credentials_home_dir: &std::path::Path,
+    new_ft_contract_account: &crate::types::ft_properties::FtContract,
+) {
+    let mut ft_contract_accounts_list = get_used_ft_contract_account_list(credentials_home_dir);
+
+    let used_ft_contract_account = if let Some(used_ft_contract_account) = ft_contract_accounts_list
+        .iter()
+        .position(|ft_contract_account| {
+            ft_contract_account.ft_contract_account_id
+                == new_ft_contract_account.ft_contract_account_id
+        })
+        .and_then(|position| ft_contract_accounts_list.remove(position))
+    {
+        used_ft_contract_account
+    } else {
+        new_ft_contract_account.clone()
+    };
+
+    ft_contract_accounts_list.push_front(used_ft_contract_account);
+
+    let ft_contract_account_list_path =
+        get_used_ft_contract_account_list_path(credentials_home_dir);
+    if let Ok(ft_contract_account_list_buf) = serde_json::to_string(&ft_contract_accounts_list) {
+        let _ = std::fs::write(ft_contract_account_list_path, ft_contract_account_list_buf);
+    }
 }
 
 pub fn save_cli_command(cli_cmd_str: &str) {
