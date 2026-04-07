@@ -28,7 +28,7 @@ fn normalize_output(output: &str) -> String {
 
 #[tokio::test]
 async fn test_construct_transaction_old_syntax() -> Result<(), Box<dyn std::error::Error>> {
-    let _ctx = common::prepare_tests().await?;
+    let ctx = common::prepare_tests().await?;
 
     let mut args = vec![
         "transaction",
@@ -42,7 +42,12 @@ async fn test_construct_transaction_old_syntax() -> Result<(), Box<dyn std::erro
     ];
     args.extend(sign_later_args());
 
-    let output = Command::new("target/debug/near").args(&args).output()?;
+    let output = Command::new("target/debug/near")
+        .env("XDG_CONFIG_HOME", &ctx.config_home)
+        .env("HOME", &ctx.config_home)
+        .env("APPDATA", &ctx.config_home)
+        .args(&args)
+        .output()?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
@@ -61,7 +66,7 @@ async fn test_construct_transaction_old_syntax() -> Result<(), Box<dyn std::erro
 
 #[tokio::test]
 async fn test_construct_transaction_new_syntax() -> Result<(), Box<dyn std::error::Error>> {
-    let _ctx = common::prepare_tests().await?;
+    let ctx = common::prepare_tests().await?;
 
     let mut args = vec![
         "transaction",
@@ -76,7 +81,12 @@ async fn test_construct_transaction_new_syntax() -> Result<(), Box<dyn std::erro
     ];
     args.extend(sign_later_args());
 
-    let output = Command::new("target/debug/near").args(&args).output()?;
+    let output = Command::new("target/debug/near")
+        .env("XDG_CONFIG_HOME", &ctx.config_home)
+        .env("HOME", &ctx.config_home)
+        .env("APPDATA", &ctx.config_home)
+        .args(&args)
+        .output()?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
@@ -96,7 +106,7 @@ async fn test_construct_transaction_new_syntax() -> Result<(), Box<dyn std::erro
 
 #[tokio::test]
 async fn test_construct_transaction_state_init() -> Result<(), Box<dyn std::error::Error>> {
-    let _ctx = common::prepare_tests().await?;
+    let ctx = common::prepare_tests().await?;
 
     // A valid base58-encoded CryptoHash (32 zero bytes in base58)
     let hash = DUMMY_BLOCK_HASH;
@@ -116,7 +126,12 @@ async fn test_construct_transaction_state_init() -> Result<(), Box<dyn std::erro
     ];
     args.extend(sign_later_args());
 
-    let output = Command::new("target/debug/near").args(&args).output()?;
+    let output = Command::new("target/debug/near")
+        .env("XDG_CONFIG_HOME", &ctx.config_home)
+        .env("HOME", &ctx.config_home)
+        .env("APPDATA", &ctx.config_home)
+        .args(&args)
+        .output()?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
