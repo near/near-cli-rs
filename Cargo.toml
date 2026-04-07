@@ -80,7 +80,7 @@ textwrap = "0.16.1"
 
 near-crypto = "0.35"
 near-primitives = "0.35"
-near-jsonrpc-client = { git = "https://github.com/near/near-jsonrpc-client-rs", branch = "bump-near-crates-0.35", features = ["any"] }
+near-jsonrpc-client = { version = "0.21", features = ["any"] }
 near-jsonrpc-primitives = "0.35"
 near-parameters = "0.35"
 near-socialdb-client = { git = "https://github.com/r-near/near-socialdb-client-rs", branch = "bump-near-crates-0.35" }
