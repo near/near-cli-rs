@@ -754,7 +754,11 @@ pub fn print_full_unsigned_transaction(
         "public_key:",
         &transaction.public_key()
     ));
-    info_str.push_str(&format!("\n{:<13} {:?}", "nonce:", &transaction.nonce()));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "nonce:",
+        transaction.nonce().nonce()
+    ));
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "block_hash:",
