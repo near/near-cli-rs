@@ -336,10 +336,8 @@ pub enum InspectAction {
     ))]
     /// Inspect the derived deterministic account ID
     AccountId(InspectAccountId),
-    #[strum_discriminants(strum(
-        message = "state-init - Inspect the borsh-base64 encoded state-init"
-    ))]
-    /// Inspect the borsh-base64 encoded state-init
+    #[strum_discriminants(strum(message = "state-init - Inspect the state-init"))]
+    /// Inspect the state-init
     StateInit(InspectStateInit),
     #[strum_discriminants(strum(message = "kv-map     - Inspect the key-value data map"))]
     /// Inspect the key-value data map
@@ -365,21 +363,64 @@ impl InspectAccountIdContext {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = StateInitDataContext)]
+pub struct InspectStateInit {
+    #[interactive_clap(subcommand)]
+    format: InspectStateInitFormat,
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = StateInitDataContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// In which format would you like to display the state-init?
+pub enum InspectStateInitFormat {
+    #[strum_discriminants(strum(message = "borsh - Borsh-serialized base64"))]
+    /// Borsh-serialized base64
+    Borsh(InspectStateInitBorsh),
+    #[strum_discriminants(strum(message = "json  - JSON-serialized"))]
+    /// JSON-serialized
+    Json(InspectStateInitJson),
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = StateInitDataContext)]
-#[interactive_clap(output_context = InspectStateInitContext)]
-pub struct InspectStateInit {}
+#[interactive_clap(output_context = InspectStateInitBorshContext)]
+pub struct InspectStateInitBorsh {}
 
 #[derive(Debug, Clone)]
-pub struct InspectStateInitContext;
+pub struct InspectStateInitBorshContext;
 
-impl InspectStateInitContext {
+impl InspectStateInitBorshContext {
     pub fn from_previous_context(
         previous_context: StateInitDataContext,
-        _scope: &<InspectStateInit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<InspectStateInitBorsh as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let bytes = borsh::to_vec(&previous_context.state_init)
             .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-serialize state-init: {e}"))?;
         println!("{}", near_primitives::serialize::to_base64(&bytes));
+        Ok(Self)
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = StateInitDataContext)]
+#[interactive_clap(output_context = InspectStateInitJsonContext)]
+pub struct InspectStateInitJson {}
+
+#[derive(Debug, Clone)]
+pub struct InspectStateInitJsonContext;
+
+impl InspectStateInitJsonContext {
+    pub fn from_previous_context(
+        previous_context: StateInitDataContext,
+        _scope: &<InspectStateInitJson as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&previous_context.state_init).map_err(
+                |e| color_eyre::eyre::eyre!("Failed to serialize state-init to JSON: {e}")
+            )?
+        );
         Ok(Self)
     }
 }

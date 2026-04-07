@@ -28,7 +28,7 @@ fn normalize_output(output: &str) -> String {
 
 #[tokio::test]
 async fn test_construct_transaction_old_syntax() -> Result<(), Box<dyn std::error::Error>> {
-    let (_sandbox, _temp_dir) = common::prepare_tests().await?;
+    let _ctx = common::prepare_tests().await?;
 
     let mut args = vec![
         "transaction",
@@ -61,7 +61,7 @@ async fn test_construct_transaction_old_syntax() -> Result<(), Box<dyn std::erro
 
 #[tokio::test]
 async fn test_construct_transaction_new_syntax() -> Result<(), Box<dyn std::error::Error>> {
-    let (_sandbox, _temp_dir) = common::prepare_tests().await?;
+    let _ctx = common::prepare_tests().await?;
 
     let mut args = vec![
         "transaction",
@@ -96,7 +96,7 @@ async fn test_construct_transaction_new_syntax() -> Result<(), Box<dyn std::erro
 
 #[tokio::test]
 async fn test_construct_transaction_state_init() -> Result<(), Box<dyn std::error::Error>> {
-    let (_sandbox, _temp_dir) = common::prepare_tests().await?;
+    let _ctx = common::prepare_tests().await?;
 
     // A valid base58-encoded CryptoHash (32 zero bytes in base58)
     let hash = DUMMY_BLOCK_HASH;
