@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0](https://github.com/near/near-cli-rs/compare/v0.24.0...v0.25.0) - 2026-04-08
+
+### Added
+
+- update function call limits to 1000 TGas ([#559](https://github.com/near/near-cli-rs/pull/559))
+- Improved interactive contract selection option for FT tokens ([#574](https://github.com/near/near-cli-rs/pull/574))
+- Added `send-tf-call` command (`ft_transfer_call` function call) to `tokens` subcommand ([#576](https://github.com/near/near-cli-rs/pull/576))
+- *(ledger)* BLE support ([#570](https://github.com/near/near-cli-rs/pull/570))
+- Allow custom input as method name ([#568](https://github.com/near/near-cli-rs/pull/568))
+
+### Fixed
+
+- wait for block finality before returning from send ([#564](https://github.com/near/near-cli-rs/pull/564))
+- number of shards calculation ([#579](https://github.com/near/near-cli-rs/pull/579))
+- resolve CI test failures from env var race and startup HTTP calls ([#578](https://github.com/near/near-cli-rs/pull/578))
+- Fixed exiting the interactive account verification survey ([#558](https://github.com/near/near-cli-rs/pull/558))
+- typo in `function.kind` check ([#572](https://github.com/near/near-cli-rs/pull/572))
+
+### Other
+
+- bump near crates to 0.35.0 ([#580](https://github.com/near/near-cli-rs/pull/580))
+- *(docs)* extension executable name ([#573](https://github.com/near/near-cli-rs/pull/573))
+
 ## [0.24.0](https://github.com/near/near-cli-rs/compare/v0.23.7...v0.24.0) - 2026-02-27
 
 ### Added
