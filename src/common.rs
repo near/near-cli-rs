@@ -754,7 +754,11 @@ pub fn print_full_unsigned_transaction(
         "public_key:",
         &transaction.public_key()
     ));
-    info_str.push_str(&format!("\n{:<13} {}", "nonce:", &transaction.nonce()));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "nonce:",
+        transaction.nonce().nonce()
+    ));
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "block_hash:",
@@ -963,6 +967,32 @@ pub fn print_unsigned_transaction(
 
                 info_str.push_str(&format!("\n{:>18} {:<13} {}", "", "state:", state_init));
             }
+            near_primitives::transaction::Action::TransferToGasKey(transfer_to_gas_key) => {
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
+                    "", "public key:", &transfer_to_gas_key.public_key
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
+                    "",
+                    "deposit:",
+                    transfer_to_gas_key.deposit.exact_amount_display()
+                ));
+            }
+            near_primitives::transaction::Action::WithdrawFromGasKey(withdraw_from_gas_key) => {
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "withdraw from gas key:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
+                    "", "public key:", &withdraw_from_gas_key.public_key
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
+                    "",
+                    "amount:",
+                    withdraw_from_gas_key.amount.exact_amount_display()
+                ));
+            }
         }
     }
     info_str.push_str("\n ");
@@ -1070,6 +1100,25 @@ fn print_value_successful_transaction(
                 info_str.push_str(&format!(
                     "\nNew deterministic account <{}> has been successfully created.",
                     transaction_info.transaction.receiver_id,
+                ));
+            }
+            near_primitives::views::ActionView::TransferToGasKey {
+                public_key,
+                deposit,
+            } => {
+                info_str.push_str(&format!(
+                    "\n<{}> has transferred {} to gas key <{}> successfully.",
+                    transaction_info.transaction.signer_id,
+                    deposit.exact_amount_display(),
+                    public_key,
+                ));
+            }
+            near_primitives::views::ActionView::WithdrawFromGasKey { public_key, amount } => {
+                info_str.push_str(&format!(
+                    "\n<{}> has withdrawn {} from gas key <{}> successfully.",
+                    transaction_info.transaction.signer_id,
+                    amount.exact_amount_display(),
+                    public_key,
                 ));
             }
         }
@@ -1304,6 +1353,41 @@ pub fn convert_action_error_to_cli_result(
                 identifier
             ))
         }
+        near_primitives::errors::ActionErrorKind::GasKeyDoesNotExist {
+            account_id,
+            public_key,
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Gas key <{}> does not exist for account <{}>.",
+            public_key,
+            account_id
+        )),
+        near_primitives::errors::ActionErrorKind::InsufficientGasKeyBalance {
+            account_id,
+            public_key,
+            balance,
+            ..
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Gas key <{}> for account <{}> has insufficient balance ({}).",
+            public_key,
+            account_id,
+            balance.exact_amount_display()
+        )),
+        near_primitives::errors::ActionErrorKind::GasKeyBalanceTooHigh {
+            account_id,
+            public_key,
+            balance,
+        } => {
+            let key_info = match public_key {
+                Some(pk) => format!("gas key <{pk}>"),
+                None => "gas keys".to_string(),
+            };
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Balance ({}) of {} for account <{}> is too high to perform this action.",
+                balance.exact_amount_display(),
+                key_info,
+                account_id
+            ))
+        }
     }
 }
 
@@ -1434,6 +1518,15 @@ pub fn convert_invalid_tx_error_to_cli_result(
                 near_primitives::errors::ActionsValidationError::DeterministicStateInitValueLengthExceeded { length, limit } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DeterministicStateInit contains value of length {} but at most {} is allowed.", length, limit))
                 },
+                near_primitives::errors::ActionsValidationError::GasKeyInvalidNumNonces { requested_nonces, limit } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Gas key requested invalid number of nonces: {} (must be between 1 and {}).", requested_nonces, limit))
+                },
+                near_primitives::errors::ActionsValidationError::AddGasKeyWithNonZeroBalance { balance } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Adding a gas key with non-zero balance is not allowed: balance = {}.", balance.exact_amount_display()))
+                },
+                near_primitives::errors::ActionsValidationError::GasKeyFunctionCallAllowanceNotAllowed => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Gas keys with FunctionCall permission cannot have an allowance set."))
+                },
             }
         },
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
@@ -1452,6 +1545,23 @@ pub fn convert_invalid_tx_error_to_cli_result(
         },
         near_primitives::errors::InvalidTxError::ShardCongested { shard_id, congestion_level } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is too congested ({congestion_level:.2}/1.00) and can't accept new transaction")),
         near_primitives::errors::InvalidTxError::ShardStuck { shard_id, missed_chunks } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is {missed_chunks} blocks behind and can't accept new transaction until it will be in the sync")),
+        near_primitives::errors::InvalidTxError::InvalidNonceIndex { tx_nonce_index, num_nonces } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid nonce_index {:?} for key with {} nonces.", tx_nonce_index, num_nonces))
+        }
+        near_primitives::errors::InvalidTxError::NotEnoughGasKeyBalance { signer_id, balance, cost } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Gas key for <{}> does not have enough balance ({}) for gas cost ({}).",
+                signer_id,
+                balance.exact_amount_display(),
+                cost.exact_amount_display()
+            ))
+        }
+        near_primitives::errors::InvalidTxError::NotEnoughBalanceForDeposit { signer_id, balance, cost, .. } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Sender <{}> does not have enough balance ({}) to cover deposit cost ({}).",
+                signer_id,
+                balance.exact_amount_display(),
+                cost.exact_amount_display()
+            ))
+        }
     }
 }
 
@@ -2423,6 +2533,32 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                         "only do {method_names:?} function calls on {receiver_id} {allowance_message}"
                     )
                 }
+            }
+            AccessKeyPermissionView::GasKeyFunctionCall {
+                balance,
+                num_nonces,
+                allowance: _,
+                receiver_id,
+                method_names,
+            } => {
+                let methods = if method_names.is_empty() {
+                    "any methods".to_string()
+                } else {
+                    format!("{method_names:?}")
+                };
+                format!(
+                    "gas key for function calls on {receiver_id} ({methods}), balance: {}, nonces: {num_nonces}",
+                    balance.exact_amount_display()
+                )
+            }
+            AccessKeyPermissionView::GasKeyFullAccess {
+                balance,
+                num_nonces,
+            } => {
+                format!(
+                    "gas key with full access, balance: {}, nonces: {num_nonces}",
+                    balance.exact_amount_display()
+                )
             }
         };
 

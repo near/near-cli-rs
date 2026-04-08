@@ -224,6 +224,41 @@ impl std::fmt::Display for AccessKeyInfo {
                     )
                 }
             }
+            near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall {
+                balance,
+                receiver_id,
+                method_names,
+                ..
+            } => {
+                let methods = if method_names.is_empty() {
+                    "any methods".to_string()
+                } else {
+                    format!("{method_names:?}")
+                };
+                write!(
+                    f,
+                    "{} {}\t{} ({}, {})",
+                    self.network_name.blue(),
+                    self.public_key.cyan(),
+                    "gas key for function calls".cyan(),
+                    format!("on {receiver_id} {methods}").cyan(),
+                    format!("balance: {}", balance.exact_amount_display()).cyan()
+                )
+            }
+            near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess {
+                balance,
+                num_nonces,
+            } => {
+                write!(
+                    f,
+                    "{} {}\t{} ({}, {})",
+                    self.network_name.blue(),
+                    self.public_key.cyan(),
+                    "gas key with full access".cyan(),
+                    format!("balance: {}", balance.exact_amount_display()).cyan(),
+                    format!("nonces: {num_nonces}").cyan()
+                )
+            }
         }
     }
 }
