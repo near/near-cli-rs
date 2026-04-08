@@ -30,6 +30,14 @@ pub enum StateInitModeCommand {
         message = "from-borsh-file        - Read borsh-serialized state init from a file"
     ))]
     FromBorshFile(StateInitFromBorshFile),
+    #[strum_discriminants(strum(
+        message = "from-json              - Provide JSON-serialized state init inline"
+    ))]
+    FromJson(StateInitFromJson),
+    #[strum_discriminants(strum(
+        message = "from-json-file         - Read JSON-serialized state init from a file"
+    ))]
+    FromJsonFile(StateInitFromJsonFile),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -186,6 +194,88 @@ impl StateInitFromBorshFileContext {
 
 impl From<StateInitFromBorshFileContext> for StateInitDataContext {
     fn from(item: StateInitFromBorshFileContext) -> Self {
+        item.0
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
+#[interactive_clap(output_context = StateInitFromJsonContext)]
+pub struct StateInitFromJson {
+    /// Enter the JSON-serialized StateInit:
+    pub state_init_json: String,
+    #[interactive_clap(named_arg)]
+    deposit: Deposit,
+}
+
+#[derive(Debug, Clone)]
+pub struct StateInitFromJsonContext(StateInitDataContext);
+
+impl StateInitFromJsonContext {
+    pub fn from_previous_context(
+        previous_context: super::ConstructTransactionSenderContext,
+        scope: &<StateInitFromJson as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit =
+            serde_json::from_str(&scope.state_init_json)
+                .wrap_err("Failed to parse JSON-serialized StateInit")?;
+        let receiver_account_id =
+            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        Ok(Self(StateInitDataContext {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.signer_account_id,
+            state_init,
+            receiver_account_id,
+        }))
+    }
+}
+
+impl From<StateInitFromJsonContext> for StateInitDataContext {
+    fn from(item: StateInitFromJsonContext) -> Self {
+        item.0
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = super::ConstructTransactionSenderContext)]
+#[interactive_clap(output_context = StateInitFromJsonFileContext)]
+pub struct StateInitFromJsonFile {
+    /// Enter the path to a file containing JSON-serialized StateInit:
+    pub file_path: crate::types::path_buf::PathBuf,
+    #[interactive_clap(named_arg)]
+    deposit: Deposit,
+}
+
+#[derive(Debug, Clone)]
+pub struct StateInitFromJsonFileContext(StateInitDataContext);
+
+impl StateInitFromJsonFileContext {
+    pub fn from_previous_context(
+        previous_context: super::ConstructTransactionSenderContext,
+        scope: &<StateInitFromJsonFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let json_str = std::fs::read_to_string(&scope.file_path).wrap_err_with(|| {
+            format!(
+                "Failed to open or read the file: {}",
+                scope.file_path.0.display()
+            )
+        })?;
+        let state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit =
+            serde_json::from_str(&json_str)
+                .wrap_err("Failed to parse JSON-serialized StateInit")?;
+        let receiver_account_id =
+            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        Ok(Self(StateInitDataContext {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.signer_account_id,
+            state_init,
+            receiver_account_id,
+        }))
+    }
+}
+
+impl From<StateInitFromJsonFileContext> for StateInitDataContext {
+    fn from(item: StateInitFromJsonFileContext) -> Self {
         item.0
     }
 }

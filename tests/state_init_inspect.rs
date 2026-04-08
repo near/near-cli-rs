@@ -102,6 +102,204 @@ fn test_inspect_state_init_borsh_roundtrip() {
     );
 }
 
+#[test]
+fn test_inspect_state_init_from_json_roundtrip() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_home = setup_config(temp_dir.path());
+
+    // Step 1: build and serialise to JSON
+    let output1 = near_cmd(&config_home)
+        .args([
+            "contract",
+            "state-init",
+            "use-global-hash",
+            ZERO_HASH,
+            "data-from-json",
+            r#"{"AAEC": "AwQF"}"#,
+            "inspect",
+            "state-init",
+            "json",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(output1.status.success(),);
+    let json = String::from_utf8_lossy(&output1.stdout).trim().to_string();
+
+    // Step 2: re-parse from-json and serialise back to JSON
+    let output2 = near_cmd(&config_home)
+        .args([
+            "contract",
+            "state-init",
+            "from-json",
+            &json,
+            "inspect",
+            "state-init",
+            "json",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(output2.status.success(),);
+    let json_roundtrip = String::from_utf8_lossy(&output2.stdout).trim().to_string();
+
+    assert_eq!(
+        json, json_roundtrip,
+        "from-json round-trip produced different output"
+    );
+}
+
+#[test]
+fn test_inspect_state_init_from_json_file_roundtrip() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_home = setup_config(temp_dir.path());
+
+    let output1 = near_cmd(&config_home)
+        .args([
+            "contract",
+            "state-init",
+            "use-global-hash",
+            ZERO_HASH,
+            "data-from-json",
+            r#"{"AAEC": "AwQF"}"#,
+            "inspect",
+            "state-init",
+            "json",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(
+        output1.status.success(),
+        "step1 stderr: {}",
+        String::from_utf8_lossy(&output1.stderr)
+    );
+    let json = String::from_utf8_lossy(&output1.stdout).trim().to_string();
+
+    let json_file = temp_dir.path().join("state_init.json");
+    std::fs::write(&json_file, &json).unwrap();
+
+    let output2 = near_cmd(&config_home)
+        .args([
+            "contract",
+            "state-init",
+            "from-json-file",
+            json_file.to_str().unwrap(),
+            "inspect",
+            "state-init",
+            "json",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(
+        output2.status.success(),
+        "step3 stderr: {}",
+        String::from_utf8_lossy(&output2.stderr)
+    );
+    let json_roundtrip = String::from_utf8_lossy(&output2.stdout).trim().to_string();
+
+    assert_eq!(
+        json, json_roundtrip,
+        "from-json-file round-trip produced different output"
+    );
+}
+
+#[test]
+fn test_inspect_state_init_json_and_borsh_paths_consistent() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_home = setup_config(temp_dir.path());
+
+    // Path A: build directly → JSON
+    let output_a = near_cmd(&config_home)
+        .args([
+            "contract",
+            "state-init",
+            "use-global-hash",
+            ZERO_HASH,
+            "data-from-json",
+            r#"{"AAEC": "AwQF"}"#,
+            "inspect",
+            "state-init",
+            "json",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output_a.status.success(),
+        "path A stderr: {}",
+        String::from_utf8_lossy(&output_a.stderr)
+    );
+    let json_a = String::from_utf8_lossy(&output_a.stdout).trim().to_string();
+
+    // Path B: build → borsh → from-borsh-base64 → JSON
+    let borsh_output = near_cmd(&config_home)
+        .args([
+            "contract",
+            "state-init",
+            "use-global-hash",
+            ZERO_HASH,
+            "data-from-json",
+            r#"{"AAEC": "AwQF"}"#,
+            "inspect",
+            "state-init",
+            "borsh",
+        ])
+        .output()
+        .unwrap();
+    let borsh_b64 = String::from_utf8_lossy(&borsh_output.stdout)
+        .trim()
+        .to_string();
+
+    let output_b = near_cmd(&config_home)
+        .args([
+            "contract",
+            "state-init",
+            "from-borsh-base64",
+            &borsh_b64,
+            "inspect",
+            "state-init",
+            "json",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output_b.status.success(),
+        "path B stderr: {}",
+        String::from_utf8_lossy(&output_b.stderr)
+    );
+    let json_b = String::from_utf8_lossy(&output_b.stdout).trim().to_string();
+
+    // Path C: build → JSON → from-json → JSON
+    let output_c = near_cmd(&config_home)
+        .args([
+            "contract",
+            "state-init",
+            "from-json",
+            &json_a,
+            "inspect",
+            "state-init",
+            "json",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output_c.status.success(),
+        "path C stderr: {}",
+        String::from_utf8_lossy(&output_c.stderr)
+    );
+    let json_c = String::from_utf8_lossy(&output_c.stdout).trim().to_string();
+
+    assert_eq!(
+        json_a, json_b,
+        "JSON differs between direct and borsh paths"
+    );
+    assert_eq!(
+        json_a, json_c,
+        "JSON differs between direct and from-json paths"
+    );
+}
+
 /// Cross-format round-trip: two input paths for the same StateInit must
 /// produce identical JSON.
 #[test]
