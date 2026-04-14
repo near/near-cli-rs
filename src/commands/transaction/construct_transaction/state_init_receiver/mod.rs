@@ -23,14 +23,6 @@ pub enum StateInitModeCommand {
     ))]
     UseGlobalAccountId(StateInitWithContractRefByAccount),
     #[strum_discriminants(strum(
-        message = "from-borsh-base64      - Provide borsh serialized base64 encoded state init"
-    ))]
-    FromBorshBase64(StateInitFromBorshBase64),
-    #[strum_discriminants(strum(
-        message = "from-borsh-file        - Read borsh-serialized state init from a file"
-    ))]
-    FromBorshFile(StateInitFromBorshFile),
-    #[strum_discriminants(strum(
         message = "from-json              - Provide JSON-serialized state init inline"
     ))]
     FromJson(StateInitFromJson),
@@ -38,6 +30,14 @@ pub enum StateInitModeCommand {
         message = "from-json-file         - Read JSON-serialized state init from a file"
     ))]
     FromJsonFile(StateInitFromJsonFile),
+    #[strum_discriminants(strum(
+        message = "from-borsh-base64      - Provide borsh serialized base64 encoded state init"
+    ))]
+    FromBorshBase64(StateInitFromBorshBase64),
+    #[strum_discriminants(strum(
+        message = "from-borsh-file        - Read borsh-serialized state init from a file"
+    ))]
+    FromBorshFile(StateInitFromBorshFile),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
