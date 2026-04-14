@@ -23,6 +23,7 @@ impl SignLegacyKeychainContext {
                     .config
                     .credentials_home_dir
                     .clone();
+                let on_after_signing = previous_context.on_after_signing_callback.clone();
                 move |network_config| {
                     let key_pair = crate::commands::account::export_account::get_account_key_pair_from_legacy_keychain(
                         network_config,
@@ -37,7 +38,7 @@ impl SignLegacyKeychainContext {
                         public_key: key_pair.public_key.to_string(),
                         signature: signature.to_string(),
                     };
-                    println!("{}", serde_json::to_string_pretty(&signed_message)?);
+                    on_after_signing(signed_message)?;
                     Ok(())
                 }
             });
