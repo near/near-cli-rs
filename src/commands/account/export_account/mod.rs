@@ -201,7 +201,9 @@ pub fn get_account_properties_data_path(
         let account_public_key = access_key.public_key.to_string().replace(':', "_");
         match &access_key.access_key.permission {
             near_primitives::views::AccessKeyPermissionView::FullAccess => {}
-            near_primitives::views::AccessKeyPermissionView::FunctionCall { .. } => {
+            near_primitives::views::AccessKeyPermissionView::FunctionCall { .. }
+            | near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall { .. }
+            | near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess { .. } => {
                 continue;
             }
         }

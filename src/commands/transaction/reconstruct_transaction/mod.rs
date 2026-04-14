@@ -346,6 +346,10 @@ fn action_transformation(
             // TODO: impl
             Err(color_eyre::eyre::eyre!("Deterministic state init is not yet implemented"))
         }
+        Action::TransferToGasKey(_) | Action::WithdrawFromGasKey(_) => {
+            // TODO: impl
+            Err(color_eyre::eyre::eyre!("Gas key actions are not yet supported in transaction reconstruction"))
+        }
     }
 }
 
@@ -400,6 +404,13 @@ fn get_access_key_permission(
                 },
             ),
         )),
+        near_primitives::account::AccessKeyPermission::GasKeyFunctionCall(_, _)
+        | near_primitives::account::AccessKeyPermission::GasKeyFullAccess(_) => {
+            // TODO: impl
+            Err(color_eyre::eyre::eyre!(
+                "Gas key permissions are not yet supported in transaction reconstruction"
+            ))
+        }
     }
 }
 

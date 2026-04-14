@@ -1,6 +1,6 @@
 [package]
 name = "near-cli-rs"
-version = "0.24.0"
+version = "0.25.0"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
 license = "MIT OR Apache-2.0"
 edition = "2024"
@@ -78,12 +78,12 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-crypto = "0.34"
-near-primitives = "0.34"
-near-jsonrpc-client = { version = "0.20", features = ["any"] }
-near-jsonrpc-primitives = "0.34"
-near-parameters = "0.34"
-near-socialdb-client = "0.14"
+near-crypto = "0.35"
+near-primitives = "0.35"
+near-jsonrpc-client = { version = "0.21", features = ["any"] }
+near-jsonrpc-primitives = "0.35"
+near-parameters = "0.35"
+near-socialdb-client = "0.15"
 
 near-ledger = { version = "0.9.2", optional = true }
 

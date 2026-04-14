@@ -94,14 +94,12 @@ impl SignLegacyKeychainContext {
                     .access_key_list_view()?
                     .keys
                     .iter()
-                    .filter(
-                        |access_key_info| match access_key_info.access_key.permission {
-                            near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                            near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                                ..
-                            } => false,
-                        },
-                    )
+                    .filter(|access_key_info| {
+                        matches!(
+                            access_key_info.access_key.permission,
+                            near_primitives::views::AccessKeyPermissionView::FullAccess
+                        )
+                    })
                     .map(|access_key_info| {
                         format!(
                             "{}.json",
