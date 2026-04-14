@@ -24,14 +24,6 @@ pub enum StateInitModeCommand {
     ))]
     UseGlobalAccountId(StateInitWithContractRefByAccount),
     #[strum_discriminants(strum(
-        message = "from-borsh-base64     - Provide borsh serialized base64 encoded state init"
-    ))]
-    FromBorshBase64(StateInitFromBorshBase64),
-    #[strum_discriminants(strum(
-        message = "from-borsh-file       - Read borsh-serialized state init from a file"
-    ))]
-    FromBorshFile(StateInitFromBorshFile),
-    #[strum_discriminants(strum(
         message = "from-json             - Provide JSON-serialized state init inline"
     ))]
     FromJson(StateInitFromJson),
@@ -39,6 +31,14 @@ pub enum StateInitModeCommand {
         message = "from-json-file        - Read JSON-serialized state init from a file"
     ))]
     FromJsonFile(StateInitFromJsonFile),
+    #[strum_discriminants(strum(
+        message = "from-borsh-base64     - Provide borsh serialized base64 encoded state init"
+    ))]
+    FromBorshBase64(StateInitFromBorshBase64),
+    #[strum_discriminants(strum(
+        message = "from-borsh-file       - Read borsh-serialized state init from a file"
+    ))]
+    FromBorshFile(StateInitFromBorshFile),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -456,12 +456,12 @@ pub struct InspectStateInit {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// In which format would you like to display the state-init?
 pub enum InspectStateInitFormat {
-    #[strum_discriminants(strum(message = "borsh - Borsh-serialized base64"))]
-    /// Borsh-serialized base64
-    Borsh(InspectStateInitBorsh),
     #[strum_discriminants(strum(message = "json  - JSON-serialized"))]
     /// JSON-serialized
     Json(InspectStateInitJson),
+    #[strum_discriminants(strum(message = "borsh - Borsh-serialized base64"))]
+    /// Borsh-serialized base64
+    Borsh(InspectStateInitBorsh),
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
