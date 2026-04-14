@@ -137,6 +137,7 @@ impl From<UsbAddLedgerKeyContext> for crate::commands::ActionContext {
                 |_outcome_view, _network_config| Ok(()),
             ),
             sign_as_delegate_action: false,
+            on_sending_delegate_action_callback: None,
         }
     }
 }
@@ -220,6 +221,7 @@ impl From<BleAddLedgerKeyContext> for crate::commands::ActionContext {
                 |_outcome_view, _network_config| Ok(()),
             ),
             sign_as_delegate_action: false,
+            on_sending_delegate_action_callback: None,
         }
     }
 }
