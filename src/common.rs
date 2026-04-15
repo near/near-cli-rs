@@ -951,40 +951,14 @@ pub fn print_unsigned_transaction(
                     format!("create deterministic account <{deterministic_account_id}>:")
                 ));
                 info_str.push_str(&format!(
-                    "\n{:>18} {:<13} {}",
-                    "", "deposit:", deterministic_init_action.deposit
+                    "\n{:>18} {:<12}: {}",
+                    "", "deposit", deterministic_init_action.deposit
                 ));
-                let state_init = match &deterministic_init_action.state_init {
-                    near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(deterministic_account_state_init_v1) => {
-                        let mut ret = "V1".to_string();
-                        if deterministic_account_state_init_v1.data.is_empty() {
-                            ret.push_str(&format!("\n{:>31} {:<13} {{}}", "", "data:"));
-                        } else {
-                            ret.push_str(&format!("\n{:>31} {:<13} {{", "", "data:"));
-                            let last_idx = deterministic_account_state_init_v1.data.len() - 1;
-                            for (i, (key, value)) in deterministic_account_state_init_v1.data.iter().enumerate() {
-                                let comma = if i < last_idx { "," } else { "" };
-                                ret.push_str(&format!(
-                                    "\n{:>45} \"{}\" : \"{}\"{}",
-                                    "", near_primitives::serialize::to_base64(key), near_primitives::serialize::to_base64(value), comma,
-                                ));
-                            }
-                            ret.push_str(&format!("\n{:>31} {:<13} }}", "", ""));
-                        }
-                        ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code:", match deterministic_account_state_init_v1.code {
-                            GlobalContractIdentifier::CodeHash(hash) => {
-                                format!("hash: {hash}")
-                            }
-                            GlobalContractIdentifier::AccountId(ref account_id) => {
-                                format!("account ref: {account_id}")
-                            }
-                        }));
+                let state_init_json = serde_json::to_string_pretty(&deterministic_init_action.state_init)
+                    .expect("DeterministicAccountStateInit is always serializable");
+                let state_init_indented = state_init_json.replace('\n', &format!("\n{:33}", ""));
 
-                        ret
-                    },
-                };
-
-                info_str.push_str(&format!("\n{:>18} {:<13} {}", "", "state:", state_init));
+                info_str.push_str(&format!("\n{:>18} {:<12}: {}", "", "state-init", state_init_indented));
             }
             near_primitives::transaction::Action::TransferToGasKey(transfer_to_gas_key) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
