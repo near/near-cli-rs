@@ -1,7 +1,6 @@
 use color_eyre::owo_colors::OwoColorize;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
@@ -138,9 +137,10 @@ pub fn sending_signed_transaction(
             "I am making HTTP call to NEAR JSON RPC to send a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx"
         );
 
-        let transaction_info_result = network_config
-            .json_rpc_client()
-            .blocking_call(request)
+        let transaction_info_result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(network_config.json_rpc_client().call(request))
+            .map_err(Box::new)
             .inspect(crate::common::teach_me_call_response);
         match transaction_info_result {
             Ok(response) => {

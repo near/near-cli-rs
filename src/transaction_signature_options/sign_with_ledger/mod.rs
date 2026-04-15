@@ -7,8 +7,7 @@ use near_primitives::transaction::Transaction;
 use near_primitives::transaction::TransactionV0;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{blocking_view_access_key, from_nk_crypto_hash};
 
 #[cfg(feature = "ledger-ble")]
 pub mod ble_helpers;
@@ -222,9 +221,8 @@ fn sign_transaction_with_usb(
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         )
     } else {
-        let rpc_query_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
+        let access_key_view = blocking_view_access_key(
+                &network_config,
                 &previous_context.prepopulated_transaction.signer_id,
                 &public_key,
                 near_primitives::types::BlockReference::latest(),
@@ -234,13 +232,9 @@ fn sign_transaction_with_usb(
             )?;
 
         (
-            rpc_query_response
-                .access_key_view()
-                .wrap_err("Error current_nonce")?
-                .nonce
-                + 1,
-            rpc_query_response.block_hash,
-            rpc_query_response.block_height,
+            access_key_view.nonce + 1,
+            from_nk_crypto_hash(&access_key_view.block_hash),
+            access_key_view.block_height,
         )
     };
 
@@ -484,9 +478,8 @@ fn sign_transaction_with_ble(
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         )
     } else {
-        let rpc_query_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
+        let access_key_view = blocking_view_access_key(
+                &network_config,
                 &previous_context.prepopulated_transaction.signer_id,
                 &public_key,
                 near_primitives::types::BlockReference::latest(),
@@ -496,13 +489,9 @@ fn sign_transaction_with_ble(
             )?;
 
         (
-            rpc_query_response
-                .access_key_view()
-                .wrap_err("Error current_nonce")?
-                .nonce
-                + 1,
-            rpc_query_response.block_hash,
-            rpc_query_response.block_height,
+            access_key_view.nonce + 1,
+            from_nk_crypto_hash(&access_key_view.block_hash),
+            access_key_view.block_height,
         )
     };
 

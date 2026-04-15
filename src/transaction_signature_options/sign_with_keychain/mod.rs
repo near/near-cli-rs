@@ -4,8 +4,7 @@ use near_primitives::transaction::Transaction;
 use near_primitives::transaction::TransactionV0;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{blocking_view_access_key, blocking_view_access_key_list, from_nk_crypto_hash};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -99,9 +98,8 @@ impl SignKeychainContext {
                 }
             }
         } else {
-            let access_key_list = network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key_list(
+            let access_key_list = blocking_view_access_key_list(
+                    &network_config,
                     &previous_context.prepopulated_transaction.signer_id,
                     near_primitives::types::Finality::Final.into(),
                 )
@@ -110,8 +108,7 @@ impl SignKeychainContext {
                         "Failed to fetch access key list for {}",
                         previous_context.prepopulated_transaction.signer_id
                     )
-                })?
-                .access_key_list_view()?;
+                })?;
 
             let res = access_key_list
                 .keys
@@ -119,7 +116,7 @@ impl SignKeychainContext {
                 .filter(|key| {
                     matches!(
                         key.access_key.permission,
-                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                        near_kit::AccessKeyPermissionView::FullAccess
                     )
                 })
                 .map(|key| key.public_key)
@@ -161,9 +158,8 @@ impl SignKeychainContext {
                     .wrap_err("Block Height is required to sign a transaction in offline mode")?,
             )
         } else {
-            let rpc_query_response = network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key(
+            let access_key_view = blocking_view_access_key(
+                    &network_config,
                     &previous_context.prepopulated_transaction.signer_id,
                     &account_json.public_key,
                     near_primitives::types::BlockReference::latest(),
@@ -173,13 +169,9 @@ impl SignKeychainContext {
                 )?;
 
             (
-                rpc_query_response
-                    .access_key_view()
-                    .wrap_err("Error current_nonce")?
-                    .nonce
-                    + 1,
-                rpc_query_response.block_hash,
-                rpc_query_response.block_height,
+                access_key_view.nonce + 1,
+                from_nk_crypto_hash(&access_key_view.block_hash),
+                access_key_view.block_height,
             )
         };
 

@@ -2624,6 +2624,331 @@ pub fn input_network_name(
     }
 }
 
+// ============================================================================
+// near-kit RPC bridge helpers
+// ============================================================================
+
+/// Convert a `near_primitives::types::BlockReference` to `near_kit::BlockReference`.
+pub fn to_nk_block_reference(
+    block_ref: &near_primitives::types::BlockReference,
+) -> near_kit::BlockReference {
+    match block_ref {
+        near_primitives::types::BlockReference::BlockId(
+            near_primitives::types::BlockId::Height(height),
+        ) => near_kit::BlockReference::Height(*height),
+        near_primitives::types::BlockReference::BlockId(
+            near_primitives::types::BlockId::Hash(hash),
+        ) => {
+            let nk_hash = near_kit::CryptoHash::from_bytes(hash.0);
+            near_kit::BlockReference::Hash(nk_hash)
+        }
+        near_primitives::types::BlockReference::Finality(finality) => match finality {
+            near_primitives::types::Finality::Final => near_kit::BlockReference::final_(),
+            near_primitives::types::Finality::DoomSlug => near_kit::BlockReference::near_final(),
+            near_primitives::types::Finality::None => near_kit::BlockReference::optimistic(),
+        },
+        near_primitives::types::BlockReference::SyncCheckpoint(
+            near_primitives::types::SyncCheckpoint::Genesis,
+        ) => near_kit::BlockReference::genesis(),
+        near_primitives::types::BlockReference::SyncCheckpoint(
+            near_primitives::types::SyncCheckpoint::EarliestAvailable,
+        ) => near_kit::BlockReference::earliest_available(),
+    }
+}
+
+/// Convert a `near_crypto::PublicKey` to `near_kit::PublicKey`.
+pub fn to_nk_public_key(
+    key: &near_crypto::PublicKey,
+) -> near_kit::PublicKey {
+    key.to_string()
+        .parse()
+        .expect("near_crypto::PublicKey should always produce a valid near_kit::PublicKey string")
+}
+
+/// Convert a `near_kit::CryptoHash` to `near_primitives::hash::CryptoHash`.
+pub fn from_nk_crypto_hash(hash: &near_kit::CryptoHash) -> near_primitives::hash::CryptoHash {
+    near_primitives::hash::CryptoHash(*hash.as_bytes())
+}
+
+/// Blocking helper: fetch an access key via near-kit.
+///
+/// Returns the near-kit `AccessKeyView` which contains `nonce`, `block_hash`,
+/// `block_height`, and `permission`.
+#[tracing::instrument(name = "Getting access key information:", skip_all)]
+pub fn blocking_view_access_key(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    public_key: &near_crypto::PublicKey,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<near_kit::AccessKeyView> {
+    tracing::Span::current().pb_set_message(&format!(
+        "public key {public_key} on account <{account_id}>..."
+    ));
+    tracing::info!(target: "near_teach_me", "Getting access key information for public key {public_key} on account <{account_id}>...");
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "I am making HTTP call to NEAR JSON RPC to get an access key details for public key {} on account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key",
+        public_key,
+        account_id
+    );
+
+    let nk_block_ref = to_nk_block_reference(&block_reference);
+    let nk_public_key = to_nk_public_key(public_key);
+
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config
+                .client()
+                .rpc()
+                .view_access_key(account_id, &nk_public_key, nk_block_ref),
+        )
+        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+}
+
+/// Blocking helper: fetch all access keys for an account via near-kit.
+#[tracing::instrument(name = "Getting a list of", skip_all)]
+pub fn blocking_view_access_key_list(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<near_kit::AccessKeyListView> {
+    tracing::Span::current()
+        .pb_set_message(&format!("access keys on account <{account_id}>..."));
+    tracing::info!(target: "near_teach_me", "Getting a list of access keys on account <{account_id}>...");
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "I am making HTTP call to NEAR JSON RPC to get a list of keys for account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
+        account_id
+    );
+
+    let nk_block_ref = to_nk_block_reference(&block_reference);
+
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config
+                .client()
+                .rpc()
+                .view_access_key_list(account_id, nk_block_ref),
+        )
+        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+}
+
+/// Blocking helper: fetch account info via near-kit.
+#[tracing::instrument(name = "Getting information about", skip_all)]
+pub fn blocking_view_account(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<near_kit::AccountView> {
+    tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
+    tracing::info!(target: "near_teach_me", "Getting information about account <{account_id}>...");
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "I am making HTTP call to NEAR JSON RPC to query information about account <{}>, learn more https://docs.near.org/api/rpc/contracts#view-account",
+        account_id
+    );
+
+    let nk_block_ref = to_nk_block_reference(&block_reference);
+
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config
+                .client()
+                .rpc()
+                .view_account(account_id, nk_block_ref),
+        )
+        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+}
+
+/// Blocking helper: call a view function via near-kit.
+#[tracing::instrument(name = "Getting the result of executing", skip_all)]
+pub fn blocking_view_function(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    function_name: &str,
+    args: Vec<u8>,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<near_kit::ViewFunctionResult> {
+    tracing::Span::current().pb_set_message(&format!(
+        "a read-only function '{function_name}' of the <{account_id}> contract ..."
+    ));
+    tracing::info!(target: "near_teach_me", "Getting the result of executing a read-only function '{function_name}' of the <{account_id}> contract ...");
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "I am making HTTP call to NEAR JSON RPC to call a read-only function `{}` on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
+        function_name,
+        account_id
+    );
+
+    let nk_block_ref = to_nk_block_reference(&block_reference);
+
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config
+                .client()
+                .rpc()
+                .view_function(account_id, function_name, &args, nk_block_ref),
+        )
+        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+}
+
+/// Blocking helper: fetch validator info via near-kit.
+pub fn blocking_validators(
+    network_config: &crate::config::NetworkConfig,
+) -> color_eyre::eyre::Result<near_kit::EpochValidatorInfo> {
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(network_config.client().rpc().validators(None))
+        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+}
+
+/// Blocking helper: fetch block info via near-kit.
+pub fn blocking_block(
+    network_config: &crate::config::NetworkConfig,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<near_kit::BlockView> {
+    let nk_block_ref = to_nk_block_reference(&block_reference);
+
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(network_config.client().rpc().block(nk_block_ref))
+        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+}
+
+/// Blocking helper: send a signed transaction via near-kit.
+pub fn blocking_send_tx(
+    network_config: &crate::config::NetworkConfig,
+    signed_transaction: &near_primitives::transaction::SignedTransaction,
+    wait_until: near_kit::TxExecutionStatus,
+) -> Result<near_kit::RawTransactionResponse, near_kit::RpcError> {
+    // near-kit's send_tx expects near_kit::SignedTransaction, but the caller has
+    // near_primitives::transaction::SignedTransaction. We serialize to base64 and
+    // use the raw RPC call escape hatch.
+    let tx_bytes = near_primitives::borsh::to_vec(signed_transaction)
+        .expect("SignedTransaction borsh serialization should never fail");
+    let tx_base64 = near_primitives::serialize::to_base64(&tx_bytes);
+
+    let params = serde_json::json!({
+        "signed_tx_base64": tx_base64,
+        "wait_until": wait_until.as_str(),
+    });
+
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config
+                .client()
+                .rpc()
+                .call::<_, near_kit::RawTransactionResponse>("send_tx", params),
+        )
+}
+
+/// Blocking helper: get transaction status via near-kit.
+pub fn blocking_tx_status(
+    network_config: &crate::config::NetworkConfig,
+    tx_hash: &near_primitives::hash::CryptoHash,
+    sender_id: &near_primitives::types::AccountId,
+    wait_until: near_kit::TxExecutionStatus,
+) -> Result<near_kit::RawTransactionResponse, near_kit::RpcError> {
+    let nk_hash = near_kit::CryptoHash::from_bytes(tx_hash.0);
+
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config
+                .client()
+                .rpc()
+                .tx_status(&nk_hash, sender_id, wait_until),
+        )
+}
+
+/// Convert near-kit `ViewFunctionResult` to `near_primitives::views::CallResult`
+/// for compatibility with `CallResultExt`.
+pub fn to_call_result(
+    result: &near_kit::ViewFunctionResult,
+) -> near_primitives::views::CallResult {
+    near_primitives::views::CallResult {
+        result: result.result.clone(),
+        logs: result.logs.clone(),
+    }
+}
+
+/// Blocking helper: query view state via near-kit escape hatch.
+///
+/// near-kit does not have a dedicated `view_state` method, so we use the
+/// raw RPC call escape hatch with the standard `query` endpoint.
+/// Returns a JSON value that must be extracted by the caller.
+pub fn blocking_view_state(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    prefix: &[u8],
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<serde_json::Value> {
+    let nk_block_ref = to_nk_block_reference(&block_reference);
+    let mut params = serde_json::json!({
+        "request_type": "view_state",
+        "account_id": account_id.to_string(),
+        "prefix_base64": near_primitives::serialize::to_base64(prefix),
+        "include_proof": false,
+    });
+    // Merge block reference params
+    if let serde_json::Value::Object(block_params) = nk_block_ref.to_rpc_params() {
+        if let serde_json::Value::Object(map) = &mut params {
+            map.extend(block_params);
+        }
+    }
+
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config
+                .client()
+                .rpc()
+                .call::<_, serde_json::Value>("query", params),
+        )
+        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+}
+
+/// Blocking helper: query view code via near-kit escape hatch.
+///
+/// near-kit does not have a dedicated `view_code` method, so we use the
+/// raw RPC call escape hatch.
+/// Returns a JSON value that must be extracted by the caller.
+pub fn blocking_view_code(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<serde_json::Value> {
+    let nk_block_ref = to_nk_block_reference(&block_reference);
+    let mut params = serde_json::json!({
+        "request_type": "view_code",
+        "account_id": account_id.to_string(),
+    });
+    if let serde_json::Value::Object(block_params) = nk_block_ref.to_rpc_params() {
+        if let serde_json::Value::Object(map) = &mut params {
+            map.extend(block_params);
+        }
+    }
+
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config
+                .client()
+                .rpc()
+                .call::<_, serde_json::Value>("query", params),
+        )
+        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+}
+
 pub trait JsonRpcClientExt {
     fn blocking_call<M>(&self, method: M) -> BoxedJsonRpcResult<M::Response, M::Error>
     where

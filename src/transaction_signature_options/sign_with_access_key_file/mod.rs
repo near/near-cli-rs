@@ -3,8 +3,7 @@ use inquire::CustomType;
 use near_primitives::transaction::Transaction;
 use near_primitives::transaction::TransactionV0;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{blocking_view_access_key, from_nk_crypto_hash};
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -70,9 +69,8 @@ impl SignAccessKeyFileContext {
                     .wrap_err("Block Height is required to sign a transaction in offline mode")?,
             )
         } else {
-            let rpc_query_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
+            let access_key_view = blocking_view_access_key(
+                &network_config,
                 &previous_context.prepopulated_transaction.signer_id,
                 &account_json.public_key,
                 near_primitives::types::BlockReference::latest(),
@@ -82,13 +80,9 @@ impl SignAccessKeyFileContext {
             )?;
 
             (
-                rpc_query_response
-                    .access_key_view()
-                    .wrap_err("Error current_nonce")?
-                    .nonce
-                    + 1,
-                rpc_query_response.block_hash,
-                rpc_query_response.block_height,
+                access_key_view.nonce + 1,
+                from_nk_crypto_hash(&access_key_view.block_hash),
+                access_key_view.block_height,
             )
         };
 

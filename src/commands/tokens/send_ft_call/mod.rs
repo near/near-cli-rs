@@ -2,7 +2,7 @@ use color_eyre::eyre::{Context, ContextCompat};
 use serde_json::{Value, json};
 
 use crate::common::CallResultExt;
-use crate::common::JsonRpcClientExt;
+use crate::common::{blocking_view_function, to_call_result};
 
 use super::send_ft::input_ft_contract_account_id;
 
@@ -164,9 +164,8 @@ pub fn get_prepopulated_transaction(
 
     let args = serde_json::to_vec(&json!({"account_id": receiver_account_id}))?;
 
-    let call_result = network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
+    let call_result = to_call_result(&blocking_view_function(
+            network_config,
             ft_contract_account_id,
             "storage_balance_of",
             args.clone(),
@@ -177,7 +176,7 @@ pub fn get_prepopulated_transaction(
                 "Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
                 ft_contract_account_id, network_config.network_name
             )
-        })?;
+        })?);
 
     if call_result.parse_result_from_json::<Value>()?.is_null() {
         let action_storage_deposit = near_primitives::transaction::Action::FunctionCall(Box::new(

@@ -7,8 +7,7 @@ use inquire::{CustomType, Select};
 use near_primitives::transaction::Transaction;
 use near_primitives::transaction::TransactionV0;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{blocking_view_access_key, blocking_view_access_key_list, from_nk_crypto_hash};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -79,9 +78,8 @@ impl SignLegacyKeychainContext {
                         .replace(':', "_")
                 ))
             } else if signer_keychain_folder.exists() {
-                let full_access_key_filenames = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_access_key_list(
+                let full_access_key_filenames = blocking_view_access_key_list(
+                        &network_config,
                         &previous_context.prepopulated_transaction.signer_id,
                         near_primitives::types::Finality::Final.into(),
                     )
@@ -91,13 +89,12 @@ impl SignLegacyKeychainContext {
                             previous_context.prepopulated_transaction.signer_id
                         )
                     })?
-                    .access_key_list_view()?
                     .keys
                     .iter()
                     .filter(|access_key_info| {
                         matches!(
                             access_key_info.access_key.permission,
-                            near_primitives::views::AccessKeyPermissionView::FullAccess
+                            near_kit::AccessKeyPermissionView::FullAccess
                         )
                     })
                     .map(|access_key_info| {
@@ -155,24 +152,19 @@ impl SignLegacyKeychainContext {
                     .wrap_err("Block Height is required to sign a transaction in offline mode")?,
             )
         } else {
-            let rpc_query_response = network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key(
+            let access_key_view = blocking_view_access_key(
+                    &network_config,
                     &previous_context.prepopulated_transaction.signer_id,
                     &signer_access_key.public_key,
-                    near_primitives::types::BlockReference::latest()
+                    near_primitives::types::BlockReference::latest(),
                 )
                 .wrap_err(
                     "Cannot sign a transaction due to an error while fetching the most recent nonce value",
                 )?;
             (
-                rpc_query_response
-                    .access_key_view()
-                    .wrap_err("Error current_nonce")?
-                    .nonce
-                    + 1,
-                rpc_query_response.block_hash,
-                rpc_query_response.block_height,
+                access_key_view.nonce + 1,
+                from_nk_crypto_hash(&access_key_view.block_hash),
+                access_key_view.block_height,
             )
         };
 

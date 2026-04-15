@@ -275,6 +275,17 @@ impl NetworkConfig {
         json_rpc_client
     }
 
+    /// Build a near-kit `Near` client pointed at this network's RPC.
+    ///
+    /// The API key is silently dropped for now — near-kit does not yet
+    /// support custom HTTP headers.  The RPC URL is forwarded as-is.
+    #[tracing::instrument(name = "Connecting to near-kit RPC", skip_all)]
+    pub fn client(&self) -> near_kit::Near {
+        tracing::Span::current().pb_set_message(self.rpc_url.as_str());
+        tracing::info!(target: "near_teach_me", "Connecting to near-kit RPC {}", self.rpc_url.as_str());
+        near_kit::Near::custom(self.rpc_url.as_str(), self.network_name.as_str()).build()
+    }
+
     pub fn get_near_social_account_id_from_network(
         &self,
     ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {

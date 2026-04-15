@@ -3,7 +3,7 @@ use inquire::CustomType;
 use near_primitives::transaction::{Transaction, TransactionV0};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::{JsonRpcClientExt, RpcQueryResponseExt};
+use crate::common::{blocking_view_access_key, blocking_view_function, from_nk_crypto_hash, to_call_result};
 
 pub mod mpc_sign_request;
 pub mod mpc_sign_result;
@@ -194,19 +194,14 @@ impl MpcDeriveKeyContext {
             &network_config,
         )?;
 
-        let json_rpc_response = network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key(
+        let access_key_view = blocking_view_access_key(
+                    &network_config,
                     &controllable_account,
                     &derived_public_key.clone(),
                     near_primitives::types::BlockReference::latest(),
                 )
                 .inspect_err(|err| {
-                    if let near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                        near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                            near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccessKey { .. },
-                        ),
-                    ) = &**err {
+                    if err.to_string().contains("AccessKeyNotFound") || err.to_string().contains("UnknownAccessKey") || err.to_string().contains("access_key_not_found") {
                         tracing::error!(
                             "Couldn't find a key on rpc. You can add it to controllable account using following command:"
                         );
@@ -234,12 +229,8 @@ impl MpcDeriveKeyContext {
             admin_account_id: previous_context.admin_account_id,
             derived_public_key,
             derivation_path: scope.derivation_path.clone(),
-            nonce: json_rpc_response
-                .access_key_view()
-                .wrap_err("Error current_nonce")?
-                .nonce
-                + 1,
-            block_hash: json_rpc_response.block_hash,
+            nonce: access_key_view.nonce + 1,
+            block_hash: from_nk_crypto_hash(&access_key_view.block_hash),
             tx_context: previous_context.tx_context,
         })
     }
@@ -268,9 +259,8 @@ pub fn derive_public_key(
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
     tracing::info!(target: "near_teach_me", "Retrieving derived public key from MPC contract ...");
-    let rpc_result = network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
+    let rpc_result = blocking_view_function(
+            network_config,
             mpc_contract_address,
             "derived_public_key",
             serde_json::to_vec(&serde_json::json!({
@@ -716,52 +706,47 @@ fn fetch_mpc_contract_response_from_dao_tx(
 ) -> color_eyre::eyre::Result<mpc_sign_result::SignResult> {
     tracing::info!(target: "near_teach_me", "Fetching executed DAO proposal ...");
 
-    let request = near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
-        transaction_info: near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
-            tx_hash,
-            sender_account_id,
-        },
-        wait_until: near_primitives::views::TxExecutionStatus::Final,
-    };
+    let tx_response = crate::common::blocking_tx_status(
+            network_config,
+            &tx_hash,
+            &sender_account_id,
+            near_kit::TxExecutionStatus::Final,
+        )
+        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+        .wrap_err("Couldn't fetch DAO transaction")?;
 
-    let exec_outcome_view = network_config
-        .json_rpc_client()
-        .blocking_call(request)
-        .wrap_err("Couldn't fetch DAO transaction")?
-        .final_execution_outcome
-        .ok_or(color_eyre::eyre::eyre!("No final execution outcome"))?
-        .into_outcome();
+    let exec_outcome = tx_response
+        .outcome
+        .ok_or(color_eyre::eyre::eyre!("No final execution outcome"))?;
 
-    if exec_outcome_view.transaction.receiver_id != *dao_address {
+    if exec_outcome.transaction.receiver_id != *dao_address {
         return Err(color_eyre::eyre::eyre!(
             "Transaction receiver is not dao account!"
         ));
     }
 
-    if !matches!(
-        exec_outcome_view.status,
-        near_primitives::views::FinalExecutionStatus::SuccessValue(_)
-    ) {
+    if !exec_outcome.is_success() {
         return Err(color_eyre::eyre::eyre!("Transaction did not succeed"));
     }
 
-    let act_proposal_args = exec_outcome_view
+    let act_proposal_args = exec_outcome
         .transaction
         .actions
         .iter()
         .find_map(|action| {
-            if let near_primitives::views::ActionView::FunctionCall {
+            if let near_kit::ActionView::FunctionCall {
                 method_name, args, ..
             } = action
                 && method_name == "act_proposal"
             {
-                return Some(args);
+                // near-kit stores args as base64
+                return near_primitives::serialize::from_base64(args).ok();
             }
             None
         })
         .ok_or(color_eyre::eyre::eyre!("No act_proposal action found"))?;
 
-    let act_proposal_args: serde_json::Value = serde_json::from_slice(act_proposal_args)?;
+    let act_proposal_args: serde_json::Value = serde_json::from_slice(&act_proposal_args)?;
 
     let proposal = act_proposal_args
         .get("proposal")
@@ -785,9 +770,9 @@ fn fetch_mpc_contract_response_from_dao_tx(
         .get_mpc_contract_account_id()
         .expect("Already checked it before calling");
 
-    for receipt in exec_outcome_view.receipts_outcome {
+    for receipt in exec_outcome.receipts_outcome {
         if receipt.outcome.executor_id == mpc_contract_address
-            && let near_primitives::views::ExecutionStatusView::SuccessValue(success_response) =
+            && let near_kit::ExecutionStatus::SuccessValue(success_response) =
                 receipt.outcome.status
         {
             sign_response_opt = Some(success_response);
