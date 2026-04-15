@@ -638,9 +638,9 @@ pub fn get_key_pair_properties_from_seed_phrase(
     master_seed_phrase: String,
 ) -> color_eyre::eyre::Result<KeyPairProperties> {
     let master_seed = bip39::Mnemonic::parse(&master_seed_phrase)?.to_seed("");
-    let derived_private_key = slipped10::derive_key_from_path(
+    let derived_private_key = near_slip10::derive_key_from_path(
         &master_seed,
-        slipped10::Curve::Ed25519,
+        near_slip10::Curve::Ed25519,
         &seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -667,13 +667,13 @@ pub fn get_key_pair_properties_from_seed_phrase(
 }
 
 pub fn get_public_key_from_seed_phrase(
-    seed_phrase_hd_path: slipped10::BIP32Path,
+    seed_phrase_hd_path: near_slip10::BIP32Path,
     master_seed_phrase: &str,
 ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
     let master_seed = bip39::Mnemonic::parse(master_seed_phrase)?.to_seed("");
-    let derived_private_key = slipped10::derive_key_from_path(
+    let derived_private_key = near_slip10::derive_key_from_path(
         &master_seed,
-        slipped10::Curve::Ed25519,
+        near_slip10::Curve::Ed25519,
         &seed_phrase_hd_path,
     )
     .map_err(|err| {
@@ -703,9 +703,9 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
             (master_seed_phrase, mnemonic.to_seed(""))
         };
 
-    let derived_private_key = slipped10::derive_key_from_path(
+    let derived_private_key = near_slip10::derive_key_from_path(
         &master_seed,
-        slipped10::Curve::Ed25519,
+        near_slip10::Curve::Ed25519,
         &generate_keypair.seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
