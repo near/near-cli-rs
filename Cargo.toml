@@ -85,7 +85,7 @@ near-jsonrpc-primitives = "0.35"
 near-parameters = "0.35"
 near-socialdb-client = "0.15"
 
-near-ledger = { version = "0.9.2", optional = true }
+near-ledger = { version = "0.9.3", optional = true }
 
 near-gas = { version = "0.3", features = [
     "serde",
@@ -128,7 +128,13 @@ insta = "1.40"
 regex = "1.10"
 
 [features]
-default = ["ledger", "ledger-ble", "self-update", "inspect_contract", "verify_contract"]
+default = [
+    "ledger",
+    "ledger-ble",
+    "self-update",
+    "inspect_contract",
+    "verify_contract",
+]
 ledger = ["near-ledger"]
 ledger-ble = ["near-ledger/ble", "ledger"]
 self-update = ["self_update", "semver"]
