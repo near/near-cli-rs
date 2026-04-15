@@ -148,7 +148,7 @@ pub fn sending_signed_transaction(
                     .final_execution_outcome
                     .map(|outcome| outcome.into_outcome());
             }
-            Err(ref err) => match crate::common::rpc_transaction_error(err) {
+            Err(ref err) => match crate::common::classify_send_tx_error(err) {
                 Ok(message) => {
                     if let Some(retries_left) = retries.next() {
                         sleep_after_error(format!(

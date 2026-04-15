@@ -204,20 +204,7 @@ fn print_account_creation_status(
                             "\nThe new account <{new_account_id}> could not be created successfully.\n{storage_message}\n "
                         ))
                     );
-                    match tx_execution_error {
-                        near_primitives::errors::TxExecutionError::ActionError(action_error) => {
-                            return crate::common::convert_action_error_to_cli_result(
-                                &action_error,
-                            );
-                        }
-                        near_primitives::errors::TxExecutionError::InvalidTxError(
-                            invalid_tx_error,
-                        ) => {
-                            return crate::common::convert_invalid_tx_error_to_cli_result(
-                                &invalid_tx_error,
-                            );
-                        }
-                    }
+                    return Err(color_eyre::eyre::eyre!("{}", tx_execution_error));
                 }
             }
             Ok(())
