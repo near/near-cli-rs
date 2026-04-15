@@ -1,7 +1,7 @@
 use color_eyre::eyre::WrapErr;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::{CallResultExt, JsonRpcClientExt};
+use crate::common::{CallResultExt, blocking_view_function, to_call_result};
 
 const STORAGE_COST_PER_BYTE: u128 = 10u128.pow(19);
 
@@ -85,22 +85,22 @@ fn get_storage_balance(
 ) -> color_eyre::eyre::Result<near_socialdb_client::StorageBalance> {
     tracing::Span::current().pb_set_message(account_id.as_ref());
     tracing::info!(target: "near_teach_me", "Getting storage balance for {account_id}");
-    network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
+    let result = blocking_view_function(
+        network_config,
+        contract_account_id,
+        "storage_balance_of",
+        serde_json::to_vec(&serde_json::json!({
+            "account_id": account_id.to_string(),
+        }))?,
+        block_reference.clone(),
+    )
+    .wrap_err_with(|| {
+        format!("Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
             contract_account_id,
-            "storage_balance_of",
-            serde_json::to_vec(&serde_json::json!({
-                "account_id": account_id.to_string(),
-            }))?,
-            block_reference.clone(),
+            network_config.network_name
         )
-        .wrap_err_with(|| {
-            format!("Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
-                contract_account_id,
-                network_config.network_name
-            )
-        })?
+    })?;
+    to_call_result(&result)
         .parse_result_from_json::<near_socialdb_client::StorageBalance>()
         .wrap_err("Failed to parse return value of view function call for StorageBalance.")
 }

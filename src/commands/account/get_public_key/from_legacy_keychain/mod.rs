@@ -1,7 +1,6 @@
 use color_eyre::eyre::WrapErr;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{blocking_view_access_key_list, from_nk_access_key_list};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -41,16 +40,15 @@ impl PublicKeyFromLegacyKeychainContext {
                             return Ok(());
                         }
                         if signer_keychain_folder.exists() {
-                            let full_access_key_filenames = network_config
-                                .json_rpc_client()
-                                .blocking_call_view_access_key_list(
-                                    &account_id.clone().into(),
-                                    near_primitives::types::Finality::Final.into(),
-                                )
-                                .wrap_err_with(|| {
-                                    format!("Failed to fetch access KeyList for {account_id}")
-                                })?
-                                .access_key_list_view()?
+                            let nk_list = blocking_view_access_key_list(
+                                network_config,
+                                &account_id.clone().into(),
+                                near_primitives::types::Finality::Final.into(),
+                            )
+                            .wrap_err_with(|| {
+                                format!("Failed to fetch access KeyList for {account_id}")
+                            })?;
+                            let full_access_key_filenames = from_nk_access_key_list(&nk_list)
                                 .keys
                                 .iter()
                                 .filter(|access_key_info| {

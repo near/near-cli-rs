@@ -1,7 +1,6 @@
 use color_eyre::eyre::WrapErr;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{blocking_view_access_key_list, from_nk_access_key_list};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -40,16 +39,15 @@ impl PublicKeyFromKeychainContext {
                     ));
 
                     let password = {
-                        let access_key_list = network_config
-                            .json_rpc_client()
-                            .blocking_call_view_access_key_list(
-                                &account_id.clone().into(),
-                                near_primitives::types::Finality::Final.into(),
-                            )
-                            .wrap_err_with(|| {
-                                format!("Failed to fetch access key list for {account_id}")
-                            })?
-                            .access_key_list_view()?;
+                        let nk_list = blocking_view_access_key_list(
+                            network_config,
+                            &account_id.clone().into(),
+                            near_primitives::types::Finality::Final.into(),
+                        )
+                        .wrap_err_with(|| {
+                            format!("Failed to fetch access key list for {account_id}")
+                        })?;
+                        let access_key_list = from_nk_access_key_list(&nk_list);
 
                         let res = access_key_list
                             .keys

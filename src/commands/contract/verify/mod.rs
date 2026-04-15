@@ -12,7 +12,6 @@ use near_verify_rs::types::{
     whitelist::{Whitelist, WhitelistEntry},
 };
 
-use crate::common::JsonRpcClientExt;
 use crate::types::contract_properties::ContractProperties;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -295,14 +294,18 @@ fn get_contract_code_from_contract_account_id(
             "I am making HTTP call to NEAR JSON RPC to get the contract code (Wasm binary) deployed to `{}` account, learn more https://docs.near.org/api/rpc/contracts#view-contract-code",
             account_id
     );
-    let view_code_response = network_config
-        .json_rpc_client()
-        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_reference.clone(),
-            request: near_primitives::views::QueryRequest::ViewCode {
-                account_id: account_id.clone(),
-            },
-        })
+    let view_code_response = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config.json_rpc_client().call(
+                near_jsonrpc_client::methods::query::RpcQueryRequest {
+                    block_reference: block_reference.clone(),
+                    request: near_primitives::views::QueryRequest::ViewCode {
+                        account_id: account_id.clone(),
+                    },
+                },
+            ),
+        )
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch query ViewCode for <{}> on network <{}>",

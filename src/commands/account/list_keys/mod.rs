@@ -1,7 +1,6 @@
 use color_eyre::eyre::Context;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{blocking_view_access_key_list, from_nk_access_key_list};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -27,19 +26,18 @@ impl ViewListKeysContext {
             let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {
-                let access_key_list = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_access_key_list(
-                        &account_id,
-                        block_reference.clone(),
+                let nk_list = blocking_view_access_key_list(
+                    network_config,
+                    &account_id,
+                    block_reference.clone(),
+                )
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to fetch query AccessKeyList for {}",
+                        &account_id
                     )
-                    .wrap_err_with(|| {
-                        format!(
-                            "Failed to fetch query AccessKeyList for {}",
-                            &account_id
-                        )
-                    })?
-                    .access_key_list_view()?;
+                })?;
+                let access_key_list = from_nk_access_key_list(&nk_list);
 
                 crate::common::display_access_key_list(&access_key_list.keys);
                 Ok(())

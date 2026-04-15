@@ -3,7 +3,7 @@ use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use crate::common::CallResultExt;
-use crate::common::JsonRpcClientExt;
+use crate::common::{blocking_view_function, to_call_result};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
 pub enum FungibleTokenTransferAmount {
@@ -205,21 +205,20 @@ pub fn params_ft_metadata(
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<FtMetadata> {
     tracing::info!(target: "near_teach_me", "Getting FT metadata ...");
-    let ft_metadata: FtMetadata = network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
-            &ft_contract_account_id,
-            "ft_metadata",
-            vec![],
-            block_reference,
+    let result = blocking_view_function(
+        network_config,
+        &ft_contract_account_id,
+        "ft_metadata",
+        vec![],
+        block_reference,
+    )
+    .wrap_err_with(||{
+        format!("Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
+            ft_contract_account_id,
+            network_config.network_name
         )
-        .wrap_err_with(||{
-            format!("Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
-                ft_contract_account_id,
-                network_config.network_name
-            )
-        })?
-        .parse_result_from_json()?;
+    })?;
+    let ft_metadata: FtMetadata = to_call_result(&result).parse_result_from_json()?;
     Ok(ft_metadata)
 }
 

@@ -1,7 +1,6 @@
 use color_eyre::eyre::Context;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -62,17 +61,19 @@ pub fn get_transaction_info(
 ) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::tx::RpcTransactionResponse> {
     tracing::Span::current().pb_set_message(&format!("{tx_hash} ..."));
     tracing::info!(target: "near_teach_me", "Getting information about transaction {tx_hash} ...");
-    network_config
-        .json_rpc_client()
-        .blocking_call(
-            near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
-                transaction_info:
-                    near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
-                        tx_hash,
-                        sender_account_id: "near".parse::<near_primitives::types::AccountId>()?,
-                    },
-                wait_until: near_primitives::views::TxExecutionStatus::Final,
-            },
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config.json_rpc_client().call(
+                near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
+                    transaction_info:
+                        near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
+                            tx_hash,
+                            sender_account_id: "near".parse::<near_primitives::types::AccountId>()?,
+                        },
+                    wait_until: near_primitives::views::TxExecutionStatus::Final,
+                },
+            ),
         )
         .wrap_err_with(|| {
             format!(

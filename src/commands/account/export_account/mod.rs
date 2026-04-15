@@ -1,8 +1,7 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{blocking_view_access_key_list, from_nk_access_key_list};
 
 mod using_private_key;
 mod using_seed_phrase;
@@ -94,14 +93,13 @@ pub fn get_password_from_keychain(
         account_id.as_str()
     ));
     let password = {
-        let access_key_list = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key_list(
-                account_id,
-                near_primitives::types::Finality::Final.into(),
-            )
-            .wrap_err_with(|| format!("Failed to fetch access key list for {account_id}"))?
-            .access_key_list_view()?;
+        let nk_list = blocking_view_access_key_list(
+            network_config,
+            account_id,
+            near_primitives::types::Finality::Final.into(),
+        )
+        .wrap_err_with(|| format!("Failed to fetch access key list for {account_id}"))?;
+        let access_key_list = from_nk_access_key_list(&nk_list);
 
         access_key_list
             .keys
@@ -185,14 +183,13 @@ pub fn get_account_properties_data_path(
         }
     }
 
-    let access_key_list = network_config
-        .json_rpc_client()
-        .blocking_call_view_access_key_list(
-            account_id,
-            near_primitives::types::Finality::Final.into(),
-        )
-        .wrap_err_with(|| format!("Failed to fetch access KeyList for {account_id}"))?
-        .access_key_list_view()?;
+    let nk_list = blocking_view_access_key_list(
+        network_config,
+        account_id,
+        near_primitives::types::Finality::Final.into(),
+    )
+    .wrap_err_with(|| format!("Failed to fetch access KeyList for {account_id}"))?;
+    let access_key_list = from_nk_access_key_list(&nk_list);
     let mut path = std::path::PathBuf::from(credentials_home_dir);
     path.push(dir_name);
     path.push(account_id.to_string());

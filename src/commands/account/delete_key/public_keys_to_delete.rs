@@ -2,8 +2,7 @@ use color_eyre::owo_colors::OwoColorize;
 use inquire::ui::{Color, RenderConfig, Styled};
 use inquire::{CustomType, MultiSelect, formatter::MultiOptionFormatter};
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{blocking_view_access_key_list, from_nk_access_key_list};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::DeleteKeysCommandContext)]
@@ -101,14 +100,13 @@ impl PublicKeyList {
             if processed_network.contains(&network_config.network_name) {
                 continue;
             }
-            match network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key_list(
-                    &context.owner_account_id,
-                    near_primitives::types::Finality::Final.into(),
-                ) {
-                Ok(rpc_query_response) => {
-                    let access_key_list_for_network = rpc_query_response.access_key_list_view()?;
+            match blocking_view_access_key_list(
+                network_config,
+                &context.owner_account_id,
+                near_primitives::types::Finality::Final.into(),
+            ) {
+                Ok(nk_list) => {
+                    let access_key_list_for_network = from_nk_access_key_list(&nk_list);
                     access_key_list.extend(access_key_list_for_network.keys.iter().map(
                         |access_key_info_view| AccessKeyInfo {
                             public_key: access_key_info_view.public_key.clone(),

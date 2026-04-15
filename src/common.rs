@@ -258,65 +258,50 @@ pub fn verify_account_access_key(
 > {
     tracing::info!(target: "near_teach_me", "Account access key verification ...");
     loop {
-        match network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
-                &account_id,
-                &public_key,
-                near_primitives::types::BlockReference::latest(),
-            )
-            .map_err(|err| *err)
-        {
-            Ok(rpc_query_response) => {
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =
-                    rpc_query_response.kind
+        match blocking_view_access_key(
+            &network_config,
+            &account_id,
+            &public_key,
+            near_primitives::types::BlockReference::latest(),
+        ) {
+            Ok(nk_access_key_view) => {
+                return Ok(from_nk_access_key_view(&nk_access_key_view));
+            }
+            Err(err) => {
+                let err_str = format!("{err}");
+                // Check for "access key not found" / "unknown access key" style errors
+                if err_str.contains("UnknownAccessKey")
+                    || err_str.contains("access key")
+                        && err_str.contains("does not exist")
                 {
-                    return Ok(result);
-                } else {
-                    return Err(AccountStateError::JsonRpcError(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
-                        near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
-                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
-                        ),
-                    ))));
-                }
-            }
-            Err(
-                err @ near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccessKey {
-                            ..
-                        },
-                    ),
-                ),
-            ) => {
-                return Err(AccountStateError::JsonRpcError(err));
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
-                let need_check_account = suspend_tracing_indicatif::<
-                    _,
-                    color_eyre::eyre::Result<bool>,
-                >(|| {
-                    need_check_account(format!(
-                        "Account information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
-                        network_config.network_name
-                    ))
-                });
-                if need_check_account.is_err() {
-                    return Err(AccountStateError::Cancel);
-                }
-                if let Ok(false) = need_check_account {
                     return Err(AccountStateError::JsonRpcError(
-                        near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
+                        near_jsonrpc_client::errors::JsonRpcError::TransportError(
+                            near_jsonrpc_client::errors::RpcTransportError::RecvError(
+                                near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
+                                    near_jsonrpc_primitives::message::Message::error(
+                                        near_jsonrpc_primitives::errors::RpcError::parse_error(err_str)
+                                    )
+                                ),
+                            ),
+                        ),
                     ));
                 }
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
+                // Distinguish transport vs server errors by checking for common transport error patterns
+                let is_transport = err_str.contains("transport")
+                    || err_str.contains("connection")
+                    || err_str.contains("timeout")
+                    || err_str.contains("DNS");
+                let category = if is_transport {
+                    "connectivity issue"
+                } else {
+                    "server error"
+                };
                 let need_check_account = suspend_tracing_indicatif::<
                     _,
                     color_eyre::eyre::Result<bool>,
                 >(|| {
                     need_check_account(format!(
-                        "Account information ({account_id}) cannot be fetched on <{}> network due to server error.",
+                        "Account information ({account_id}) cannot be fetched on <{}> network due to {category}.",
                         network_config.network_name
                     ))
                 });
@@ -325,7 +310,15 @@ pub fn verify_account_access_key(
                 }
                 if let Ok(false) = need_check_account {
                     return Err(AccountStateError::JsonRpcError(
-                        near_jsonrpc_client::errors::JsonRpcError::ServerError(err),
+                        near_jsonrpc_client::errors::JsonRpcError::TransportError(
+                            near_jsonrpc_client::errors::RpcTransportError::RecvError(
+                                near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
+                                    near_jsonrpc_primitives::message::Message::error(
+                                        near_jsonrpc_primitives::errors::RpcError::parse_error(err_str)
+                                    )
+                                ),
+                            ),
+                        ),
                     ));
                 }
             }
@@ -1954,12 +1947,14 @@ pub fn get_delegated_validator_list_from_mainnet(
         .get("mainnet")
         .wrap_err("There is no 'mainnet' network in your configuration.")?;
 
-    let epoch_validator_info = network_config
-        .json_rpc_client()
-        .blocking_call(
-            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
-                epoch_reference: near_primitives::types::EpochReference::Latest,
-            },
+    let epoch_validator_info = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            network_config.json_rpc_client().call(
+                &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
+                    epoch_reference: near_primitives::types::EpochReference::Latest,
+                },
+            ),
         )
         .wrap_err("Failed to get epoch validators information request.")?;
 
@@ -2127,15 +2122,18 @@ pub fn fetch_currently_active_staking_pools(
     staking_pools_factory_account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
     tracing::info!(target: "near_teach_me", "Getting currently active staking pools ...");
-    let query_view_method_response = json_rpc_client
-        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::ViewState {
-                account_id: staking_pools_factory_account_id.clone(),
-                prefix: near_primitives::types::StoreKey::from(b"se".to_vec()),
-                include_proof: false,
-            },
-        })
+    let query_view_method_response = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            json_rpc_client.call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: near_primitives::types::Finality::Final.into(),
+                request: near_primitives::views::QueryRequest::ViewState {
+                    account_id: staking_pools_factory_account_id.clone(),
+                    prefix: near_primitives::types::StoreKey::from(b"se".to_vec()),
+                    include_proof: false,
+                },
+            }),
+        )
         .map_err(color_eyre::Report::msg)?;
     if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
         query_view_method_response.kind
@@ -2157,11 +2155,14 @@ pub fn get_validators_stake(
     std::collections::HashMap<near_primitives::types::AccountId, near_primitives::types::Balance>,
 > {
     tracing::info!(target: "near_teach_me", "Getting a stake of validators ...");
-    let epoch_validator_info = json_rpc_client
-        .blocking_call(
-            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
-                epoch_reference: near_primitives::types::EpochReference::Latest,
-            },
+    let epoch_validator_info = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(
+            json_rpc_client.call(
+                &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
+                    epoch_reference: near_primitives::types::EpochReference::Latest,
+                },
+            ),
         )
         .wrap_err("Failed to get epoch validators information request.")?;
 
@@ -2881,6 +2882,101 @@ pub fn to_call_result(
     }
 }
 
+/// Convert near-kit `AccessKeyPermissionView` to `near_primitives::views::AccessKeyPermissionView`.
+pub fn from_nk_access_key_permission(
+    nk: &near_kit::AccessKeyPermissionView,
+) -> near_primitives::views::AccessKeyPermissionView {
+    match nk {
+        near_kit::AccessKeyPermissionView::FullAccess => {
+            near_primitives::views::AccessKeyPermissionView::FullAccess
+        }
+        near_kit::AccessKeyPermissionView::FunctionCall {
+            allowance,
+            receiver_id,
+            method_names,
+        } => near_primitives::views::AccessKeyPermissionView::FunctionCall {
+            allowance: allowance.map(|a| a),
+            receiver_id: receiver_id.to_string(),
+            method_names: method_names.clone(),
+        },
+        near_kit::AccessKeyPermissionView::GasKeyFunctionCall {
+            balance,
+            num_nonces,
+            allowance,
+            receiver_id,
+            method_names,
+        } => near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall {
+            balance: *balance,
+            num_nonces: *num_nonces,
+            allowance: allowance.map(|a| a),
+            receiver_id: receiver_id.to_string(),
+            method_names: method_names.clone(),
+        },
+        near_kit::AccessKeyPermissionView::GasKeyFullAccess {
+            balance,
+            num_nonces,
+        } => near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess {
+            balance: *balance,
+            num_nonces: *num_nonces,
+        },
+    }
+}
+
+/// Convert near-kit `AccessKeyInfoView` to `near_primitives::views::AccessKeyInfoView`.
+pub fn from_nk_access_key_info(
+    nk: &near_kit::AccessKeyInfoView,
+) -> near_primitives::views::AccessKeyInfoView {
+    near_primitives::views::AccessKeyInfoView {
+        public_key: nk
+            .public_key
+            .to_string()
+            .parse()
+            .expect("near_kit::PublicKey should always produce a valid near_crypto::PublicKey string"),
+        access_key: near_primitives::views::AccessKeyView {
+            nonce: nk.access_key.nonce,
+            permission: from_nk_access_key_permission(&nk.access_key.permission),
+        },
+    }
+}
+
+/// Convert near-kit `AccessKeyListView` to `near_primitives::views::AccessKeyList`.
+pub fn from_nk_access_key_list(
+    nk: &near_kit::AccessKeyListView,
+) -> near_primitives::views::AccessKeyList {
+    near_primitives::views::AccessKeyList {
+        keys: nk.keys.iter().map(from_nk_access_key_info).collect(),
+    }
+}
+
+/// Convert near-kit `AccessKeyView` to `near_primitives::views::AccessKeyView`.
+pub fn from_nk_access_key_view(
+    nk: &near_kit::AccessKeyView,
+) -> near_primitives::views::AccessKeyView {
+    near_primitives::views::AccessKeyView {
+        nonce: nk.nonce,
+        permission: from_nk_access_key_permission(&nk.permission),
+    }
+}
+
+/// Convert near-kit `AccountView` to `near_primitives::views::AccountView`.
+pub fn from_nk_account_view(
+    nk: &near_kit::AccountView,
+) -> near_primitives::views::AccountView {
+    near_primitives::views::AccountView {
+        amount: nk.amount,
+        locked: nk.locked,
+        code_hash: from_nk_crypto_hash(&nk.code_hash),
+        storage_usage: nk.storage_usage,
+        storage_paid_at: nk.storage_paid_at,
+        global_contract_hash: nk.global_contract_hash.as_ref().map(from_nk_crypto_hash),
+        global_contract_account_id: nk.global_contract_account_id.as_ref().map(|a| {
+            a.to_string()
+                .parse()
+                .expect("near_kit AccountId should always produce a valid near_primitives AccountId")
+        }),
+    }
+}
+
 /// Blocking helper: query view state via near-kit escape hatch.
 ///
 /// near-kit does not have a dedicated `view_state` method, so we use the
@@ -2949,297 +3045,6 @@ pub fn blocking_view_code(
         .map_err(|err| color_eyre::eyre::eyre!("{}", err))
 }
 
-pub trait JsonRpcClientExt {
-    fn blocking_call<M>(&self, method: M) -> BoxedJsonRpcResult<M::Response, M::Error>
-    where
-        M: near_jsonrpc_client::methods::RpcMethod,
-        M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display;
-
-    /// A helper function to make a view-funcation call using JSON encoding for the function
-    /// arguments and function return value.
-    fn blocking_call_view_function(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        method_name: &str,
-        args: Vec<u8>,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error>;
-
-    fn blocking_call_view_access_key(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        public_key: &near_crypto::PublicKey,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    >;
-
-    fn blocking_call_view_access_key_list(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    >;
-
-    fn blocking_call_view_account(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    >;
-}
-
-impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
-    fn blocking_call<M>(&self, method: M) -> BoxedJsonRpcResult<M::Response, M::Error>
-    where
-        M: near_jsonrpc_client::methods::RpcMethod,
-        M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
-    {
-        if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method)
-            && tracing::enabled!(target: "near_teach_me", tracing::Level::INFO)
-        {
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "HTTP POST {}",
-                self.server_addr()
-            );
-
-            let (request_payload, message_about_saving_payload) =
-                check_request_payload_for_send_transaction(request_payload);
-
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "JSON Request Body:\n{}",
-                indent_payload(&format!("{request_payload:#}"))
-            );
-            match message_about_saving_payload {
-                Ok(Some(message)) => {
-                    tracing::event!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        tracing::Level::INFO,
-                        "{}", message
-                    );
-                }
-                Err(message) => {
-                    tracing::event!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        tracing::Level::WARN,
-                        "{}", message
-                    );
-                }
-                _ => {}
-            }
-        }
-
-        tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(self.call(method))
-            .inspect_err(|err| match err {
-                near_jsonrpc_client::errors::JsonRpcError::TransportError(transport_error) => {
-                    tracing::info!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        "JSON RPC Request failed due to connectivity issue:\n{}",
-                        indent_payload(&format!("{transport_error:#?}"))
-                    );
-                }
-                near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(handler_error),
-                ) => {
-                    tracing::info!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        "JSON RPC Request returned a handling error:\n{}",
-                        indent_payload(&serde_json::to_string_pretty(handler_error).unwrap_or_else(|_| handler_error.to_string()))
-                    );
-                }
-                near_jsonrpc_client::errors::JsonRpcError::ServerError(server_error) => {
-                    tracing::info!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        "JSON RPC Request returned a generic server error:\n{}",
-                        indent_payload(&format!("{server_error:#?}"))
-                    );
-                }
-            })
-            .map_err(Box::new)
-    }
-
-    /// A helper function to make a view-funcation call using JSON encoding for the function
-    /// arguments and function return value.
-    #[tracing::instrument(name = "Getting the result of executing", skip_all)]
-    fn blocking_call_view_function(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        function_name: &str,
-        args: Vec<u8>,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
-        tracing::Span::current().pb_set_message(&format!(
-            "a read-only function '{function_name}' of the <{account_id}> contract ..."
-        ));
-        tracing::info!(target: "near_teach_me", "Getting the result of executing a read-only function '{function_name}' of the <{account_id}> contract ...");
-
-        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: account_id.clone(),
-                method_name: function_name.to_owned(),
-                args: near_primitives::types::FunctionArgs::from(args),
-            },
-        };
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to call a read-only function `{}` on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
-            function_name,
-            account_id
-        );
-
-        let query_view_method_response = self
-            .blocking_call(query_view_method_request)
-            .wrap_err("Read-only function execution failed")?;
-
-        query_view_method_response.call_result()
-            .inspect(|call_result| {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON RPC Response:\n{}",
-                    indent_payload(&format!(
-                        "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
-                        query_view_method_response.block_hash,
-                        query_view_method_response.block_height,
-                        call_result.logs,
-                        call_result.result
-                    ))
-                );
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
-                    indent_payload(&format!("{}\n ", 
-                        &String::from_utf8(call_result.result.clone())
-                            .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
-                    ))
-                );
-            })
-            .inspect_err(|_| {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON RPC Response:\n{}",
-                    indent_payload("Internal error: Received unexpected query kind in response to a view-function query call")
-                );
-            })
-    }
-
-    #[tracing::instrument(name = "Getting access key information:", skip_all)]
-    fn blocking_call_view_access_key(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        public_key: &near_crypto::PublicKey,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    > {
-        tracing::Span::current().pb_set_message(&format!(
-            "public key {public_key} on account <{account_id}>..."
-        ));
-        tracing::info!(target: "near_teach_me", "Getting access key information for public key {public_key} on account <{account_id}>...");
-
-        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccessKey {
-                account_id: account_id.clone(),
-                public_key: public_key.clone(),
-            },
-        };
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to get an access key details for public key {} on account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key",
-            public_key,
-            account_id
-        );
-
-        self.blocking_call(query_view_method_request)
-            .inspect(teach_me_call_response)
-    }
-
-    #[tracing::instrument(name = "Getting a list of", skip_all)]
-    fn blocking_call_view_access_key_list(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    > {
-        tracing::Span::current()
-            .pb_set_message(&format!("access keys on account <{account_id}>..."));
-        tracing::info!(target: "near_teach_me", "Getting a list of access keys on account <{account_id}>...");
-
-        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                account_id: account_id.clone(),
-            },
-        };
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to get a list of keys for account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
-            account_id
-        );
-
-        self.blocking_call(query_view_method_request)
-            .inspect(teach_me_call_response)
-    }
-
-    #[tracing::instrument(name = "Getting information about", skip_all)]
-    fn blocking_call_view_account(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    > {
-        tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
-        tracing::info!(target: "near_teach_me", "Getting information about account <{account_id}>...");
-
-        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccount {
-                account_id: account_id.clone(),
-            },
-        };
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to query information about account <{}>, learn more https://docs.near.org/api/rpc/contracts#view-account",
-            account_id
-        );
-
-        self.blocking_call(query_view_method_request)
-            .inspect(teach_me_call_response)
-    }
-}
 
 fn check_request_payload_for_send_transaction(
     mut request_payload: serde_json::Value,

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use color_eyre::{eyre::WrapErr, owo_colors::OwoColorize};
 use inquire::{CustomType, Select};
 
-use crate::common::{CallResultExt, JsonRpcClientExt};
+use crate::common::{CallResultExt, blocking_view_function, to_call_result};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::profile_args_type::ArgsContext)]
@@ -260,22 +260,22 @@ fn get_remote_profile(
     account_id: near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<serde_json::Value> {
     tracing::info!(target: "near_teach_me", "Getting data about a remote profile ...");
-    match network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
+    let result = blocking_view_function(
+        network_config,
+        near_social_account_id,
+        "get",
+        serde_json::to_vec(&serde_json::json!({
+            "keys": vec![format!("{account_id}/profile/**")],
+        }))?,
+        near_primitives::types::Finality::Final.into(),
+    )
+    .wrap_err_with(|| {
+        format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",
             near_social_account_id,
-            "get",
-            serde_json::to_vec(&serde_json::json!({
-                "keys": vec![format!("{account_id}/profile/**")],
-            }))?,
-            near_primitives::types::Finality::Final.into(),
+            network_config.network_name
         )
-        .wrap_err_with(|| {
-            format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",
-                near_social_account_id,
-                network_config.network_name
-            )
-        })?
+    })?;
+    match to_call_result(&result)
         .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
         .wrap_err_with(|| {
             format!("Failed to parse view function call return value for {account_id}/profile.")

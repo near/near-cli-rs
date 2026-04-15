@@ -4,7 +4,6 @@ use color_eyre::eyre::Context;
 use inquire::CustomType;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone)]
 pub enum ContractType {
@@ -348,11 +347,16 @@ pub fn get_code(
         ),
     };
 
-    let block = network_config
-        .json_rpc_client()
-        .blocking_call(near_jsonrpc_client::methods::block::RpcBlockRequest {
-            block_reference: block_reference.clone(),
-        })
+    let rt = tokio::runtime::Runtime::new().unwrap();
+
+    let block = rt
+        .block_on(
+            network_config.json_rpc_client().call(
+                near_jsonrpc_client::methods::block::RpcBlockRequest {
+                    block_reference: block_reference.clone(),
+                },
+            ),
+        )
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch block info for block reference {:?} on network <{}>",
@@ -370,13 +374,15 @@ pub fn get_code(
             contract_type, block_height, network_config.network_name
         );
 
-        let Ok(query_view_method_response) = network_config.json_rpc_client().blocking_call(
-            near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: near_primitives::types::BlockReference::BlockId(
-                    near_primitives::types::BlockId::Height(block_height),
-                ),
-                request: request.clone(),
-            },
+        let Ok(query_view_method_response) = rt.block_on(
+            network_config.json_rpc_client().call(
+                near_jsonrpc_client::methods::query::RpcQueryRequest {
+                    block_reference: near_primitives::types::BlockReference::BlockId(
+                        near_primitives::types::BlockId::Height(block_height),
+                    ),
+                    request: request.clone(),
+                },
+            ),
         ) else {
             continue;
         };

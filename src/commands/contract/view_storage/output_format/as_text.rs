@@ -22,23 +22,17 @@ impl AsTextContext {
             let prefix = previous_context.prefix;
 
             move |network_config, block_reference| {
-                let query_view_method_response =
+                let result =
                     super::get_contract_state(&contract_account_id, prefix.clone(), network_config, block_reference.clone())?;
 
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
-                    query_view_method_response.kind
-                {
-                    let mut info_str = String::new();
-                    for value in &result.values {
-                        info_str.push_str(&format!("\n\tkey:   {}", key_value_to_string(&value.key)?.green()));
-                        info_str.push_str(&format!("\n\tvalue: {}", key_value_to_string(&value.value)?.yellow()));
-                        info_str.push_str("\n\t--------------------------------");
-                    }
-                    println!("Contract state (values):{info_str}\n");
-                    println!("Contract state (proof):\n{:#?}\n", result.proof);
-                } else {
-                    return Err(color_eyre::Report::msg("Error call result".to_string()));
-                };
+                let mut info_str = String::new();
+                for value in &result.values {
+                    info_str.push_str(&format!("\n\tkey:   {}", key_value_to_string(&value.key)?.green()));
+                    info_str.push_str(&format!("\n\tvalue: {}", key_value_to_string(&value.value)?.yellow()));
+                    info_str.push_str("\n\t--------------------------------");
+                }
+                println!("Contract state (values):{info_str}\n");
+                println!("Contract state (proof):\n{:#?}\n", result.proof);
                 Ok(())
             }
         });
