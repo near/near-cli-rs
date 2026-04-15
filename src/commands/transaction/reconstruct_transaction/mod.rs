@@ -310,7 +310,7 @@ fn action_transformation(
             let mode = match use_global_contract_action.contract_identifier {
                 near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => add_action::use_global_contract::CliUseGlobalActionMode::UseGlobalHash(
                     add_action::use_global_contract::CliUseHashAction {
-                        hash: Some(crate::types::crypto_hash::CryptoHash(hash)),
+                        hash: Some(crate::types::crypto_hash::CryptoHash::from(hash)),
                         initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
                             add_action::deploy_contract::initialize_mode::CliNoInitialize {
                                 next_action: None

@@ -62,10 +62,9 @@ impl SignAccessKeyFileContext {
                 scope
                     .nonce
                     .wrap_err("Nonce is required to sign a transaction in offline mode")?,
-                scope
+                near_primitives::hash::CryptoHash::from(scope
                     .block_hash
-                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?
-                    .0,
+                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?),
                 scope
                     .block_height
                     .wrap_err("Block Height is required to sign a transaction in offline mode")?,

@@ -216,9 +216,8 @@ fn sign_transaction_with_usb(
     let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
         (
             nonce.wrap_err("Nonce is required to sign a transaction in offline mode")?,
-            block_hash
-                .wrap_err("Block Hash is required to sign a transaction in offline mode")?
-                .0,
+            near_primitives::hash::CryptoHash::from(block_hash
+                .wrap_err("Block Hash is required to sign a transaction in offline mode")?),
             block_height
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         )
@@ -479,9 +478,8 @@ fn sign_transaction_with_ble(
     let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
         (
             nonce.wrap_err("Nonce is required to sign a transaction in offline mode")?,
-            block_hash
-                .wrap_err("Block Hash is required to sign a transaction in offline mode")?
-                .0,
+            near_primitives::hash::CryptoHash::from(block_hash
+                .wrap_err("Block Hash is required to sign a transaction in offline mode")?),
             block_height
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         )

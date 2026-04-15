@@ -1,5 +1,7 @@
+use std::str::FromStr;
+
 #[derive(Debug, Clone)]
-pub struct Signature(pub near_crypto::Signature);
+pub struct Signature(pub near_kit::Signature);
 
 impl std::fmt::Display for Signature {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -8,16 +10,19 @@ impl std::fmt::Display for Signature {
 }
 
 impl std::str::FromStr for Signature {
-    type Err = near_crypto::ParseSignatureError;
+    type Err = color_eyre::eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let signature = near_crypto::Signature::from_str(s)?;
+        let signature = near_kit::Signature::from_str(s)
+            .map_err(color_eyre::eyre::Report::msg)?;
         Ok(Self(signature))
     }
 }
 
 impl From<Signature> for near_crypto::Signature {
     fn from(item: Signature) -> Self {
-        item.0
+        // Both use identical "keytype:base58" format
+        near_crypto::Signature::from_str(&item.0.to_string())
+            .expect("near-kit and near-crypto use compatible signature formats")
     }
 }
