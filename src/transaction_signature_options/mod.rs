@@ -116,7 +116,7 @@ pub type OnSendingDelegateActionCallback = std::sync::Arc<
     dyn Fn(
         near_primitives::action::delegate::SignedDelegateAction,
         &crate::config::NetworkConfig,
-    ) -> color_eyre::eyre::Result<()>,
+    ) -> crate::CliResult,
 >;
 
 #[derive(Clone)]
