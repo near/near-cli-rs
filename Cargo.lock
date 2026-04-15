@@ -2564,6 +2564,7 @@ dependencies = [
  "near-parameters",
  "near-primitives",
  "near-sandbox",
+ "near-slip10",
  "near-socialdb-client",
  "near-token",
  "near-verify-rs",
@@ -2580,7 +2581,6 @@ dependencies = [
  "serde_with",
  "shell-words",
  "shellexpand",
- "slipped10",
  "smart-default",
  "strum",
  "strum_macros",
@@ -2843,6 +2843,17 @@ name = "near-schema-checker-macro"
 version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b61eccf333a27e5dc076290f9eb59b18fc848188377bf3e99e0fe0a93627e18"
+
+[[package]]
+name = "near-slip10"
+version = "0.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f476bc5f8bcb36242d25ef252ce43edb22d4dfb8dcdd1b61812c7c9a7594400f"
+dependencies = [
+ "ed25519-dalek",
+ "hmac",
+ "sha2 0.9.9",
+]
 
 [[package]]
 name = "near-socialdb-client"

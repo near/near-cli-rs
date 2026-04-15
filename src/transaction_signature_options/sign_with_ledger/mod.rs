@@ -210,7 +210,7 @@ fn sign_transaction_with_usb(
     tracing::info!(target: "near_teach_me", "Signing the transaction with Ledger device via USB. Follow the instructions on the ledger ...");
 
     let network_config = previous_context.network_config.clone();
-    let seed_phrase_hd_path_raw: slipped10::BIP32Path = seed_phrase_hd_path.clone().into();
+    let seed_phrase_hd_path_raw: near_slip10::BIP32Path = seed_phrase_hd_path.clone().into();
     let public_key: near_crypto::PublicKey = signer_public_key.clone().into();
 
     let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
@@ -473,7 +473,7 @@ fn sign_transaction_with_ble(
     tracing::info!(target: "near_teach_me", "Signing the transaction with Ledger device via Bluetooth. Follow the instructions on the ledger ...");
 
     let network_config = previous_context.network_config.clone();
-    let seed_phrase_hd_path_raw: slipped10::BIP32Path = seed_phrase_hd_path.clone().into();
+    let seed_phrase_hd_path_raw: near_slip10::BIP32Path = seed_phrase_hd_path.clone().into();
     let public_key: near_crypto::PublicKey = signer_public_key.clone().into();
 
     let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
