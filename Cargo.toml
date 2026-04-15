@@ -98,6 +98,7 @@ near-token = { version = "0.3", features = [
     "interactive-clap",
 ] }
 
+near-kit = { path = "/home/ricky/near-kit-rs/crates/near-kit", features = ["interactive-clap"] }
 near-abi = "0.4.2"
 
 zstd = "0.13"

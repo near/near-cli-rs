@@ -15,6 +15,9 @@ pub mod sign_with_private_key;
 pub mod sign_with_seed_phrase;
 pub mod submit_dao_proposal;
 
+#[cfg(test)]
+mod hash_compat_tests;
+
 pub const META_TRANSACTION_VALID_FOR_DEFAULT: u64 = 1000;
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
