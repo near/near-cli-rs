@@ -954,11 +954,17 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<12}: {}",
                     "", "deposit", deterministic_init_action.deposit
                 ));
-                let state_init_json = serde_json::to_string_pretty(&deterministic_init_action.state_init)
-                    .expect("DeterministicAccountStateInit is always serializable");
+                let state_init_json =
+                    serde_json::to_string_pretty(&DeterministicAccountStateInitView::from(
+                        deterministic_init_action.state_init.clone(),
+                    ))
+                    .expect("DeterministicAccountStateInitView is always serializable");
                 let state_init_indented = state_init_json.replace('\n', &format!("\n{:33}", ""));
 
-                info_str.push_str(&format!("\n{:>18} {:<12}: {}", "", "state-init", state_init_indented));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<12}: {}",
+                    "", "state-init", state_init_indented
+                ));
             }
             near_primitives::transaction::Action::TransferToGasKey(transfer_to_gas_key) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
@@ -3453,6 +3459,48 @@ pub fn parse_base64_kv_map(
     let data: Data = serde_json::from_str(input)
         .map_err(|e| color_eyre::eyre::eyre!("Failed to parse base64 KV map: {e}"))?;
     Ok(data.0)
+}
+
+// NOTE: workaround for not yet released version of near-primitives that accounts for proper
+// serialization of GlobalContractIdentifier
+// ref: https://github.com/near/nearcore/commit/1bcb01fb09ada9243182d061b8b2e2ad7bf544c3
+#[serde_as]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct DeterministicAccountStateInitV1View {
+    code: near_primitives::views::GlobalContractIdentifierView,
+    #[serde_as(as = "std::collections::BTreeMap<Base64, Base64>")]
+    data: std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) enum DeterministicAccountStateInitView {
+    V1(DeterministicAccountStateInitV1View),
+}
+
+impl From<near_primitives::deterministic_account_id::DeterministicAccountStateInit>
+    for DeterministicAccountStateInitView
+{
+    fn from(
+        near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(v1): near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+    ) -> Self {
+        Self::V1(DeterministicAccountStateInitV1View {
+            code: v1.code.into(),
+            data: v1.data,
+        })
+    }
+}
+
+impl From<DeterministicAccountStateInitView>
+    for near_primitives::deterministic_account_id::DeterministicAccountStateInit
+{
+    fn from(DeterministicAccountStateInitView::V1(v1): DeterministicAccountStateInitView) -> Self {
+        Self::V1(
+            near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
+                code: v1.code.into(),
+                data: v1.data,
+            },
+        )
+    }
 }
 
 /// Deserializes a `DeterministicAccountStateInit` from borsh-serialized bytes.

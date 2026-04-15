@@ -216,9 +216,11 @@ impl StateInitFromJsonContext {
         previous_context: super::ConstructTransactionSenderContext,
         scope: &<StateInitFromJson as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit =
-            serde_json::from_str(&scope.state_init_json)
-                .wrap_err("Failed to parse JSON-serialized StateInit")?;
+        let state_init = serde_json::from_str::<crate::common::DeterministicAccountStateInitView>(
+            &scope.state_init_json,
+        )
+        .map(Into::into)
+        .wrap_err("Failed to parse JSON-serialized StateInit")?;
         let receiver_account_id =
             near_primitives::utils::derive_near_deterministic_account_id(&state_init);
         Ok(Self(StateInitDataContext {
@@ -260,8 +262,9 @@ impl StateInitFromJsonFileContext {
                 scope.file_path.0.display()
             )
         })?;
-        let state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit =
-            serde_json::from_str(&json_str)
+        let state_init =
+            serde_json::from_str::<crate::common::DeterministicAccountStateInitView>(&json_str)
+                .map(Into::into)
                 .wrap_err("Failed to parse JSON-serialized StateInit")?;
         let receiver_account_id =
             near_primitives::utils::derive_near_deterministic_account_id(&state_init);
