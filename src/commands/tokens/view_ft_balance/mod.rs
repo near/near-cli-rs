@@ -55,10 +55,10 @@ impl ViewFtBalanceContext {
                 let call_result = get_ft_balance(network_config, &ft_contract_account_id, args, block_reference.clone())?;
                 call_result.print_logs();
                 let amount: String = call_result.parse_result_from_json()?;
-                let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
+                let fungible_token = near_kit::FtAmount::new(
                     amount.parse::<u128>()?,
                     ft_metadata.decimals,
-                    ft_metadata.symbol
+                    ft_metadata.symbol,
                 );
 
                 println!("<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})");

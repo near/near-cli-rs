@@ -5,11 +5,10 @@ use serde::ser::{Serialize, Serializer};
 use crate::common::CallResultExt;
 use crate::common::{RpcResultExt, block_on};
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
+/// CLI-specific enum for interactive_clap: either an exact FT amount or "all".
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FungibleTokenTransferAmount {
-    /// Transfer of the specified amount of fungible tokens (wNearAmount (10 wNEAR))
     ExactAmount(FungibleToken),
-    /// Transfer the entire amount of fungible tokens from your account ID
     MaxAmount,
 }
 
@@ -48,7 +47,11 @@ impl std::str::FromStr for FungibleTokenTransferAmount {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
+/// Thin CLI wrapper for parsing user-input like "10.5 wNEAR" where the token's
+/// actual decimals are not yet known. Call `normalize()` once metadata is
+/// available to scale to the real decimals; then use `to_ft_amount()` to obtain
+/// a `near_kit::FtAmount`. Display delegates to `near_kit::FtAmount`.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct FungibleToken {
     amount: u128,
     decimals: u8,
@@ -57,11 +60,7 @@ pub struct FungibleToken {
 
 impl FungibleToken {
     pub fn from_params_ft(amount: u128, decimals: u8, symbol: String) -> Self {
-        Self {
-            amount,
-            decimals,
-            symbol,
-        }
+        Self { amount, decimals, symbol }
     }
 
     pub fn normalize(&self, ft_metadata: &FtMetadata) -> color_eyre::eyre::Result<Self> {
@@ -79,11 +78,7 @@ impl FungibleToken {
                     )
                     .wrap_err("Overflow in decimal normalization")?
             };
-            Ok(Self {
-                symbol: ft_metadata.symbol.clone(),
-                decimals: ft_metadata.decimals,
-                amount,
-            })
+            Ok(Self { symbol: ft_metadata.symbol.clone(), decimals: ft_metadata.decimals, amount })
         } else {
             color_eyre::eyre::bail!(
                 "Invalid decimal places. Your FT amount exceeds {} decimal places.",
@@ -92,43 +87,19 @@ impl FungibleToken {
         }
     }
 
-    pub fn amount(&self) -> u128 {
-        self.amount
-    }
+    pub fn amount(&self) -> u128 { self.amount }
+    pub fn decimals(&self) -> u8 { self.decimals }
+    pub fn symbol(&self) -> &str { &self.symbol }
 
-    pub fn decimals(&self) -> u8 {
-        self.decimals
-    }
-
-    pub fn symbol(&self) -> &str {
-        &self.symbol
+    /// Convert into a `near_kit::FtAmount` (only meaningful after normalization).
+    pub fn to_ft_amount(&self) -> near_kit::FtAmount {
+        near_kit::FtAmount::new(self.amount, self.decimals, &self.symbol)
     }
 }
 
 impl std::fmt::Display for FungibleToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let one_ft: u128 = 10u128
-            .checked_pow(self.decimals.into())
-            .wrap_err("Overflow in FungibleToken normalization")
-            .unwrap();
-        if self.amount == 0 {
-            write!(f, "0 {}", self.symbol)
-        } else if self.amount.is_multiple_of(one_ft) {
-            write!(f, "{} {}", self.amount / one_ft, self.symbol)
-        } else {
-            write!(
-                f,
-                "{}.{} {}",
-                self.amount / one_ft,
-                format!(
-                    "{:0>decimals$}",
-                    (self.amount % one_ft),
-                    decimals = self.decimals.into()
-                )
-                .trim_end_matches('0'),
-                self.symbol
-            )
-        }
+        self.to_ft_amount().fmt(f)
     }
 }
 
@@ -162,11 +133,7 @@ impl std::str::FromStr for FungibleToken {
                     .ok_or("FungibleToken: overflow happens")?
                     .checked_add(num_fract_part)
                     .ok_or("FungibleToken: overflow happens")?;
-                Ok(Self {
-                    amount,
-                    decimals: len_fract,
-                    symbol: currency,
-                })
+                Ok(Self { amount, decimals: len_fract, symbol: currency })
             }
             1 => {
                 if res_split[0].starts_with('0') && res_split[0] != "0" {
@@ -175,11 +142,7 @@ impl std::str::FromStr for FungibleToken {
                 let amount = res_split[0]
                     .parse::<u128>()
                     .map_err(|err| format!("FungibleToken: {err}"))?;
-                Ok(Self {
-                    amount,
-                    decimals: 0,
-                    symbol: currency,
-                })
+                Ok(Self { amount, decimals: 0, symbol: currency })
             }
             _ => Err("FungibleToken: incorrect number entered".to_string()),
         }
@@ -190,12 +153,26 @@ impl interactive_clap::ToCli for FungibleToken {
     type CliVariant = FungibleToken;
 }
 
+/// Slim CLI-local metadata (symbol + decimals only) for ft_contracts.json
+/// persistence. For full metadata, use `near_kit::FtMetadata`.
 #[derive(
     Debug, Clone, Default, PartialEq, Eq, PartialOrd, serde::Serialize, serde::Deserialize,
 )]
 pub struct FtMetadata {
     pub symbol: String,
     pub decimals: u8,
+}
+
+impl From<near_kit::FtMetadata> for FtMetadata {
+    fn from(m: near_kit::FtMetadata) -> Self {
+        Self { symbol: m.symbol, decimals: m.decimals }
+    }
+}
+
+impl From<&near_kit::FtMetadata> for FtMetadata {
+    fn from(m: &near_kit::FtMetadata) -> Self {
+        Self { symbol: m.symbol.clone(), decimals: m.decimals }
+    }
 }
 
 #[tracing::instrument(name = "Getting FT metadata ...", skip_all, parent = None)]
@@ -224,6 +201,7 @@ pub fn params_ft_metadata(
     Ok(ft_metadata)
 }
 
+/// Serde-compatible entry for ft_contracts.json persistence.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct FtContract {
     #[serde(flatten)]
@@ -232,6 +210,7 @@ pub struct FtContract {
     pub ft_contract_account_id: near_kit::AccountId,
 }
 
+/// Serde struct for ft_transfer JSON args (amount serialized as string).
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FtTransfer {
     pub receiver_id: near_kit::AccountId,
@@ -241,6 +220,7 @@ pub struct FtTransfer {
     pub memo: Option<String>,
 }
 
+/// Serde struct for ft_transfer_call JSON args (amount serialized as string).
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FtTransferCall {
     pub receiver_id: near_kit::AccountId,
@@ -307,9 +287,7 @@ mod tests {
         assert_eq!(
             ft_transfer_amount,
             FungibleTokenTransferAmount::ExactAmount(FungibleToken::from_params_ft(
-                123456,
-                6,
-                "USDC".to_string()
+                123456, 6, "USDC".to_string()
             ))
         );
     }
@@ -328,9 +306,7 @@ mod tests {
         })
         .unwrap();
         assert_eq!(
-            serde_json::from_slice::<serde_json::Value>(&ft_transfer)
-                .unwrap()
-                .to_string(),
+            serde_json::from_slice::<serde_json::Value>(&ft_transfer).unwrap().to_string(),
             "{\"amount\":\"123456\",\"memo\":\"Memo\",\"receiver_id\":\"fro_volod.testnet\"}"
         );
     }
@@ -343,9 +319,7 @@ mod tests {
         })
         .unwrap();
         assert_eq!(
-            serde_json::from_slice::<serde_json::Value>(&ft_transfer)
-                .unwrap()
-                .to_string(),
+            serde_json::from_slice::<serde_json::Value>(&ft_transfer).unwrap().to_string(),
             "{\"amount\":\"123456\",\"receiver_id\":\"fro_volod.testnet\"}"
         );
     }

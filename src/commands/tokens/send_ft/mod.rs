@@ -183,7 +183,7 @@ pub fn get_prepopulated_transaction(
     ft_contract_account_id: &near_kit::AccountId,
     receiver_account_id: &near_kit::AccountId,
     signer_id: &near_kit::AccountId,
-    amount_ft: &crate::types::ft_properties::FungibleToken,
+    amount_ft: &near_kit::FtAmount,
     memo: &str,
     deposit: crate::types::near_token::NearToken,
     gas: crate::common::NearGas,
@@ -191,7 +191,7 @@ pub fn get_prepopulated_transaction(
     tracing::info!(target: "near_teach_me", "Creating a pre-populated transaction for signature ...");
     let args_ft_transfer = serde_json::to_vec(&crate::types::ft_properties::FtTransfer {
         receiver_id: receiver_account_id.clone(),
-        amount: amount_ft.amount(),
+        amount: amount_ft.raw(),
         memo: if memo.is_empty() {
             None
         } else {
@@ -250,7 +250,7 @@ pub fn get_ft_balance_for_account(
     signer_account_id: &near_kit::AccountId,
     ft_contract_account_id: &near_kit::AccountId,
     block_reference: near_kit::BlockReference,
-) -> color_eyre::eyre::Result<crate::types::ft_properties::FungibleToken> {
+) -> color_eyre::eyre::Result<near_kit::FtAmount> {
     let function_args = serde_json::to_vec(&json!({"account_id": signer_account_id}))?;
     let amount = get_ft_balance(
         network_config,
@@ -265,7 +265,7 @@ pub fn get_ft_balance_for_account(
             network_config,
             near_kit::Finality::Final.into(),
         )?;
-    Ok(crate::types::ft_properties::FungibleToken::from_params_ft(
+    Ok(near_kit::FtAmount::new(
         amount.parse::<u128>()?,
         decimals,
         symbol,

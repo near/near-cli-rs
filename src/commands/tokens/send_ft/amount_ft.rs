@@ -111,9 +111,9 @@ impl FtTransferParamsContext {
 
                 move |network_config| {
                     let amount_ft = if let crate::types::ft_properties::FungibleTokenTransferAmount::ExactAmount(ft) = &ft_transfer_amount {
-                        ft
+                        ft.to_ft_amount()
                     } else {
-                        &super::get_ft_balance_for_account(
+                        super::get_ft_balance_for_account(
                             network_config,
                             &signer_account_id,
                             &ft_contract_account_id,
@@ -126,7 +126,7 @@ impl FtTransferParamsContext {
                         &ft_contract_account_id,
                         &receiver_account_id,
                         &signer_account_id,
-                        amount_ft,
+                        &amount_ft,
                         &memo,
                         deposit,
                         gas
@@ -152,10 +152,10 @@ impl FtTransferParamsContext {
                                     &ft_contract_account_id,
                                     near_kit::BlockReference::at_hash(outcome_view.receipts_outcome.last().expect("FT transfer should have at least one receipt outcome, but none was received").block_hash)
                                 ) {
-                                    let ft_transfer_amount = crate::types::ft_properties::FungibleToken::from_params_ft(
+                                    let ft_transfer_amount = near_kit::FtAmount::new(
                                         ft_transfer.amount,
                                         ft_balance.decimals(),
-                                        ft_balance.symbol().to_string()
+                                        ft_balance.symbol(),
                                     );
                                     if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
                                         tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(

@@ -135,7 +135,7 @@ pub fn get_prepopulated_transaction(
     ft_contract_account_id: &near_kit::AccountId,
     receiver_account_id: &near_kit::AccountId,
     signer_id: &near_kit::AccountId,
-    amount_ft: &crate::types::ft_properties::FungibleToken,
+    amount_ft: &near_kit::FtAmount,
     memo: &str,
     msg: &str,
     deposit: crate::types::near_token::NearToken,
@@ -144,7 +144,7 @@ pub fn get_prepopulated_transaction(
     tracing::info!(target: "near_teach_me", "Creating a pre-populated transaction for signature ...");
     let args_ft_transfer_call = serde_json::to_vec(&crate::types::ft_properties::FtTransferCall {
         receiver_id: receiver_account_id.clone(),
-        amount: amount_ft.amount(),
+        amount: amount_ft.raw(),
         memo: if memo.is_empty() {
             None
         } else {
