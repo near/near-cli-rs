@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use futures::{StreamExt, TryStreamExt};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::{CallResultExt, RpcQueryResponseExt};
+use crate::common::CallResultExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -64,8 +64,6 @@ pub fn get_account_inquiry(
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Receiving an inquiry about your account ...");
 
-    let json_rpc_client = network_config.json_rpc_client();
-
     let nk_account_view = crate::common::blocking_view_account(
         network_config,
         account_id,
@@ -106,12 +104,16 @@ pub fn get_account_inquiry(
         &network_config.staking_pools_factory_account_id
     {
         crate::common::fetch_currently_active_staking_pools(
-            &json_rpc_client,
+            network_config,
             staking_pools_factory_account_id,
         )
     } else {
         Ok(Default::default())
     };
+
+    let client = network_config.client();
+    let rpc = client.rpc();
+    let nk_block_ref = crate::common::to_nk_block_reference(block_reference);
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -146,8 +148,8 @@ pub fn get_account_inquiry(
                     futures::stream::iter(validator_batch)
                         .map(|validator_account_id| async {
                             let balance = get_delegated_staked_balance(
-                                &json_rpc_client,
-                                block_reference,
+                                rpc,
+                                &nk_block_ref,
                                 &validator_account_id,
                                 account_id,
                             )
@@ -202,43 +204,35 @@ pub fn get_account_inquiry(
     skip_all
 )]
 async fn get_delegated_staked_balance(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    block_reference: &near_primitives::types::BlockReference,
+    rpc: &near_kit::RpcClient,
+    block_reference: &near_kit::BlockReference,
     staking_pool_account_id: &near_primitives::types::AccountId,
     account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
     tracing::Span::current().pb_set_message(staking_pool_account_id.as_str());
     tracing::info!(target: "near_teach_me", "Receiving the delegated staked balance from validator {staking_pool_account_id}");
-    let account_staked_balance_response = json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_reference.clone(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: staking_pool_account_id.clone(),
-                method_name: "get_account_staked_balance".to_string(),
-                args: near_primitives::types::FunctionArgs::from(serde_json::to_vec(
-                    &serde_json::json!({
-                        "account_id": account_id,
-                    }),
-                )?),
-            },
-        })
-        .await;
-    match account_staked_balance_response {
-        Ok(response) => Ok(near_token::NearToken::from_yoctonear(
-            response
-                .call_result()?
-                .parse_result_from_json::<String>()
+    let args = serde_json::to_vec(&serde_json::json!({
+        "account_id": account_id,
+    }))?;
+    match rpc
+        .view_function(
+            staking_pool_account_id,
+            "get_account_staked_balance",
+            &args,
+            block_reference.clone(),
+        )
+        .await
+    {
+        Ok(result) => Ok(near_token::NearToken::from_yoctonear(
+            result
+                .json::<String>()
                 .wrap_err("Failed to parse return value of view function call for String.")?
                 .parse::<u128>()?,
         )),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
-                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
-                    ..
-                },
-            ),
-        )) => Ok(near_token::NearToken::from_yoctonear(0)),
+        Err(
+            near_kit::RpcError::ContractNotDeployed(_)
+            | near_kit::RpcError::ContractExecution { .. },
+        ) => Ok(near_token::NearToken::from_yoctonear(0)),
         Err(err) => Err(err.into()),
     }
 }

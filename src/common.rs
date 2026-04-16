@@ -202,7 +202,7 @@ pub async fn get_account_transfer_allowance(
         }
     };
     let storage_amount_per_byte =
-        get_partial_protocol_config(&network_config.json_rpc_client(), &block_reference)
+        get_partial_protocol_config(network_config, &block_reference)
             .await?
             .runtime_config
             .storage_amount_per_byte;
@@ -1526,21 +1526,12 @@ pub fn get_delegated_validator_list_from_mainnet(
         .get("mainnet")
         .wrap_err("There is no 'mainnet' network in your configuration.")?;
 
-    let epoch_validator_info = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config.json_rpc_client().call(
-                &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
-                    epoch_reference: near_primitives::types::EpochReference::Latest,
-                },
-            ),
-        )
-        .wrap_err("Failed to get epoch validators information request.")?;
+    let epoch_validator_info = blocking_validators(network_config)?;
 
     Ok(epoch_validator_info
         .current_proposals
         .into_iter()
-        .map(|current_proposal| current_proposal.take_account_id())
+        .map(|proposal| proposal.into_v1().account_id)
         .chain(
             epoch_validator_info
                 .current_validators
@@ -1627,7 +1618,7 @@ pub struct StakingPoolInfo {
     pub validator_id: near_primitives::types::AccountId,
     pub fee: Option<RewardFeeFraction>,
     pub delegators: Option<u64>,
-    pub stake: near_primitives::types::Balance,
+    pub stake: near_token::NearToken,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
@@ -1642,10 +1633,10 @@ pub fn get_validator_list(
 ) -> color_eyre::eyre::Result<Vec<StakingPoolInfo>> {
     tracing::info!(target: "near_teach_me", "Getting a list of validators ...");
 
-    let json_rpc_client = network_config.json_rpc_client();
+    let validators_stake = get_validators_stake(network_config)?;
 
-    let validators_stake = get_validators_stake(&json_rpc_client)?;
-
+    let client = network_config.client();
+    let rpc = client.rpc();
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?;
@@ -1655,7 +1646,7 @@ pub fn get_validator_list(
         futures::stream::iter(validators_stake.iter())
             .map(|(validator_account_id, stake)| async {
                 get_staking_pool_info(
-                    &json_rpc_client.clone(),
+                    rpc,
                     validator_account_id.clone(),
                     *stake,
                 )
@@ -1697,60 +1688,65 @@ pub fn fetch_historically_delegated_staking_pools(
 
 #[tracing::instrument(name = "Getting currently active staking pools ...", skip_all)]
 pub fn fetch_currently_active_staking_pools(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    network_config: &crate::config::NetworkConfig,
     staking_pools_factory_account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
     tracing::info!(target: "near_teach_me", "Getting currently active staking pools ...");
-    let query_view_method_response = tokio::runtime::Runtime::new()
+
+    // near-kit does not expose a view_state helper, so use the raw RPC escape hatch.
+    #[derive(serde::Deserialize)]
+    struct ViewStateItem {
+        value: String, // base64-encoded
+    }
+    #[derive(serde::Deserialize)]
+    struct ViewStateResult {
+        values: Vec<ViewStateItem>,
+    }
+
+    let prefix_base64 =
+        near_primitives::serialize::to_base64(b"se");
+
+    let result: ViewStateResult = tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(
-            json_rpc_client.call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: near_primitives::types::Finality::Final.into(),
-                request: near_primitives::views::QueryRequest::ViewState {
-                    account_id: staking_pools_factory_account_id.clone(),
-                    prefix: near_primitives::types::StoreKey::from(b"se".to_vec()),
-                    include_proof: false,
-                },
-            }),
+            network_config.client().rpc().call(
+                "query",
+                serde_json::json!({
+                    "request_type": "view_state",
+                    "finality": "final",
+                    "account_id": staking_pools_factory_account_id.to_string(),
+                    "prefix_base64": prefix_base64,
+                    "include_proof": false,
+                }),
+            ),
         )
-        .map_err(color_eyre::Report::msg)?;
-    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
-        query_view_method_response.kind
-    {
-        Ok(result
-            .values
-            .into_iter()
-            .filter_map(|item| near_primitives::borsh::from_slice(&item.value).ok())
-            .collect())
-    } else {
-        Err(color_eyre::Report::msg("Error call result".to_string()))
-    }
+        .map_err(|err| color_eyre::eyre::eyre!("{}", err))?;
+
+    Ok(result
+        .values
+        .into_iter()
+        .filter_map(|item| {
+            let bytes = near_primitives::serialize::from_base64(&item.value).ok()?;
+            near_primitives::borsh::from_slice(&bytes).ok()
+        })
+        .collect())
 }
 
 #[tracing::instrument(name = "Getting a stake of validators ...", skip_all)]
 pub fn get_validators_stake(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<
-    std::collections::HashMap<near_primitives::types::AccountId, near_primitives::types::Balance>,
+    std::collections::HashMap<near_primitives::types::AccountId, near_token::NearToken>,
 > {
     tracing::info!(target: "near_teach_me", "Getting a stake of validators ...");
-    let epoch_validator_info = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            json_rpc_client.call(
-                &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
-                    epoch_reference: near_primitives::types::EpochReference::Latest,
-                },
-            ),
-        )
-        .wrap_err("Failed to get epoch validators information request.")?;
+    let epoch_validator_info = blocking_validators(network_config)?;
 
     Ok(epoch_validator_info
         .current_proposals
         .into_iter()
-        .map(|validator_stake_view| {
-            let validator_stake = validator_stake_view.into_validator_stake();
-            validator_stake.account_and_stake()
+        .map(|proposal| {
+            let v1 = proposal.into_v1();
+            (v1.account_id, v1.stake)
         })
         .chain(epoch_validator_info.current_validators.into_iter().map(
             |current_epoch_validator_info| {
@@ -1775,65 +1771,51 @@ pub fn get_validators_stake(
 }
 
 async fn get_staking_pool_info(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    rpc: &near_kit::RpcClient,
     validator_account_id: near_primitives::types::AccountId,
     stake: near_token::NearToken,
 ) -> color_eyre::Result<StakingPoolInfo> {
-    let fee = match json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: validator_account_id.clone(),
-                method_name: "get_reward_fee_fraction".to_string(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
+    let fee = match rpc
+        .view_function(
+            &validator_account_id,
+            "get_reward_fee_fraction",
+            &[],
+            near_kit::BlockReference::final_(),
+        )
         .await
     {
-        Ok(response) => Some(
-            response
-                .call_result()?
-                .parse_result_from_json::<RewardFeeFraction>()
+        Ok(result) => Some(
+            result
+                .json::<RewardFeeFraction>()
                 .wrap_err(
                     "Failed to parse return value of view function call for RewardFeeFraction.",
                 )?,
         ),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
-                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
-                    ..
-                },
-            ),
-        )) => None,
+        Err(
+            near_kit::RpcError::ContractNotDeployed(_)
+            | near_kit::RpcError::ContractExecution { .. },
+        ) => None,
         Err(err) => return Err(err.into()),
     };
 
-    let delegators = match json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: validator_account_id.clone(),
-                method_name: "get_number_of_accounts".to_string(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
+    let delegators = match rpc
+        .view_function(
+            &validator_account_id,
+            "get_number_of_accounts",
+            &[],
+            near_kit::BlockReference::final_(),
+        )
         .await
     {
-        Ok(response) => Some(
-            response
-                .call_result()?
-                .parse_result_from_json::<u64>()
+        Ok(result) => Some(
+            result
+                .json::<u64>()
                 .wrap_err("Failed to parse return value of view function call for u64.")?,
         ),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
-                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
-                    ..
-                },
-            ),
-        )) => None,
+        Err(
+            near_kit::RpcError::ContractNotDeployed(_)
+            | near_kit::RpcError::ContractExecution { .. },
+        ) => None,
         Err(err) => return Err(err.into()),
     };
 

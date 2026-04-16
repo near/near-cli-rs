@@ -1,11 +1,7 @@
-use near_jsonrpc_client::methods::EXPERIMENTAL_protocol_config::RpcProtocolConfigError;
-
 #[derive(Debug, serde::Deserialize)]
 pub struct PartialProtocolConfigView {
     pub runtime_config: PartialRuntimeConfigView,
 }
-
-impl near_jsonrpc_client::methods::RpcHandlerResponse for PartialProtocolConfigView {}
 
 #[derive(Debug, serde::Deserialize)]
 pub struct PartialRuntimeConfigView {
@@ -15,18 +11,16 @@ pub struct PartialRuntimeConfigView {
 }
 
 pub async fn get_partial_protocol_config(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    network_config: &crate::config::NetworkConfig,
     block_reference: &near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<PartialProtocolConfigView> {
-    let request = near_jsonrpc_client::methods::any::<
-        Result<PartialProtocolConfigView, RpcProtocolConfigError>,
-    >(
-        "EXPERIMENTAL_protocol_config",
-        serde_json::to_value(block_reference)?,
-    );
+    let nk_block_ref = crate::common::to_nk_block_reference(block_reference);
+    let params = nk_block_ref.to_rpc_params();
 
-    json_rpc_client
-        .call(request)
+    network_config
+        .client()
+        .rpc()
+        .call("EXPERIMENTAL_protocol_config", params)
         .await
         .map_err(|_| color_eyre::eyre::eyre!("Failed to get protocol config."))
 }
