@@ -74,9 +74,28 @@ impl SignNep413Context {
     }
 }
 
-#[derive(Debug, Clone)]
+pub type OnAfterSigningNep413Callback =
+    std::sync::Arc<dyn Fn(SignedMessage) -> color_eyre::eyre::Result<()>>;
+
+fn default_on_after_signing_nep413_callback() -> OnAfterSigningNep413Callback {
+    std::sync::Arc::new(|signed_message| {
+        println!("{}", serde_json::to_string_pretty(&signed_message)?);
+        Ok(())
+    })
+}
+
+#[derive(Clone)]
 pub struct FinalSignNep413Context {
     pub global_context: crate::GlobalContext,
     pub payload: NEP413Payload,
     pub signer_id: near_primitives::types::AccountId,
+    pub on_after_signing_callback: OnAfterSigningNep413Callback,
+}
+
+impl std::fmt::Debug for FinalSignNep413Context {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FinalSignNep413Context")
+            .field("signer_id", &self.signer_id)
+            .finish()
+    }
 }

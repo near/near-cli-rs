@@ -39,6 +39,8 @@ pub struct SignKeychainContext {
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
 }
 
 impl From<super::sign_with_legacy_keychain::SignLegacyKeychainContext> for SignKeychainContext {
@@ -50,6 +52,7 @@ impl From<super::sign_with_legacy_keychain::SignLegacyKeychainContext> for SignK
                 .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: value.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: value.on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: value.on_sending_delegate_action_callback,
         }
     }
 }
@@ -222,6 +225,8 @@ impl SignKeychainContext {
                     .on_before_sending_transaction_callback,
                 on_after_sending_transaction_callback: previous_context
                     .on_after_sending_transaction_callback,
+                on_sending_delegate_action_callback: previous_context
+                    .on_sending_delegate_action_callback,
             });
         }
 
@@ -253,6 +258,8 @@ impl SignKeychainContext {
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback,
         })
     }
 }
@@ -297,6 +304,7 @@ impl From<SignKeychainContext> for super::SubmitContext {
                 .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
         }
     }
 }

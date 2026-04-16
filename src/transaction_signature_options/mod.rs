@@ -112,6 +112,13 @@ pub type OnAfterSendingTransactionCallback = std::sync::Arc<
     ) -> crate::CliResult,
 >;
 
+pub type OnSendingDelegateActionCallback = std::sync::Arc<
+    dyn Fn(
+        near_primitives::action::delegate::SignedDelegateAction,
+        &crate::config::NetworkConfig,
+    ) -> crate::CliResult,
+>;
+
 #[derive(Clone)]
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
@@ -119,6 +126,7 @@ pub struct SubmitContext {
     pub signed_transaction_or_signed_delegate_action: SignedTransactionOrSignedDelegateAction,
     pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
+    pub on_sending_delegate_action_callback: Option<OnSendingDelegateActionCallback>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

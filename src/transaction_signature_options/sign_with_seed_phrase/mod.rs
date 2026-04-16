@@ -42,6 +42,8 @@ pub struct SignSeedPhraseContext {
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
 }
 
 impl SignSeedPhraseContext {
@@ -135,6 +137,8 @@ impl SignSeedPhraseContext {
                     .on_before_sending_transaction_callback,
                 on_after_sending_transaction_callback: previous_context
                     .on_after_sending_transaction_callback,
+                on_sending_delegate_action_callback: previous_context
+                    .on_sending_delegate_action_callback,
             });
         }
 
@@ -164,6 +168,8 @@ impl SignSeedPhraseContext {
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback,
         })
     }
 }
@@ -177,6 +183,7 @@ impl From<SignSeedPhraseContext> for super::SubmitContext {
                 .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
         }
     }
 }

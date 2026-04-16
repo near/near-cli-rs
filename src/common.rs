@@ -2089,7 +2089,7 @@ pub fn get_validator_list(
             .buffer_unordered(concurrency)
             .try_collect::<Vec<_>>(),
     )?;
-    validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
+    validator_list.sort_by_key(|b| std::cmp::Reverse(b.stake));
     Ok(validator_list)
 }
 

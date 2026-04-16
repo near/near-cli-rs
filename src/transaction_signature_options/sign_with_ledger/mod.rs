@@ -314,6 +314,9 @@ fn sign_transaction_with_usb(
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback
                 .clone(),
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback
+                .clone(),
         }));
     }
 
@@ -365,6 +368,9 @@ fn sign_transaction_with_usb(
             .clone(),
         on_after_sending_transaction_callback: previous_context
             .on_after_sending_transaction_callback
+            .clone(),
+        on_sending_delegate_action_callback: previous_context
+            .on_sending_delegate_action_callback
             .clone(),
     }))
 }
@@ -577,6 +583,9 @@ fn sign_transaction_with_ble(
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback
                 .clone(),
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback
+                .clone(),
         }));
     }
 
@@ -628,6 +637,9 @@ fn sign_transaction_with_ble(
             .clone(),
         on_after_sending_transaction_callback: previous_context
             .on_after_sending_transaction_callback
+            .clone(),
+        on_sending_delegate_action_callback: previous_context
+            .on_sending_delegate_action_callback
             .clone(),
     }))
 }

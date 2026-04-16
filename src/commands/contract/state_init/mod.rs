@@ -698,6 +698,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
             ),
+            on_sending_delegate_action_callback: None,
             sign_as_delegate_action: false,
         }
     }

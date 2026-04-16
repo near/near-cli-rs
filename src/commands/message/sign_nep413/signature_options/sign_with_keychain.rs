@@ -18,6 +18,7 @@ impl SignKeychainContext {
             std::sync::Arc::new({
                 let signer_id = previous_context.signer_id.clone();
                 let payload = previous_context.payload.clone();
+                let on_after_signing = previous_context.on_after_signing_callback.clone();
                 move |network_config| {
                     let key_pair = crate::commands::account::export_account::get_account_key_pair_from_keychain(network_config, &signer_id)?;
                     let signature =
@@ -28,7 +29,7 @@ impl SignKeychainContext {
                         public_key: key_pair.public_key.to_string(),
                         signature: signature.to_string(),
                     };
-                    println!("{}", serde_json::to_string_pretty(&signed_message)?);
+                    on_after_signing(signed_message)?;
                     Ok(())
                 }
             });
